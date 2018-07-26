@@ -26,7 +26,7 @@ RUN pip install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto
 RUN pip install pandas numexpr --upgrade
 
-COPY installPackages.R /installPackages.R
+COPY docker/installPackages.R /installPackages.R
 RUN Rscript /installPackages.R
 
 #install pandoc 1.19.2.1
