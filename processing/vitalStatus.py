@@ -106,4 +106,3 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
 		vitalStatusDf = pd.read_csv(filePathList[0], sep="\t")
 		total_error, warning = self.validate_helper(vitalStatusDf)
 		return(total_error, warning)
-

@@ -178,4 +178,3 @@ class maf(example_filetype_format.FileTypeFormat):
 								 '-NaN', 'nan','-nan',''],keep_default_na=False)
 		total_error, warning = self.validate_helper(mutationDF)
 		return(total_error, warning)
-
