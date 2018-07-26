@@ -10,7 +10,7 @@ setup(name='aacrgenie',
       packages=find_packages(),
       zip_safe=False,
       entry_points = {
-        'console_scripts': ['genie = processing_sage.__main__:main']},
+        'console_scripts': ['genie = processing.__main__:main']},
       install_requires=[
         'pandas>=0.20.0',
         'synapseclient',
