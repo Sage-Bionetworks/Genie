@@ -5,7 +5,7 @@ import argparse
 import urllib2
 import re
 import json
-processingDir = os.path.join(os.path.dirname(os.path.abspath(__file__)),"../../processing_sage")
+processingDir = os.path.join(os.path.dirname(os.path.abspath(__file__)),"../../processing")
 sys.path.append(processingDir)
 import process_functions as process
 # globals
