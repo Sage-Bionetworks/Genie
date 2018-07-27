@@ -243,8 +243,8 @@ class clinical(example_filetype_format.FileTypeFormat):
 
 		#CHECK: SAMPLE_ID
 		sampleId = 'SAMPLE_ID'
-		haveColumn = process_functions.checkColExist(clinicalSampleDF, sampleId)
-		if not haveColumn:
+		haveSampleColumn = process_functions.checkColExist(clinicalSampleDF, sampleId)
+		if not haveSampleColumn:
 			total_error += "Sample: clinical file must have SAMPLE_ID column.\n"
 		else:
 			if sum(clinicalSampleDF[sampleId] == "") > 0:
@@ -370,8 +370,9 @@ class clinical(example_filetype_format.FileTypeFormat):
 				total_error += "Sample: There can't be any blank values for PATIENT_ID\n"
 
 			#CHECK: within the sample file that the sample ids match the patient ids
-			if not all([patient in sample for sample, patient in zip(clinicalSampleDF[sampleId], clinicalSampleDF[patientId])]):
-				total_error += "Sample: PATIENT_ID's much be contained in the SAMPLE_ID's (ex. SAGE-1 <-> SAGE-1-2)\n"
+			if haveSampleColumn:
+				if not all([patient in sample for sample, patient in zip(clinicalSampleDF[sampleId], clinicalSampleDF[patientId])]):
+					total_error += "Sample: PATIENT_ID's much be contained in the SAMPLE_ID's (ex. SAGE-1 <-> SAGE-1-2)\n"
 			#Remove empty patient values from both files
 			sample_patients = clinicalSampleDF[patientId][clinicalSampleDF[patientId] != ""]
 			patient_patients = clinicalDF[patientId][clinicalDF[patientId] != ""]
