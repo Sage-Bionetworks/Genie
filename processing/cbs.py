@@ -52,11 +52,11 @@ class cbs(seg.seg):
 			total_error += "cbs: No null or empty values allowed in column(s): %s.\n" % ", ".join(nullCols)
 		return(total_error, warning)
 		
-	def validate_steps(self, filePathList, **kwargs):
+	# def validate_steps(self, filePathList, **kwargs):
 
-		filePath = filePathList[0]
-		logger.info("VALIDATING %s" % os.path.basename(filePath))
+	# 	filePath = filePathList[0]
+	# 	logger.info("VALIDATING %s" % os.path.basename(filePath))
 
 
-		cbsDf = pd.read_csv(filePath,sep="\t",comment="#")
-		return(self._validate(cbsDf))
+	# 	cbsDf = pd.read_csv(filePath,sep="\t",comment="#")
+	# 	return(self._validate(cbsDf))

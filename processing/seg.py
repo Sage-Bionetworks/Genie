@@ -68,18 +68,18 @@ class seg(example_filetype_format.FileTypeFormat):
 
 		return(total_error, warning)
 
-	def validate_steps(self, filePathList, **kwargs):
-		"""
-		This function validates the SEG file to make sure it adhere to the genomic SOP.
+	# def validate_steps(self, filePathList, **kwargs):
+	# 	"""
+	# 	This function validates the SEG file to make sure it adhere to the genomic SOP.
 		
-		:params filePath:     Path to SEG/CBS files
+	# 	:params filePath:     Path to SEG/CBS files
 
-		:returns:             Text with all the errors in the SEG file
-		"""
-		filePath = filePathList[0]
-		logger.info("VALIDATING %s" % os.path.basename(filePath))
+	# 	:returns:             Text with all the errors in the SEG file
+	# 	"""
+	# 	filePath = filePathList[0]
+	# 	logger.info("VALIDATING %s" % os.path.basename(filePath))
 
 
-		segDF = pd.read_csv(filePath,sep="\t",comment="#")
+	# 	segDF = pd.read_csv(filePath,sep="\t",comment="#")
 
-		return(self._validate(segDF))
+	# 	return(self._validate(segDF))

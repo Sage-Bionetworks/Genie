@@ -36,7 +36,7 @@ class mutationsInCis(example_filetype_format.FileTypeFormat):
         mutationInCis.to_csv(newPath, sep="\t",index=False)
         return(newPath)
 
-    def validate_helper(self, mutationInCisDf, testing=False):
+    def _validate(self, mutationInCisDf, testing=False):
         mutationInCisSynId = process_functions.getDatabaseSynId(self.syn, "mutationsInCis", test=testing)
         #Pull down the correct database
         existingMergeCheck = self.syn.tableQuery("select * from %s where Center = '%s'" % (mutationInCisSynId,self.center))
@@ -58,12 +58,14 @@ class mutationsInCis(example_filetype_format.FileTypeFormat):
             if not all(new.primaryAll.isin(existing.primaryAll)):
                 total_error += "Mutations In Cis Filter File: All variants must come from the original mutationInCis_filtered_samples.csv file in each institution's staging folder.\n"
         return(total_error, warning)
-
-    # VALIDATION
-    def validate_steps(self, filePathList, **kwargs):
-        logger.info("VALIDATING %s" % os.path.basename(filePathList[0]))
+   # VALIDATION
+    def _call_validate(self, df, **kwargs):
         testing = kwargs['testing']
-        mutationInCisDf = pd.read_csv(filePathList[0])
+        return(self._validate(df, testing))
+    # def validate_steps(self, filePathList, **kwargs):
+    #     logger.info("VALIDATING %s" % os.path.basename(filePathList[0]))
+    #     testing = kwargs['testing']
+    #     mutationInCisDf = pd.read_csv(filePathList[0])
 
-        total_error, warning = self.validate_helper(mutationInCisDf, testing)
-        return(total_error, warning)
+    #     total_error, warning = self.validate_helper(mutationInCisDf, testing)
+    #     return(total_error, warning)

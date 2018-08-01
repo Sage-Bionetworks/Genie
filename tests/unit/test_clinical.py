@@ -149,19 +149,20 @@ def test_validation():
 								 SEQ_ASSAY_ID=['SAGE-1','SAGE-1','SAGE-1','SAGE-1','SAGE-1'],
 								 SEQ_DATE=['Jan-2013','ApR-2013','Jul-2013','Oct-2013','release']))
 
-	error, warning = clin.validate_helper(patientDf, sampleDf, oncotree_url)
+	clinicalDf = patientDf.merge(sampleDf, on="PATIENT_ID")
+	error, warning = clin._validate(clinicalDf, oncotree_url)
 	assert error == ""
 	assert warning == ""
-	error, warning = clin.validate_helper(patientDf, sampleDf, json_oncotreeurl)
-	assert error == ""
-	assert warning == ""
+	# error, warning = clin._validate(clinicalDf, json_oncotreeurl)
+	# assert error == ""
+	# assert warning == ""
 	
 
 
 	#TEST MISSING COLUMNS
-	sampleDf = pd.DataFrame()
-	patientDf = pd.DataFrame()
-	error, warning = clin.validate_helper(patientDf, sampleDf, json_oncotreeurl)
+	clincalDf = pd.DataFrame()
+	#patientDf = pd.DataFrame()
+	error, warning = clin._validate(clincalDf, json_oncotreeurl)
 	expectedErrors = ("Sample: clinical file must have SAMPLE_ID column.\n"
 					  "Sample: clinical file must have AGE_AT_SEQ_REPORT column.\n"
 					  "Sample: clinical file must have ONCOTREE_CODE column.\n"
@@ -197,8 +198,8 @@ def test_validation():
 								 ETHNICITY=[1,2,3,6,float('nan')],
 								 BIRTH_YEAR=[1990,1990,1990,1990,1990],
 								 CENTER=["FOO","FOO","FOO","FOO","FOO"]))
-
-	error, warning = clin.validate_helper(patientDf, sampleDf, json_oncotreeurl)
+	clinicalDf = patientDf.merge(sampleDf, on="PATIENT_ID")
+	error, warning = clin.validate_helper(clinicalDf, json_oncotreeurl)
 	expectedErrors = ("Sample: There can't be any blank values for SAMPLE_ID\n"
 					  "Sample: Please double check that all your ONCOTREE CODES exist in the mapping. You have 1 samples that don't map. These are the codes that don't map: AMPCAD\n"
 					  "Sample: Please double check your SAMPLE_TYPE column. No null values allowed.\n"

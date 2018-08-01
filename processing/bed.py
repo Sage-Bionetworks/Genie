@@ -113,6 +113,16 @@ class bed(example_filetype_format.FileTypeFormat):
 
 	_process_kwargs = ["newPath", "parentId", "databaseSynId"]
 
+	def readFile(self, filePathList):
+		filePath = filePathList[0]
+		try:
+			bed = pd.read_csv(filePath, sep="\t",header=None)
+		except:
+			raise ValueError("Can't read in your bed file. Please make sure the BED file is not binary and does not contain a comment/header line")
+		if not str(bed[0][0]).isdigit() and not str(bed[0][0]).startswith("chr"):
+			raise ValueError("Please make sure your bed file does not contain a comment/header line")
+		return(df)
+
 	def _validateFilename(self, filePath):
 		assert os.path.basename(filePath[0]).startswith("%s-" % self.center) and os.path.basename(filePath[0]).endswith(".bed")
 
@@ -230,23 +240,23 @@ class bed(example_filetype_format.FileTypeFormat):
 					total_error += "You have no correct gene symbols. Make sure your gene symbol column (4th column) is formatted like so: SYMBOL(;optionaltext).  Optional text can be semi-colon separated.\n"
 		return(total_error, warning)
 
-	### VALIDATION
-	def validate_steps(self, filePathList, **kwargs):
-		"""
-		This function validates the BED file to make sure it adhere to the genomic SOP.
+	# ### VALIDATION
+	# def validate_steps(self, filePathList, **kwargs):
+	# 	"""
+	# 	This function validates the BED file to make sure it adhere to the genomic SOP.
 		
-		:params filePath:     Path to BED file
+	# 	:params filePath:     Path to BED file
 
-		:returns:             Text with all the errors in the BED file
-		"""
-		filePath = filePathList[0]
-		logger.info("VALIDATING %s" % os.path.basename(filePath))
+	# 	:returns:             Text with all the errors in the BED file
+	# 	"""
+	# 	filePath = filePathList[0]
+	# 	logger.info("VALIDATING %s" % os.path.basename(filePath))
 
-		try:
-			bed = pd.read_csv(filePath, sep="\t",header=None)
-		except:
-			raise ValueError("Can't read in your bed file. Please make sure the BED file is not binary and does not contain a comment/header line")
-		if not str(bed[0][0]).isdigit() and not str(bed[0][0]).startswith("chr"):
-			raise ValueError("Please make sure your bed file does not contain a comment/header line")
+	# 	try:
+	# 		bed = pd.read_csv(filePath, sep="\t",header=None)
+	# 	except:
+	# 		raise ValueError("Can't read in your bed file. Please make sure the BED file is not binary and does not contain a comment/header line")
+	# 	if not str(bed[0][0]).isdigit() and not str(bed[0][0]).startswith("chr"):
+	# 		raise ValueError("Please make sure your bed file does not contain a comment/header line")
 		
-		return(self._validate(bed))
+	# 	return(self._validate(bed))
