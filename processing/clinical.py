@@ -379,7 +379,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 			patient_patients = clinicalDF[patientId][clinicalDF[patientId] != ""]
 			# #CHECK: All samples must have associated patient data (GENIE requires patient data)
 			if not all(sample_patients.isin(patient_patients)):
-				total_error += "Sample: All samples must have associated patient information. These samples are missing patient data: %s\n" % ", ".join(clinicalSampleDF[patientId][~clinicalSampleDF[patientId].isin(clinicalDF[patientId])])
+				total_error += "Sample: All samples must have associated patient information. These samples are missing patient data: %s\n" % ", ".join(clinicalSampleDF[sampleId][~clinicalSampleDF[patientId].isin(clinicalDF[patientId])])
 			#CHECK: All patients must have associated sample data 
 			if not all(patient_patients.isin(sample_patients)):
 				### MAKE WARNING FOR NOW###
