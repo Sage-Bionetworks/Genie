@@ -281,9 +281,10 @@ class clinical(example_filetype_format.FileTypeFormat):
 					if oncotree_mapping_dict.get(code) is not None and sum(clinicalDF['PATIENT_ID'] == patient) > 0:
 						primaryCode = oncotree_mapping_dict[code]['ONCOTREE_PRIMARY_NODE']
 						sex = clinicalDF['SEX'][clinicalDF['PATIENT_ID'] == patient].values[0]
-						if oncotree_mapping_dict[code]['ONCOTREE_PRIMARY_NODE'] in maleOncoCodes and sex != "Male":
+						sex = float('nan') if sex == '' else float(sex)
+						if oncotree_mapping_dict[code]['ONCOTREE_PRIMARY_NODE'] in maleOncoCodes and sex != 1.0:
 							wrongCodeSamples.append(sample)
-						if oncotree_mapping_dict[code]['ONCOTREE_PRIMARY_NODE'] in womenOncoCodes and sex != "Female":
+						if oncotree_mapping_dict[code]['ONCOTREE_PRIMARY_NODE'] in womenOncoCodes and sex != 2.0:
 							wrongCodeSamples.append(sample)
 				if len(wrongCodeSamples) > 0:
 					warning += "Sample: Some SAMPLE_IDs have conflicting SEX and ONCOTREE_CODES: %s\n" % ",".join(wrongCodeSamples)
@@ -378,7 +379,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 			patient_patients = clinicalDF[patientId][clinicalDF[patientId] != ""]
 			# #CHECK: All samples must have associated patient data (GENIE requires patient data)
 			if not all(sample_patients.isin(patient_patients)):
-				total_error += "Sample: All samples must have associated patient information. These samples are missing patient data: %s\n" % ", ".join(clinicalSampleDF[patientId][~clinicalSampleDF[patientId].isin(clinicalDF[patientId])])
+				total_error += "Sample: All samples must have associated patient information. These samples are missing patient data: %s\n" % ", ".join(clinicalSampleDF[sampleId][~clinicalSampleDF[patientId].isin(clinicalDF[patientId])])
 			#CHECK: All patients must have associated sample data 
 			if not all(patient_patients.isin(sample_patients)):
 				### MAKE WARNING FOR NOW###

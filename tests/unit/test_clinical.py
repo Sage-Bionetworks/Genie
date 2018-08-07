@@ -182,7 +182,7 @@ def test_validation():
 
 	#TEST 
 	sampleDf = pd.DataFrame(dict(SAMPLE_ID=[float('nan'),"ID2-1","ID3-1","ID4-1","ID5-1"],
-								 PATIENT_ID=[float('nan'),"ID3","ID3","ID4","ID5"],
+								 PATIENT_ID=[float('nan'),"ID2","ID3","ID7","ID5"],
 								 AGE_AT_SEQ_REPORT=[10,100000,100000,100000,100000],
 								 ONCOTREE_CODE=['AMPCAD','TESTIS','AMPCA','AMPCA','UCEC'],
 								 SAMPLE_TYPE=[1,2,3,4,float('nan')],
@@ -207,7 +207,7 @@ def test_validation():
 					  "Patient: There can't be any blank values for PATIENT_ID\n"
 					  "Sample: There can't be any blank values for PATIENT_ID\n"
 					  "Sample: PATIENT_ID's much be contained in the SAMPLE_ID's (ex. SAGE-1 <-> SAGE-1-2)\n"
-					  "Sample: All samples must have associated patient information. These samples are missing patient data: ID4\n"
+					  "Sample: All samples must have associated patient information. These samples are missing patient data: ID4-1\n"
 					  "Patient: Please double check your PRIMARY_RACE column.  This column must be these values 1, 2, 3, 4, or blank.\n"
 					  "Patient: Please double check your SECONDARY_RACE column.  This column must be these values 1, 2, 3, 4, or blank.\n"
 					  "Patient: Please double check your TERTIARY_RACE column.  This column must be these values 1, 2, 3, 4, or blank.\n"
@@ -215,6 +215,6 @@ def test_validation():
 					  "Patient: Please double check your ETHNICITY column.  This column must be these values 1, 2, 3, 4, or blank.\n")
 	expectedWarnings = ("Sample: Some SAMPLE_IDs have conflicting SEX and ONCOTREE_CODES: ID2-1,ID5-1\n"
 						"Sample: Please double check your SEQ_ASSAY_ID columns, there are empty rows.\n"
-						"Sample: All patients must have associated sample information. These patients are missing sample data: ID6, ID2\n")
+						"Sample: All patients must have associated sample information. These patients are missing sample data: ID6\n")
 	assert error == expectedErrors
 	assert warning == expectedWarnings
