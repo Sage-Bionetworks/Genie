@@ -393,7 +393,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 			#missing = center_cna.columns[~center_cna.columns.isin(samples)]
 			center_cna = center_cna[center_cna.columns[center_cna.columns.isin(keepForCenterConsortiumSamples)]]
 			center_cna['Hugo_Symbol'] = center_cna.index
-			center_cna = center_cna.fillna(0)
+			center_cna = center_cna.fillna('')
 			cols = center_cna.columns.tolist()
 			cols = cols[-1:] + cols[:-1]
 			center_cna = center_cna[cols]
@@ -405,7 +405,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 			mergedCNA = mergedCNA.merge(center_cna, on='Hugo_Symbol', how="outer")
 
 	mergedCNA = mergedCNA[mergedCNA.columns[mergedCNA.columns.isin(keepForMergedConsortiumSamples.append(pd.Series("Hugo_Symbol")))]]
-	mergedCNA = mergedCNA.fillna(0)
+	mergedCNA = mergedCNA.fillna('')
 	cnaText = removePandasDfFloat(mergedCNA)
 	with open(CNA_PATH, "w") as cnaFile:
 		cnaFile.write(cnaText)
