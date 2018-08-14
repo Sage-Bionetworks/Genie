@@ -122,7 +122,10 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 #             DF[col][DF[col] == key] = value
 #     return(DF, nonmapped)
 
-
+# Check if oncotree link is live
+def checkUrl(url):
+	temp = requests.get(url)
+	assert temp.status_code == 200, "%s site is down"% url
 
 # VALIDATION: Getting the GENIE mapping synapse tables
 def getGenieMapping(syn, synId):
@@ -442,9 +445,6 @@ def extract_oncotree_code_mappings_from_oncotree_json(oncotree_json, primary, se
 		elif data[node]['level'] == 2:
 			secondary = node
 		cancer_type = data[node]['mainType']
-		# cancer_type = ''
-		# if main_type:
-		# 	cancer_type = main_type
 		cancer_type_detailed = data[node]['name']
 		if not cancer_type_detailed:
 			cancer_type_detailed = ''
@@ -496,6 +496,43 @@ def readKey(pemPath):
 	f = open(pemPath,'r')
 	key = RSA.importKey(f.read())
 	return(key)
+
+# def createKey():
+# 	import Crypto
+# 	from Crypto.PublicKey import RSA
+# 	from Crypto import Random
+
+# 	random_generator = Random.new().read
+# 	key = RSA.generate(1024, random_generator) #generate public and private keys
+
+# 	#publickey = key.publickey # pub key export for exchange
+# 	encrypted = key.encrypt(geniePassword, 32)
+# 	#message to encrypt is in the above line 'encrypt this message'
+# 	descrypted = key.decrypt(encrypted)
+# 	with open("genie.pem","w") as geniePem:
+# 		geniePem.write(key.exportKey(format='PEM'))
+
+## READ KEY
+def readKey(pemPath):
+	f = open(pemPath,'r')
+	key = RSA.importKey(f.read())
+	return(key)
+
+def decryptMessage(message, key):
+	decrypted = key.decrypt(ast.literal_eval(str(message)))
+	return(decrypted)
+
+
+def synLogin(args):
+	try:
+		syn = synapseclient.login(silent=True)
+	except:
+		assert os.path.exists(args.pemFile), "Path to pemFile must be specified if there is no cached credentials"
+		key = readKey(args.pemFile)
+		geniePass = decryptMessage(os.environ['GENIE_PASS'], key)
+		syn = synapseclient.login(os.environ['GENIE_USER'], geniePass)
+	return(syn)
+
 
 def decryptMessage(message, key):
 	decrypted = key.decrypt(ast.literal_eval(str(message)))

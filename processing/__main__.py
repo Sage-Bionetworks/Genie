@@ -60,7 +60,7 @@ def synapse_login():
         syn = synapseclient.login(email=Username, password=Password,rememberMe=True,silent=True)
     return(syn)
 
-def validate(syn, fileType, filePath, center, threads, oncotree_url="http://oncotree.mskcc.org/oncotree/api/tumor_types.txt?version=oncotree_2017_06_21", offline=False, uploadToSynapse=None, testing=False, noSymbolCheck=False):
+def validate(syn, fileType, filePath, center, threads, oncotree_url=None, offline=False, uploadToSynapse=None, testing=False, noSymbolCheck=False):
     """
     This performs the validation of files
 
@@ -109,6 +109,11 @@ def perform_validate(syn, args):
     center_mapping_df = center_mapping.asDataFrame()
     assert args.center in center_mapping_df.center.tolist(), "Must specify one of these centers: %s" % ", ".join(center_mapping_df.center)
 
+    if args.oncotreeLink is None:
+        oncoLink = databaseToSynIdMappingDf['Id'][databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
+        oncoLinkEnt = syn.get(oncoLink)
+        args.oncotreeLink = oncoLinkEnt.externalURL
+
     if args.uploadToSynapse is not None:
         if args.offline:
             raise ValueError("If you specify the uploadToSynapse option, your filename must be named correctly")
@@ -148,8 +153,7 @@ def build_parser():
                         help='No validation of filenames')
     parser_validate.add_argument("--uploadToSynapse", type=str, default=None,
                         help='Will upload the file to the synapse directory of users choice')
-    parser_validate.add_argument("--oncotreeLink", type=str, default='http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21',
-                        help="Link to oncotree code")
+    parser_validate.add_argument("--oncotreeLink", type=str, help="Link to oncotree code")
     parser_validate.add_argument("--noSymbolCheck", action='store_true',
                         help='Do not check hugo symbols of fusion and cna file')
     parser_validate.add_argument("--testing", action='store_true',

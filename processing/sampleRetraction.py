@@ -17,22 +17,27 @@ class sampleRetraction(example_filetype_format.FileTypeFormat):
 	def _validateFilename(self, filePath):
 		assert os.path.basename(filePath[0]) == "%s.csv" % self._fileType
 
+	def _process(self, deleteSamplesDf, modifiedOn):
+		col = 'genieSampleId' if self._fileType == "sampleRetraction" else 'geniePatientId'
+		deleteSamplesDf.rename(columns = {0:col}, inplace=True)
+		samples = [process_functions.checkGenieId(sample, self.center) for sample in deleteSamplesDf[col]]
+		deleteSamplesDf[col] = samples
+		modifiedOn = synapseclient.utils.to_unix_epoch_time(datetime.datetime.strptime(modifiedOn, "%Y-%m-%dT%H:%M:%S"))
+		deleteSamplesDf['retractionDate'] = modifiedOn
+		deleteSamplesDf['center'] = self.center
+		return(deleteSamplesDf)
+
 	def process_steps(self, filePath, **kwargs):
 		logger.info('PROCESSING %s' % filePath)
 		fileSynId = kwargs['fileSynId']
 		databaseSynId = kwargs['databaseSynId']
 		newPath = kwargs['newPath']
+		col = 'genieSampleId' if self._fileType == "sampleRetraction" else 'geniePatientId'
 		info = self.syn.get(fileSynId, downloadFile=False)
 		retractedSamples = self.syn.tableQuery("select * from %s where center = '%s'" % (databaseSynId,self.center))
 		retractedSamplesDf = retractedSamples.asDataFrame()
 		deleteSamples = pd.read_csv(filePath,header=None)
-		col = 'genieSampleId' if self._fileType == "sampleRetraction" else 'geniePatientId'
-		deleteSamples.rename(columns = {0:col}, inplace=True)
-		samples = [process_functions.checkGenieId(sample, self.center) for sample in deleteSamples[col]]
-		deleteSamples[col] = samples
-		modifiedOn = synapseclient.utils.to_unix_epoch_time(datetime.datetime.strptime(info.modifiedOn.split(".")[0], "%Y-%m-%dT%H:%M:%S"))
-		deleteSamples['retractionDate'] = modifiedOn
-		deleteSamples['center'] = self.center
+		deleteSamples = self._process(deleteSamples, info.modifiedOn.split(".")[0])
 		process_functions.updateDatabase(self.syn, retractedSamplesDf, deleteSamples, databaseSynId, [col], toDelete=True)
 		return(newPath)
 

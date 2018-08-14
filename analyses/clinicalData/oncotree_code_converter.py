@@ -140,27 +140,31 @@ def process_clinical_file_json(oncotree, clinical_filename):
 			continue
 		data = line.split('\t')
 		oncotree_code = data[header.index(ONCOTREE_CODE)]
-		cancer_types = oncotree[oncotree_code.upper()]
+		cancer_types = oncotree.get(oncotree_code.upper())
 		# if cancer_types[CANCER_TYPE_DETAILED] == NA:
 		# 	no_matches.append(data[header.index(SAMPLE_ID)])
 		# Handle the case if CANCER_TYPE or CANCER_TYPE_DETAILED has to be appended to the header. 
 		# Separate try-except in case one of the fields exists and the other doesn't
-		try:
-			data[header.index(CANCER_TYPE)] = cancer_types[CANCER_TYPE]
-		except IndexError:
-			data.append(cancer_types[CANCER_TYPE])
-		try:
-			data[header.index(CANCER_TYPE_DETAILED)] = cancer_types[CANCER_TYPE_DETAILED]
-		except IndexError:
-			data.append(cancer_types[CANCER_TYPE_DETAILED])
-		try:
-			data[header.index(ONCOTREE_PRIMARY_NODE)] = cancer_types[ONCOTREE_PRIMARY_NODE]
-		except IndexError:
-			data.append(cancer_types[ONCOTREE_PRIMARY_NODE])
-		try:
-			data[header.index(ONCOTREE_SECONDARY_NODE)] = cancer_types[ONCOTREE_SECONDARY_NODE]
-		except IndexError:
-			data.append(cancer_types[ONCOTREE_SECONDARY_NODE])
+		if cancer_types is not None:
+			try:
+				data[header.index(CANCER_TYPE)] = cancer_types[CANCER_TYPE]
+			except IndexError:
+				data.append(cancer_types[CANCER_TYPE])
+			try:
+				data[header.index(CANCER_TYPE_DETAILED)] = cancer_types[CANCER_TYPE_DETAILED]
+			except IndexError:
+				data.append(cancer_types[CANCER_TYPE_DETAILED])
+			try:
+				data[header.index(ONCOTREE_PRIMARY_NODE)] = cancer_types[ONCOTREE_PRIMARY_NODE]
+			except IndexError:
+				data.append(cancer_types[ONCOTREE_PRIMARY_NODE])
+			#Secondary node added by json oncotree url parser
+			try:
+				data[header.index(ONCOTREE_SECONDARY_NODE)] = cancer_types[ONCOTREE_SECONDARY_NODE]
+			except IndexError:
+				data.append(cancer_types[ONCOTREE_SECONDARY_NODE])
+		else:
+			data.extend(['']*4)
 		print '\t'.join(data).replace('\n', '')
 
 

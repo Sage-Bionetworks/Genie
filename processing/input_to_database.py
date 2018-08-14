@@ -194,7 +194,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 	logger.info("ALL DATA STORED IN DATABASE")
 
 #Create and archive maf database
-def createMafDatabase(syn, databaseToSynIdMappingDf,testing=False):
+def createMafDatabase(syn, databaseToSynIdMappingDf,testing=False,staging=False):
 	mafDatabaseSynId = process_functions.getDatabaseSynId(syn, "vcf2maf", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
 	mafDatabaseEnt = syn.get(mafDatabaseSynId)
 	mafCols = list(syn.getTableColumns(mafDatabaseSynId))
@@ -204,6 +204,12 @@ def createMafDatabase(syn, databaseToSynIdMappingDf,testing=False):
 	#Store in the new database synid
 	databaseToSynIdMappingDf['Id'][0] = newMafDb.id
 	syn.store(synapseclient.Table(process_functions.getDatabaseSynId(syn, "dbMapping", test=testing),databaseToSynIdMappingDf))
+	if not staging and not testing:
+		#Make sure to store the newly created maf db synid into the staging synapse mapping
+		databaseToSynIdMapping = syn.tableQuery("SELECT * FROM syn12094210 where Database = 'vcf2maf'")
+		databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
+		databaseToSynIdMapping['Id'][0] = newMafDb.id
+		syn.store(synapseclient.Table("syn12094210",databaseToSynIdMappingDf))
 	#Move and archive old mafdatabase
 	mafDatabaseEnt.parentId = "syn7208886"
 	mafDatabaseEnt.name = "ARCHIVED " + mafDatabaseEnt.name
@@ -219,74 +225,79 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
 	allFiles = getCenterInputFiles(syn, centerInputSynId, center, process)
 
 	allFiles = pd.DataFrame(allFiles,columns=['synId','filePaths'])
-	#Make sure the vcf validation statuses don't get wiped away
-	if process != "vcf":
-		addToQuery = "and name not like '%.vcf'"
+	#If a center has no files, then return empty list
+	if allFiles.empty:
+		logger.info("%s has not uploaded any files" % center)
+		return([])
 	else:
-		addToQuery = ''
-	validationStatus = syn.tableQuery("SELECT * FROM %s where center = '%s' %s" % (process_functions.getDatabaseSynId(syn, "validationStatus", databaseToSynIdMappingDf=databaseToSynIdMappingDf), center, addToQuery))
-	errorTracker = syn.tableQuery("SELECT * FROM %s where center = '%s' %s"  % (process_functions.getDatabaseSynId(syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf), center,addToQuery))
-	#VALIDATE FILES
-	validationStatusDf = validationStatus.asDataFrame()
-	errorTrackerDf = errorTracker.asDataFrame()
-	validated = allFiles.apply(lambda x: validateFile(syn, validationStatusDf, errorTrackerDf, center, thread, x, testing, oncotreeLink), axis=1)
-	inputValidStatus = []
-	invalidErrors = []
-	for inputStat, invalErrors in validated:
-		inputValidStatus.extend(inputStat)
-		if invalErrors is not None:
-			invalidErrors.extend(invalErrors)
-	inputValidStatus = pd.DataFrame(inputValidStatus, columns = ["id",'path','md5','status','name','modifiedOn','fileType'])
-	logger.info("CHECK FOR DUPLICATED FILES")
-	##### DUPLICATED FILES ######
-	#check for duplicated filenames.  There should be no duplication, files should be uploaded as new versions and the entire dataset should be uploaded everytime
-	duplicatedFiles = inputValidStatus[inputValidStatus['name'].duplicated(keep=False)]
-	nodups = ["data_mutations_extended"]
-	allDuplicatedFiles = []
-	for nodup in nodups:
-		checkDups = [name for name in inputValidStatus['name'] if name.startswith(nodup)]
-		if len(checkDups) > 1:
-			allDuplicatedFiles.extend(checkDups)
-	duplicatedFiles = duplicatedFiles.append(inputValidStatus[inputValidStatus['name'].isin(allDuplicatedFiles)])
-	duplicatedFiles.drop_duplicates("id",inplace=True)
-	inputValidStatus['status'][inputValidStatus['id'].isin(duplicatedFiles['id'])] = "INVALID"
-	duplicatedFiles['errors'] = "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME"
-	#Send an email if there are any duplicated files
-	if not duplicatedFiles.empty:
-		incorrectFiles = ", ".join([name for synId, name in zip(duplicatedFiles['id'],duplicatedFiles['name'])])
-		incorrectEnt = syn.get(synId)
-		sendEmail = set([incorrectEnt.modifiedBy, incorrectEnt.createdBy])
-		userNames = ", ".join([syn.getUserProfile(user).userName for user in sendEmail])
-		syn.sendMessage(list(sendEmail), "GENIE Validation Error", "Dear %s,\n\nYour files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME" % (userNames, incorrectFiles))
-	logger.info("THERE ARE %d DUPLICATED FILES" % len(duplicatedFiles))
-	##### DUPLICATED FILES ######
+		#Make sure the vcf validation statuses don't get wiped away
+		if process != "vcf":
+			addToQuery = "and name not like '%.vcf'"
+		else:
+			addToQuery = ''
+		validationStatus = syn.tableQuery("SELECT * FROM %s where center = '%s' %s" % (process_functions.getDatabaseSynId(syn, "validationStatus", databaseToSynIdMappingDf=databaseToSynIdMappingDf), center, addToQuery))
+		errorTracker = syn.tableQuery("SELECT * FROM %s where center = '%s' %s"  % (process_functions.getDatabaseSynId(syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf), center,addToQuery))
+		#VALIDATE FILES
+		validationStatusDf = validationStatus.asDataFrame()
+		errorTrackerDf = errorTracker.asDataFrame()
+		validated = allFiles.apply(lambda x: validateFile(syn, validationStatusDf, errorTrackerDf, center, thread, x, testing, oncotreeLink), axis=1)
+		inputValidStatus = []
+		invalidErrors = []
+		for inputStat, invalErrors in validated:
+			inputValidStatus.extend(inputStat)
+			if invalErrors is not None:
+				invalidErrors.extend(invalErrors)
+		inputValidStatus = pd.DataFrame(inputValidStatus, columns = ["id",'path','md5','status','name','modifiedOn','fileType'])
+		logger.info("CHECK FOR DUPLICATED FILES")
+		##### DUPLICATED FILES ######
+		#check for duplicated filenames.  There should be no duplication, files should be uploaded as new versions and the entire dataset should be uploaded everytime
+		duplicatedFiles = inputValidStatus[inputValidStatus['name'].duplicated(keep=False)]
+		nodups = ["data_mutations_extended"]
+		allDuplicatedFiles = []
+		for nodup in nodups:
+			checkDups = [name for name in inputValidStatus['name'] if name.startswith(nodup)]
+			if len(checkDups) > 1:
+				allDuplicatedFiles.extend(checkDups)
+		duplicatedFiles = duplicatedFiles.append(inputValidStatus[inputValidStatus['name'].isin(allDuplicatedFiles)])
+		duplicatedFiles.drop_duplicates("id",inplace=True)
+		inputValidStatus['status'][inputValidStatus['id'].isin(duplicatedFiles['id'])] = "INVALID"
+		duplicatedFiles['errors'] = "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME"
+		#Send an email if there are any duplicated files
+		if not duplicatedFiles.empty:
+			incorrectFiles = ", ".join([name for synId, name in zip(duplicatedFiles['id'],duplicatedFiles['name'])])
+			incorrectEnt = syn.get(synId)
+			sendEmail = set([incorrectEnt.modifiedBy, incorrectEnt.createdBy])
+			userNames = ", ".join([syn.getUserProfile(user).userName for user in sendEmail])
+			syn.sendMessage(list(sendEmail), "GENIE Validation Error", "Dear %s,\n\nYour files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME" % (userNames, incorrectFiles))
+		logger.info("THERE ARE %d DUPLICATED FILES" % len(duplicatedFiles))
+		##### DUPLICATED FILES ######
 
-	#Create invalid error synapse table
-	logger.info("UPDATE INVALID FILE REASON DATABASE")
-	invalidErrors = pd.DataFrame(invalidErrors, columns = ["id",'errors','name'])
-	# Remove fixed duplicated files
-	dupIds = invalidErrors['id'][invalidErrors['errors'] == "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME"]
-	removeIds = dupIds[~dupIds.isin(duplicatedFiles['id'])]
-	invalidErrors = invalidErrors[~invalidErrors['id'].isin(removeIds)]
-	# Append duplicated file errors
-	invalidErrors = invalidErrors.append(duplicatedFiles[['id','errors','name']])
-	invalidErrors['center'] = center
-	invalidIds = inputValidStatus['id'][inputValidStatus['status'] == "INVALID"]
-	invalidErrors = invalidErrors[invalidErrors['id'].isin(invalidIds)]
-	process_functions.updateDatabase(syn, errorTracker.asDataFrame(), invalidErrors, process_functions.getDatabaseSynId(syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf), ["id"], toDelete=True)
+		#Create invalid error synapse table
+		logger.info("UPDATE INVALID FILE REASON DATABASE")
+		invalidErrors = pd.DataFrame(invalidErrors, columns = ["id",'errors','name'])
+		# Remove fixed duplicated files
+		dupIds = invalidErrors['id'][invalidErrors['errors'] == "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME"]
+		removeIds = dupIds[~dupIds.isin(duplicatedFiles['id'])]
+		invalidErrors = invalidErrors[~invalidErrors['id'].isin(removeIds)]
+		# Append duplicated file errors
+		invalidErrors = invalidErrors.append(duplicatedFiles[['id','errors','name']])
+		invalidErrors['center'] = center
+		invalidIds = inputValidStatus['id'][inputValidStatus['status'] == "INVALID"]
+		invalidErrors = invalidErrors[invalidErrors['id'].isin(invalidIds)]
+		process_functions.updateDatabase(syn, errorTracker.asDataFrame(), invalidErrors, process_functions.getDatabaseSynId(syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf), ["id"], toDelete=True)
 
-	paths = inputValidStatus['path']
-	filenames = [os.path.basename(name) for name in paths]
-	del inputValidStatus['path']
-	logger.info("UPDATE VALIDATION STATUS DATABASE")
-	inputValidStatus['center'] = center
-	#Remove fixed duplicated files
-	inputValidStatus = inputValidStatus[~inputValidStatus['id'].isin(removeIds)]
+		paths = inputValidStatus['path']
+		filenames = [os.path.basename(name) for name in paths]
+		del inputValidStatus['path']
+		logger.info("UPDATE VALIDATION STATUS DATABASE")
+		inputValidStatus['center'] = center
+		#Remove fixed duplicated files
+		inputValidStatus = inputValidStatus[~inputValidStatus['id'].isin(removeIds)]
 
-	process_functions.updateDatabase(syn, validationStatus.asDataFrame(), inputValidStatus[["id",'md5','status','name','center','modifiedOn']], process_functions.getDatabaseSynId(syn, "validationStatus", databaseToSynIdMappingDf=databaseToSynIdMappingDf), ["id"], toDelete=True)
-	inputValidStatus['path'] = paths
-	validFiles = inputValidStatus[['id','path','fileType']][inputValidStatus['status'] == "VALIDATED"]
-	return(validFiles)
+		process_functions.updateDatabase(syn, validationStatus.asDataFrame(), inputValidStatus[["id",'md5','status','name','center','modifiedOn']], process_functions.getDatabaseSynId(syn, "validationStatus", databaseToSynIdMappingDf=databaseToSynIdMappingDf), ["id"], toDelete=True)
+		inputValidStatus['path'] = paths
+		validFiles = inputValidStatus[['id','path','fileType']][inputValidStatus['status'] == "VALIDATED"]
+		return(validFiles)
 
 def main():
 	"""Set up argument parser and returns"""
@@ -302,19 +313,18 @@ def main():
 	parser.add_argument("--vcf2mafPath", type=str, help="Path to vcf2maf")
 	parser.add_argument("--vepPath", type=str, help="Path to VEP")
 	parser.add_argument("--vepData", type=str, help="Path to VEP data")
-	parser.add_argument("--oncotreeLink", type=str, default='http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21', help="Link to oncotree code")
+	parser.add_argument("--oncotreeLink", type=str, help="Link to oncotree code")
 	parser.add_argument("--createNewMafDatabase", action='store_true', help = "Creates a new maf database")
 	parser.add_argument("--testing", action='store_true', help = "Testing the infrastructure!")
 
 	args = parser.parse_args()
 	syn = process_functions.synLogin(args)
-
 	#Must specify path to vcf2maf, VEP and VEP data is these types are specified
 	if args.process in ['vcf','maf','mafSP'] and not args.onlyValidate:
 		assert os.path.exists(args.vcf2mafPath), "Path to vcf2maf (--vcf2mafPath) must be specified if `--process {vcf,maf,mafSP}` is used"
 		assert os.path.exists(args.vepPath), "Path to VEP (--vepPath) must be specified if `--process {vcf,maf,mafSP}` is used"
 		assert os.path.exists(args.vepData), "Path to VEP data (--vepData) must be specified if `--process {vcf,maf,mafSP}` is used"
-
+	
 	syn.table_query_timeout = 50000
 	testing = args.testing
 	if testing:
@@ -332,9 +342,16 @@ def main():
 		databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
 
 	databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
+	
+	if args.oncotreeLink is None:
+		oncoLink = databaseToSynIdMappingDf['Id'][databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
+		oncoLinkEnt = syn.get(oncoLink)
+		args.oncotreeLink = oncoLinkEnt.externalURL
+	#Check if you can connect to oncotree link, if not then don't run validation / processing
+	process_functions.checkUrl(args.oncotreeLink)
 
 	#Create new maf database
-	if args.createNewMafDatabase:
+	if args.createNewMafDatabase and not args.staging:
 		createMafDatabase(syn, databaseToSynIdMappingDf, testing=testing)
 
 	# ----------------------------------------
@@ -351,58 +368,57 @@ def main():
 		process_functions.rmFiles(os.path.join(path_to_GENIE,args.center))
 	center = args.center
 	validFiles = validation(syn, center, args.process, center_mapping_df, databaseToSynIdMappingDf, args.thread, testing, args.oncotreeLink)
-	#Reorganize so BED file are always validated and processed first
-	validBED = [os.path.basename(i).endswith('.bed') for i in validFiles['path']]
-	beds = validFiles[validBED]
-	validFiles = beds.append(validFiles)
-	validFiles.drop_duplicates(inplace=True)
-	#Valid maf, mafsp, vcf and cbs files
-	validMAF = [i for i in validFiles['path'] if os.path.basename(i).startswith("data_mutations_extended")]
-	validMAFSP = [i for i in validFiles['path'] if os.path.basename(i).startswith("nonGENIE_data_mutations_extended")]
-	validVCF = [i for i in validFiles['path'] if os.path.basename(i).endswith('.vcf')]
-	validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
-	if args.process == 'mafSP':
-		validMAFs = validMAFSP
-		#mafSynId = process_functions.getDatabaseSynId(syn, "mafSP", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
-	else:
-		validMAFs = validMAF
-		#mafSynId = process_functions.getDatabaseSynId(syn, "vcf2maf", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
 
-	if not args.onlyValidate:
-		#Start processing
-		if len(validFiles) > 0:
-			processTrackerSynId = process_functions.getDatabaseSynId(syn, "processTracker", test=testing)
-			#Add process tracker for time start
-			processTracker = syn.tableQuery("SELECT timeStartProcessing FROM %s where center = '%s' and processingType = '%s'" % (processTrackerSynId, center,args.process))
-			processTrackerDf = processTracker.asDataFrame()
-			if len(processTrackerDf) == 0:
-				new_rows = [[center,str(int(time.time()*1000)), str(int(time.time()*1000)),args.process]] 
-				table = syn.store(synapseclient.Table(processTrackerSynId, new_rows))
-			else:
-				processTrackerDf['timeStartProcessing'][0] = str(int(time.time()*1000))
-				syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
-			processFiles(syn, validFiles, center, path_to_GENIE, args.thread, 
-						 center_mapping_df, args.oncotreeLink, databaseToSynIdMappingDf, 
-						 validVCF=validVCF, validMAFs=validMAFs, validCBS=validCBS,
-						 vcf2mafPath=args.vcf2mafPath,
-			   			 veppath=args.vepPath,vepdata=args.vepData,
-						 test=testing, processing=args.process)
-
-			#Should add in this process end tracking before the deletion of samples
-			processTracker = syn.tableQuery("SELECT timeEndProcessing FROM %s where center = '%s' and processingType = '%s'" % (processTrackerSynId, args.center,args.process))
-			processTrackerDf = processTracker.asDataFrame()
-			processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
-			syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
+	if len(validFiles) > 0 and not args.onlyValidate:
+		#Reorganize so BED file are always validated and processed first
+		validBED = [os.path.basename(i).endswith('.bed') for i in validFiles['path']]
+		beds = validFiles[validBED]
+		validFiles = beds.append(validFiles)
+		validFiles.drop_duplicates(inplace=True)
+		#Valid maf, mafsp, vcf and cbs files
+		validMAF = [i for i in validFiles['path'] if os.path.basename(i).startswith("data_mutations_extended")]
+		validMAFSP = [i for i in validFiles['path'] if os.path.basename(i).startswith("nonGENIE_data_mutations_extended")]
+		validVCF = [i for i in validFiles['path'] if os.path.basename(i).endswith('.vcf')]
+		validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
+		if args.process == 'mafSP':
+			validMAFs = validMAFSP
+			#mafSynId = process_functions.getDatabaseSynId(syn, "mafSP", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
 		else:
-			logger.error("%s does not have any valid files to process" % center)
+			validMAFs = validMAF
+			#mafSynId = process_functions.getDatabaseSynId(syn, "vcf2maf", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+
+		processTrackerSynId = process_functions.getDatabaseSynId(syn, "processTracker", test=testing)
+		#Add process tracker for time start
+		processTracker = syn.tableQuery("SELECT timeStartProcessing FROM %s where center = '%s' and processingType = '%s'" % (processTrackerSynId, center,args.process))
+		processTrackerDf = processTracker.asDataFrame()
+		if len(processTrackerDf) == 0:
+			new_rows = [[center,str(int(time.time()*1000)), str(int(time.time()*1000)),args.process]] 
+			table = syn.store(synapseclient.Table(processTrackerSynId, new_rows))
+		else:
+			processTrackerDf['timeStartProcessing'][0] = str(int(time.time()*1000))
+			syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
+		processFiles(syn, validFiles, center, path_to_GENIE, args.thread, 
+					 center_mapping_df, args.oncotreeLink, databaseToSynIdMappingDf, 
+					 validVCF=validVCF, validMAFs=validMAFs, validCBS=validCBS,
+					 vcf2mafPath=args.vcf2mafPath,
+		   			 veppath=args.vepPath,vepdata=args.vepData,
+					 test=testing, processing=args.process)
+
+		#Should add in this process end tracking before the deletion of samples
+		processTracker = syn.tableQuery("SELECT timeEndProcessing FROM %s where center = '%s' and processingType = '%s'" % (processTrackerSynId, args.center,args.process))
+		processTrackerDf = processTracker.asDataFrame()
+		processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
+		syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
+
 		logger.info("SAMPLE/PATIENT RETRACTION")
 		retractionCommand = ["python",os.path.join(process_functions.SCRIPT_DIR, "toRetract.py")] if args.pemFile is None else ["python",os.path.join(process_functions.SCRIPT_DIR, "toRetract.py"),'--pemFile',args.pemFile]
 		if testing:
 			retractionCommand.append("--test")
 		#Comment back in after testing is done
 		subprocess.call(retractionCommand)
-	#pool.close()
-	#pool.join()
+	else:
+		messageOut = "%s does not have any valid files" if not args.onlyValidate else "ONLY VALIDATION OCCURED FOR %s"
+		logger.info(messageOut % center)
 	logger.info("ALL PROCESSES COMPLETE")
 
 if __name__ == "__main__":

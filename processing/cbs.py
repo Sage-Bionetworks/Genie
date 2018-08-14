@@ -32,16 +32,31 @@ class cbs(seg.seg):
 			segFile.write(noFloatsDf)
 		return({"path":path})
 
+	def _validate(self, cbsDf):
+		total_error = ""
+		warning = ""
+		REQUIRED_HEADERS = pd.Series([cbsDf.columns[0], 'Chr','Start','End','Probes','Log2Ratio'])
+		if not all(REQUIRED_HEADERS.isin(cbsDf.columns)):
+			total_error += "Your cbs file must at least have these headers: %s.\n" % ",".join(REQUIRED_HEADERS[~REQUIRED_HEADERS.isin(cbsDf.columns)])
+		else:
+			intCols = ['Start','End','Probes']
+			nonInts = [col for col in intCols if cbsDf[col].dtype != int]
+			if len(nonInts) > 0:
+				total_error += "cbs: Only integars allowed in these column(s): %s.\n" % ", ".join(nonInts)
+			if not cbsDf['Log2Ratio'].dtype in [float, int]:
+				total_error += "cbs: Only numerical values allowed in Log2Ratio.\n"
+
+		checkNA = cbsDf.isna().apply(sum)
+		nullCols = [ind for ind in checkNA.index if checkNA[ind] > 0]
+		if len(nullCols) > 0:
+			total_error += "cbs: No null or empty values allowed in column(s): %s.\n" % ", ".join(nullCols)
+		return(total_error, warning)
+		
 	def validate_steps(self, filePathList, **kwargs):
 
 		filePath = filePathList[0]
 		logger.info("VALIDATING %s" % os.path.basename(filePath))
-		total_error = ""
-		warning = ""
+
 
 		cbsDf = pd.read_csv(filePath,sep="\t",comment="#")
-		REQUIRED_HEADERS = [cbsDf.columns[0], 'Chr','Start','End','Probes','Log2Ratio']
-		if not all(cbsDf.columns.isin(REQUIRED_HEADERS)):
-			total_error += "Your cbs file must at least have these headers: %s.\n" % ",".join([i for i in REQUIRED_HEADERS if i not in cbsDf.columns.values])
-
-		return(total_error, warning)
+		return(self._validate(cbsDf))

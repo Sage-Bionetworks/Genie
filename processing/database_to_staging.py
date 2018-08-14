@@ -126,6 +126,7 @@ def runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test=False, geni
 	MAFinBED_script = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../analyses/genomicData/MAFinBED.R')
 	command = ['Rscript', MAFinBED_script, str(test)]
 	subprocess.check_call(command)
+
 	mutationSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "vcf2maf"][0]
 	removedVariants = syn.tableQuery('select Chromosome, Start_Position, End_Position, Reference_Allele, Tumor_Seq_Allele2, Tumor_Sample_Barcode, Center from %s where inBED is False' % mutationSynId)
 	removedVariantsDf = removedVariants.asDataFrame()
@@ -159,8 +160,8 @@ def mutation_in_cis_filter(syn, skipMutationsInCis, test, variant_filtering_synI
 				mergeCheckDf[mergeCheckDf['Center'] == center].to_csv("mutationsInCis_filtered_samples.csv",index=False)
 				storeFile(syn, "mutationsInCis_filtered_samples.csv", parent = stagingSynId[0], centerStaging=True, genieVersion=genieVersion)
 				os.unlink("mutationsInCis_filtered_samples.csv")
-
 	variant_filtering = syn.tableQuery("SELECT Tumor_Sample_Barcode FROM %s where Flag = 'TOSS' and Tumor_Sample_Barcode is not null" % variant_filtering_synId)
+
 	filtered_samples = variant_filtering.asDataFrame()
 	# #Alex script #1 removed patients
 	remove_samples = filtered_samples['Tumor_Sample_Barcode'].drop_duplicates()
@@ -173,7 +174,7 @@ def seq_assay_id_filter(clinicalDf):
 
 
 #def stagingToCbio(syn, releaseSynId, releaseDate, filtering=False, release=False, current_release_staging=False):	
-def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, databaseSynIdMappingDf, oncotree_url='http://oncotree.mskcc.org/oncotree/api/tumor_types.txt?version=oncotree_2017_06_21', consortiumReleaseCutOff=183, filtering=False, current_release_staging=False, skipMutationsInCis=False, test=False):	
+def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, databaseSynIdMappingDf, oncotree_url=None, consortiumReleaseCutOff=183, filtering=False, current_release_staging=False, skipMutationsInCis=False, test=False):	
 	CNA_PATH = os.path.join(GENIE_RELEASE_DIR,"data_CNA_%s.txt" % genieVersion)
 	CLINCICAL_PATH = os.path.join(GENIE_RELEASE_DIR,'data_clinical_%s.txt' % genieVersion)
 	CLINCICAL_SAMPLE_PATH = os.path.join(GENIE_RELEASE_DIR,'data_clinical_sample_%s.txt' % genieVersion)
@@ -195,9 +196,10 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	data_gene_panel = pd.DataFrame(columns = ["SAMPLE_ID","SEQ_ASSAY_ID"])
 	patientSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "patient"][0]
 	sampleSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "sample"][0]
-
-	patient = syn.tableQuery('SELECT * FROM %s' % patientSynId)
-	sample = syn.tableQuery('SELECT * FROM %s' % sampleSynId)
+	
+	#Using center mapping df to gate centers in release fileStage
+	patient = syn.tableQuery("SELECT * FROM %s where CENTER in ('%s')" % (patientSynId,"','".join(CENTER_MAPPING_DF.center)))
+	sample = syn.tableQuery("SELECT * FROM %s where CENTER in ('%s')" % (sampleSynId,"','".join(CENTER_MAPPING_DF.center)))
 	patientDf = patient.asDataFrame()
 	sampleDf = sample.asDataFrame()
 	del sampleDf['AGE_AT_SEQ_REPORT_NUMERICAL']
@@ -240,6 +242,8 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	command = ['python',add_cancerType_script,'-o',oncotree_url,'-c',CLINCICAL_PATH]
 	subprocess.check_call(command)
 	clinicalDf = pd.read_csv(CLINCICAL_PATH, sep="\t", comment="#")
+	#All cancer types that are null should have null oncotree codes
+	clinicalDf['ONCOTREE_CODE'][clinicalDf['CANCER_TYPE'].isnull()] = float('nan')
 	# Suggest using AGE_AT_SEQ_REPORT_DAYS instead so that the descriptions can match
 	clinicalDf['AGE_AT_SEQ_REPORT_DAYS'] = clinicalDf['AGE_AT_SEQ_REPORT']
 	clinicalDf['AGE_AT_SEQ_REPORT'] = [int(math.floor(int(float(i))/365.25)) if process.checkInt(i) else i for i in clinicalDf['AGE_AT_SEQ_REPORT']]
@@ -259,8 +263,9 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	clinicalDf.drop_duplicates("SAMPLE_ID",inplace=True)
 
 	#samples must be removed after reading in the clinical file again
- 	clinicalDfStaging = clinicalDf[~clinicalDf['SAMPLE_ID'].isin(removeForCenterConsortiumSamples)]
- 	if not current_release_staging:
+
+	clinicalDfStaging = clinicalDf[~clinicalDf['SAMPLE_ID'].isin(removeForCenterConsortiumSamples)]
+	if not current_release_staging:
 		for center in CENTER_MAPPING_DF.center:
 			center_clinical =  clinicalDfStaging[clinicalDfStaging['CENTER'] == center]
 			center_sample = center_clinical[sampleCols].drop_duplicates('SAMPLE_ID')
@@ -306,7 +311,6 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	centerMafFileViewSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "centerMafView"][0]
 	centerMafSynIds = syn.tableQuery('select id from %s' % centerMafFileViewSynId)
 	centerMafSynIdsDf = centerMafSynIds.asDataFrame()
-	
 	with open(MUTATIONS_PATH, 'w') as f:
 		f.write(sequenced_samples + "\n") 
 	for index, mafSynId in enumerate(centerMafSynIdsDf.id):
@@ -336,8 +340,9 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 					with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
 						f.write(newCenterRow)
 	storeFile(syn, MUTATIONS_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_mutations_extended.txt", staging=current_release_staging)
-	for center in clinicalDf['CENTER'].unique():
-		storeFile(syn, MUTATIONS_CENTER_PATH % center, genieVersion=genieVersion, parent = CENTER_MAPPING_DF['stagingSynId'][CENTER_MAPPING_DF['center'] == center][0], centerStaging=True)
+	if not current_release_staging:
+		for center in clinicalDf['CENTER'].unique():
+			storeFile(syn, MUTATIONS_CENTER_PATH % center, genieVersion=genieVersion, parent = CENTER_MAPPING_DF['stagingSynId'][CENTER_MAPPING_DF['center'] == center][0], centerStaging=True)
 
 	#Only need to upload these files once
 	#if filtering:
@@ -395,7 +400,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 			cnaText = removePandasDfFloat(center_cna)
 			with open(CNA_CENTER_PATH % center, "w") as cnaFile:
 				cnaFile.write(cnaText)
- 			if not current_release_staging:
+			if not current_release_staging:
 				storeFile(syn,CNA_CENTER_PATH % center, genieVersion=genieVersion, parent = CENTER_MAPPING_DF['stagingSynId'][CENTER_MAPPING_DF['center'] == center][0], centerStaging=True)
 			mergedCNA = mergedCNA.merge(center_cna, on='Hugo_Symbol', how="outer")
 
@@ -416,7 +421,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	FusionsDf['ENTREZ_GENE_ID'][FusionsDf['ENTREZ_GENE_ID'] == 0] = pd.np.nan
 	# missing = FusionsDf[~FusionsDf['TUMOR_SAMPLE_BARCODE'].isin(samples)]['TUMOR_SAMPLE_BARCODE']
 	# missing.drop_duplicates().to_csv("fusion_missing.txt",sep="\t",index=False)
- 	if not current_release_staging:
+	if not current_release_staging:
 		FusionsStagingDf = FusionsDf[FusionsDf['TUMOR_SAMPLE_BARCODE'].isin(keepForCenterConsortiumSamples)]
 		for center in CENTER_MAPPING_DF.center:
 			center_fusion = FusionsStagingDf[FusionsStagingDf['CENTER'] == center]
@@ -443,7 +448,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	segDf = segDf.rename(columns= {'CHROM':'chrom','LOCSTART':'loc.start','LOCEND':'loc.end','SEGMEAN':'seg.mean','NUMMARK':'num.mark'})
 	# missing = segDf[~segDf['ID'].isin(samples)]['ID']
 	# missing.drop_duplicates().to_csv("seg_missing.txt",sep="\t",index=False)
- 	if not current_release_staging:
+	if not current_release_staging:
 		segStagingDf = segDf[segDf['ID'].isin(keepForCenterConsortiumSamples)]
 		for center in CENTER_MAPPING_DF.center:
 			center_seg = segStagingDf[segStagingDf['CENTER'] == center]
@@ -465,7 +470,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	bedSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "bed"][0]
 	bed = syn.tableQuery('SELECT Chromosome,Start_Position,End_Position,Hugo_Symbol,ID,SEQ_ASSAY_ID,Feature_Type,includeInPanel FROM %s' % bedSynId)
 	bedDf = bed.asDataFrame()
- 	if not current_release_staging:
+	if not current_release_staging:
 		for seqAssay in bedDf['SEQ_ASSAY_ID'].unique():
 			bedSeqDf = bedDf[bedDf['SEQ_ASSAY_ID'] == seqAssay]
 			center = seqAssay.split("-")[0]
@@ -484,11 +489,11 @@ def command_reviseMetadataFiles(syn, args, databaseSynIdMappingDf):
 	reviseMetadataFiles(syn, args.staging, databaseSynIdMappingDf, args.genieVersion)
 
 def reviseMetadataFiles(syn, staging, databaseSynIdMappingDf, genieVersion=None):
-	if staging:
-		consortiumId = "syn7551278"
-		#allFiles = syn.getChildren('syn7551278')
-	else:
-		consortiumId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'consortium'].values[0]
+	# if staging:
+	# 	consortiumId = "syn7551278"
+	# 	#allFiles = syn.getChildren('syn7551278')
+	# else:
+	consortiumId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'consortium'].values[0]
 	allFiles = syn.getChildren(consortiumId)
 	metadataEnts = [syn.get(i['id'], downloadLocation=GENIE_RELEASE_DIR, ifcollision="overwrite.local") for i in allFiles if 'meta' in i['name']]
 	for metaEnt in metadataEnts:
@@ -507,8 +512,8 @@ def reviseMetadataFiles(syn, staging, databaseSynIdMappingDf, genieVersion=None)
 				dataFileVersion = dataFileVersion.group(1).split("_")[-1]
 
 			if version != genieVersion:
-				metaText = metaText.replace("(GENIE) v%s" % version,"(GENIE) v%s" % genieVersion)
-				metaText = metaText.replace("(GENIE, 2017) v%s" % version,"(GENIE, 2017) v%s" % genieVersion)
+				metaText = metaText.replace("AACR Project GENIE Cohort v%s" % version,"AACR Project GENIE Cohort v%s" % genieVersion)
+				metaText = metaText.replace("GENIE v%s" % version,"GENIE v%s" % genieVersion)
 				if dataFileVersion is not None:
 					metaText = metaText.replace(dataFileVersion, genieVersion)
 					metaText = metaText.replace(dataFileVersion, genieVersion)
@@ -556,37 +561,48 @@ def createLinkVersion(syn,genieVersion, caseListEntities, genePanelEntities, dat
 def main():
 	parser = argparse.ArgumentParser(description='Staging to CBioOutput')
 	parser.add_argument("processingDate", type=str, metavar="Jan-2017",
-	                    help="The processing date of GENIE in Month-Year format (ie. Apr-2017)")
+						help="The processing date of GENIE in Month-Year format (ie. Apr-2017)")
 	parser.add_argument("cbioportalPath", type=str, metavar="/path/to/cbioportal",
 						help="Make sure you clone the cbioportal github: git clone https://github.com/cBioPortal/cbioportal.git")
 	parser.add_argument("genieVersion", type=str, metavar="1.0.1",
 						help="GENIE release version")
-	parser.add_argument("--oncotreeLink", type=str, default='http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21',
+	parser.add_argument("--oncotreeLink", type=str,
 						help="Link to oncotree code")
 	parser.add_argument("--consortiumReleaseCutOff", type=int, metavar=184, default=184,
 						help="Consortium release cut off time in days")
 	parser.add_argument("--staging", action='store_true',
-	                    help="Store into staging folder")
+						help="Store into staging folder")
 	parser.add_argument("--skipMutationsInCis", action='store_true',
-	                    help="Skip running mutation in cis script")
+						help="Skip running mutation in cis script")
 	parser.add_argument("--test", action='store_true',
-	                    help="Run test")
+						help="Run test")
+	parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
 	args = parser.parse_args()
+	syn = process.synLogin(args)
 
-	try:
-		syn = synapseclient.login(silent=True)
-	except:
-		syn = synapseclient.login(os.environ['GENIE_USER'],os.environ['GENIE_PASS'])
 	assert not (args.test and args.staging), "You can only specify --test or --staging, not both"
+
 	if args.test:
 		databaseSynIdMappingId = 'syn11600968'
 		args.genieVersion = "TESTING"
+	elif args.staging:
+		args.skipMutationsInCis = True
+		databaseSynIdMappingId = 'syn12094210'	
 	else:
 		databaseSynIdMappingId = 'syn10967259'
 	#Database/folder syn id mapping
 	databaseSynIdMapping = syn.tableQuery('select * from %s' % databaseSynIdMappingId)
 	databaseSynIdMappingDf = databaseSynIdMapping.asDataFrame()
 	consortiumSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'consortium'].values[0]
+
+	if args.oncotreeLink is None:
+		oncoLink = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
+		oncoLinkEnt = syn.get(oncoLink)
+		args.oncotreeLink = oncoLinkEnt.externalURL
+
+	#Check if you can connect to oncotree link, if not then don't run validation / processing
+	process.checkUrl(args.oncotreeLink)
+
 	#get syn id of case list folder in consortium release
 	caseListSynId = findCaseListId(syn, consortiumSynId)
 
@@ -644,18 +660,18 @@ def main():
 	command = ['python',cbioValidatorPath,'-s',GENIE_RELEASE_DIR,'-n','; exit 0']
 	cbioOutput = subprocess.check_output(" ".join(command), shell=True)
 	print(cbioOutput)
-	with open("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion, "w") as cbioLog:
-		cbioLog.write(cbioOutput)
-	syn.store(File("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion, parentId = "syn10155804"))
-	os.remove("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion)
+	if not args.test and not args.staging:
+		with open("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion, "w") as cbioLog:
+			cbioLog.write(cbioOutput)
+		syn.store(File("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion, parentId = "syn10155804"))
+		os.remove("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion)
 	logger.info("REMOVING OLD FILES")
 
 	process.rmFiles(CASE_LIST_PATH)
 	if os.path.exists('%s/genie_private_meta_cna_hg19_seg.txt' % GENIE_RELEASE_DIR):
 		os.unlink('%s/genie_private_meta_cna_hg19_seg.txt' % GENIE_RELEASE_DIR)
 	logger.info("CREATING LINK VERSION")
-	if not args.staging:
-		createLinkVersion(syn, args.genieVersion, caseListEntities, genePanelEntities, databaseSynIdMappingDf)
+	createLinkVersion(syn, args.genieVersion, caseListEntities, genePanelEntities, databaseSynIdMappingDf)
 
 	if not args.test and not args.staging:
 		processTracker = syn.tableQuery("SELECT timeEndProcessing FROM %s where center = 'SAGE' and processingType = 'dbToStage'" % processTrackerSynId)

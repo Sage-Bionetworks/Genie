@@ -68,6 +68,4 @@ def test_validation():
 	expectedError = ("Your vcf file must not have variants on chrM.\n")
 	expectedWarning = ("Your vcf file should not have the chr prefix in front of chromosomes.\n")
 	assert error == expectedError
-	assert warning == expectedWarning		
-#test_validation()
-#test_processing()
+	assert warning == expectedWarning

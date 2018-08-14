@@ -135,13 +135,43 @@ class vcf(maf.maf):
 			mafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == mafProcessing][0]
 			centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
 			logger.info(validVCF)
-			vcfFilePath = self.process_helper(validVCF, path_to_GENIE, mafSynId,centerMafSynId,
-										 vcf2mafPath, veppath, vepdata)
+			vcfFilePath = self.process_helper(validVCF, path_to_GENIE, mafSynId,centerMafSynId, vcf2mafPath, veppath, vepdata)
 			mutationFiles = [vcfFilePath]
 			logger.info("UPDATED DATABASE WITH: %s" % ", ".join(mutationFiles))
 		else:
 			logger.info("Please run with `--process %s` parameter if you want to reannotate the %s files" % (self._fileType, self._fileType))
 		return(mutationFiles)
+
+
+	def _validate(self, vcf):
+		REQUIRED_HEADERS = pd.Series(["#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO"])
+
+		total_error = ""
+		warning = ""
+		if not all(REQUIRED_HEADERS.isin(vcf.columns)):
+			total_error += "Your vcf file must have these headers: CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO.\n"
+
+		if len(vcf.columns) > 8:
+			if "FORMAT" not in vcf.columns:
+				total_error += "Your vcf file must have FORMAT header if genotype columns exist.\n"
+	   
+		#Require that they report variants mapped to either GRCh37 or hg19 without 
+		#the chr-prefix. variants on chrM are not supported
+		haveColumn = process_functions.checkColExist(vcf, "#CHROM")
+		if haveColumn:
+			nochr = ["chr" in i for i in vcf['#CHROM'] if isinstance(i, str)]
+			if sum(nochr) > 0:
+				warning += "Your vcf file should not have the chr prefix in front of chromosomes.\n"
+			if sum(vcf['#CHROM'].isin(["chrM"])) > 0:
+				total_error += "Your vcf file must not have variants on chrM.\n"
+
+		#No white spaces
+		temp = vcf.apply(lambda x: contains_whitespace(x), axis=1)
+		if sum(temp) >0:
+			warning += "Your vcf file should not have any white spaces in any of the columns.\n"
+		#I can also recommend a `bcftools query` command that will parse a VCF in a detailed way, 
+		#and output with warnings or errors if the format is not adhered too
+		return(total_error, warning)
 
 	# Resolve missing read counts
 	def _validate(self, vcf):

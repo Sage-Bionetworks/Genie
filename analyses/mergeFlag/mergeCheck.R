@@ -30,7 +30,6 @@ uploadToTable <- function(tbl, databaseSynId, subSetSamples, centerMappingDf) {
     } 
     if (any(annotated_df$Center %in% keepCenters)) {
       annotated_df$Flag[annotated_df$Center %in% keepCenters] = "KEEP"
-      #synStore(Table(databaseSynId, annotated_df))
     }
     synStore(Table(databaseSynId, annotated_df))
   }
@@ -72,9 +71,6 @@ if (testing) {
 }
 databaseSynIdMapping = synTableQuery(sprintf('select * from %s', databaseSynIdMappingId),includeRowIdAndRowVersion=F)
 databaseSynIdMappingDf = synapser::as.data.frame(databaseSynIdMapping)
-centerMappingSynId = databaseSynIdMappingDf$Id[databaseSynIdMappingDf$Database == "centerMapping"]
-
-#Use center mapping table
 sampleSynId = databaseSynIdMappingDf$Id[databaseSynIdMappingDf$Database == "sample"]
 mutationsInCisSynId = databaseSynIdMappingDf$Id[databaseSynIdMappingDf$Database == "mutationsInCis"]
 mafSynId = databaseSynIdMappingDf$Id[databaseSynIdMappingDf$Database == "vcf2maf"]
@@ -83,6 +79,7 @@ centersTable = synTableQuery(sprintf('select distinct CENTER from %s', sampleSyn
 centers = synapser::as.data.frame(centersTable)
 centers = centers$CENTER
 
+centerMappingSynId = databaseSynIdMappingDf$Id[databaseSynIdMappingDf$Database == "centerMapping"]
 centerMapping = synTableQuery(sprintf('select * from %s where release is true', centerMappingSynId),includeRowIdAndRowVersion=F)
 centerMappingDf = synapser::as.data.frame(centerMapping)
 centerMappingDf$mutationInCisFilter = as.logical(centerMappingDf$mutationInCisFilter)
@@ -90,7 +87,6 @@ for (center in centers) {
   # read aggregated clinical data
   genieClinTable = synTableQuery(sprintf("select SAMPLE_ID from %s where CENTER = '%s'", sampleSynId, center),includeRowIdAndRowVersion=F)
   genieClinData = synapser::as.data.frame(genieClinTable)
-  
   mafSampleCountTable = synTableQuery(sprintf("select Tumor_Sample_Barcode, count(Tumor_Sample_Barcode) from %s where Center = '%s' group by Tumor_Sample_Barcode",mafSynId, center),includeRowIdAndRowVersion=F)
   mafSampleCount = synapser::as.data.frame(mafSampleCountTable)
   mafSampleCount = mafSampleCount[mafSampleCount$Tumor_Sample_Barcode %in%genieClinData$SAMPLE_ID,]

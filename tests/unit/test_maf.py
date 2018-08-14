@@ -54,14 +54,13 @@ def test_validation():
 							 N_DEPTH=[1,2,3,4,3],
 							 N_REF_COUNT=[1,2,3,4,3],
 							 N_ALT_COUNT=[1,2,3,4,3],
-							 TUMOR_SEQ_ALLELE1=["A","A","A","A","A"],
-							 TUMOR_SEQ_ALLELE2=[float('nan'),float('nan'),float('nan'),float('nan'),float('nan')]))
+							 TUMOR_SEQ_ALLELE2=["A","A","A","A","A"]))
 
 	error, warning = mafClass.validate_helper(mafDf)
 	assert error == ""
 	assert warning == ""
 
-	mafDf = pd.DataFrame(dict(CHROMOSOME=[1,2,3,4,5],
+	mafDf = pd.DataFrame(dict(CHROMOSOME=[1,"chr2","WT",4,5],
 							 START_POSITION=[1,2,3,4,2],
 							 REFERENCE_ALLELE=["NA",float('nan'),"A","A","A"],
 							 TUMOR_SAMPLE_BARCODE=["ID1-1","ID1-1","ID1-1","ID1-1","ID1-1"],
@@ -71,10 +70,11 @@ def test_validation():
 							 N_ALT_COUNT=[1,2,3,4,3]))	
 
 	error, warning = mafClass.validate_helper(mafDf)
-	expectedErrors = ("Your mutation file must also have at least one of these headers: TUMOR_SEQ_ALLELE2 or TUMOR_SEQ_ALLELE1.\n"
-					  "Your mutation file cannot have any empty REFERENCE_ALLELE values.\n")
-	expectedWarnings = ("Your mutation file does not have the column headers that can give extra information to the processed mutation file: T_REF_COUNT, N_DEPTH.\n"
-						"Your REFERENCE_ALLELE column contains NA values, which cannot be placeholders for blank values.  Please put in empty strings for blank values.\n")
+	expectedErrors = ("Mutation File: Must at least have these headers: TUMOR_SEQ_ALLELE2.\n"
+					  "Mutation File: Cannot have any empty REFERENCE_ALLELE values.\n"
+					  "Mutation File: CHROMOSOME column cannot have any values that start with 'chr' or any 'WT' values.\n")
+	expectedWarnings = ("Mutation File: Does not have the column headers that can give extra information to the processed mutation file: T_REF_COUNT, N_DEPTH.\n"
+						"Mutation File: Your REFERENCE_ALLELE column contains NA values, which cannot be placeholders for blank values.  Please put in empty strings for blank values.\n")
 	assert error == expectedErrors
 	assert warning == expectedWarnings
 
@@ -86,29 +86,14 @@ def test_validation():
 							 N_DEPTH=[1,2,3,4,3],
 							 N_REF_COUNT=[1,2,3,4,3],
 							 N_ALT_COUNT=[1,2,3,4,3],
-							 TUMOR_SEQ_ALLELE1=["NA",float('nan'),"A","A","A"]))
+							 TUMOR_SEQ_ALLELE2=["NA",float('nan'),"A","A","A"]))
 
 	error, warning = mafClass.validate_helper(mafDf)
-	expectedErrors = ("First column header must be one of these: CHROMOSOME, HUGO_SYMBOL, TUMOR_SAMPLE_BARCODE.\n"
-					  "If you are missing T_DEPTH, you must have T_REF_COUNT!\n"
-					  "Your mutation file must at least have these headers: CHROMOSOME.\n"
-					  "Your mutation file must have at least one of these: TUMOR_SEQ_ALLELE2, TUMOR_SEQ_ALLELE1 and at least one of those columns cannot have any empty values.\n")
-	expectedWarnings = ("Your TUMOR_SEQ_ALLELE1 column contains NA values, which cannot be placeholders for blank values.  Please put in empty strings for blank values.\n"
-						"Your mutation file does not have the column headers that can give extra information to the processed mutation file: T_REF_COUNT.\n")
-	assert error == expectedErrors
-	assert warning == expectedWarnings
-
-	mafDf = pd.DataFrame(dict(START_POSITION=[1,2,3,4,2],
-							 REFERENCE_ALLELE=["A","A","A","A","A"],
-							 TUMOR_SAMPLE_BARCODE=["ID1-1","ID1-1","ID1-1","ID1-1","ID1-1"],
-							 N_DEPTH=[1,2,3,4,3],
-							 N_REF_COUNT=[1,2,3,4,3],
-							 N_ALT_COUNT=[1,2,3,4,3],
-							 TUMOR_SEQ_ALLELE2=["NA",float('nan'),"A","A","A"]))
-	error, warning = mafSPClass.validate_helper(mafDf, SP=True)
-	expectedErrors = ("First column header must be one of these: CHROMOSOME, HUGO_SYMBOL, TUMOR_SAMPLE_BARCODE.\n"
-					  "Your mutation file must at least have these headers: CHROMOSOME.\n"
-					  "Your mutation file must have at least one of these: TUMOR_SEQ_ALLELE2, TUMOR_SEQ_ALLELE1 and at least one of those columns cannot have any empty values.\n")
-	expectedWarnings = ("Your TUMOR_SEQ_ALLELE2 column contains NA values, which cannot be placeholders for blank values.  Please put in empty strings for blank values.\n")
+	expectedErrors = ("Mutation File: First column header must be one of these: CHROMOSOME, HUGO_SYMBOL, TUMOR_SAMPLE_BARCODE.\n"
+					  "Mutation File: If you are missing T_DEPTH, you must have T_REF_COUNT!\n"
+					  "Mutation File: Must at least have these headers: CHROMOSOME.\n"
+					  "Mutation File: TUMOR_SEQ_ALLELE2 can't have any null values.\n")
+	expectedWarnings = ("Mutation File: TUMOR_SEQ_ALLELE2 column contains 'NA' values, which cannot be placeholders for blank values.  Please put in empty strings for blank values.\n"
+						"Mutation File: Does not have the column headers that can give extra information to the processed mutation file: T_REF_COUNT.\n")
 	assert error == expectedErrors
 	assert warning == expectedWarnings

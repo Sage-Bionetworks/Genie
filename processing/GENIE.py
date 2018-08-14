@@ -22,16 +22,11 @@ def main():
     parser.add_argument("--vcf2mafPath", type=str, help="Path to vcf2maf", default="~/vcf2maf-1.6.14")
     parser.add_argument("--vepPath", type=str, help="Path to VEP", default="~/vep")
     parser.add_argument("--vepData", type=str, help="Path to VEP data", default="~/.vep")
-    parser.add_argument("--oncotreeLink", type=str, default='http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21', help="Link to oncotree code")
-
+    #parser.add_argument("--oncotreeLink", type=str, default='http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21', help="Link to oncotree code")
 
     args = parser.parse_args()
     syn = process_functions.synLogin(args)
     
-    if args.testing:
-        databaseSynIdMappingId = 'syn11600968'
-    else:
-        databaseSynIdMappingId = 'syn10967259'
     #Database/folder syn id mapping
     CENTER_MAPPING = syn.tableQuery('SELECT * FROM %s where inputSynId is not null and release is true' % process_functions.getDatabaseSynId(syn, "centerMapping", test=args.testing))
     CENTER_MAPPING_DF = CENTER_MAPPING.asDataFrame()
@@ -53,11 +48,11 @@ def main():
             logPath = os.path.join(SCRIPT_DIR, "%s_validation_log.txt" % center)
         else:
             logger.info("PROCESSING %s" % center)
-            extendCommands = ['--deleteOld', '--vcf2mafPath', args.vcf2mafPath, '--vepPath', args.vepPath, '--vepData', args.vepData,
-                               '--oncotreeLink', args.oncotreeLink]
+            extendCommands = ['--deleteOld', '--vcf2mafPath', os.path.expanduser(args.vcf2mafPath), '--vepPath', os.path.expanduser(args.vepPath), '--vepData', os.path.expanduser(args.vepData)]
+                               #'--oncotreeLink', args.oncotreeLink]
             logPath = os.path.join(SCRIPT_DIR, "%s_%s_log.txt" % (center, args.process))
 
-        command = ["python", inputToDatabaseScript, center, args.process, "--pemFile", args.pemFile] if args.pemFile is not None else ["python", inputToDatabaseScript, center, args.process]
+        command = ["python", inputToDatabaseScript, center, args.process, "--pemFile", os.path.expanduser(args.pemFile)] if args.pemFile is not None else ["python", inputToDatabaseScript, center, args.process]
         if args.testing:
             extendCommands.append("--testing")
         if args.createNewMafDatabase:
@@ -67,7 +62,7 @@ def main():
         command.extend(extendCommands)
         logger.info("COMMAND EXECUTED: %s" % " ".join(command)) 
         output = subprocess.check_output(command,stderr= subprocess.STDOUT)
-        logger.info(output)
+        #logger.info(output)
         with open(logPath, "w") as centerLog:
             centerLog.write(output)
         syn.store(synapseclient.File(logPath, parentId="syn10155804"))
@@ -76,7 +71,7 @@ def main():
     if args.center is None and args.onlyValidate:
         logger.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
         writeInvalidReasonsScript = os.path.join(SCRIPT_DIR, 'writeInvalidReasons.py')
-        writeInvalidReasons = ['python', writeInvalidReasonsScript, '--pemFile', args.pemFile] if args.pemFile is not None else ['python', writeInvalidReasonsScript]
+        writeInvalidReasons = ['python', writeInvalidReasonsScript, '--pemFile', os.path.expanduser(args.pemFile)] if args.pemFile is not None else ['python', writeInvalidReasonsScript]
         output = subprocess.check_call(writeInvalidReasons)
 
 if __name__ == "__main__":

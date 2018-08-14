@@ -114,5 +114,3 @@ updateMutData = genieMutData[genieMutData$inBED != oldInBed,]
 if (nrow(updateMutData) > 0) { 
   synStore(Table(mafSynId, updateMutData[c("ROW_ID","ROW_VERSION","inBED")]))
 }
-
-#write.table(genieMutData[,originalCols], args[1], quote=F, sep="\t",row.names=F)

@@ -98,6 +98,3 @@ def test_validation():
 	error, warning = mutCis.validate_helper(mutCisDf)
 	expectedErrors = ("Mutations In Cis Filter File: All variants must come from the original mutationInCis_filtered_samples.csv file in each institution's staging folder.\n")
 	assert error == expectedErrors
-
-#test_validation()
-#test_processing()

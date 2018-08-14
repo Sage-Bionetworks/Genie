@@ -142,7 +142,7 @@ class bed(example_filetype_format.FileTypeFormat):
 		bed['SEQ_ASSAY_ID'] = seq_assay_id
 		bed.to_csv(os.path.join(process_functions.SCRIPT_DIR,"temp.bed"), sep="\t",index=False, header=None)
 		command = ['bedtools','intersect','-a',os.path.join(process_functions.SCRIPT_DIR,"temp.bed"),'-b',os.path.join(process_functions.SCRIPT_DIR,'exon.gtf'),'-u','>',os.path.join(process_functions.SCRIPT_DIR,'genie_exons.bed')]
-		subprocess.call(" ".join(command),shell=True)
+		subprocess.check_call(" ".join(command),shell=True)
 		if os.stat(os.path.join(process_functions.SCRIPT_DIR,'genie_exons.bed')).st_size > 0 and createGenePanel:
 			temp = pd.read_csv(os.path.join(process_functions.SCRIPT_DIR,'genie_exons.bed'),sep="\t",header=None)
 			temp.columns = ["Chromosome","Start_Position","End_Position","Hugo_Symbol","includeInPanel","ID","SEQ_ASSAY_ID"]
@@ -162,6 +162,7 @@ class bed(example_filetype_format.FileTypeFormat):
 		return(bed)
 
 	def _process(self, gene, seq_assay_id, newPath, parentId, createPanel=True):
+		seq_assay_id = seq_assay_id.upper()
 		if len(gene.columns) > 4:
 			if not all(gene[4].apply(lambda x: isinstance(x, bool))):
 				gene[4] = True
@@ -169,12 +170,12 @@ class bed(example_filetype_format.FileTypeFormat):
 			gene[4] = True
 		bed = gene[[0,1,2,3,4]]
 		genePanelPath = os.path.dirname(newPath)
-		# if not os.path.exists(os.path.join(process_functions.SCRIPT_DIR,"exon.gtf")) or not os.path.exists(os.path.join(process_functions.SCRIPT_DIR,"gene.gtf")):
-		# 	command = ['bash',os.path.join(process_functions.SCRIPT_DIR,'createGTF.sh')]
-		# 	subprocess.call(command)
+		if not os.path.exists(os.path.join(process_functions.SCRIPT_DIR,"exon.gtf")) or not os.path.exists(os.path.join(process_functions.SCRIPT_DIR,"gene.gtf")):
+			command = ['bash',os.path.join(process_functions.SCRIPT_DIR,'createGTF.sh')]
+			subprocess.check_call(command)
 		bed = self.createdBEDandGenePanel(bed, seq_assay_id, genePanelPath, parentId, createGenePanel =createPanel)
 		command = ['bash',os.path.join(process_functions.SCRIPT_DIR,'addFeatureType.sh')]
-		subprocess.call(command)
+		subprocess.check_call(command)
 		bed = pd.read_csv(os.path.join(process_functions.SCRIPT_DIR,"genie_combined.bed"),sep="\t")
 		bed['CENTER'] =self.center
 		bed['Chromosome'] = bed['Chromosome'].astype(str)

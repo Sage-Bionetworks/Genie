@@ -25,8 +25,8 @@ def getDatabaseSynId(syn, tableName, test=False):
 
 def main():
 	parser = argparse.ArgumentParser(description='Sample retraction')
-	parser.add_argument("--test", action='store_true',help="Run test")
 	parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
+	parser.add_argument("--test", action='store_true',help="Run test")
 	args = parser.parse_args()
 	syn = process_functions.synLogin(args)
 

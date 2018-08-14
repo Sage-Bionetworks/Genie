@@ -32,9 +32,9 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 	ANONYMIZE_CENTER = syn.tableQuery('SELECT * FROM syn10170510')
 	ANONYMIZE_CENTER_DF = ANONYMIZE_CENTER.asDataFrame()
 	CNA_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,"data_CNA_%s.txt" % genie_version)
-	CLINCICAL_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_clinical_%s.txt' % genie_version)
-	CLINCICAL_SAMPLE_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_clinical_sample_%s.txt' % genie_version)
-	CLINCICAL_PATIENT_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_clinical_patient_%s.txt' % genie_version)
+	CLINICAL_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_clinical_%s.txt' % genie_version)
+	CLINICAL_SAMPLE_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_clinical_sample_%s.txt' % genie_version)
+	CLINICAL_PATIENT_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_clinical_patient_%s.txt' % genie_version)
 	DATA_GENE_PANEL_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_gene_matrix_%s.txt' % genie_version)
 	MUTATIONS_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_mutations_extended_%s.txt' % genie_version)
 	FUSIONS_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_fusions_%s.txt' % genie_version)
@@ -46,14 +46,14 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 	if not os.path.exists(dbTostaging.CASE_LIST_PATH):
 		os.mkdir(dbTostaging.CASE_LIST_PATH)
 
-	if staging:
-		#public release staging
-		PUBLIC_RELEASE_PREVIEW = "syn7871696"
-		PUBLIC_RELEASE_PREVIEW_CASELIST = "syn9689659"
-	else:
-		#public release preview
-		PUBLIC_RELEASE_PREVIEW =  databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'public'].values[0]
-		PUBLIC_RELEASE_PREVIEW_CASELIST = dbTostaging.findCaseListId(syn, PUBLIC_RELEASE_PREVIEW)
+	# if staging:
+	# 	#public release staging
+	# 	PUBLIC_RELEASE_PREVIEW = "syn7871696"
+	# 	PUBLIC_RELEASE_PREVIEW_CASELIST = "syn9689659"
+	# else:
+	#public release preview
+	PUBLIC_RELEASE_PREVIEW =  databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'public'].values[0]
+	PUBLIC_RELEASE_PREVIEW_CASELIST = dbTostaging.findCaseListId(syn, PUBLIC_RELEASE_PREVIEW)
 
 	##############################################################################################################################
 	## Sponsored projects filter
@@ -71,11 +71,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 	
 	# SEQ_DATE filter
 	# Jun-2015, given processing date (today) -> public release (processing date - Jun-2015 > 12 months)
-	if staging:
-		#Consortium Files / clinical
-		consortiumReleaseWalk = synu.walk(syn, "syn7551278")
-	else:
-		consortiumReleaseWalk = synu.walk(syn, releaseId)
+	consortiumReleaseWalk = synu.walk(syn, releaseId)
 
 	consortiumRelease = consortiumReleaseWalk.next()
 	clinical = [syn.get(synid, followLink=True) for filename, synid in consortiumRelease[2] if filename == "data_clinical.txt"][0]
@@ -84,6 +80,8 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 	removeForPublicSamples = process.seqDateFilter(clinicalDf,processingDate,publicReleaseCutOff)
 	#comment back in when public release filter back on
 	#publicReleaseSamples = publicReleaseSamples.append(keepForPublicSamples)
+	#Make sure all null oncotree codes are removed
+	clinicalDf = clinicalDf[~clinicalDf['ONCOTREE_CODE'].isnull()]
 	publicReleaseSamples = clinicalDf.SAMPLE_ID[~clinicalDf.SAMPLE_ID.isin(removeForPublicSamples)]
 
 	print("SEQ_DATES for public release: " + ", ".join(set(clinicalDf.SEQ_DATE[clinicalDf.SAMPLE_ID.isin(publicReleaseSamples)].astype(str))))
@@ -94,11 +92,14 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 	publicRelease = clinicalReleaseScope.asDataFrame()
 
 	allClin = clinicalDf[clinicalDf['SAMPLE_ID'].isin(publicReleaseSamples)]
-	allClin.to_csv(CLINCICAL_PATH, sep="\t", index=False)
-	storeFile(syn, CLINCICAL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_clinical.txt")
+	allClin.to_csv(CLINICAL_PATH, sep="\t", index=False)
+	storeFile(syn, CLINICAL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_clinical.txt")
 	caseListGeneratorPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),'create_case_lists_by_cancer_type.py')
 	#GENERATE CASELISTS
-	os.system('python %s --clinical-file %s --output-directory %s --study-id %s' % (caseListGeneratorPath, CLINCICAL_PATH, dbTostaging.CASE_LIST_PATH, "genie_public"))
+	#os.system('python %s --clinical-file %s --output-directory %s --study-id %s' % (caseListGeneratorPath, CLINICAL_PATH, dbTostaging.CASE_LIST_PATH, "genie_public"))
+	command=['python',caseListGeneratorPath,'--clinical-file',CLINICAL_PATH,
+		 '--output-directory',dbTostaging.CASE_LIST_PATH,'--study-id',"genie_public"]
+	subprocess.call(command)
 	caseListFiles = os.listdir(dbTostaging.CASE_LIST_PATH)
 	caseListEntities = []
 	for casePath in caseListFiles:
@@ -122,13 +123,14 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 			# clinicalDf['AGE_AT_SEQ_REPORT'][clinicalDf['AGE_AT_SEQ_REPORT'] == "<6570"] = "<18"
 
 			clinicalDf = clinicalDf[clinicalDf['SAMPLE_ID'].isin(publicReleaseSamples)]
+
 			#Delete columns that are private scope
 			# for private in privateRelease:
 			# 	del clinicalDf[private]
-			process.addClinicalHeaders(clinicalDf, mapping, patientCols, sampleCols, CLINCICAL_SAMPLE_PATH, CLINCICAL_PATIENT_PATH)
+			process.addClinicalHeaders(clinicalDf, mapping, patientCols, sampleCols, CLINICAL_SAMPLE_PATH, CLINICAL_PATIENT_PATH)
 
-			storeFile(syn, CLINCICAL_SAMPLE_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_clinical_sample.txt")
-			storeFile(syn, CLINCICAL_PATIENT_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_clinical_patient.txt")
+			storeFile(syn, CLINICAL_SAMPLE_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_clinical_sample.txt")
+			storeFile(syn, CLINICAL_PATIENT_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_clinical_patient.txt")
 
 		elif "mutation" in entName:
 			mutation = syn.get(entId, followLink=True)
@@ -239,8 +241,8 @@ def reviseMetadataFiles(syn, staging, databaseSynIdMappingDf, genieVersion=None)
 				dataFileVersion = dataFileVersion.group(1).split("_")[-1]
 
 			if version != genieVersion:
-				metaText = metaText.replace("(GENIE) v%s" % version,"(GENIE) v%s" % genieVersion)
-				metaText = metaText.replace("(GENIE, 2017) v%s" % version,"(GENIE, 2017) v%s" % genieVersion)
+				metaText = metaText.replace("GENIE Cohort v%s" % version,"GENIE Cohort v%s" % genieVersion)
+				metaText = metaText.replace("GENIE v%s" % version,"GENIE v%s" % genieVersion)
 				if dataFileVersion is not None:
 					metaText = metaText.replace(dataFileVersion, genieVersion)
 					metaText = metaText.replace(dataFileVersion, genieVersion)
@@ -297,14 +299,13 @@ if __name__ == "__main__":
 	                    help="Store into staging folder")
 	parser.add_argument("--test", action='store_true',
 	                    help="Store into staging folder")
+	parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
 	args = parser.parse_args()
 	cbioValidatorPath = os.path.join(args.cbioportalPath,"core/src/main/scripts/importer/validateData.py")
 	assert os.path.exists(cbioValidatorPath), "Please specify correct cbioportalPath"
 	assert not (args.test and args.staging), "You can only specify --test or --staging, not both"
-	try:
-		syn = synapseclient.login(silent=True)
-	except:
-		syn = synapseclient.login(os.environ['GENIE_USER'],os.environ['GENIE_PASS'])
+		
+	syn = process.synLogin(args)
 	#Get all the possible public releases
 	if args.test:
 		databaseSynIdMappingId = 'syn11600968'
@@ -316,7 +317,7 @@ if __name__ == "__main__":
 	databaseSynIdMapping = syn.tableQuery('select * from %s' % databaseSynIdMappingId)
 	databaseSynIdMappingDf = databaseSynIdMapping.asDataFrame()
 	releaseSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'release'].values[0]
-
+	
 	temp = synu.walk(syn, releaseSynId)
 	officialPublic = dict()
 	for dirpath, dirnames, filenames in temp:
@@ -337,12 +338,12 @@ if __name__ == "__main__":
 						officialPublic[str(int(checkRelease[0]))+".0-public"] = dirpath[1]
 	assert args.genieVersion in officialPublic.keys(), "genieVersion must be one of these: %s." % ", ".join(officialPublic.keys())
 	args.releaseId = officialPublic[args.genieVersion]
-	
-	processTrackerSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'processTracker'].values[0]
-	processTracker = syn.tableQuery("SELECT timeStartProcessing FROM %s where center = 'SAGE' and processingType = 'public'" % processTrackerSynId)
-	processTrackerDf = processTracker.asDataFrame()
-	processTrackerDf['timeStartProcessing'][0] = str(int(time.time()*1000))
-	syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
+	if not args.test and not args.staging:
+		processTrackerSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'processTracker'].values[0]
+		processTracker = syn.tableQuery("SELECT timeStartProcessing FROM %s where center = 'SAGE' and processingType = 'public'" % processTrackerSynId)
+		processTrackerDf = processTracker.asDataFrame()
+		processTrackerDf['timeStartProcessing'][0] = str(int(time.time()*1000))
+		syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
 
 	caseListEntities, genePanelEntities = perform_consortiumToPublic(syn, args, databaseSynIdMappingDf)
 	command_reviseMetadataFiles(syn, args, databaseSynIdMappingDf)
@@ -361,11 +362,11 @@ if __name__ == "__main__":
 		os.unlink('%s/genie_public_meta_cna_hg19_seg.txt' % dbTostaging.GENIE_RELEASE_DIR)
 
 	print("CREATING LINK VERSION")
-	#if not args.staging:
 	createLinkVersion(syn, args.genieVersion, caseListEntities, genePanelEntities, databaseSynIdMappingDf)
-		#Don't update process tracker is testing or staging
-	processTracker = syn.tableQuery("SELECT timeEndProcessing FROM %s where center = 'SAGE' and processingType = 'public'" % processTrackerSynId)
-	processTrackerDf = processTracker.asDataFrame()
-	processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
-	syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
+	#Don't update process tracker is testing or staging
+	if not args.test and not args.staging:
+		processTracker = syn.tableQuery("SELECT timeEndProcessing FROM %s where center = 'SAGE' and processingType = 'public'" % processTrackerSynId)
+		processTrackerDf = processTracker.asDataFrame()
+		processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
+		syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
 	print("COMPLETED CONSORTIUM TO PUBLIC")

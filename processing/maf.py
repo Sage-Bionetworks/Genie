@@ -48,7 +48,7 @@ class maf(example_filetype_format.FileTypeFormat):
 		else:
 			self.syn.store(synapseclient.File(filePath, parentId=centerMafSynId))
 		return(filePath)
-		
+
 	def process_helper(self, filePath, path_to_GENIE, mafSynId, centerMafSynId,
 					   vcf2mafPath, veppath, vepdata):
 		logger.info('MAF2MAF %s' % filePath)
@@ -56,18 +56,6 @@ class maf(example_filetype_format.FileTypeFormat):
 		newMafPath = os.path.join(path_to_GENIE,self.center,"staging",fileName)
 		narrowMafPath = os.path.join(path_to_GENIE,self.center,"staging","data_mutations_extended_%s_MAF_narrow.txt" % self.center)
 		narrowMafColumns = [col['name'] for col in self.syn.getTableColumns(mafSynId) if col['name'] != 'inBED']
-
-		#Need to get rid of this center specific code
-		if self.center == "GRCC":
-			temp = pd.read_csv(filePath, sep="\t",comment="#")
-			temp.columns = [col.upper() for col in temp.columns]
-			#if temp.get('CHROMOSOME') is not None:
-			temp = temp[temp['CHROMOSOME'] != "WT"]
-			temp['CHROMOSOME'] = [i.replace("chr","") for i in temp['CHROMOSOME']]
-			temp['TUMOR_SEQ_ALLELE2'] = temp['TUMOR_SEQ_ALLELE1']
-			del temp['TUMOR_SEQ_ALLELE1']
-			filePath = os.path.join(path_to_GENIE,"GRCCmaf.txt")
-			temp.to_csv(filePath,sep="\t", index=False)
 
 		tempdir = os.path.join(path_to_GENIE, self.center)
 		commandCall = ["perl",os.path.join(vcf2mafPath,"maf2maf.pl"),
@@ -133,55 +121,53 @@ class maf(example_filetype_format.FileTypeFormat):
 
 		first_header = ['CHROMOSOME','HUGO_SYMBOL','TUMOR_SAMPLE_BARCODE']
 		if SP:
-			correct_column_headers = ['CHROMOSOME','START_POSITION','REFERENCE_ALLELE','TUMOR_SAMPLE_BARCODE'] #T_REF_COUNT + T_ALT_COUNT = T_DEPTH
+			correct_column_headers = ['CHROMOSOME','START_POSITION','REFERENCE_ALLELE','TUMOR_SAMPLE_BARCODE','TUMOR_SEQ_ALLELE2'] #T_REF_COUNT + T_ALT_COUNT = T_DEPTH
 		else:
-			correct_column_headers = ['CHROMOSOME','START_POSITION','REFERENCE_ALLELE','TUMOR_SAMPLE_BARCODE','T_ALT_COUNT'] #T_REF_COUNT + T_ALT_COUNT = T_DEPTH
+			correct_column_headers = ['CHROMOSOME','START_POSITION','REFERENCE_ALLELE','TUMOR_SAMPLE_BARCODE','T_ALT_COUNT','TUMOR_SEQ_ALLELE2'] #T_REF_COUNT + T_ALT_COUNT = T_DEPTH
 		optional_headers = ['T_REF_COUNT','N_DEPTH','N_REF_COUNT','N_ALT_COUNT']
-		tumors = ['TUMOR_SEQ_ALLELE2','TUMOR_SEQ_ALLELE1']
 		
-
 		mutationDF.columns = [col.upper() for col in mutationDF.columns]
 
 		total_error = ""
 		warning = ""
 		#CHECK: First column must be in the first_header list
 		if mutationDF.columns[0] not in first_header:
-			total_error += "First column header must be one of these: %s.\n" % ", ".join(first_header)
+			total_error += "Mutation File: First column header must be one of these: %s.\n" % ", ".join(first_header)
 		
 		if not process_functions.checkColExist(mutationDF, "T_DEPTH") and not SP:
 			if not process_functions.checkColExist(mutationDF, "T_REF_COUNT"):
-				total_error += "If you are missing T_DEPTH, you must have T_REF_COUNT!\n"
+				total_error += "Mutation File: If you are missing T_DEPTH, you must have T_REF_COUNT!\n"
 
 		#CHECK: Everything in correct_column_headers must be in mutation file
 		if not all([process_functions.checkColExist(mutationDF, i) for i in correct_column_headers]):
-			total_error += "Your mutation file must at least have these headers: %s.\n" % ",".join([i for i in correct_column_headers if i not in mutationDF.columns.values])
+			total_error += "Mutation File: Must at least have these headers: %s.\n" % ",".join([i for i in correct_column_headers if i not in mutationDF.columns.values])
 		
-		#CHECK: Must have either Tumor_Seq_Allele1 or 2
-		tumor_cols = [i for i in tumors if i in mutationDF.columns.values]
-		if len(tumor_cols) == 0:
-			total_error += "Your mutation file must also have at least one of these headers: %s.\n" % " or ".join(tumors)
-		nullTumorSeqCount = 0
-		for i in tumor_cols:
+		#CHECK: Must have either TUMOR_SEQ_ALLELE2 column
+		if process_functions.checkColExist(mutationDF, "TUMOR_SEQ_ALLELE2"):
 			#CHECK: The value "NA" can't be used as a placeholder
-			if sum(mutationDF[i].fillna('') == "NA") > 0:
-				warning += "Your %s column contains NA values, which cannot be placeholders for blank values.  Please put in empty strings for blank values.\n" % i
+			if sum(mutationDF["TUMOR_SEQ_ALLELE2"].fillna('') == "NA") > 0:
+				warning += "Mutation File: TUMOR_SEQ_ALLELE2 column contains 'NA' values, which cannot be placeholders for blank values.  Please put in empty strings for blank values.\n"
 			#CHECK: There can't be any null values
-			if sum(mutationDF[i].isnull()) > 0:
-				nullTumorSeqCount += 1
-
-		if nullTumorSeqCount == len(tumor_cols) and nullTumorSeqCount > 0:
-			total_error += "Your mutation file must have at least one of these: %s and at least one of those columns cannot have any empty values.\n" % ", ".join(tumors)
-
+			if sum(mutationDF["TUMOR_SEQ_ALLELE2"].isnull()) > 0:
+				total_error += "Mutation File: TUMOR_SEQ_ALLELE2 can't have any null values.\n"
+		
 		#CHECK: Mutation file would benefit from columns in optional_headers
 		if not all([process_functions.checkColExist(mutationDF, i) for i in optional_headers]) and not SP:
-			warning += "Your mutation file does not have the column headers that can give extra information to the processed mutation file: %s.\n" % ", ".join([i for i in optional_headers if i not in mutationDF.columns.values ])      
+			warning += "Mutation File: Does not have the column headers that can give extra information to the processed mutation file: %s.\n" % ", ".join([i for i in optional_headers if i not in mutationDF.columns.values ])      
 
 		if process_functions.checkColExist(mutationDF, "REFERENCE_ALLELE"):
 			if sum(mutationDF['REFERENCE_ALLELE'] == "NA") > 0:
-				warning += "Your REFERENCE_ALLELE column contains NA values, which cannot be placeholders for blank values.  Please put in empty strings for blank values.\n"
+				warning += "Mutation File: Your REFERENCE_ALLELE column contains NA values, which cannot be placeholders for blank values.  Please put in empty strings for blank values.\n"
 			#CHECK: mutation file must not have empty reference or variant alleles
 			if sum(mutationDF['REFERENCE_ALLELE'].isnull()) > 0:
-				total_error += "Your mutation file cannot have any empty REFERENCE_ALLELE values.\n"
+				total_error += "Mutation File: Cannot have any empty REFERENCE_ALLELE values.\n"
+
+		if process_functions.checkColExist(mutationDF, "CHROMOSOME"):
+			#CHECK: Chromosome column can't have any values that start with chr or have any WT values
+			invalidValues = [str(i).startswith("chr") or str(i) == "WT" for i in mutationDF['CHROMOSOME']]
+			if sum(invalidValues) > 0:
+				total_error += "Mutation File: CHROMOSOME column cannot have any values that start with 'chr' or any 'WT' values.\n"
+
 
 		return(total_error, warning)
 
@@ -192,4 +178,3 @@ class maf(example_filetype_format.FileTypeFormat):
 								 '-NaN', 'nan','-nan',''],keep_default_na=False)
 		total_error, warning = self.validate_helper(mutationDF)
 		return(total_error, warning)
-
