@@ -6,6 +6,13 @@ import process_functions
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+def updateData(syn, databaseSynId, newData, center, col, toDelete=False):
+	databaseEnt = syn.get(databaseSynId)
+	database = syn.tableQuery("SELECT * FROM %s where Center ='%s'" % (databaseSynId, center))
+	database = database.asDataFrame()[col]
+	process_functions.updateDatabase(syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete)
+	
 class mafSP(maf.maf):
 
 	_fileType = "mafSP"
@@ -24,9 +31,8 @@ class mafSP(maf.maf):
 	def storeProcessedMaf(self, filePath, mafSynId, centerMafSynId, isNarrow=False):
 		logger.info('STORING %s' % filePath)
 		database = self.syn.get(mafSynId)
-		#if isNarrow:
 		mafDf = pd.read_csv(filePath,sep="\t")
-		process_functions.updateData(self.syn, mafSynId, mafDf, self.center, database.primaryKey, toDelete=True)
+		updateData(self.syn, mafSynId, mafDf, self.center, database.primaryKey, toDelete=True)
 			#self.syn.store(synapseclient.Table(database.id, filePath, separator="\t"))
 		#.syn.store(synapseclient.File(filePath, parentId=centerMafSynId))
 		return(filePath)
