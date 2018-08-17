@@ -34,6 +34,4 @@ class mafSP(maf.maf):
 		database = self.syn.get(mafSynId)
 		mafDataFrame = pd.read_csv(filePath,sep="\t")
 		updateData(self.syn, mafSynId, mafDataFrame, self.center, database.primaryKey, toDelete=True)
-			#self.syn.store(synapseclient.Table(database.id, filePath, separator="\t"))
-		#.syn.store(synapseclient.File(filePath, parentId=centerMafSynId))
 		return(filePath)

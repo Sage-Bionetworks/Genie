@@ -342,6 +342,7 @@ def updateDatabase(syn, database, new_dataset, databaseSynId, uniqueKeyCols, toD
 	database[checkBy] = database[uniqueKeyCols].apply(lambda x: ' '.join(x), axis=1)
 	new_dataset[uniqueKeyCols] = new_dataset[uniqueKeyCols].applymap(str)
 	new_dataset[checkBy] = new_dataset[uniqueKeyCols].apply(lambda x: ' '.join(x), axis=1)
+
 	if not database.empty and not new_dataset.empty:
 		updateSet = new_dataset[new_dataset[checkBy].isin(database[checkBy])]
 		updatingDatabase = database[database[checkBy].isin(new_dataset[checkBy])]
