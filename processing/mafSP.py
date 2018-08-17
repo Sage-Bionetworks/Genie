@@ -25,8 +25,7 @@ class mafSP(maf.maf):
 		database = self.syn.get(mafSynId)
 		#if isNarrow:
 		mafDf = pd.read_csv(filePath,sep="\t")
-		print(mafDf)
-		#processing_functions.updateData(syn, mafSynId, mafDf, self.center, database.primaryKey)
+		processing_functions.updateData(syn, mafSynId, mafDf, self.center, database.primaryKey, toDelete=True)
 			#self.syn.store(synapseclient.Table(database.id, filePath, separator="\t"))
 		#.syn.store(synapseclient.File(filePath, parentId=centerMafSynId))
 		return(filePath)
