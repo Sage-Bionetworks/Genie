@@ -62,8 +62,8 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
 		#INT DOD
 		haveColumn = process_functions.checkColExist(vitalStatusDf, "INT_DOD")
 		if haveColumn:
-			if not all([isinstance(i, int) for i in vitalStatusDf.INT_DOD]):
-				total_error += "Vital status file: Please double check your INT_DOD column, it must be an integer.\n"
+			if not all([process_functions.checkInt(i) for i in vitalStatusDf.INT_DOD if not pd.isnull(i)]):
+				total_error += "Vital status file: Please double check your INT_DOD column, it must be an integer or NA/null/empty.\n"
 		else:
 			total_error += "Vital status file: Must have INT_DOD column.\n"
 

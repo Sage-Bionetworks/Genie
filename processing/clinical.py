@@ -297,9 +297,10 @@ class clinical(example_filetype_format.FileTypeFormat):
 					if oncotree_mapping_dict.get(code) is not None and sum(clinicalDF['PATIENT_ID'] == patient) > 0:
 						primaryCode = oncotree_mapping_dict[code]['ONCOTREE_PRIMARY_NODE']
 						sex = clinicalDF['SEX'][clinicalDF['PATIENT_ID'] == patient].values[0]
-						if oncotree_mapping_dict[code]['ONCOTREE_PRIMARY_NODE'] in maleOncoCodes and sex != "Male":
+						sex = float('nan') if sex == '' else float(sex)
+						if oncotree_mapping_dict[code]['ONCOTREE_PRIMARY_NODE'] in maleOncoCodes and sex != 1.0:
 							wrongCodeSamples.append(sample)
-						if oncotree_mapping_dict[code]['ONCOTREE_PRIMARY_NODE'] in womenOncoCodes and sex != "Female":
+						if oncotree_mapping_dict[code]['ONCOTREE_PRIMARY_NODE'] in womenOncoCodes and sex != 2.0:
 							wrongCodeSamples.append(sample)
 				if len(wrongCodeSamples) > 0:
 					warning += "Sample: Some SAMPLE_IDs have conflicting SEX and ONCOTREE_CODES: %s\n" % ",".join(wrongCodeSamples)
