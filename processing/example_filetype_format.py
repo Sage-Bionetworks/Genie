@@ -1,6 +1,7 @@
 import logging
 import multiprocessing
 import pandas as pd
+import os
 #import packages
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
