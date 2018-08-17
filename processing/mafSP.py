@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 def updateData(syn, databaseSynId, newData, center, col, toDelete=False):
 	databaseEnt = syn.get(databaseSynId)
 	database = syn.tableQuery("SELECT * FROM %s where Center ='%s'" % (databaseSynId, center))
-	database = database.asDataFrame()[col]
 	process_functions.updateDatabase(syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete)
 	
 class mafSP(maf.maf):
@@ -33,7 +32,6 @@ class mafSP(maf.maf):
 		logger.info('STORING %s' % filePath)
 		database = self.syn.get(mafSynId)
 		mafDataFrame = pd.read_csv(filePath,sep="\t")
-		print(mafDataFrame)
 		updateData(self.syn, mafSynId, mafDataFrame, self.center, database.primaryKey, toDelete=True)
 			#self.syn.store(synapseclient.Table(database.id, filePath, separator="\t"))
 		#.syn.store(synapseclient.File(filePath, parentId=centerMafSynId))
