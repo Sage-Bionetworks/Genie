@@ -52,7 +52,10 @@ class maf(example_filetype_format.FileTypeFormat):
 	def process_helper(self, filePath, path_to_GENIE, mafSynId, centerMafSynId,
 					   vcf2mafPath, veppath, vepdata):
 		logger.info('MAF2MAF %s' % filePath)
+		#if self._fileType == "maf":
 		fileName = "data_mutations_extended_%s_MAF.txt" % self.center
+		#else:
+			#fileName = "nonGENIE_data_mutations_extended_%s_MAF.txt" % self.center
 		newMafPath = os.path.join(path_to_GENIE,self.center,"staging",fileName)
 		narrowMafPath = os.path.join(path_to_GENIE,self.center,"staging","data_mutations_extended_%s_MAF_narrow.txt" % self.center)
 		narrowMafColumns = [col['name'] for col in self.syn.getTableColumns(mafSynId) if col['name'] != 'inBED']
@@ -80,7 +83,8 @@ class maf(example_filetype_format.FileTypeFormat):
 			self.createFinalMaf(narrowMafDf, narrowMafPath, maf=True)
 			#These functions have to be next to each other, because no modifications can happen 
 			#Store Narrow MAF into db
-			self.storeProcessedMaf(narrowMafPath, mafSynId, centerMafSynId, isNarrow=True)
+			if self._fileType == "maf":
+				self.storeProcessedMaf(narrowMafPath, mafSynId, centerMafSynId, isNarrow=True)
 			#Store MAF flat file into synapse
 			self.storeProcessedMaf(newMafPath, mafSynId, centerMafSynId)
 		else:

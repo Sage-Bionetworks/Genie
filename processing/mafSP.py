@@ -19,3 +19,14 @@ class mafSP(maf.maf):
 								 '-NaN', 'nan','-nan',''],keep_default_na=False)
 		total_error, warning = self.validate_helper(mutationDF,SP=True)
 		return(total_error, warning)
+
+	def storeProcessedMaf(self, filePath, mafSynId, centerMafSynId, isNarrow=False):
+		logger.info('STORING %s' % filePath)
+		database = self.syn.get(mafSynId)
+		#if isNarrow:
+		mafDf = pd.read_csv(filePath,sep="\t")
+		print(mafDf)
+		#processing_functions.updateData(syn, mafSynId, mafDf, self.center, database.primaryKey)
+			#self.syn.store(synapseclient.Table(database.id, filePath, separator="\t"))
+		#.syn.store(synapseclient.File(filePath, parentId=centerMafSynId))
+		return(filePath)
