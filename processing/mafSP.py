@@ -28,10 +28,12 @@ class mafSP(maf.maf):
 		total_error, warning = self.validate_helper(mutationDF,SP=True)
 		return(total_error, warning)
 
+
 	def storeProcessedMaf(self, filePath, mafSynId, centerMafSynId, isNarrow=False):
 		logger.info('STORING %s' % filePath)
 		database = self.syn.get(mafSynId)
 		mafDf = pd.read_csv(filePath,sep="\t")
+		print(mafDf)
 		updateData(self.syn, mafSynId, mafDf, self.center, database.primaryKey, toDelete=True)
 			#self.syn.store(synapseclient.Table(database.id, filePath, separator="\t"))
 		#.syn.store(synapseclient.File(filePath, parentId=centerMafSynId))
