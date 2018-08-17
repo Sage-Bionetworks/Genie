@@ -32,9 +32,9 @@ class mafSP(maf.maf):
 	def storeProcessedMaf(self, filePath, mafSynId, centerMafSynId, isNarrow=False):
 		logger.info('STORING %s' % filePath)
 		database = self.syn.get(mafSynId)
-		mafDf = pd.read_csv(filePath,sep="\t")
-		print(mafDf)
-		updateData(self.syn, mafSynId, mafDf, self.center, database.primaryKey, toDelete=True)
+		mafDataFrame = pd.read_csv(filePath,sep="\t")
+		print(mafDataFrame)
+		updateData(self.syn, mafSynId, mafDataFrame, self.center, database.primaryKey, toDelete=True)
 			#self.syn.store(synapseclient.Table(database.id, filePath, separator="\t"))
 		#.syn.store(synapseclient.File(filePath, parentId=centerMafSynId))
 		return(filePath)
