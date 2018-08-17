@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 def updateData(syn, databaseSynId, newData, center, col, toDelete=False):
 	databaseEnt = syn.get(databaseSynId)
 	database = syn.tableQuery("SELECT * FROM %s where Center ='%s'" % (databaseSynId, center))
+	database = database.asDataFrame()
 	process_functions.updateDatabase(syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete)
 	
 class mafSP(maf.maf):
