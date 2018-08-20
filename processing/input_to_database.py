@@ -157,6 +157,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 			else:
 				synId = synId[0]
 			if fileType is not None and fileType is not "cbs":
+			#if fileType not in [None,"cbs","cna"]:
 				PROCESS_FILES[fileType](syn, center, threads).process(filePath=filePath, newPath=newPath, 
 									parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
 									fileSynId=fileSynId, validVCF=validVCF, 
