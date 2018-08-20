@@ -209,7 +209,7 @@ def createMafDatabase(syn, databaseToSynIdMappingDf,testing=False,staging=False)
 		#Make sure to store the newly created maf db synid into the staging synapse mapping
 		databaseToSynIdMapping = syn.tableQuery("SELECT * FROM syn12094210 where Database = 'vcf2maf'")
 		databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
-		databaseToSynIdMapping['Id'][0] = newMafDb.id
+		databaseToSynIdMappingDf['Id'][0] = newMafDb.id
 		syn.store(synapseclient.Table("syn12094210",databaseToSynIdMappingDf))
 	#Move and archive old mafdatabase
 	mafDatabaseEnt.parentId = "syn7208886"
