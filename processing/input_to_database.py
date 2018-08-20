@@ -352,7 +352,7 @@ def main():
 	process_functions.checkUrl(args.oncotreeLink)
 
 	#Create new maf database
-	if args.createNewMafDatabase and not args.staging:
+	if args.createNewMafDatabase:
 		createMafDatabase(syn, databaseToSynIdMappingDf, testing=testing)
 
 	# ----------------------------------------
