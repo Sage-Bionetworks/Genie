@@ -12,7 +12,6 @@ import json
 from multiprocessing import Pool
 import datetime
 from functools import partial
-import urllib2
 import re
 import warnings
 from config_process_scripts import *
