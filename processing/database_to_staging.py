@@ -315,7 +315,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 		f.write(sequenced_samples + "\n") 
 	for index, mafSynId in enumerate(centerMafSynIdsDf.id):
 		mafEnt = syn.get(mafSynId)
-		print(mafEnt.path)
+		logger.info(mafEnt.path)
 		with open(mafEnt.path,"r") as mafFile:
 			header = mafFile.readline()
 			headers = header.replace("\n","").split("\t")
