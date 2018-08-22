@@ -236,12 +236,20 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	removeForMergedConsortiumSamples = set(removeForMergedConsortiumSamples).union(set(removeForCenterConsortiumSamples))
 
 	logger.info("ADD CANCER TYPES")
+	#This removes support for both oncotree urls (only support json)
+	oncotreeDict = process.get_oncotree_code_mappings(oncotree_url)
+	clinicalDf['CANCER_TYPE'] = [oncotreeDict[code.upper()].get("CANCER_TYPE",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]
+	clinicalDf['CANCER_TYPE_DETAILED'] = [oncotreeDict[code.upper()].get("CANCER_TYPE_DETAILED",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]
+	clinicalDf['ONCOTREE_PRIMARY_NODE'] = [oncotreeDict[code.upper()].get("ONCOTREE_PRIMARY_NODE",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]
+	clinicalDf['ONCOTREE_SECONDARY_NODE'] = [oncotreeDict[code.upper()].get("ONCOTREE_SECONDARY_NODE",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]
+
 	#CANCER TYPES are added which is why the clinical file is written out.
-	clinicalDf.to_csv(CLINCICAL_PATH, sep="\t", index=False)
-	add_cancerType_script = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../analyses/clinicalData/oncotree_code_converter.py')
-	command = ['python',add_cancerType_script,'-o',oncotree_url,'-c',CLINCICAL_PATH]
-	subprocess.check_call(command)
-	clinicalDf = pd.read_csv(CLINCICAL_PATH, sep="\t", comment="#")
+	#clinicalDf.to_csv(CLINCICAL_PATH, sep="\t", index=False)
+	#add_cancerType_script = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../analyses/clinicalData/oncotree_code_converter.py')
+	#command = ['python',add_cancerType_script,'-o',oncotree_url,'-c',CLINCICAL_PATH]
+	#subprocess.check_call(command)
+	#clinicalDf = pd.read_csv(CLINCICAL_PATH, sep="\t", comment="#")
+
 	#All cancer types that are null should have null oncotree codes
 	clinicalDf['ONCOTREE_CODE'][clinicalDf['CANCER_TYPE'].isnull()] = float('nan')
 	# Suggest using AGE_AT_SEQ_REPORT_DAYS instead so that the descriptions can match
