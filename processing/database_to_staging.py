@@ -27,7 +27,7 @@ BED_DIFFS_SEQASSAY_PATH = os.path.join(GENIE_RELEASE_DIR,'diff_%s.csv')
 
 def findCaseListId(syn, parentId):
 	releaseEnts = synu.walk(syn, parentId)
-	releaseFolders = releaseEnts.next()
+	releaseFolders = next(releaseEnts)
 	if len(releaseFolders[1]) == 0:
 		caselistId = syn.store(synapseclient.Folder(name="case_lists", parent=parentId)).id
 	else:
@@ -534,11 +534,11 @@ def createLinkVersion(syn,genieVersion, caseListEntities, genePanelEntities, dat
 	#second = ".".join(versioning[1:])
 	releaseSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'release'].values[0]
 	releases = synu.walk(syn, releaseSynId)
-	mainReleaseFolders = releases.next()[1]
+	mainReleaseFolders = next(releases)[1]
 	releaseFolderSynId = [synId for folderName, synId in mainReleaseFolders if folderName == "Release %s" % main] 
 	if len(releaseFolderSynId) > 0:
 		secondRelease = synu.walk(syn, releaseFolderSynId[0])
-		secondReleaseFolders = secondRelease.next()[1]
+		secondReleaseFolders = next(secondRelease)[1]
 		secondReleaseFolderSynIdList = [synId for folderName, synId in secondReleaseFolders if folderName == genieVersion] 
 		if len(secondReleaseFolderSynIdList) > 0:
 			secondReleaseFolderSynId = secondReleaseFolderSynIdList[0]
@@ -663,9 +663,9 @@ def main():
 	command_reviseMetadataFiles(syn, args, databaseSynIdMappingDf)
 	logger.info("CBIO VALIDATION")
 	#Must be exit 0 because the validator sometimes fails, but we still want to capture the output	
-	command = ['python',cbioValidatorPath,'-s',GENIE_RELEASE_DIR,'-n','; exit 0']
+	command = [cbioValidatorPath,'-s',GENIE_RELEASE_DIR,'-n','; exit 0']
 	cbioOutput = subprocess.check_output(" ".join(command), shell=True)
-	print(cbioOutput)
+	logger.info(cbioOutput.decode("utf-8"))
 	if not args.test and not args.staging:
 		with open("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion, "w") as cbioLog:
 			cbioLog.write(cbioOutput)
