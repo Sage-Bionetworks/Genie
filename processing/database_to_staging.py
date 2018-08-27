@@ -192,8 +192,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 
 	### ADD CHECKS TO CODE BEFORE UPLOAD. Throw error if things don't go through
 	logger.info("MERING, FILTERING, STORING CLINICAL FILES")
-	### CREATE GENE PANEL MAPPING AND STORING CLINICAL FILES INTO CBIOPORTAL
-	data_gene_panel = pd.DataFrame(columns = ["SAMPLE_ID","SEQ_ASSAY_ID"])
+	### STORING CLINICAL FILES INTO CBIOPORTAL
 	patientSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "patient"][0]
 	sampleSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "sample"][0]
 	
@@ -297,12 +296,12 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 
 	logger.info("CREATING DATA GENE PANEL FILE")
 	#Samples have already been removed
+	data_gene_panel = pd.DataFrame(columns = ["SAMPLE_ID","SEQ_ASSAY_ID"])
 	data_gene_panel = data_gene_panel.append(clinicalDf[['SAMPLE_ID', 'SEQ_ASSAY_ID']])
 	data_gene_panel = data_gene_panel.rename(columns={"SEQ_ASSAY_ID":"mutations"})
 	data_gene_panel = data_gene_panel[data_gene_panel['SAMPLE_ID'] != ""]
 	data_gene_panel.drop_duplicates("SAMPLE_ID",inplace=True)
-	data_gene_panel.to_csv(DATA_GENE_PANEL_PATH,sep="\t",index=False)
-	storeFile(syn, DATA_GENE_PANEL_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_gene_matrix.txt", staging=current_release_staging)
+	# Gene panel file is written below CNA, because of the "cna" column
 
 	samples = data_gene_panel['SAMPLE_ID']
 	sequenced_samples = "#sequenced_samples: " + " ".join(samples)
@@ -410,6 +409,13 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	with open(CNA_PATH, "w") as cnaFile:
 		cnaFile.write(cnaText)
 	storeFile(syn, CNA_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_CNA.txt", staging=current_release_staging)
+
+	# Add in CNA column into gene panel file
+	cnaSeqIds = data_gene_panel['mutations'][data_gene_panel['SAMPLE_ID'].isin(mergedCNA.columns)].unique()
+	data_gene_panel['cna'] = data_gene_panel['mutations']
+	data_gene_panel['cna'][~data_gene_panel['cna'].isin(cnaSeqIds)] = "NA"
+	data_gene_panel.to_csv(DATA_GENE_PANEL_PATH,sep="\t",index=False)
+	storeFile(syn, DATA_GENE_PANEL_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_gene_matrix.txt", staging=current_release_staging)
 
 	### FUSIONS
 	logger.info("MERING, FILTERING, STORING FUSION FILES")
