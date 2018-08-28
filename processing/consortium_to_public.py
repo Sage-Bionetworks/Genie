@@ -12,6 +12,9 @@ import database_to_staging as dbTostaging
 import subprocess
 import time
 import shutil
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def storeFile(syn, filePath, parentId, anonymizeCenterDf, genie_version, name=None):
 	#process.center_anon(filePath, anonymizeCenterDf)
@@ -73,7 +76,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 	# Jun-2015, given processing date (today) -> public release (processing date - Jun-2015 > 12 months)
 	consortiumReleaseWalk = synu.walk(syn, releaseId)
 
-	consortiumRelease = consortiumReleaseWalk.next()
+	consortiumRelease = next(consortiumReleaseWalk)
 	clinical = [syn.get(synid, followLink=True) for filename, synid in consortiumRelease[2] if filename == "data_clinical.txt"][0]
 
 	clinicalDf = pd.read_csv(clinical.path, sep="\t", comment="#")
@@ -84,7 +87,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 	clinicalDf = clinicalDf[~clinicalDf['ONCOTREE_CODE'].isnull()]
 	publicReleaseSamples = clinicalDf.SAMPLE_ID[~clinicalDf.SAMPLE_ID.isin(removeForPublicSamples)]
 
-	print("SEQ_DATES for public release: " + ", ".join(set(clinicalDf.SEQ_DATE[clinicalDf.SAMPLE_ID.isin(publicReleaseSamples)].astype(str))))
+	logger.info("SEQ_DATES for public release: " + ", ".join(set(clinicalDf.SEQ_DATE[clinicalDf.SAMPLE_ID.isin(publicReleaseSamples)].astype(str))))
 
 	#Clinical release scope filter
 	#If consortium -> Don't release to public
@@ -255,17 +258,17 @@ def reviseMetadataFiles(syn, staging, databaseSynIdMappingDf, genieVersion=None)
 
 def createLinkVersion(syn, genie_version, caseListEntities, genePanelEntities, databaseSynIdMappingDf):
 	versioning = genie_version.split(".")
-	print(genie_version)
+	logger.info(genie_version)
 	main = versioning[0]
 	releaseSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'release'].values[0]
 	publicSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'public'].values[0]
 	#second = ".".join(versioning[1:])
 	releases = synu.walk(syn, releaseSynId)
-	mainReleaseFolders = releases.next()[1]
+	mainReleaseFolders = next(releases)[1]
 	releaseFolderSynId = [synId for folderName, synId in mainReleaseFolders if folderName == "Release %s" % main] 
 	if len(releaseFolderSynId) > 0:
 		secondRelease = synu.walk(syn, releaseFolderSynId[0])
-		secondReleaseFolders = secondRelease.next()[1]
+		secondReleaseFolders = next(secondRelease)[1]
 		secondReleaseFolderSynIdList = [synId for folderName, synId in secondReleaseFolders if folderName == genie_version] 
 		if len(secondReleaseFolderSynIdList) > 0:
 			secondReleaseFolderSynId = secondReleaseFolderSynIdList[0]
@@ -347,21 +350,22 @@ if __name__ == "__main__":
 
 	caseListEntities, genePanelEntities = perform_consortiumToPublic(syn, args, databaseSynIdMappingDf)
 	command_reviseMetadataFiles(syn, args, databaseSynIdMappingDf)
-	print("CBIO VALIDATION")
+	logger.info("CBIO VALIDATION")
 	#Must be exit 0 because the validator sometimes fails, but we still want to capture the output
 	command = ['python',cbioValidatorPath, '-s', dbTostaging.GENIE_RELEASE_DIR, '-n','; exit 0']
 	cbioOutput = subprocess.check_output(" ".join(command), shell=True)
-	print(cbioOutput)
-	with open("cbioValidatorLogsPublic_%s.txt" % args.genieVersion, "w") as cbioLog:
-		cbioLog.write(cbioOutput)
-	syn.store(File("cbioValidatorLogsPublic_%s.txt" % args.genieVersion, parentId = "syn10155804"))
-	os.remove("cbioValidatorLogsPublic_%s.txt" % args.genieVersion)
-	print("REMOVING OLD FILES")
+	logger.info(cbioOutput.decode("utf-8"))
+	if not args.test and not args.staging:
+		with open("cbioValidatorLogsPublic_%s.txt" % args.genieVersion, "w") as cbioLog:
+			cbioLog.write(cbioOutput.decode("utf-8"))
+		syn.store(File("cbioValidatorLogsPublic_%s.txt" % args.genieVersion, parentId = "syn10155804"))
+		os.remove("cbioValidatorLogsPublic_%s.txt" % args.genieVersion)
+	logger.info("REMOVING OLD FILES")
 	process.rmFiles(dbTostaging.CASE_LIST_PATH)
 	if os.path.exists('%s/genie_public_meta_cna_hg19_seg.txt' % dbTostaging.GENIE_RELEASE_DIR):
 		os.unlink('%s/genie_public_meta_cna_hg19_seg.txt' % dbTostaging.GENIE_RELEASE_DIR)
 
-	print("CREATING LINK VERSION")
+	logger.info("CREATING LINK VERSION")
 	createLinkVersion(syn, args.genieVersion, caseListEntities, genePanelEntities, databaseSynIdMappingDf)
 	#Don't update process tracker is testing or staging
 	if not args.test and not args.staging:
@@ -369,4 +373,4 @@ if __name__ == "__main__":
 		processTrackerDf = processTracker.asDataFrame()
 		processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
 		syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
-	print("COMPLETED CONSORTIUM TO PUBLIC")
+	logger.info("COMPLETED CONSORTIUM TO PUBLIC")
