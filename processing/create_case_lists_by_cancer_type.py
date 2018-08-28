@@ -10,6 +10,9 @@ import os
 import sys
 import getopt
 import csv
+from future.utils import iteritems
+# or
+from six import iteritems
 
 # ---------------------------------------------------------------
 # globals
@@ -40,7 +43,7 @@ def create_case_lists_map(clinical_file_name):
 # ---------------------------------------------------------------
 # writes the file to case_lists directory inside the directory
 def write_case_list_files(clinical_file_map, output_directory, study_id):
-	for cancer_type,ids in clinical_file_map.iteritems():
+	for cancer_type,ids in iteritems(clinical_file_map):
 		cancer_type_no_spaces = cancer_type.replace(' ','_').replace(',','').replace("/","_")
 		case_list_file = open(os.path.abspath(output_directory + '/' + 'case_list_' + cancer_type_no_spaces + '.txt'),'w')
 		stable_id = study_id + '_' + cancer_type_no_spaces
@@ -56,8 +59,8 @@ def write_case_list_files(clinical_file_map, output_directory, study_id):
 # ---------------------------------------------------------------
 # gets clin file and processes it 
 def create_case_lists(clinical_file_name, output_directory, study_id):
-    case_lists_map = create_case_lists_map(clinical_file_name)
-    write_case_list_files(case_lists_map, output_directory, study_id)
+	case_lists_map = create_case_lists_map(clinical_file_name)
+	write_case_list_files(case_lists_map, output_directory, study_id)
 
 # ---------------------------------------------------------------
 # displays usage of program
@@ -68,39 +71,39 @@ def usage():
 # the main
 def main():
 	# parse command line
-    try:
-        opts,args = getopt.getopt(sys.argv[1:],'',['clinical-file=', 'output-directory=', 'study-id='])
-    except getopt.error,msg:
-        print >> ERROR_FILE,msg
-        usage()
-        sys.exit(2)
+	try:
+		opts,args = getopt.getopt(sys.argv[1:],'',['clinical-file=', 'output-directory=', 'study-id='])
+	except getopt.error as msg:
+		print >> ERROR_FILE,msg
+		usage()
+		sys.exit(2)
 
-    clinical_file_name = ''
-    output_directory = ''
-    study_id = ''
+	clinical_file_name = ''
+	output_directory = ''
+	study_id = ''
 
 	# process options
-    for o, a in opts:
-        if o == '--clinical-file':
-            clinical_file_name = a
-        elif o == '--output-directory':
-        	output_directory = a
-        elif o == '--study-id':
-        	study_id = a
+	for o, a in opts:
+		if o == '--clinical-file':
+			clinical_file_name = a
+		elif o == '--output-directory':
+			output_directory = a
+		elif o == '--study-id':
+			study_id = a
 	
-    if clinical_file_name == '' or output_directory == '' or study_id == '':
-        usage()
-        sys.exit(2)
+	if clinical_file_name == '' or output_directory == '' or study_id == '':
+		usage()
+		sys.exit(2)
 
 	# check existence of file
-    if not os.path.exists(os.path.abspath(clinical_file_name)):
-        print >> ERROR_FILE, 'clinical file cannot be found: ' + clinical_file_name
-        sys.exit(2)
-    if not os.path.isdir(os.path.abspath(output_directory)):
-    	print >> ERROR_FILE, 'directory cannot be found or is not a directory: ' + output_directory
-        sys.exit(2)
+	if not os.path.exists(os.path.abspath(clinical_file_name)):
+		print >> ERROR_FILE, 'clinical file cannot be found: ' + clinical_file_name
+		sys.exit(2)
+	if not os.path.isdir(os.path.abspath(output_directory)):
+		print >> ERROR_FILE, 'directory cannot be found or is not a directory: ' + output_directory
+		sys.exit(2)
 
-    create_case_lists(clinical_file_name, output_directory, study_id)
+	create_case_lists(clinical_file_name, output_directory, study_id)
 
 # ---------------------------------------------------------------
 # do a main
