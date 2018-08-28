@@ -157,6 +157,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 			else:
 				synId = synId[0]
 			if fileType is not None and fileType is not "cbs":
+			#if fileType not in [None,"cbs","cna"]:
 				PROCESS_FILES[fileType](syn, center, threads).process(filePath=filePath, newPath=newPath, 
 									parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
 									fileSynId=fileSynId, validVCF=validVCF, 
@@ -208,7 +209,7 @@ def createMafDatabase(syn, databaseToSynIdMappingDf,testing=False,staging=False)
 		#Make sure to store the newly created maf db synid into the staging synapse mapping
 		databaseToSynIdMapping = syn.tableQuery("SELECT * FROM syn12094210 where Database = 'vcf2maf'")
 		databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
-		databaseToSynIdMapping['Id'][0] = newMafDb.id
+		databaseToSynIdMappingDf['Id'][0] = newMafDb.id
 		syn.store(synapseclient.Table("syn12094210",databaseToSynIdMappingDf))
 	#Move and archive old mafdatabase
 	mafDatabaseEnt.parentId = "syn7208886"
@@ -351,7 +352,7 @@ def main():
 	process_functions.checkUrl(args.oncotreeLink)
 
 	#Create new maf database
-	if args.createNewMafDatabase and not args.staging:
+	if args.createNewMafDatabase:
 		createMafDatabase(syn, databaseToSynIdMappingDf, testing=testing)
 
 	# ----------------------------------------

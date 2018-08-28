@@ -80,7 +80,8 @@ class maf(example_filetype_format.FileTypeFormat):
 			self.createFinalMaf(narrowMafDf, narrowMafPath, maf=True)
 			#These functions have to be next to each other, because no modifications can happen 
 			#Store Narrow MAF into db
-			self.storeProcessedMaf(narrowMafPath, mafSynId, centerMafSynId, isNarrow=True)
+			if self._fileType == "maf":
+				self.storeProcessedMaf(narrowMafPath, mafSynId, centerMafSynId, isNarrow=True)
 			#Store MAF flat file into synapse
 			self.storeProcessedMaf(newMafPath, mafSynId, centerMafSynId)
 		else:
