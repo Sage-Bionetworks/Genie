@@ -27,7 +27,7 @@ BED_DIFFS_SEQASSAY_PATH = os.path.join(GENIE_RELEASE_DIR,'diff_%s.csv')
 
 def findCaseListId(syn, parentId):
 	releaseEnts = synu.walk(syn, parentId)
-	releaseFolders = releaseEnts.next()
+	releaseFolders = next(releaseEnts)
 	if len(releaseFolders[1]) == 0:
 		caselistId = syn.store(synapseclient.Folder(name="case_lists", parent=parentId)).id
 	else:
@@ -192,8 +192,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 
 	### ADD CHECKS TO CODE BEFORE UPLOAD. Throw error if things don't go through
 	logger.info("MERING, FILTERING, STORING CLINICAL FILES")
-	### CREATE GENE PANEL MAPPING AND STORING CLINICAL FILES INTO CBIOPORTAL
-	data_gene_panel = pd.DataFrame(columns = ["SAMPLE_ID","SEQ_ASSAY_ID"])
+	### STORING CLINICAL FILES INTO CBIOPORTAL
 	patientSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "patient"][0]
 	sampleSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "sample"][0]
 	
@@ -250,8 +249,15 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	clinicalDf['AGE_AT_SEQ_REPORT'][clinicalDf['AGE_AT_SEQ_REPORT'] == ">32485"] = ">89"
 	clinicalDf['AGE_AT_SEQ_REPORT'][clinicalDf['AGE_AT_SEQ_REPORT'] == "<6570"] = "<18"
 
+	############################################################
 	#CENTER SPECIFIC CODE FOR RIGHT NOW (REMOVE UHN-555-V1)
+	############################################################
 	clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "UHN-555-V1"]
+	clinicalDf = clinicalDf[clinicalDf['CENTER'] != "WAKE"]
+	clinicalDf = clinicalDf[clinicalDf['CENTER'] != "CRUK"]
+	############################################################
+	############################################################
+	
 
 	# add in vital status
 	# logger.info("MERGE VITAL STATUS")
@@ -297,12 +303,12 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 
 	logger.info("CREATING DATA GENE PANEL FILE")
 	#Samples have already been removed
+	data_gene_panel = pd.DataFrame(columns = ["SAMPLE_ID","SEQ_ASSAY_ID"])
 	data_gene_panel = data_gene_panel.append(clinicalDf[['SAMPLE_ID', 'SEQ_ASSAY_ID']])
 	data_gene_panel = data_gene_panel.rename(columns={"SEQ_ASSAY_ID":"mutations"})
 	data_gene_panel = data_gene_panel[data_gene_panel['SAMPLE_ID'] != ""]
 	data_gene_panel.drop_duplicates("SAMPLE_ID",inplace=True)
-	data_gene_panel.to_csv(DATA_GENE_PANEL_PATH,sep="\t",index=False)
-	storeFile(syn, DATA_GENE_PANEL_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_gene_matrix.txt", staging=current_release_staging)
+	# Gene panel file is written below CNA, because of the "cna" column
 
 	samples = data_gene_panel['SAMPLE_ID']
 	sequenced_samples = "#sequenced_samples: " + " ".join(samples)
@@ -315,7 +321,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 		f.write(sequenced_samples + "\n") 
 	for index, mafSynId in enumerate(centerMafSynIdsDf.id):
 		mafEnt = syn.get(mafSynId)
-		print(mafEnt.path)
+		logger.info(mafEnt.path)
 		with open(mafEnt.path,"r") as mafFile:
 			header = mafFile.readline()
 			headers = header.replace("\n","").split("\t")
@@ -393,7 +399,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 			#missing = center_cna.columns[~center_cna.columns.isin(samples)]
 			center_cna = center_cna[center_cna.columns[center_cna.columns.isin(keepForCenterConsortiumSamples)]]
 			center_cna['Hugo_Symbol'] = center_cna.index
-			center_cna = center_cna.fillna(0)
+			center_cna = center_cna.fillna('NA')
 			cols = center_cna.columns.tolist()
 			cols = cols[-1:] + cols[:-1]
 			center_cna = center_cna[cols]
@@ -405,11 +411,18 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 			mergedCNA = mergedCNA.merge(center_cna, on='Hugo_Symbol', how="outer")
 
 	mergedCNA = mergedCNA[mergedCNA.columns[mergedCNA.columns.isin(keepForMergedConsortiumSamples.append(pd.Series("Hugo_Symbol")))]]
-	mergedCNA = mergedCNA.fillna(0)
+	mergedCNA = mergedCNA.fillna('NA')
 	cnaText = removePandasDfFloat(mergedCNA)
 	with open(CNA_PATH, "w") as cnaFile:
 		cnaFile.write(cnaText)
 	storeFile(syn, CNA_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_CNA.txt", staging=current_release_staging)
+
+	# Add in CNA column into gene panel file
+	cnaSeqIds = data_gene_panel['mutations'][data_gene_panel['SAMPLE_ID'].isin(mergedCNA.columns)].unique()
+	data_gene_panel['cna'] = data_gene_panel['mutations']
+	data_gene_panel['cna'][~data_gene_panel['cna'].isin(cnaSeqIds)] = "NA"
+	data_gene_panel.to_csv(DATA_GENE_PANEL_PATH,sep="\t",index=False)
+	storeFile(syn, DATA_GENE_PANEL_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_gene_matrix.txt", staging=current_release_staging)
 
 	### FUSIONS
 	logger.info("MERING, FILTERING, STORING FUSION FILES")
@@ -528,11 +541,11 @@ def createLinkVersion(syn,genieVersion, caseListEntities, genePanelEntities, dat
 	#second = ".".join(versioning[1:])
 	releaseSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'release'].values[0]
 	releases = synu.walk(syn, releaseSynId)
-	mainReleaseFolders = releases.next()[1]
+	mainReleaseFolders = next(releases)[1]
 	releaseFolderSynId = [synId for folderName, synId in mainReleaseFolders if folderName == "Release %s" % main] 
 	if len(releaseFolderSynId) > 0:
 		secondRelease = synu.walk(syn, releaseFolderSynId[0])
-		secondReleaseFolders = secondRelease.next()[1]
+		secondReleaseFolders = next(secondRelease)[1]
 		secondReleaseFolderSynIdList = [synId for folderName, synId in secondReleaseFolders if folderName == genieVersion] 
 		if len(secondReleaseFolderSynIdList) > 0:
 			secondReleaseFolderSynId = secondReleaseFolderSynIdList[0]
@@ -657,9 +670,9 @@ def main():
 	command_reviseMetadataFiles(syn, args, databaseSynIdMappingDf)
 	logger.info("CBIO VALIDATION")
 	#Must be exit 0 because the validator sometimes fails, but we still want to capture the output	
-	command = ['python',cbioValidatorPath,'-s',GENIE_RELEASE_DIR,'-n','; exit 0']
+	command = [cbioValidatorPath,'-s',GENIE_RELEASE_DIR,'-n','; exit 0']
 	cbioOutput = subprocess.check_output(" ".join(command), shell=True)
-	print(cbioOutput)
+	logger.info(cbioOutput.decode("utf-8"))
 	if not args.test and not args.staging:
 		with open("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion, "w") as cbioLog:
 			cbioLog.write(cbioOutput)
