@@ -657,7 +657,7 @@ def main():
 	caseListEntities = []
 	for casePath in caseListFiles:
 		casePath = os.path.join(CASE_LIST_PATH, casePath)
-		caseListEntities.append(storeFile(syn, casePath, parent=caseListSynId, staging=args.staging, caseLists=True))
+		caseListEntities.append(storeFile(syn, casePath, parent=caseListSynId, staging=args.staging, caseLists=True, genieVersion=args.genieVersion))
 		
 	logger.info("REMOVING UNNECESSARY FILES")
 	genie_files = os.listdir(GENIE_RELEASE_DIR)
