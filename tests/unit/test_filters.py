@@ -5,10 +5,11 @@ import datetime
 import os
 import sys
 import mock
+from genie.process_functions import seqDateFilter
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(SCRIPT_DIR,"../../processing"))
+sys.path.append(os.path.join(SCRIPT_DIR,"../../genie"))
 from database_to_staging import seq_assay_id_filter, reAnnotatePHI, mutation_in_cis_filter,runMAFinBED
-from process_functions import seqDateFilter
 from consortium_to_public import commonVariantFilter
 
 #syn = synapseclient.login()

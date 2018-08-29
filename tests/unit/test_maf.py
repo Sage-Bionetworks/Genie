@@ -4,11 +4,9 @@ import mock
 from nose.tools import assert_raises
 import os
 import sys
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(SCRIPT_DIR,"../../processing"))
 
-from maf import maf
-from mafSP import mafSP
+from genie.maf import maf
+from genie.mafSP import mafSP
 
 def test_processing():
 
