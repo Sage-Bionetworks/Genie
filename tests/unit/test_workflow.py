@@ -4,10 +4,7 @@ import mock
 from nose.tools import assert_raises
 import os
 import sys
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(SCRIPT_DIR,"../../processing"))
-
-from workflow import workflow
+from genie.workflow import workflow
 
 def test_processing():
 

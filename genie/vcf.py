@@ -1,9 +1,11 @@
+from __future__ import absolute_import
+from genie import maf
+from genie import process_functions
+
 import subprocess
 import os
 import logging
 import pandas as pd
-import process_functions
-import maf
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -1,5 +1,7 @@
+from __future__ import absolute_import
+from genie import bed
+
 import os
-import bed
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
