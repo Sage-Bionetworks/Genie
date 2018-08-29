@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='aacrgenie',
-      version='1.2.0',
+      version='1.4.0',
       description='Processing and validation for GENIE',
       url='https://github.com/Sage-Bionetworks/Genie',
       author='Thomas Yu',
@@ -10,7 +10,7 @@ setup(name='aacrgenie',
       packages=find_packages(),
       zip_safe=False,
       entry_points = {
-        'console_scripts': ['genie = processing.__main__:main']},
+        'console_scripts': ['genie = genie.__main__:main']},
       install_requires=[
         'pandas>=0.20.0',
         'synapseclient',
