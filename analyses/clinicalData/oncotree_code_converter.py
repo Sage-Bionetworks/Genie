@@ -1,13 +1,18 @@
+#! /usr/bin/env python
+
 import os
 import sys
 import fileinput
 import argparse
-import urllib2
+try:
+    # For Python 3.0 and later
+    from urllib.request import urlopen
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from urllib2 import urlopen
 import re
 import json
-processingDir = os.path.join(os.path.dirname(os.path.abspath(__file__)),"../../processing")
-sys.path.append(processingDir)
-import process_functions as process
+from genie import process_functions as process
 # globals
 
 PATTERN = re.compile('([A-Za-z\' ,-/]*) \\(([A-Za-z_]*)\\)',re.IGNORECASE)
@@ -28,7 +33,7 @@ no_matches = []
 def get_oncotree(oncotree_url): 
 	""" Gets the oncotree data from the specified url """
 
-	return urllib2.urlopen(oncotree_url).read().split('\n')
+	return urlopen(oncotree_url).read().split('\n')
 
 def get_cancer_types(oncotree, code, spreadsheet_fields):
 	""" 

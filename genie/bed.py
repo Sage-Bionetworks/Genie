@@ -1,10 +1,12 @@
+from __future__ import absolute_import
+from genie import example_filetype_format
+from genie import process_functions
+
 import os
 import logging
-import process_functions
 import pandas as pd
 from functools import partial
 import subprocess
-import example_filetype_format
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

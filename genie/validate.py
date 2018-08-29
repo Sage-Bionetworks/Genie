@@ -14,7 +14,7 @@ import datetime
 from functools import partial
 import re
 import warnings
-from config_process_scripts import *
+from genie import PROCESS_FILES
 warnings.simplefilter(action='ignore', category=pd.errors.DtypeWarning)
 try:
     from urlparse import urlparse

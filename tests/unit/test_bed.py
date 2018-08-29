@@ -4,11 +4,9 @@ import mock
 from nose.tools import assert_raises
 import os
 import sys
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(SCRIPT_DIR,"../../processing"))
 
-from bed import bed
-from bedSP import bedSP
+from genie.bed import bed
+from genie.bedSP import bedSP
 
 def test_processing():
 	def createMockTable(dataframe):

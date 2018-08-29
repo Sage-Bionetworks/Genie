@@ -2,7 +2,7 @@ import synapseclient
 import pandas as pd
 import argparse
 import os
-import process_functions
+from genie import process_functions
 
 def retraction(syn, databaseSynId, sampleKey, deleteSamples):
 	schema = syn.get(databaseSynId)
