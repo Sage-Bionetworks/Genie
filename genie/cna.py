@@ -33,8 +33,12 @@ def makeCNARow(row, symbols):
 	return(totalrow)
 
 def mergeCNAvalues(x):
-	if len(set(x.tolist())) == 1:
+	uniqueValues = set(x.tolist())
+	if len(uniqueValues) == 1:
 		return(x.tolist()[0])
+	elif len(uniqueValues) == 2 and 0 in uniqueValues:
+		uniqueValues.remove(0)
+		return(list(uniqueValues)[0])
 	else:
 		return(pd.np.nan)
 
@@ -69,9 +73,9 @@ class cna(example_filetype_format.FileTypeFormat):
 		bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=test)
 		bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))
 		bedDf = bed.asDataFrame()
-		print(bedDf)
 		#originalSymbols = cnaDf['HUGO_SYMBOL'].copy()
 		cnaDf['HUGO_SYMBOL'] = cnaDf['HUGO_SYMBOL'].apply(lambda x: validateSymbol(x, bedDf))
+		order = cnaDf.columns
 		# unmappable = cnaDf[cnaDf['HUGO_SYMBOL'].isnull()]
 		# unmappableSymbols = originalSymbols[cnaDf['HUGO_SYMBOL'].isnull()]
 
@@ -85,7 +89,7 @@ class cna(example_filetype_format.FileTypeFormat):
 			duplicatedGenes = duplicatedGenes.append(temp)
 		cnaDf.drop_duplicates('HUGO_SYMBOL',keep=False, inplace=True)
 		cnaDf = cnaDf.append(duplicatedGenes)
-
+		cnaDf = cnaDf[order]
 		#symbols = cnaDf['HUGO_SYMBOL']
 		#del cnaDf['HUGO_SYMBOL']
 		cnaDf = cnaDf.fillna('NA')

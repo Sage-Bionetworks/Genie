@@ -28,34 +28,42 @@ def test_processing():
 	syn.tableQuery.side_effect=table_query_results
 
 	cnaClass = cna(syn, "SAGE")
-	order = ["Hugo_Symbol","Entrez_gene_id","GENIE-SAGE-ID1-1","GENIE-SAGE-ID2-1"]
+	order = ["Hugo_Symbol","Entrez_gene_id","GENIE-SAGE-Id1-1","GENIE-SAGE-Id2-1"]
 
-	expectedCnaDf = pd.DataFrame(dict(TUMOR_SAMPLE_BARCODE =['GENIE-SAGE-ID1-1', 'GENIE-SAGE-ID2-1'],
-									  CNAData =["AAED1,AAK1,AAAS\n1,2,0", "AAED1,AAK1,AAAS\n2,1,-1"],
-									  CENTER =['SAGE','SAGE'],
-									  unmappedData =[float('nan'),float('nan')]))
-
+	# expectedCnaDf = pd.DataFrame(dict(TUMOR_SAMPLE_BARCODE =['GENIE-SAGE-ID1-1', 'GENIE-SAGE-ID2-1'],
+	# 								  CNAData =["AAED1,AAK1,AAAS\n1,2,0", "AAED1,AAK1,AAAS\n2,1,-1"],
+	# 								  CENTER =['SAGE','SAGE'],
+	# 								  unmappedData =[float('nan'),float('nan')]))
+	expectedCnaDf = pd.DataFrame({"HUGO_SYMBOL":['AAED1', 'AAK1', 'AAAS'],
+						  "Entrez_gene_id":[0,0,0],
+						  "GENIE-SAGE-Id1-1":[1, 2, 0],
+						  "GENIE-SAGE-Id2-1":[2, 1, -1]})
 
 	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAK1', 'AAAS'],
 						  "Entrez_gene_id":[0,0,0],
-						  "GENIE-SAGE-ID1-1":[1, 2, 0],
-						  "GENIE-SAGE-ID2-1":[2, 1, -1]})
+						  "GENIE-SAGE-Id1-1":[1, 2, 0],
+						  "GENIE-SAGE-Id2-1":[2, 1, -1]})
 	cnaDf = cnaDf[order]
 	newCnaDf = cnaClass._process(cnaDf)
 	assert expectedCnaDf.equals(newCnaDf[expectedCnaDf.columns])
 	
-	expectedCnaDf = pd.DataFrame(dict(TUMOR_SAMPLE_BARCODE =['GENIE-SAGE-ID1-1',"GENIE-SAGE-ID2-1"],
-									  CNAData =["AAED1\n1","AAED1\n"],
-									  CENTER =['SAGE','SAGE'],
-									  unmappedData =["foo\n0","foo\n-1"]))
+	# expectedCnaDf = pd.DataFrame(dict(TUMOR_SAMPLE_BARCODE =['GENIE-SAGE-ID1-1',"GENIE-SAGE-ID2-1"],
+	# 								  CNAData =["AAED1\n1","AAED1\n"],
+	# 								  CENTER =['SAGE','SAGE'],
+	# 								  unmappedData =["foo\n0","foo\n-1"]))
+	expectedCnaDf = pd.DataFrame({"HUGO_SYMBOL":['AAAS','AAED1'],
+						  "Entrez_gene_id":[0.0,0.0],
+						  "GENIE-SAGE-Id1-1":['NA',1],
+						  "GENIE-SAGE-Id2-1":['NA',2]})
 
-	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAED1', 'foo'],
-						  "Entrez_gene_id":[0,0,0],
-						  "GENIE-SAGE-ID1-1":[1, 1, 0],
-						  "GENIE-SAGE-ID2-1":[2, 0, -1]})
+	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAED1', 'foo','AAAS'],
+						  "Entrez_gene_id":[0,0,0,0],
+						  "GENIE-SAGE-Id1-1":[1, 1, 0, float('nan')],
+						  "GENIE-SAGE-Id2-1":[2, 0, -1, float('nan')]})
 	cnaDf = cnaDf[order]
 	newCnaDf = cnaClass._process(cnaDf)
-	assert expectedCnaDf.equals(newCnaDf[expectedCnaDf.columns])
+	newCnaDf.reset_index(inplace=True,drop=True)
+	pd.util.testing.assert_frame_equal(expectedCnaDf, newCnaDf[expectedCnaDf.columns])
 
 def test_validation():
 	def createMockTable(dataframe):
