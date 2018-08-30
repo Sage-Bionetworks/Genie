@@ -56,10 +56,11 @@ class cna(example_filetype_format.FileTypeFormat):
 
 	def _process(self, cnaDf, test=False):
 		checkBy = "TUMOR_SAMPLE_BARCODE"
-		columns = [col.upper() for col in cnaDf.columns]
 
 		cnaDf.rename(columns= {cnaDf.columns[0]:cnaDf.columns[0].upper()}, inplace=True)
-		index = [i for i, col in enumerate(columns) if col == "ENTREZ_GENE_ID"]
+
+		columns = [col.upper() for col in cnaDf.columns]
+		index = [i for i, col in enumerate(cnaDf.columns) if col == "ENTREZ_GENE_ID"]
 		if len(index) > 0:
 			del cnaDf[cnaDf.columns[index][0]]
 		#validateSymbol = partial(process_functions.validateSymbol,returnMapping=True)
@@ -68,10 +69,11 @@ class cna(example_filetype_format.FileTypeFormat):
 		bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=test)
 		bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))
 		bedDf = bed.asDataFrame()
-		originalSymbols = cnaDf['HUGO_SYMBOL'].copy()
+		print(bedDf)
+		#originalSymbols = cnaDf['HUGO_SYMBOL'].copy()
 		cnaDf['HUGO_SYMBOL'] = cnaDf['HUGO_SYMBOL'].apply(lambda x: validateSymbol(x, bedDf))
-		unmappable = cnaDf[cnaDf['HUGO_SYMBOL'].isnull()]
-		unmappableSymbols = originalSymbols[cnaDf['HUGO_SYMBOL'].isnull()]
+		# unmappable = cnaDf[cnaDf['HUGO_SYMBOL'].isnull()]
+		# unmappableSymbols = originalSymbols[cnaDf['HUGO_SYMBOL'].isnull()]
 
 		cnaDf = cnaDf[~cnaDf['HUGO_SYMBOL'].isnull()]
 		duplicatedGenes = pd.DataFrame()
@@ -84,29 +86,29 @@ class cna(example_filetype_format.FileTypeFormat):
 		cnaDf.drop_duplicates('HUGO_SYMBOL',keep=False, inplace=True)
 		cnaDf = cnaDf.append(duplicatedGenes)
 
-		symbols = cnaDf['HUGO_SYMBOL']
-		del cnaDf['HUGO_SYMBOL']
-		cnaDf = cnaDf.fillna('')
-		newsamples = [process_functions.checkGenieId(i,self.center) for i in cnaDf.columns]
+		#symbols = cnaDf['HUGO_SYMBOL']
+		#del cnaDf['HUGO_SYMBOL']
+		cnaDf = cnaDf.fillna('NA')
+		newsamples = [process_functions.checkGenieId(i,self.center) if i != "HUGO_SYMBOL" else i for i in cnaDf.columns]
 		#Transpose matrix
-		cnaDf = cnaDf.transpose()
-		data = cnaDf.apply(lambda row: makeCNARow(row, symbols), axis=1)
+		# cnaDf = cnaDf.transpose()
+		# data = cnaDf.apply(lambda row: makeCNARow(row, symbols), axis=1)
 
 		#Transpose matrix
-		del unmappable['HUGO_SYMBOL']
-		unmappable = unmappable.transpose()
-		unmappableData = unmappable.apply(lambda row: makeCNARow(row, unmappableSymbols), axis=1)
+		# del unmappable['HUGO_SYMBOL']
+		# unmappable = unmappable.transpose()
+		# unmappableData = unmappable.apply(lambda row: makeCNARow(row, unmappableSymbols), axis=1)
 
-		newCNA = pd.DataFrame()
-		newCNA[checkBy] = newsamples
-		newCNA['CNAData'] = data.values
-		newCNA['CENTER'] = self.center
-		newCNA['unmappedData'] = unmappableData.values
+		# newCNA = pd.DataFrame()
+		# newCNA[checkBy] = newsamples
+		# newCNA['CNAData'] = data.values
+		# newCNA['CENTER'] = self.center
+		# newCNA['unmappedData'] = unmappableData.values
 		#newCNA = newCNA[~newCNA['CNAData'].isnull()]
 		#remove the 0.0, 1.0 and 2.0
 		# os.system("sed 's/[.]0//g' %s > %s" % (newPath + "temp", newPath))
 		# os.remove(newPath + "temp")
-		return(newCNA)
+		return(cnaDf)
 
 	def process_steps(self, filePath, **kwargs):
 		logger.info('PROCESSING %s' % filePath)
