@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 #Configuration file
-from config_process_scripts import PROCESS_FILES
+from genie import PROCESS_FILES
 
 def reNameFile(syn, synId):
 	temp = syn.get(synId)

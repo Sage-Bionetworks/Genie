@@ -1,7 +1,9 @@
+from __future__ import absolute_import
+from genie import example_filetype_format
+
 import os
 import logging
 import synapseclient
-import example_filetype_format
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
