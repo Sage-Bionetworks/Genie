@@ -34,8 +34,7 @@ def test_processing():
 	# 								  CNAData =["AAED1,AAK1,AAAS\n1,2,0", "AAED1,AAK1,AAAS\n2,1,-1"],
 	# 								  CENTER =['SAGE','SAGE'],
 	# 								  unmappedData =[float('nan'),float('nan')]))
-	expectedCnaDf = pd.DataFrame({"HUGO_SYMBOL":['AAED1', 'AAK1', 'AAAS'],
-						  "Entrez_gene_id":[0,0,0],
+	expectedCnaDf = pd.DataFrame({"Hugo_Symbol":['AAED1', 'AAK1', 'AAAS'],
 						  "GENIE-SAGE-Id1-1":[1, 2, 0],
 						  "GENIE-SAGE-Id2-1":[2, 1, -1]})
 
@@ -51,8 +50,7 @@ def test_processing():
 	# 								  CNAData =["AAED1\n1","AAED1\n"],
 	# 								  CENTER =['SAGE','SAGE'],
 	# 								  unmappedData =["foo\n0","foo\n-1"]))
-	expectedCnaDf = pd.DataFrame({"HUGO_SYMBOL":['AAAS','AAED1'],
-						  "Entrez_gene_id":[0.0,0.0],
+	expectedCnaDf = pd.DataFrame({"Hugo_Symbol":['AAAS','AAED1'],
 						  "GENIE-SAGE-Id1-1":['NA',1],
 						  "GENIE-SAGE-Id2-1":['NA',2]})
 
@@ -109,7 +107,7 @@ def test_validation():
 	cnaDf = cnaDf[["GENIE-SAGE-ID1-1","Hugo_Symbol","GENIE-SAGE-ID2-1"]]
 	
 	error, warning = cnaClass._validate(cnaDf, False)
-	expectedErrors = ("Your cnv file's first column must be Hugo_symbol\n"
+	expectedErrors = ("Your cnv file's first column must be Hugo_Symbol\n"
 					  "Your cnv file must not have any empty values\n"
 					  "Your CNA file has duplicated Hugo_Symbols (After remapping of genes): AAD,AAED,AAED1 -> AAED1,AAED1,AAED1.\n")
 
