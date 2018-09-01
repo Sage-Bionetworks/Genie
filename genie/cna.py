@@ -95,7 +95,7 @@ class cna(example_filetype_format.FileTypeFormat):
 		#symbols = cnaDf['HUGO_SYMBOL']
 		#del cnaDf['HUGO_SYMBOL']
 		cnaDf = cnaDf.fillna('NA')
-		newsamples = [process_functions.checkGenieId(i,self.center) if i != "Hugo_Symbol" else i for i in cnaDf.columns]
+		cnaDf.columns = [process_functions.checkGenieId(i,self.center) if i != "Hugo_Symbol" else i for i in cnaDf.columns]
 		#Transpose matrix
 		# cnaDf = cnaDf.transpose()
 		# data = cnaDf.apply(lambda row: makeCNARow(row, symbols), axis=1)

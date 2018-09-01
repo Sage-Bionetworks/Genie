@@ -28,7 +28,7 @@ def test_processing():
 	syn.tableQuery.side_effect=table_query_results
 
 	cnaClass = cna(syn, "SAGE")
-	order = ["Hugo_Symbol","Entrez_gene_id","GENIE-SAGE-Id1-1","GENIE-SAGE-Id2-1"]
+	order = ["Hugo_Symbol","Entrez_gene_id","Id1-1","Id2-1"]
 
 	# expectedCnaDf = pd.DataFrame(dict(TUMOR_SAMPLE_BARCODE =['GENIE-SAGE-ID1-1', 'GENIE-SAGE-ID2-1'],
 	# 								  CNAData =["AAED1,AAK1,AAAS\n1,2,0", "AAED1,AAK1,AAAS\n2,1,-1"],
@@ -40,8 +40,8 @@ def test_processing():
 
 	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAK1', 'AAAS'],
 						  "Entrez_gene_id":[0,0,0],
-						  "GENIE-SAGE-Id1-1":[1, 2, 0],
-						  "GENIE-SAGE-Id2-1":[2, 1, -1]})
+						  "Id1-1":[1, 2, 0],
+						  "Id2-1":[2, 1, -1]})
 	cnaDf = cnaDf[order]
 	newCnaDf = cnaClass._process(cnaDf)
 	assert expectedCnaDf.equals(newCnaDf[expectedCnaDf.columns])
@@ -50,6 +50,8 @@ def test_processing():
 	# 								  CNAData =["AAED1\n1","AAED1\n"],
 	# 								  CENTER =['SAGE','SAGE'],
 	# 								  unmappedData =["foo\n0","foo\n-1"]))
+	order = ["Hugo_Symbol","Entrez_gene_id","GENIE-SAGE-Id1-1","GENIE-SAGE-Id2-1"]
+
 	expectedCnaDf = pd.DataFrame({"Hugo_Symbol":['AAAS','AAED1'],
 						  "GENIE-SAGE-Id1-1":['NA',1],
 						  "GENIE-SAGE-Id2-1":['NA',2]})

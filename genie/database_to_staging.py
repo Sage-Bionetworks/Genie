@@ -128,7 +128,7 @@ def runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test=False, geni
 	subprocess.check_call(command)
 
 	mutationSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "vcf2maf"][0]
-	removedVariants = syn.tableQuery('select Chromosome, Start_Position, End_Position, Reference_Allele, Tumor_Seq_Allele2, Tumor_Sample_Barcode, Center from %s where inBED is False' % mutationSynId)
+	removedVariants = syn.tableQuery("select Chromosome, Start_Position, End_Position, Reference_Allele, Tumor_Seq_Allele2, Tumor_Sample_Barcode, Center from %s where inBED is False and Center in ('%s')" % (mutationSynId,"','".join(CENTER_MAPPING_DF.center)))
 	removedVariantsDf = removedVariants.asDataFrame()
 	removedVariantsDf['removeVariants'] = removedVariantsDf['Chromosome'].astype(str) + ' ' + removedVariantsDf['Start_Position'].astype(str) + ' ' + removedVariantsDf['End_Position'].astype(str) + ' ' + removedVariantsDf['Reference_Allele'].astype(str) + ' ' + removedVariantsDf['Tumor_Seq_Allele2'].astype(str) + ' ' + removedVariantsDf['Tumor_Sample_Barcode'].astype(str)
 	#Store filtered vairants
@@ -152,7 +152,7 @@ def mutation_in_cis_filter(syn, skipMutationsInCis, test, variant_filtering_synI
 		command = ['Rscript', mergeCheck_script, str(test)]
 		subprocess.check_call(command)
 		# Store each centers mutations in cis to their staging folder
-		mergeCheck = syn.tableQuery('select * from %s' % variant_filtering_synId)
+		mergeCheck = syn.tableQuery("select * from %s where CENTER in ('%s')" % (variant_filtering_synId,"','".join(CENTER_MAPPING_DF.center)))
 		mergeCheckDf = mergeCheck.asDataFrame()
 		for center in mergeCheckDf.Center.unique():
 			if not pd.isnull(center):
@@ -257,7 +257,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	clinicalDf = clinicalDf[clinicalDf['CENTER'] != "CRUK"]
 	############################################################
 	############################################################
-	
+
 
 	# add in vital status
 	# logger.info("MERGE VITAL STATUS")
@@ -317,94 +317,126 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	centerMafFileViewSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "centerMafView"][0]
 	centerMafSynIds = syn.tableQuery("select id from %s " % centerMafFileViewSynId + "where name like '%mutation%'")
 	centerMafSynIdsDf = centerMafSynIds.asDataFrame()
-	with open(MUTATIONS_PATH, 'w') as f:
-		f.write(sequenced_samples + "\n") 
-	for index, mafSynId in enumerate(centerMafSynIdsDf.id):
-		mafEnt = syn.get(mafSynId)
-		logger.info(mafEnt.path)
-		with open(mafEnt.path,"r") as mafFile:
-			header = mafFile.readline()
-			headers = header.replace("\n","").split("\t")
-			if index == 0:
-				with open(MUTATIONS_PATH, 'a') as f:
-					f.write(header)
-				#Create maf file per center for their staging directory
-				for center in clinicalDf['CENTER'].unique():
-					with open(MUTATIONS_CENTER_PATH % center, 'w') as f:
-						f.write(header)
-		# with open(mafEnt.path,"r") as newMafFile:
-		# 	newMafFile.readline()
-			for row in mafFile:
-				rowArray = row.replace("\n","").split("\t")
-				center = rowArray[headers.index('Center')]
-				newMergedRow = configureMafRow(rowArray, headers, keepForMergedConsortiumSamples, remove_mafInBed_variants)
-				if newMergedRow is not None:
-					with open(MUTATIONS_PATH, 'a') as f:
-						f.write(newMergedRow)
-				newCenterRow = configureMafRow(rowArray, headers, keepForCenterConsortiumSamples, remove_mafInBed_variants)
-				if newCenterRow is not None:
-					with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
-						f.write(newCenterRow)
-	storeFile(syn, MUTATIONS_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_mutations_extended.txt", staging=current_release_staging)
-	if not current_release_staging:
-		for center in clinicalDf['CENTER'].unique():
-			storeFile(syn, MUTATIONS_CENTER_PATH % center, genieVersion=genieVersion, parent = CENTER_MAPPING_DF['stagingSynId'][CENTER_MAPPING_DF['center'] == center][0], centerStaging=True)
+	# with open(MUTATIONS_PATH, 'w') as f:
+	# 	f.write(sequenced_samples + "\n") 
+	# for index, mafSynId in enumerate(centerMafSynIdsDf.id):
+	# 	mafEnt = syn.get(mafSynId)
+	# 	logger.info(mafEnt.path)
+	# 	with open(mafEnt.path,"r") as mafFile:
+	# 		header = mafFile.readline()
+	# 		headers = header.replace("\n","").split("\t")
+	# 		if index == 0:
+	# 			with open(MUTATIONS_PATH, 'a') as f:
+	# 				f.write(header)
+	# 			#Create maf file per center for their staging directory
+	# 			for center in clinicalDf['CENTER'].unique():
+	# 				with open(MUTATIONS_CENTER_PATH % center, 'w') as f:
+	# 					f.write(header)
+	# 	# with open(mafEnt.path,"r") as newMafFile:
+	# 	# 	newMafFile.readline()
+	# 		center = mafEnt.path.split("_")[3]
+	# 		#Make sure to only write the centers that release = True
+	# 		if center in CENTER_MAPPING_DF.center:
+	# 			for row in mafFile:
+	# 				rowArray = row.replace("\n","").split("\t")
+	# 				center = rowArray[headers.index('Center')]
+	# 				newMergedRow = configureMafRow(rowArray, headers, keepForMergedConsortiumSamples, remove_mafInBed_variants)
+	# 				if newMergedRow is not None:
+	# 					with open(MUTATIONS_PATH, 'a') as f:
+	# 						f.write(newMergedRow)
+	# 				newCenterRow = configureMafRow(rowArray, headers, keepForCenterConsortiumSamples, remove_mafInBed_variants)
+	# 				if newCenterRow is not None:
+	# 					with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
+	# 						f.write(newCenterRow)
+	# storeFile(syn, MUTATIONS_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_mutations_extended.txt", staging=current_release_staging)
+	# if not current_release_staging:
+	# 	for center in clinicalDf['CENTER'].unique():
+	# 		storeFile(syn, MUTATIONS_CENTER_PATH % center, genieVersion=genieVersion, parent = CENTER_MAPPING_DF['stagingSynId'][CENTER_MAPPING_DF['center'] == center][0], centerStaging=True)
 
 	#Only need to upload these files once
 	#if filtering:
 		#Normalize gene panels
 	logger.info("STORING GENE PANELS FILES")
 	fileviewSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "fileview"][0]
-	genePanels = syn.tableQuery("select id from %s where cBioFileFormat = 'genePanel' and fileStage = 'staging'" % fileviewSynId)
-	genePanelDf = genePanels.asDataFrame()
-	genePanelEntities = []
-	for synId in genePanelDf['id']:
-		genePanel = syn.get(synId)
-		panelNames = set(data_gene_panel['mutations'])
-		genePanelName = os.path.basename(genePanel.path)
-		newGenePanelPath = os.path.join(GENIE_RELEASE_DIR, genePanelName.replace(".txt","_%s.txt" % genieVersion))
-		if genePanelName.replace(".txt","").replace("data_gene_panel_","") in panelNames:
-			os.rename(genePanel.path, newGenePanelPath)
-			genePanelEntities.append(storeFile(syn, newGenePanelPath, parent= consortiumReleaseSynId, genieVersion=genieVersion, name=genePanelName, cBioFileFormat = "genePanel", staging=current_release_staging))
+	# genePanels = syn.tableQuery("select id from %s where cBioFileFormat = 'genePanel' and fileStage = 'staging'" % fileviewSynId)
+	# genePanelDf = genePanels.asDataFrame()
+	# genePanelEntities = []
+	# for synId in genePanelDf['id']:
+	# 	genePanel = syn.get(synId)
+	# 	panelNames = set(data_gene_panel['mutations'])
+	# 	genePanelName = os.path.basename(genePanel.path)
+	# 	newGenePanelPath = os.path.join(GENIE_RELEASE_DIR, genePanelName.replace(".txt","_%s.txt" % genieVersion))
+	# 	if genePanelName.replace(".txt","").replace("data_gene_panel_","") in panelNames:
+	# 		os.rename(genePanel.path, newGenePanelPath)
+	# 		genePanelEntities.append(storeFile(syn, newGenePanelPath, parent= consortiumReleaseSynId, genieVersion=genieVersion, name=genePanelName, cBioFileFormat = "genePanel", staging=current_release_staging))
 	
 	## CNA
 	logger.info("MERING, FILTERING, STORING CNA FILES")
 	centerCNASynIds = syn.tableQuery("select id from %s " % centerMafFileViewSynId + "where name like 'data_CNA%'")
 	centerCNASynIdsDf = centerCNASynIds.asDataFrame()
+	logger.info(centerCNASynIdsDf)
 	#Grab all unique symbols and form cnaTemplate
 	allSymbols = set()
-	cnaSamples = []
 
 	for cnaSynId in centerCNASynIdsDf.id:
 		cnaEnt = syn.get(cnaSynId)
-		with open(cnaEnt.path) as cnaFile:
+		with open(cnaEnt.path,"r") as cnaFile:
 			#Read first line first to get all the samples
 			samples = cnaFile.readline()
 			#Get all hugo symbols
 			allSymbols = allSymbols.union(set(line.split("\t")[0] for line in cnaFile))
-	cnaSamples.extend(samples.replace("\n","").split("\t")[1:])
 	cnaTemplate = pd.DataFrame({"Hugo_Symbol":list(allSymbols)})
 	cnaTemplate.sort_values("Hugo_Symbol",inplace=True)
 	cnaTemplate.to_csv(CNA_PATH, sep="\t",index=False)
 	#Loop through to create finalized CNA file
+	withCenterHugoSymbol = pd.Series("Hugo_Symbol")
+	withCenterHugoSymbol = withCenterHugoSymbol.append(pd.Series(keepForCenterConsortiumSamples))
+
+	withMergedHugoSymbol = pd.Series("Hugo_Symbol")
+	withMergedHugoSymbol = withMergedHugoSymbol.append(pd.Series(keepForMergedConsortiumSamples))
+	logger.info(withCenterHugoSymbol)
+	logger.info(withMergedHugoSymbol)
+
+
+	cnaSamples = []
+
 	for cnaSynId in centerCNASynIdsDf.id:
 		cnaEnt = syn.get(cnaSynId)
 		center = cnaEnt.name.replace("data_CNA_","").replace(".txt","")
 		logger.info(cnaEnt.path)
-		centerCNA = pd.read_csv(cnaEnt.path,sep="\t")
-		merged = cnaTemplate.merge(centerCNA, on="Hugo_Symbol", how="outer")
-		merged = merged.fillna("NA")
-		merged.sort_values("Hugo_Symbol",inplace=True)
-		cnaText = removePandasDfFloat(merged)
-		#Store center CNA file in staging dir
-		with open(CNA_CENTER_PATH % center, "w") as cnaFile:
-			cnaFile.write(cnaText)
-		storeFile(syn, CNA_CENTER_PATH % center, genieVersion=genieVersion, parent = CENTER_MAPPING_DF['stagingSynId'][CENTER_MAPPING_DF['center'] == center][0], centerStaging=True)
-		#Join CNA file
-		joinCommand = ["join",CNA_PATH, CNA_CENTER_PATH % center]
-		output = subprocess.check_output(joinCommand)
-		with open(CNA_PATH, "w") as cnaFile:
-			cnaFile.write(output.decode("utf-8").replace(" ","\t"))
+		logger.info(center)
+		logger.info(center in CENTER_MAPPING_DF.center.tolist())
+		logger.info(CENTER_MAPPING_DF.center)
+		if center in CENTER_MAPPING_DF.center.tolist():
+			centerCNA = pd.read_csv(cnaEnt.path,sep="\t")
+			merged = cnaTemplate.merge(centerCNA, on="Hugo_Symbol", how="outer")
+			merged.sort_values("Hugo_Symbol",inplace=True)
+
+			merged = merged[merged.columns[merged.columns.isin(withCenterHugoSymbol)]]
+			logger.info(merged)
+
+			cnaText = removePandasDfFloat(merged)
+			#Replace blank with NA's
+			cnaText = cnaText.replace("\t\t","\tNA\t").replace("\t\t","\tNA\t").replace('\t\n',"\tNA\n")
+
+			#Store center CNA file in staging dir
+			with open(CNA_CENTER_PATH % center, "w") as cnaFile:
+				cnaFile.write(cnaText)
+			storeFile(syn, CNA_CENTER_PATH % center, genieVersion=genieVersion, parent = CENTER_MAPPING_DF['stagingSynId'][CENTER_MAPPING_DF['center'] == center][0], centerStaging=True)
+			#This is to remove more samples for the final cna file
+			merged = merged[merged.columns[merged.columns.isin(withMergedHugoSymbol)]]
+			logger.info(merged)
+
+			cnaText = removePandasDfFloat(merged)
+			with open(CNA_CENTER_PATH % center, "w") as cnaFile:
+				cnaFile.write(cnaText)
+			#Join CNA file
+			cnaSamples.extend(merged.columns[1:].tolist())
+			joinCommand = ["join",CNA_PATH, CNA_CENTER_PATH % center]
+			output = subprocess.check_output(joinCommand)
+			with open(CNA_PATH, "w") as cnaFile:
+				cnaFile.write(output.decode("utf-8").replace(" ","\t"))
+
 	storeFile(syn, CNA_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_CNA.txt", staging=current_release_staging)
 
 	# cnaText = removePandasDfFloat(mergedCNA)
@@ -462,7 +494,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	# storeFile(syn, CNA_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_CNA.txt", staging=current_release_staging)
 
 	# Add in CNA column into gene panel file
-	cnaSeqIds = data_gene_panel['mutations'][data_gene_panel['SAMPLE_ID'].isin(foo)].unique()
+	cnaSeqIds = data_gene_panel['mutations'][data_gene_panel['SAMPLE_ID'].isin(cnaSamples)].unique()
 	data_gene_panel['cna'] = data_gene_panel['mutations']
 	data_gene_panel['cna'][~data_gene_panel['cna'].isin(cnaSeqIds)] = "NA"
 	data_gene_panel.to_csv(DATA_GENE_PANEL_PATH,sep="\t",index=False)
