@@ -550,7 +550,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	#BED
 	logger.info("STORING COMBINED BED FILE")
 	bedSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "bed"][0]
-	bed = syn.tableQuery('SELECT Chromosome,Start_Position,End_Position,Hugo_Symbol,ID,SEQ_ASSAY_ID,Feature_Type,includeInPanel FROM %s' % bedSynId)
+	bed = syn.tableQuery("SELECT Chromosome,Start_Position,End_Position,Hugo_Symbol,ID,SEQ_ASSAY_ID,Feature_Type,includeInPanel FROM %s where CENTER in ('%s')" % (bedSynId,"','".join(CENTER_MAPPING_DF.center)))
 	bedDf = bed.asDataFrame()
 	if not current_release_staging:
 		for seqAssay in bedDf['SEQ_ASSAY_ID'].unique():
