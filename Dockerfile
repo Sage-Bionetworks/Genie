@@ -37,7 +37,7 @@ WORKDIR /root/
 COPY . Genie
 RUN git clone https://github.com/cBioPortal/cbioportal.git
 
-WORKDIR /root/Genie/processing
+WORKDIR /root/Genie/genie
 RUN wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz
 RUN gunzip Homo_sapiens.GRCh37.75.gtf.gz
 RUN awk '$3 == "exon" {print}' Homo_sapiens.GRCh37.75.gtf > exon.gtf
