@@ -57,7 +57,9 @@ class maf(example_filetype_format.FileTypeFormat):
 		newMafPath = os.path.join(path_to_GENIE,self.center,"staging",fileName)
 		narrowMafPath = os.path.join(path_to_GENIE,self.center,"staging","data_mutations_extended_%s_MAF_narrow.txt" % self.center)
 		narrowMafColumns = [col['name'] for col in self.syn.getTableColumns(mafSynId) if col['name'] != 'inBED']
-
+		#Strips out windows indentations \r
+		command = ['dos2unix',filePath]
+		subprocess.call(command)
 		tempdir = os.path.join(path_to_GENIE, self.center)
 		commandCall = ["perl",os.path.join(vcf2mafPath,"maf2maf.pl"),
 					   "--input-maf",filePath,
