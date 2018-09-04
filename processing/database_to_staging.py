@@ -127,7 +127,8 @@ def runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test=False, geni
 	command = ['Rscript', MAFinBED_script, str(test)]
 	subprocess.check_call(command)
 	mutationSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "vcf2maf"][0]
-	removedVariants = syn.tableQuery('select Chromosome, Start_Position, End_Position, Reference_Allele, Tumor_Seq_Allele2, Tumor_Sample_Barcode, Center from %s where inBED is False' % mutationSynId)
+	removedVariants = syn.tableQuery("select Chromosome, Start_Position, End_Position, Reference_Allele, Tumor_Seq_Allele2, Tumor_Sample_Barcode, Center from %s where inBED is False and Center in ('%s')" % (mutationSynId,"','".join(CENTER_MAPPING_DF.center)))
+
 	removedVariantsDf = removedVariants.asDataFrame()
 	removedVariantsDf['removeVariants'] = removedVariantsDf['Chromosome'].astype(str) + ' ' + removedVariantsDf['Start_Position'].astype(str) + ' ' + removedVariantsDf['End_Position'].astype(str) + ' ' + removedVariantsDf['Reference_Allele'].astype(str) + ' ' + removedVariantsDf['Tumor_Seq_Allele2'].astype(str) + ' ' + removedVariantsDf['Tumor_Sample_Barcode'].astype(str)
 	#Store filtered vairants
@@ -151,7 +152,8 @@ def mutation_in_cis_filter(syn, skipMutationsInCis, test, variant_filtering_synI
 		command = ['Rscript', mergeCheck_script, str(test)]
 		subprocess.check_call(command)
 		# Store each centers mutations in cis to their staging folder
-		mergeCheck = syn.tableQuery('select * from %s' % variant_filtering_synId)
+		mergeCheck = syn.tableQuery("select * from %s where CENTER in ('%s')" % (variant_filtering_synId,"','".join(CENTER_MAPPING_DF.center)))
+
 		mergeCheckDf = mergeCheck.asDataFrame()
 		for center in mergeCheckDf.Center.unique():
 			if not pd.isnull(center):
@@ -218,6 +220,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	#Remove patients without any sample or patient ids
 	clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isnull()]
 	clinicalDf = clinicalDf[~clinicalDf['PATIENT_ID'].isnull()]
+	clinicalDf = clinicalDf[clinicalDf['CENTER'].isin(CENTER_MAPPING_DF.center.tolist())]
 	#########FILTERING#########
 	logger.info("REMOVING PHI")
 	clinicalDf = reAnnotatePHI(clinicalDf)
@@ -304,7 +307,8 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 
 	logger.info("FILTERING, STORING MUTATION FILES")
 	centerMafFileViewSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "centerMafView"][0]
-	centerMafSynIds = syn.tableQuery('select id from %s' % centerMafFileViewSynId)
+	centerMafSynIds = syn.tableQuery("select id from %s " % centerMafFileViewSynId + "where name like '%mutation%'")
+
 	centerMafSynIdsDf = centerMafSynIds.asDataFrame()
 	
 	with open(MUTATIONS_PATH, 'w') as f:
@@ -463,7 +467,8 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	#BED
 	logger.info("STORING COMBINED BED FILE")
 	bedSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "bed"][0]
-	bed = syn.tableQuery('SELECT Chromosome,Start_Position,End_Position,Hugo_Symbol,ID,SEQ_ASSAY_ID,Feature_Type,includeInPanel FROM %s' % bedSynId)
+	bed = syn.tableQuery("SELECT Chromosome,Start_Position,End_Position,Hugo_Symbol,ID,SEQ_ASSAY_ID,Feature_Type,includeInPanel FROM %s where CENTER in ('%s')" % (bedSynId,"','".join(CENTER_MAPPING_DF.center)))
+
 	bedDf = bed.asDataFrame()
  	if not current_release_staging:
 		for seqAssay in bedDf['SEQ_ASSAY_ID'].unique():

@@ -152,7 +152,7 @@ def process_clinical_file_json(oncotree, clinical_filename):
 		try:
 			data[header.index(CANCER_TYPE_DETAILED)] = cancer_types[CANCER_TYPE_DETAILED]
 		except IndexError:
-			data.append(cancer_types[CANCER_TYPE_DETAILED])
+			data.append(cancer_types[CANCER_TYPE_DETAILED].replace(u"\u2013","-"))
 		try:
 			data[header.index(ONCOTREE_PRIMARY_NODE)] = cancer_types[ONCOTREE_PRIMARY_NODE]
 		except IndexError:

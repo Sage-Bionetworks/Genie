@@ -334,7 +334,7 @@ if __name__ == "__main__":
 					if checkRelease[0] in ['1','2']:
 						officialPublic[str(int(checkRelease[0])+1)+".0.0"] = dirpath[1]
 					else:
-						officialPublic[str(int(checkRelease[0]))+".0-public"] = dirpath[1]
+						officialPublic[str(int(checkRelease[0]))+".1-public"] = dirpath[1]
 	assert args.genieVersion in officialPublic.keys(), "genieVersion must be one of these: %s." % ", ".join(officialPublic.keys())
 	args.releaseId = officialPublic[args.genieVersion]
 	
