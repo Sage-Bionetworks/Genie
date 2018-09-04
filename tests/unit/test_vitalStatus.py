@@ -4,10 +4,7 @@ import mock
 from nose.tools import assert_raises
 import os
 import sys
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(SCRIPT_DIR,"../../processing"))
-
-from vitalStatus import vitalStatus
+from genie.vitalStatus import vitalStatus
 
 
 def test_processing():
@@ -46,7 +43,7 @@ def test_validation():
 							 YEAR_DEATH=[1999,2000,3000,1000,float('nan')],
 							 YEAR_CONTACT=[1999,2000,3000,1000,1999],
 							 INT_CONTACT=[1,2,3,4,3],
-							 INT_DOD=[1,2,3,4,3],
+							 INT_DOD=[1,2,3,4,float('nan')],
 							 DEAD=[True, False, True, False, True]))
 
 	error, warning = vs.validate_helper(vsDf)
@@ -69,14 +66,14 @@ def test_validation():
 							 YEAR_DEATH=[1999,2000,3000,3,float('nan')],
 							 YEAR_CONTACT=[1999,2000,3000,2,1999],
 							 INT_CONTACT=[1,2,3,4,float('nan')],
-							 INT_DOD=[1,2,3,4,float('nan')],
+							 INT_DOD=[1,2,3,4,'string'],
 							 DEAD=[True, False, True, float('nan'), True]))
 
 	error, warning = vs.validate_helper(vsDf)
 	expectedErrors = ("Vital status file: Please double check your YEAR_DEATH column, it must be an integer in YYYY format or NA/null/empty.\n"
 					  "Vital status file: Please double check your YEAR_CONTACT column, it must be an integer in YYYY format.\n"
 					  "Vital status file: Please double check your INT_CONTACT column, it must be an integer.\n"
-					  "Vital status file: Please double check your INT_DOD column, it must be an integer.\n"
+					  "Vital status file: Please double check your INT_DOD column, it must be an integer or NA/null/empty.\n"
 					  "Vital status file: Please double check your DEAD column, it must be a boolean value.\n")
 	assert error == expectedErrors
 	assert warning == ""

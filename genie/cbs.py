@@ -1,10 +1,11 @@
+from __future__ import absolute_import
+from genie import seg
+from genie import example_filetype_format
+from genie import process_functions
+
 import os
-import seg
 import logging
 import pandas as pd
-import example_filetype_format
-import process_functions
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

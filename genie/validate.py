@@ -12,10 +12,9 @@ import json
 from multiprocessing import Pool
 import datetime
 from functools import partial
-import urllib2
 import re
 import warnings
-from config_process_scripts import *
+from genie import PROCESS_FILES
 warnings.simplefilter(action='ignore', category=pd.errors.DtypeWarning)
 try:
     from urlparse import urlparse

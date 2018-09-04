@@ -1,11 +1,12 @@
+from __future__ import absolute_import
+from genie import example_filetype_format
+from genie import process_functions
+
 import os
 import logging
-import process_functions
 import subprocess
 import pandas as pd
-import example_filetype_format
 import synapseclient
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,9 @@ class maf(example_filetype_format.FileTypeFormat):
 		newMafPath = os.path.join(path_to_GENIE,self.center,"staging",fileName)
 		narrowMafPath = os.path.join(path_to_GENIE,self.center,"staging","data_mutations_extended_%s_MAF_narrow.txt" % self.center)
 		narrowMafColumns = [col['name'] for col in self.syn.getTableColumns(mafSynId) if col['name'] != 'inBED']
-
+		#Strips out windows indentations \r
+		command = ['dos2unix',filePath]
+		subprocess.call(command)
 		tempdir = os.path.join(path_to_GENIE, self.center)
 		commandCall = ["perl",os.path.join(vcf2mafPath,"maf2maf.pl"),
 					   "--input-maf",filePath,
@@ -80,7 +83,8 @@ class maf(example_filetype_format.FileTypeFormat):
 			self.createFinalMaf(narrowMafDf, narrowMafPath, maf=True)
 			#These functions have to be next to each other, because no modifications can happen 
 			#Store Narrow MAF into db
-			self.storeProcessedMaf(narrowMafPath, mafSynId, centerMafSynId, isNarrow=True)
+			if self._fileType == "maf":
+				self.storeProcessedMaf(narrowMafPath, mafSynId, centerMafSynId, isNarrow=True)
 			#Store MAF flat file into synapse
 			self.storeProcessedMaf(newMafPath, mafSynId, centerMafSynId)
 		else:

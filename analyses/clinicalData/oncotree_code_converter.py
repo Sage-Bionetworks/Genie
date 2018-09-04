@@ -1,13 +1,18 @@
+#! /usr/bin/env python
+
 import os
 import sys
 import fileinput
 import argparse
-import urllib2
+try:
+    # For Python 3.0 and later
+    from urllib.request import urlopen
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from urllib2 import urlopen
 import re
 import json
-processingDir = os.path.join(os.path.dirname(os.path.abspath(__file__)),"../../processing")
-sys.path.append(processingDir)
-import process_functions as process
+from genie import process_functions as process
 # globals
 
 PATTERN = re.compile('([A-Za-z\' ,-/]*) \\(([A-Za-z_]*)\\)',re.IGNORECASE)
@@ -28,7 +33,7 @@ no_matches = []
 def get_oncotree(oncotree_url): 
 	""" Gets the oncotree data from the specified url """
 
-	return urllib2.urlopen(oncotree_url).read().split('\n')
+	return urlopen(oncotree_url).read().split('\n')
 
 def get_cancer_types(oncotree, code, spreadsheet_fields):
 	""" 
@@ -88,7 +93,7 @@ def process_clinical_file(oncotree, clinical_filename, spreadsheet_fields):
 				header.append(ONCOTREE_PRIMARY_NODE)
 			if ONCOTREE_SECONDARY_NODE not in header:
 				header.append(ONCOTREE_SECONDARY_NODE)
-			print '\t'.join(header).replace('\n', '')
+			print('\t'.join(header).replace('\n', ''))
 			continue
 		data = line.split('\t')
 		oncotree_code = data[header.index(ONCOTREE_CODE)]
@@ -113,7 +118,7 @@ def process_clinical_file(oncotree, clinical_filename, spreadsheet_fields):
 			data[header.index(ONCOTREE_SECONDARY_NODE)] = cancer_types[ONCOTREE_SECONDARY_NODE]
 		except IndexError:
 			data.append(cancer_types[ONCOTREE_SECONDARY_NODE])
-		print '\t'.join(data).replace('\n', '')
+		print('\t'.join(data).replace('\n', ''))
 
 
 def process_clinical_file_json(oncotree, clinical_filename):
@@ -136,7 +141,7 @@ def process_clinical_file_json(oncotree, clinical_filename):
 				header.append(ONCOTREE_PRIMARY_NODE)
 			if ONCOTREE_SECONDARY_NODE not in header:
 				header.append(ONCOTREE_SECONDARY_NODE)
-			print '\t'.join(header).replace('\n', '')
+			print('\t'.join(header).replace('\n', ''))
 			continue
 		data = line.split('\t')
 		oncotree_code = data[header.index(ONCOTREE_CODE)]
@@ -153,7 +158,7 @@ def process_clinical_file_json(oncotree, clinical_filename):
 			try:
 				data[header.index(CANCER_TYPE_DETAILED)] = cancer_types[CANCER_TYPE_DETAILED]
 			except IndexError:
-				data.append(cancer_types[CANCER_TYPE_DETAILED])
+				data.append(cancer_types[CANCER_TYPE_DETAILED].replace(u"\u2013","-"))
 			try:
 				data[header.index(ONCOTREE_PRIMARY_NODE)] = cancer_types[ONCOTREE_PRIMARY_NODE]
 			except IndexError:
@@ -165,16 +170,17 @@ def process_clinical_file_json(oncotree, clinical_filename):
 				data.append(cancer_types[ONCOTREE_SECONDARY_NODE])
 		else:
 			data.extend(['']*4)
-		print '\t'.join(data).replace('\n', '')
+		#print(data)
+		print('\t'.join(data).replace('\n', ''))
 
 
 def report_failed_matches():
 	""" Reports any samples from the file that could not match its oncotree code """
 
 	if len(no_matches) > 0:
-		print 'Could not find a match for the following samples:'
+		print('Could not find a match for the following samples:')
 		for sample_id in no_matches:
-			print sample_id	
+			print(sample_id)
 
 def main():
 	""" 
@@ -194,7 +200,7 @@ def main():
 	json = args.json
 
 	if not os.path.exists(clinical_filename):
-		print 'clinical file cannot be found ' + clinical_filename
+		print('clinical file cannot be found ' + clinical_filename)
 		sys.exit(2)		
 
 

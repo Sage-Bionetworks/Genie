@@ -4,10 +4,7 @@ import mock
 from nose.tools import assert_raises
 import os
 import sys
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(SCRIPT_DIR,"../../processing"))
-
-from cna import cna
+from genie.cna import cna
 
 def test_processing():
 	def createMockTable(dataframe):
@@ -31,34 +28,42 @@ def test_processing():
 	syn.tableQuery.side_effect=table_query_results
 
 	cnaClass = cna(syn, "SAGE")
-	order = ["Hugo_Symbol","Entrez_gene_id","GENIE-SAGE-ID1-1","GENIE-SAGE-ID2-1"]
+	order = ["Hugo_Symbol","Entrez_gene_id","Id1-1","Id2-1"]
 
-	expectedCnaDf = pd.DataFrame(dict(TUMOR_SAMPLE_BARCODE =['GENIE-SAGE-ID1-1', 'GENIE-SAGE-ID2-1'],
-									  CNAData =["AAED1,AAK1,AAAS\n1,2,0", "AAED1,AAK1,AAAS\n2,1,-1"],
-									  CENTER =['SAGE','SAGE'],
-									  unmappedData =[float('nan'),float('nan')]))
-
+	# expectedCnaDf = pd.DataFrame(dict(TUMOR_SAMPLE_BARCODE =['GENIE-SAGE-ID1-1', 'GENIE-SAGE-ID2-1'],
+	# 								  CNAData =["AAED1,AAK1,AAAS\n1,2,0", "AAED1,AAK1,AAAS\n2,1,-1"],
+	# 								  CENTER =['SAGE','SAGE'],
+	# 								  unmappedData =[float('nan'),float('nan')]))
+	expectedCnaDf = pd.DataFrame({"Hugo_Symbol":['AAED1', 'AAK1', 'AAAS'],
+						  "GENIE-SAGE-Id1-1":[1, 2, 0],
+						  "GENIE-SAGE-Id2-1":[2, 1, -1]})
 
 	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAK1', 'AAAS'],
 						  "Entrez_gene_id":[0,0,0],
-						  "GENIE-SAGE-ID1-1":[1, 2, 0],
-						  "GENIE-SAGE-ID2-1":[2, 1, -1]})
+						  "Id1-1":[1, 2, 0],
+						  "Id2-1":[2, 1, -1]})
 	cnaDf = cnaDf[order]
 	newCnaDf = cnaClass._process(cnaDf)
 	assert expectedCnaDf.equals(newCnaDf[expectedCnaDf.columns])
 	
-	expectedCnaDf = pd.DataFrame(dict(TUMOR_SAMPLE_BARCODE =['GENIE-SAGE-ID1-1',"GENIE-SAGE-ID2-1"],
-									  CNAData =["AAED1\n1","AAED1\n"],
-									  CENTER =['SAGE','SAGE'],
-									  unmappedData =["foo\n0","foo\n-1"]))
+	# expectedCnaDf = pd.DataFrame(dict(TUMOR_SAMPLE_BARCODE =['GENIE-SAGE-ID1-1',"GENIE-SAGE-ID2-1"],
+	# 								  CNAData =["AAED1\n1","AAED1\n"],
+	# 								  CENTER =['SAGE','SAGE'],
+	# 								  unmappedData =["foo\n0","foo\n-1"]))
+	order = ["Hugo_Symbol","Entrez_gene_id","GENIE-SAGE-Id1-1","GENIE-SAGE-Id2-1"]
 
-	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAED1', 'foo'],
-						  "Entrez_gene_id":[0,0,0],
-						  "GENIE-SAGE-ID1-1":[1, 1, 0],
-						  "GENIE-SAGE-ID2-1":[2, 0, -1]})
+	expectedCnaDf = pd.DataFrame({"Hugo_Symbol":['AAAS','AAED1'],
+						  "GENIE-SAGE-Id1-1":['NA',1],
+						  "GENIE-SAGE-Id2-1":['NA',2]})
+
+	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAED1', 'foo','AAAS'],
+						  "Entrez_gene_id":[0,0,0,0],
+						  "GENIE-SAGE-Id1-1":[1, 1, 0, float('nan')],
+						  "GENIE-SAGE-Id2-1":[2, 0, -1, float('nan')]})
 	cnaDf = cnaDf[order]
 	newCnaDf = cnaClass._process(cnaDf)
-	assert expectedCnaDf.equals(newCnaDf[expectedCnaDf.columns])
+	newCnaDf.reset_index(inplace=True,drop=True)
+	pd.util.testing.assert_frame_equal(expectedCnaDf, newCnaDf[expectedCnaDf.columns])
 
 def test_validation():
 	def createMockTable(dataframe):
@@ -104,7 +109,7 @@ def test_validation():
 	cnaDf = cnaDf[["GENIE-SAGE-ID1-1","Hugo_Symbol","GENIE-SAGE-ID2-1"]]
 	
 	error, warning = cnaClass._validate(cnaDf, False)
-	expectedErrors = ("Your cnv file's first column must be Hugo_symbol\n"
+	expectedErrors = ("Your cnv file's first column must be Hugo_Symbol\n"
 					  "Your cnv file must not have any empty values\n"
 					  "Your CNA file has duplicated Hugo_Symbols (After remapping of genes): AAD,AAED,AAED1 -> AAED1,AAED1,AAED1.\n")
 
