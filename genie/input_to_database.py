@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import process_functions
 import validate
 import synapseclient

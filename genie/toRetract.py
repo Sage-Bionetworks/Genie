@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import synapseclient
 import pandas as pd
 import argparse

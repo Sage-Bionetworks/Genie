@@ -6,6 +6,7 @@ import os
 import pandas as pd
 import logging
 from functools import partial
+import synapseclient
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,8 +34,12 @@ def makeCNARow(row, symbols):
 	return(totalrow)
 
 def mergeCNAvalues(x):
-	if len(set(x.tolist())) == 1:
+	uniqueValues = set(x.tolist())
+	if len(uniqueValues) == 1:
 		return(x.tolist()[0])
+	elif len(uniqueValues) == 2 and 0 in uniqueValues:
+		uniqueValues.remove(0)
+		return(list(uniqueValues)[0])
 	else:
 		return(pd.np.nan)
 
@@ -46,7 +51,7 @@ class cna(example_filetype_format.FileTypeFormat):
    
 	_fileType = "cna"
 
-	_process_kwargs = ["newPath", "databaseSynId",'test']
+	_process_kwargs = ["newPath", "databaseSynId",'test','databaseToSynIdMappingDf']
 
 	_validation_kwargs = ['testing','noSymbolCheck']
 
@@ -56,10 +61,12 @@ class cna(example_filetype_format.FileTypeFormat):
 
 	def _process(self, cnaDf, test=False):
 		checkBy = "TUMOR_SAMPLE_BARCODE"
-		columns = [col.upper() for col in cnaDf.columns]
 
 		cnaDf.rename(columns= {cnaDf.columns[0]:cnaDf.columns[0].upper()}, inplace=True)
-		index = [i for i, col in enumerate(columns) if col == "ENTREZ_GENE_ID"]
+		cnaDf.rename(columns= {"HUGO_SYMBOL":"Hugo_Symbol"}, inplace=True)
+
+		columns = [col.upper() for col in cnaDf.columns]
+		index = [i for i, col in enumerate(cnaDf.columns) if col.upper() == "ENTREZ_GENE_ID"]
 		if len(index) > 0:
 			del cnaDf[cnaDf.columns[index][0]]
 		#validateSymbol = partial(process_functions.validateSymbol,returnMapping=True)
@@ -68,58 +75,64 @@ class cna(example_filetype_format.FileTypeFormat):
 		bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=test)
 		bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))
 		bedDf = bed.asDataFrame()
-		originalSymbols = cnaDf['HUGO_SYMBOL'].copy()
-		cnaDf['HUGO_SYMBOL'] = cnaDf['HUGO_SYMBOL'].apply(lambda x: validateSymbol(x, bedDf))
-		unmappable = cnaDf[cnaDf['HUGO_SYMBOL'].isnull()]
-		unmappableSymbols = originalSymbols[cnaDf['HUGO_SYMBOL'].isnull()]
+		#originalSymbols = cnaDf['HUGO_SYMBOL'].copy()
+		cnaDf['Hugo_Symbol'] = cnaDf['Hugo_Symbol'].apply(lambda x: validateSymbol(x, bedDf))
+		order = cnaDf.columns
+		# unmappable = cnaDf[cnaDf['HUGO_SYMBOL'].isnull()]
+		# unmappableSymbols = originalSymbols[cnaDf['HUGO_SYMBOL'].isnull()]
 
-		cnaDf = cnaDf[~cnaDf['HUGO_SYMBOL'].isnull()]
+		cnaDf = cnaDf[~cnaDf['Hugo_Symbol'].isnull()]
 		duplicatedGenes = pd.DataFrame()
-		for i in cnaDf['HUGO_SYMBOL'][cnaDf['HUGO_SYMBOL'].duplicated()].unique():
-			dups = cnaDf[cnaDf['HUGO_SYMBOL'] == i]
+		for i in cnaDf['Hugo_Symbol'][cnaDf['Hugo_Symbol'].duplicated()].unique():
+			dups = cnaDf[cnaDf['Hugo_Symbol'] == i]
 			newVal = dups[dups.columns[dups.columns!="HUGO_SYMBOL"]].apply(mergeCNAvalues)
 			temp = pd.DataFrame(newVal).transpose()
-			temp['HUGO_SYMBOL'] = i
+			temp['Hugo_Symbol'] = i
 			duplicatedGenes = duplicatedGenes.append(temp)
-		cnaDf.drop_duplicates('HUGO_SYMBOL',keep=False, inplace=True)
+		cnaDf.drop_duplicates('Hugo_Symbol',keep=False, inplace=True)
 		cnaDf = cnaDf.append(duplicatedGenes)
-
-		symbols = cnaDf['HUGO_SYMBOL']
-		del cnaDf['HUGO_SYMBOL']
-		cnaDf = cnaDf.fillna('')
-		newsamples = [process_functions.checkGenieId(i,self.center) for i in cnaDf.columns]
+		cnaDf = cnaDf[order]
+		#symbols = cnaDf['HUGO_SYMBOL']
+		#del cnaDf['HUGO_SYMBOL']
+		cnaDf = cnaDf.fillna('NA')
+		cnaDf.columns = [process_functions.checkGenieId(i,self.center) if i != "Hugo_Symbol" else i for i in cnaDf.columns]
 		#Transpose matrix
-		cnaDf = cnaDf.transpose()
-		data = cnaDf.apply(lambda row: makeCNARow(row, symbols), axis=1)
+		# cnaDf = cnaDf.transpose()
+		# data = cnaDf.apply(lambda row: makeCNARow(row, symbols), axis=1)
 
 		#Transpose matrix
-		del unmappable['HUGO_SYMBOL']
-		unmappable = unmappable.transpose()
-		unmappableData = unmappable.apply(lambda row: makeCNARow(row, unmappableSymbols), axis=1)
+		# del unmappable['HUGO_SYMBOL']
+		# unmappable = unmappable.transpose()
+		# unmappableData = unmappable.apply(lambda row: makeCNARow(row, unmappableSymbols), axis=1)
 
-		newCNA = pd.DataFrame()
-		newCNA[checkBy] = newsamples
-		newCNA['CNAData'] = data.values
-		newCNA['CENTER'] = self.center
-		newCNA['unmappedData'] = unmappableData.values
+		# newCNA = pd.DataFrame()
+		# newCNA[checkBy] = newsamples
+		# newCNA['CNAData'] = data.values
+		# newCNA['CENTER'] = self.center
+		# newCNA['unmappedData'] = unmappableData.values
 		#newCNA = newCNA[~newCNA['CNAData'].isnull()]
 		#remove the 0.0, 1.0 and 2.0
 		# os.system("sed 's/[.]0//g' %s > %s" % (newPath + "temp", newPath))
 		# os.remove(newPath + "temp")
-		return(newCNA)
+		return(cnaDf)
 
 	def process_steps(self, filePath, **kwargs):
 		logger.info('PROCESSING %s' % filePath)
+		databaseToSynIdMappingDf = kwargs['databaseToSynIdMappingDf']
 		databaseSynId = kwargs['databaseSynId']
 		newPath = kwargs['newPath']
 		test = kwargs['test']
 
 		cnaDf = pd.read_csv(filePath, sep="\t",comment="#")
 		newCNA = self._process(cnaDf, test=test)
+
+		centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
 		if not newCNA.empty:
-			cols = newCNA.columns   
-			process_functions.updateData(self.syn, databaseSynId, newCNA, self.center, cols, toDelete=True)
+		# 	cols = newCNA.columns   
+		# 	process_functions.updateData(self.syn, databaseSynId, newCNA, self.center, cols, toDelete=True)
+		# 	newCNA.to_csv(newPath, sep="\t",index=False)
 			newCNA.to_csv(newPath, sep="\t",index=False)
+			self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
 		return(newPath)
 
 	def _validate(self, cnvDF, noSymbolCheck, test=False):
@@ -128,7 +141,7 @@ class cna(example_filetype_format.FileTypeFormat):
 		cnvDF.columns = [col.upper() for col in cnvDF.columns]
 
 		if cnvDF.columns[0] != "HUGO_SYMBOL":
-			total_error += "Your cnv file's first column must be Hugo_symbol\n"
+			total_error += "Your cnv file's first column must be Hugo_Symbol\n"
 		haveColumn = process_functions.checkColExist(cnvDF, "HUGO_SYMBOL")
 		if haveColumn:
 			keepSymbols = cnvDF["HUGO_SYMBOL"]
