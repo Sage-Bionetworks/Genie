@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y \
 	libffi-dev
 
 RUN pip install --upgrade pip
-RUN pip install synapseclient httplib2 pycrypto
+RUN pip install synapseclient httplib2 pycrypto aacrgenie
 RUN pip install pandas numexpr --upgrade
 
 COPY docker/installPackages.R /installPackages.R
