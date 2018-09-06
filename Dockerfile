@@ -8,9 +8,9 @@ RUN apt-get update && apt-get install -y \
 	bedtools \ 
 	dos2unix \
 	wget \ 
-	python \
-	python-pip \
-	python-pandas \
+	python3 \
+	python3-pip \
+	#python-pandas \
 	git \
 	r-base \
 	r-base-dev \
@@ -22,9 +22,11 @@ RUN apt-get update && apt-get install -y \
 	libcurl3-dev \ 
 	libffi-dev
 
-RUN pip install --upgrade pip
+RUN pip3 install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto aacrgenie
 RUN pip install pandas numexpr --upgrade
+
+ln -s /usr/bin/python3 /usr/bin/python 
 
 COPY docker/installPackages.R /installPackages.R
 RUN Rscript /installPackages.R
