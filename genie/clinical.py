@@ -262,8 +262,10 @@ class clinical(example_filetype_format.FileTypeFormat):
 		if haveColumn:
 			#Deal with HIPAA converted rows from DFCI
 			#First for loop can't int(text) because there are instances that have <3435
+
 			clinicalSampleDF[age] = removeGreaterThanAndLessThanStr(clinicalSampleDF[age]) 
-			if not all([isinstance(i, (int,float)) or i == "" for i in clinicalSampleDF[age]]) or pd.np.median(clinicalSampleDF[age]) < 100:
+			medianAge = clinicalSampleDF[age][clinicalSampleDF[age] != ''].astype(int)
+			if not all([isinstance(i, (int,float)) or i == "" for i in clinicalSampleDF[age]]) or pd.np.median(medianAge) < 100:
 				total_error += "Sample: Please double check your AGE_AT_SEQ_REPORT.  This is the interval in DAYS (integer) between the patient's date of birth and the date of the sequencing report that is associated with the sample.\n"
 		else:
 			total_error += "Sample: clinical file must have AGE_AT_SEQ_REPORT column.\n"
