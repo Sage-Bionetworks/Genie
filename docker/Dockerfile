@@ -26,6 +26,7 @@ RUN apt-get install -y libmysqlclient-dev
 RUN cpanm CPAN::Meta \
 	Archive::Zip \
 	DBI \
+	Devel::CheckLib \
 	DBD::mysql \ 
 	JSON \
 	DBD::SQLite \
