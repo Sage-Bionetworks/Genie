@@ -22,7 +22,7 @@ def main():
     parser.add_argument("--vcf2mafPath", type=str, help="Path to vcf2maf", default="~/vcf2maf-1.6.14")
     parser.add_argument("--vepPath", type=str, help="Path to VEP", default="~/vep")
     parser.add_argument("--vepData", type=str, help="Path to VEP data", default="~/.vep")
-    #parser.add_argument("--oncotreeLink", type=str, default='http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21', help="Link to oncotree code")
+    parser.add_argument("--useReference", action='store_true', help = "Use fa instead of fa.gz (Use this flag for batch)")
 
     args = parser.parse_args()
     syn = process_functions.synLogin(args)
@@ -60,6 +60,8 @@ def main():
             extendCommands.append('--createNewMafDatabase')
             args.createNewMafDatabase = False
         command.extend(extendCommands)
+        if useReference:
+            command.extend(["--reference",os.path.join(os.path.expanduser(args.vepData),"homo_sapiens/86_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa")])
         logger.info("COMMAND EXECUTED: %s" % " ".join(command)) 
         output = subprocess.check_output(command,stderr= subprocess.STDOUT)
         #logger.info(output)

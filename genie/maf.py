@@ -51,7 +51,7 @@ class maf(example_filetype_format.FileTypeFormat):
 		return(filePath)
 
 	def process_helper(self, filePath, path_to_GENIE, mafSynId, centerMafSynId,
-					   vcf2mafPath, veppath, vepdata):
+					   vcf2mafPath, veppath, vepdata, reference=None):
 		logger.info('MAF2MAF %s' % filePath)
 		fileName = "data_mutations_extended_%s_MAF.txt" % self.center
 		newMafPath = os.path.join(path_to_GENIE,self.center,"staging",fileName)
@@ -70,6 +70,8 @@ class maf(example_filetype_format.FileTypeFormat):
 					   '--vep-data', vepdata,
 					   #'--ref-fasta','/root/.vep/homo_sapiens/86_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa',
 					   "--custom-enst", os.path.join(vcf2mafPath,"data/isoform_overrides_uniprot")]
+		if reference is not None:
+			commandCall.extend(["--ref-fasta",reference])
 		maf = subprocess.call(commandCall) 
 
 		process_functions.rmFiles(tempdir, recursive=False)
@@ -102,12 +104,13 @@ class maf(example_filetype_format.FileTypeFormat):
 			vepdata = kwargs['vepdata']
 			validMAFs = kwargs['validMAFs']
 			path_to_GENIE = kwargs['path_to_GENIE']
+			reference = kwargs['reference']
 			mafProcessing = "mafSP" if self._fileType == "mafSP" else 'vcf2maf'
 			mafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == mafProcessing][0]
 			centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
 			for filePath in validMAFs:
 				mafFilePath = self.process_helper(filePath, path_to_GENIE, mafSynId, centerMafSynId,
-											 vcf2mafPath, veppath, vepdata)
+											 vcf2mafPath, veppath, vepdata, reference=reference)
 				mutationFiles.append(mafFilePath)
 			logger.info("UPDATED DATABASE WITH: %s" % ", ".join(mutationFiles))
 		else:

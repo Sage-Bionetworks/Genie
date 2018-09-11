@@ -25,14 +25,14 @@ class vcf(maf.maf):
 	_fileType = "vcf"
 
 	_process_kwargs = ["validVCF", "processing", "path_to_GENIE", "databaseToSynIdMappingDf", 
-					   "vcf2mafPath","veppath","vepdata"]
+					   "vcf2mafPath","veppath","vepdata","reference"]
 
 	def _validateFilename(self, filePath):
 		assert os.path.basename(filePath[0]).startswith("GENIE-%s-" % self.center) and os.path.basename(filePath[0]).endswith(".vcf")
 	
 	def process_helper(self, vcffiles, path_to_GENIE, mafSynId, centerMafSynId,
 					   vcf2mafPath,veppath, vepdata, 
-					   reference="/home/tyu/reference/hg19/hg_19_all_chrs.fasta"):
+					   reference=None):
 		logger.info('VCF2MAF %s' % self.center)
 		centerInputFolder = os.path.join(path_to_GENIE, self.center,"input")
 		centerStagingFolder = os.path.join(path_to_GENIE,self.center,"staging")
@@ -96,6 +96,8 @@ class vcf(maf.maf):
 						   '--vcf-tumor-id',tumor,
 						   #'--ref-fasta','/root/.vep/homo_sapiens/86_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa',
 						   '--custom-enst', os.path.join(vcf2mafPath, 'data/isoform_overrides_uniprot')]
+				if reference is not None:
+					command.extend(["--ref-fasta",reference])
 				subprocess.call(command)
 				if (os.path.isfile(newMAFPath)):
 					mafFiles.append(newMAFPath)
@@ -133,6 +135,7 @@ class vcf(maf.maf):
 			vepdata = kwargs['vepdata']
 			validVCF = kwargs['validVCF']
 			path_to_GENIE = kwargs['path_to_GENIE']
+			reference = kwargs['reference']
 			mafProcessing = "mafSP" if self._fileType == "mafSP" else 'vcf2maf'
 			mafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == mafProcessing][0]
 			centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
