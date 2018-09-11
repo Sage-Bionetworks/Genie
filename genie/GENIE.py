@@ -60,7 +60,7 @@ def main():
             extendCommands.append('--createNewMafDatabase')
             args.createNewMafDatabase = False
         command.extend(extendCommands)
-        if useReference:
+        if args.useReference:
             command.extend(["--reference",os.path.join(os.path.expanduser(args.vepData),"homo_sapiens/86_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa")])
         logger.info("COMMAND EXECUTED: %s" % " ".join(command)) 
         output = subprocess.check_output(command,stderr= subprocess.STDOUT)
