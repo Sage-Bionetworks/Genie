@@ -5,11 +5,9 @@ syn get -r syn11601335
 genie validate clinical data_clinical_supp_SAGE.txt SAGE --test
 genie validate cna data_CNA_SAGE.txt SAGE --test
 genie validate maf data_mutations_extended_SAGE.txt SAGE --test
-genie validate cbs GENIE-SAGE-1-1.cbs SAGE --test
 genie validate vcf GENIE-SAGE-1-1.vcf SAGE --test
 genie validate mutationsInCis mutationsInCis_filtered_samples.csv SAGE --test
 genie validate clinicalSP nonGENIE_data_clinical.txt SAGE --test
-#
 genie validate mafSP nonGENIE_data_mutations_extended_SAGE.txt SAGE --test
 genie validate bedSP nonGENIE_SAGE-AKT1.bed SAGE --test
 genie validate patientRetraction patientRetraction.csv SAGE --test
