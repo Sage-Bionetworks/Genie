@@ -8,9 +8,9 @@ RUN apt-get update && apt-get install -y \
 	bedtools \ 
 	dos2unix \
 	wget \ 
-	python \
-	python-pip \
-	python-pandas \
+	python3 \
+	python3-pip \
+	#python-pandas \
 	git \
 	r-base \
 	r-base-dev \
@@ -22,9 +22,11 @@ RUN apt-get update && apt-get install -y \
 	libcurl3-dev \ 
 	libffi-dev
 
-RUN pip install --upgrade pip
-RUN pip install synapseclient httplib2 pycrypto
+RUN pip3 install --upgrade pip
+RUN pip install synapseclient httplib2 pycrypto aacrgenie
 RUN pip install pandas numexpr --upgrade
+
+ln -s /usr/bin/python3 /usr/bin/python 
 
 COPY docker/installPackages.R /installPackages.R
 RUN Rscript /installPackages.R
@@ -37,7 +39,7 @@ WORKDIR /root/
 COPY . Genie
 RUN git clone https://github.com/cBioPortal/cbioportal.git
 
-WORKDIR /root/Genie/processing
+WORKDIR /root/Genie/genie
 RUN wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz
 RUN gunzip Homo_sapiens.GRCh37.75.gtf.gz
 RUN awk '$3 == "exon" {print}' Homo_sapiens.GRCh37.75.gtf > exon.gtf
