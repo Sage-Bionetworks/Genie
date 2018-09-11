@@ -270,16 +270,19 @@ class clinical(example_filetype_format.FileTypeFormat):
 				### MAKE WARNING FOR NOW###
 				warning += "Sample: All patients must have associated sample information. These patients are missing sample data: %s\n" % ", ".join(clinicalDF[patientId][clinicalDF[sampleId] == ""])
 
-
-
 		#CHECK: AGE_AT_SEQ_REPORT
 		age = "AGE_AT_SEQ_REPORT"
 		haveColumn = process_functions.checkColExist(clinicalDF, age)
 		if haveColumn:
 			#Deal with HIPAA converted rows from DFCI
 			#First for loop can't int(text) because there are instances that have <3435
+
 			clinicalDF[age] = removeGreaterThanAndLessThanStr(clinicalDF[age]) 
-			if not all([isinstance(i, (int,float)) or i == "" for i in clinicalDF[age]]) or pd.np.median(clinicalDF[age]) < 100:
+			if sum(clinicalDF[age].astype(str) == '') >0:
+				medianAge = clinicalDF[age][clinicalDF[age] != ''].astype(int)
+			else:
+				medianAge = clinicalDF[age]
+			if not all([isinstance(i, (int,float)) or i == "" for i in clinicalDF[age]]) or pd.np.median(medianAge) < 100:
 				total_error += "Sample: Please double check your AGE_AT_SEQ_REPORT.  This is the interval in DAYS (integer) between the patient's date of birth and the date of the sequencing report that is associated with the sample.\n"
 		else:
 			total_error += "Sample: clinical file must have AGE_AT_SEQ_REPORT column.\n"
