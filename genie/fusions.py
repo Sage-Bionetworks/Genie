@@ -129,7 +129,7 @@ class fusions(example_filetype_format.FileTypeFormat):
             #invalidated_genes = self.pool.map(process_functions.validateSymbol, fusionDF["HUGO_SYMBOL"].drop_duplicates())
             fusionDF = fusionDF.drop_duplicates("HUGO_SYMBOL").apply(lambda x: validateSymbol(x, bedDf), axis=1)
             if fusionDF["HUGO_SYMBOL"].isnull().any():
-                warning += "Any gene names that can't be remapped will be removed.\n"
+                warning += "Any gene names that can't be remapped will stay the same.\n"
         
         if process_functions.checkColExist(fusionDF, "DNA_SUPPORT"):
             if not fusionDF.DNA_SUPPORT.isin(["yes","no","unknown"]).all():
