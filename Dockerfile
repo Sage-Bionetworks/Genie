@@ -26,7 +26,7 @@ RUN pip3 install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto aacrgenie
 RUN pip install pandas numexpr --upgrade
 
-ln -s /usr/bin/python3 /usr/bin/python 
+RUN ln -s /usr/bin/python3 /usr/bin/python 
 
 COPY docker/installPackages.R /installPackages.R
 RUN Rscript /installPackages.R
