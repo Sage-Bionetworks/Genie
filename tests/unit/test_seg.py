@@ -5,12 +5,14 @@ from nose.tools import assert_raises
 import os
 import sys
 from genie.seg import seg
+from genie.cbs import cbs
 
 def test_processing():
 
 	syn = mock.create_autospec(synapseclient.Synapse) 
 
 	segClass = seg(syn, "SAGE")
+	cbsClass = cbs(syn, "SAGE")
 
 	expectedSegDf = pd.DataFrame({"ID":['GENIE-SAGE-ID1-1','GENIE-SAGE-ID2-1','GENIE-SAGE-ID3-1','GENIE-SAGE-ID4-1','GENIE-SAGE-ID5-1'],
 						  "CHROM":['1','2','3','4','5'],
@@ -30,14 +32,19 @@ def test_processing():
 	newSegDf = segClass._process(segDf)
 	assert expectedSegDf.equals(newSegDf[expectedSegDf.columns])
 
+	newSegDf = cbsClass._process(segDf)
+	assert expectedSegDf.equals(newSegDf[expectedSegDf.columns])
+
 
 def test_validation():
 	syn = mock.create_autospec(synapseclient.Synapse) 
 
 	segClass = seg(syn, "SAGE")
+	cbsClass = cbs(syn, "SAGE")
 
 	assert_raises(AssertionError, segClass.validateFilename, ["foo"])
 	assert segClass.validateFilename(["genie_data_cna_hg19_SAGE.seg"]) == "seg"
+	assert cbsClass.validateFilename(["genie_data_cna_hg19_SAGE.cbs"]) == "cbs"
 
 	segDf = pd.DataFrame({"ID":['ID1','ID2','ID3','ID4','ID5'],
 						  "CHROM":[1,2,3,4,5],
@@ -58,6 +65,10 @@ def test_validation():
 	expectedErrors = ("Your seg file is missing these headers: SEG.MEAN.\n"
 					  "Seg: No null or empty values allowed in column(s): CHROM, LOC.END, LOC.START.\n")
 	error, warning = segClass._validate(segDf)
+	assert error == expectedErrors
+	assert warning == ""
+
+	error, warning = cbsClass._validate(segDf)
 	assert error == expectedErrors
 	assert warning == ""
 

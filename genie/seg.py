@@ -15,7 +15,7 @@ class seg(example_filetype_format.FileTypeFormat):
 	_process_kwargs = ["newPath", "databaseSynId"]
 
 	def _validateFilename(self, filePath):
-		assert os.path.basename(filePath[0]) == "genie_data_cna_hg19_%s.seg" % self.center
+		assert os.path.basename(filePath[0]) == "genie_data_cna_hg19_%s.%s" % (self.center, self._fileType)
 
 	def _process(self, seg):
 		seg.columns = [col.upper() for col in seg.columns]
