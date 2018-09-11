@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y \
 	libffi-dev
 
 RUN pip3 install --upgrade pip
-RUN pip install synapseclient httplib2 pycrypto aacrgenie
+RUN pip install synapseclient httplib2 pycrypto
 RUN pip install pandas numexpr --upgrade
 
 RUN rm /usr/bin/python 
@@ -37,11 +37,13 @@ RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.
 RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb	
 
 WORKDIR /root/
-COPY . Genie
+
+RUN git clone https://github.com/Sage-Bionetworks/Genie.git
+RUN python /root/Genie/setup.py install
 RUN git clone https://github.com/cBioPortal/cbioportal.git
 
 WORKDIR /root/Genie/genie
-RUN wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz
-RUN gunzip Homo_sapiens.GRCh37.75.gtf.gz
-RUN awk '$3 == "exon" {print}' Homo_sapiens.GRCh37.75.gtf > exon.gtf
-RUN awk '$3 == "gene" {print}' Homo_sapiens.GRCh37.75.gtf > gene.gtf
+#RUN wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz
+#RUN gunzip Homo_sapiens.GRCh37.75.gtf.gz
+#RUN awk '$3 == "exon" {print}' Homo_sapiens.GRCh37.75.gtf > exon.gtf
+#RUN awk '$3 == "gene" {print}' Homo_sapiens.GRCh37.75.gtf > gene.gtf
