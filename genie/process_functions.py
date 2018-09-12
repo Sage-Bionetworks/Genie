@@ -522,23 +522,6 @@ def decryptMessage(message, key):
 	decrypted = key.decrypt(ast.literal_eval(str(message)))
 	return(decrypted)
 
-
-def synLogin(args):
-	try:
-		syn = synapseclient.login(silent=True)
-	except:
-		assert os.path.exists(args.pemFile), "Path to pemFile must be specified if there is no cached credentials"
-		key = readKey(args.pemFile)
-		geniePass = decryptMessage(os.environ['GENIE_PASS'], key)
-		syn = synapseclient.login(os.environ['GENIE_USER'], geniePass)
-	return(syn)
-
-
-def decryptMessage(message, key):
-	decrypted = key.decrypt(ast.literal_eval(str(message)))
-	return(decrypted)
-
-
 def synLogin(args):
 	try:
 		syn = synapseclient.login(silent=True)
