@@ -140,7 +140,7 @@ class vcf(maf.maf):
 			mafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == mafProcessing][0]
 			centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
 			logger.info(validVCF)
-			vcfFilePath = self.process_helper(validVCF, path_to_GENIE, mafSynId,centerMafSynId, vcf2mafPath, veppath, vepdata)
+			vcfFilePath = self.process_helper(validVCF, path_to_GENIE, mafSynId,centerMafSynId, vcf2mafPath, veppath, vepdata,reference=reference)
 			mutationFiles = [vcfFilePath]
 			logger.info("UPDATED DATABASE WITH: %s" % ", ".join(mutationFiles))
 		else:
