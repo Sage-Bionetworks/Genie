@@ -37,9 +37,7 @@ RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.
 RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb	
 
 WORKDIR /root/
-
-RUN git clone https://github.com/Sage-Bionetworks/Genie.git
-RUN python /root/Genie/setup.py install
+COPY . Genie
 RUN git clone https://github.com/cBioPortal/cbioportal.git
 
 WORKDIR /root/Genie/genie
