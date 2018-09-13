@@ -520,7 +520,7 @@ def readKey(pemPath):
 
 def decryptMessage(message, key):
 	decrypted = key.decrypt(ast.literal_eval(str(message)))
-	return(decrypted)
+	return(decrypted.decode("utf-8"))
 
 def synLogin(args):
 	try:
