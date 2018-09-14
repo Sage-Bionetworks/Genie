@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='aacrgenie',
-      version='1.5.0',
+      version='1.6.0',
       description='Processing and validation for GENIE',
       url='https://github.com/Sage-Bionetworks/Genie',
       author='Thomas Yu',
@@ -11,7 +11,6 @@ setup(name='aacrgenie',
       zip_safe=False,
       entry_points = {
         'console_scripts': ['genie = genie.__main__:main']},
-     # scripts=['ggenie/createGTF.sh'],
       install_requires=[
         'pandas>=0.20.0',
         'synapseclient',

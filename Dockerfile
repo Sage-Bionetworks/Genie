@@ -40,9 +40,9 @@ WORKDIR /root/
 RUN git clone https://github.com/cBioPortal/cbioportal.git
 
 COPY . Genie
-WORKDIR /root/Genie
-RUN python3 setup.py sdist
-RUN python3 setup.py install
+#WORKDIR /root/Genie
+#RUN python3 setup.py sdist
+#RUN python3 setup.py install
 
 WORKDIR /root/Genie/genie
 #RUN wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz
