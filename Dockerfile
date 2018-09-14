@@ -38,7 +38,7 @@ RUN Rscript /installPackages.R
 
 WORKDIR /root/
 COPY . Genie
-RUN python3 /root/Genie/setup.py install
+RUN python3 /root/Genie/setup.py develop
 RUN git clone https://github.com/cBioPortal/cbioportal.git
 
 WORKDIR /root/Genie/genie
