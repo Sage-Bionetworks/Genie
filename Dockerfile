@@ -38,10 +38,11 @@ RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb
 
 WORKDIR /root/
 COPY . Genie
+RUN python3 /root/Genie/setup.py install
 RUN git clone https://github.com/cBioPortal/cbioportal.git
 
 WORKDIR /root/Genie/genie
-RUN wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz
-RUN gunzip Homo_sapiens.GRCh37.75.gtf.gz
-RUN awk '$3 == "exon" {print}' Homo_sapiens.GRCh37.75.gtf > exon.gtf
-RUN awk '$3 == "gene" {print}' Homo_sapiens.GRCh37.75.gtf > gene.gtf
+#RUN wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz
+#RUN gunzip Homo_sapiens.GRCh37.75.gtf.gz
+#RUN awk '$3 == "exon" {print}' Homo_sapiens.GRCh37.75.gtf > exon.gtf
+#RUN awk '$3 == "gene" {print}' Homo_sapiens.GRCh37.75.gtf > gene.gtf
