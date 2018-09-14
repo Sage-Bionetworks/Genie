@@ -37,9 +37,11 @@ RUN Rscript /installPackages.R
 #RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb	
 
 WORKDIR /root/
-COPY . Genie
-RUN python3 /root/Genie/setup.py install
 RUN git clone https://github.com/cBioPortal/cbioportal.git
+
+COPY . Genie
+WORKDIR /root/Genie
+RUN python3 setup.py install
 
 WORKDIR /root/Genie/genie
 #RUN wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz
