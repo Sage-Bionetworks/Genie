@@ -41,6 +41,7 @@ RUN git clone https://github.com/cBioPortal/cbioportal.git
 
 COPY . Genie
 WORKDIR /root/Genie
+RUN python3 setup.py sdist
 RUN python3 setup.py install
 
 WORKDIR /root/Genie/genie
