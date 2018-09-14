@@ -11,6 +11,7 @@ setup(name='aacrgenie',
       zip_safe=False,
       entry_points = {
         'console_scripts': ['genie = genie.__main__:main']},
+      data_files=['genie/createGTF.sh'],
       install_requires=[
         'pandas>=0.20.0',
         'synapseclient',
