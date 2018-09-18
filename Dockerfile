@@ -32,15 +32,21 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 COPY docker/installPackages.R /installPackages.R
 RUN Rscript /installPackages.R
 
-#install pandoc 1.19.2.1
+#install pandoc 1.19.2.1 (dashboard use)
 #RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.1-1-amd64.deb
 #RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb	
 
 WORKDIR /root/
 RUN git clone https://github.com/cBioPortal/cbioportal.git
 
-COPY . Genie
+#Only copy necessary files, so no data is copied ever and most recent changes 
+#in code are always installed
 WORKDIR /root/Genie
+COPY ./genie/*.py ./genie/
+COPY ./genie/*.sh ./genie/
+COPY setup.py ./
+COPY MANIFEST.in ./
+COPY ./analyses ./analyses
 RUN python3 setup.py sdist
 RUN python3 setup.py develop
 
