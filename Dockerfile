@@ -46,7 +46,9 @@ COPY ./genie/*.py ./genie/
 COPY ./genie/*.sh ./genie/
 COPY setup.py ./
 COPY MANIFEST.in ./
-COPY ./analyses ./analyses
+COPY ./analyses/clinicalData/oncotree_code_converter.py ./analyses/clinicalData/
+COPY ./analyses/genomicData/MAFinBED.R ./analyses/genomicData/
+COPY ./analyses/mergeFlag/mergeCheck.R ./analyses/mergeFlag/
 RUN python3 setup.py sdist
 RUN python3 setup.py develop
 
