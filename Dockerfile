@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y \
 	libffi-dev
 
 RUN pip3 install --upgrade pip
-RUN pip install synapseclient httplib2 pycrypto aacrgenie
+RUN pip install synapseclient httplib2 pycrypto
 RUN pip install pandas numexpr --upgrade
 
 RUN rm /usr/bin/python 
@@ -40,9 +40,9 @@ WORKDIR /root/
 RUN git clone https://github.com/cBioPortal/cbioportal.git
 
 COPY . Genie
-#WORKDIR /root/Genie
-#RUN python3 setup.py sdist
-#RUN python3 setup.py install
+WORKDIR /root/Genie
+RUN python3 setup.py sdist
+RUN python3 setup.py develop
 
 WORKDIR /root/Genie/genie
 #RUN wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz
