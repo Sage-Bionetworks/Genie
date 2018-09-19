@@ -55,16 +55,17 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
 		#INT CONTACT
 		haveColumn = process_functions.checkColExist(vitalStatusDf, "INT_CONTACT")
 		if haveColumn:
-			if not all([process_functions.checkInt(i) for i in vitalStatusDf.INT_CONTACT if not pd.isnull(i) and not in ['>32485','<6570']]):
-				total_error += "Vital status file: Please double check your INT_CONTACT column, it must be an integer.\n"
+			#notNullContact = vitalStatusDf.INT_CONTACT[~vitalStatusDf.INT_CONTACT.isnull()]
+			if not all([process_functions.checkInt(i) for i in vitalStatusDf.INT_CONTACT if not pd.isnull(i) and i not in ['>32485','<6570']]):
+				total_error += "Vital status file: Please double check your INT_CONTACT column, it must be an integer, NA/null/empty, >32485, or <6570.\n"
 		else:
 			total_error += "Vital status file: Must have INT_CONTACT column.\n"
 
 		#INT DOD
 		haveColumn = process_functions.checkColExist(vitalStatusDf, "INT_DOD")
 		if haveColumn:
-			if not all([process_functions.checkInt(i) for i in vitalStatusDf.INT_DOD if not pd.isnull(i) and not in ['>32485','<6570']]):
-				total_error += "Vital status file: Please double check your INT_DOD column, it must be an integer or NA/null/empty.\n"
+			if not all([process_functions.checkInt(i) for i in vitalStatusDf.INT_DOD if not pd.isnull(i) and i not in ['>32485','<6570']]):
+				total_error += "Vital status file: Please double check your INT_DOD column, it must be an integer, NA/null/empty, >32485, or <6570.\n"
 		else:
 			total_error += "Vital status file: Must have INT_DOD column.\n"
 
