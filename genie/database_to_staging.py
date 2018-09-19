@@ -86,14 +86,14 @@ def reAnnotatePHI(mergedClinical):
 	toRedact  = [int(float(age)) > PHIcutoff if age != '' else False for age in INT_CONTACT]
 	toRedactPeds  = [int(float(age)) < pedsCutoff if age != '' else False for age in INT_CONTACT]
 	mergedClinical['INT_CONTACT'][toRedact] = ">32485"
-	mergedClinical['INT_CONTACT'][toRedactPeds] = "withheld"	
+	mergedClinical['INT_CONTACT'][toRedactPeds] = "<6570"
 
 	INT_DOD =[pedsCutoff - 1 if "<" in str(age) else age for age in mergedClinical['INT_DOD']]
 	INT_DOD =[PHIcutoff + 1 if ">" in str(age) else age for age in INT_DOD]
 	toRedact  = [int(float(age)) > PHIcutoff if age != '' else False for age in INT_DOD]
 	toRedactPeds  = [int(float(age)) < pedsCutoff if age != '' else False for age in INT_DOD]
 	mergedClinical['INT_DOD'][toRedact] = ">32485"
-	mergedClinical['INT_DOD'][toRedactPeds] = "withheld"	
+	mergedClinical['INT_DOD'][toRedactPeds] = "<6570"
 	return(mergedClinical)
 
 #remove string float
