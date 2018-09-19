@@ -66,10 +66,18 @@ RUN cpanm CPAN::Meta \
 WORKDIR /root
 RUN wget https://github.com/mskcc/vcf2maf/archive/v1.6.14.zip
 RUN unzip v1.6.14.zip
-
-RUN git clone https://github.com/Sage-Bionetworks/Genie.git -b vcf2maf
-RUN pip install /root/Genie/
 RUN git clone https://github.com/cBioPortal/cbioportal.git
+
+WORKDIR /root/Genie
+COPY ./genie/*.py ./genie/
+COPY ./genie/*.sh ./genie/
+COPY setup.py ./
+COPY MANIFEST.in ./
+COPY ./analyses/clinicalData/oncotree_code_converter.py ./analyses/clinicalData/
+COPY ./analyses/genomicData/MAFinBED.R ./analyses/genomicData/
+COPY ./analyses/mergeFlag/mergeCheck.R ./analyses/mergeFlag/
+RUN python3 setup.py sdist
+RUN python3 setup.py develop
 
 RUN wget https://github.com/samtools/samtools/releases/download/1.3/samtools-1.3.tar.bz2
 RUN tar jxf samtools-1.3.tar.bz2
