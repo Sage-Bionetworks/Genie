@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y \
 	libffi-dev
 
 RUN pip3 install --upgrade pip
-RUN pip install synapseclient httplib2 pycrypto
+RUN pip install synapseclient httplib2 pycrypto aacrgenie
 RUN pip install pandas numexpr --upgrade
 
 RUN rm /usr/bin/python 
@@ -38,7 +38,6 @@ RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb
 
 WORKDIR /root/
 COPY . Genie
-RUN pip install /root/Genie
 RUN git clone https://github.com/cBioPortal/cbioportal.git
 
 WORKDIR /root/Genie/genie
