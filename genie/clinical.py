@@ -172,9 +172,9 @@ class clinical(example_filetype_format.FileTypeFormat):
 		patient= False
 		sample = False
 		#These synapse ids for the clinical tier release scope is hardcoded because it never changes
-		patientColsTable = self.syn.tableQuery('select fieldName from syn8545211 where patient is True')
+		patientColsTable = self.syn.tableQuery('select fieldName from syn8545211 where patient is True and inClinicalDb is True')
 		patientCols = patientColsTable.asDataFrame()['fieldName'].tolist()
-		sampleColsTable = self.syn.tableQuery('select fieldName from syn8545211 where sample is True')
+		sampleColsTable = self.syn.tableQuery('select fieldName from syn8545211 where sample is True and inClinicalDb is True')
 		sampleCols = sampleColsTable.asDataFrame()['fieldName'].tolist()
 
 		if "patient" in filePath.lower():
