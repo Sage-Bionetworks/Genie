@@ -32,13 +32,25 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 COPY docker/installPackages.R /installPackages.R
 RUN Rscript /installPackages.R
 
-#install pandoc 1.19.2.1
-RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.1-1-amd64.deb
-RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb	
+#install pandoc 1.19.2.1 (dashboard use)
+#RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.1-1-amd64.deb
+#RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb	
 
 WORKDIR /root/
-COPY . Genie
 RUN git clone https://github.com/cBioPortal/cbioportal.git
+
+#Only copy necessary files, so no data is copied ever and most recent changes 
+#in code are always installed
+WORKDIR /root/Genie
+COPY ./genie/*.py ./genie/
+COPY ./genie/*.sh ./genie/
+COPY setup.py ./
+COPY MANIFEST.in ./
+COPY ./analyses/clinicalData/oncotree_code_converter.py ./analyses/clinicalData/
+COPY ./analyses/genomicData/MAFinBED.R ./analyses/genomicData/
+COPY ./analyses/mergeFlag/mergeCheck.R ./analyses/mergeFlag/
+RUN python3 setup.py sdist
+RUN python3 setup.py develop
 
 WORKDIR /root/Genie/genie
 #RUN wget ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz

@@ -68,11 +68,16 @@ def test_reAnnotatePHI():
 	clinicalDf['AGE_AT_SEQ_REPORT'] = [32850, 32485, 6570, 6569, '<foo','>testing']
 
 	clinicalDf['BIRTH_YEAR'] = [1900,1901,1902,1903,1900,1900]
+	clinicalDf['INT_CONTACT'] = [32850, 32485, 6570, 6569, '<foo','>testing']
+	clinicalDf['INT_DOD'] = [32850, 32485, 6570, 6569, '<foo','>testing']
+
 	finalClin = reAnnotatePHI(clinicalDf)
 	expectedAge = pd.Series(['>32485',32485,6570,'<6570','<6570','>32485'])
 	expectedBirth = pd.Series(['cannotReleaseHIPAA',1901,1902,'withheld','withheld','cannotReleaseHIPAA'])
 
 	assert all(finalClin['AGE_AT_SEQ_REPORT'] == expectedAge)
+	assert all(finalClin['INT_CONTACT'] == expectedAge)
+	assert all(finalClin['INT_DOD'] == expectedAge)
 	assert all(finalClin['BIRTH_YEAR'] == expectedBirth)
 
 # def test_MAFinBED():

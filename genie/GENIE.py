@@ -66,7 +66,7 @@ def main():
         output = subprocess.check_output(command,stderr= subprocess.STDOUT)
         #logger.info(output)
         with open(logPath, "w") as centerLog:
-            centerLog.write(output)
+            centerLog.write(output.decode("utf-8"))
         syn.store(synapseclient.File(logPath, parentId="syn10155804"))
         os.remove(logPath)
     #Only write out invalid reasons if the center isnt specified and if only validate
