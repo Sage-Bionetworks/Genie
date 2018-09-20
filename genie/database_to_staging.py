@@ -79,6 +79,21 @@ def reAnnotatePHI(mergedClinical):
 	#BIRTH_YEAR =[">89y" if str(year) in [">89","<1926"] else year for year in mergedClinical['BIRTH_YEAR']]
 	#BIRTH_YEAR =["<18y" if str(year) in ["<18",">1998"] else year for year in BIRTH_YEAR]
 	#mergedClinical['BIRTH_YEAR'] = BIRTH_YEAR
+	mergedClinical['INT_CONTACT'] = mergedClinical['INT_CONTACT'].fillna('')
+	mergedClinical['INT_DOD'] = mergedClinical['INT_DOD'].fillna('')
+	INT_CONTACT =[pedsCutoff - 1 if "<" in str(age) else age for age in mergedClinical['INT_CONTACT']]
+	INT_CONTACT =[PHIcutoff + 1 if ">" in str(age) else age for age in INT_CONTACT]
+	toRedact  = [int(float(age)) > PHIcutoff if age != '' else False for age in INT_CONTACT]
+	toRedactPeds  = [int(float(age)) < pedsCutoff if age != '' else False for age in INT_CONTACT]
+	mergedClinical['INT_CONTACT'][toRedact] = ">32485"
+	mergedClinical['INT_CONTACT'][toRedactPeds] = "<6570"
+
+	INT_DOD =[pedsCutoff - 1 if "<" in str(age) else age for age in mergedClinical['INT_DOD']]
+	INT_DOD =[PHIcutoff + 1 if ">" in str(age) else age for age in INT_DOD]
+	toRedact  = [int(float(age)) > PHIcutoff if age != '' else False for age in INT_DOD]
+	toRedactPeds  = [int(float(age)) < pedsCutoff if age != '' else False for age in INT_DOD]
+	mergedClinical['INT_DOD'][toRedact] = ">32485"
+	mergedClinical['INT_DOD'][toRedactPeds] = "<6570"
 	return(mergedClinical)
 
 #remove string float
@@ -152,7 +167,7 @@ def mutation_in_cis_filter(syn, skipMutationsInCis, test, variant_filtering_synI
 		command = ['Rscript', mergeCheck_script, str(test)]
 		subprocess.check_call(command)
 		# Store each centers mutations in cis to their staging folder
-		mergeCheck = syn.tableQuery("select * from %s where CENTER in ('%s')" % (variant_filtering_synId,"','".join(CENTER_MAPPING_DF.center)))
+		mergeCheck = syn.tableQuery("select * from %s where Center in ('%s')" % (variant_filtering_synId,"','".join(CENTER_MAPPING_DF.center)))
 		mergeCheckDf = mergeCheck.asDataFrame()
 		for center in mergeCheckDf.Center.unique():
 			if not pd.isnull(center):
@@ -219,6 +234,17 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	#Remove patients without any sample or patient ids
 	clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isnull()]
 	clinicalDf = clinicalDf[~clinicalDf['PATIENT_ID'].isnull()]
+
+	#add in vital status
+	logger.info("MERGE VITAL STATUS")
+	vitalStatusSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "vitalStatus"][0]
+	vitalStatus = syn.tableQuery('select * from %s' % vitalStatusSynId)
+	vitalStatusDf = vitalStatus.asDataFrame()
+	del vitalStatusDf['CENTER']
+	#Make sure to grab only the patients that exist in the clinical database
+	vitalStatusDf = vitalStatusDf[vitalStatusDf.PATIENT_ID.isin(clinicalDf.PATIENT_ID)]
+	clinicalDf = clinicalDf.merge(vitalStatusDf, on = "PATIENT_ID",how="outer")
+
 	#########FILTERING#########
 	logger.info("REMOVING PHI")
 	clinicalDf = reAnnotatePHI(clinicalDf)
@@ -261,19 +287,11 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	#CENTER SPECIFIC CODE FOR RIGHT NOW (REMOVE UHN-555-V1)
 	############################################################
 	clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "UHN-555-V1"]
-	clinicalDf = clinicalDf[clinicalDf['CENTER'] != "WAKE"]
-	clinicalDf = clinicalDf[clinicalDf['CENTER'] != "CRUK"]
+	#clinicalDf = clinicalDf[clinicalDf['CENTER'] != "WAKE"]
+	#clinicalDf = clinicalDf[clinicalDf['CENTER'] != "CRUK"]
 	############################################################
 	############################################################
 
-
-	# add in vital status
-	# logger.info("MERGE VITAL STATUS")
-	# vitalStatusSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "vitalStatus"][0]
-	# vitalStatus = syn.tableQuery('select * from %s' % vitalStatusSynId)
-	# vitalStatusDf = vitalStatus.asDataFrame()
-	# del vitalStatusDf['CENTER']
-	# clinicalDf = clinicalDf.merge(vitalStatusDf, on = "PATIENT_ID",how="outer")
 	clinicalDf.drop_duplicates("SAMPLE_ID",inplace=True)
 
 	#samples must be removed after reading in the clinical file again
