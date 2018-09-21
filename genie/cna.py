@@ -42,8 +42,10 @@ def mergeCNAvalues(x):
 		uniqueValues.discard('NA')
 		if len(uniqueValues) == 1:
 			returnVal = list(uniqueValues)[0]
+		else:
+			returnVal = 'NA'
 	else:
-		returnVal = pd.np.nan
+		returnVal = 'NA'
 	return(returnVal)
 
 	
