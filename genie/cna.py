@@ -36,12 +36,17 @@ def makeCNARow(row, symbols):
 def mergeCNAvalues(x):
 	uniqueValues = set(x.tolist())
 	if len(uniqueValues) == 1:
-		return(x.tolist()[0])
-	elif len(uniqueValues) == 2 and 0 in uniqueValues:
-		uniqueValues.remove(0)
-		return(list(uniqueValues)[0])
+		returnVal = x.tolist()[0]
+	elif len(uniqueValues) <= 3:
+		uniqueValues.discard(0)
+		uniqueValues.discard('NA')
+		if len(uniqueValues) == 1:
+			returnVal = list(uniqueValues)[0]
+		else:
+			returnVal = 'NA'
 	else:
-		return(pd.np.nan)
+		returnVal = 'NA'
+	return(returnVal)
 
 	
 def checkIfOneZero(x):
@@ -82,6 +87,7 @@ class cna(example_filetype_format.FileTypeFormat):
 		# unmappableSymbols = originalSymbols[cnaDf['HUGO_SYMBOL'].isnull()]
 
 		cnaDf = cnaDf[~cnaDf['Hugo_Symbol'].isnull()]
+		cnaDf = cnaDf.fillna('NA')
 		duplicatedGenes = pd.DataFrame()
 		for i in cnaDf['Hugo_Symbol'][cnaDf['Hugo_Symbol'].duplicated()].unique():
 			dups = cnaDf[cnaDf['Hugo_Symbol'] == i]
@@ -94,7 +100,6 @@ class cna(example_filetype_format.FileTypeFormat):
 		cnaDf = cnaDf[order]
 		#symbols = cnaDf['HUGO_SYMBOL']
 		#del cnaDf['HUGO_SYMBOL']
-		cnaDf = cnaDf.fillna('NA')
 		cnaDf.columns = [process_functions.checkGenieId(i,self.center) if i != "Hugo_Symbol" else i for i in cnaDf.columns]
 		#Transpose matrix
 		# cnaDf = cnaDf.transpose()
@@ -147,14 +152,14 @@ class cna(example_filetype_format.FileTypeFormat):
 			keepSymbols = cnvDF["HUGO_SYMBOL"]
 			cnvDF.drop("HUGO_SYMBOL", axis=1, inplace=True)
 
-		if sum(cnvDF.apply(lambda x: sum(x.isnull()))) > 0:
-			total_error += "Your cnv file must not have any empty values\n"
+		# if sum(cnvDF.apply(lambda x: sum(x.isnull()))) > 0:
+		# 	total_error += "Your cnv file must not have any empty values\n"
 
 		if process_functions.checkColExist(cnvDF, "ENTREZ_GENE_ID"):
 			del cnvDF['ENTREZ_GENE_ID']
 
 		if not all(cnvDF.applymap(lambda x: isinstance(x, (int, float))).all()):
-			total_error += "All values must be numerical values\n"
+			total_error += "All values must be numerical values, or NA\n"
 		else:
 			cnvDF['HUGO_SYMBOL'] = keepSymbols
 			if haveColumn and not noSymbolCheck:
