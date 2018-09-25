@@ -40,6 +40,7 @@ def main():
         centers = CENTER_MAPPING_DF.center
 
     inputToDatabaseScript = os.path.join(SCRIPT_DIR, "input_to_database.py")
+    #centers = [i for i in centers if i not in ["JHU","DFCI","GRCC","NKI","MSK","UHN","VICC"]]
     for center in centers:
         if args.onlyValidate:
             logger.info("VALIDATING %s" % center)
