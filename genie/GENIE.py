@@ -70,13 +70,14 @@ def main():
             centerLog.write(output.decode("utf-8"))
         syn.store(synapseclient.File(logPath, parentId="syn10155804"))
         os.remove(logPath)
+
     #Only write out invalid reasons if the center isnt specified and if only validate
     if args.center is None and args.onlyValidate:
         logger.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
         writeInvalidReasonsScript = os.path.join(SCRIPT_DIR, 'writeInvalidReasons.py')
         writeInvalidReasons = ['python', writeInvalidReasonsScript, '--pemFile', os.path.expanduser(args.pemFile)] if args.pemFile is not None else ['python', writeInvalidReasonsScript]
         output = subprocess.check_call(writeInvalidReasons)
-
+    logger.info("COMPLETED!")
 if __name__ == "__main__":
     main()
    
