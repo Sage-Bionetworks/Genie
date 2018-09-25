@@ -354,7 +354,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 		# 	newMafFile.readline()
 			center = mafEnt.path.split("_")[3]
 			#Make sure to only write the centers that release = True
-			if center in CENTER_MAPPING_DF.center:
+			if center in CENTER_MAPPING_DF.center.tolist():
 				for row in mafFile:
 					rowArray = row.replace("\n","").split("\t")
 					center = rowArray[headers.index('Center')]
