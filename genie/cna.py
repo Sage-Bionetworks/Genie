@@ -157,15 +157,11 @@ class cna(example_filetype_format.FileTypeFormat):
 
 		if process_functions.checkColExist(cnvDF, "ENTREZ_GENE_ID"):
 			del cnvDF['ENTREZ_GENE_ID']
-
-		if not all(cnvDF.applymap(lambda x: isinstance(x, (int, float))).all()):
-			total_error += "All values must be numerical values, or NA\n"
+		
+		cnvDF = cnvDF.fillna("NA")
+		if not all(cnvDF.applymap(lambda x: str(x) in ['-2.0','-2','-1.5','-1.0','-1','0.0','0','0.5','1.0','1','1.5','2','2.0','NA']).all()):
+			total_error += "All values must be NA/blank, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, or 2.\n"
 		else:
-			cnvDF = cnvDF.applymap(float)
-			cnvDF = cnvDF.fillna("NA")
-			if not cnvDF.applymap(lambda x: x in [-2.0,-1.5,-1.0,0.0,1.0,1.5,2.0,'NA']).all().all():
-				total_error += "All values must be NA/blank, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, or 2.\n"
-
 			cnvDF['HUGO_SYMBOL'] = keepSymbols
 			if haveColumn and not noSymbolCheck:
 				#logger.info("VALIDATING %s GENE SYMBOLS" % os.path.basename(filePath))

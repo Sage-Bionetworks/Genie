@@ -95,8 +95,9 @@ def test_validation():
 	order = ["Hugo_Symbol","Entrez_gene_id","GENIE-SAGE-ID1-1","GENIE-SAGE-ID2-1"]
 	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAK1', 'AAAS'],
 						  "Entrez_gene_id":[0,0,0],
-						  "GENIE-SAGE-ID1-1":[1, float('nan'), 3],
-						  "GENIE-SAGE-ID2-1":[2, 1, -1]})
+						  "GENIE-SAGE-ID1-1":[-2, 0, 1],
+						  "GENIE-SAGE-ID2-1":[0.5, 1.5, -1.5],
+						  "GENIE-SAGE-ID3-1":[float('nan'), 2, 'NA']})
 	cnaDf = cnaDf[order]
 	error, warning = cnaClass._validate(cnaDf, False)
 	assert error == ""
@@ -118,10 +119,10 @@ def test_validation():
 
 	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAK1', 'AAAS', 'AAED1'],
 						  "GENIE-SAGE-ID1-1":[1, 2, 1],
-						  "GENIE-SAGE-ID2-1":[2, 1, "foo"]})
+						  "GENIE-SAGE-ID2-1":[2, 1, 3]})
 	cnaDf = cnaDf[order]
 	error, warning = cnaClass._validate(cnaDf, False)
-	expectedErrors = ("All values must be numerical values, or NA\n")
+	expectedErrors = ("All values must be NA/blank, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, or 2.\n")
 	assert error == expectedErrors
 
 	assert warning == ""
