@@ -66,10 +66,11 @@ class fusions(example_filetype_format.FileTypeFormat):
         newsamples = [process_functions.checkGenieId(i,self.center) for i in fusion['TUMOR_SAMPLE_BARCODE']]
         fusion['TUMOR_SAMPLE_BARCODE'] = newsamples
 
-        if fusion.get("COMMENTS") is None:
-            fusion['COMMENTS'] = ""
-
-        fusion['COMMENTS'] = fusion['COMMENTS'].fillna("")
+        #This is temporary, because comments column will be removed
+        #if fusion.get("COMMENTS") is None:
+        #    fusion['COMMENTS'] = ""
+        # #Will remove comments column
+        # fusion['COMMENTS'] = ""
         fusion['ENTREZ_GENE_ID'] = fusion['ENTREZ_GENE_ID'].fillna(0)
         fusion = fusion.drop_duplicates()
         fusion['ID'] = fusion['HUGO_SYMBOL'].copy()
@@ -87,7 +88,7 @@ class fusions(example_filetype_format.FileTypeFormat):
         # fusion = fusion[~fusion['HUGO_SYMBOL'].isnull()]
         fusion['FUSION'] = fusion['FUSION'].fillna("")
         fusion, nonmapped = remapFusion(temp.to_dict()['HUGO_SYMBOL'], fusion, "FUSION")
-        fusion, nonmapped = remapFusion(temp.to_dict()['HUGO_SYMBOL'], fusion, "COMMENTS")
+        #fusion, nonmapped = remapFusion(temp.to_dict()['HUGO_SYMBOL'], fusion, "COMMENTS")
         fusion['ENTREZ_GENE_ID'] = [int(float(i)) for i in fusion['ENTREZ_GENE_ID']]
         return(fusion)
 
@@ -97,7 +98,7 @@ class fusions(example_filetype_format.FileTypeFormat):
         databaseSynId = kwargs['databaseSynId']
         newPath = kwargs['newPath']
         test = kwargs['test']
-        cols = ['HUGO_SYMBOL','ENTREZ_GENE_ID','CENTER','TUMOR_SAMPLE_BARCODE','FUSION','DNA_SUPPORT','RNA_SUPPORT','METHOD','FRAME','COMMENTS','ID']
+        cols = ['HUGO_SYMBOL','ENTREZ_GENE_ID','CENTER','TUMOR_SAMPLE_BARCODE','FUSION','DNA_SUPPORT','RNA_SUPPORT','METHOD','FRAME','ID']
 
         fusion = pd.read_csv(filePath, sep="\t",comment="#")
         fusion = self._process(fusion, test)
@@ -110,8 +111,8 @@ class fusions(example_filetype_format.FileTypeFormat):
         warning = ""
 
 
-# Frame: “in-frame” or “frameshift”.
-# Fusion_Status (OPTIONAL): An assessment of the mutation type (i.e., “SOMATIC”, “GERMLINE”, “UNKNOWN”, or empty)
+# Frame: "in-frame" or "frameshift".
+# Fusion_Status (OPTIONAL): An assessment of the mutation type (i.e., "SOMATIC", "GERMLINE", "UNKNOWN", or empty)
 
         fusionDF.columns = [col.upper() for col in fusionDF.columns]
 
@@ -129,15 +130,15 @@ class fusions(example_filetype_format.FileTypeFormat):
             #invalidated_genes = self.pool.map(process_functions.validateSymbol, fusionDF["HUGO_SYMBOL"].drop_duplicates())
             fusionDF = fusionDF.drop_duplicates("HUGO_SYMBOL").apply(lambda x: validateSymbol(x, bedDf), axis=1)
             if fusionDF["HUGO_SYMBOL"].isnull().any():
-                warning += "Any gene names that can't be remapped will stay the same.\n"
+                total_error += "Your fusion file should not have any NA/blank Hugo Symbols.\n"
         
-        if process_functions.checkColExist(fusionDF, "DNA_SUPPORT"):
-            if not fusionDF.DNA_SUPPORT.isin(["yes","no","unknown"]).all():
-                total_error += "Your fusion file's DNA_SUPPORT column must be 'yes', 'no', or 'unknown'"
+        # if process_functions.checkColExist(fusionDF, "DNA_SUPPORT"):
+        #     if not fusionDF.DNA_SUPPORT.isin(["yes","no","unknown"]).all():
+        #         total_error += "Your fusion file's DNA_SUPPORT column must be 'yes', 'no', or 'unknown'"
 
-        if process_functions.checkColExist(fusionDF, "RNA_SUPPORT"):
-            if not fusionDF.RNA_SUPPORT.isin(["yes","no","unknown"]).all():
-                total_error += "Your fusion file's RNA_SUPPORT column must be 'yes', 'no', or 'unknown'"
+        # if process_functions.checkColExist(fusionDF, "RNA_SUPPORT"):
+        #     if not fusionDF.RNA_SUPPORT.isin(["yes","no","unknown"]).all():
+        #         total_error += "Your fusion file's RNA_SUPPORT column must be 'yes', 'no', or 'unknown'"
 
         # if process_functions.checkColExist(fusionDF, "FRAME"):
         #     if not fusionDF.FRAME.isin(["in-frame","frameshift"]).all():
