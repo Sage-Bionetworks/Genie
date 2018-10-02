@@ -16,8 +16,8 @@ def test_processing():
 		return(table_query_results_map[args])
 	databaseMapping = pd.DataFrame(dict(Database=['bed'],
 										Id=['syn8457748']))
-	symbols = pd.DataFrame(dict(Hugo_Symbol=['AAK1','AAED1','AAAS'],
-								ID=['AAK1', 'AAED', 'AAAS']))
+	symbols = pd.DataFrame(dict(Hugo_Symbol=['AAK1','AAED1','AAAS','AAED1'],
+								ID=['AAK1', 'AAED', 'AAAS','AAD']))
 	#This is the gene positions that all bed dataframe will be processed against
 	table_query_results_map = {
 	("SELECT * FROM syn10967259",) : createMockTable(databaseMapping),
@@ -56,10 +56,10 @@ def test_processing():
 						  "GENIE-SAGE-Id1-1":['NA',1],
 						  "GENIE-SAGE-Id2-1":['NA',2]})
 
-	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAED1', 'foo','AAAS'],
-						  "Entrez_gene_id":[0,0,0,0],
-						  "GENIE-SAGE-Id1-1":[1, 1, 0, float('nan')],
-						  "GENIE-SAGE-Id2-1":[2, 0, -1, float('nan')]})
+	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAED1', 'foo','AAAS','AAD'],
+						  "Entrez_gene_id":[0,0,0,0,0],
+						  "GENIE-SAGE-Id1-1":[1, 1, 0, float('nan'),1],
+						  "GENIE-SAGE-Id2-1":[2, 0, -1, float('nan'),float('nan')]})
 	cnaDf = cnaDf[order]
 	newCnaDf = cnaClass._process(cnaDf)
 	newCnaDf.reset_index(inplace=True,drop=True)
@@ -95,8 +95,9 @@ def test_validation():
 	order = ["Hugo_Symbol","Entrez_gene_id","GENIE-SAGE-ID1-1","GENIE-SAGE-ID2-1"]
 	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAK1', 'AAAS'],
 						  "Entrez_gene_id":[0,0,0],
-						  "GENIE-SAGE-ID1-1":[1, 2, 0],
-						  "GENIE-SAGE-ID2-1":[2, 1, -1]})
+						  "GENIE-SAGE-ID1-1":[-2, 0, 1],
+						  "GENIE-SAGE-ID2-1":[0.5, 1.5, -1.5],
+						  "GENIE-SAGE-ID3-1":[float('nan'), 2, 'NA']})
 	cnaDf = cnaDf[order]
 	error, warning = cnaClass._validate(cnaDf, False)
 	assert error == ""
@@ -110,7 +111,6 @@ def test_validation():
 	
 	error, warning = cnaClass._validate(cnaDf, False)
 	expectedErrors = ("Your cnv file's first column must be Hugo_Symbol\n"
-					  "Your cnv file must not have any empty values\n"
 					  "Your CNA file has duplicated Hugo_Symbols (After remapping of genes): AAD,AAED,AAED1 -> AAED1,AAED1,AAED1.\n")
 
 	assert error == expectedErrors
@@ -119,9 +119,10 @@ def test_validation():
 
 	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAK1', 'AAAS', 'AAED1'],
 						  "GENIE-SAGE-ID1-1":[1, 2, 1],
-						  "GENIE-SAGE-ID2-1":[2, 1, "foo"]})
+						  "GENIE-SAGE-ID2-1":[2, 1, 3]})
 	cnaDf = cnaDf[order]
 	error, warning = cnaClass._validate(cnaDf, False)
-	expectedErrors = ("All values must be numerical values\n")
+	expectedErrors = ("All values must be NA/blank, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, or 2.\n")
 	assert error == expectedErrors
+
 	assert warning == ""
