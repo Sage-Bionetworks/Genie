@@ -140,7 +140,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 				 validVCF=None, validMAFs=None,
 				 vcf2mafPath=None,
 	   			 veppath=None,vepdata=None,
-				 processing="main", test=False):
+				 processing="main", test=False, reference=None):
 
 	logger.info("PROCESSING %s FILES: %d" % (center, len(validFiles)))
 	centerStagingFolder = os.path.join(path_to_GENIE, center)
@@ -180,7 +180,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 									validMAFs=validMAFs,
 									path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
 						   			veppath=veppath,vepdata=vepdata,
-									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, reference=reference)
 	logger.info("ALL DATA STORED IN DATABASE")
 
 #Create and archive maf database
@@ -308,6 +308,7 @@ def main():
 	parser.add_argument("--vcf2mafPath", type=str, help="Path to vcf2maf")
 	parser.add_argument("--vepPath", type=str, help="Path to VEP")
 	parser.add_argument("--vepData", type=str, help="Path to VEP data")
+	parser.add_argument("--reference", type=str, help="Path to VCF reference file")
 	parser.add_argument("--oncotreeLink", type=str, help="Link to oncotree code")
 	parser.add_argument("--createNewMafDatabase", action='store_true', help = "Creates a new maf database")
 	parser.add_argument("--testing", action='store_true', help = "Testing the infrastructure!")
@@ -396,7 +397,7 @@ def main():
 					 center_mapping_df, args.oncotreeLink, databaseToSynIdMappingDf, 
 					 validVCF=validVCF, validMAFs=validMAFs, vcf2mafPath=args.vcf2mafPath,
 		   			 veppath=args.vepPath,vepdata=args.vepData,
-					 test=testing, processing=args.process)
+					 test=testing, processing=args.process, reference=args.reference)
 
 		#Should add in this process end tracking before the deletion of samples
 		processTracker = syn.tableQuery("SELECT timeEndProcessing FROM %s where center = '%s' and processingType = '%s'" % (processTrackerSynId, args.center,args.process))
