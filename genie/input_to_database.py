@@ -137,7 +137,7 @@ def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, test
 #Processing single file
 def processFiles(syn, validFiles, center, path_to_GENIE, threads, 
 				 center_mapping_df, oncotreeLink, databaseToSynIdMappingDf, 
-				 validVCF=None, validMAFs=None, validCBS=None,
+				 validVCF=None, validMAFs=None,
 				 vcf2mafPath=None,
 	   			 veppath=None,vepdata=None,
 				 processing="main", test=False):
@@ -158,28 +158,15 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 				synId = None
 			else:
 				synId = synId[0]
-			if fileType is not None and fileType is not "cbs":
-			#if fileType not in [None,"cbs","cna"]:
+			if fileType is not None:
+			#if fileType not in [None,"cna"]:
 				PROCESS_FILES[fileType](syn, center, threads).process(filePath=filePath, newPath=newPath, 
 									parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
 									fileSynId=fileSynId, validVCF=validVCF, 
-									validMAFs=validMAFs, validCBS=validCBS,
+									validMAFs=validMAFs,
 									path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
 						   			veppath=veppath,vepdata=vepdata,
 									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, test=test)
-		if len(validCBS) > 0:
-			filePath = None
-			newPath = None
-			fileType = None
-			synId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "cbs"][0]
-			fileSynId = None
-			PROCESS_FILES["cbs"](syn, center, threads).process(filePath=filePath, newPath=newPath, 
-										parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
-										fileSynId=fileSynId, validVCF=validVCF, 
-										validMAFs=validMAFs, validCBS=validCBS,
-										path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
-							   			veppath=veppath,vepdata=vepdata,
-										processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf)
 
 	elif processing in ["vcf","maf","mafSP"]:
 		filePath = None
@@ -190,7 +177,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 		PROCESS_FILES[processing](syn, center, threads).process(filePath=filePath, newPath=newPath, 
 									parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
 									fileSynId=fileSynId, validVCF=validVCF, 
-									validMAFs=validMAFs, validCBS=validCBS,
+									validMAFs=validMAFs,
 									path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
 						   			veppath=veppath,vepdata=vepdata,
 									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf)
@@ -254,7 +241,12 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
 		logger.info("CHECK FOR DUPLICATED FILES")
 		##### DUPLICATED FILES ######
 		#check for duplicated filenames.  There should be no duplication, files should be uploaded as new versions and the entire dataset should be uploaded everytime
+		#cbs and seg files should not be duplicated.  There can only be one
 		duplicatedFiles = inputValidStatus[inputValidStatus['name'].duplicated(keep=False)]
+		cbsSegBool = [os.path.basename(i).endswith('.cbs') or os.path.basename(i).endswith('.seg') for i in inputValidStatus['name']]
+		cbsSegFiles = inputValidStatus[cbsSegBool]
+		if len(cbsSegFiles) >1:
+			duplicatedFiles = duplicatedFiles.append(cbsSegFiles)
 		nodups = ["data_mutations_extended"]
 		allDuplicatedFiles = []
 		for nodup in nodups:
@@ -268,7 +260,7 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
 		#Send an email if there are any duplicated files
 		if not duplicatedFiles.empty:
 			incorrectFiles = ", ".join([name for synId, name in zip(duplicatedFiles['id'],duplicatedFiles['name'])])
-			incorrectEnt = syn.get(synId)
+			incorrectEnt = syn.get(duplicatedFiles['id'].iloc[0])
 			sendEmail = set([incorrectEnt.modifiedBy, incorrectEnt.createdBy])
 			userNames = ", ".join([syn.getUserProfile(user).userName for user in sendEmail])
 			syn.sendMessage(list(sendEmail), "GENIE Validation Error", "Dear %s,\n\nYour files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME" % (userNames, incorrectFiles))
@@ -382,7 +374,7 @@ def main():
 		validMAF = [i for i in validFiles['path'] if os.path.basename(i).startswith("data_mutations_extended")]
 		validMAFSP = [i for i in validFiles['path'] if os.path.basename(i).startswith("nonGENIE_data_mutations_extended")]
 		validVCF = [i for i in validFiles['path'] if os.path.basename(i).endswith('.vcf')]
-		validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
+		#validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
 		if args.process == 'mafSP':
 			validMAFs = validMAFSP
 			#mafSynId = process_functions.getDatabaseSynId(syn, "mafSP", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
@@ -402,8 +394,7 @@ def main():
 			syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
 		processFiles(syn, validFiles, center, path_to_GENIE, args.thread, 
 					 center_mapping_df, args.oncotreeLink, databaseToSynIdMappingDf, 
-					 validVCF=validVCF, validMAFs=validMAFs, validCBS=validCBS,
-					 vcf2mafPath=args.vcf2mafPath,
+					 validVCF=validVCF, validMAFs=validMAFs, vcf2mafPath=args.vcf2mafPath,
 		   			 veppath=args.vepPath,vepdata=args.vepData,
 					 test=testing, processing=args.process)
 
