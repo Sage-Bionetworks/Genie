@@ -327,8 +327,14 @@ def main():
 		logger.info("###########################################")
 		logger.info("############NOW IN TESTING MODE############")
 		logger.info("###########################################")
-
-	center_mapping = syn.tableQuery('SELECT * FROM %s' % process_functions.getDatabaseSynId(syn, "centerMapping", test=testing))
+	center_mapping_id = process_functions.getDatabaseSynId(syn, "centerMapping", test=testing)
+	center_mapping_ent = syn.get(center_mapping_id)
+	if center_mapping_ent.get('isProcessing',['True'])[0] == 'True':
+		raise Exception("Processing/validation is currently happened.  Please change/add the 'isProcessing' annotation on %s to False to enable processing" % center_mapping_id)
+	else:
+		center_mapping_ent.isProcessing="True"
+		center_mapping_ent = syn.store(center_mapping_ent)
+	center_mapping = syn.tableQuery('SELECT * FROM %s' %center_mapping_id)
 	center_mapping_df = center_mapping.asDataFrame()
 	assert args.center in center_mapping_df.center.tolist(), "Must specify one of these centers: %s" % ", ".join(center_mapping_df.center)
 	
@@ -414,6 +420,9 @@ def main():
 	else:
 		messageOut = "%s does not have any valid files" if not args.onlyValidate else "ONLY VALIDATION OCCURED FOR %s"
 		logger.info(messageOut % center)
+
+	center_mapping_ent.isProcessing="False"
+	center_mapping_ent = syn.store(center_mapping_ent)
 	logger.info("ALL PROCESSES COMPLETE")
 
 if __name__ == "__main__":
