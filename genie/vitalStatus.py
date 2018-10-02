@@ -97,8 +97,8 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
 		newPath = kwargs['newPath']
 		vitalStatusDf = pd.read_csv(filePath, sep="\t", comment="#")
 		vitalStatusDf = self._process(vitalStatusDf)
-		cols = vitalStatusDf.columns
-		process_functions.updateData(self.syn, databaseSynId, vitalStatusDf, self.center, cols)
+		#cols = vitalStatusDf.columns
+		process_functions.updateData(self.syn, databaseSynId, vitalStatusDf, self.center)
 		vitalStatusDf.to_csv(newPath, sep="\t",index=False)
 		return(newPath)
 

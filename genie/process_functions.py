@@ -305,10 +305,14 @@ def center_convert_back(filePath, anonymizeCenterDf):
 ####################################################################################
 # UPDATING DATABASE
 ####################################################################################
-def updateData(syn, databaseSynId, newData, center, col, toDelete=False):
+def updateData(syn, databaseSynId, newData, filterBy, filterByColumn= "CENTER", col=None, toDelete=False):
 	databaseEnt = syn.get(databaseSynId)
-	database = syn.tableQuery("SELECT * FROM %s where CENTER ='%s'" % (databaseSynId, center))
-	database = database.asDataFrame()[col]
+	database = syn.tableQuery("SELECT * FROM %s where %s ='%s'" % (databaseSynId, filterByColumn, filterBy))
+	database = database.asDataFrame()
+	if col is not None:
+		database = database[col]
+	else:
+		newData = newData[database.columns]
 	updateDatabase(syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete)
 	
 def updateDatabase(syn, database, new_dataset, databaseSynId, uniqueKeyCols, toDelete=False):
