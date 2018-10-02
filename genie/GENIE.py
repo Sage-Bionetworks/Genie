@@ -22,7 +22,7 @@ def main():
     parser.add_argument("--vcf2mafPath", type=str, help="Path to vcf2maf", default="~/vcf2maf-1.6.14")
     parser.add_argument("--vepPath", type=str, help="Path to VEP", default="~/vep")
     parser.add_argument("--vepData", type=str, help="Path to VEP data", default="~/.vep")
-    #parser.add_argument("--oncotreeLink", type=str, default='http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21', help="Link to oncotree code")
+    parser.add_argument("--useReference", action='store_true', help = "Use fa instead of fa.gz (Use this flag for batch)")
 
     args = parser.parse_args()
     syn = process_functions.synLogin(args)
@@ -40,6 +40,7 @@ def main():
         centers = CENTER_MAPPING_DF.center
 
     inputToDatabaseScript = os.path.join(SCRIPT_DIR, "input_to_database.py")
+    #centers = [i for i in centers if i not in ["JHU","DFCI","GRCC","NKI","MSK","UHN","VICC"]]
     for center in centers:
         if args.onlyValidate:
             logger.info("VALIDATING %s" % center)
@@ -60,6 +61,8 @@ def main():
             extendCommands.append('--createNewMafDatabase')
             args.createNewMafDatabase = False
         command.extend(extendCommands)
+        if args.useReference:
+            command.extend(["--reference",os.path.join(os.path.expanduser(args.vepData),"homo_sapiens/86_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa")])
         logger.info("COMMAND EXECUTED: %s" % " ".join(command)) 
         output = subprocess.check_output(command,stderr= subprocess.STDOUT)
         #logger.info(output)
@@ -67,13 +70,14 @@ def main():
             centerLog.write(output.decode("utf-8"))
         syn.store(synapseclient.File(logPath, parentId="syn10155804"))
         os.remove(logPath)
+
     #Only write out invalid reasons if the center isnt specified and if only validate
     if args.center is None and args.onlyValidate:
         logger.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
         writeInvalidReasonsScript = os.path.join(SCRIPT_DIR, 'writeInvalidReasons.py')
         writeInvalidReasons = ['python', writeInvalidReasonsScript, '--pemFile', os.path.expanduser(args.pemFile)] if args.pemFile is not None else ['python', writeInvalidReasonsScript]
         output = subprocess.check_call(writeInvalidReasons)
-
+    logger.info("COMPLETED!")
 if __name__ == "__main__":
     main()
    
