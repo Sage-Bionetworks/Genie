@@ -8,24 +8,24 @@ import sys
 from genie.maf import maf
 from genie.mafSP import mafSP
 
-def test_processing():
+# def test_processing():
 
-	syn = mock.create_autospec(synapseclient.Synapse) 
+# 	syn = mock.create_autospec(synapseclient.Synapse) 
 
-	mafClass = maf(syn, "SAGE")
-	mafDf = pd.DataFrame(dict(Center=["foo","dsdf","sdf"],
-							 Tumor_Sample_Barcode=["GENIE-SAGE-1-3","1-2","3-2"],
-							 Sequence_Source=["3","e","sd"],
-							 Sequencer=["dsf","sdf","d"],
-							 Validation_Status=["Unknown","unknown","f"]))
-	formattedMafDf = mafClass.formatMAF(mafDf)
+# 	mafClass = maf(syn, "SAGE")
+# 	mafDf = pd.DataFrame(dict(Center=["foo","dsdf","sdf"],
+# 							 Tumor_Sample_Barcode=["GENIE-SAGE-1-3","1-2","3-2"],
+# 							 Sequence_Source=["3","e","sd"],
+# 							 Sequencer=["dsf","sdf","d"],
+# 							 Validation_Status=["Unknown","unknown","f"]))
+# 	formattedMafDf = mafClass.formatMAF(mafDf)
 
-	expectedMafDf = pd.DataFrame(dict(Center=["SAGE","SAGE","SAGE"],
-							 Tumor_Sample_Barcode=["GENIE-SAGE-1-3","GENIE-SAGE-1-2","GENIE-SAGE-3-2"],
-							 Sequence_Source=[pd.np.nan,pd.np.nan,pd.np.nan],
-							 Sequencer=[pd.np.nan,pd.np.nan,pd.np.nan],
-							 Validation_Status=['','',"f"]))
-	assert expectedMafDf.equals(formattedMafDf[expectedMafDf.columns])
+# 	expectedMafDf = pd.DataFrame(dict(Center=["SAGE","SAGE","SAGE"],
+# 							 Tumor_Sample_Barcode=["GENIE-SAGE-1-3","GENIE-SAGE-1-2","GENIE-SAGE-3-2"],
+# 							 Sequence_Source=[pd.np.nan,pd.np.nan,pd.np.nan],
+# 							 Sequencer=[pd.np.nan,pd.np.nan,pd.np.nan],
+# 							 Validation_Status=['','',"f"]))
+# 	assert expectedMafDf.equals(formattedMafDf[expectedMafDf.columns])
 
 def test_validation():
 
