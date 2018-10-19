@@ -386,7 +386,6 @@ def main():
 		validFiles = beds.append(validFiles)
 		validFiles.drop_duplicates(inplace=True)
 		#Valid maf, mafsp, vcf and cbs files
-		data_mutations_extended_%s.txt
 		validMAF = [i for i in validFiles['path'] if os.path.basename(i) == "data_mutations_extended_%s.txt" % args.center]
 		validMAFSP = [i for i in validFiles['path'] if os.path.basename(i)  == "nonGENIE_data_mutations_extended_%s.txt" % args.center]
 		validVCF = [i for i in validFiles['path'] if os.path.basename(i).endswith('.vcf')]
