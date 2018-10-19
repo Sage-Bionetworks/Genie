@@ -424,11 +424,12 @@ def main():
 		if testing:
 			retractionCommand.append("--test")
 		#Comment back in after testing is done
-		subprocess.call(retractionCommand)
+		subprocess.check_call(retractionCommand)
 	else:
 		messageOut = "%s does not have any valid files" if not args.onlyValidate else "ONLY VALIDATION OCCURED FOR %s"
 		logger.info(messageOut % center)
-
+	# To ensure that this is the new entity
+	center_mapping_ent = syn.get(center_mapping_id)
 	center_mapping_ent.isProcessing="False"
 	center_mapping_ent = syn.store(center_mapping_ent)
 	logger.info("ALL PROCESSES COMPLETE")
