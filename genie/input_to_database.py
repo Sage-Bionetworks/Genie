@@ -268,7 +268,7 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
 		#Send an email if there are any duplicated files
 		if not duplicatedFiles.empty:
 			incorrectFiles = ", ".join([name for synId, name in zip(duplicatedFiles['id'],duplicatedFiles['name'])])
-			incorrectEnt = syn.get(duplicatedFiles['id'].loc[0])
+			incorrectEnt = syn.get(duplicatedFiles['id'].iloc[0])
 			sendEmail = set([incorrectEnt.modifiedBy, incorrectEnt.createdBy])
 			userNames = ", ".join([syn.getUserProfile(user).userName for user in sendEmail])
 			syn.sendMessage(list(sendEmail), "GENIE Validation Error", "Dear %s,\n\nYour files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME" % (userNames, incorrectFiles))
