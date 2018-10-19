@@ -123,7 +123,7 @@ def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, test
 		else:
 			#Send email the first time the file is invalid
 			incorrectFiles = ", ".join([name for synId, name in zip(x['synId'],names)])
-			incorrectEnt = syn.get(synId)
+			incorrectEnt = syn.get(x['synId'][0])
 			sendEmail = set([incorrectEnt.modifiedBy, incorrectEnt.createdBy])
 			userNames = ", ".join([syn.getUserProfile(user).userName for user in sendEmail])
 			syn.sendMessage(list(sendEmail), "GENIE Validation Error", "Dear %s,\n\nYour files (%s) are invalid! Here are the reasons why:\n\n%s" % (userNames, incorrectFiles, message))
