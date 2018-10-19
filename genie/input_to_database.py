@@ -255,13 +255,14 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
 		##### DUPLICATED FILES ######
 		#check for duplicated filenames.  There should be no duplication, files should be uploaded as new versions and the entire dataset should be uploaded everytime
 		duplicatedFiles = inputValidStatus[inputValidStatus['name'].duplicated(keep=False)]
-		nodups = ["data_mutations_extended"]
-		allDuplicatedFiles = []
-		for nodup in nodups:
-			checkDups = [name for name in inputValidStatus['name'] if name.startswith(nodup)]
-			if len(checkDups) > 1:
-				allDuplicatedFiles.extend(checkDups)
-		duplicatedFiles = duplicatedFiles.append(inputValidStatus[inputValidStatus['name'].isin(allDuplicatedFiles)])
+		#No need for this anymore, because any other mutation header, we will just fail
+		#nodups = ["data_mutations_extended"]
+		#allDuplicatedFiles = []
+		# for nodup in nodups:
+		# 	checkDups = [name for name in inputValidStatus['name'] if name.startswith(nodup)]
+		# 	if len(checkDups) > 1:
+		# 		allDuplicatedFiles.extend(checkDups)
+		#duplicatedFiles = duplicatedFiles.append(inputValidStatus[inputValidStatus['name'].isin(allDuplicatedFiles)])
 		duplicatedFiles.drop_duplicates("id",inplace=True)
 		inputValidStatus['status'][inputValidStatus['id'].isin(duplicatedFiles['id'])] = "INVALID"
 		duplicatedFiles['errors'] = "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME"
@@ -385,8 +386,9 @@ def main():
 		validFiles = beds.append(validFiles)
 		validFiles.drop_duplicates(inplace=True)
 		#Valid maf, mafsp, vcf and cbs files
-		validMAF = [i for i in validFiles['path'] if os.path.basename(i).startswith("data_mutations_extended")]
-		validMAFSP = [i for i in validFiles['path'] if os.path.basename(i).startswith("nonGENIE_data_mutations_extended")]
+		data_mutations_extended_%s.txt
+		validMAF = [i for i in validFiles['path'] if os.path.basename(i) == "data_mutations_extended_%s.txt" % args.center]
+		validMAFSP = [i for i in validFiles['path'] if os.path.basename(i)  == "nonGENIE_data_mutations_extended_%s.txt" % args.center]
 		validVCF = [i for i in validFiles['path'] if os.path.basename(i).endswith('.vcf')]
 		validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
 		if args.process == 'mafSP':
