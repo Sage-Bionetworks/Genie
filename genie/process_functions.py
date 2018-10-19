@@ -429,8 +429,8 @@ def updateDatabase(syn, database, new_dataset, databaseSynId, uniqueKeyCols, toD
 #Check if an item can become an integer
 def checkInt(element):
 	try:
-		int(float(element))
-		return(True)
+		element = float(element)
+		return(element.is_integer())
 	except ValueError:
 		return(False)
 
