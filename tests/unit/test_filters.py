@@ -89,6 +89,16 @@ def test_reAnnotatePHI():
 	finalClin = reAnnotatePHI(clinicalDf)
 	assert all(finalClin['BIRTH_YEAR'] == expectedBirth)
 
+	#Test to check if > or < submitted in BIRTH_YEAR.  If so, redact
+	expectedBirth = pd.Series(['cannotReleaseHIPAA','withheld'])
+	clinicalDf = pd.DataFrame(['SAGE-TEST-1','SAGE-TEST-2'])
+	clinicalDf['AGE_AT_SEQ_REPORT'] = [32485, 6570]
+	clinicalDf['INT_CONTACT'] = [32485, 6570]
+	clinicalDf['INT_DOD'] = [32485, 6570]
+	clinicalDf['BIRTH_YEAR'] = [">asdf", "<adf"]
+	finalClin = reAnnotatePHI(clinicalDf)
+	assert all(finalClin['BIRTH_YEAR'] == expectedBirth)
+
 # def test_MAFinBED():
 # 	syn = mock.create_autospec(synapseclient.Synapse) 
 # 	# MAF in BED filter (Make sure that the only Hugo symbol that passes through this filter is the ERRFI1 gene)

@@ -98,6 +98,11 @@ def reAnnotatePHI(mergedClinical):
 	mergedClinical['INT_DOD'][toRedactPeds] = "<6570"
 	mergedClinical['BIRTH_YEAR'][toRedact] = "cannotReleaseHIPAA"
 	mergedClinical['BIRTH_YEAR'][toRedactPeds] = "withheld"
+
+	#Redact DFCI inputed fields
+	mergedClinical['BIRTH_YEAR'] = ["cannotReleaseHIPAA" if ">" in str(year) else year for year in mergedClinical['BIRTH_YEAR']]
+	mergedClinical['BIRTH_YEAR'] = ["withheld" if "<" in str(year) else year for year in mergedClinical['BIRTH_YEAR']]
+
 	return(mergedClinical)
 
 #remove string float
