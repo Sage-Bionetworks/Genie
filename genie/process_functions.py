@@ -159,9 +159,11 @@ def get_oncotree_codes(oncotree_url):
 	""" Gets the oncotree data from the specified url """
 	#PATTERN = re.compile('([A-Za-z\' ,-/]*) \\(([A-Za-z_]*)\\)')
 	PATTERN = re.compile('.*[(](.*)[)]')
-	with requests.get(oncotree_url) as oncotreeUrl:
-		oncotree = oncotreeUrl.text.split("\n")
-
+	# with requests.get(oncotree_url) as oncotreeUrl:
+	# 	oncotree = oncotreeUrl.text.split("\n")
+	oncotreeUrl = requests.get(oncotree_url)
+	oncotree = oncotreeUrl.text.split("\n")
+	
 	#oncotree = urlopen(oncotree_url).read().split('\n')
 	allCodes = []
 	for row in oncotree[:-1]:
