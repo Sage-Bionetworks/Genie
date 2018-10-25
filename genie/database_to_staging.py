@@ -771,7 +771,7 @@ def main():
 	logger.info(cbioOutput.decode("utf-8"))
 	if not args.test and not args.staging:
 		with open("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion, "w") as cbioLog:
-			cbioLog.write(cbioOutput)
+			cbioLog.write(cbioOutput.decode("utf-8"))
 		syn.store(File("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion, parentId = "syn10155804"))
 		os.remove("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion)
 	logger.info("REMOVING OLD FILES")
