@@ -4,7 +4,6 @@ import pandas as pd
 import math
 import os
 import re
-from synapseclient import File
 import argparse
 import datetime
 import process_functions as process
@@ -13,6 +12,7 @@ import subprocess
 import time
 import shutil
 import logging
+import create_case_lists
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ def storeFile(syn, filePath, parentId, anonymizeCenterDf, genie_version, name=No
 	#process.center_anon(filePath, anonymizeCenterDf)
 	if name is None:
 		name = os.path.basename(filePath)
-	return(syn.store(File(filePath, name=name, parent = parentId, versionComment=genie_version)))
+	return(syn.store(synapseclient.File(filePath, name=name, parent = parentId, versionComment=genie_version)))
 	#process.center_convert_back(filePath, anonymizeCenterDf)
 
 #This is the only filter that returns mutation columns to keep
@@ -78,8 +78,11 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 
 	consortiumRelease = next(consortiumReleaseWalk)
 	clinical = [syn.get(synid, followLink=True) for filename, synid in consortiumRelease[2] if filename == "data_clinical.txt"][0]
+	gene_matrix = [syn.get(synid, followLink=True) for filename, synid in consortiumRelease[2] if filename == "data_gene_matrix.txt"][0]
 
 	clinicalDf = pd.read_csv(clinical.path, sep="\t", comment="#")
+	gene_matrixdf = pd.read_csv(gene_matrix.path, sep="\t")
+
 	removeForPublicSamples = process.seqDateFilter(clinicalDf,processingDate,publicReleaseCutOff)
 	#comment back in when public release filter back on
 	#publicReleaseSamples = publicReleaseSamples.append(keepForPublicSamples)
@@ -96,13 +99,14 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 
 	allClin = clinicalDf[clinicalDf['SAMPLE_ID'].isin(publicReleaseSamples)]
 	allClin.to_csv(CLINICAL_PATH, sep="\t", index=False)
+
+	gene_matrixdf = gene_matrixdf[gene_matrixdf['SAMPLE_ID'].isin(publicReleaseSamples)]
+	gene_matrixdf.to_csv(DATA_GENE_PANEL_PATH,sep="\t",index=False)
+	storeFile(syn, DATA_GENE_PANEL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_gene_matrix.txt")
 	storeFile(syn, CLINICAL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_clinical.txt")
-	caseListGeneratorPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),'create_case_lists_by_cancer_type.py')
-	#GENERATE CASELISTS
-	#os.system('python %s --clinical-file %s --output-directory %s --study-id %s' % (caseListGeneratorPath, CLINICAL_PATH, dbTostaging.CASE_LIST_PATH, "genie_public"))
-	command=['python',caseListGeneratorPath,'--clinical-file',CLINICAL_PATH,
-		 '--output-directory',dbTostaging.CASE_LIST_PATH,'--study-id',"genie_public"]
-	subprocess.call(command)
+	
+	create_case_lists.create_case_lists(CLINICAL_PATH, DATA_GENE_PANEL_PATH, dbTostaging.CASE_LIST_PATH, "genie_public")
+
 	caseListFiles = os.listdir(dbTostaging.CASE_LIST_PATH)
 	caseListEntities = []
 	for casePath in caseListFiles:
@@ -174,11 +178,13 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 				segFile.write(text)
 			storeFile(syn, SEG_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="genie_public_data_cna_hg19.seg")
 		elif entName == "data_gene_matrix.txt":
-			panel = syn.get(entId, followLink=True)
-			panelDf = pd.read_csv(panel.path, sep="\t")
-			panelDf = panelDf[panelDf['SAMPLE_ID'].isin(publicReleaseSamples)]
-			panelDf.to_csv(DATA_GENE_PANEL_PATH,sep="\t",index=False)
-			storeFile(syn, DATA_GENE_PANEL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_gene_matrix.txt")
+			pass
+			# This file was processed above because it had to be used for generating caselists
+			# panel = syn.get(entId, followLink=True)
+			# panelDf = pd.read_csv(panel.path, sep="\t")
+			# panelDf = panelDf[panelDf['SAMPLE_ID'].isin(publicReleaseSamples)]
+			# panelDf.to_csv(DATA_GENE_PANEL_PATH,sep="\t",index=False)
+			# storeFile(syn, DATA_GENE_PANEL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_gene_matrix.txt")
 		elif entName == "genie_combined.bed":
 			bed = syn.get(entId, followLink=True)
 			bedDf = pd.read_csv(bed.path, sep="\t")

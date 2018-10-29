@@ -19,6 +19,7 @@ from . import mutationsInCis
 from . import vitalStatus
 from . import process_functions
 from . import example_filetype_format
+from . import create_case_lists
 
 PROCESS_FILES = {'bed':bed.bed,
 				 'bedSP':bedSP.bedSP,
