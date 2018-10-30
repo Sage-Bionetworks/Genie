@@ -12,6 +12,7 @@ import time
 import re
 import subprocess
 import synapseutils as synu
+import create_case_lists
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,8 @@ def reAnnotatePHI(mergedClinical):
 	toRedactPeds  = [int(float(age)) < pedsCutoff if age != '' else False for age in INT_CONTACT]
 	mergedClinical['INT_CONTACT'][toRedact] = ">32485"
 	mergedClinical['INT_CONTACT'][toRedactPeds] = "<6570"
+	mergedClinical['BIRTH_YEAR'][toRedact] = "cannotReleaseHIPAA"
+	mergedClinical['BIRTH_YEAR'][toRedactPeds] = "withheld"
 
 	INT_DOD =[pedsCutoff - 1 if "<" in str(age) else age for age in mergedClinical['INT_DOD']]
 	INT_DOD =[PHIcutoff + 1 if ">" in str(age) else age for age in INT_DOD]
@@ -94,6 +97,13 @@ def reAnnotatePHI(mergedClinical):
 	toRedactPeds  = [int(float(age)) < pedsCutoff if age != '' else False for age in INT_DOD]
 	mergedClinical['INT_DOD'][toRedact] = ">32485"
 	mergedClinical['INT_DOD'][toRedactPeds] = "<6570"
+	mergedClinical['BIRTH_YEAR'][toRedact] = "cannotReleaseHIPAA"
+	mergedClinical['BIRTH_YEAR'][toRedactPeds] = "withheld"
+
+	#Redact DFCI inputed fields
+	mergedClinical['BIRTH_YEAR'] = ["cannotReleaseHIPAA" if ">" in str(year) else year for year in mergedClinical['BIRTH_YEAR']]
+	mergedClinical['BIRTH_YEAR'] = ["withheld" if "<" in str(year) else year for year in mergedClinical['BIRTH_YEAR']]
+
 	return(mergedClinical)
 
 #remove string float
@@ -523,7 +533,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	logger.info("MERING, FILTERING, STORING FUSION FILES")
 	fusionSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "fusions"][0]
 
-	Fusions = syn.tableQuery('SELECT HUGO_SYMBOL,ENTREZ_GENE_ID,CENTER,TUMOR_SAMPLE_BARCODE,FUSION,DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME,COMMENTS FROM %s' % fusionSynId)
+	Fusions = syn.tableQuery('SELECT HUGO_SYMBOL,ENTREZ_GENE_ID,CENTER,TUMOR_SAMPLE_BARCODE,FUSION,DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME FROM %s' % fusionSynId)
 	FusionsDf = Fusions.asDataFrame()
 	#FusionsDf['ENTREZ_GENE_ID'] = FusionsDf['ENTREZ_GENE_ID'].fillna(0).apply(int)
 	FusionsDf['ENTREZ_GENE_ID'][FusionsDf['ENTREZ_GENE_ID'] == 0] = pd.np.nan
@@ -539,7 +549,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 		
 	FusionsDf = FusionsDf[FusionsDf['TUMOR_SAMPLE_BARCODE'].isin(keepForMergedConsortiumSamples)]
 	FusionsDf = FusionsDf.rename(columns= {'HUGO_SYMBOL':'Hugo_Symbol','ENTREZ_GENE_ID':'Entrez_Gene_Id','CENTER':'Center','TUMOR_SAMPLE_BARCODE':'Tumor_Sample_Barcode','FUSION':'Fusion',
-										   'DNA_SUPPORT':'DNA_support','RNA_SUPPORT':'RNA_support','METHOD':'Method','FRAME':'Frame','COMMENTS':'Comments'})
+										   'DNA_SUPPORT':'DNA_support','RNA_SUPPORT':'RNA_support','METHOD':'Method','FRAME':'Frame'})
 	#Remove duplicated Fusions
 	FusionsDf = FusionsDf[~FusionsDf[['Hugo_Symbol','Tumor_Sample_Barcode','Fusion']].duplicated()]
 	#FusionsDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
@@ -743,17 +753,15 @@ def main():
 		os.mkdir(CASE_LIST_PATH)
 	caselists = os.listdir(CASE_LIST_PATH)
 	[os.remove(os.path.join(CASE_LIST_PATH,caselist)) for caselist in caselists]
-	caseListGeneratorPath = os.path.join(os.path.dirname(os.path.abspath(__file__)),'create_case_lists_by_cancer_type.py')
 	CLINICAL_PATH = os.path.join(GENIE_RELEASE_DIR,'data_clinical_%s.txt' % args.genieVersion)
-	command=['python',caseListGeneratorPath,'--clinical-file',CLINICAL_PATH,
-			 '--output-directory',CASE_LIST_PATH,'--study-id',"genie_private"]
-	subprocess.call(command)
+	GENE_MATRIX_PATH = os.path.join(GENIE_RELEASE_DIR,"data_gene_matrix_%s.txt" % args.genieVersion)
+	create_case_lists.create_case_lists(CLINICAL_PATH, GENE_MATRIX_PATH, CASE_LIST_PATH, "genie_private")
 	caseListFiles = os.listdir(CASE_LIST_PATH)
 	caseListEntities = []
 	for casePath in caseListFiles:
 		casePath = os.path.join(CASE_LIST_PATH, casePath)
 		caseListEntities.append(storeFile(syn, casePath, parent=caseListSynId, staging=args.staging, caseLists=True, genieVersion=args.genieVersion))
-		
+
 	logger.info("REMOVING UNNECESSARY FILES")
 	genie_files = os.listdir(GENIE_RELEASE_DIR)
 	#deletePatterns = ('data_clinical_supp_patient_','data_clinical_supp_sample_','data_CNA_','data_mutations_extended_','data_fusions_','genie_private_data_cna_hg19_')
@@ -770,7 +778,7 @@ def main():
 	logger.info(cbioOutput.decode("utf-8"))
 	if not args.test and not args.staging:
 		with open("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion, "w") as cbioLog:
-			cbioLog.write(cbioOutput)
+			cbioLog.write(cbioOutput.decode("utf-8"))
 		syn.store(File("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion, parentId = "syn10155804"))
 		os.remove("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion)
 	logger.info("REMOVING OLD FILES")

@@ -80,6 +80,25 @@ def test_reAnnotatePHI():
 	assert all(finalClin['INT_DOD'] == expectedAge)
 	assert all(finalClin['BIRTH_YEAR'] == expectedBirth)
 
+	#Test for if the other columns will redact BIRTH_YEAR as well
+	expectedBirth = pd.Series(['cannotReleaseHIPAA','cannotReleaseHIPAA','withheld','withheld','withheld','cannotReleaseHIPAA'])
+	clinicalDf['AGE_AT_SEQ_REPORT'] = [32850, 32485, 6570, 6570, '<foo',32485]
+	clinicalDf['INT_CONTACT'] = [32485, 32850, 6569, 6570, 6570,32485]
+	clinicalDf['INT_DOD'] = [32485, 32485, 6570, 6569, 6570,'>testing']
+	clinicalDf['BIRTH_YEAR'] = [1900,1901,1902,1903,1900,1900]
+	finalClin = reAnnotatePHI(clinicalDf)
+	assert all(finalClin['BIRTH_YEAR'] == expectedBirth)
+
+	#Test to check if > or < submitted in BIRTH_YEAR.  If so, redact
+	expectedBirth = pd.Series(['cannotReleaseHIPAA','withheld'])
+	clinicalDf = pd.DataFrame(['SAGE-TEST-1','SAGE-TEST-2'])
+	clinicalDf['AGE_AT_SEQ_REPORT'] = [32485, 6570]
+	clinicalDf['INT_CONTACT'] = [32485, 6570]
+	clinicalDf['INT_DOD'] = [32485, 6570]
+	clinicalDf['BIRTH_YEAR'] = [">asdf", "<adf"]
+	finalClin = reAnnotatePHI(clinicalDf)
+	assert all(finalClin['BIRTH_YEAR'] == expectedBirth)
+
 # def test_MAFinBED():
 # 	syn = mock.create_autospec(synapseclient.Synapse) 
 # 	# MAF in BED filter (Make sure that the only Hugo symbol that passes through this filter is the ERRFI1 gene)
