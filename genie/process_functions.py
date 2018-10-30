@@ -159,8 +159,10 @@ def get_oncotree_codes(oncotree_url):
 	""" Gets the oncotree data from the specified url """
 	#PATTERN = re.compile('([A-Za-z\' ,-/]*) \\(([A-Za-z_]*)\\)')
 	PATTERN = re.compile('.*[(](.*)[)]')
-	with requests.get(oncotree_url) as oncotreeUrl:
-		oncotree = oncotreeUrl.text.split("\n")
+	# with requests.get(oncotree_url) as oncotreeUrl:
+	# 	oncotree = oncotreeUrl.text.split("\n")
+	oncotreeUrl = requests.get(oncotree_url)
+	oncotree = oncotreeUrl.text.split("\n")
 
 	#oncotree = urlopen(oncotree_url).read().split('\n')
 	allCodes = []
@@ -462,8 +464,9 @@ def extract_oncotree_code_mappings_from_oncotree_json(oncotree_json, primary, se
 def get_oncotree_code_mappings(oncotree_tumortype_api_endpoint_url):
 
 	#oncotree_raw_response = urlopen(oncotree_tumortype_api_endpoint_url).text
-	with requests.get(oncotree_tumortype_api_endpoint_url) as oncotreeUrl:
-		oncotree_raw_response = oncotreeUrl.text
+	#with requests.get(oncotree_tumortype_api_endpoint_url) as oncotreeUrl:
+	oncotreeUrl = requests.get(oncotree_tumortype_api_endpoint_url)
+	oncotree_raw_response = oncotreeUrl.text
 	oncotree_response = json.loads(oncotree_raw_response)
 	oncotree_response = oncotree_response['TISSUE']
 	return extract_oncotree_code_mappings_from_oncotree_json(oncotree_response, '', '')
