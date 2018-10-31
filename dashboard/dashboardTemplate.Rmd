@@ -1,0 +1,329 @@
+---
+title: "%s Summary"
+output: html_document
+params:
+  genieUser:
+    value: x
+  geniePass:
+    value: x
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, fig.height=8, fig.width=10)
+```
+
+```{r intro}
+suppressMessages(library(synapser))
+tryCatch({
+  foo = capture.output(synLogin())
+}, error = function(err) {
+  genieUser = params$genieUser
+  geniePass = params$geniePass
+  foo = capture.output(synLogin(genieUser, geniePass))
+})
+
+suppressMessages(library(ggplot2))
+suppressMessages(library(UpSetR))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(jsonlite))
+suppressMessages(library(knitr))
+
+createCenterColumn <- function(clinicalDf) {        
+  if (is.null(clinicalDf$CENTER)) {
+    centers = unlist(lapply(strsplit(clinicalDf$PATIENT_ID, "-"), function(x)  return(x[2])))
+  } else {
+    centers = clinicalDf$CENTER
+  }
+  return(centers)
+}
+
+getFileDf <- function(fileName, releaseFiles) {
+  synId = unlist(lapply(releaseFiles, function(x) {
+    if (x$name == fileName) {
+      return(x$id)
+    }
+  }))
+  if (length(synId)>0) {
+    ent = synGet(synId,followLink=T)
+    df = read.csv(ent$path,sep="\t",comment.char = "#",stringsAsFactors = F)
+    return(df)
+  } else {
+    return(NULL)
+  }
+}
+getPrimary <- function(code, oncotreeDict, primary) {
+  if (code!="") {
+    for (x in oncotreeDict) {
+      if (length(primary[x == code]) > 0) {
+        return(unique(primary[x == code])[1]) 
+      }
+    }
+    return(code)
+  } else {
+    return("NOT_ANNOTATED")
+  }
+}
+
+extract <- function(oncotree_json, primary, secondary) {
+  oncotree_code_to_info = list()
+  data = oncotree_json$children
+  for (node in names(data)) {
+    if (data[[node]]$level == 1) {
+      primary = node
+      secondary = ""
+    } else if (data[[node]]$level == 2) {
+      secondary = node
+    }
+    cancer_type = data[[node]]$mainType
+    cancer_type_detailed = data[[node]]$name
+    if (is.null(cancer_type_detailed)) {
+      cancer_type_detailed = ""
+    }
+    oncotree_code_to_info[[node]] = c("CANCER_TYPE" = cancer_type, "CANCER_TYPE_DETAILED"= cancer_type_detailed , "ONCOTREE_PRIMARY_NODE"= primary, "ONCOTREE_SECONDARY_NODE"=secondary)
+    if (length(data[[node]]$children) > 0) {
+      recurseDict = extract(data[[node]], primary, secondary)
+      oncotree_code_to_info <- append(oncotree_code_to_info,recurseDict)
+    }
+  }
+  return(oncotree_code_to_info)
+}
+plotPrimarySites <- function(clinical, oncotreeLink, release) { 
+  tryCatch({
+    ONCOTREE_MAP <- read.csv(oncotreeLink,sep="\t",stringsAsFactors = F)
+    levels = colnames(ONCOTREE_MAP)[grepl(colnames(ONCOTREE_MAP), pattern = "level")]
+    oncotreeDict = list()
+    for (level in levels) {
+      oncotreeDict[[level]] = sub(".+[(](.+)[)]","\\1",ONCOTREE_MAP[[level]])
+    }
+    primary = oncotreeDict$level_1
+    clinical$PRIMARY_CODES <- unlist(sapply(clinical$ONCOTREE_CODE, function(code) {
+      getPrimary(code, oncotreeDict, primary)
+    }))
+  }, error = function(err) {
+    data <- fromJSON(oncotreeLink)
+    oncotree_json = data$TISSUE
+    oncotreeDict = extract(oncotree_json, "", "")
+    clinical$PRIMARY_CODES <- unlist(sapply(clinical$ONCOTREE_CODE, function(code) {
+      oncotreeDict[[toupper(code)]]["ONCOTREE_PRIMARY_NODE"]
+    }))
+  })
+  clinical$CENTER = createCenterColumn(clinical)
+  primarysites <- matrix(nrow = length(unique(clinical$PRIMARY_CODES)),ncol = length(unique(clinical$CENTER)),dimnames = list(unique(clinical$PRIMARY_CODES),unique(clinical$CENTER)))
+  
+  for (center in unique(clinical$CENTER)) {
+    mapping <- clinical[clinical$CENTER==center,]
+    primary = table(mapping$PRIMARY_CODES)
+    primarysites[,center] <- primary[match(row.names(primarysites),names(primary))]
+  }
+  primarysites[is.na(primarysites)] <- 0
+  transposed <- t(primarysites)
+  
+  maxValue = max(apply(transposed, 2,sum))
+  par(mar=c(11, 4.1, 4.1, 7), xpd=TRUE)
+  barplot(transposed[,order(apply(transposed, 2,sum),decreasing = T)][,0:50],col=c("red","blue","light green","pink","purple","black","lavender","yellow"), width=2, beside=F, las=2,ylab="Number of Samples",main="Primary Site Distribution (Top 50 Counts)", ylim=c(0,ceiling(maxValue * 1.0 / 1000) * 1000))
+  legend("topright",fill=c("red","blue","light green","pink","purple","black","lavender","yellow"), legend=rownames(transposed))
+}
+
+plotCancerType <- function(this_samples) {
+  typeCounts = table(this_samples$CANCER_TYPE)
+  op = par(mar = c(13, 4, 4, 2))
+  barplot(typeCounts[order(typeCounts,decreasing = TRUE)], las = 2,cex.names = 0.8, ylab = "Number of samples", main="Samples, by cancer type and institution")
+  typeCountsByCen = table(this_samples$CENTER,this_samples$CANCER_TYPE)
+  
+  fractionalCounts = apply(typeCountsByCen,MARGIN = 2,function(x){ x/sum(x)})
+  op = par(mar = c(13, 4, 4, 2))
+  barplot(fractionalCounts[,order(typeCounts,decreasing = TRUE)], las = 2,cex.names = 0.8, ylab = "Fraction of samples",col = brewer.pal(8,"Spectral"),legend.text = rownames(typeCountsByCen),main="Fractional sample counts, per center and type")
+}
+
+plotPanelOverlap <- function(samples, bed, assays) {
+  #source("../analyses/genomicData/panelOverlap_gene.R")
+  #panelOverlap = getPanelOverlap(genieClinData = this_samples,genieBedData = this_bed)
+  #kable(panelOverlap)
+  makePanelList=function(assay,bed){
+    return(unique(as.character(bed$Hugo_Symbol[bed$SEQ_ASSAY_ID == assay])))
+  }
+  listInput = lapply(as.list(assays), function(x){makePanelList(x,bed)})
+  names(listInput) = assays
+  upset(fromList(listInput), order.by = "freq",nsets = length(assays),nintersects = 30)
+}
+
+plotCenterXRace <- function(genieClinData) {
+  t = as.data.frame.matrix(table(genieClinData$CENTER,genieClinData$PRIMARY_RACE))
+  t = data.frame(n=rowSums(t),t)
+  kable(t)
+  
+  kable(data.frame("Percent.Unknown"=(t[,"Unknown"]/rowSums(t[,colnames(t)!="n"]))*100),digits=2)
+  
+  # reduce table to none "Unknown" data
+  t$n = t$n-t$Unknown
+  t = t[,!(colnames(t)=="Unknown")]
+  # find sites with greater than 100 nono "Unknown" patients wrt race
+  k = which(t$n>100)
+  t = t[,c("n","White","Black","Asian","Native.American","Other")]
+  t[k,colnames(t)!="n"] = t[k,colnames(t)!="n"]/rowSums(t[k,colnames(t)!="n"])
+  kable(t[k,],digits=3)
+  
+  # Center vs Race BARCHARTS
+  t$Center = rownames(t)
+  l = c("White","Black","Asian","Native.American","Other")
+  t = reshape(t[k,],direction="long",idvar=("Center"),varying=l,v.names="Percentage",times=l,drop="n")
+  colnames(t)[colnames(t)=="time"] = "Race"
+  t$Race = factor(t$Race,l)
+  plot(ggplot(t,aes(Race,Percentage,group=Center))+geom_bar(stat="identity")+facet_wrap(~Center,ncol=4)+ylim(0,1)+coord_flip()+ ggtitle("Distribution of race across centers"))
+}
+
+plotCenterXEthnicity <- function(genieClinData) {
+  t = as.data.frame.matrix(table(genieClinData$CENTER,genieClinData$ETHNICITY))
+  t = data.frame(n=rowSums(t),t)
+  kable(t)
+  
+  kable(data.frame("Percent.Unknown"=(t[,"Unknown"]/rowSums(t[,colnames(t)!="n"]))*100),digits=2)
+  
+  t$n = t$n-t$Unknown
+  t = t[,!(colnames(t)=="Unknown")]
+  k = which(t$n>100)
+  t[k,colnames(t)!="n"] = t[k,colnames(t)!="n"]/rowSums(t[k,colnames(t)!="n"])
+  kable(t[k,],digits=3)
+  
+  # Center vs Ethnicity BARCHARTS
+  t$Center = rownames(t)
+  l = c("Non.Spanish.non.Hispanic","Spanish.Hispanic")
+  t = reshape(t[k,],direction="long",idvar=("Center"),varying=l,v.names="Percentage",times=l,drop="n")
+  colnames(t)[colnames(t)=="time"] = "Ethnicity"
+  t$Ethnicity = factor(t$Ethnicity,l)
+  plot(ggplot(t,aes(Ethnicity,Percentage,group=Center))+geom_bar(stat="identity")+facet_wrap(~Center,ncol=4)+ylim(0,1)+coord_flip()+ ggtitle("Distribution of ethnicity across centers"))
+}
+
+plotCenterXSex <- function(genieClinData) {
+  t = as.data.frame.matrix(table(genieClinData$CENTER,genieClinData$SEX))
+  t = data.frame(n=rowSums(t),t)
+  kable(t)
+  
+  t[,colnames(t)!="n"] = t[,colnames(t)!="n"]/rowSums(t[,colnames(t)!="n"])
+  kable(t,digits=3)
+  
+  # Center vs Sex BARCHARTS
+  t$Center = rownames(t)
+  l = c("Female","Male")
+  t = reshape(t,direction="long",idvar=("Center"),varying=l,v.names="Percentage",times=l,drop="n")
+  colnames(t)[colnames(t)=="time"] = "Sex"
+  t$Sex = factor(t$Sex,l)
+  plot(ggplot(t,aes(Sex,Percentage,group=Center))+geom_bar(stat="identity")+facet_wrap(~Center,ncol=4)+ylim(0,1)+coord_flip()+ ggtitle("Distribution of sex across centers"))
+}
+
+plotCenterXAge <- function(genieClinData) {
+  if (mean(as.numeric(genieClinData$AGE_AT_SEQ_REPORT),na.rm = T) < 100) {
+    multiply = T
+  } else {
+    multiply = F
+  } 
+  genieClinData$age_days <- genieClinData$AGE_AT_SEQ_REPORT
+  k = grep("^>",genieClinData$AGE_AT_SEQ_REPORT) # these are the >=90 group that get mapped to 90
+  genieClinData$age_days[k] = 32872
+  k = grep("^<",genieClinData$AGE_AT_SEQ_REPORT) # these are the <=18 group that get mapped to 18
+  genieClinData$age_days[k] = 6573
+  genieClinData$age_days = as.numeric(genieClinData$AGE_AT_SEQ_REPORT)
+  if (multiply) {
+    genieClinData$age_days <- genieClinData$age_days * 365
+  }
+  
+  k = is.na(genieClinData$age_days)
+  t = as.data.frame.matrix(table(genieClinData$CENTER,k))
+  kable(data.frame("Percent.Unknown"=(t[,"TRUE"]/rowSums(t))*100),digits=2)
+  
+  k = !is.na(genieClinData$age_days)
+  plot(ggplot(genieClinData[k,],aes(x=(age_days/365),group=CENTER))+geom_histogram(aes(y = (..count..)/width/tapply(..count..,..group..,sum)[..group..]),breaks=c(0,seq(19,89,2),90,108),closed="left")+facet_wrap(~CENTER,ncol=4) + ylab("Density") + xlab("Age")+ ggtitle("Distribution of age across centers"))
+}
+
+```
+
+```{r downloads, echo=FALSE, message=FALSE, results = 'hide'}
+releaseFiles = as.list(synGetChildren('%s'))
+this_samples <- getFileDf("data_clinical.txt", releaseFiles)
+if (is.null(this_samples)) {
+  this_samples <- getFileDf("data_clinical_sample.txt", releaseFiles)
+  this_patient <- getFileDf("data_clinical_patient.txt", releaseFiles)
+  this_patient$CENTER <- createCenterColumn(this_patient)
+  this_samples$CENTER <- createCenterColumn(this_samples)
+} else {
+  this_patient <- this_samples
+  this_patient <- this_patient[!duplicated(this_patient$PATIENT_ID),]
+}
+this_bed <- getFileDf("genie_combined.bed", releaseFiles)
+this_assays = as.character(unique(this_samples$SEQ_ASSAY_ID))
+this_mut <- getFileDf("data_mutations_extended.txt", releaseFiles)
+
+# this_cna <- getFileDf("data_CNA.txt", releaseFiles)
+#this_fus <- getFileDf("data_fusions.txt", releaseFiles)
+```
+
+```{r sampleTable}
+#Put table of counts
+#samplesPerReleaseTable = synTableQuery("select Center, Clinical as Samples from syn8105940 where Release = '{Release}'",includeRowIdAndRowVersion=F)
+#samplesPerReleaseDf = as.data.frame(samplesPerReleaseTable)
+#sampleCountNoTotalDf <- sampleCountNoTotalDf[sampleCountNoTotalDf$Center!="Total",]
+sampleCounts = table(this_samples$CENTER)
+samplesPerReleaseDf = as.data.frame(sampleCounts)
+colnames(samplesPerReleaseDf) = c("Center","Samples")
+samplesPerReleaseDf = rbind(samplesPerReleaseDf,data.frame("Center" ="Total","Samples" =sum(sampleCounts)))
+kable(samplesPerReleaseDf,row.names = F)
+# row.names(sampleCountNoTotalDf) <- sampleCountNoTotalDf$Center
+# sampleCountNoTotalDf$Center <- NULL
+# sampleCountNoTotalDf <- t(sampleCountNoTotalDf)
+# barplot(sampleCountNoTotalDf, main="Release {Release} Sample Counts per File", col=c("light blue","dark green","coral","blue","red"), width=2, beside=TRUE,ylim=c(0,ceiling(max(sampleCountNoTotalDf) * 1.0 / 1000) * 1000))
+# legend("topright",fill=c("light blue","dark green","coral","blue","red"), legend=rownames(sampleCountNoTotalDf))
+```
+
+```{r primaryPlots}
+#primary site distribution
+par(mar=c(10,3,3,1))
+barplot(sort(log(table(this_mut$FILTER)),decreasing = T), main="Log Distribution of Mutation FILTERs",las=2)
+plotPrimarySites(this_samples, "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21","%s")
+#Center X Race
+plotCenterXRace(this_patient)
+#Center X Ethnicity
+plotCenterXEthnicity(this_patient)
+#Center X Sex
+plotCenterXSex(this_patient)
+#Center X Age
+plotCenterXAge(this_samples)
+if (!is.null(this_samples$CANCER_TYPE)) {
+  #Samples, by cancer type and institution
+  plotCancerType(this_samples)
+}
+if (!is.null(this_bed)) {
+  this_bed <- this_bed[this_bed$Feature_Type == "exon",]
+  #Make it so that I use include in panel
+  if (!is.null(this_bed$includeInPanel)) {
+    this_bed <- this_bed[this_bed$includeInPanel == "True",]
+  }
+  noneExistentAssays = this_assays[!this_assays %in% this_bed$SEQ_ASSAY_ID]
+  if (length(noneExistentAssays) > 0) {
+    print(paste("These assays do not have bed files associated with them: ", paste(noneExistentAssays, collapse = ", ")))
+  }
+  myeloid = this_assays[this_assays %in% c("VICC-01-MYELOID","UHN-54-V1","UCHI-ONCOHEME55-V1")]
+  if (length(myeloid) > 1) {
+    print("Overlap of myeloid gene panels")
+    plotPanelOverlap(this_samples, this_bed, myeloid)
+  }
+  normal = this_assays[!this_assays %in% c("VICC-01-MYELOID","UHN-54-V1","UCHI-ONCOHEME55-V1")]
+  smallPanels = c()
+  largePanels = c()
+  for (panel in normal) {
+    panelDf = this_bed[this_bed$SEQ_ASSAY_ID == panel,]
+    if (length(table(panelDf$Hugo_Symbol)) < 100) {
+      smallPanels = c(smallPanels, panel)
+    } else {
+      largePanels = c(largePanels, panel)
+    }
+  }
+  if (length(smallPanels) > 1) {
+    print("Overlap of small (<100) gene panels")
+    plotPanelOverlap(this_samples, this_bed, smallPanels)
+  }
+  if (length(largePanels) > 1) {
+    print("Overlap of large (>100) gene panels")
+    plotPanelOverlap(this_samples, this_bed, largePanels)
+  }
+}
+```
