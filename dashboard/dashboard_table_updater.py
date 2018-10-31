@@ -6,6 +6,15 @@ import argparse
 import datetime
 
 def get_center_data_completion(center, df):
+	'''
+	Get center data completion.  Calulates the percentile of 
+	how complete a clinical data element is:
+	Number of not blank/Unknown/NA divded by total number of patients or samples
+
+	params:
+		center: GENIE center
+		df: sample or patient dataframe
+	'''
 	centerdf = df[df['CENTER'] == center]
 	total = len(centerdf)
 	center_data = pd.DataFrame()
@@ -240,7 +249,8 @@ def update_oncotree_code_tables(syn, database_mappingdf):
 	#### DISTRIBUTION OF PRIMARY CODE TABLE UPDATE
 	oncotree_link_synid = database_mappingdf['Id'][database_mappingdf['Database'] == 'oncotreeLink'].values[0]
 	primary_code_synId = database_mappingdf['Id'][database_mappingdf['Database'] == 'primaryCode'].values[0]
-
+	#Can also use most up to date oncotree code, because these tables are updated
+	#from the database
 	oncotree_link_ent = syn.get(oncotree_link_synid)
 	oncotree_link = oncotree_link_ent.externalURL
 	oncotree_mapping = genie.process_functions.get_oncotree_code_mappings(oncotree_link)
@@ -350,6 +360,8 @@ def update_wiki(syn, database_mappingdf):
 
 	params:
 		syn: synapse object
+		database_mappingdf: mapping between synapse ids and database
+
 	'''
 	#Updates to query and date dashboard was updated
 	cumulative_sample_count_synid = database_mappingdf['Id'][database_mappingdf['Database'] == 'cumulativeSampleCount'].values[0]
@@ -367,16 +379,30 @@ def update_wiki(syn, database_mappingdf):
 	wikiPage.markdown = "".join(markdown)
 	syn.store(wikiPage)
 
+def run_dashboard(syn, database_mappingdf, release):
+	'''
+	Function that runs the dashboard scripts
+
+	params:
+		syn: synapse object
+		database_mappingdf: mapping between synapse ids and database
+		release: GENIE release (ie. 5.3-consortium)
+
+	'''
+	update_release_numbers(syn, database_mappingdf, release = release)
+	update_database_numbers(syn, database_mappingdf)
+	update_oncotree_code_tables(syn, database_mappingdf)
+	update_sample_difference_table(syn, database_mappingdf)
+	update_data_completeness_table(syn, database_mappingdf)
+	update_wiki(syn,database_mappingdf)
 
 def main():
 	parser = argparse.ArgumentParser(description='Update dashboard tables')
 	parser.add_argument('--release', help = "GENIE release number (ie. 5.3-consortium)", default=None)
-	parser.add_argument("--oncotree_link", type=str, help="Link to oncotree code")
 	parser.add_argument("--pem_file", type=str, help="Path to PEM file (genie.pem)")
 	parser.add_argument("--staging", action='store_true', help = "Using staging directory files")
 	args = parser.parse_args()
 	syn = genie.process_functions.synLogin(args)
-
 	if args.staging:
 		#Database to Synapse Id mapping Table
 		database_mapping_synid = 'syn12094210'	
@@ -385,17 +411,8 @@ def main():
 	
 	database_mapping = syn.tableQuery('select * from %s' % database_mapping_synid)
 	database_mappingdf = database_mapping.asDataFrame()
-	if args.oncotree_link is None:
-		oncotree_link = database_mappingdf['Id'][database_mappingdf['Database'] == 'oncotreeLink'].values[0]
-		oncotree_link_ent = syn.get(oncotree_link)
-		args.oncotree_link = oncotree_link_ent.externalURL
+	run_dashboard(syn, database_mappingdf, args.release)
 
-	update_release_numbers(syn, database_mappingdf, release = args.release)
-	update_database_numbers(syn, database_mappingdf)
-	update_oncotree_code_tables(syn, database_mappingdf)
-	update_sample_difference_table(syn, database_mappingdf)
-	update_data_completeness_table(syn, database_mappingdf)
-	update_wiki(syn,database_mappingdf)
 
 if __name__ == "__main__":
 	main()
