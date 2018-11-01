@@ -97,7 +97,7 @@ class fusions(example_filetype_format.FileTypeFormat):
         databaseSynId = kwargs['databaseSynId']
         newPath = kwargs['newPath']
         test = kwargs['test']
-        cols = ['HUGO_SYMBOL','ENTREZ_GENE_ID','CENTER','TUMOR_SAMPLE_BARCODE','FUSION','DNA_SUPPORT','RNA_SUPPORT','METHOD','FRAME','COMMENTS','ID']
+        cols = ['HUGO_SYMBOL','ENTREZ_GENE_ID','CENTER','TUMOR_SAMPLE_BARCODE','FUSION','DNA_SUPPORT','RNA_SUPPORT','METHOD','FRAME','ID']
 
         fusion = pd.read_csv(filePath, sep="\t",comment="#")
         fusion = self._process(fusion, test)

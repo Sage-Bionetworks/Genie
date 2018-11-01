@@ -15,6 +15,7 @@ import datetime
 import subprocess
 import shutil
 import time
+import toRetract
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -421,11 +422,12 @@ def main():
 		syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
 
 		logger.info("SAMPLE/PATIENT RETRACTION")
-		retractionCommand = ["python",os.path.join(process_functions.SCRIPT_DIR, "toRetract.py")] if args.pemFile is None else ["python",os.path.join(process_functions.SCRIPT_DIR, "toRetract.py"),'--pemFile',args.pemFile]
-		if testing:
-			retractionCommand.append("--test")
-		#Comment back in after testing is done
-		subprocess.check_call(retractionCommand)
+		toRetract.retract(syn, testing)
+		# retractionCommand = ["python",os.path.join(process_functions.SCRIPT_DIR, "toRetract.py")] if args.pemFile is None else ["python",os.path.join(process_functions.SCRIPT_DIR, "toRetract.py"),'--pemFile',args.pemFile]
+		# if testing:
+		# 	retractionCommand.append("--test")
+		# #Comment back in after testing is done
+		# subprocess.check_call(retractionCommand)
 	else:
 		messageOut = "%s does not have any valid files" if not args.onlyValidate else "ONLY VALIDATION OCCURED FOR %s"
 		logger.info(messageOut % center)
