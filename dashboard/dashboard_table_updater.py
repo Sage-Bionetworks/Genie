@@ -20,7 +20,7 @@ def get_center_data_completion(center, df):
 	center_data = pd.DataFrame()
 	for col in centerdf:
 		if not col.endswith("_NUMERICAL") and col not in ['CENTER', 'PATIENT_ID','SAMPLE_ID','SAMPLE_TYPE_DETAILED']:
-			not_missing = [str(value) != "Unknown" and not pd.isnull(value) for value in centerdf[col]]
+			not_missing = [pd.isnull(value) for value in centerdf[col]]
 			completeness = float(sum(not_missing)) / int(total)
 			returned = pd.DataFrame([[col, center, total, completeness]])
 			center_data = center_data.append(returned)
