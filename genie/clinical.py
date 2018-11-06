@@ -322,12 +322,18 @@ class clinical(example_filetype_format.FileTypeFormat):
 			seqAssayIds = clinicalSampleDF.SEQ_ASSAY_ID[clinicalSampleDF.SEQ_ASSAY_ID != ""]
 			allSeqAssays = seqAssayIds.unique()
 			notNormalized = []
+			not_caps = []
 			for seqassay in allSeqAssays:
-				checkIfNormalized = [bool(re.search(seqassay,seq,re.IGNORECASE)) for seq in allSeqAssays]
+				#Add ^ and $ to make sure that strings match exactly, allow for V1 and V1.1...
+				checkIfNormalized = [bool(re.search("^" + seqassay + "$",seq,re.IGNORECASE)) for seq in allSeqAssays]
 				if sum(checkIfNormalized) > 1:
 					notNormalized.append(seqassay)
+				if not seqassay.upper().startswith(self.center):
+					not_caps.append(seqassay)
 			if len(notNormalized) > 0:
 				total_error += "Sample: Please normalize your SEQ_ASSAY_ID names.  You have these SEQ_ASSAY_IDs: %s.\n" % ", ".join(notNormalized)
+			if len(not_caps) > 0:
+				total_error += "Sample: Please make sure your SEQ_ASSAY_IDs start with your center abbreviation: %s.\n" % ", ".join(not_caps)
 		else:
 			total_error += "Sample: clinical file must have SEQ_ASSAY_ID column.\n"
 
