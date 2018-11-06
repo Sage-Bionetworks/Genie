@@ -379,6 +379,33 @@ def update_wiki(syn, database_mappingdf):
 	wikiPage.markdown = "".join(markdown)
 	syn.store(wikiPage)
 
+def string_to_unix_epoch_time_milliseconds(string_time):
+	'''
+	This function takes dates in this format: 2018-10-25T20:16:07.959Z 
+	and turns it into unix epoch time in milliseconds
+
+	params:
+		string_time: string in this format: 2018-10-25T20:16:07.959Z
+	'''
+	datetime_obj = datetime.datetime.strptime(string_time.split(".")[0], "%Y-%m-%dT%H:%M:%S")
+	return(synapseclient.utils.to_unix_epoch_time(datetime_obj))
+
+def update_data_release_file_table(syn, database_mappingdf):
+	release_folder_fileview_synid = "syn17019650"
+	release_folder = syn.tableQuery("select id,name from %s" % release_folder_fileview_synid + " where name not like 'Release%' and name <> 'case_lists' and name not like '0.%'")
+	release_folderdf = release_folder.asDataFrame()
+
+	data_release_table_synid = "syn16804261"
+	data_release_table = syn.tableQuery("select * from %s" % data_release_table_synid)
+	data_release_tabledf = data_release_table.asDataFrame()
+
+	not_in_release_tabledf = release_folderdf[~release_folderdf.name.isin(data_release_tabledf.release)]
+
+	for synid, name in zip(not_in_release_tabledf.id, not_in_release_tabledf.name):
+		release_files = syn.getChildren(synid)
+		append_rows = [[release_file['name'],release_file['id'],name,string_to_unix_epoch_time_milliseconds(release_file['modifiedOn']),synid] for release_file in release_files if release_file['name'] != "case_lists"]
+		syn.store(synapseclient.Table(data_release_table_synid,append_rows))
+
 def run_dashboard(syn, database_mappingdf, release):
 	'''
 	Function that runs the dashboard scripts
@@ -395,6 +422,7 @@ def run_dashboard(syn, database_mappingdf, release):
 	update_sample_difference_table(syn, database_mappingdf)
 	update_data_completeness_table(syn, database_mappingdf)
 	update_wiki(syn,database_mappingdf)
+	update_data_release_file_table(syn, database_mappingdf)
 
 def main():
 	parser = argparse.ArgumentParser(description='Update dashboard tables')
