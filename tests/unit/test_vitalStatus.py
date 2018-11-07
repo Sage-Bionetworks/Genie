@@ -70,10 +70,10 @@ def test_validation():
 							 DEAD=[True, False, True, 'boobar', True]))
 
 	error, warning = vs.validate_helper(vsDf)
-	expectedErrors = ("Vital status file: Please double check your YEAR_DEATH column, it must be an integer in YYYY format or NA/null/empty.\n"
+	expectedErrors = ("Vital status file: Please double check your YEAR_DEATH column, it must be an integer in YYYY format or an empty string.\n"
 					  "Vital status file: Please double check your YEAR_CONTACT column, it must be an integer in YYYY format.\n"
-					  "Vital status file: Please double check your INT_CONTACT column, it must be an integer, NA/null/empty, >32485, or <6570.\n"
-					  "Vital status file: Please double check your INT_DOD column, it must be an integer, NA/null/empty, >32485, or <6570.\n"
-					  "Vital status file: Please double check your DEAD column, it must be a boolean value.\n")
+					  "Vital status file: Please double check your INT_CONTACT column, it must be an integer, an empty string, >32485, or <6570.\n"
+					  "Vital status file: Please double check your INT_DOD column, it must be an integer, an empty string, >32485, or <6570.\n"
+					  "Vital status file: Please double check your DEAD column, it must be a boolean value or an empty string.\n")
 	assert error == expectedErrors
 	assert warning == ""
