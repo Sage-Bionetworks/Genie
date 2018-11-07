@@ -199,7 +199,6 @@ def test_validation():
 	expectedErrors = ("Sample: There can't be any blank values for SAMPLE_ID\n"
 					  "Sample: Please double check that all your ONCOTREE CODES exist in the mapping. You have 1 samples that don't map. These are the codes that don't map: AMPCAD\n"
 					  "Sample: Please double check your SAMPLE_TYPE column. No null values allowed.\n"
-					  "Sample: Please normalize your SEQ_ASSAY_ID names.  You have these SEQ_ASSAY_IDs: Sage-1, SAGE-1.\n"
 					  "Sample: Please make sure your SEQ_ASSAY_IDs start with your center abbreviation: S-SAGE-1.\n"
 					  "Sample: SEQ_DATE must be one of five values- For Jan-March: use Jan-YEAR. For Apr-June: use Apr-YEAR. For July-Sep: use Jul-YEAR. For Oct-Dec: use Oct-YEAR. (ie. Apr-2017) For values that don't have SEQ_DATES that you want released use 'release'.\n"
 					  "Patient: There can't be any blank values for PATIENT_ID\n"
