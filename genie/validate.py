@@ -3,8 +3,6 @@ import pandas as pd
 assert pd.__version__ >= "0.20.0", "Please make sure your pandas version is at least 0.20.0.  If not, please do pip install pandas --upgrade"
 import synapseclient
 import os
-#import subprocess
-import argparse
 import getpass
 import string
 import httplib2 as http
@@ -15,6 +13,7 @@ from functools import partial
 import re
 import warnings
 from genie import PROCESS_FILES
+
 warnings.simplefilter(action='ignore', category=pd.errors.DtypeWarning)
 try:
     from urlparse import urlparse
@@ -59,7 +58,7 @@ def synapse_login():
         syn = synapseclient.login(email=Username, password=Password,rememberMe=True,silent=True)
     return(syn)
 
-def main(syn, fileType, filePath, center, threads, oncotreeLink="http://oncotree.mskcc.org/oncotree/api/tumor_types.txt?version=oncotree_2017_06_21", offline=False, uploadToSynapse=None, testing=False, noSymbolCheck=False):
+def validate(syn, fileType, filePath, center, threads, oncotree_url=None, offline=False, uploadToSynapse=None, testing=False, noSymbolCheck=False):
     """
     This performs the validation of files
 
@@ -69,10 +68,9 @@ def main(syn, fileType, filePath, center, threads, oncotreeLink="http://oncotree
     if not offline:
         try:
             PROCESS_FILES[fileType](syn, center, threads).validateFilename(filePath)
-           # PROCESS_FILES[fileType].validateFilename(filePath, center)
         except AssertionError as e:
             raise ValueError("Your filename is incorrect!\n%s\nPlease change your filename before you run the validator again."  % e)
-    total_error, warning = PROCESS_FILES[fileType](syn, center, threads).validate(filePathList=filePath, oncotreeLink=oncotreeLink, testing=testing, noSymbolCheck=noSymbolCheck)
+    total_error, warning = PROCESS_FILES[fileType](syn, center, threads).validate(filePathList=filePath, oncotreeLink=oncotree_url, testing=testing, noSymbolCheck=noSymbolCheck)
 
     #Complete error message
     message = "----------------ERRORS----------------\n"
@@ -96,40 +94,7 @@ def main(syn, fileType, filePath, center, threads, oncotreeLink="http://oncotree
         [syn.store(synapseclient.File(path, parent=uploadToSynapse)) for path in filePath]
     return(message, valid)
 
-
-def perform_main(syn, args):
-    #pool = Pool(args.thread)
-    message = main(syn, args.fileType, args.file, args.center, args.thread, args.oncotreeLink, args.offline, args.uploadToSynapse, args.testing, args.noSymbolCheck)
-    #pool.close()
-    #pool.join()
-
-if __name__ == "__main__":
-
-
-    parser = argparse.ArgumentParser(description='Validate GENIE files')
-
-    parser.add_argument("fileType", type=str, choices = PROCESS_FILES.keys(),
-                        help='Filetypes that you are validating. Note, the filetypes with SP at the end are for special sponsored projects')
-    parser.add_argument("file", type=str, nargs="+",
-                        help='File(s) that you are validating.  If you validation your clinical files and you have both sample and patient files, you must provide both')
-    parser.add_argument("center", type=str,
-                        help='Contributing Centers')
-    parser.add_argument("--thread", type=int, required=False, default=1,
-                        help='Number of threads used in validation symbols')
-    parser.add_argument("--offline", action='store_true',
-                        help='No validation of filenames')
-    parser.add_argument("--uploadToSynapse", type=str, default=None,
-                        help='Will upload the file to the synapse directory of users choice')
-    parser.add_argument("--oncotreeLink", type=str,
-                        help="Link to oncotree code")
-    parser.add_argument("--noSymbolCheck", action='store_true',
-                        help='Do not check hugo symbols of fusion and cna file')
-    parser.add_argument("--testing", action='store_true',
-                        help='Put in testing mode')
-    args = parser.parse_args()
-
-    syn = synapse_login()
-
+def perform_validate(syn, args):    
     if args.testing:
         databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
     else:
@@ -140,7 +105,7 @@ if __name__ == "__main__":
     center_mapping = syn.tableQuery('SELECT * FROM %s' % synId[0])
     center_mapping_df = center_mapping.asDataFrame()
     assert args.center in center_mapping_df.center.tolist(), "Must specify one of these centers: %s" % ", ".join(center_mapping_df.center)
-    
+
     if args.oncotreeLink is None:
         oncoLink = databaseToSynIdMappingDf['Id'][databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
         oncoLinkEnt = syn.get(oncoLink)
@@ -154,4 +119,5 @@ if __name__ == "__main__":
                 syn.get(args.uploadToSynapse)
             except synapseclient.exceptions.SynapseHTTPError as e:
                 raise ValueError("Provided Synapse id must be your input folder Synapse id or a Synapse Id of a folder inside your input directory")
-    perform_main(syn, args)
+
+    message = validate(syn, args.fileType, args.file, args.center, args.thread, args.oncotreeLink, args.offline, args.uploadToSynapse, args.testing, args.noSymbolCheck)

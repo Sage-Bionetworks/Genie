@@ -38,3 +38,5 @@ PROCESS_FILES = {'bed':bed.bed,
 				 'patientCounts':patientCounts.patientCounts,
 				 'mutationsInCis':mutationsInCis.mutationsInCis,
 				 'vitalStatus':vitalStatus.vitalStatus}
+#Must import validate after the fact
+from . import validate
