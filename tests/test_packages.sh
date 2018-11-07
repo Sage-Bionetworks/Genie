@@ -1,6 +1,6 @@
-mkdir testing_package
+#mkdir testing_package
 cd testing_package
-syn get -r syn11601335
+synapse get -r syn11601335
 
 genie validate clinical data_clinical_supp_SAGE.txt SAGE --test
 genie validate cna data_CNA_SAGE.txt SAGE --test
