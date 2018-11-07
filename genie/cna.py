@@ -8,7 +8,7 @@ import logging
 from functools import partial
 import synapseclient
 
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def validateSymbol(gene, bedDf, returnMappedDf=True):

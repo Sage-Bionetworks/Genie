@@ -7,7 +7,7 @@ import os
 #import pandas as pd
 #import synapseclient
 #import datetime
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class patientRetraction(sampleRetraction.sampleRetraction):

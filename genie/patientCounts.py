@@ -6,7 +6,7 @@ import logging
 import os
 import pandas as pd
 import re
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class patientCounts(example_filetype_format.FileTypeFormat):

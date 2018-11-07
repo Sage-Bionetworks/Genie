@@ -17,7 +17,7 @@ import ast
 #Ignore SettingWithCopyWarning warning
 pd.options.mode.chained_assignment = None
 
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))

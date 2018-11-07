@@ -6,7 +6,7 @@ import os
 import logging
 import pandas as pd
 import datetime
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

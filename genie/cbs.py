@@ -6,7 +6,7 @@ from genie import process_functions
 import os
 import logging
 import pandas as pd
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class cbs(seg.seg):

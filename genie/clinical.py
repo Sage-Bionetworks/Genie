@@ -9,7 +9,7 @@ import synapseclient
 import re
 import datetime
 #import time
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

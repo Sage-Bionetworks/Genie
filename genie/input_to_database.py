@@ -1,5 +1,6 @@
 #! /usr/bin/env python
-
+import logging
+logger = logging.getLogger("genie")
 import process_functions
 import validate
 import synapseclient
@@ -10,15 +11,11 @@ import os
 from multiprocessing import Pool
 import pandas as pd
 import subprocess
-import logging
 import datetime
 import subprocess
 import shutil
 import time
 import toRetract
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 #Configuration file
 from genie import PROCESS_FILES
@@ -332,6 +329,16 @@ def main():
 	
 	syn.table_query_timeout = 50000
 	testing = args.testing
+
+	if args.onlyValidate:
+		logPath = os.path.join(process_functions.SCRIPT_DIR, "%s_validation_log.txt" % args.center)
+	else:
+		logPath = os.path.join(process_functions.SCRIPT_DIR, "%s_%s_log.txt" % (args.center, args.process))
+	logFormatter = logging.Formatter("%(asctime)s [%(name)s][%(levelname)s] %(message)s")
+	fileHandler = logging.FileHandler(logPath,mode='w')
+	fileHandler.setFormatter(logFormatter)
+	logger.addHandler(fileHandler)
+
 	if testing:
 		logger.info("###########################################")
 		logger.info("############NOW IN TESTING MODE############")

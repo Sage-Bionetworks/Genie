@@ -7,7 +7,7 @@ import logging
 import pandas as pd
 from functools import partial
 import subprocess
-logging.basicConfig(level=logging.INFO)
+#logger.basicConfig(level=logger.INFO)
 logger = logging.getLogger(__name__)
 
 # def createGenePositionsTables():

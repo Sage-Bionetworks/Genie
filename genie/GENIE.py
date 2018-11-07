@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-import synapseclient
 import logging
+logger = logging.getLogger("genie")
+import synapseclient
 import process_functions
 import subprocess
 import argparse
 import os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+
 
 def main():
     parser = argparse.ArgumentParser(description='validate/processing genie sites')
