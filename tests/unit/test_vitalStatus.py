@@ -44,7 +44,7 @@ def test_validation():
 							 YEAR_CONTACT=[1999,2000,float('nan'),2342,1999],
 							 INT_CONTACT=[1,2,">32485",float('nan'),"<6570"],
 							 INT_DOD=[1,">32485",3,"<6570",float('nan')],
-							 DEAD=[True, False, True, False, True]))
+							 DEAD=[True, False, True, False, float('nan')]))
 
 	error, warning = vs.validate_helper(vsDf)
 	assert error == ""
@@ -67,7 +67,7 @@ def test_validation():
 							 YEAR_CONTACT=[1999,2000,3000,2,1999],
 							 INT_CONTACT=[1,2,3,4,'string'],
 							 INT_DOD=[1,2,3,4,'string'],
-							 DEAD=[True, False, True, float('nan'), True]))
+							 DEAD=[True, False, True, 'boobar', True]))
 
 	error, warning = vs.validate_helper(vsDf)
 	expectedErrors = ("Vital status file: Please double check your YEAR_DEATH column, it must be an integer in YYYY format or NA/null/empty.\n"

@@ -71,7 +71,7 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
 
 		haveColumn = process_functions.checkColExist(vitalStatusDf, "DEAD")
 		if haveColumn:
-			if not all([isinstance(i, bool) for i in vitalStatusDf.DEAD]):
+			if not all([isinstance(i, bool) for i in vitalStatusDf.DEAD if not pd.isnull(i)]):
 				total_error += "Vital status file: Please double check your DEAD column, it must be a boolean value.\n"
 		else:
 			total_error += "Vital status file: Must have DEAD column.\n"
