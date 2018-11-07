@@ -136,10 +136,10 @@ def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, test
 #Processing single file
 def processFiles(syn, validFiles, center, path_to_GENIE, threads, 
 				 center_mapping_df, oncotreeLink, databaseToSynIdMappingDf, 
-				 validVCF=None, validMAFs=None, validCBS=None,
+				 validVCF=None, validMAFs=None,
 				 vcf2mafPath=None,
 	   			 veppath=None,vepdata=None,
-				 processing="main", test=False):
+				 processing="main", test=False, reference=None):
 
 	logger.info("PROCESSING %s FILES: %d" % (center, len(validFiles)))
 	centerStagingFolder = os.path.join(path_to_GENIE, center)
@@ -157,28 +157,15 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 				synId = None
 			else:
 				synId = synId[0]
-			if fileType is not None and fileType is not "cbs":
-			#if fileType not in [None,"cbs","cna"]:
+			if fileType is not None:
+			#if fileType not in [None,"cna"]:
 				PROCESS_FILES[fileType](syn, center, threads).process(filePath=filePath, newPath=newPath, 
 									parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
 									fileSynId=fileSynId, validVCF=validVCF, 
-									validMAFs=validMAFs, validCBS=validCBS,
+									validMAFs=validMAFs,
 									path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
 						   			veppath=veppath,vepdata=vepdata,
 									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, test=test)
-		if len(validCBS) > 0:
-			filePath = None
-			newPath = None
-			fileType = None
-			synId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "cbs"][0]
-			fileSynId = None
-			PROCESS_FILES["cbs"](syn, center, threads).process(filePath=filePath, newPath=newPath, 
-										parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
-										fileSynId=fileSynId, validVCF=validVCF, 
-										validMAFs=validMAFs, validCBS=validCBS,
-										path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
-							   			veppath=veppath,vepdata=vepdata,
-										processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf)
 
 	elif processing in ["vcf","maf","mafSP"]:
 		filePath = None
@@ -189,10 +176,10 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 		PROCESS_FILES[processing](syn, center, threads).process(filePath=filePath, newPath=newPath, 
 									parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
 									fileSynId=fileSynId, validVCF=validVCF, 
-									validMAFs=validMAFs, validCBS=validCBS,
+									validMAFs=validMAFs,
 									path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
 						   			veppath=veppath,vepdata=vepdata,
-									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, reference=reference)
 	logger.info("ALL DATA STORED IN DATABASE")
 
 #Create and archive maf database
@@ -253,15 +240,20 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
 		logger.info("CHECK FOR DUPLICATED FILES")
 		##### DUPLICATED FILES ######
 		#check for duplicated filenames.  There should be no duplication, files should be uploaded as new versions and the entire dataset should be uploaded everytime
+		#cbs and seg files should not be duplicated.  There can only be one
 		duplicatedFiles = inputValidStatus[inputValidStatus['name'].duplicated(keep=False)]
-		#No need for this anymore, because any other mutation header, we will just fail
-		#nodups = ["data_mutations_extended"]
-		#allDuplicatedFiles = []
+		cbsSegBool = [os.path.basename(i).endswith('.cbs') or os.path.basename(i).endswith('.seg') for i in inputValidStatus['name']]
+		cbsSegFiles = inputValidStatus[cbsSegBool]
+		if len(cbsSegFiles) >1:
+			duplicatedFiles = duplicatedFiles.append(cbsSegFiles)
+		# nodups = ["data_mutations_extended"]
+		# allDuplicatedFiles = []
 		# for nodup in nodups:
 		# 	checkDups = [name for name in inputValidStatus['name'] if name.startswith(nodup)]
 		# 	if len(checkDups) > 1:
 		# 		allDuplicatedFiles.extend(checkDups)
-		#duplicatedFiles = duplicatedFiles.append(inputValidStatus[inputValidStatus['name'].isin(allDuplicatedFiles)])
+		# duplicatedFiles = duplicatedFiles.append(inputValidStatus[inputValidStatus['name'].isin(allDuplicatedFiles)])
+
 		duplicatedFiles.drop_duplicates("id",inplace=True)
 		inputValidStatus['status'][inputValidStatus['id'].isin(duplicatedFiles['id'])] = "INVALID"
 		duplicatedFiles['errors'] = "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME"
@@ -316,6 +308,7 @@ def main():
 	parser.add_argument("--vcf2mafPath", type=str, help="Path to vcf2maf")
 	parser.add_argument("--vepPath", type=str, help="Path to VEP")
 	parser.add_argument("--vepData", type=str, help="Path to VEP data")
+	parser.add_argument("--reference", type=str, help="Path to VCF reference file")
 	parser.add_argument("--oncotreeLink", type=str, help="Link to oncotree code")
 	parser.add_argument("--createNewMafDatabase", action='store_true', help = "Creates a new maf database")
 	parser.add_argument("--testing", action='store_true', help = "Testing the infrastructure!")
@@ -388,7 +381,7 @@ def main():
 		validMAF = [i for i in validFiles['path'] if os.path.basename(i) == "data_mutations_extended_%s.txt" % args.center]
 		validMAFSP = [i for i in validFiles['path'] if os.path.basename(i)  == "nonGENIE_data_mutations_extended_%s.txt" % args.center]
 		validVCF = [i for i in validFiles['path'] if os.path.basename(i).endswith('.vcf')]
-		validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
+		#validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
 		if args.process == 'mafSP':
 			validMAFs = validMAFSP
 			#mafSynId = process_functions.getDatabaseSynId(syn, "mafSP", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
@@ -408,10 +401,9 @@ def main():
 			syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
 		processFiles(syn, validFiles, center, path_to_GENIE, args.thread, 
 					 center_mapping_df, args.oncotreeLink, databaseToSynIdMappingDf, 
-					 validVCF=validVCF, validMAFs=validMAFs, validCBS=validCBS,
-					 vcf2mafPath=args.vcf2mafPath,
+					 validVCF=validVCF, validMAFs=validMAFs, vcf2mafPath=args.vcf2mafPath,
 		   			 veppath=args.vepPath,vepdata=args.vepData,
-					 test=testing, processing=args.process)
+					 test=testing, processing=args.process, reference=args.reference)
 
 		#Should add in this process end tracking before the deletion of samples
 		processTracker = syn.tableQuery("SELECT timeEndProcessing FROM %s where center = '%s' and processingType = '%s'" % (processTrackerSynId, args.center,args.process))
