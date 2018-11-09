@@ -177,10 +177,10 @@ class cna(example_filetype_format.FileTypeFormat):
 					total_error+= "Your CNA file has duplicated Hugo_Symbols (After remapping of genes): %s -> %s.\n" % (",".join(cnvDF['HUGO_SYMBOL'][cnvDF['remapped'].duplicated(keep=False)]), ",".join(cnvDF['remapped'][cnvDF['remapped'].duplicated(keep=False)]))
 		return(total_error, warning)
 
-	def _call_validate(self, df, **kwargs):
-		test = kwargs['testing']
-		noSymbolCheck = kwargs['noSymbolCheck']
-		return(self._validate(df, noSymbolCheck, test))
+	# def _call_validate(self, df, **kwargs):
+	# 	test = kwargs['testing']
+	# 	noSymbolCheck = kwargs['noSymbolCheck']
+	# 	return(self._validate(df, noSymbolCheck, test))
 
 	# VALIDATION
 	# def validate_steps(self, filePathList, **kwargs):

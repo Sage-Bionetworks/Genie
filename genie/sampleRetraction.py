@@ -43,10 +43,10 @@ class sampleRetraction(example_filetype_format.FileTypeFormat):
 		process_functions.updateDatabase(self.syn, retractedSamplesDf, deleteSamples, databaseSynId, [col], toDelete=True)
 		return(newPath)
 
-	def _call_validate(self, df, **kwargs):
-	 	#send email when there are updates to the GENIE retraction files
-		self.syn.sendMessage([3324230,1968150],messageSubject="GENIE: New retraction for %s" % self.center, messageBody="Check GENIE files")
-		return(self._validate(df))
+	# def _call_validate(self, df, **kwargs):
+	#  	#send email when there are updates to the GENIE retraction files
+	# 	self.syn.sendMessage([3324230,1968150],messageSubject="GENIE: New retraction for %s" % self.center, messageBody="Check GENIE files")
+	# 	return(self._validate(df))
 
 	# def validate_steps(self, filePathList, **kwargs):
 	# 	filePath = filePathList[0]

@@ -147,10 +147,10 @@ class fusions(example_filetype_format.FileTypeFormat):
 
         return(total_error, warning)
 
-    def _call_validate(self, df, **kwargs):
-        test = kwargs['testing']
-        noSymbolCheck = kwargs['noSymbolCheck']
-        return(self._validate(df, noSymbolCheck, test))
+    # def _call_validate(self, df, **kwargs):
+    #     test = kwargs['testing']
+    #     noSymbolCheck = kwargs['noSymbolCheck']
+    #     return(self._validate(df, noSymbolCheck, test))
 
 
     # #VALIDATION

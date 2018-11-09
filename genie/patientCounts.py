@@ -87,9 +87,9 @@ class patientCounts(example_filetype_format.FileTypeFormat):
 
 		return(total_error, warning)
 
-	def _call_validate(self, df, **kwargs):
-		oncotreeLink = kwargs['oncotreeLink']
-		return(self._validate(df, oncotreeLink))
+	# def _call_validate(self, df, **kwargs):
+	# 	oncotreeLink = kwargs['oncotreeLink']
+	# 	return(self._validate(df, oncotreeLink))
 		
 	# def validate_steps(self, filePathList, **kwargs):
 	# 	"""

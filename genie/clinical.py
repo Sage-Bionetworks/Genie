@@ -412,9 +412,9 @@ class clinical(example_filetype_format.FileTypeFormat):
 				raise ValueError("If submitting separate patient and sample files, they both must have SAMPLE columns")
 		return(clinicalDf)
 
-	def _call_validate(self, df, **kwargs):
-		oncotreeLink = kwargs['oncotreeLink']
-		return(self._validate(df, oncotreeLink))
+	#def _call_validate(self, df, **kwargs):
+	#	oncotreeLink = kwargs['oncotreeLink']
+	#	return(self._validate(df, oncotreeLink))
 
 	# def validate_steps(self, filePathList, **kwargs):
 

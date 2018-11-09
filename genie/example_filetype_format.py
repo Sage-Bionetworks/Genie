@@ -56,14 +56,14 @@ class FileTypeFormat(object):
 		path = self.process_steps(filePath, **mykwargs)
 		return(path)
 
-	def _validate(self, df):
+	def _validate(self, df, **kwargs):
 		total_error =""
 		warning = ""
 		logger.info("NO VALIDATION for %s files" % self._fileType)
 		return(total_error, warning)
 
-	def _call_validate(self, df, **kwargs):
-		return(self._validate(df))
+	# def _call_validate(self, df, **kwargs):
+	# 	return(self._validate(df))
 
 	# def validate_steps(self, filePathList, **kwargs):
 	# 	total_error = ""
@@ -81,5 +81,5 @@ class FileTypeFormat(object):
 		logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
 		#total_error, warning = self.validate_steps(filePathList, **mykwargs)
 		df = self.readFile(filePathList)
-		total_error, warning = self._call_validate(df, **mykwargs)
+		total_error, warning = self._validate(df, **mykwargs)
 		return(total_error, warning)

@@ -32,12 +32,13 @@ class vcf(maf.maf):
 
 	def readFile(self, filePathList):
 		headers = None
-		with open(filePath,"r") as foo:
-			for i in foo:
-				if i.startswith("#CHROM"):
-					headers = i.replace("\n","").replace("\r","").split("\t")
+		filepath = filePathList[0]
+		with open(filepath,"r") as vcffile:
+			for row in vcffile:
+				if row.startswith("#CHROM"):
+					headers = row.replace("\n","").replace("\r","").split("\t")
 		if headers is not None:
-			vcf = pd.read_csv(filePath, sep="\t",comment="#",header=None,names=headers)
+			vcf = pd.read_csv(filepath, sep="\t",comment="#",header=None,names=headers)
 		else:
 			raise ValueError("Your vcf must start with the header #CHROM")
 		return(vcf)

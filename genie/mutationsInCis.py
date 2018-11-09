@@ -61,9 +61,9 @@ class mutationsInCis(example_filetype_format.FileTypeFormat):
                 total_error += "Mutations In Cis Filter File: All variants must come from the original mutationInCis_filtered_samples.csv file in each institution's staging folder.\n"
         return(total_error, warning)
    # VALIDATION
-    def _call_validate(self, df, **kwargs):
-        testing = kwargs['testing']
-        return(self._validate(df, testing))
+    # def _call_validate(self, df, **kwargs):
+    #     testing = kwargs['testing']
+    #     return(self._validate(df, testing))
     # def validate_steps(self, filePathList, **kwargs):
     #     logger.info("VALIDATING %s" % os.path.basename(filePathList[0]))
     #     testing = kwargs['testing']
