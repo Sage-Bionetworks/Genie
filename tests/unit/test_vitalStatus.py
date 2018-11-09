@@ -63,15 +63,15 @@ def test_validation():
 	assert warning == ""
 
 	vsDf = pd.DataFrame(dict(PATIENT_ID=["ID1","ID2","ID3","ID4","ID5"],
-							 YEAR_DEATH=[1999,2000,3000,3,float('nan')],
-							 YEAR_CONTACT=[1999,2000,3000,2,1999],
+							 YEAR_DEATH=[1999,2000,3000,3,'asdfs'],
+							 YEAR_CONTACT=[1999,2000,3000,2,'assdfd'],
 							 INT_CONTACT=[1,2,3,4,'string'],
 							 INT_DOD=[1,2,3,4,'string'],
 							 DEAD=[True, False, True, 'boobar', True]))
 
 	error, warning = vs.validate_helper(vsDf)
 	expectedErrors = ("Vital status file: Please double check your YEAR_DEATH column, it must be an integer in YYYY format or an empty string.\n"
-					  "Vital status file: Please double check your YEAR_CONTACT column, it must be an integer in YYYY format.\n"
+					  "Vital status file: Please double check your YEAR_CONTACT column, it must be an integer in YYYY format or an empty string.\n"
 					  "Vital status file: Please double check your INT_CONTACT column, it must be an integer, an empty string, >32485, or <6570.\n"
 					  "Vital status file: Please double check your INT_DOD column, it must be an integer, an empty string, >32485, or <6570.\n"
 					  "Vital status file: Please double check your DEAD column, it must be a boolean value or an empty string.\n")

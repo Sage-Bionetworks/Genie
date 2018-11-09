@@ -34,21 +34,22 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
 		#YEAR DEATH
 		haveColumn = process_functions.checkColExist(vitalStatusDf, "YEAR_DEATH")
 		if haveColumn:
-				notNullYears = vitalStatusDf.YEAR_DEATH[~vitalStatusDf.YEAR_DEATH.isnull()]
-				try:
-					notNullYears.apply(lambda x: datetime.datetime.strptime(str(int(x)), '%Y'))
-				except:
-					total_error += "Vital status file: Please double check your YEAR_DEATH column, it must be an integer in YYYY format or an empty string.\n"
+			notNullYears = vitalStatusDf.YEAR_DEATH[~vitalStatusDf.YEAR_DEATH.isnull()]
+			try:
+				notNullYears.apply(lambda x: datetime.datetime.strptime(str(int(x)), '%Y'))
+			except:
+				total_error += "Vital status file: Please double check your YEAR_DEATH column, it must be an integer in YYYY format or an empty string.\n"
 		else:
 			total_error += "Vital status file: Must have YEAR_DEATH column.\n"
 
 		#YEAR CONTACT
 		haveColumn = process_functions.checkColExist(vitalStatusDf, "YEAR_CONTACT")
 		if haveColumn:
+			notNullYears = vitalStatusDf.YEAR_CONTACT[~vitalStatusDf.YEAR_CONTACT.isnull()]
 			try:
 				notNullYears.apply(lambda x: datetime.datetime.strptime(str(int(x)), '%Y'))
 			except:
-				total_error += "Vital status file: Please double check your YEAR_CONTACT column, it must be an integer in YYYY format.\n"
+				total_error += "Vital status file: Please double check your YEAR_CONTACT column, it must be an integer in YYYY format or an empty string.\n"
 		else:
 			total_error += "Vital status file: Must have YEAR_CONTACT column.\n"
 
