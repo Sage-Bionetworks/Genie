@@ -34,21 +34,22 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
 		#YEAR DEATH
 		haveColumn = process_functions.checkColExist(vitalStatusDf, "YEAR_DEATH")
 		if haveColumn:
-				notNullYears = vitalStatusDf.YEAR_DEATH[~vitalStatusDf.YEAR_DEATH.isnull()]
-				try:
-					notNullYears.apply(lambda x: datetime.datetime.strptime(str(int(x)), '%Y'))
-				except:
-					total_error += "Vital status file: Please double check your YEAR_DEATH column, it must be an integer in YYYY format or NA/null/empty.\n"
+			notNullYears = vitalStatusDf.YEAR_DEATH[~vitalStatusDf.YEAR_DEATH.isnull()]
+			try:
+				notNullYears.apply(lambda x: datetime.datetime.strptime(str(int(x)), '%Y'))
+			except:
+				total_error += "Vital status file: Please double check your YEAR_DEATH column, it must be an integer in YYYY format or an empty string.\n"
 		else:
 			total_error += "Vital status file: Must have YEAR_DEATH column.\n"
 
 		#YEAR CONTACT
 		haveColumn = process_functions.checkColExist(vitalStatusDf, "YEAR_CONTACT")
 		if haveColumn:
+			notNullYears = vitalStatusDf.YEAR_CONTACT[~vitalStatusDf.YEAR_CONTACT.isnull()]
 			try:
 				notNullYears.apply(lambda x: datetime.datetime.strptime(str(int(x)), '%Y'))
 			except:
-				total_error += "Vital status file: Please double check your YEAR_CONTACT column, it must be an integer in YYYY format.\n"
+				total_error += "Vital status file: Please double check your YEAR_CONTACT column, it must be an integer in YYYY format or an empty string.\n"
 		else:
 			total_error += "Vital status file: Must have YEAR_CONTACT column.\n"
 
@@ -57,7 +58,7 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
 		if haveColumn:
 			#notNullContact = vitalStatusDf.INT_CONTACT[~vitalStatusDf.INT_CONTACT.isnull()]
 			if not all([process_functions.checkInt(i) for i in vitalStatusDf.INT_CONTACT if not pd.isnull(i) and i not in ['>32485','<6570']]):
-				total_error += "Vital status file: Please double check your INT_CONTACT column, it must be an integer, NA/null/empty, >32485, or <6570.\n"
+				total_error += "Vital status file: Please double check your INT_CONTACT column, it must be an integer, an empty string, >32485, or <6570.\n"
 		else:
 			total_error += "Vital status file: Must have INT_CONTACT column.\n"
 
@@ -65,14 +66,14 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
 		haveColumn = process_functions.checkColExist(vitalStatusDf, "INT_DOD")
 		if haveColumn:
 			if not all([process_functions.checkInt(i) for i in vitalStatusDf.INT_DOD if not pd.isnull(i) and i not in ['>32485','<6570']]):
-				total_error += "Vital status file: Please double check your INT_DOD column, it must be an integer, NA/null/empty, >32485, or <6570.\n"
+				total_error += "Vital status file: Please double check your INT_DOD column, it must be an integer, an empty string, >32485, or <6570.\n"
 		else:
 			total_error += "Vital status file: Must have INT_DOD column.\n"
 
 		haveColumn = process_functions.checkColExist(vitalStatusDf, "DEAD")
 		if haveColumn:
-			if not all([isinstance(i, bool) for i in vitalStatusDf.DEAD]):
-				total_error += "Vital status file: Please double check your DEAD column, it must be a boolean value.\n"
+			if not all([isinstance(i, bool) for i in vitalStatusDf.DEAD if not pd.isnull(i)]):
+				total_error += "Vital status file: Please double check your DEAD column, it must be a boolean value or an empty string.\n"
 		else:
 			total_error += "Vital status file: Must have DEAD column.\n"
 
