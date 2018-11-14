@@ -55,9 +55,7 @@ class patientCounts(example_filetype_format.FileTypeFormat):
 
 		patientCounts = pd.read_csv(filePath, sep="\t",comment="#")
 		patientCountsDf = self._process(patientCounts, oncotreeLink)
-		cols = patientCountsDf.columns
-
-		process_functions.updateData(self.syn, databaseSynId, patientCountsDf[cols], self.center, cols)
+		process_functions.updateData(self.syn, databaseSynId, patientCountsDf, self.center)
 		patientCountsDf.to_csv(newPath, sep="\t",index=False)
 		return(newPath)
 

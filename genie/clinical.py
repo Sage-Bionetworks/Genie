@@ -194,7 +194,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 			newClinicalDf[seqColumn + "_NUMERICAL"] = [int(year) if process_functions.checkInt(year) else pd.np.nan for year in newClinicalDf[seqColumn]]
 			patientClinical = newClinicalDf[patientCols].drop_duplicates("PATIENT_ID")
 			self.uploadMissingData(patientClinical, "PATIENT_ID", patientSynId, centerStagingSynId)#retractedPatientSynId)
-			process_functions.updateData(self.syn, patientSynId, patientClinical, self.center, patientCols, toDelete=True)
+			process_functions.updateData(self.syn, patientSynId, patientClinical, self.center, col=patientCols, toDelete=True)
 		if sample:
 			seqColumn = "AGE_AT_SEQ_REPORT"
 			sampleCols.extend([seqColumn + "_NUMERICAL"])
@@ -211,7 +211,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 			sampleClinical['ONCOTREE_CODE'] = sampleClinical['ONCOTREE_CODE'].astype(str).str.upper()
 			sampleClinical = sampleClinical[sampleClinical['ONCOTREE_CODE'].isin(oncotree_mapping['ONCOTREE_CODE'])]
 			self.uploadMissingData(sampleClinical, "SAMPLE_ID", sampleSynId, centerStagingSynId)#, retractedSampleSynId)
-			process_functions.updateData(self.syn, sampleSynId, sampleClinical, self.center, sampleCols, toDelete=True)
+			process_functions.updateData(self.syn, sampleSynId, sampleClinical, self.center, col=sampleCols, toDelete=True)
 
 		newClinicalDf.to_csv(newPath, sep="\t", index=False)
 		return(newPath)
