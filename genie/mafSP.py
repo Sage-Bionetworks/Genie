@@ -9,11 +9,11 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def updateData(syn, databaseSynId, newData, center, col, toDelete=False):
-	databaseEnt = syn.get(databaseSynId)
-	database = syn.tableQuery("SELECT * FROM %s where Center ='%s'" % (databaseSynId, center))
-	database = database.asDataFrame()
-	process_functions.updateDatabase(syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete)
+# def updateData(syn, databaseSynId, newData, center, col, toDelete=False):
+# 	databaseEnt = syn.get(databaseSynId)
+# 	database = syn.tableQuery("SELECT * FROM %s where Center ='%s'" % (databaseSynId, center))
+# 	database = database.asDataFrame()
+# 	process_functions.updateDatabase(syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete)
 	
 class mafSP(maf.maf):
 
@@ -30,10 +30,9 @@ class mafSP(maf.maf):
 		total_error, warning = self.validate_helper(mutationDF,SP=True)
 		return(total_error, warning)
 
-
 	def storeProcessedMaf(self, filePath, mafSynId, centerMafSynId, isNarrow=False):
 		logger.info('STORING %s' % filePath)
 		database = self.syn.get(mafSynId)
 		mafDataFrame = pd.read_csv(filePath,sep="\t")
-		updateData(self.syn, mafSynId, mafDataFrame, self.center, database.primaryKey, toDelete=True)
+		process_functions.updateData(self.syn, mafSynId, mafDataFrame, self.center, filterByColumn="Center", toDelete=True)
 		return(filePath)

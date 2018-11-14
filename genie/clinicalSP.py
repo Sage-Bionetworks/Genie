@@ -28,8 +28,7 @@ class clinicalSP(example_filetype_format.FileTypeFormat):
 		databaseSynId = kwargs['databaseSynId']
 		clinicalSPDf = pd.read_csv(filePath, sep="\t", comment="#")
 		clinicalSPDf = self._process(clinicalSPDf)
-		cols = clinicalSPDf.columns
-		process_functions.updateData(self.syn, databaseSynId, clinicalSPDf, self.center, cols)
+		process_functions.updateData(self.syn, databaseSynId, clinicalSPDf, self.center)
 		clinicalSPDf.to_csv(newPath, sep="\t",index=False)
 		return(newPath)
 
