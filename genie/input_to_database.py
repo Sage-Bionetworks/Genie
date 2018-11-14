@@ -338,7 +338,7 @@ def main():
 	center_mapping_id = process_functions.getDatabaseSynId(syn, "centerMapping", test=testing)
 	center_mapping_ent = syn.get(center_mapping_id)
 	if center_mapping_ent.get('isProcessing',['True'])[0] == 'True':
-		raise Exception("Processing/validation is currently happened.  Please change/add the 'isProcessing' annotation on %s to False to enable processing" % center_mapping_id)
+		raise Exception("Processing/validation is currently happening.  Please change/add the 'isProcessing' annotation on %s to False to enable processing" % center_mapping_id)
 	else:
 		center_mapping_ent.isProcessing="True"
 		center_mapping_ent = syn.store(center_mapping_ent)
