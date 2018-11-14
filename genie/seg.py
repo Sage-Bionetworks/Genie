@@ -41,7 +41,7 @@ class seg(example_filetype_format.FileTypeFormat):
 		databaseSynId = kwargs['databaseSynId']
 		seg = pd.read_csv(filePath, sep="\t")
 		seg = self._process(seg)
-		process_functions.updateData(self.syn, databaseSynId, seg, self.center, seg.columns, toDelete=True)
+		process_functions.updateData(self.syn, databaseSynId, seg, self.center, toDelete=True)
 		seg.to_csv(newPath,sep="\t",index=False)
 		return(newPath)
 

@@ -44,7 +44,7 @@ def test_validation():
 							 YEAR_CONTACT=[1999,2000,float('nan'),2342,1999],
 							 INT_CONTACT=[1,2,">32485",float('nan'),"<6570"],
 							 INT_DOD=[1,">32485",3,"<6570",float('nan')],
-							 DEAD=[True, False, True, False, True]))
+							 DEAD=[True, False, True, False, float('nan')]))
 
 	error, warning = vs._validate(vsDf)
 	assert error == ""
@@ -63,17 +63,17 @@ def test_validation():
 	assert warning == ""
 
 	vsDf = pd.DataFrame(dict(PATIENT_ID=["ID1","ID2","ID3","ID4","ID5"],
-							 YEAR_DEATH=[1999,2000,3000,3,float('nan')],
-							 YEAR_CONTACT=[1999,2000,3000,2,1999],
+							 YEAR_DEATH=[1999,2000,3000,3,'asdfs'],
+							 YEAR_CONTACT=[1999,2000,3000,2,'assdfd'],
 							 INT_CONTACT=[1,2,3,4,'string'],
 							 INT_DOD=[1,2,3,4,'string'],
-							 DEAD=[True, False, True, float('nan'), True]))
+							 DEAD=[True, False, True, 'boobar', True]))
 
 	error, warning = vs._validate(vsDf)
-	expectedErrors = ("Vital status file: Please double check your YEAR_DEATH column, it must be an integer in YYYY format or NA/null/empty.\n"
-					  "Vital status file: Please double check your YEAR_CONTACT column, it must be an integer in YYYY format.\n"
-					  "Vital status file: Please double check your INT_CONTACT column, it must be an integer, NA/null/empty, >32485, or <6570.\n"
-					  "Vital status file: Please double check your INT_DOD column, it must be an integer, NA/null/empty, >32485, or <6570.\n"
-					  "Vital status file: Please double check your DEAD column, it must be a boolean value.\n")
+	expectedErrors = ("Vital status file: Please double check your YEAR_DEATH column, it must be an integer in YYYY format or an empty string.\n"
+					  "Vital status file: Please double check your YEAR_CONTACT column, it must be an integer in YYYY format or an empty string.\n"
+					  "Vital status file: Please double check your INT_CONTACT column, it must be an integer, an empty string, >32485, or <6570.\n"
+					  "Vital status file: Please double check your INT_DOD column, it must be an integer, an empty string, >32485, or <6570.\n"
+					  "Vital status file: Please double check your DEAD column, it must be a boolean value or an empty string.\n")
 	assert error == expectedErrors
 	assert warning == ""

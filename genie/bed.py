@@ -129,11 +129,11 @@ class bed(example_filetype_format.FileTypeFormat):
 		assert os.path.basename(filePath[0]).startswith("%s-" % self.center) and os.path.basename(filePath[0]).endswith(".bed")
 
 	## PROCESSING
-	def updateBED(self, databaseSynId, newData, seq_assay_id, col, toDelete=False):
-		databaseEnt = self.syn.get(databaseSynId)
-		database = self.syn.tableQuery("SELECT * FROM %s where SEQ_ASSAY_ID ='%s'" % (databaseSynId, seq_assay_id))
-		database = database.asDataFrame()[col]
-		process_functions.updateDatabase(self.syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete)
+	# def updateBED(self, databaseSynId, newData, seq_assay_id, col, toDelete=False):
+	# 	databaseEnt = self.syn.get(databaseSynId)
+	# 	database = self.syn.tableQuery("SELECT * FROM %s where SEQ_ASSAY_ID ='%s'" % (databaseSynId, seq_assay_id))
+	# 	database = database.asDataFrame()[col]
+	# 	process_functions.updateDatabase(self.syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete)
 
 	def createdBEDandGenePanel(self, bed, seq_assay_id, genePanelPath, parentId, createGenePanel=True):
 		logger.info("REMAPPING %s" % seq_assay_id)
@@ -202,10 +202,9 @@ class bed(example_filetype_format.FileTypeFormat):
 		seq_assay_id = os.path.basename(filePath).replace(".bed","").upper()
 		gene = pd.read_csv(filePath, sep="\t",header=None)
 		bed = self._process(gene, seq_assay_id, newPath, parentId)
-		self.updateBED(databaseSynId, bed, seq_assay_id, bed.columns, toDelete=True)
+		process_functions.updateData(self.syn, databaseSynId, bed, seq_assay_id, filterByColumn="SEQ_ASSAY_ID", toDelete=True)
 		bed.to_csv(newPath, sep="\t",index=False)
 		return(newPath)
-
 
 	def _validate(self, bed):
 		total_error = ""

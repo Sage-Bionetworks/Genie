@@ -100,8 +100,6 @@ class clinical(example_filetype_format.FileTypeFormat):
 
 		#SEQ ASSAY ID
 		if x.get('SEQ_ASSAY_ID') is not None:
-			if not str(x['SEQ_ASSAY_ID']).startswith(self.center) and str(x['SEQ_ASSAY_ID']) != "":
-				x['SEQ_ASSAY_ID'] = "%s-%s" % (self.center, str(x['SEQ_ASSAY_ID']))
 			x['SEQ_ASSAY_ID'] = x['SEQ_ASSAY_ID'].replace('_','-')
 			#standardize all SEQ_ASSAY_ID with uppercase
 			x['SEQ_ASSAY_ID'] = x['SEQ_ASSAY_ID'].upper()
@@ -196,7 +194,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 			newClinicalDf[seqColumn + "_NUMERICAL"] = [int(year) if process_functions.checkInt(year) else pd.np.nan for year in newClinicalDf[seqColumn]]
 			patientClinical = newClinicalDf[patientCols].drop_duplicates("PATIENT_ID")
 			self.uploadMissingData(patientClinical, "PATIENT_ID", patientSynId, centerStagingSynId)#retractedPatientSynId)
-			process_functions.updateData(self.syn, patientSynId, patientClinical, self.center, patientCols, toDelete=True)
+			process_functions.updateData(self.syn, patientSynId, patientClinical, self.center, col=patientCols, toDelete=True)
 		if sample:
 			seqColumn = "AGE_AT_SEQ_REPORT"
 			sampleCols.extend([seqColumn + "_NUMERICAL"])
@@ -213,7 +211,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 			sampleClinical['ONCOTREE_CODE'] = sampleClinical['ONCOTREE_CODE'].astype(str).str.upper()
 			sampleClinical = sampleClinical[sampleClinical['ONCOTREE_CODE'].isin(oncotree_mapping['ONCOTREE_CODE'])]
 			self.uploadMissingData(sampleClinical, "SAMPLE_ID", sampleSynId, centerStagingSynId)#, retractedSampleSynId)
-			process_functions.updateData(self.syn, sampleSynId, sampleClinical, self.center, sampleCols, toDelete=True)
+			process_functions.updateData(self.syn, sampleSynId, sampleClinical, self.center, col=sampleCols, toDelete=True)
 
 		newClinicalDf.to_csv(newPath, sep="\t", index=False)
 		return(newPath)
@@ -331,17 +329,18 @@ class clinical(example_filetype_format.FileTypeFormat):
 		if haveColumn:
 			if not all([i != "" for i in clinicalDF['SEQ_ASSAY_ID']]):
 				warning += "Sample: Please double check your SEQ_ASSAY_ID columns, there are empty rows.\n"
-			#must remove empty seq assay ids first or else the case checking of values will fail
-			#Checking for if there are seq assay ids like (SAGE-1, Sage-1)
+			#must remove empty seq assay ids first
+			#Checking if seq assay ids start with the center name
 			seqAssayIds = clinicalDF.SEQ_ASSAY_ID[clinicalDF.SEQ_ASSAY_ID != ""]
 			allSeqAssays = seqAssayIds.unique()
 			notNormalized = []
+			not_caps = []
 			for seqassay in allSeqAssays:
-				checkIfNormalized = [bool(re.search(seqassay,seq,re.IGNORECASE)) for seq in allSeqAssays]
-				if sum(checkIfNormalized) > 1:
-					notNormalized.append(seqassay)
-			if len(notNormalized) > 0:
-				total_error += "Sample: Please normalize your SEQ_ASSAY_ID names.  You have these SEQ_ASSAY_IDs: %s.\n" % ", ".join(notNormalized)
+				#SEQ Ids are all capitalized now, so no need to check for differences in case
+				if not seqassay.upper().startswith(self.center):
+					not_caps.append(seqassay)
+			if len(not_caps) > 0:
+				total_error += "Sample: Please make sure your SEQ_ASSAY_IDs start with your center abbreviation: %s.\n" % ", ".join(not_caps)
 		else:
 			total_error += "Sample: clinical file must have SEQ_ASSAY_ID column.\n"
 
