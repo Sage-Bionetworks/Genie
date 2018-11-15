@@ -19,9 +19,21 @@ class FileTypeFormat(object):
 		self.center = center
 		#self.pool = multiprocessing.Pool(poolSize)
 	
-	def readFile(self, filePathList):
+	def _get_dataframe(self, filePathList):
+		'''
+		This function by defaults assumes the filePathList is length of 1 
+		and is a tsv file.  Could change depending on file type.
+		'''
 		filePath = filePathList[0]
 		df = pd.read_csv(filePath,sep="\t",comment="#")
+		return(df)
+
+	def read_file(self, filePathList):
+		'''
+		Each file is to be read in for validation and processing.
+		This is not to be changed in any functions.
+		'''
+		df = self._get_dataframe(filePathList)
 		return(df)
 
 	def _validateFilename(self, filePath):
@@ -79,7 +91,6 @@ class FileTypeFormat(object):
 			assert required_parameter in kwargs.keys(), "%s not in parameter list" % required_parameter
 			mykwargs[required_parameter] = kwargs[required_parameter]
 		logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
-		#total_error, warning = self.validate_steps(filePathList, **mykwargs)
-		df = self.readFile(filePathList)
+		df = self.read_file(filePathList)
 		total_error, warning = self._validate(df, **mykwargs)
 		return(total_error, warning)

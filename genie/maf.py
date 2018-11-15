@@ -117,8 +117,7 @@ class maf(example_filetype_format.FileTypeFormat):
 			logger.info("Please run with `--process %s` parameter if you want to reannotate the %s files" % (self._fileType, self._fileType))
 		return(mutationFiles)
 
-
-	def validate_helper(self, mutationDF, SP=False):
+	def _validate(self, mutationDF):
 		"""
 		This function validates the clinical file to make sure it adhere to the clinical SOP.
 		
@@ -127,7 +126,7 @@ class maf(example_filetype_format.FileTypeFormat):
 		"""
 
 		first_header = ['CHROMOSOME','HUGO_SYMBOL','TUMOR_SAMPLE_BARCODE']
-		if SP:
+		if self._fileType == "mafSP":
 			correct_column_headers = ['CHROMOSOME','START_POSITION','REFERENCE_ALLELE','TUMOR_SAMPLE_BARCODE','TUMOR_SEQ_ALLELE2'] #T_REF_COUNT + T_ALT_COUNT = T_DEPTH
 		else:
 			correct_column_headers = ['CHROMOSOME','START_POSITION','REFERENCE_ALLELE','TUMOR_SAMPLE_BARCODE','T_ALT_COUNT','TUMOR_SEQ_ALLELE2'] #T_REF_COUNT + T_ALT_COUNT = T_DEPTH
@@ -178,10 +177,8 @@ class maf(example_filetype_format.FileTypeFormat):
 
 		return(total_error, warning)
 
-	def validate_steps(self, filePathList, **kwargs):
-		logger.info("VALIDATING %s" % os.path.basename(filePathList[0]))
+	def _get_dataframe(self, filePathList):
 		mutationDF = pd.read_csv(filePathList[0],sep="\t",comment="#",na_values = ['-1.#IND', '1.#QNAN', '1.#IND', 
-								 '-1.#QNAN', '#N/A N/A', '#N/A', 'N/A', '#NA', 'NULL', 'NaN', 
-								 '-NaN', 'nan','-nan',''],keep_default_na=False)
-		total_error, warning = self.validate_helper(mutationDF)
-		return(total_error, warning)
+						 '-1.#QNAN', '#N/A N/A', '#N/A', 'N/A', '#NA', 'NULL', 'NaN', 
+						 '-NaN', 'nan','-nan',''],keep_default_na=False)
+		return(mutationDF)

@@ -176,23 +176,3 @@ class cna(example_filetype_format.FileTypeFormat):
 				if sum(cnvDF['remapped'].duplicated()) >0:
 					total_error+= "Your CNA file has duplicated Hugo_Symbols (After remapping of genes): %s -> %s.\n" % (",".join(cnvDF['HUGO_SYMBOL'][cnvDF['remapped'].duplicated(keep=False)]), ",".join(cnvDF['remapped'][cnvDF['remapped'].duplicated(keep=False)]))
 		return(total_error, warning)
-
-	# def _call_validate(self, df, **kwargs):
-	# 	test = kwargs['testing']
-	# 	noSymbolCheck = kwargs['noSymbolCheck']
-	# 	return(self._validate(df, noSymbolCheck, test))
-
-	# VALIDATION
-	# def validate_steps(self, filePathList, **kwargs):
-	# 	"""
-	# 	This function validates the CNV (linear or discrete) file to make sure it adhere to the genomic SOP.
-		
-	# 	:params filePath:     Path to CNV file
-
-	# 	:returns:             Text with all the errors in the CNV file
-	# 	"""
-	# 	filePath = filePathList[0]
-	# 	logger.info("VALIDATING %s" % os.path.basename(filePath))
-
-	# 	cnvDF = pd.read_csv(filePath,sep="\t",comment="#")
-	# 	return(self._validate(cnvDF, noSymbolCheck, test))

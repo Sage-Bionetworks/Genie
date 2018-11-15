@@ -401,7 +401,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 
 		return(total_error, warning)
 
-	def readFile(self, filePathList):
+	def _get_dataframe(self, filePathList):
 		clinicalDf = pd.read_csv(filePathList[0],sep="\t",comment="#")
 		if len(filePathList) > 1:
 			otherClinicalDf = pd.read_csv(filePathList[1],sep="\t",comment="#")
@@ -410,24 +410,3 @@ class clinical(example_filetype_format.FileTypeFormat):
 			except Exception as e:
 				raise ValueError("If submitting separate patient and sample files, they both must have SAMPLE columns")
 		return(clinicalDf)
-
-	#def _call_validate(self, df, **kwargs):
-	#	oncotreeLink = kwargs['oncotreeLink']
-	#	return(self._validate(df, oncotreeLink))
-
-	# def validate_steps(self, filePathList, **kwargs):
-
-	# 	#logger.info("VALIDATING %s" % ", ".join([ os.path.basename(i) for i in filePathList]))
-	# 	oncotreeLink = kwargs['oncotreeLink']
-	# 	clinicalDF = pd.read_csv(filePathList[0],sep="\t",comment="#")
-
-	# 	if len(filePathList) > 1:
-	# 		otherClinicalDF = pd.read_csv(filePathList[1],sep="\t",comment="#")
-	# 		if "patient" in filePathList[0].lower():
-	# 			total_error, warning = self.validate_helper(clinicalDF, otherClinicalDF, oncotreeLink)
-	# 		else:
-	# 			total_error, warning = self.validate_helper(otherClinicalDF, clinicalDF, oncotreeLink)
-	# 	else:
-	# 		otherClinicalDF = clinicalDF.copy()
-	# 		total_error, warning = self.validate_helper(clinicalDF, otherClinicalDF, oncotreeLink)
-	# 	return(total_error, warning)

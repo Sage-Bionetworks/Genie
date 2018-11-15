@@ -30,7 +30,7 @@ class vcf(maf.maf):
 	def _validateFilename(self, filePath):
 		assert os.path.basename(filePath[0]).startswith("GENIE-%s-" % self.center) and os.path.basename(filePath[0]).endswith(".vcf")
 
-	def readFile(self, filePathList):
+	def _get_dataframe(self, filePathList):
 		headers = None
 		filepath = filePathList[0]
 		with open(filepath,"r") as vcffile:
@@ -221,27 +221,3 @@ class vcf(maf.maf):
 		#I can also recommend a `bcftools query` command that will parse a VCF in a detailed way, 
 		#and output with warnings or errors if the format is not adhered too
 		return(total_error, warning)
-
-	# Resolve missing read counts
-	# def validate_steps(self, filePathList, **kwargs):
-	# 	"""
-	# 	This function validates the VCF file to make sure it adhere to the genomic SOP.
-		
-	# 	:params filePath:     Path to VCF file
-	# 	:returns:             Text with all the errors in the VCF file
-	# 	"""  
-	# 	filePath = filePathList[0]
-	# 	logger.info("VALIDATING %s" % os.path.basename(filePath))
-	# 	#FORMAT is optional
-	# 	headers = None
-	# 	with open(filePath,"r") as foo:
-	# 		for i in foo:
-	# 			if i.startswith("#CHROM"):
-	# 				headers = i.replace("\n","").replace("\r","").split("\t")
-	# 	if headers is not None:
-	# 		vcf = pd.read_csv(filePath, sep="\t",comment="#",header=None,names=headers)
-	# 	else:
-	# 		raise ValueError("Your vcf must start with the header #CHROM")
-
-	# 	total_error, warning = self._validate(vcf)
-	# 	return(total_error, warning)

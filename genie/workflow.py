@@ -22,11 +22,3 @@ class workflow(example_filetype_format.FileTypeFormat):
 		databaseSynId = kwargs['databaseSynId']
 		self.syn.store(synapseclient.File(filePath, parent=databaseSynId))
 		return(filePath)
-
-	# def validate_steps(self, filePathList, **kwargs):
-	# 	filePath = filePathList[0]
-	# 	logger.info("VALIDATING %s" % os.path.basename(filePath))
-	# 	total_error = ""
-	# 	warning = ""
-	# 	logger.info("NO VALIDATION for workflow files")
-	# 	return(total_error, warning)

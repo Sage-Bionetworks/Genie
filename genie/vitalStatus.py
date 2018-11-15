@@ -102,10 +102,3 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
 		process_functions.updateData(self.syn, databaseSynId, vitalStatusDf, self.center)
 		vitalStatusDf.to_csv(newPath, sep="\t",index=False)
 		return(newPath)
-
-	## VALIDATION
-	# def validate_steps(self, filePathList, **kwargs):
-	# 	logger.info("VALIDATING %s" % os.path.basename(filePathList[0]))
-	# 	vitalStatusDf = pd.read_csv(filePathList[0], sep="\t")
-	# 	total_error, warning = self.validate_helper(vitalStatusDf)
-	# 	return(total_error, warning)
