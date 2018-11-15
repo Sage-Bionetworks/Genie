@@ -393,16 +393,18 @@ def main():
 						help='Process vcf, maf or the rest of the files')
 	parser.add_argument('--center', help='The centers')
 	parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
-	parser.add_argument('--thread', type=int, help="Number of threads to use for validation", default=1)
 	parser.add_argument("--deleteOld", action='store_true', help = "Delete all old processed and temp files")
 	parser.add_argument("--onlyValidate", action='store_true', help = "Only validate the files, don't process")
-	parser.add_argument("--vcf2mafPath", type=str, help="Path to vcf2maf")
-	parser.add_argument("--vepPath", type=str, help="Path to VEP")
-	parser.add_argument("--vepData", type=str, help="Path to VEP data")
 	parser.add_argument("--oncotreeLink", type=str, help="Link to oncotree code")
 	parser.add_argument("--createNewMafDatabase", action='store_true', help = "Creates a new maf database")
 	parser.add_argument("--testing", action='store_true', help = "Testing the infrastructure!")
 	parser.add_argument("--debug", action='store_true', help = "Add debug mode to synapse")
+
+	#DEFAULT PARAMS
+	parser.add_argument("--vcf2mafPath", type=str, help="Path to vcf2maf", default="~/vcf2maf-1.6.14")
+	parser.add_argument("--vepPath", type=str, help="Path to VEP", default="~/vep")
+	parser.add_argument("--vepData", type=str, help="Path to VEP data", default="~/.vep")
+	parser.add_argument('--thread', type=int, help="Number of threads to use for validation", default=1)
 
 	args = parser.parse_args()
 	syn = process_functions.synLogin(args)
