@@ -6,7 +6,8 @@ import process_functions
 import subprocess
 import argparse
 import os
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+import input_to_database
+#SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 
@@ -41,6 +42,7 @@ def main():
 
     inputToDatabaseScript = os.path.join(SCRIPT_DIR, "input_to_database.py")
     for center in centers:
+
         if args.onlyValidate:
             logger.info("VALIDATING %s" % center)
             extendCommands = ["--onlyValidate"]
