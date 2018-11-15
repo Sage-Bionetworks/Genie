@@ -126,7 +126,8 @@ class maf(example_filetype_format.FileTypeFormat):
 		"""
 
 		first_header = ['CHROMOSOME','HUGO_SYMBOL','TUMOR_SAMPLE_BARCODE']
-		if self._fileType == "mafSP":
+		SP = self.fileType == "mafSP"
+		if SP:
 			correct_column_headers = ['CHROMOSOME','START_POSITION','REFERENCE_ALLELE','TUMOR_SAMPLE_BARCODE','TUMOR_SEQ_ALLELE2'] #T_REF_COUNT + T_ALT_COUNT = T_DEPTH
 		else:
 			correct_column_headers = ['CHROMOSOME','START_POSITION','REFERENCE_ALLELE','TUMOR_SAMPLE_BARCODE','T_ALT_COUNT','TUMOR_SEQ_ALLELE2'] #T_REF_COUNT + T_ALT_COUNT = T_DEPTH
