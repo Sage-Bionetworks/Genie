@@ -402,6 +402,7 @@ def main():
 	parser.add_argument("--oncotreeLink", type=str, help="Link to oncotree code")
 	parser.add_argument("--createNewMafDatabase", action='store_true', help = "Creates a new maf database")
 	parser.add_argument("--testing", action='store_true', help = "Testing the infrastructure!")
+	parser.add_argument("--debug", action='store_true', help = "Add debug mode to synapse")
 
 	args = parser.parse_args()
 	syn = process_functions.synLogin(args)
