@@ -16,7 +16,7 @@ import subprocess
 import shutil
 import time
 import toRetract
-import writeInvalidReasons
+import write_invalid_reasons
 
 #Configuration file
 from genie import PROCESS_FILES
@@ -460,7 +460,7 @@ def main():
 	#Only write out invalid reasons if the center isnt specified and if only validate
 	if args.center is None and args.onlyValidate:
 	    logging.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
-	    writeInvalidReasons.write_invalid_reasons(syn, center_mapping_df, error_tracker_synid)
+	    write_invalid_reasons.write_invalid_reasons(syn, center_mapping_df, error_tracker_synid)
 
 if __name__ == "__main__":
 	main()
