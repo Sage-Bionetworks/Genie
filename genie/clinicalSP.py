@@ -1,11 +1,8 @@
 from __future__ import absolute_import
-from genie import example_filetype_format
-from genie import process_functions
-
+from genie import example_filetype_format, process_functions
 import os
 import logging
 import pandas as pd
-#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class clinicalSP(example_filetype_format.FileTypeFormat):

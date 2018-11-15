@@ -1,20 +1,10 @@
 from __future__ import absolute_import
-from genie import maf
-from genie import process_functions
-
+from genie import maf, process_functions
 import os
 import logging
 import pandas as pd
-#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-# def updateData(syn, databaseSynId, newData, center, col, toDelete=False):
-# 	databaseEnt = syn.get(databaseSynId)
-# 	database = syn.tableQuery("SELECT * FROM %s where Center ='%s'" % (databaseSynId, center))
-# 	database = database.asDataFrame()
-# 	process_functions.updateDatabase(syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete)
-	
 class mafSP(maf.maf):
 
 	_fileType = "mafSP"

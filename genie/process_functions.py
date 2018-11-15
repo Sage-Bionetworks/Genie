@@ -17,7 +17,6 @@ import ast
 #Ignore SettingWithCopyWarning warning
 pd.options.mode.chained_assignment = None
 
-#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -191,8 +190,6 @@ def rmFiles(folderPath, recursive=True):
 			os.unlink(os.path.join(dirPath, filePath))
 		if not recursive:
 			break
-
-
 
 #Remove .0
 def removeFloat(df):
