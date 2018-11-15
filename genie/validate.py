@@ -3,7 +3,6 @@ import pandas as pd
 assert pd.__version__ >= "0.20.0", "Please make sure your pandas version is at least 0.20.0.  If not, please do pip install pandas --upgrade"
 import synapseclient
 import os
-#import subprocess
 import argparse
 import getpass
 import string
