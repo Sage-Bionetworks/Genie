@@ -166,7 +166,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 									validMAFs=validMAFs,
 									path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
 						   			veppath=veppath,vepdata=vepdata,
-									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, test=test)
+									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, reference=reference, test=test)
 
 	elif processing in ["vcf","maf","mafSP"]:
 		filePath = None
