@@ -429,6 +429,8 @@ def main():
 		assert args.center in center_mapping_df.center.tolist(), "Must specify one of these centers: %s" % ", ".join(center_mapping_df.center)
 		centers = [args.center]
 	else:
+		center_mapping_df = center_mapping_df[~center_mapping_df['inputSynId'].isnull()]
+		center_mapping_df = center_mapping_df[center_mapping_df['release'] == True]
 		centers = center_mapping_df.center
 	
 	if args.oncotreeLink is None:
