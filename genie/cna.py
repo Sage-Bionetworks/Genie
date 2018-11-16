@@ -1,14 +1,11 @@
 from __future__ import absolute_import
-from genie import example_filetype_format
-from genie import process_functions
+from genie import example_filetype_format, process_functions
 
 import os
 import pandas as pd
 import logging
 from functools import partial
 import synapseclient
-
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def validateSymbol(gene, bedDf, returnMappedDf=True):
