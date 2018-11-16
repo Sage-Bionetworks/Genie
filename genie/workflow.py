@@ -1,10 +1,8 @@
 from __future__ import absolute_import
 from genie import example_filetype_format
-
 import os
 import logging
 import synapseclient
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

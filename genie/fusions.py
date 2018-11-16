@@ -1,13 +1,9 @@
 from __future__ import absolute_import
-from genie import example_filetype_format
-from genie import process_functions
-
+from genie import example_filetype_format, process_functions
 import os
 import logging
 import pandas as pd
 from functools import partial
-
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -97,7 +93,6 @@ class fusions(example_filetype_format.FileTypeFormat):
         databaseSynId = kwargs['databaseSynId']
         newPath = kwargs['newPath']
         test = kwargs['test']
-
         fusion = pd.read_csv(filePath, sep="\t",comment="#")
         fusion = self._process(fusion, test)
         process_functions.updateData(self.syn, databaseSynId, fusion, self.center, toDelete=True)

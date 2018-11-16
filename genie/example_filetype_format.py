@@ -1,9 +1,3 @@
-import logging
-import multiprocessing
-#import packages
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 
 class FileTypeFormat(object):
 

@@ -13,10 +13,11 @@ These are tools or packages you will need, to be able to reproduce these results
 - Python 2.7.10 or higher
 - Sage Synapse's [command-line client](http://python-docs.synapse.org/CommandLineClient.html) (`pip install synapseclient`)
 - Python [pandas](http://pandas.pydata.org/) (`pip install pandas`)
+- [bedtools](https://bedtools.readthedocs.io/en/latest/content/installation.html)
 
 ## File Validator
 ```
-pip install aacrgenie
+pip install git+https://github.com/Sage-Bionetworks/Genie.git
 ```
 
 This will install all the necessary components for you to run the validator locally on all of your files, including the Synapse client.  Please view the help to see how to run to validator.  
@@ -29,8 +30,7 @@ genie validate clinical data_clincal_supp_SAGE.txt SAGE
 ## Processing instructions
 1. Go onto GENIE ec2
 
-2. Run shell script - `.sage_processing/processGENIE.sh` 
-> Currently processGENIE.sh is set up with default parameters and set to upload into the staging site.  Make sure you modify these lines below can be modified in the shell script.  (Working on being able to pass in arguments into the shell script)
+2. Run shell script - `genie/processGENIE.sh` 
 
 **Releases**
 
