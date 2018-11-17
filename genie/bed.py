@@ -1,13 +1,10 @@
 from __future__ import absolute_import
-from genie import example_filetype_format
-from genie import process_functions
-
+from genie import example_filetype_format, process_functions
 import os
 import logging
 import pandas as pd
 from functools import partial
 import subprocess
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # def createGenePositionsTables():
@@ -127,13 +124,6 @@ class bed(example_filetype_format.FileTypeFormat):
 
 	def _validateFilename(self, filePath):
 		assert os.path.basename(filePath[0]).startswith("%s-" % self.center) and os.path.basename(filePath[0]).endswith(".bed")
-
-	## PROCESSING
-	# def updateBED(self, databaseSynId, newData, seq_assay_id, col, toDelete=False):
-	# 	databaseEnt = self.syn.get(databaseSynId)
-	# 	database = self.syn.tableQuery("SELECT * FROM %s where SEQ_ASSAY_ID ='%s'" % (databaseSynId, seq_assay_id))
-	# 	database = database.asDataFrame()[col]
-	# 	process_functions.updateDatabase(self.syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete)
 
 	def createdBEDandGenePanel(self, bed, seq_assay_id, genePanelPath, parentId, createGenePanel=True):
 		logger.info("REMAPPING %s" % seq_assay_id)

@@ -1,6 +1,10 @@
-mkdir testing_package
-cd testing_package
-syn get -r syn11601335
+script_dir=$(dirname $0)
+if [ ! -d "$script_dir/testing_package" ]; then
+  mkdir $script_dir/testing_package
+fi
+
+cd $script_dir/testing_package
+synapse get -r syn11601335
 
 genie validate clinical data_clinical_supp_SAGE.txt SAGE --test
 genie validate cna data_CNA_SAGE.txt SAGE --test
