@@ -1,3 +1,5 @@
+![Docker Automated](https://img.shields.io/docker/automated/sagebionetworks/genie.svg) ![Docker Build](https://img.shields.io/docker/build/sagebionetworks/genie.svg)
+
 # AACR Project GENIE
 
 ## Introduction
