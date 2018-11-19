@@ -211,14 +211,13 @@ class clinical(example_filetype_format.FileTypeFormat):
 		return(newPath)
 
 	# VALIDATION
-	def validate_helper(self, clinicalDF, clinicalSampleDF, oncotreeLink):
+	def _validate(self, clinicalDF, oncotreeLink):
 		"""
 		This function validates the clinical file to make sure it adhere to the clinical SOP.
 		
-		:params clinicalFilePath:              Flattened clinical file or patient clinical file
-		:params clinicalSamplePath:            Sample clinical file if patient clinical file is provided
+		:params clinicalDF:              Merged clinical file with patient and sample information
 
-		:returns:                              Error message
+		:returns:                        Error message
 		"""
 		total_error = ""
 		warning = ""
@@ -226,8 +225,6 @@ class clinical(example_filetype_format.FileTypeFormat):
 		clinicalDF.columns = [col.upper() for col in clinicalDF.columns]
 		clinicalDF = clinicalDF.fillna("")
 
-		clinicalSampleDF.columns = [col.upper() for col in clinicalSampleDF.columns]
-		clinicalSampleDF = clinicalSampleDF.fillna("")
 		oncotree_mapping = process_functions.get_oncotree_codes(oncotreeLink)
 		if oncotree_mapping.empty:
 			oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(oncotreeLink)
@@ -239,46 +236,63 @@ class clinical(example_filetype_format.FileTypeFormat):
 
 		#CHECK: SAMPLE_ID
 		sampleId = 'SAMPLE_ID'
-		haveSampleColumn = process_functions.checkColExist(clinicalSampleDF, sampleId)
+		haveSampleColumn = process_functions.checkColExist(clinicalDF, sampleId)
 		if not haveSampleColumn:
 			total_error += "Sample: clinical file must have SAMPLE_ID column.\n"
 		else:
-			if sum(clinicalSampleDF[sampleId] == "") > 0:
-				total_error += "Sample: There can't be any blank values for SAMPLE_ID\n"
-			if sum(clinicalSampleDF[sampleId].duplicated()) > 0:
+			if sum(clinicalDF[sampleId].duplicated()) > 0:
 				total_error += "Sample: There can't be any duplicated values for SAMPLE_ID\n"
+
+		#CHECK: PATIENT_ID
+		patientId = "PATIENT_ID"
+		# #CHECK: PATIENT_ID IN SAMPLE FILE
+		havePatientColumn = process_functions.checkColExist(clinicalDF, patientId)
+		if not havePatientColumn:
+			total_error += "Sample/Clinical: clinical files must have PATIENT_ID column.\n"
+
+		#CHECK: within the sample file that the sample ids match the patient ids
+		if haveSampleColumn and havePatientColumn:
+			if not all([patient in sample for sample, patient in zip(clinicalDF[sampleId], clinicalDF[patientId])]):
+				total_error += "Sample: PATIENT_ID's much be contained in the SAMPLE_ID's (ex. SAGE-1 <-> SAGE-1-2)\n"
+			# #CHECK: All samples must have associated patient data (GENIE requires patient data)
+			if not all(clinicalDF[patientId] != ""):
+				total_error += "Patient: All samples must have associated patient information and no null patient ids allowed. These samples are missing patient data: %s\n" % ", ".join(clinicalDF[sampleId][clinicalDF[patientId] == ""])
+			#CHECK: All patients should have associated sample data 
+			if not all(clinicalDF[sampleId] != ""):
+				### MAKE WARNING FOR NOW###
+				warning += "Sample: All patients must have associated sample information. These patients are missing sample data: %s\n" % ", ".join(clinicalDF[patientId][clinicalDF[sampleId] == ""])
 
 		#CHECK: AGE_AT_SEQ_REPORT
 		age = "AGE_AT_SEQ_REPORT"
-		haveColumn = process_functions.checkColExist(clinicalSampleDF, age)
+		haveColumn = process_functions.checkColExist(clinicalDF, age)
 		if haveColumn:
 			#Deal with HIPAA converted rows from DFCI
 			#First for loop can't int(text) because there are instances that have <3435
 
-			clinicalSampleDF[age] = removeGreaterThanAndLessThanStr(clinicalSampleDF[age]) 
-			if sum(clinicalSampleDF[age].astype(str) == '') >0:
-				medianAge = clinicalSampleDF[age][clinicalSampleDF[age] != ''].astype(int)
+			clinicalDF[age] = removeGreaterThanAndLessThanStr(clinicalDF[age]) 
+			if sum(clinicalDF[age].astype(str) == '') >0:
+				medianAge = clinicalDF[age][clinicalDF[age] != ''].astype(int)
 			else:
-				medianAge = clinicalSampleDF[age]
-			if not all([isinstance(i, (int,float)) or i == "" for i in clinicalSampleDF[age]]) or pd.np.median(medianAge) < 100:
+				medianAge = clinicalDF[age]
+			if not all([isinstance(i, (int,float)) or i == "" for i in clinicalDF[age]]) or pd.np.median(medianAge) < 100:
 				total_error += "Sample: Please double check your AGE_AT_SEQ_REPORT.  This is the interval in DAYS (integer) between the patient's date of birth and the date of the sequencing report that is associated with the sample.\n"
 		else:
 			total_error += "Sample: clinical file must have AGE_AT_SEQ_REPORT column.\n"
 
 		#CHECK: ONCOTREE_CODE
-		haveColumn = process_functions.checkColExist(clinicalSampleDF, "ONCOTREE_CODE")
+		haveColumn = process_functions.checkColExist(clinicalDF, "ONCOTREE_CODE")
 		maleOncoCodes = ["TESTIS","PROSTATE","PENIS"]
 		womenOncoCodes = ["CERVIX","VULVA","UTERUS","OVARY"]
 		if haveColumn:
 			#Make oncotree codes uppercase (SpCC/SPCC)
-			clinicalSampleDF['ONCOTREE_CODE'] = clinicalSampleDF['ONCOTREE_CODE'].astype(str).str.upper()
-			if not all(clinicalSampleDF['ONCOTREE_CODE'].isin(oncotree_mapping['ONCOTREE_CODE'])):
-				unmapped_oncotrees = clinicalSampleDF['ONCOTREE_CODE'][~clinicalSampleDF['ONCOTREE_CODE'].isin(oncotree_mapping['ONCOTREE_CODE'])]
+			clinicalDF['ONCOTREE_CODE'] = clinicalDF['ONCOTREE_CODE'].astype(str).str.upper()
+			if not all(clinicalDF['ONCOTREE_CODE'].isin(oncotree_mapping['ONCOTREE_CODE'])):
+				unmapped_oncotrees = clinicalDF['ONCOTREE_CODE'][~clinicalDF['ONCOTREE_CODE'].isin(oncotree_mapping['ONCOTREE_CODE'])]
 				total_error += "Sample: Please double check that all your ONCOTREE CODES exist in the mapping. You have %d samples that don't map. These are the codes that don't map: %s\n" % (len(unmapped_oncotrees),",".join(set(unmapped_oncotrees)))
-			if process_functions.checkColExist(clinicalDF, "SEX") and 'oncotree_mapping_dict' in locals():
+			if process_functions.checkColExist(clinicalDF, "SEX") and 'oncotree_mapping_dict' in locals() and havePatientColumn and haveSampleColumn:
 				wrongCodeSamples = []
 				#This is to check if oncotree codes match the sex, returns list of samples that have conflicting codes and sex
-				for code, patient, sample in zip(clinicalSampleDF['ONCOTREE_CODE'], clinicalSampleDF['PATIENT_ID'], clinicalSampleDF['SAMPLE_ID']):
+				for code, patient, sample in zip(clinicalDF['ONCOTREE_CODE'], clinicalDF['PATIENT_ID'], clinicalDF['SAMPLE_ID']):
 					if oncotree_mapping_dict.get(code) is not None and sum(clinicalDF['PATIENT_ID'] == patient) > 0:
 						primaryCode = oncotree_mapping_dict[code]['ONCOTREE_PRIMARY_NODE']
 						sex = clinicalDF['SEX'][clinicalDF['PATIENT_ID'] == patient].values[0]
@@ -293,10 +307,10 @@ class clinical(example_filetype_format.FileTypeFormat):
 			total_error += "Sample: clinical file must have ONCOTREE_CODE column.\n"
 		
 		#CHECK: SAMPLE_TYPE
-		haveColumn = process_functions.checkColExist(clinicalSampleDF, "SAMPLE_TYPE")
+		haveColumn = process_functions.checkColExist(clinicalDF, "SAMPLE_TYPE")
 		if haveColumn:
-			if clinicalSampleDF.SAMPLE_TYPE.dtype == int:
-				if not all(clinicalSampleDF['SAMPLE_TYPE'].isin(sampleType_mapping['CODE'])):
+			if clinicalDF.SAMPLE_TYPE.dtype == int:
+				if not all(clinicalDF['SAMPLE_TYPE'].isin(sampleType_mapping['CODE'])):
 					total_error += "Sample: Please double check your SAMPLE_TYPE column. This column must be %s.\n" % ", ".join(map(str,sampleType_mapping['CODE']))
 			else:
 				total_error += "Sample: Please double check your SAMPLE_TYPE column. No null values allowed.\n"
@@ -305,13 +319,13 @@ class clinical(example_filetype_format.FileTypeFormat):
 			total_error += "Sample: clinical file must have SAMPLE_TYPE column.\n"
 
 		#CHECK: SEQ_ASSAY_ID
-		haveColumn = process_functions.checkColExist(clinicalSampleDF, "SEQ_ASSAY_ID")
+		haveColumn = process_functions.checkColExist(clinicalDF, "SEQ_ASSAY_ID")
 		if haveColumn:
-			if not all([i != "" for i in clinicalSampleDF['SEQ_ASSAY_ID']]):
+			if not all([i != "" for i in clinicalDF['SEQ_ASSAY_ID']]):
 				warning += "Sample: Please double check your SEQ_ASSAY_ID columns, there are empty rows.\n"
 			#must remove empty seq assay ids first
 			#Checking if seq assay ids start with the center name
-			seqAssayIds = clinicalSampleDF.SEQ_ASSAY_ID[clinicalSampleDF.SEQ_ASSAY_ID != ""]
+			seqAssayIds = clinicalDF.SEQ_ASSAY_ID[clinicalDF.SEQ_ASSAY_ID != ""]
 			allSeqAssays = seqAssayIds.unique()
 			notNormalized = []
 			not_caps = []
@@ -324,11 +338,11 @@ class clinical(example_filetype_format.FileTypeFormat):
 		else:
 			total_error += "Sample: clinical file must have SEQ_ASSAY_ID column.\n"
 
-		haveColumn = process_functions.checkColExist(clinicalSampleDF, "SEQ_DATE")
+		haveColumn = process_functions.checkColExist(clinicalDF, "SEQ_DATE")
 		if haveColumn:
-			clinicalSampleDF['SEQ_DATE'] = [i.title() for i in clinicalSampleDF['SEQ_DATE'].astype(str)]
-			seqDate = clinicalSampleDF['SEQ_DATE'][clinicalSampleDF['SEQ_DATE'] != 'Release']
-			if sum(clinicalSampleDF['SEQ_DATE'] == '') >0:
+			clinicalDF['SEQ_DATE'] = [i.title() for i in clinicalDF['SEQ_DATE'].astype(str)]
+			seqDate = clinicalDF['SEQ_DATE'][clinicalDF['SEQ_DATE'] != 'Release']
+			if sum(clinicalDF['SEQ_DATE'] == '') >0:
 				total_error += "Sample: Samples without SEQ_DATEs will NOT be released.\n"
 			try:
 				if not seqDate.empty:
@@ -353,39 +367,6 @@ class clinical(example_filetype_format.FileTypeFormat):
 				total_error += "Patient: Please double check your BIRTH_YEAR column.  This column must be integers or blank.\n"
 		else:
 			total_error += "Patient: clinical file must have BIRTH_YEAR column.\n"
-
-
-		#CHECK: PATIENT_ID
-		patientId = "PATIENT_ID"
-		haveColumn = process_functions.checkColExist(clinicalDF, patientId)
-		if not haveColumn:
-			total_error += "Patient: clinical file must have PATIENT_ID column.\n"
-		else:
-			if sum(clinicalDF[patientId] == "") > 0:
-				total_error += "Patient: There can't be any blank values for PATIENT_ID\n"
-
-		#CHECK: PATIENT_ID IN SAMPLE FILE
-		haveColumn = process_functions.checkColExist(clinicalSampleDF, patientId)
-		if not haveColumn:
-			total_error += "Sample: clinical file must have PATIENT_ID column.\n"
-		else:
-			if sum(clinicalSampleDF[patientId] == "") > 0:
-				total_error += "Sample: There can't be any blank values for PATIENT_ID\n"
-
-			#CHECK: within the sample file that the sample ids match the patient ids
-			if haveSampleColumn:
-				if not all([patient in sample for sample, patient in zip(clinicalSampleDF[sampleId], clinicalSampleDF[patientId])]):
-					total_error += "Sample: PATIENT_ID's much be contained in the SAMPLE_ID's (ex. SAGE-1 <-> SAGE-1-2)\n"
-			#Remove empty patient values from both files
-			sample_patients = clinicalSampleDF[patientId][clinicalSampleDF[patientId] != ""]
-			patient_patients = clinicalDF[patientId][clinicalDF[patientId] != ""]
-			# #CHECK: All samples must have associated patient data (GENIE requires patient data)
-			if not all(sample_patients.isin(patient_patients)):
-				total_error += "Sample: All samples must have associated patient information. These samples are missing patient data: %s\n" % ", ".join(clinicalSampleDF[sampleId][~clinicalSampleDF[patientId].isin(clinicalDF[patientId])])
-			#CHECK: All patients must have associated sample data 
-			if not all(patient_patients.isin(sample_patients)):
-				### MAKE WARNING FOR NOW###
-				warning += "Sample: All patients must have associated sample information. These patients are missing sample data: %s\n" % ", ".join(clinicalDF[patientId][~clinicalDF[patientId].isin(clinicalSampleDF[patientId])])
 
 		#CHECK: PRIMARY_RACE
 		warn, error = checkMapping(clinicalDF,"PRIMARY_RACE",race_mapping['CODE'])
@@ -414,19 +395,12 @@ class clinical(example_filetype_format.FileTypeFormat):
 
 		return(total_error, warning)
 
-	def validate_steps(self, filePathList, **kwargs):
-
-		logger.info("VALIDATING %s" % ", ".join([ os.path.basename(i) for i in filePathList]))
-		oncotreeLink = kwargs['oncotreeLink']
-		clinicalDF = pd.read_csv(filePathList[0],sep="\t",comment="#")
-
+	def _get_dataframe(self, filePathList):
+		clinicalDf = pd.read_csv(filePathList[0],sep="\t",comment="#")
 		if len(filePathList) > 1:
-			otherClinicalDF = pd.read_csv(filePathList[1],sep="\t",comment="#")
-			if "patient" in filePathList[0].lower():
-				total_error, warning = self.validate_helper(clinicalDF, otherClinicalDF, oncotreeLink)
-			else:
-				total_error, warning = self.validate_helper(otherClinicalDF, clinicalDF, oncotreeLink)
-		else:
-			otherClinicalDF = clinicalDF.copy()
-			total_error, warning = self.validate_helper(clinicalDF, otherClinicalDF, oncotreeLink)
-		return(total_error, warning)
+			otherClinicalDf = pd.read_csv(filePathList[1],sep="\t",comment="#")
+			try:
+				clinicalDf = clinicalDf.merge(otherClinicalDf, on="PATIENT_ID")
+			except Exception as e:
+				raise ValueError("If submitting separate patient and sample files, they both must have SAMPLE columns")
+		return(clinicalDf)

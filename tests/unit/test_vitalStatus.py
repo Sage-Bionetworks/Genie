@@ -46,13 +46,13 @@ def test_validation():
 							 INT_DOD=[1,">32485",3,"<6570",float('nan')],
 							 DEAD=[True, False, True, False, float('nan')]))
 
-	error, warning = vs.validate_helper(vsDf)
+	error, warning = vs._validate(vsDf)
 	assert error == ""
 	assert warning == ""
 
 
 	vsDf = pd.DataFrame()
-	error, warning = vs.validate_helper(vsDf)
+	error, warning = vs._validate(vsDf)
 	expectedErrors = ("Vital status file: Must have PATIENT_ID column.\n"
 					  "Vital status file: Must have YEAR_DEATH column.\n"
 					  "Vital status file: Must have YEAR_CONTACT column.\n"
@@ -69,7 +69,7 @@ def test_validation():
 							 INT_DOD=[1,2,3,4,'string'],
 							 DEAD=[True, False, True, 'boobar', True]))
 
-	error, warning = vs.validate_helper(vsDf)
+	error, warning = vs._validate(vsDf)
 	expectedErrors = ("Vital status file: Please double check your YEAR_DEATH column, it must be an integer in YYYY format or an empty string.\n"
 					  "Vital status file: Please double check your YEAR_CONTACT column, it must be an integer in YYYY format or an empty string.\n"
 					  "Vital status file: Please double check your INT_CONTACT column, it must be an integer, an empty string, >32485, or <6570.\n"

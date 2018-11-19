@@ -140,19 +140,3 @@ class fusions(example_filetype_format.FileTypeFormat):
     
 
         return(total_error, warning)
-
-    #VALIDATION
-    def validate_steps(self, filePathList, **kwargs):
-        """
-        This function validates the Fusion file to make sure it adhere to the genomic SOP.
-        
-        :params filePath:     Path to Fusion file
-
-        :returns:             Text with all the errors in the Fusion file
-        """
-        filePath = filePathList[0]
-        logger.info("VALIDATING %s" % os.path.basename(filePath))
-        test = kwargs['testing']
-        noSymbolCheck = kwargs['noSymbolCheck']
-        fusionDF = pd.read_csv(filePath,sep="\t",comment="#")
-        return(self._validate(fusionDF,noSymbolCheck,test))

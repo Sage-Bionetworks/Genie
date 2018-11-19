@@ -81,17 +81,3 @@ class patientCounts(example_filetype_format.FileTypeFormat):
 			total_error += "Patient Counts: File must have NUM_PATIENTS_PD1_PDL1 column.\n"
 
 		return(total_error, warning)
-
-	def validate_steps(self, filePathList, **kwargs):
-		"""
-		This function validates the patient count file to make sure it adheres to the SOP
-		
-		:params filePath:     Path to Patient count file
-
-		:returns:             Text with all the errors in the BED file
-		"""
-		filePath = filePathList[0]
-		oncotree_url = kwargs['oncotreeLink']
-		logger.info("VALIDATING %s" % os.path.basename(filePath))
-		patCountsDf = pd.read_csv(filePath, sep="\t")
-		return(self._validate(patCountsDf, oncotree_url))

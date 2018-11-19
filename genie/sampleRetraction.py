@@ -36,13 +36,3 @@ class sampleRetraction(example_filetype_format.FileTypeFormat):
 		deleteSamples = self._process(deleteSamples, info.modifiedOn.split(".")[0])
 		process_functions.updateData(self.syn, databaseSynId, deleteSamples, databaseSynId, filterByColumn="center", toDelete=True)
 		return(newPath)
-
-	def validate_steps(self, filePathList, **kwargs):
-		filePath = filePathList[0]
-		logger.info("VALIDATING %s" % os.path.basename(filePath))
-		total_error = ""
-		warning = ""
-		#send email when there are updates to the GENIE retraction files
-		self.syn.sendMessage([3324230,1968150],messageSubject="GENIE: New retraction for %s" % self.center, messageBody="Check GENIE files")
-		logger.info("NO VALIDATION for retraction files")
-		return(total_error, warning)	
