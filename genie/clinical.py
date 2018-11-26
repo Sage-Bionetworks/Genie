@@ -164,7 +164,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 
 		clinicalDf = pd.read_csv(filePath, sep="\t", comment="#")
 		#Capitalize all clinical dataframe columns
-		clinicalDF.columns = [col.upper() for col in clinicalDF.columns]
+		clinicalDf.columns = [col.upper() for col in clinicalDf.columns]
 		
 		patient= False
 		sample = False
