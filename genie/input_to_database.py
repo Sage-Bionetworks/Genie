@@ -332,15 +332,9 @@ def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path
 		beds = validFiles[validBED]
 		validFiles = beds.append(validFiles)
 		validFiles.drop_duplicates(inplace=True)
-		#Valid maf, mafsp, vcf and cbs files
-		validMAF = [i for i in validFiles['path'] if os.path.basename(i) == "data_mutations_extended_%s.txt" % center]
-		validMAFSP = [i for i in validFiles['path'] if os.path.basename(i)  == "nonGENIE_data_mutations_extended_%s.txt" % center]
+		#Valid vcf files
 		validVCF = [i for i in validFiles['path'] if os.path.basename(i).endswith('.vcf')]
 		#validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
-		if process == 'mafSP':
-			validMAFs = validMAFSP
-		else:
-			validMAFs = validMAF
 
 		processTrackerSynId = process_functions.getDatabaseSynId(syn, "processTracker", databaseToSynIdMappingDf = database_to_synid_mappingdf)
 		#Add process tracker for time start
@@ -355,7 +349,7 @@ def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path
 
 		processFiles(syn, validFiles, center, path_to_genie, thread, 
 					 center_mapping_df, oncotree_link, database_to_synid_mappingdf, 
-					 validVCF=validVCF, validMAFs=validMAFs,
+					 validVCF=validVCF,
 					 vcf2mafPath=vcf2maf_path,
 					 veppath=vep_path,vepdata=vep_data,
 					 test=testing, processing=process,reference=reference)
