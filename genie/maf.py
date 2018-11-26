@@ -12,7 +12,7 @@ class maf(example_filetype_format.FileTypeFormat):
 	_fileType = "maf"
 
 	_process_kwargs = ["databaseToSynIdMappingDf","processing","path_to_GENIE",
-					   "vcf2mafPath","veppath","vepdata",'validMAFs','reference']
+					   "vcf2mafPath","veppath","vepdata",'reference']
 
 	def _validateFilename(self, filePath):
 		assert os.path.basename(filePath[0]) == "data_mutations_extended_%s.txt" % self.center
