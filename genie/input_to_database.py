@@ -136,9 +136,8 @@ def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, test
 #Processing single file
 def processFiles(syn, validFiles, center, path_to_GENIE, threads, 
 				 center_mapping_df, oncotreeLink, databaseToSynIdMappingDf, 
-				 validVCF=None, validMAFs=None,
-				 vcf2mafPath=None,
-	   			 veppath=None,vepdata=None,
+				 validVCF=None, vcf2mafPath=None,
+	   			 veppath=None, vepdata=None,
 				 processing="main", test=False, reference=None):
 
 	logger.info("PROCESSING %s FILES: %d" % (center, len(validFiles)))
@@ -162,7 +161,6 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 				PROCESS_FILES[fileType](syn, center, threads).process(filePath=filePath, newPath=newPath, 
 									parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
 									fileSynId=fileSynId, validVCF=validVCF, 
-									validMAFs=validMAFs,
 									path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
 						   			veppath=veppath,vepdata=vepdata,
 									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, reference=reference, test=test)
@@ -175,8 +173,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 		fileSynId = None
 		PROCESS_FILES[processing](syn, center, threads).process(filePath=filePath, newPath=newPath, 
 									parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
-									fileSynId=fileSynId, validVCF=validVCF, 
-									validMAFs=validMAFs,
+									fileSynId=fileSynId, validVCF=validVCF,
 									path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
 						   			veppath=veppath,vepdata=vepdata,
 									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, reference=reference)
