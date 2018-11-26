@@ -163,6 +163,9 @@ class clinical(example_filetype_format.FileTypeFormat):
 		# retractedPatientSynId = kwargs['retractedPatientSynId']
 
 		clinicalDf = pd.read_csv(filePath, sep="\t", comment="#")
+		#Capitalize all clinical dataframe columns
+		clinicalDF.columns = [col.upper() for col in clinicalDF.columns]
+		
 		patient= False
 		sample = False
 		#These synapse ids for the clinical tier release scope is hardcoded because it never changes
