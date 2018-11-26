@@ -107,6 +107,8 @@ class clinical(example_filetype_format.FileTypeFormat):
 
 		if x.get('SEQ_DATE') is not None:
 			x['SEQ_DATE'] = x['SEQ_DATE'].title()
+			print(str(x['SEQ_DATE']))
+			print(str(x['SEQ_DATE']).split("-"))
 			x['SEQ_YEAR'] = int(str(x['SEQ_DATE']).split("-")[1]) if str(x['SEQ_DATE']) != "Release" else pd.np.nan
 
 		#TRIM EVERY COLUMN MAKE ALL DASHES 
