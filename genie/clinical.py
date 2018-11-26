@@ -107,8 +107,6 @@ class clinical(example_filetype_format.FileTypeFormat):
 
 		if x.get('SEQ_DATE') is not None:
 			x['SEQ_DATE'] = x['SEQ_DATE'].title()
-			print(str(x['SEQ_DATE']))
-			print(str(x['SEQ_DATE']).split("-"))
 			x['SEQ_YEAR'] = int(str(x['SEQ_DATE']).split("-")[1]) if str(x['SEQ_DATE']) != "Release" else pd.np.nan
 
 		#TRIM EVERY COLUMN MAKE ALL DASHES 
@@ -136,6 +134,8 @@ class clinical(example_filetype_format.FileTypeFormat):
 
 
 	def _process(self, clinical, clinicalTemplate):
+		#Capitalize all clinical dataframe columns
+		clinical.columns = [col.upper() for col in clinical.columns]
 		clinicalMerged = clinical.merge(clinicalTemplate,how='outer')
 		clinicalMerged = clinicalMerged.drop(clinicalMerged.columns[~clinicalMerged.columns.isin(clinicalTemplate.columns)],1)
 
@@ -163,9 +163,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 		# retractedPatientSynId = kwargs['retractedPatientSynId']
 
 		clinicalDf = pd.read_csv(filePath, sep="\t", comment="#")
-		#Capitalize all clinical dataframe columns
-		clinicalDf.columns = [col.upper() for col in clinicalDf.columns]
-		
+
 		patient= False
 		sample = False
 		#These synapse ids for the clinical tier release scope is hardcoded because it never changes
