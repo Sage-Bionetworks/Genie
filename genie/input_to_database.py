@@ -446,7 +446,7 @@ def main():
 
 	#Create new maf database, should only happen once if its specified
 	if args.createNewMafDatabase:
-		createMafDatabase(syn, databaseToSynIdMappingDf, testing=testing)
+		createMafDatabase(syn, databaseToSynIdMappingDf, testing=args.testing)
 
 	for center in centers:
 		input_to_database(syn, center, args.process, args.testing, args.onlyValidate, args.vcf2mafPath, args.vepPath, args.vepData, databaseToSynIdMappingDf, center_mapping_df, reference=args.reference, delete_old=args.deleteOld, oncotree_link=args.oncotreeLink, thread=args.thread)
