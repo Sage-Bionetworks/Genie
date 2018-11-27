@@ -1,63 +1,67 @@
 #! /usr/bin/env python
 
 import synapseclient
-import pandas as pd
 import argparse
-import os
 from genie import process_functions
 
-def retraction(syn, databaseSynId, sampleKey, deleteSamples):
-	schema = syn.get(databaseSynId)
-	deleteSamplesQuery = "','".join(deleteSamples)
-	database = syn.tableQuery("select %s from %s where %s in ('%s')" % (sampleKey, databaseSynId, sampleKey, deleteSamplesQuery))
-	if len(database.asRowSet()['rows']) > 0:
-		syn.delete(database.asRowSet())
+def retract_samples(syn, database_synid, col, remove_values):
+	'''
+	Helper retraction function that help remove values from a column in
+	a database
+
+	params:
+		syn: synapse object
+		databse_synid:  synapse id of database
+		col: column in database
+		remove_values: list of values to remove from the column 
+	'''
+
+	schema = syn.get(database_synid)
+	remove_values_query = "','".join(remove_values)
+	remove_rows = syn.tableQuery("select %s from %s where %s in ('%s')" % (col, database_synid, col, remove_values_query))
+	if len(remove_rows.asRowSet()['rows']) > 0:
+		syn.delete(remove_rows.asRowSet())
 	else:
 		print("Nothing to retract")
 
-def getDatabaseSynId(syn, tableName, test=False):
-	if test:
-		databaseToSynIdMappingSynId = 'syn11600968'
-	else:
-		databaseToSynIdMappingSynId = 'syn10967259'
-	databaseToSynIdMapping = syn.tableQuery('SELECT * FROM %s' % databaseToSynIdMappingSynId)
-	databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
-	synId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == tableName]
-	return(synId.values[0])
+
+def retract(syn, test=False):
+	'''
+	Main retraction function
+	
+	params:
+		syn: synapse object
+		test: use test files or main files. Default is False
+	'''
+
+	patientRetract = syn.tableQuery('select * from %s' % process_functions.getDatabaseSynId(syn, "patientRetraction", test=test))
+	patientRetractIds = patientRetract.asDataFrame()
+	#grab all clinical samples that belong to patients in the patient clinical file and append to sample list
+	sampleClinical = syn.tableQuery('select * from %s' % process_functions.getDatabaseSynId(syn, "sample", test=test))
+	sampleClinicalDf = sampleClinical.asDataFrame()
+	appendSamples = sampleClinicalDf['SAMPLE_ID'][sampleClinicalDf['PATIENT_ID'].isin(patientRetractIds.geniePatientId)]
+	
+	sampleRetract = syn.tableQuery('select * from %s' % process_functions.getDatabaseSynId(syn, "sampleRetraction", test=test))
+	sampleRetractIds = sampleRetract.asDataFrame()
+
+	allRetractedSamples = sampleRetractIds['genieSampleId'].append(appendSamples)
+
+	#Only need to retract clinical data, because the rest of the data is filtered by clinical data
+	#Sample Clinical Data
+	retract_samples(syn,process_functions.getDatabaseSynId(syn,"sample", test=test),"SAMPLE_ID",allRetractedSamples)
+	#Patient Clinical Data
+	retract_samples(syn, process_functions.getDatabaseSynId(syn, "patient", test=test),"PATIENT_ID",patientRetractIds['geniePatientId'])
 
 def main():
+	'''
+	Main block with argparse and calls the main retract function
+	'''
 	parser = argparse.ArgumentParser(description='Sample retraction')
 	parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
 	parser.add_argument("--test", action='store_true',help="Run test")
 	args = parser.parse_args()
 	syn = process_functions.synLogin(args)
-
-	patientRetract = syn.tableQuery('select * from %s' % getDatabaseSynId(syn, "patientRetraction", test=args.test))
-	patientRetractIds = patientRetract.asDataFrame()
-	#grab all clinical samples that belong to patients in the patient clinical file and append to sample list
-	sampleClinical = syn.tableQuery('select * from %s' % getDatabaseSynId(syn, "sample", test=args.test))
-	sampleClinicalDf = sampleClinical.asDataFrame()
-	appendSamples = sampleClinicalDf['SAMPLE_ID'][sampleClinicalDf['PATIENT_ID'].isin(patientRetractIds.geniePatientId)]
-	
-	sampleRetract = syn.tableQuery('select * from %s' % getDatabaseSynId(syn, "sampleRetraction", test=args.test))
-	sampleRetractIds = sampleRetract.asDataFrame()
-
-	allRetractedSamples = sampleRetractIds['genieSampleId'].append(appendSamples)
-
-	#Sample Clinical Data
-	retraction(syn,getDatabaseSynId(syn,"sample", test=args.test),"SAMPLE_ID",allRetractedSamples)
-	#Patient Clinical Data
-	retraction(syn, getDatabaseSynId(syn, "patient", test=args.test),"PATIENT_ID",patientRetractIds['geniePatientId'])
-	#Fusions
-	#retraction(syn,getDatabaseSynId(syn, "fusion", test=args.test),"TUMOR_SAMPLE_BARCODE",allRetractedSamples)
-	#CNA
-	#retraction(syn,getDatabaseSynId(syn, "cna", test=args.test),"TUMOR_SAMPLE_BARCODE",allRetractedSamples)
-	#VCF2MAF
-	#retraction(syn,getDatabaseSynId(syn, "vcf2maf", test=args.test),"Tumor_Sample_Barcode",allRetractedSamples)
-	#Vital status
-	#retraction(syn, getDatabaseSynId(syn, "vitalStatus", test=args.test),"PATIENT_ID",patientRetractIds['geniePatientId'])
-	#SEG
-	#retraction(syn,getDatabaseSynId(syn, "seg", test=args.test),"ID",allRetractedSamples)
+	retract(syn, args.test)
 
 if __name__ == "__main__":
 	main()

@@ -1,18 +1,12 @@
 from __future__ import absolute_import
-from genie import example_filetype_format
-from genie import process_functions
-
+from genie import example_filetype_format, process_functions
 import os
 import logging
 import pandas as pd
 import synapseclient
 import re
 import datetime
-#import time
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
 
 #CHECKS IF THE MAPPING IS CORRECT
 def checkMapping(clinicalDF, colName, mapping, required=False, fileType = "Patient"):
@@ -140,6 +134,8 @@ class clinical(example_filetype_format.FileTypeFormat):
 
 
 	def _process(self, clinical, clinicalTemplate):
+		#Capitalize all clinical dataframe columns
+		clinical.columns = [col.upper() for col in clinical.columns]
 		clinicalMerged = clinical.merge(clinicalTemplate,how='outer')
 		clinicalMerged = clinicalMerged.drop(clinicalMerged.columns[~clinicalMerged.columns.isin(clinicalTemplate.columns)],1)
 
@@ -167,6 +163,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 		# retractedPatientSynId = kwargs['retractedPatientSynId']
 
 		clinicalDf = pd.read_csv(filePath, sep="\t", comment="#")
+
 		patient= False
 		sample = False
 		#These synapse ids for the clinical tier release scope is hardcoded because it never changes

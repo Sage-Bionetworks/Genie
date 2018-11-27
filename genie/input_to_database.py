@@ -1,5 +1,6 @@
 #! /usr/bin/env python
-
+import logging
+logger = logging.getLogger("genie")
 import process_functions
 import validate
 import synapseclient
@@ -10,14 +11,12 @@ import os
 from multiprocessing import Pool
 import pandas as pd
 import subprocess
-import logging
 import datetime
 import subprocess
 import shutil
 import time
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+import toRetract
+import write_invalid_reasons
 
 #Configuration file
 from genie import PROCESS_FILES
@@ -139,7 +138,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 				 center_mapping_df, oncotreeLink, databaseToSynIdMappingDf, 
 				 validVCF=None, validMAFs=None, validCBS=None,
 				 vcf2mafPath=None,
-	   			 veppath=None,vepdata=None,
+				 veppath=None,vepdata=None,
 				 processing="main", test=False):
 
 	logger.info("PROCESSING %s FILES: %d" % (center, len(validFiles)))
@@ -165,7 +164,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 									fileSynId=fileSynId, validVCF=validVCF, 
 									validMAFs=validMAFs, validCBS=validCBS,
 									path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
-						   			veppath=veppath,vepdata=vepdata,
+									veppath=veppath,vepdata=vepdata,
 									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, test=test)
 		if len(validCBS) > 0:
 			filePath = None
@@ -178,7 +177,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 										fileSynId=fileSynId, validVCF=validVCF, 
 										validMAFs=validMAFs, validCBS=validCBS,
 										path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
-							   			veppath=veppath,vepdata=vepdata,
+										veppath=veppath,vepdata=vepdata,
 										processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf)
 
 	elif processing in ["vcf","maf","mafSP"]:
@@ -192,7 +191,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 									fileSynId=fileSynId, validVCF=validVCF, 
 									validMAFs=validMAFs, validCBS=validCBS,
 									path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
-						   			veppath=veppath,vepdata=vepdata,
+									veppath=veppath,vepdata=vepdata,
 									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf)
 	logger.info("ALL DATA STORED IN DATABASE")
 
@@ -303,23 +302,109 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
 		validFiles = inputValidStatus[['id','path','fileType']][inputValidStatus['status'] == "VALIDATED"]
 		return(validFiles)
 
+def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path, vep_path, vep_data, database_to_synid_mappingdf, center_mapping_df, delete_old=False, oncotree_link=None, thread=1):
+	if only_validate:
+		log_path = os.path.join(process_functions.SCRIPT_DIR, "%s_validation_log.txt" % center)
+	else:
+		log_path = os.path.join(process_functions.SCRIPT_DIR, "%s_%s_log.txt" % (center, process))
+
+	logFormatter = logging.Formatter("%(asctime)s [%(name)s][%(levelname)s] %(message)s")
+	fileHandler = logging.FileHandler(log_path,mode='w')
+	fileHandler.setFormatter(logFormatter)
+	logger.addHandler(fileHandler)
+
+	if testing:
+		logger.info("###########################################")
+		logger.info("############NOW IN TESTING MODE############")
+		logger.info("###########################################")
+
+	# ----------------------------------------
+	# Start input to staging process
+	# ----------------------------------------
+	path_to_genie = os.path.realpath(os.path.join(process_functions.SCRIPT_DIR,"../"))
+	#Create input and staging folders
+	if not os.path.exists(os.path.join(path_to_genie,center,"input")):
+		os.makedirs(os.path.join(path_to_genie,center,"input"))
+	if not os.path.exists(os.path.join(path_to_genie,center,"staging")):
+		os.makedirs(os.path.join(path_to_genie,center,"staging"))
+	 
+	if delete_old:
+		process_functions.rmFiles(os.path.join(path_to_genie,center))
+
+	validFiles = validation(syn, center, process, center_mapping_df, database_to_synid_mappingdf, thread, testing, oncotree_link)
+
+	if len(validFiles) > 0 and not only_validate:
+		#Reorganize so BED file are always validated and processed first
+		validBED = [os.path.basename(i).endswith('.bed') for i in validFiles['path']]
+		beds = validFiles[validBED]
+		validFiles = beds.append(validFiles)
+		validFiles.drop_duplicates(inplace=True)
+		#Valid maf, mafsp, vcf and cbs files
+		validMAF = [i for i in validFiles['path'] if os.path.basename(i) == "data_mutations_extended_%s.txt" % center]
+		validMAFSP = [i for i in validFiles['path'] if os.path.basename(i)  == "nonGENIE_data_mutations_extended_%s.txt" % center]
+		validVCF = [i for i in validFiles['path'] if os.path.basename(i).endswith('.vcf')]
+		validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
+		if process == 'mafSP':
+			validMAFs = validMAFSP
+		else:
+			validMAFs = validMAF
+
+		processTrackerSynId = process_functions.getDatabaseSynId(syn, "processTracker", databaseToSynIdMappingDf = database_to_synid_mappingdf)
+		#Add process tracker for time start
+		processTracker = syn.tableQuery("SELECT timeStartProcessing FROM %s where center = '%s' and processingType = '%s'" % (processTrackerSynId, center, process))
+		processTrackerDf = processTracker.asDataFrame()
+		if len(processTrackerDf) == 0:
+			new_rows = [[center,str(int(time.time()*1000)), str(int(time.time()*1000)), process]] 
+			table = syn.store(synapseclient.Table(processTrackerSynId, new_rows))
+		else:
+			processTrackerDf['timeStartProcessing'][0] = str(int(time.time()*1000))
+			syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
+		processFiles(syn, validFiles, center, path_to_genie, thread, 
+					 center_mapping_df, oncotree_link, database_to_synid_mappingdf, 
+					 validVCF=validVCF, validMAFs=validMAFs, validCBS=validCBS,
+					 vcf2mafPath=vcf2maf_path,
+					 veppath=vep_path,vepdata=vep_data,
+					 test=testing, processing=process)
+
+		#Should add in this process end tracking before the deletion of samples
+		processTracker = syn.tableQuery("SELECT timeEndProcessing FROM %s where center = '%s' and processingType = '%s'" % (processTrackerSynId, center, process))
+		processTrackerDf = processTracker.asDataFrame()
+		processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
+		syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
+
+		logger.info("SAMPLE/PATIENT RETRACTION")
+		toRetract.retract(syn, testing)
+
+	else:
+		messageOut = "%s does not have any valid files" if not only_validate else "ONLY VALIDATION OCCURED FOR %s"
+		logger.info(messageOut % center)
+
+	#Store log file
+	syn.store(synapseclient.File(log_path, parentId="syn10155804"))
+	os.remove(log_path)
+	logger.info("ALL PROCESSES COMPLETE")
+
+
 def main():
 	"""Set up argument parser and returns"""
 	parser = argparse.ArgumentParser(
 		description='GENIE center inputs to database')
-	parser.add_argument('center', help='The centers')
 	parser.add_argument("process",choices=['vcf','maf','main','mafSP'],
 						help='Process vcf, maf or the rest of the files')
+	parser.add_argument('--center', help='The centers')
 	parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
-	parser.add_argument('--thread', type=int, help="Number of threads to use for validation", default=1)
 	parser.add_argument("--deleteOld", action='store_true', help = "Delete all old processed and temp files")
 	parser.add_argument("--onlyValidate", action='store_true', help = "Only validate the files, don't process")
-	parser.add_argument("--vcf2mafPath", type=str, help="Path to vcf2maf")
-	parser.add_argument("--vepPath", type=str, help="Path to VEP")
-	parser.add_argument("--vepData", type=str, help="Path to VEP data")
 	parser.add_argument("--oncotreeLink", type=str, help="Link to oncotree code")
 	parser.add_argument("--createNewMafDatabase", action='store_true', help = "Creates a new maf database")
 	parser.add_argument("--testing", action='store_true', help = "Testing the infrastructure!")
+	parser.add_argument("--debug", action='store_true', help = "Add debug mode to synapse")
+
+	#DEFAULT PARAMS
+	parser.add_argument("--vcf2mafPath", type=str, help="Path to vcf2maf", default="~/vcf2maf-1.6.14")
+	parser.add_argument("--vepPath", type=str, help="Path to VEP", default="~/vep")
+	parser.add_argument("--vepData", type=str, help="Path to VEP data", default="~/.vep")
+	parser.add_argument('--thread', type=int, help="Number of threads to use for validation", default=1)
 
 	args = parser.parse_args()
 	syn = process_functions.synLogin(args)
@@ -329,111 +414,58 @@ def main():
 		assert os.path.exists(args.vepPath), "Path to VEP (--vepPath) must be specified if `--process {vcf,maf,mafSP}` is used"
 		assert os.path.exists(args.vepData), "Path to VEP data (--vepData) must be specified if `--process {vcf,maf,mafSP}` is used"
 	
-	syn.table_query_timeout = 50000
-	testing = args.testing
-	if testing:
-		logger.info("###########################################")
-		logger.info("############NOW IN TESTING MODE############")
-		logger.info("###########################################")
-	center_mapping_id = process_functions.getDatabaseSynId(syn, "centerMapping", test=testing)
+	if args.testing:
+		databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
+	else:
+		databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
+
+	databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
+
+	center_mapping_id = process_functions.getDatabaseSynId(syn, "centerMapping", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+	center_mapping = syn.tableQuery('SELECT * FROM %s' % center_mapping_id)
+	center_mapping_df = center_mapping.asDataFrame()
+
+	if args.center is not None:
+		assert args.center in center_mapping_df.center.tolist(), "Must specify one of these centers: %s" % ", ".join(center_mapping_df.center)
+		centers = [args.center]
+	else:
+		center_mapping_df = center_mapping_df[~center_mapping_df['inputSynId'].isnull()]
+		center_mapping_df = center_mapping_df[center_mapping_df['release'] == True]
+		centers = center_mapping_df.center
+	
+	if args.oncotreeLink is None:
+		onco_link = databaseToSynIdMappingDf['Id'][databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
+		onco_link_ent = syn.get(onco_link)
+		args.oncotreeLink = onco_link_ent.externalURL
+	#Check if you can connect to oncotree link, if not then don't run validation / processing
+	process_functions.checkUrl(args.oncotreeLink)
+
 	center_mapping_ent = syn.get(center_mapping_id)
 	if center_mapping_ent.get('isProcessing',['True'])[0] == 'True':
 		raise Exception("Processing/validation is currently happening.  Please change/add the 'isProcessing' annotation on %s to False to enable processing" % center_mapping_id)
 	else:
 		center_mapping_ent.isProcessing="True"
 		center_mapping_ent = syn.store(center_mapping_ent)
-	center_mapping = syn.tableQuery('SELECT * FROM %s' %center_mapping_id)
-	center_mapping_df = center_mapping.asDataFrame()
-	assert args.center in center_mapping_df.center.tolist(), "Must specify one of these centers: %s" % ", ".join(center_mapping_df.center)
-	
-	if testing:
-		databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
-	else:
-		databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
+	#remove this query timeout and see what happens
+	#syn.table_query_timeout = 50000
 
-	databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
-	
-	if args.oncotreeLink is None:
-		oncoLink = databaseToSynIdMappingDf['Id'][databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
-		oncoLinkEnt = syn.get(oncoLink)
-		args.oncotreeLink = oncoLinkEnt.externalURL
-	#Check if you can connect to oncotree link, if not then don't run validation / processing
-	process_functions.checkUrl(args.oncotreeLink)
-
-	#Create new maf database
+	#Create new maf database, should only happen once if its specified
 	if args.createNewMafDatabase:
-		createMafDatabase(syn, databaseToSynIdMappingDf, testing=testing)
+		createMafDatabase(syn, databaseToSynIdMappingDf, testing=args.testing)
 
-	# ----------------------------------------
-	# Start input to staging process
-	# ----------------------------------------
-	path_to_GENIE = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),"../"))
-	#Create input and staging folders
-	if not os.path.exists(os.path.join(path_to_GENIE,args.center,"input")):
-		os.makedirs(os.path.join(path_to_GENIE,args.center,"input"))
-	if not os.path.exists(os.path.join(path_to_GENIE,args.center,"staging")):
-		os.makedirs(os.path.join(path_to_GENIE,args.center,"staging"))
-	 
-	if args.deleteOld:
-		process_functions.rmFiles(os.path.join(path_to_GENIE,args.center))
-	center = args.center
-	validFiles = validation(syn, center, args.process, center_mapping_df, databaseToSynIdMappingDf, args.thread, testing, args.oncotreeLink)
+	for center in centers:
+		input_to_database(syn, center, args.process, args.testing, args.onlyValidate, args.vcf2mafPath, args.vepPath, args.vepData, databaseToSynIdMappingDf, center_mapping_df, delete_old=args.deleteOld, oncotree_link=args.oncotreeLink, thread=args.thread)
 
-	if len(validFiles) > 0 and not args.onlyValidate:
-		#Reorganize so BED file are always validated and processed first
-		validBED = [os.path.basename(i).endswith('.bed') for i in validFiles['path']]
-		beds = validFiles[validBED]
-		validFiles = beds.append(validFiles)
-		validFiles.drop_duplicates(inplace=True)
-		#Valid maf, mafsp, vcf and cbs files
-		validMAF = [i for i in validFiles['path'] if os.path.basename(i) == "data_mutations_extended_%s.txt" % args.center]
-		validMAFSP = [i for i in validFiles['path'] if os.path.basename(i)  == "nonGENIE_data_mutations_extended_%s.txt" % args.center]
-		validVCF = [i for i in validFiles['path'] if os.path.basename(i).endswith('.vcf')]
-		validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
-		if args.process == 'mafSP':
-			validMAFs = validMAFSP
-			#mafSynId = process_functions.getDatabaseSynId(syn, "mafSP", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
-		else:
-			validMAFs = validMAF
-			#mafSynId = process_functions.getDatabaseSynId(syn, "vcf2maf", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
-
-		processTrackerSynId = process_functions.getDatabaseSynId(syn, "processTracker", test=testing)
-		#Add process tracker for time start
-		processTracker = syn.tableQuery("SELECT timeStartProcessing FROM %s where center = '%s' and processingType = '%s'" % (processTrackerSynId, center,args.process))
-		processTrackerDf = processTracker.asDataFrame()
-		if len(processTrackerDf) == 0:
-			new_rows = [[center,str(int(time.time()*1000)), str(int(time.time()*1000)),args.process]] 
-			table = syn.store(synapseclient.Table(processTrackerSynId, new_rows))
-		else:
-			processTrackerDf['timeStartProcessing'][0] = str(int(time.time()*1000))
-			syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
-		processFiles(syn, validFiles, center, path_to_GENIE, args.thread, 
-					 center_mapping_df, args.oncotreeLink, databaseToSynIdMappingDf, 
-					 validVCF=validVCF, validMAFs=validMAFs, validCBS=validCBS,
-					 vcf2mafPath=args.vcf2mafPath,
-		   			 veppath=args.vepPath,vepdata=args.vepData,
-					 test=testing, processing=args.process)
-
-		#Should add in this process end tracking before the deletion of samples
-		processTracker = syn.tableQuery("SELECT timeEndProcessing FROM %s where center = '%s' and processingType = '%s'" % (processTrackerSynId, args.center,args.process))
-		processTrackerDf = processTracker.asDataFrame()
-		processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
-		syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
-
-		logger.info("SAMPLE/PATIENT RETRACTION")
-		retractionCommand = ["python",os.path.join(process_functions.SCRIPT_DIR, "toRetract.py")] if args.pemFile is None else ["python",os.path.join(process_functions.SCRIPT_DIR, "toRetract.py"),'--pemFile',args.pemFile]
-		if testing:
-			retractionCommand.append("--test")
-		#Comment back in after testing is done
-		subprocess.check_call(retractionCommand)
-	else:
-		messageOut = "%s does not have any valid files" if not args.onlyValidate else "ONLY VALIDATION OCCURED FOR %s"
-		logger.info(messageOut % center)
 	# To ensure that this is the new entity
 	center_mapping_ent = syn.get(center_mapping_id)
 	center_mapping_ent.isProcessing="False"
 	center_mapping_ent = syn.store(center_mapping_ent)
-	logger.info("ALL PROCESSES COMPLETE")
+
+	error_tracker_synid = process_functions.getDatabaseSynId(syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+	#Only write out invalid reasons if the center isnt specified and if only validate
+	if args.center is None and args.onlyValidate:
+	    logging.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
+	    write_invalid_reasons.write_invalid_reasons(syn, center_mapping_df, error_tracker_synid)
 
 if __name__ == "__main__":
 	main()
