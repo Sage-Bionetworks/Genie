@@ -54,7 +54,7 @@ def test_validation():
 							 N_ALT_COUNT=[1,2,3,4,3],
 							 TUMOR_SEQ_ALLELE2=["A","A","A","A","A"]))
 
-	error, warning = mafClass.validate_helper(mafDf)
+	error, warning = mafClass._validate(mafDf)
 	assert error == ""
 	assert warning == ""
 
@@ -67,7 +67,7 @@ def test_validation():
 							 N_REF_COUNT=[1,2,3,4,3],
 							 N_ALT_COUNT=[1,2,3,4,3]))	
 
-	error, warning = mafClass.validate_helper(mafDf)
+	error, warning = mafClass._validate(mafDf)
 	expectedErrors = ("Mutation File: Must at least have these headers: TUMOR_SEQ_ALLELE2.\n"
 					  "Mutation File: Cannot have any empty REFERENCE_ALLELE values.\n"
 					  "Mutation File: CHROMOSOME column cannot have any values that start with 'chr' or any 'WT' values.\n")
@@ -86,7 +86,7 @@ def test_validation():
 							 N_ALT_COUNT=[1,2,3,4,3],
 							 TUMOR_SEQ_ALLELE2=["NA",float('nan'),"A","A","A"]))
 
-	error, warning = mafClass.validate_helper(mafDf)
+	error, warning = mafClass._validate(mafDf)
 	expectedErrors = ("Mutation File: First column header must be one of these: CHROMOSOME, HUGO_SYMBOL, TUMOR_SAMPLE_BARCODE.\n"
 					  "Mutation File: If you are missing T_DEPTH, you must have T_REF_COUNT!\n"
 					  "Mutation File: Must at least have these headers: CHROMOSOME.\n"

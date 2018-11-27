@@ -1,12 +1,9 @@
 from __future__ import absolute_import
-from genie import example_filetype_format
-from genie import process_functions
-
+from genie import example_filetype_format, process_functions
 import os
 import logging
 import pandas as pd
 import datetime
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -19,7 +16,7 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
 		assert os.path.basename(filePath[0]) == "vital_status.txt"
 		
 
-	def validate_helper(self, vitalStatusDf):
+	def _validate(self, vitalStatusDf):
 		total_error = ""
 		warning = ""
 
@@ -102,10 +99,3 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
 		process_functions.updateData(self.syn, databaseSynId, vitalStatusDf, self.center)
 		vitalStatusDf.to_csv(newPath, sep="\t",index=False)
 		return(newPath)
-
-	## VALIDATION
-	def validate_steps(self, filePathList, **kwargs):
-		logger.info("VALIDATING %s" % os.path.basename(filePathList[0]))
-		vitalStatusDf = pd.read_csv(filePathList[0], sep="\t")
-		total_error, warning = self.validate_helper(vitalStatusDf)
-		return(total_error, warning)

@@ -1,11 +1,8 @@
 from __future__ import absolute_import
-from genie import example_filetype_format
-from genie import process_functions
-
+from genie import example_filetype_format, process_functions
 import os
 import logging
 import pandas as pd
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class clinicalSP(example_filetype_format.FileTypeFormat):
@@ -62,18 +59,3 @@ class clinicalSP(example_filetype_format.FileTypeFormat):
 			if sum(clinicalDF['PATIENT_ID'].isnull()) > 0:
 				total_error += "nonGENIE_data_clinical.txt: There can't be any blank values for PATIENT_ID\n"
 		return(total_error, warning)
-	# VALIDATION
-	def validate_steps(self, filePathList, **kwargs):
-		"""
-		This function validates the clinical file to make sure it adhere to the clinical SOP.
-		
-		:params clinicalFilePath:              Flattened clinical file or patient clinical file
-		:params clinicalSamplePath:            Sample clinical file if patient clinical file is provided
-
-		:returns:                              Error message
-		"""
-		filePath = filePathList[0]
-		logger.info("VALIDATING %s" % os.path.basename(filePath))
-		clinicalDF = pd.read_csv(filePath,sep="\t",comment="#")
-
-		return(self._validate(clinicalDF))

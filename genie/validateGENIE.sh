@@ -1,1 +1,1 @@
-python GENIE.py vcf --pemFile /root/.ssh/genie.pem --onlyValidate
+python input_to_database.py vcf --pemFile /root/.ssh/genie.pem --onlyValidate

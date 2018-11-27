@@ -1,14 +1,11 @@
 from __future__ import absolute_import
-from genie import example_filetype_format
-from genie import process_functions
+from genie import example_filetype_format, process_functions
 
 import os
 import pandas as pd
 import logging
 from functools import partial
 import synapseclient
-
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def validateSymbol(gene, bedDf, returnMappedDf=True):
@@ -176,19 +173,3 @@ class cna(example_filetype_format.FileTypeFormat):
 				if sum(cnvDF['remapped'].duplicated()) >0:
 					total_error+= "Your CNA file has duplicated Hugo_Symbols (After remapping of genes): %s -> %s.\n" % (",".join(cnvDF['HUGO_SYMBOL'][cnvDF['remapped'].duplicated(keep=False)]), ",".join(cnvDF['remapped'][cnvDF['remapped'].duplicated(keep=False)]))
 		return(total_error, warning)
-
-	# VALIDATION
-	def validate_steps(self, filePathList, **kwargs):
-		"""
-		This function validates the CNV (linear or discrete) file to make sure it adhere to the genomic SOP.
-		
-		:params filePath:     Path to CNV file
-
-		:returns:             Text with all the errors in the CNV file
-		"""
-		filePath = filePathList[0]
-		logger.info("VALIDATING %s" % os.path.basename(filePath))
-		test = kwargs['testing']
-		noSymbolCheck = kwargs['noSymbolCheck']
-		cnvDF = pd.read_csv(filePath,sep="\t",comment="#")
-		return(self._validate(cnvDF, noSymbolCheck, test))

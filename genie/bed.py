@@ -1,13 +1,10 @@
 from __future__ import absolute_import
-from genie import example_filetype_format
-from genie import process_functions
-
+from genie import example_filetype_format, process_functions
 import os
 import logging
 import pandas as pd
 from functools import partial
 import subprocess
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # def createGenePositionsTables():
@@ -115,15 +112,18 @@ class bed(example_filetype_format.FileTypeFormat):
 
 	_process_kwargs = ["newPath", "parentId", "databaseSynId"]
 
+	def _get_dataframe(self, filePathList):
+		filePath = filePathList[0]
+		try:
+			bed = pd.read_csv(filePath, sep="\t",header=None)
+		except:
+			raise ValueError("Can't read in your bed file. Please make sure the BED file is not binary and does not contain a comment/header line")
+		if not str(bed[0][0]).isdigit() and not str(bed[0][0]).startswith("chr"):
+			raise ValueError("Please make sure your bed file does not contain a comment/header line")
+		return(df)
+
 	def _validateFilename(self, filePath):
 		assert os.path.basename(filePath[0]).startswith("%s-" % self.center) and os.path.basename(filePath[0]).endswith(".bed")
-
-	## PROCESSING
-	# def updateBED(self, databaseSynId, newData, seq_assay_id, col, toDelete=False):
-	# 	databaseEnt = self.syn.get(databaseSynId)
-	# 	database = self.syn.tableQuery("SELECT * FROM %s where SEQ_ASSAY_ID ='%s'" % (databaseSynId, seq_assay_id))
-	# 	database = database.asDataFrame()[col]
-	# 	process_functions.updateDatabase(self.syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete)
 
 	def createdBEDandGenePanel(self, bed, seq_assay_id, genePanelPath, parentId, createGenePanel=True):
 		logger.info("REMAPPING %s" % seq_assay_id)
@@ -230,24 +230,3 @@ class bed(example_filetype_format.FileTypeFormat):
 				if all(bed['Hugo_Symbol'].isnull()):
 					total_error += "You have no correct gene symbols. Make sure your gene symbol column (4th column) is formatted like so: SYMBOL(;optionaltext).  Optional text can be semi-colon separated.\n"
 		return(total_error, warning)
-
-	### VALIDATION
-	def validate_steps(self, filePathList, **kwargs):
-		"""
-		This function validates the BED file to make sure it adhere to the genomic SOP.
-		
-		:params filePath:     Path to BED file
-
-		:returns:             Text with all the errors in the BED file
-		"""
-		filePath = filePathList[0]
-		logger.info("VALIDATING %s" % os.path.basename(filePath))
-
-		try:
-			bed = pd.read_csv(filePath, sep="\t",header=None)
-		except:
-			raise ValueError("Can't read in your bed file. Please make sure the BED file is not binary and does not contain a comment/header line")
-		if not str(bed[0][0]).isdigit() and not str(bed[0][0]).startswith("chr"):
-			raise ValueError("Please make sure your bed file does not contain a comment/header line")
-		
-		return(self._validate(bed))

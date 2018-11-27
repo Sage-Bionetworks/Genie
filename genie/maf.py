@@ -1,13 +1,10 @@
 from __future__ import absolute_import
-from genie import example_filetype_format
-from genie import process_functions
-
+from genie import example_filetype_format, process_functions
 import os
 import logging
 import subprocess
 import pandas as pd
 import synapseclient
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class maf(example_filetype_format.FileTypeFormat):
@@ -117,8 +114,7 @@ class maf(example_filetype_format.FileTypeFormat):
 			logger.info("Please run with `--process %s` parameter if you want to reannotate the %s files" % (self._fileType, self._fileType))
 		return(mutationFiles)
 
-
-	def validate_helper(self, mutationDF, SP=False):
+	def _validate(self, mutationDF):
 		"""
 		This function validates the clinical file to make sure it adhere to the clinical SOP.
 		
@@ -127,6 +123,7 @@ class maf(example_filetype_format.FileTypeFormat):
 		"""
 
 		first_header = ['CHROMOSOME','HUGO_SYMBOL','TUMOR_SAMPLE_BARCODE']
+		SP = self._fileType == "mafSP"
 		if SP:
 			correct_column_headers = ['CHROMOSOME','START_POSITION','REFERENCE_ALLELE','TUMOR_SAMPLE_BARCODE','TUMOR_SEQ_ALLELE2'] #T_REF_COUNT + T_ALT_COUNT = T_DEPTH
 		else:
@@ -178,10 +175,8 @@ class maf(example_filetype_format.FileTypeFormat):
 
 		return(total_error, warning)
 
-	def validate_steps(self, filePathList, **kwargs):
-		logger.info("VALIDATING %s" % os.path.basename(filePathList[0]))
+	def _get_dataframe(self, filePathList):
 		mutationDF = pd.read_csv(filePathList[0],sep="\t",comment="#",na_values = ['-1.#IND', '1.#QNAN', '1.#IND', 
-								 '-1.#QNAN', '#N/A N/A', '#N/A', 'N/A', '#NA', 'NULL', 'NaN', 
-								 '-NaN', 'nan','-nan',''],keep_default_na=False)
-		total_error, warning = self.validate_helper(mutationDF)
-		return(total_error, warning)
+						 '-1.#QNAN', '#N/A N/A', '#N/A', 'N/A', '#NA', 'NULL', 'NaN', 
+						 '-NaN', 'nan','-nan',''],keep_default_na=False)
+		return(mutationDF)
