@@ -50,10 +50,11 @@ def test_processing():
 										 BIRTH_YEAR=[1990,1990,1990,1990,1990],
 										 CENTER=["SAGE","SAGE","SAGE","SAGE","SAGE"]))
 	#TEST patient processing
-	patientDf = pd.DataFrame(dict(PATIENT_ID=["ID1","ID2","ID3","ID4","ID5"],
-								 SEX=[1,2,3,4,float('nan')],
+	#Clinical file headers are capitalized prior to processing
+	patientDf = pd.DataFrame(dict(PATIENT_Id=["ID1","ID2","ID3","ID4","ID5"],
+								 sex=[1,2,3,4,float('nan')],
 								 PRIMARY_RACE=[1,2,3,4,float('nan')],
-								 SECONDARY_RACE=[1,2,3,4,float('nan')],
+								 Secondary_RACE=[1,2,3,4,float('nan')],
 								 TERTIARY_RACE=[1,2,3,4,float('nan')],
 								 ETHNICITY=[1,2,3,4,float('nan')],
 								 BIRTH_YEAR=[1990,1990,1990,1990,1990],
@@ -61,8 +62,7 @@ def test_processing():
 	clinicalTemplate = pd.DataFrame(columns=patientCols)
 	patient=True
 	newPatientDf = clin._process(patientDf, clinicalTemplate)
-
-	assert expectedPatientDf.equals(newPatientDf)
+	assert expectedPatientDf.equals(newPatientDf[expectedPatientDf.columns])
 
 	#TEST for sample processing
 	expectedSampleDf = pd.DataFrame(dict(SAMPLE_ID=["GENIE-SAGE-ID1-1","GENIE-SAGE-ID2-1","GENIE-SAGE-ID3-1","GENIE-SAGE-ID4-1","GENIE-SAGE-ID5-1"],
@@ -79,8 +79,8 @@ def test_processing():
 	patient=False
 	sampleDf = pd.DataFrame(dict(SAMPLE_ID=["ID1-1","ID2-1","ID3-1","ID4-1","ID5-1"],
 								 PATIENT_ID=["ID1","ID2","ID3","ID4","ID5"],
-								 AGE_AT_SEQ_REPORT=[100000,100000,100000,100000,100000],
-								 ONCOTREE_CODE=['AMPCA','AMPCA','AMPCA','AMPCA','AMPCA'],
+								 Age_AT_SEQ_REPORT=[100000,100000,100000,100000,100000],
+								 ONCOTree_CODE=['AMPCA','AMPCA','AMPCA','AMPCA','AMPCA'],
 								 SAMPLE_TYPE=[1,2,3,4,4],
 								 SEQ_ASSAY_ID=['SAGE-1','SAGE-1','SAGE-1','SAGE-1','SAGE-1'],
 								 SEQ_DATE=['Jan-2012','Apr-2013','JUL-2014','Oct-2015','release']))

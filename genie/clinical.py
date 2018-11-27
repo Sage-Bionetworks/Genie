@@ -134,6 +134,8 @@ class clinical(example_filetype_format.FileTypeFormat):
 
 
 	def _process(self, clinical, clinicalTemplate):
+		#Capitalize all clinical dataframe columns
+		clinical.columns = [col.upper() for col in clinical.columns]
 		clinicalMerged = clinical.merge(clinicalTemplate,how='outer')
 		clinicalMerged = clinicalMerged.drop(clinicalMerged.columns[~clinicalMerged.columns.isin(clinicalTemplate.columns)],1)
 
@@ -161,6 +163,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 		# retractedPatientSynId = kwargs['retractedPatientSynId']
 
 		clinicalDf = pd.read_csv(filePath, sep="\t", comment="#")
+
 		patient= False
 		sample = False
 		#These synapse ids for the clinical tier release scope is hardcoded because it never changes
