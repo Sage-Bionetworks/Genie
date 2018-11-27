@@ -17,7 +17,6 @@ import ast
 #Ignore SettingWithCopyWarning warning
 pd.options.mode.chained_assignment = None
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -191,8 +190,6 @@ def rmFiles(folderPath, recursive=True):
 			os.unlink(os.path.join(dirPath, filePath))
 		if not recursive:
 			break
-
-
 
 #Remove .0
 def removeFloat(df):
@@ -496,8 +493,6 @@ def getPrimary(code, oncotreeDict, primary):
 	return(toAdd)
 
 
-
-
 ## READ KEY
 def readKey(pemPath):
 	f = open(pemPath,'r')
@@ -531,10 +526,12 @@ def decryptMessage(message, key):
 
 def synLogin(args):
 	try:
-		syn = synapseclient.login(silent=True)
+		syn = synapseclient.Synapse(debug=args.debug)
+		syn.login()
 	except:
 		assert os.path.exists(args.pemFile), "Path to pemFile must be specified if there is no cached credentials"
 		key = readKey(args.pemFile)
 		geniePass = decryptMessage(os.environ['GENIE_PASS'], key)
-		syn = synapseclient.login(os.environ['GENIE_USER'], geniePass)
+		syn = synapseclient.Synapse(debug=args.debug)
+		syn.login(os.environ['GENIE_USER'], geniePass)
 	return(syn)

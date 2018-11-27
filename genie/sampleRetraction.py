@@ -1,13 +1,10 @@
 from __future__ import absolute_import
-from genie import example_filetype_format
-from genie import process_functions
-
+from genie import example_filetype_format, process_functions
 import logging
 import os
 import pandas as pd
 import synapseclient
 import datetime
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class sampleRetraction(example_filetype_format.FileTypeFormat):
@@ -34,13 +31,10 @@ class sampleRetraction(example_filetype_format.FileTypeFormat):
 		fileSynId = kwargs['fileSynId']
 		databaseSynId = kwargs['databaseSynId']
 		newPath = kwargs['newPath']
-		col = 'genieSampleId' if self._fileType == "sampleRetraction" else 'geniePatientId'
 		info = self.syn.get(fileSynId, downloadFile=False)
-		retractedSamples = self.syn.tableQuery("select * from %s where center = '%s'" % (databaseSynId,self.center))
-		retractedSamplesDf = retractedSamples.asDataFrame()
 		deleteSamples = pd.read_csv(filePath,header=None)
 		deleteSamples = self._process(deleteSamples, info.modifiedOn.split(".")[0])
-		process_functions.updateDatabase(self.syn, retractedSamplesDf, deleteSamples, databaseSynId, [col], toDelete=True)
+		process_functions.updateData(self.syn, databaseSynId, deleteSamples, databaseSynId, filterByColumn="center", toDelete=True)
 		return(newPath)
 
 	def validate_steps(self, filePathList, **kwargs):
