@@ -120,7 +120,12 @@ plotPrimarySites <- function(clinical, oncotreeLink, release) {
   
   maxValue = max(apply(transposed, 2,sum))
   par(mar=c(11, 4.1, 4.1, 7), xpd=TRUE)
-  barplot(transposed[,order(apply(transposed, 2,sum),decreasing = T)][,0:50],col=c("red","blue","light green","pink","purple","black","lavender","yellow"), width=2, beside=F, las=2,ylab="Number of Samples",main="Primary Site Distribution (Top 50 Counts)", ylim=c(0,ceiling(maxValue * 1.0 / 1000) * 1000))
+  if (nrow(transposed) > 1) {
+    toPlot = transposed[,order(apply(transposed, 2,sum),decreasing = T)][,0:50]
+  } else {
+    toPlot= transposed[,order(apply(transposed, 2,sum),decreasing = T)][0:50]
+  }
+  barplot(toPlot,col=c("red","blue","light green","pink","purple","black","lavender","yellow"), width=2, beside=F, las=2,ylab="Number of Samples",main="Primary Site Distribution (Top 50 Counts)", ylim=c(0,ceiling(maxValue * 1.0 / 1000) * 1000))
   legend("topright",fill=c("red","blue","light green","pink","purple","black","lavender","yellow"), legend=rownames(transposed))
 }
 
@@ -132,7 +137,12 @@ plotCancerType <- function(this_samples) {
   
   fractionalCounts = apply(typeCountsByCen,MARGIN = 2,function(x){ x/sum(x)})
   op = par(mar = c(13, 4, 4, 2))
-  barplot(fractionalCounts[,order(typeCounts,decreasing = TRUE)], las = 2,cex.names = 0.8, ylab = "Fraction of samples",col = brewer.pal(8,"Spectral"),legend.text = rownames(typeCountsByCen),main="Fractional sample counts, per center and type")
+  if (nrow(typeCountsByCen) >1){
+    toPlot = fractionalCounts[,order(typeCounts,decreasing = TRUE)]
+  } else {
+    toPlot = fractionalCounts[order(typeCounts,decreasing = TRUE)]
+  }
+  barplot(toPlot, las = 2,cex.names = 0.8, ylab = "Fraction of samples",col = brewer.pal(8,"Spectral"),legend.text = rownames(typeCountsByCen),main="Fractional sample counts, per center and type")
 }
 
 plotPanelOverlap <- function(samples, bed, assays) {
