@@ -11,7 +11,7 @@ def get_center_data_completion(center, df):
 	how complete a clinical data element is:
 	Number of not blank/Unknown/NA divded by total number of patients or samples
 
-	params:
+	Args:
 		center: GENIE center
 		df: sample or patient dataframe
 	'''
@@ -31,7 +31,7 @@ def update_samples_in_release_table(syn, file_mapping, release, samples_in_relea
 	Convenience function that updates the sample in release table
 	This tracks the samples of each release.  1 means it exists, and 0 means it doesn't
 
-	params: 
+	Args: 
 		syn: synapse object
 		file_mapping: file mapping generated from file mapping function
 		release:  GENIE release number (ie. 5.3-consortium)
@@ -62,7 +62,7 @@ def update_cumulative_sample_table(syn, file_mapping, release, cumulative_sample
 	Consortium release sample count table update function
 	This gets the cumulative sample count of each file type in each release
 	
-	params:
+	Args:
 		syn: synapse object
 		file_mapping: file mapping generated from file mapping function
 		release:  GENIE release number (ie. 5.3-consortium)
@@ -119,7 +119,7 @@ def get_file_mapping(syn, release_folder_synid):
 	Get file mapping between important files needed for dashboard and 
 	their synapse ids
 
-	params:
+	Args:
 		syn:  synapse object
 		release_folder_synid: synapse id of release
 
@@ -145,7 +145,7 @@ def update_release_numbers(syn, database_mappingdf, release = None):
 	Function that updates all release dashboard numbers or
 	specific release number
 
-	params:
+	Args:
 		syn: synapse object
 		database_mappingdf: mapping between synapse ids and database
 		release: GENIE release (ie. 5.3-consortium).  Defaults to None
@@ -171,7 +171,7 @@ def update_database_numbers(syn, database_mappingdf):
 	'''
 	Updates database cumulative numbers
 	
-	params:
+	Args:
 		syn: synapse object
 		database_mappingdf: mapping between synapse ids and database
 	'''
@@ -224,7 +224,7 @@ def update_oncotree_code_tables(syn, database_mappingdf):
 	'''
 	Function that updates database statistics of oncotree codes and primary onocotree codes
 
-	params:
+	Args:
 		syn: synapse object
 		database_mappingdf: mapping between synapse ids and database
 	'''
@@ -276,7 +276,7 @@ def update_sample_difference_table(syn, database_mappingdf):
 	Function that updates sample difference table between
 	consortium releases
 
-	params:
+	Args:
 		syn: synapse object
 		database_mappingdf: mapping between synapse ids and database
 	'''
@@ -322,7 +322,7 @@ def update_data_completeness_table(syn, database_mappingdf):
 	'''
 	Function that updates the data completeness of the database
 	
-	params:
+	Args:
 		syn: synapse object
 		database_mappingdf: mapping between synapse ids and database
 	'''
@@ -354,35 +354,11 @@ def update_data_completeness_table(syn, database_mappingdf):
 	genie.process_functions.updateDatabase(syn, data_completeness_dbdf, data_completenessdf, data_completion_synid, ["FIELD","CENTER"], toDelete=True)
 
 
-def update_clinical_values_difference_table(syn, database_mappingdf):
-	'''
-	Function that checks for a decrease in values in the clinical file
-	from last consortium release to most recent consortium release
-
-	params:
-		syn: synapse object
-		database_mappingdf: mapping between synapse ids and database
-	'''
-	release_folder_fileview_synid = "syn17019650"
-	release_folder = syn.tableQuery("select id,name from %s" % release_folder_fileview_synid + " where name not like 'Release%' and name <> 'case_lists' and name not like '%.0.%' and name not like '%-public'")
-	release_folderdf = release_folder.asDataFrame()
-	release_folderdf.sort_values("name",ascending=False,inplace=True)
-	current_release = release_folderdf['id'][0]
-	older_release = release_folderdf['id'][1]
-
-	current_release_files = syn.getChildren(current_release)
-	current_clinical_synids = [file['id'] for file in current_release_files if file['name'] in ['data_clinical_sample.txt','data_clinical_patient.txt']]
-
-	
-	older_release_files = syn.getChildren(older_release)
-	older_clinical_synids = [file['id'] for file in older_release_files if file['name'] in ['data_clinical_sample.txt','data_clinical_patient.txt']]
-
-
 def update_wiki(syn, database_mappingdf):
 	'''
 	Updates the GENIE project dashboard wiki timestamp
 
-	params:
+	Args:
 		syn: synapse object
 		database_mappingdf: mapping between synapse ids and database
 
@@ -408,7 +384,7 @@ def string_to_unix_epoch_time_milliseconds(string_time):
 	This function takes dates in this format: 2018-10-25T20:16:07.959Z 
 	and turns it into unix epoch time in milliseconds
 
-	params:
+	Args:
 		string_time: string in this format: 2018-10-25T20:16:07.959Z
 	'''
 	datetime_obj = datetime.datetime.strptime(string_time.split(".")[0], "%Y-%m-%dT%H:%M:%S")
@@ -430,6 +406,58 @@ def update_data_release_file_table(syn, database_mappingdf):
 		append_rows = [[release_file['name'],release_file['id'],name,string_to_unix_epoch_time_milliseconds(release_file['modifiedOn']),synid] for release_file in release_files if release_file['name'] != "case_lists"]
 		syn.store(synapseclient.Table(data_release_table_synid,append_rows))
 
+def check_column_decreases(currentdf, olderdf):
+	"""
+	Check entity decreases
+
+	Args:
+		current_ent: Current entity dataframe
+		old_ent: Older entity dataframe
+	"""
+	
+	for col in currentdf:
+		new_counts = currentdf[col].value_counts()
+		if olderdf.get(col) is not None:
+			old_counts = olderdf[col].value_counts()
+			new_keys = pd.Series(index=new_counts.keys()[~new_counts.keys().isin(old_counts.keys())])
+			old_counts = old_counts.add(new_keys,fill_value=0)
+			old_counts.fillna(0,inplace=True)
+			if any(new_counts - old_counts < 0):
+				print("DECREASE IN COLUMN: %s" % col)
+
+def update_clinical_values_difference_table(syn, database_mappingdf):
+	'''
+	Function that checks for a decrease in values in the clinical file
+	from last consortium release to most recent consortium release
+
+	Args:
+		syn: synapse object
+		database_mappingdf: mapping between synapse ids and database
+	'''
+	release_folder_fileview_synid = "syn17019650"
+	release_folder = syn.tableQuery("select id,name from %s" % release_folder_fileview_synid + " where name not like 'Release%' and name <> 'case_lists' and name not like '%.0.%' and name not like '%-public'")
+	release_folderdf = release_folder.asDataFrame()
+	release_folderdf.sort_values("name",ascending=False,inplace=True)
+	current_release = release_folderdf['id'][0]
+	older_release = release_folderdf['id'][1]
+
+	current_release_files = syn.getChildren(current_release)
+	current_clinical_synids = {file['name']:file['id'] for file in current_release_files if file['name'] in ['data_clinical_sample.txt','data_clinical_patient.txt']}
+	
+	older_release_files = syn.getChildren(older_release)
+	older_clinical_synids = {file['name']:file['id'] for file in older_release_files if file['name'] in ['data_clinical_sample.txt','data_clinical_patient.txt']}
+
+	current_sample_ent = syn.get(current_clinical_synids['data_clinical_sample.txt'], followLink=True)
+	older_sample_ent = syn.get(older_clinical_synids['data_clinical_sample.txt'], followLink=True)
+	current_sampledf = pd.read_csv(current_sample_ent.path,sep="\t",comment="#")
+	older_sampledf =  pd.read_csv(older_sample_ent.path,sep="\t",comment="#")
+	check_column_decreases(current_sampledf, older_sampledf)
+
+	current_patient_ent = syn.get(current_clinical_synids['data_clinical_patient.txt'], followLink=True)
+	older_patient_ent = syn.get(older_clinical_synids['data_clinical_patient.txt'], followLink=True)
+	current_patientdf = pd.read_csv(current_sample_ent.path,sep="\t",comment="#")
+	older_patientdf =  pd.read_csv(older_sample_ent.path,sep="\t",comment="#")
+	check_column_decreases(current_patientdf, older_patientdf)
 
 
 
@@ -437,7 +465,7 @@ def run_dashboard(syn, database_mappingdf, release):
 	'''
 	Function that runs the dashboard scripts
 
-	params:
+	Args:
 		syn: synapse object
 		database_mappingdf: mapping between synapse ids and database
 		release: GENIE release (ie. 5.3-consortium)
@@ -456,6 +484,7 @@ def main():
 	parser.add_argument('--release', help = "GENIE release number (ie. 5.3-consortium)", default=None)
 	parser.add_argument("--pem_file", type=str, help="Path to PEM file (genie.pem)")
 	parser.add_argument("--staging", action='store_true', help = "Using staging directory files")
+	parser.add_argument("--debug", action='store_true', help = "Synapse debugging flag")
 	args = parser.parse_args()
 	syn = genie.process_functions.synLogin(args)
 	if args.staging:

@@ -73,7 +73,5 @@ template = readLines("dashboardTemplate.Rmd")
 rmarkdown_path = create_markdown(release, release_folder_synid, template)
 rmarkdown::render(rmarkdown_path,params = list("genieUser"=genie_user, "geniePass"=genie_pass))
 #Store the html file.
-#release_html_ent = synStore(File(sprintf("%s.html",release),parentId=release_folder_synid))
-#synStore(Wiki(markdown=sprintf("${preview?entityId=%s}",release_html_ent$properties$id),owner=release_folder_synid))
-
-
+release_html_ent = synStore(File(sprintf("%s.html",release),parentId=release_folder_synid))
+synStore(Wiki(markdown=sprintf("${preview?entityId=%s}",release_html_ent$properties$id),owner=release_folder_synid))
