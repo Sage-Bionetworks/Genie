@@ -96,7 +96,7 @@ for (center in centers) {
   for (sample in mafSampleCount$Tumor_Sample_Barcode) {
     total = total + mafSampleCount[mafSampleCount$Tumor_Sample_Barcode == sample,"COUNT(Tumor_Sample_Barcode)"]
     samplesToQuery = c(sample,samplesToQuery)
-    if (total > variant_limit || sample == mafSampleCount$Tumor_Sample_Barcode[nrow(mafSampleCount)]) {
+    if (total > variant_limit || sample == mafSampleCount$Tumor_Sample_Barcode[nrow(mafSampleCount)] || length(samplesToQuery) == 30) {
       splitBySamples = c(splitBySamples, paste(samplesToQuery,collapse="','"))
       total = 0
       samplesToQuery = c()
