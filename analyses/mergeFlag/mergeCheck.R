@@ -84,6 +84,7 @@ centerMapping = synTableQuery(sprintf('select * from %s where release is true', 
 centerMappingDf = synapser::as.data.frame(centerMapping)
 centerMappingDf$mutationInCisFilter = as.logical(centerMappingDf$mutationInCisFilter)
 for (center in centers) {
+  print(center)
   # read aggregated clinical data
   genieClinTable = synTableQuery(sprintf("select SAMPLE_ID from %s where CENTER = '%s'", sampleSynId, center),includeRowIdAndRowVersion=F)
   genieClinData = synapser::as.data.frame(genieClinTable)
@@ -96,7 +97,7 @@ for (center in centers) {
   for (sample in mafSampleCount$Tumor_Sample_Barcode) {
     total = total + mafSampleCount[mafSampleCount$Tumor_Sample_Barcode == sample,"COUNT(Tumor_Sample_Barcode)"]
     samplesToQuery = c(sample,samplesToQuery)
-    if (total > variant_limit || sample == mafSampleCount$Tumor_Sample_Barcode[nrow(mafSampleCount)] || length(samplesToQuery) == 30) {
+    if (total > variant_limit || sample == mafSampleCount$Tumor_Sample_Barcode[nrow(mafSampleCount)]) {
       splitBySamples = c(splitBySamples, paste(samplesToQuery,collapse="','"))
       total = 0
       samplesToQuery = c()
