@@ -354,6 +354,30 @@ def update_data_completeness_table(syn, database_mappingdf):
 	genie.process_functions.updateDatabase(syn, data_completeness_dbdf, data_completenessdf, data_completion_synid, ["FIELD","CENTER"], toDelete=True)
 
 
+def update_clinical_values_difference_table(syn, database_mappingdf):
+	'''
+	Function that checks for a decrease in values in the clinical file
+	from last consortium release to most recent consortium release
+
+	params:
+		syn: synapse object
+		database_mappingdf: mapping between synapse ids and database
+	'''
+	release_folder_fileview_synid = "syn17019650"
+	release_folder = syn.tableQuery("select id,name from %s" % release_folder_fileview_synid + " where name not like 'Release%' and name <> 'case_lists' and name not like '%.0.%' and name not like '%-public'")
+	release_folderdf = release_folder.asDataFrame()
+	release_folderdf.sort_values("name",ascending=False,inplace=True)
+	current_release = release_folderdf['id'][0]
+	older_release = release_folderdf['id'][1]
+
+	current_release_files = syn.getChildren(current_release)
+	current_clinical_synids = [file['id'] for file in current_release_files if file['name'] in ['data_clinical_sample.txt','data_clinical_patient.txt']]
+
+	
+	older_release_files = syn.getChildren(older_release)
+	older_clinical_synids = [file['id'] for file in older_release_files if file['name'] in ['data_clinical_sample.txt','data_clinical_patient.txt']]
+
+
 def update_wiki(syn, database_mappingdf):
 	'''
 	Updates the GENIE project dashboard wiki timestamp
@@ -405,6 +429,9 @@ def update_data_release_file_table(syn, database_mappingdf):
 		release_files = syn.getChildren(synid)
 		append_rows = [[release_file['name'],release_file['id'],name,string_to_unix_epoch_time_milliseconds(release_file['modifiedOn']),synid] for release_file in release_files if release_file['name'] != "case_lists"]
 		syn.store(synapseclient.Table(data_release_table_synid,append_rows))
+
+
+
 
 def run_dashboard(syn, database_mappingdf, release):
 	'''
