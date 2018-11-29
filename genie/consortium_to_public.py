@@ -317,7 +317,7 @@ if __name__ == "__main__":
 	assert os.path.exists(cbioValidatorPath), "Please specify correct cbioportalPath"
 	assert not (args.test and args.staging), "You can only specify --test or --staging, not both"
 		
-	syn = process.synLogin(args)
+	syn = process_functions.synLogin(args.pemFile, debug=args.debug)
 	#Get all the possible public releases
 	if args.test:
 		databaseSynIdMappingId = 'syn11600968'

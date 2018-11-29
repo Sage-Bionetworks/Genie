@@ -30,9 +30,10 @@ def write_invalid_reasons(syn, center_mapping_df, error_tracker_synid):
 def main():
 	parser = argparse.ArgumentParser(description='Write invalid reasons')
 	parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
+	parser.add_argument("--debug", action='store_true',help="Synapse Debug Feature")
 	args = parser.parse_args()
 	
-	syn = process_functions.synLogin(args)
+	syn = process_functions.synLogin(args.pemFile, debug=args.debug)
 	center_mapping = syn.tableQuery('SELECT * FROM syn10061452 where inputSynId is not null and release is true')
 	center_mappingdf = center_mapping.asDataFrame()
 	error_tracker_synid = "syn10153306"
