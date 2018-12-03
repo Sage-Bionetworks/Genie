@@ -154,8 +154,8 @@ def update_release_numbers(syn, database_mappingdf, release = None):
 	samples_in_release_synid = database_mappingdf['Id'][database_mappingdf['Database'] == 'samplesInRelease'].values[0]
 	cumulative_sample_count_synid = database_mappingdf['Id'][database_mappingdf['Database'] == 'cumulativeSampleCount'].values[0]
 
-	release_folder_fileview_synid = "syn17019650"
-	release_folder = syn.tableQuery("select id,name from %s" % release_folder_fileview_synid + " where name not like 'Release%' and name <> 'case_lists'")
+	release_folder_fileview_synid = database_mappingdf['Id'][database_mappingdf['Database'] == 'releaseFolder'].values[0]
+	release_folder = syn.tableQuery("select id,name from %s" % release_folder_fileview_synid + " where name not like 'Release%' and name <> 'case_lists' and name not like '%.0.%'")
 	release_folderdf = release_folder.asDataFrame()
 
 	for release_synid, release_name in zip(release_folderdf.id, release_folderdf.name):
@@ -391,7 +391,7 @@ def string_to_unix_epoch_time_milliseconds(string_time):
 	return(synapseclient.utils.to_unix_epoch_time(datetime_obj))
 
 def update_data_release_file_table(syn, database_mappingdf):
-	release_folder_fileview_synid = "syn17019650"
+	release_folder_fileview_synid = database_mappingdf['Id'][database_mappingdf['Database'] == 'releaseFolder'].values[0]
 	release_folder = syn.tableQuery("select id,name from %s" % release_folder_fileview_synid + " where name not like 'Release%' and name <> 'case_lists' and name not like '0.%'")
 	release_folderdf = release_folder.asDataFrame()
 
@@ -414,7 +414,6 @@ def check_column_decreases(currentdf, olderdf):
 		current_ent: Current entity dataframe
 		old_ent: Older entity dataframe
 	"""
-	
 	for col in currentdf:
 		new_counts = currentdf[col].value_counts()
 		if olderdf.get(col) is not None:
@@ -424,8 +423,12 @@ def check_column_decreases(currentdf, olderdf):
 			old_counts.fillna(0,inplace=True)
 			if any(new_counts - old_counts < 0):
 				print("DECREASE IN COLUMN: %s" % col)
+				diff = new_counts[new_counts - old_counts < 0]
+				print(diff)
+				#print(currentdf['CENTER'][currentdf[col].isin(diff.index)].value_counts())
+				print(old_counts[old_counts - new_counts > 0])
 
-def update_clinical_values_difference_table(syn, database_mappingdf):
+def print_clinical_values_difference_table(syn, database_mappingdf):
 	'''
 	Function that checks for a decrease in values in the clinical file
 	from last consortium release to most recent consortium release
@@ -434,7 +437,7 @@ def update_clinical_values_difference_table(syn, database_mappingdf):
 		syn: synapse object
 		database_mappingdf: mapping between synapse ids and database
 	'''
-	release_folder_fileview_synid = "syn17019650"
+	release_folder_fileview_synid = database_mappingdf['Id'][database_mappingdf['Database'] == 'releaseFolder'].values[0]
 	release_folder = syn.tableQuery("select id,name from %s" % release_folder_fileview_synid + " where name not like 'Release%' and name <> 'case_lists' and name not like '%.0.%' and name not like '%-public'")
 	release_folderdf = release_folder.asDataFrame()
 	release_folderdf.sort_values("name",ascending=False,inplace=True)
@@ -450,15 +453,31 @@ def update_clinical_values_difference_table(syn, database_mappingdf):
 	current_sample_ent = syn.get(current_clinical_synids['data_clinical_sample.txt'], followLink=True)
 	older_sample_ent = syn.get(older_clinical_synids['data_clinical_sample.txt'], followLink=True)
 	current_sampledf = pd.read_csv(current_sample_ent.path,sep="\t",comment="#")
+	current_sampledf['CENTER'] = [patient.split("-")[1] for patient in current_sampledf['PATIENT_ID']]
+
 	older_sampledf =  pd.read_csv(older_sample_ent.path,sep="\t",comment="#")
-	check_column_decreases(current_sampledf, older_sampledf)
+	older_sampledf['CENTER'] = [patient.split("-")[1] for patient in older_sampledf['PATIENT_ID']]
+	current_sampledf = current_sampledf[current_sampledf['CENTER'].isin(older_sampledf['CENTER'].unique())]
+
+	print("SAMPLE CLINICAL VALUE DECREASES")
+	for center in older_sampledf['CENTER'].unique():
+		current_center_sampledf = current_sampledf[current_sampledf['CENTER'] == center]
+		older_center_sampledf = older_sampledf[older_sampledf['CENTER'] == center]
+		print(center)
+		check_column_decreases(current_center_sampledf, older_center_sampledf)
 
 	current_patient_ent = syn.get(current_clinical_synids['data_clinical_patient.txt'], followLink=True)
 	older_patient_ent = syn.get(older_clinical_synids['data_clinical_patient.txt'], followLink=True)
-	current_patientdf = pd.read_csv(current_sample_ent.path,sep="\t",comment="#")
-	older_patientdf =  pd.read_csv(older_sample_ent.path,sep="\t",comment="#")
-	check_column_decreases(current_patientdf, older_patientdf)
+	current_patientdf = pd.read_csv(current_patient_ent.path,sep="\t",comment="#")
+	older_patientdf =  pd.read_csv(older_patient_ent.path,sep="\t",comment="#")
+	current_patientdf = current_patientdf[current_patientdf['CENTER'].isin(older_patientdf['CENTER'].unique())]
 
+	print("PATIENT CLINICAL VALUE DECREASES")
+	for center in older_patientdf['CENTER'].unique():
+		current_center_patientdf = current_patientdf[current_patientdf['CENTER'] == center]
+		older_center_patientdf = older_patientdf[older_patientdf['CENTER'] == center]
+		print(center)
+		check_column_decreases(current_center_patientdf, older_center_patientdf)
 
 
 def run_dashboard(syn, database_mappingdf, release):
@@ -478,6 +497,7 @@ def run_dashboard(syn, database_mappingdf, release):
 	update_data_completeness_table(syn, database_mappingdf)
 	update_wiki(syn,database_mappingdf)
 	update_data_release_file_table(syn, database_mappingdf)
+	print_clinical_values_difference_table(syn, database_mappingdf)
 
 def main():
 	parser = argparse.ArgumentParser(description='Update dashboard tables')
