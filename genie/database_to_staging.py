@@ -691,7 +691,7 @@ def main():
 	parser.add_argument("--debug", action='store_true', 
 						help="Synapse debug feature")
 	args = parser.parse_args()
-	syn = process.synLogin(args)
+	syn = process.synLogin(args.pemFile, debug=args.debug)
 
 	assert not (args.test and args.staging), "You can only specify --test or --staging, not both"
 
