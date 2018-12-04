@@ -425,8 +425,6 @@ def check_column_decreases(currentdf, olderdf):
 				print("DECREASE IN COLUMN: %s" % col)
 				diff = new_counts[new_counts - old_counts < 0]
 				print(diff)
-				#print(currentdf['CENTER'][currentdf[col].isin(diff.index)].value_counts())
-				print(old_counts[old_counts - new_counts > 0])
 
 def print_clinical_values_difference_table(syn, database_mappingdf):
 	'''
@@ -480,7 +478,7 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
 		check_column_decreases(current_center_patientdf, older_center_patientdf)
 
 
-def run_dashboard(syn, database_mappingdf, release):
+def run_dashboard(syn, database_mappingdf, release, staging=False):
 	'''
 	Function that runs the dashboard scripts
 
@@ -491,13 +489,14 @@ def run_dashboard(syn, database_mappingdf, release):
 
 	'''
 	update_release_numbers(syn, database_mappingdf, release = release)
-	update_database_numbers(syn, database_mappingdf)
-	update_oncotree_code_tables(syn, database_mappingdf)
 	update_sample_difference_table(syn, database_mappingdf)
 	update_data_completeness_table(syn, database_mappingdf)
-	update_wiki(syn,database_mappingdf)
-	update_data_release_file_table(syn, database_mappingdf)
 	print_clinical_values_difference_table(syn, database_mappingdf)
+	if not staging:
+		update_database_numbers(syn, database_mappingdf)
+		update_oncotree_code_tables(syn, database_mappingdf)
+		update_data_release_file_table(syn, database_mappingdf)
+		update_wiki(syn,database_mappingdf)
 
 def main():
 	parser = argparse.ArgumentParser(description='Update dashboard tables')

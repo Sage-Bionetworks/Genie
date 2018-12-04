@@ -13,6 +13,8 @@ import re
 import subprocess
 import synapseutils as synu
 import create_case_lists
+import dashboard.dashboard_table_updater
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -788,6 +790,10 @@ def main():
 		syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
 	logger.info("COMPLETED DATABASE TO STAGING")
 
+	if not args.test:
+		logger.info("DASHBOARD UPDATE")
+		dashboard.dashboard_table_updater.run_dashboard(syn, databaseSynIdMappingDf, args.genieVersion, staging=args.staging)
+		logger.info("DASHBOARD UPDATE COMPLETE")
 
 if __name__ == "__main__":
 	main()
