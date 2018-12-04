@@ -1,8 +1,6 @@
 #! /usr/bin/env python
 import logging
 logger = logging.getLogger("genie")
-import process_functions
-import validate
 import synapseclient
 from synapseclient import File, Table
 import synapseutils as synu
@@ -19,7 +17,7 @@ import toRetract
 import write_invalid_reasons
 
 #Configuration file
-from genie import PROCESS_FILES
+from genie import PROCESS_FILES, process_functions, validate
 
 def reNameFile(syn, synId):
 	temp = syn.get(synId)
@@ -111,7 +109,7 @@ def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, test
 			valid=False
 		else:
 			try:
-				message, valid = validate.main(syn, fileType, paths, center, threads, oncotreeLink=oncotreeLink, testing=testing)
+				message, valid = validate.validate(syn, fileType, paths, center, threads, oncotree_url=oncotreeLink, testing=testing)
 				logger.info("VALIDATION COMPLETE")
 			except ValueError as e:
 				logger.error(e)
