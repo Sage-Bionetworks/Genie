@@ -308,13 +308,16 @@ if __name__ == "__main__":
 	                    help="Store into staging folder")
 	parser.add_argument("--test", action='store_true',
 	                    help="Store into staging folder")
-	parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
+	parser.add_argument("--pemFile", type=str, 
+					    help="Path to PEM file (genie.pem)")
+	parser.add_argument("--debug", action='store_true', 
+						help="Synapse debug feature")
 	args = parser.parse_args()
 	cbioValidatorPath = os.path.join(args.cbioportalPath,"core/src/main/scripts/importer/validateData.py")
 	assert os.path.exists(cbioValidatorPath), "Please specify correct cbioportalPath"
 	assert not (args.test and args.staging), "You can only specify --test or --staging, not both"
 		
-	syn = process.synLogin(args)
+	syn = process.synLogin(args.pemFile, debug=args.debug)
 	#Get all the possible public releases
 	if args.test:
 		databaseSynIdMappingId = 'syn11600968'

@@ -1,8 +1,6 @@
 #! /usr/bin/env python
 import logging
 logger = logging.getLogger("genie")
-import process_functions
-import validate
 import synapseclient
 from synapseclient import File, Table
 import synapseutils as synu
@@ -19,7 +17,7 @@ import toRetract
 import write_invalid_reasons
 
 #Configuration file
-from genie import PROCESS_FILES
+from genie import PROCESS_FILES, process_functions, validate
 
 def reNameFile(syn, synId):
 	temp = syn.get(synId)
@@ -111,7 +109,7 @@ def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, test
 			valid=False
 		else:
 			try:
-				message, valid = validate.main(syn, fileType, paths, center, threads, oncotreeLink=oncotreeLink, testing=testing)
+				message, valid = validate.validate(syn, fileType, paths, center, threads, oncotree_url=oncotreeLink, testing=testing)
 				logger.info("VALIDATION COMPLETE")
 			except ValueError as e:
 				logger.error(e)
@@ -393,7 +391,7 @@ def main():
 	parser.add_argument('--thread', type=int, help="Number of threads to use for validation", default=1)
 
 	args = parser.parse_args()
-	syn = process_functions.synLogin(args)
+	syn = process_functions.synLogin(args.pemFile, debug=args.debug)
 	#Must specify path to vcf2maf, VEP and VEP data is these types are specified
 	if args.process in ['vcf','maf','mafSP'] and not args.onlyValidate:
 		assert os.path.exists(args.vcf2mafPath), "Path to vcf2maf (--vcf2mafPath) must be specified if `--process {vcf,maf,mafSP}` is used"
@@ -437,7 +435,7 @@ def main():
 
 	#Create new maf database, should only happen once if its specified
 	if args.createNewMafDatabase:
-		createMafDatabase(syn, databaseToSynIdMappingDf, testing=testing)
+		createMafDatabase(syn, databaseToSynIdMappingDf, testing=args.testing)
 
 	for center in centers:
 		input_to_database(syn, center, args.process, args.testing, args.onlyValidate, args.vcf2mafPath, args.vepPath, args.vepData, databaseToSynIdMappingDf, center_mapping_df, reference=args.reference, delete_old=args.deleteOld, oncotree_link=args.oncotreeLink, thread=args.thread)

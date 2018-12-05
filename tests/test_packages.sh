@@ -4,6 +4,7 @@ if [ ! -d "$script_dir/testing_package" ]; then
 fi
 
 cd $script_dir/testing_package
+
 synapse get -r syn11601335
 
 genie validate clinical data_clinical_supp_SAGE.txt SAGE --test
