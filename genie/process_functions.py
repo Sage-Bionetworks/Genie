@@ -524,14 +524,21 @@ def decryptMessage(message, key):
 	decrypted = key.decrypt(ast.literal_eval(str(message)))
 	return(decrypted.decode("utf-8"))
 
-def synLogin(args):
+def synLogin(pemFile, debug=False):
+	'''
+	Use pem file to log into synapse if credentials aren't cached
+
+	Args:
+		pemFile: Path to pem file
+		debug: Synapse debug feature.  Defaults to False
+	'''
 	try:
-		syn = synapseclient.Synapse(debug=args.debug)
+		syn = synapseclient.Synapse(debug=debug)
 		syn.login()
 	except:
-		assert os.path.exists(args.pemFile), "Path to pemFile must be specified if there is no cached credentials"
-		key = readKey(args.pemFile)
+		assert os.path.exists(pemFile), "Path to pemFile must be specified if there is no cached credentials"
+		key = readKey(pemFile)
 		geniePass = decryptMessage(os.environ['GENIE_PASS'], key)
-		syn = synapseclient.Synapse(debug=args.debug)
+		syn = synapseclient.Synapse(debug=debug)
 		syn.login(os.environ['GENIE_USER'], geniePass)
 	return(syn)

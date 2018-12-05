@@ -694,9 +694,12 @@ def main():
 						help="Skip running mutation in cis script")
 	parser.add_argument("--test", action='store_true',
 						help="Run test")
-	parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
+	parser.add_argument("--pemFile", type=str, 
+						help="Path to PEM file (genie.pem)")
+	parser.add_argument("--debug", action='store_true', 
+						help="Synapse debug feature")
 	args = parser.parse_args()
-	syn = process.synLogin(args)
+	syn = process.synLogin(args.pemFile, debug=args.debug)
 
 	assert not (args.test and args.staging), "You can only specify --test or --staging, not both"
 

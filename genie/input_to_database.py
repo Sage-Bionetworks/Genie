@@ -400,7 +400,7 @@ def main():
 	parser.add_argument('--thread', type=int, help="Number of threads to use for validation", default=1)
 
 	args = parser.parse_args()
-	syn = process_functions.synLogin(args)
+	syn = process_functions.synLogin(args.pemFile, debug=args.debug)
 	#Must specify path to vcf2maf, VEP and VEP data is these types are specified
 	if args.process in ['vcf','maf','mafSP'] and not args.onlyValidate:
 		assert os.path.exists(args.vcf2mafPath), "Path to vcf2maf (--vcf2mafPath) must be specified if `--process {vcf,maf,mafSP}` is used"
