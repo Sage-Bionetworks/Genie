@@ -84,6 +84,7 @@ centerMapping = synTableQuery(sprintf('select * from %s where release is true', 
 centerMappingDf = synapser::as.data.frame(centerMapping)
 centerMappingDf$mutationInCisFilter = as.logical(centerMappingDf$mutationInCisFilter)
 for (center in centers) {
+  print(center)
   # read aggregated clinical data
   genieClinTable = synTableQuery(sprintf("select SAMPLE_ID from %s where CENTER = '%s'", sampleSynId, center),includeRowIdAndRowVersion=F)
   genieClinData = synapser::as.data.frame(genieClinTable)
