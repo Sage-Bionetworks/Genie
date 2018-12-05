@@ -1,4 +1,7 @@
 import pandas as pd
+import logging
+import os
+logger = logging.getLogger(__name__)
 
 class FileTypeFormat(object):
 

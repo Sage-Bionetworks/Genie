@@ -137,7 +137,7 @@ class cna(example_filetype_format.FileTypeFormat):
 			self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
 		return(newPath)
 
-	def _validate(self, cnvDF, noSymbolCheck, test=False):
+	def _validate(self, cnvDF, noSymbolCheck, testing=False):
 		total_error = ""
 		warning = ""
 		cnvDF.columns = [col.upper() for col in cnvDF.columns]
@@ -163,7 +163,7 @@ class cna(example_filetype_format.FileTypeFormat):
 			if haveColumn and not noSymbolCheck:
 				#logger.info("VALIDATING %s GENE SYMBOLS" % os.path.basename(filePath))
 
-				bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=test)
+				bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=testing)
 				bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))
 				bedDf = bed.asDataFrame()
 				cnvDF['remapped'] = cnvDF['HUGO_SYMBOL'].apply(lambda x: validateSymbol(x, bedDf))

@@ -115,12 +115,12 @@ class bed(example_filetype_format.FileTypeFormat):
 	def _get_dataframe(self, filePathList):
 		filePath = filePathList[0]
 		try:
-			bed = pd.read_csv(filePath, sep="\t",header=None)
+			beddf = pd.read_csv(filePath, sep="\t",header=None)
 		except:
 			raise ValueError("Can't read in your bed file. Please make sure the BED file is not binary and does not contain a comment/header line")
-		if not str(bed[0][0]).isdigit() and not str(bed[0][0]).startswith("chr"):
+		if not str(beddf[0][0]).isdigit() and not str(beddf[0][0]).startswith("chr"):
 			raise ValueError("Please make sure your bed file does not contain a comment/header line")
-		return(df)
+		return(beddf)
 
 	def _validateFilename(self, filePath):
 		assert os.path.basename(filePath[0]).startswith("%s-" % self.center) and os.path.basename(filePath[0]).endswith(".bed")
