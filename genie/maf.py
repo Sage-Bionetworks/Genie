@@ -11,7 +11,7 @@ class maf(example_filetype_format.FileTypeFormat):
 
 	_fileType = "maf"
 
-	_process_kwargs = ["databaseToSynIdMappingDf","processing","path_to_GENIE",
+	_process_kwargs = ["processing","path_to_GENIE",
 					   "vcf2mafPath","veppath","vepdata",'reference']
 
 	def _validateFilename(self, filePath):

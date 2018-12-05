@@ -19,10 +19,7 @@ class clinicalSP(example_filetype_format.FileTypeFormat):
 		clinicalSPDf['PATIENT_ID'] = [process_functions.checkGenieId(sample, self.center) for sample in clinicalSPDf['PATIENT_ID']]
 		return(clinicalSPDf)
 
-	def process_steps(self, filePath, **kwargs):
-		logger.info('PROCESSING %s' % filePath)
-		newPath = kwargs['newPath']
-		databaseSynId = kwargs['databaseSynId']
+	def process_steps(self, filePath, newPath, databaseSynId):
 		clinicalSPDf = pd.read_csv(filePath, sep="\t", comment="#")
 		clinicalSPDf = self._process(clinicalSPDf)
 		process_functions.updateData(self.syn, databaseSynId, clinicalSPDf, self.center)

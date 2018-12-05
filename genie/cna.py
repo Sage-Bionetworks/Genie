@@ -44,7 +44,6 @@ def mergeCNAvalues(x):
 	else:
 		returnVal = 'NA'
 	return(returnVal)
-
 	
 def checkIfOneZero(x):
 	assert len(set(x.tolist())) == 1, "Can only be one unique value"
@@ -53,7 +52,7 @@ class cna(example_filetype_format.FileTypeFormat):
    
 	_fileType = "cna"
 
-	_process_kwargs = ["newPath", "databaseSynId",'test','databaseToSynIdMappingDf']
+	_process_kwargs = ["newPath",'test','databaseToSynIdMappingDf']
 
 	_validation_kwargs = ['testing','noSymbolCheck']
 
@@ -71,18 +70,12 @@ class cna(example_filetype_format.FileTypeFormat):
 		index = [i for i, col in enumerate(cnaDf.columns) if col.upper() == "ENTREZ_GENE_ID"]
 		if len(index) > 0:
 			del cnaDf[cnaDf.columns[index][0]]
-		#validateSymbol = partial(process_functions.validateSymbol,returnMapping=True)
-		#invalidated_genes = self.pool.map(validateSymbol, cna["HUGO_SYMBOL"].drop_duplicates())
-		#cna, nonmapped = process_functions.remapGenes(invalidated_genes, cna, "HUGO_SYMBOL",isBedFile=True)
+
 		bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=test)
 		bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))
 		bedDf = bed.asDataFrame()
-		#originalSymbols = cnaDf['HUGO_SYMBOL'].copy()
 		cnaDf['Hugo_Symbol'] = cnaDf['Hugo_Symbol'].apply(lambda x: validateSymbol(x, bedDf))
 		order = cnaDf.columns
-		# unmappable = cnaDf[cnaDf['HUGO_SYMBOL'].isnull()]
-		# unmappableSymbols = originalSymbols[cnaDf['HUGO_SYMBOL'].isnull()]
-
 		cnaDf = cnaDf[~cnaDf['Hugo_Symbol'].isnull()]
 		cnaDf = cnaDf.fillna('NA')
 		duplicatedGenes = pd.DataFrame()
@@ -95,44 +88,16 @@ class cna(example_filetype_format.FileTypeFormat):
 		cnaDf.drop_duplicates('Hugo_Symbol',keep=False, inplace=True)
 		cnaDf = cnaDf.append(duplicatedGenes)
 		cnaDf = cnaDf[order]
-		#symbols = cnaDf['HUGO_SYMBOL']
-		#del cnaDf['HUGO_SYMBOL']
 		cnaDf.columns = [process_functions.checkGenieId(i,self.center) if i != "Hugo_Symbol" else i for i in cnaDf.columns]
-		#Transpose matrix
-		# cnaDf = cnaDf.transpose()
-		# data = cnaDf.apply(lambda row: makeCNARow(row, symbols), axis=1)
 
-		#Transpose matrix
-		# del unmappable['HUGO_SYMBOL']
-		# unmappable = unmappable.transpose()
-		# unmappableData = unmappable.apply(lambda row: makeCNARow(row, unmappableSymbols), axis=1)
-
-		# newCNA = pd.DataFrame()
-		# newCNA[checkBy] = newsamples
-		# newCNA['CNAData'] = data.values
-		# newCNA['CENTER'] = self.center
-		# newCNA['unmappedData'] = unmappableData.values
-		#newCNA = newCNA[~newCNA['CNAData'].isnull()]
-		#remove the 0.0, 1.0 and 2.0
-		# os.system("sed 's/[.]0//g' %s > %s" % (newPath + "temp", newPath))
-		# os.remove(newPath + "temp")
 		return(cnaDf)
 
-	def process_steps(self, filePath, **kwargs):
-		logger.info('PROCESSING %s' % filePath)
-		databaseToSynIdMappingDf = kwargs['databaseToSynIdMappingDf']
-		databaseSynId = kwargs['databaseSynId']
-		newPath = kwargs['newPath']
-		test = kwargs['test']
-
+	def process_steps(self, filePath, newPath, databaseToSynIdMappingDf, test):
 		cnaDf = pd.read_csv(filePath, sep="\t",comment="#")
 		newCNA = self._process(cnaDf, test=test)
 
 		centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
 		if not newCNA.empty:
-		# 	cols = newCNA.columns   
-		# 	process_functions.updateData(self.syn, databaseSynId, newCNA, self.center, cols, toDelete=True)
-		# 	newCNA.to_csv(newPath, sep="\t",index=False)
 			newCNA.to_csv(newPath, sep="\t",index=False)
 			self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
 		return(newPath)
@@ -161,8 +126,6 @@ class cna(example_filetype_format.FileTypeFormat):
 		else:
 			cnvDF['HUGO_SYMBOL'] = keepSymbols
 			if haveColumn and not noSymbolCheck:
-				#logger.info("VALIDATING %s GENE SYMBOLS" % os.path.basename(filePath))
-
 				bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=test)
 				bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))
 				bedDf = bed.asDataFrame()

@@ -1,4 +1,7 @@
 import pandas as pd
+import os
+import logging
+logger = logging.getLogger(__name__)
 
 class FileTypeFormat(object):
 
@@ -40,25 +43,24 @@ class FileTypeFormat(object):
 
 
 
-	def process_steps(self, filePath, *args, **kwargs):
+	def process_steps(self, filePath, **kwargs):
 		pass
 
-	def preprocess(self, filePath, *args, **kwargs):
+	def preprocess(self, filePath, **kwargs):
 # - clinical
 # - maf
 # - vcf
 		return(dict())
 
 
-	def process(self, filePath, *args, **kwargs):
-		
+	def process(self, filePath, **kwargs):
 		preprocess_args = self.preprocess(filePath, **kwargs)
 		kwargs.update(preprocess_args)
 		mykwargs = {}
 		for required_parameter in self._process_kwargs:
 			assert required_parameter in kwargs.keys(), "%s not in parameter list" % required_parameter
 			mykwargs[required_parameter] = kwargs[required_parameter]
-
+		logger.info('PROCESSING %s' % filePath)
 		path = self.process_steps(filePath, **mykwargs)
 		return(path)
 

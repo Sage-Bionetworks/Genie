@@ -89,11 +89,7 @@ class fusions(example_filetype_format.FileTypeFormat):
         return(fusion)
 
     #PROCESSING
-    def process_steps(self, filePath, **kwargs):
-        logger.info('PROCESSING %s' % filePath)
-        databaseSynId = kwargs['databaseSynId']
-        newPath = kwargs['newPath']
-        test = kwargs['test']
+    def process_steps(self, filePath, databaseSynId, newPath, test):
         fusion = pd.read_csv(filePath, sep="\t",comment="#")
         fusion = self._process(fusion, test)
         process_functions.updateData(self.syn, databaseSynId, fusion, self.center, toDelete=True)

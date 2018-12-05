@@ -27,15 +27,7 @@ class seg(example_filetype_format.FileTypeFormat):
 		seg['NUMMARK'] = seg['NUMMARK'].astype(int)
 		return(seg)
 
-	def process_steps(self, filePath, **kwargs):
-		#For CBS files
-		if kwargs.get("path") is not None:
-			filePath = kwargs['path']
-			newPath = filePath
-		else:
-			newPath = kwargs['newPath']
-		logger.info('PROCESSING %s' % filePath)
-		databaseSynId = kwargs['databaseSynId']
+	def process_steps(self, filePath, newPath, databaseSynId):
 		seg = pd.read_csv(filePath, sep="\t")
 		seg = self._process(seg)
 		process_functions.updateData(self.syn, databaseSynId, seg, self.center, toDelete=True)

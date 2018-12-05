@@ -183,11 +183,7 @@ class bed(example_filetype_format.FileTypeFormat):
 		bed['Chromosome'] = bed['Chromosome'].astype(str)
 		return(bed)
 
-	def process_steps(self, filePath, **kwargs):
-		newPath = kwargs['newPath']
-		parentId = kwargs['parentId']
-		databaseSynId = kwargs['databaseSynId']
-		logger.info('PROCESSING %s' % filePath)
+	def process_steps(self, filePath, newPath, parentId, databaseSynId):
 		#standardize all SEQ_ASSAY_IDs
 		seq_assay_id = os.path.basename(filePath).replace(".bed","").upper()
 		gene = pd.read_csv(filePath, sep="\t",header=None)

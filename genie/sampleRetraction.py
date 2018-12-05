@@ -26,11 +26,7 @@ class sampleRetraction(example_filetype_format.FileTypeFormat):
 		deleteSamplesDf['center'] = self.center
 		return(deleteSamplesDf)
 
-	def process_steps(self, filePath, **kwargs):
-		logger.info('PROCESSING %s' % filePath)
-		fileSynId = kwargs['fileSynId']
-		databaseSynId = kwargs['databaseSynId']
-		newPath = kwargs['newPath']
+	def process_steps(self, filePath, fileSynId, databaseSynId, newPath):
 		info = self.syn.get(fileSynId, downloadFile=False)
 		deleteSamples = pd.read_csv(filePath,header=None)
 		deleteSamples = self._process(deleteSamples, info.modifiedOn.split(".")[0])

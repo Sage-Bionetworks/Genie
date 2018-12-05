@@ -78,24 +78,14 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
 	
 
 	def _process(self, vitalStatusDf):
-		#vitalStatus_mapping = process_functions.getGenieMapping(self.syn, "syn10888675")
-
-		#noPhiCols = pd.Series(['PATIENT_ID','YEAR_DEATH','YEAR_CONTACT','INT_CONTACT','INT_DOD','DEAD'])
-
-		#vitalStatusDf.VITAL_STATUS = [process_functions.getCODE(vitalStatus_mapping, status) for status in vitalStatusDf.VITAL_STATUS]
 		vitalStatusDf.PATIENT_ID = [process_functions.checkGenieId(patient, self.center) for patient in vitalStatusDf.PATIENT_ID]
 		vitalStatusDf['CENTER'] = self.center
-
 		return(vitalStatusDf)
 
 	# PROCESS
-	def process_steps(self, filePath, **kwargs):
-		logger.info('PROCESSING %s' % filePath)
-		databaseSynId = kwargs['databaseSynId']
-		newPath = kwargs['newPath']
+	def process_steps(self, filePath, databaseSynId, newPath):
 		vitalStatusDf = pd.read_csv(filePath, sep="\t", comment="#")
 		vitalStatusDf = self._process(vitalStatusDf)
-		#cols = vitalStatusDf.columns
 		process_functions.updateData(self.syn, databaseSynId, vitalStatusDf, self.center)
 		vitalStatusDf.to_csv(newPath, sep="\t",index=False)
 		return(newPath)

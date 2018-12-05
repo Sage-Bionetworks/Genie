@@ -150,18 +150,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 		clinicalRemapped['CENTER'] = self.center
 		return(clinicalRemapped)
 
-	def process_steps(self, filePath, **kwargs):
-		logger.info('PROCESSING %s' % filePath)
-		patientSynId = kwargs['patientSynId']
-		sampleSynId = kwargs['patientSynId']
-		newPath = kwargs['newPath']
-		patientSynId = kwargs['patientSynId']
-		sampleSynId = kwargs['sampleSynId']
-		centerStagingSynId = kwargs['parentId']
-		oncotreeLink = kwargs['oncotreeLink']
-		# retractedSampleSynId = kwargs['retractedSampleSynId']
-		# retractedPatientSynId = kwargs['retractedPatientSynId']
-
+	def process_steps(self, filePath, patientSynId, sampleSynId, newPath, parentId, oncotreeLink):
 		clinicalDf = pd.read_csv(filePath, sep="\t", comment="#")
 
 		patient= False
@@ -190,7 +179,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 			patientCols.append(seqColumn + "_NUMERICAL")
 			newClinicalDf[seqColumn + "_NUMERICAL"] = [int(year) if process_functions.checkInt(year) else pd.np.nan for year in newClinicalDf[seqColumn]]
 			patientClinical = newClinicalDf[patientCols].drop_duplicates("PATIENT_ID")
-			self.uploadMissingData(patientClinical, "PATIENT_ID", patientSynId, centerStagingSynId)#retractedPatientSynId)
+			self.uploadMissingData(patientClinical, "PATIENT_ID", patientSynId, parentId)#retractedPatientSynId)
 			process_functions.updateData(self.syn, patientSynId, patientClinical, self.center, col=patientCols, toDelete=True)
 		if sample:
 			seqColumn = "AGE_AT_SEQ_REPORT"
@@ -207,7 +196,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 			#Make oncotree codes uppercase (SpCC/SPCC)
 			sampleClinical['ONCOTREE_CODE'] = sampleClinical['ONCOTREE_CODE'].astype(str).str.upper()
 			sampleClinical = sampleClinical[sampleClinical['ONCOTREE_CODE'].isin(oncotree_mapping['ONCOTREE_CODE'])]
-			self.uploadMissingData(sampleClinical, "SAMPLE_ID", sampleSynId, centerStagingSynId)#, retractedSampleSynId)
+			self.uploadMissingData(sampleClinical, "SAMPLE_ID", sampleSynId, parentId)#, retractedSampleSynId)
 			process_functions.updateData(self.syn, sampleSynId, sampleClinical, self.center, col=sampleCols, toDelete=True)
 
 		newClinicalDf.to_csv(newPath, sep="\t", index=False)

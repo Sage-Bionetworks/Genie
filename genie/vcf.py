@@ -134,17 +134,9 @@ class vcf(maf.maf):
 			self.storeProcessedMaf(newMafPath, mafSynId, centerMafSynId)
 		return(newMafPath)
 
-	def process_steps(self, filePath, **kwargs): 
-		processing = kwargs['processing']
+	def process_steps(self, filePath, processing, databaseToSynIdMappingDf, vcf2mafPath, veppath, vepdata, validVCF, path_to_GENIE, reference): 
 		mutationFiles = []
 		if processing == self._fileType:
-			databaseToSynIdMappingDf = kwargs['databaseToSynIdMappingDf']
-			vcf2mafPath = kwargs['vcf2mafPath']
-			veppath = kwargs['veppath']
-			vepdata = kwargs['vepdata']
-			validVCF = kwargs['validVCF']
-			path_to_GENIE = kwargs['path_to_GENIE']
-			reference = kwargs['reference']
 			mafProcessing = "mafSP" if self._fileType == "mafSP" else 'vcf2maf'
 			mafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == mafProcessing][0]
 			centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
