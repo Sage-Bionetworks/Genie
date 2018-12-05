@@ -12,20 +12,29 @@ def test_processing():
 
 	syn = mock.create_autospec(synapseclient.Synapse) 
 
-	mafClass = maf(syn, "SAGE")
-	mafDf = pd.DataFrame(dict(Center=["foo","dsdf","sdf"],
-							 Tumor_Sample_Barcode=["GENIE-SAGE-1-3","1-2","3-2"],
-							 Sequence_Source=["3","e","sd"],
-							 Sequencer=["dsf","sdf","d"],
-							 Validation_Status=["Unknown","unknown","f"]))
-	formattedMafDf = mafClass.formatMAF(mafDf)
+	maf_class = maf(syn, "SAGE")
 
-	expectedMafDf = pd.DataFrame(dict(Center=["SAGE","SAGE","SAGE"],
-							 Tumor_Sample_Barcode=["GENIE-SAGE-1-3","GENIE-SAGE-1-2","GENIE-SAGE-3-2"],
-							 Sequence_Source=[pd.np.nan,pd.np.nan,pd.np.nan],
-							 Sequencer=[pd.np.nan,pd.np.nan,pd.np.nan],
-							 Validation_Status=['','',"f"]))
-	assert expectedMafDf.equals(formattedMafDf[expectedMafDf.columns])
+	keep_maf_columns = ['Hugo_Symbol','Entrez_Gene_Id','Center','NCBI_Build','Chromosome','Start_Position','End_Position','Strand','Variant_Classification','Variant_Type','Reference_Allele','Tumor_Seq_Allele1','Tumor_Seq_Allele2','dbSNP_RS','dbSNP_Val_Status','Tumor_Sample_Barcode','Matched_Norm_Sample_Barcode','Match_Norm_Seq_Allele1','Match_Norm_Seq_Allele2','Tumor_Validation_Allele1','Tumor_Validation_Allele2','Match_Norm_Validation_Allele1','Match_Norm_Validation_Allele2','Verification_Status','Validation_Status','Mutation_Status','Sequencing_Phase','Sequence_Source','Validation_Method','Score','BAM_File','Sequencer','HGVSp_Short','t_ref_count','t_alt_count','n_ref_count','n_alt_count','Protein_position','Codons','SWISSPROT','RefSeq','t_depth','n_depth','FILTER']
+	maf_dict = {key: ['','',''] for key in keep_maf_columns}
+	maf_dict['Center']=["foo","dsdf","sdf"]
+	maf_dict['Tumor_Sample_Barcode']=["GENIE-SAGE-1-3","1-2","3-2"]
+	maf_dict['Sequence_Source']=["3","e","sd"]
+	maf_dict['Sequencer']=["dsf","sdf","d"]
+	maf_dict['Validation_Status']=["Unknown","unknown","f"]
+	maf_dict['not_there'] = ['','','']
+	mafdf = pd.DataFrame(maf_dict)
+
+	formatted_mafdf = maf_class.formatMAF(mafdf)
+
+	expected_maf_dict = {key: ['','',''] for key in keep_maf_columns}
+	expected_maf_dict['Center']=["SAGE","SAGE","SAGE"]
+	expected_maf_dict['Tumor_Sample_Barcode']=["GENIE-SAGE-1-3","GENIE-SAGE-1-2","GENIE-SAGE-3-2"]
+	expected_maf_dict['Sequence_Source']=[pd.np.nan,pd.np.nan,pd.np.nan]
+	expected_maf_dict['Sequencer']=[pd.np.nan,pd.np.nan,pd.np.nan]
+	expected_maf_dict['Validation_Status']=['','',"f"]
+	expected_mafdf = pd.DataFrame(expected_maf_dict)
+
+	assert expected_mafdf.equals(formatted_mafdf[expected_mafdf.columns])
 
 def test_validation():
 
