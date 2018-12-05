@@ -18,6 +18,14 @@ class mutationsInCis(example_filetype_format.FileTypeFormat):
 
     _validation_kwargs = ["testing"]
 
+    def _get_dataframe(self, filePathList):
+        '''
+        Mutation In Cis is a csv file
+        '''
+        filePath = filePathList[0]
+        df = pd.read_csv(filePath,comment="#")
+        return(df)
+
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "mutationsInCis_filtered_samples.csv"
@@ -41,7 +49,6 @@ class mutationsInCis(example_filetype_format.FileTypeFormat):
 
         total_error = ""
         warning = ""
-
         REQUIRED_HEADERS = pd.Series(['Flag','Center','Tumor_Sample_Barcode','Hugo_Symbol','HGVSp_Short','Variant_Classification','Chromosome','Start_Position','Reference_Allele','Tumor_Seq_Allele2','t_alt_count_num','t_depth'])
         primaryKeys = ['Tumor_Sample_Barcode', 'HGVSp_Short', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2']
         if not all(REQUIRED_HEADERS.isin(mutationInCisDf.columns)):
