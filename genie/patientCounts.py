@@ -56,12 +56,12 @@ class patientCounts(example_filetype_format.FileTypeFormat):
 		patientCountsDf.to_csv(newPath, sep="\t",index=False)
 		return(newPath)
 
-	def _validate(self, patCountsDf, oncotree_url):
+	def _validate(self, patCountsDf, oncotreeLink):
 		total_error = ""
 		warning = ""
-		oncotree_mapping = process_functions.get_oncotree_codes(oncotree_url)
+		oncotree_mapping = process_functions.get_oncotree_codes(oncotreeLink)
 		if oncotree_mapping.empty:
-			oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(oncotree_url)
+			oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(oncotreeLink)
 			oncotree_mapping['ONCOTREE_CODE'] = oncotree_mapping_dict.keys()
 		haveColumn = process_functions.checkColExist(patCountsDf, "ONCOTREE_CODE")
 		if haveColumn:
