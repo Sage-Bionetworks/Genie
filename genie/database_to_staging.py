@@ -796,7 +796,7 @@ def main():
 	if not args.test:
 		logger.info("DASHBOARD UPDATE")
 		dashboard_table_updater.run_dashboard(syn, databaseSynIdMappingDf, args.genieVersion, staging=args.staging)
-		dashboard_markdown_html_commands = ['Rscript', os.path.join(os.path.dirname(os.path.abspath(__file__)),'dashboard/dashboard_markdown_generator.R'), args.genieVersion]
+		dashboard_markdown_html_commands = ['Rscript', os.path.join(os.path.dirname(os.path.abspath(__file__)),'dashboard_markdown_generator.R'), args.genieVersion]
 		if args.staging:
 			dashboard_markdown_html_commands.append('--staging')
 		subprocess.check_call(dashboard_markdown_html_commands)
