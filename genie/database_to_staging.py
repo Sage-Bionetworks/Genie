@@ -13,7 +13,7 @@ import re
 import subprocess
 import synapseutils as synu
 import create_case_lists
-import dashboard.dashboard_table_updater
+import dashboard_table_updater
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
