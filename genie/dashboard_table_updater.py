@@ -414,6 +414,7 @@ def check_column_decreases(currentdf, olderdf):
 		current_ent: Current entity dataframe
 		old_ent: Older entity dataframe
 	"""
+	diff_map = dict()
 	for col in currentdf:
 		new_counts = currentdf[col].value_counts()
 		if olderdf.get(col) is not None:
@@ -422,9 +423,12 @@ def check_column_decreases(currentdf, olderdf):
 			old_counts = old_counts.add(new_keys,fill_value=0)
 			old_counts.fillna(0,inplace=True)
 			if any(new_counts - old_counts < 0):
-				print("DECREASE IN COLUMN: %s" % col)
+				print("\tDECREASE IN COLUMN: %s" % col)
 				diff = new_counts[new_counts - old_counts < 0]
-				print(diff)
+				diff_map[col] = True
+			else:
+				diff_map[col] = False
+	return(diff_map)
 
 def print_clinical_values_difference_table(syn, database_mappingdf):
 	'''
@@ -436,6 +440,8 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
 		database_mappingdf: mapping between synapse ids and database
 	'''
 	release_folder_fileview_synid = database_mappingdf['Id'][database_mappingdf['Database'] == 'releaseFolder'].values[0]
+	clinical_key_decrease_synid = database_mappingdf['Id'][database_mappingdf['Database'] == 'clinicalKeyDecrease'].values[0]
+	
 	release_folder = syn.tableQuery("select id,name from %s" % release_folder_fileview_synid + " where name not like 'Release%' and name <> 'case_lists' and name not like '%.0.%' and name not like '%-public'")
 	release_folderdf = release_folder.asDataFrame()
 	release_folderdf.sort_values("name",ascending=False,inplace=True)
@@ -458,12 +464,13 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
 	current_sampledf = current_sampledf[current_sampledf['CENTER'].isin(older_sampledf['CENTER'].unique())]
 
 	print("SAMPLE CLINICAL VALUE DECREASES")
+	center_decrease_mapping = dict()
 	for center in older_sampledf['CENTER'].unique():
 		current_center_sampledf = current_sampledf[current_sampledf['CENTER'] == center]
 		older_center_sampledf = older_sampledf[older_sampledf['CENTER'] == center]
 		print(center)
-		check_column_decreases(current_center_sampledf, older_center_sampledf)
-
+		decrease_map = check_column_decreases(current_center_sampledf, older_center_sampledf)
+		center_decrease_mapping[center] = decrease_map
 	current_patient_ent = syn.get(current_clinical_synids['data_clinical_patient.txt'], followLink=True)
 	older_patient_ent = syn.get(older_clinical_synids['data_clinical_patient.txt'], followLink=True)
 	current_patientdf = pd.read_csv(current_patient_ent.path,sep="\t",comment="#")
@@ -475,8 +482,16 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
 		current_center_patientdf = current_patientdf[current_patientdf['CENTER'] == center]
 		older_center_patientdf = older_patientdf[older_patientdf['CENTER'] == center]
 		print(center)
-		check_column_decreases(current_center_patientdf, older_center_patientdf)
+		patient_decrease_map = check_column_decreases(current_center_patientdf, older_center_patientdf)
+		center_decrease_mapping[center].update(patient_decrease_map)
 
+	center_decrease_mapping = pd.DataFrame(center_decrease_mapping)
+	center_decrease_mapping = center_decrease_mapping.transpose()
+	center_decrease_mapping['CENTER'] = center_decrease_mapping.index
+
+	clinical_key_decrease = syn.tableQuery("select * from {0}".format(clinical_key_decrease_synid))
+	clinical_key_decreasedbdf = clinical_key_decrease.asDataFrame()
+	genie.process_functions.updateDatabase(syn, clinical_key_decreasedbdf, center_decrease_mapping, clinical_key_decrease_synid, ["CENTER"], toDelete=True)
 
 def run_dashboard(syn, database_mappingdf, release, staging=False):
 	'''
