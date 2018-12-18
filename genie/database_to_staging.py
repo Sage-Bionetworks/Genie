@@ -319,10 +319,10 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	
 	clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isin(removeForMergedConsortiumSamples)]
 	#This must happen here because the seq assay filter must happen after all the other filters
-	logger.info("SEQ ASSAY FILTER")
-	remove_seqAssayId_samples = seq_assay_id_filter(clinicalDf)
+	# logger.info("SEQ ASSAY FILTER")
+	# remove_seqAssayId_samples = seq_assay_id_filter(clinicalDf)
 	#removeForMergedConsortiumSamples = removeForMergedConsortiumSamples.union(set(remove_seqAssayId_samples))
-	clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isin(remove_seqAssayId_samples)]
+	# clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isin(remove_seqAssayId_samples)]
 
 	keepForCenterConsortiumSamples = clinicalDfStaging.SAMPLE_ID
 	keepForMergedConsortiumSamples = clinicalDf.SAMPLE_ID
