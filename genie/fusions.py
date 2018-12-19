@@ -95,7 +95,7 @@ class fusions(example_filetype_format.FileTypeFormat):
         fusion.to_csv(newPath, sep="\t",index=False)
         return(newPath)
 
-    def _validate(self, fusionDF, noSymbolCheck, test=False):
+    def _validate(self, fusionDF, noSymbolCheck, testing=False):
         total_error = ""
         warning = ""
 
@@ -113,7 +113,7 @@ class fusions(example_filetype_format.FileTypeFormat):
         if process_functions.checkColExist(fusionDF, "HUGO_SYMBOL") and not noSymbolCheck:
            # logger.info("VALIDATING %s GENE SYMBOLS" % os.path.basename(filePath))
             #invalidated_genes = fusionDF["HUGO_SYMBOL"].drop_duplicates().apply(validateSymbol)
-            bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=test)
+            bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=testing)
             bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))
             bedDf = bed.asDataFrame()
             #invalidated_genes = self.pool.map(process_functions.validateSymbol, fusionDF["HUGO_SYMBOL"].drop_duplicates())

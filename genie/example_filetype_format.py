@@ -1,6 +1,6 @@
 import pandas as pd
-import os
 import logging
+import os
 logger = logging.getLogger(__name__)
 
 class FileTypeFormat(object):
@@ -74,17 +74,6 @@ class FileTypeFormat(object):
 		warning = ""
 		logger.info("NO VALIDATION for %s files" % self._fileType)
 		return(total_error, warning)
-
-	# def _call_validate(self, df, **kwargs):
-	# 	return(self._validate(df))
-
-	# def validate_steps(self, filePathList, **kwargs):
-	# 	total_error = ""
-	# 	warning = ""
-	# 	logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
-	# 	df = readFile(filePathList)
-
-	# 	return(self._validate(df))
 
 	def validate(self, filePathList, **kwargs):
 		mykwargs = {}
