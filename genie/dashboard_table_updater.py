@@ -4,6 +4,8 @@ import synapseclient
 import pandas as pd
 import argparse
 import datetime
+import logging
+logger = logging.getLogger(__name__)
 
 def get_center_data_completion(center, df):
 	'''
@@ -423,7 +425,7 @@ def check_column_decreases(currentdf, olderdf):
 			old_counts = old_counts.add(new_keys,fill_value=0)
 			old_counts.fillna(0,inplace=True)
 			if any(new_counts - old_counts < 0):
-				print("\tDECREASE IN COLUMN: %s" % col)
+				logger.info("\tDECREASE IN COLUMN: %s" % col)
 				diff = new_counts[new_counts - old_counts < 0]
 				diff_map[col] = True
 			else:
@@ -463,12 +465,12 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
 	older_sampledf['CENTER'] = [patient.split("-")[1] for patient in older_sampledf['PATIENT_ID']]
 	current_sampledf = current_sampledf[current_sampledf['CENTER'].isin(older_sampledf['CENTER'].unique())]
 
-	print("SAMPLE CLINICAL VALUE DECREASES")
+	logger.info("SAMPLE CLINICAL VALUE DECREASES")
 	center_decrease_mapping = dict()
 	for center in older_sampledf['CENTER'].unique():
 		current_center_sampledf = current_sampledf[current_sampledf['CENTER'] == center]
 		older_center_sampledf = older_sampledf[older_sampledf['CENTER'] == center]
-		print(center)
+		logger.info(center)
 		decrease_map = check_column_decreases(current_center_sampledf, older_center_sampledf)
 		center_decrease_mapping[center] = decrease_map
 	current_patient_ent = syn.get(current_clinical_synids['data_clinical_patient.txt'], followLink=True)
@@ -477,11 +479,11 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
 	older_patientdf =  pd.read_csv(older_patient_ent.path,sep="\t",comment="#")
 	current_patientdf = current_patientdf[current_patientdf['CENTER'].isin(older_patientdf['CENTER'].unique())]
 
-	print("PATIENT CLINICAL VALUE DECREASES")
+	logger.info("PATIENT CLINICAL VALUE DECREASES")
 	for center in older_patientdf['CENTER'].unique():
 		current_center_patientdf = current_patientdf[current_patientdf['CENTER'] == center]
 		older_center_patientdf = older_patientdf[older_patientdf['CENTER'] == center]
-		print(center)
+		logger.info(center)
 		patient_decrease_map = check_column_decreases(current_center_patientdf, older_center_patientdf)
 		center_decrease_mapping[center].update(patient_decrease_map)
 
