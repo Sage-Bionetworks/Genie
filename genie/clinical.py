@@ -150,7 +150,9 @@ class clinical(example_filetype_format.FileTypeFormat):
 		clinicalRemapped['CENTER'] = self.center
 		return(clinicalRemapped)
 
-	def process_steps(self, clinicalDf, patientSynId, sampleSynId, newPath, parentId, oncotreeLink):
+	def process_steps(self, filePath, patientSynId, sampleSynId, newPath, parentId, oncotreeLink):
+		clinicalDf = pd.read_csv(filePath, sep="\t", comment="#")
+
 		patient= False
 		sample = False
 		#These synapse ids for the clinical tier release scope is hardcoded because it never changes
