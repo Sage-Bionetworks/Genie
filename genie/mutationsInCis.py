@@ -32,7 +32,6 @@ class mutationsInCis(example_filetype_format.FileTypeFormat):
     
     # PROCESS
     def process_steps(self, mutationInCis, newPath, databaseSynId):
-        #cols = mutationInCis.columns
         process_functions.updateData(self.syn, databaseSynId, mutationInCis, self.center, filterByColumn="Center")
         mutationInCis.to_csv(newPath, sep="\t",index=False)
         return(newPath)

@@ -27,8 +27,7 @@ class seg(example_filetype_format.FileTypeFormat):
 		seg['NUMMARK'] = seg['NUMMARK'].astype(int)
 		return(seg)
 
-	def process_steps(self, filePath, newPath, databaseSynId):
-		seg = pd.read_csv(filePath, sep="\t")
+	def process_steps(self, seg, newPath, databaseSynId):
 		seg = self._process(seg)
 		process_functions.updateData(self.syn, databaseSynId, seg, self.center, toDelete=True)
 		seg.to_csv(newPath,sep="\t",index=False)

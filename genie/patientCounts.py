@@ -43,8 +43,7 @@ class patientCounts(example_filetype_format.FileTypeFormat):
 			patientCountsDf['PRIMARY_CODE'] = patientCountsDf.ONCOTREE_CODE.apply(lambda code: process_functions.getPrimary(code, oncotreeDict, primary))
 		return(patientCountsDf)
 
-	def process_steps(self, filePath, newPath, oncotreeLink, databaseSynId):
-		patientCounts = pd.read_csv(filePath, sep="\t",comment="#")
+	def process_steps(self, patientCountsDf, newPath, oncotreeLink, databaseSynId):
 		patientCountsDf = self._process(patientCounts, oncotreeLink)
 		process_functions.updateData(self.syn, databaseSynId, patientCountsDf, self.center)
 		patientCountsDf.to_csv(newPath, sep="\t",index=False)

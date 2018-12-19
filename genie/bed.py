@@ -110,7 +110,7 @@ class bed(example_filetype_format.FileTypeFormat):
 
 	_fileType = "bed"
 
-	_process_kwargs = ["newPath", "parentId", "databaseSynId"]
+	_process_kwargs = ["newPath", "parentId", "databaseSynId",'seq_assay_id']
 
 	def _get_dataframe(self, filePathList):
 		filePath = filePathList[0]
@@ -182,10 +182,17 @@ class bed(example_filetype_format.FileTypeFormat):
 		bed['CENTER'] =self.center
 		bed['Chromosome'] = bed['Chromosome'].astype(str)
 		return(bed)
-
-	def process_steps(self, gene, newPath, parentId, databaseSynId):
-		#standardize all SEQ_ASSAY_IDs
+	
+	def preprocess(self, filePath, **kwargs):
+# - clinical
+# - maf
+# - vcf
 		seq_assay_id = os.path.basename(filePath).replace(".bed","").upper()
+		return({'seq_assay_id':seq_assay_id})
+
+	def process_steps(self, gene, newPath, parentId, databaseSynId, seq_assay_id):
+		#standardize all SEQ_ASSAY_IDs
+		#seq_assay_id = os.path.basename(filePath).replace(".bed","").upper()
 		bed = self._process(gene, seq_assay_id, newPath, parentId)
 		process_functions.updateData(self.syn, databaseSynId, bed, seq_assay_id, filterByColumn="SEQ_ASSAY_ID", toDelete=True)
 		bed.to_csv(newPath, sep="\t",index=False)

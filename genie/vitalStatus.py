@@ -83,8 +83,7 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
 		return(vitalStatusDf)
 
 	# PROCESS
-	def process_steps(self, filePath, databaseSynId, newPath):
-		vitalStatusDf = pd.read_csv(filePath, sep="\t", comment="#")
+	def process_steps(self, vitalStatusDf, databaseSynId, newPath):
 		vitalStatusDf = self._process(vitalStatusDf)
 		process_functions.updateData(self.syn, databaseSynId, vitalStatusDf, self.center)
 		vitalStatusDf.to_csv(newPath, sep="\t",index=False)
