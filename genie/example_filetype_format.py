@@ -43,7 +43,7 @@ class FileTypeFormat(object):
 
 
 
-	def process_steps(self, filePath, **kwargs):
+	def process_steps(self, df, **kwargs):
 		pass
 
 	def preprocess(self, filePath, **kwargs):
@@ -61,7 +61,12 @@ class FileTypeFormat(object):
 			assert required_parameter in kwargs.keys(), "%s not in parameter list" % required_parameter
 			mykwargs[required_parameter] = kwargs[required_parameter]
 		logger.info('PROCESSING %s' % filePath)
-		path = self.process_steps(filePath, **mykwargs)
+		#If file type is vcf or maf file, processing requires a filepath
+		if self._fileType not in ['vcf','maf','mafSP']
+			path_or_df = self.read_file(filePath)
+		else:
+			path_or_df = filePath
+		path = self.process_steps(path_or_df, **mykwargs)
 		return(path)
 
 	def _validate(self, df, **kwargs):

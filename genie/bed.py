@@ -183,10 +183,9 @@ class bed(example_filetype_format.FileTypeFormat):
 		bed['Chromosome'] = bed['Chromosome'].astype(str)
 		return(bed)
 
-	def process_steps(self, filePath, newPath, parentId, databaseSynId):
+	def process_steps(self, gene, newPath, parentId, databaseSynId):
 		#standardize all SEQ_ASSAY_IDs
 		seq_assay_id = os.path.basename(filePath).replace(".bed","").upper()
-		gene = pd.read_csv(filePath, sep="\t",header=None)
 		bed = self._process(gene, seq_assay_id, newPath, parentId)
 		process_functions.updateData(self.syn, databaseSynId, bed, seq_assay_id, filterByColumn="SEQ_ASSAY_ID", toDelete=True)
 		bed.to_csv(newPath, sep="\t",index=False)

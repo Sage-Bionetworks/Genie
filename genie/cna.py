@@ -92,8 +92,7 @@ class cna(example_filetype_format.FileTypeFormat):
 
 		return(cnaDf)
 
-	def process_steps(self, filePath, newPath, databaseToSynIdMappingDf, test):
-		cnaDf = pd.read_csv(filePath, sep="\t",comment="#")
+	def process_steps(self, cnaDf, newPath, databaseToSynIdMappingDf, test):
 		newCNA = self._process(cnaDf, test=test)
 
 		centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]

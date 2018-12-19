@@ -23,8 +23,7 @@ class mutationsInCis(example_filetype_format.FileTypeFormat):
         assert os.path.basename(filePath[0]) == "mutationsInCis_filtered_samples.csv"
     
     # PROCESS
-    def process_steps(self, filePath, newPath, databaseSynId):
-        mutationInCis = pd.read_csv(filePath, comment="#")
+    def process_steps(self, mutationInCis, newPath, databaseSynId):
         #cols = mutationInCis.columns
         process_functions.updateData(self.syn, databaseSynId, mutationInCis, self.center, filterByColumn="Center")
         mutationInCis.to_csv(newPath, sep="\t",index=False)
