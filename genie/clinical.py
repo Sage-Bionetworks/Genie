@@ -127,10 +127,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 		databaseToSynIdMappingDf = kwargs['databaseToSynIdMappingDf']
 		patientSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "patient"][0]
 		sampleSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "sample"][0]
-		# retractedSampleSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "sampleRetraction"][0]
-		# retractedPatientSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "patientRetraction"][0]
-		#path = process_helper(syn, filePath, center, newPath, patientSynId, sampleSynId, centerStagingSynId, fileType)
-		return({"patientSynId":patientSynId,"sampleSynId":sampleSynId})#"retractedSampleSynId":retractedSampleSynId,"retractedPatientSynId":retractedPatientSynId})
+		return({"patientSynId":patientSynId,"sampleSynId":sampleSynId})
 
 
 	def _process(self, clinical, clinicalTemplate):
@@ -314,7 +311,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 		haveColumn = process_functions.checkColExist(clinicalDF, "SEQ_ASSAY_ID")
 		if haveColumn:
 			if not all([i != "" for i in clinicalDF['SEQ_ASSAY_ID']]):
-				warning += "Sample: Please double check your SEQ_ASSAY_ID columns, there are empty rows.\n"
+				total_error += "Sample: Please double check your SEQ_ASSAY_ID columns, there are empty rows.\n"
 			#must remove empty seq assay ids first
 			#Checking if seq assay ids start with the center name
 			seqAssayIds = clinicalDF.SEQ_ASSAY_ID[clinicalDF.SEQ_ASSAY_ID != ""]

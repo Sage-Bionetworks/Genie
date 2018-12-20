@@ -11,7 +11,7 @@ class maf(example_filetype_format.FileTypeFormat):
 
 	_fileType = "maf"
 
-	_process_kwargs = ["processing","path_to_GENIE",
+	_process_kwargs = ["processing","path_to_GENIE",'mafSynId','centerMafSynId',
 					   "vcf2mafPath","veppath","vepdata",'reference']
 
 	def _validateFilename(self, filePath):
@@ -49,8 +49,15 @@ class maf(example_filetype_format.FileTypeFormat):
 			self.syn.store(synapseclient.File(filePath, parentId=centerMafSynId))
 		return(filePath)
 
+	def preprocess(self, filePath, **kwargs):
+		databaseToSynIdMappingDf = kwargs['databaseToSynIdMappingDf']
+		mafProcessing = "mafSP" if self._fileType == "mafSP" else 'vcf2maf'
+		mafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == mafProcessing][0]
+		centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]		# retractedSampleSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "sampleRetraction"][0]
+		return({"mafSynId":mafSynId,"centerMafSynId":centerMafSynId})
+
 	def process_steps(self, filePath, path_to_GENIE, mafSynId, centerMafSynId,
-					   vcf2mafPath, veppath, vepdata, reference=None):
+					   vcf2mafPath, veppath, vepdata, processing, reference=None):
 		if processing == self._fileType:
 			logger.info('MAF2MAF %s' % filePath)
 			fileName = "data_mutations_extended_%s_MAF.txt" % self.center

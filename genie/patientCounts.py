@@ -44,7 +44,7 @@ class patientCounts(example_filetype_format.FileTypeFormat):
 		return(patientCountsDf)
 
 	def process_steps(self, patientCountsDf, newPath, oncotreeLink, databaseSynId):
-		patientCountsDf = self._process(patientCounts, oncotreeLink)
+		patientCountsDf = self._process(patientCountsDf, oncotreeLink)
 		process_functions.updateData(self.syn, databaseSynId, patientCountsDf, self.center)
 		patientCountsDf.to_csv(newPath, sep="\t",index=False)
 		return(newPath)

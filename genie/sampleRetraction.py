@@ -13,6 +13,15 @@ class sampleRetraction(example_filetype_format.FileTypeFormat):
 
 	_process_kwargs = ["newPath", "databaseSynId","fileSynId"]
 
+	def _get_dataframe(self, filePathList):
+		'''
+		This function by defaults assumes the filePathList is length of 1 
+		and is a tsv file.  Could change depending on file type.
+		'''
+		filePath = filePathList[0]
+		df = pd.read_csv(filePath,header=None)
+		return(df)
+
 	def _validateFilename(self, filePath):
 		assert os.path.basename(filePath[0]) == "%s.csv" % self._fileType
 
@@ -26,9 +35,8 @@ class sampleRetraction(example_filetype_format.FileTypeFormat):
 		deleteSamplesDf['center'] = self.center
 		return(deleteSamplesDf)
 
-	def process_steps(self, filePath, fileSynId, databaseSynId, newPath):
+	def process_steps(self, deleteSamples, fileSynId, databaseSynId, newPath):
 		info = self.syn.get(fileSynId, downloadFile=False)
-		deleteSamples = pd.read_csv(filePath,header=None)
 		deleteSamples = self._process(deleteSamples, info.modifiedOn.split(".")[0])
 		process_functions.updateData(self.syn, databaseSynId, deleteSamples, databaseSynId, filterByColumn="center", toDelete=True)
 		return(newPath)
