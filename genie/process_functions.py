@@ -304,6 +304,73 @@ def center_convert_back(filePath, anonymizeCenterDf):
 ####################################################################################
 # UPDATING DATABASE
 ####################################################################################
+def _append_rows(new_dataset, databasedf, checkby):
+	#All new rows
+	if not databasedf.empty:
+		appenddf = new_dataset[~new_dataset[checkby].isin(databasedf[checkby])]
+	else:
+		appenddf = new_dataset.copy()
+	if not appenddf.empty:
+		logger.info("Adding Rows")
+		del appenddf[checkby]
+		#appenddf = appenddf.append(newset)
+		appenddf['ROW_ID'] = pd.np.nan
+		appenddf['ROW_VERSION'] = pd.np.nan
+	else:
+		logger.info("No new rows")
+	return(appenddf)
+
+def _update_rows(new_dataset, databasedf, checkby):
+	toupdatedf = pd.DataFrame()
+	if not databasedf.empty and not new_dataset.empty:
+		updatesetdf = new_dataset[new_dataset[checkby].isin(databasedf[checkby])]
+		updating_databasedf = databasedf[databasedf[checkby].isin(new_dataset[checkby])]
+	else:
+		updatesetdf = pd.DataFrame()
+		updating_databasedf = pd.DataFrame()
+
+	#If you input the exact same dataframe theres nothing to update
+	if updatesetdf.empty and updating_databasedf.empty:
+		differentrows = []
+	else:
+		rowids = updating_databasedf.index.values
+		updatesetdf.index = updatesetdf[checkby]
+		updating_databasedf.index = updating_databasedf[checkby]
+		#Remove duplicated index values
+		updatesetdf = updatesetdf[~updatesetdf.index.duplicated()]
+		updatesetdf = updatesetdf.loc[updating_databasedf.index]
+		differences = updatesetdf != updating_databasedf
+		differentrows = differences.apply(sum, axis=1) >0
+
+	if sum(differentrows) > 0:
+		updating_databasedf.loc[differentrows] = updatesetdf.loc[differentrows]
+		toupdatedf = updating_databasedf.loc[differentrows]
+		del toupdatedf[checkby]
+		logger.info("Updating rows")
+		rowid_version = pd.DataFrame([[rowid.split("_")[0],rowid.split("_")[1]] for rowid, row in zip(rowids, differentrows) if row])
+		toupdatedf['ROW_ID'] = rowid_version[0].values
+		toupdatedf['ROW_VERSION'] = rowid_version[1].values
+		#updatedf = updatedf.append(toupdatedf)
+	else:
+		logger.info("No updated rows")
+	return(toupdatedf)
+
+def _delete_rows(new_datasetdf, databasedf, checkby):
+	#databasedf.index = allRowIds
+	#If the new dataset is empty, delete everything in the database
+	if not new_datasetdf.empty:
+		deletedf = databasedf[~databasedf[checkby].isin(new_datasetdf[checkby])]
+	else:
+		deletedf = databasedf
+	del deletedf[checkby]
+	if not deletedf.empty:
+		logger.info("Deleting Rows")
+		delete_rowid_version = pd.DataFrame([[rowid.split("_")[0],rowid.split("_")[1]] for rowid in deletedf.index])
+	else:
+		delete_rowid_version = pd.DataFrame()
+		logger.info("No deleted rows")
+	return(delete_rowid_version)
+
 def updateData(syn, databaseSynId, newData, filterBy, filterByColumn= "CENTER", col=None, toDelete=False):
 	databaseEnt = syn.get(databaseSynId)
 	database = syn.tableQuery("SELECT * FROM %s where %s ='%s'" % (databaseSynId, filterByColumn, filterBy))
@@ -325,14 +392,6 @@ def updateDatabase(syn, database, new_dataset, databaseSynId, uniqueKeyCols, toD
 
 	:returns:      		   Don't know yet	
 	"""
-	####### PARTIAL ROWSET UPDATES #######
-	# temp = syn.tableQuery('SELECT * FROM ')
-	# df = temp.asDataFrame(rowIdAndVersionInIndex=False)
-	# partial_changes = {df['ROW_ID'][0]: {'asdfd': 'wow large text'},
-	#                    df['ROWSETW_ID'][1]: {'i': 234234234}}
-	# partial_rowset = synapseclient.PartialRowset.from_mapping(partial_changes, temp)
-	# syn.store(partial_rowset)
-	#######
 	checkBy = 'UNIQUE_KEY'
 	database = database.fillna("")
 	origDatabaseCols = database.columns
@@ -346,84 +405,30 @@ def updateDatabase(syn, database, new_dataset, databaseSynId, uniqueKeyCols, toD
 	new_dataset[uniqueKeyCols] = new_dataset[uniqueKeyCols].applymap(str)
 	new_dataset[checkBy] = new_dataset[uniqueKeyCols].apply(lambda x: ' '.join(x), axis=1)
 
-	if not database.empty and not new_dataset.empty:
-		updateSet = new_dataset[new_dataset[checkBy].isin(database[checkBy])]
-		updatingDatabase = database[database[checkBy].isin(new_dataset[checkBy])]
-	else:
-		updateSet = pd.DataFrame()
-		updatingDatabase = pd.DataFrame()
-
-	allRowIds = database.index.values
-	allUpdates = pd.DataFrame()
-	#All new rows
-	if not database.empty:
-		newSet =  new_dataset[~new_dataset[checkBy].isin(database[checkBy])]
-	else:
-		newSet = new_dataset.copy()
-	if not newSet.empty:
-		logger.info("Adding Rows")
-		del newSet[checkBy]
-		allUpdates = allUpdates.append(newSet)
-		allUpdates['ROW_ID'] = pd.np.nan
-		allUpdates['ROW_VERSION'] = pd.np.nan
-	else:
-		logger.info("No new rows")
-
-	#If you input the exact same dataframe theres nothing to update
-	if updateSet.empty and updatingDatabase.empty:
-		differentRows = []
-	else:
-		rowIds = updatingDatabase.index.values
-		updateSet.index = updateSet[checkBy]
-		updatingDatabase.index = updatingDatabase[checkBy]
-		#Remove duplicated index values
-		updateSet = updateSet[~updateSet.index.duplicated()]
-		updateSet = updateSet.loc[updatingDatabase.index]
-		differences = updateSet != updatingDatabase
-		differentRows = differences.apply(sum, axis=1) >0
-
-	if sum(differentRows) > 0:
-		updatingDatabase.loc[differentRows] = updateSet.loc[differentRows]
-		toUpdate = updatingDatabase.loc[differentRows]
-		del toUpdate[checkBy]
-		logger.info("Updating rows")
-		rowIdVersion = pd.DataFrame([[rowId.split("_")[0],rowId.split("_")[1]] for rowId, row in zip(rowIds, differentRows) if row])
-		toUpdate['ROW_ID'] = rowIdVersion[0].values
-		toUpdate['ROW_VERSION'] = rowIdVersion[1].values
-		allUpdates = allUpdates.append(toUpdate)
-	else:
-		logger.info("No updated rows")
-	
-	#All deleted rows (This assumes that all data that don't show up in the new uploaded data should be deleted...)
-	#Must specify deleteSets
-	deleteSets = pd.DataFrame()
+	#allRowIds = database.index.values
+	allupdates = pd.DataFrame()
+	appendrows = _append_rows(new_dataset, database, checkBy)
+	updaterows = _update_rows(new_dataset, database, checkBy)
 	if toDelete:
-		database.index = allRowIds
-		#If the new dataset is empty, delete everything in the database
-		if not new_dataset.empty:
-			deleteSets = database[~database[checkBy].isin(new_dataset[checkBy])]
-		else:
-			deleteSets = database
-		del deleteSets[checkBy]
-		if not deleteSets.empty:
-			logger.info("Deleting Rows")
-			rowIdVersion = pd.DataFrame([[rowId.split("_")[0],rowId.split("_")[1]] for rowId in deleteSets.index])
-		else:
-			logger.info("No deleted rows")
+		deleterows = _delete_rows(new_dataset, database, checkBy)
+	else:
+		deleterows = pd.DataFrame()
+	allupdates = allupdates.append(appendrows)
+	allupdates = allupdates.append(updaterows)
 
-	storeDatabase = False
+	storedatabase = False
 	updateAllFile = os.path.join(SCRIPT_DIR,"toUpdateAll.csv")
 	with open(updateAllFile,"w") as updateFile:
 		#Must write out the headers in case there are no appends or updates
 		updateFile.write(",".join(columnOrder) + "\n")
-		if not allUpdates.empty:
-			updateFile.write(allUpdates[columnOrder].to_csv(index=False,header=None).replace(".0,",","))
-			storeDatabase = True
-		if not deleteSets.empty:
-			updateFile.write(rowIdVersion.to_csv(index=False,header=None).replace(".0,",","))
-			storeDatabase = True
-	if storeDatabase:
-		syn.store(synapseclient.Table(syn.get(databaseSynId), updateAllFile))
+		if not allupdates.empty:
+			updateFile.write(allupdates[columnOrder].to_csv(index=False,header=None).replace(".0,",","))
+			storedatabase = True
+		if not deleterows.empty:
+			updateFile.write(deleterows.to_csv(index=False,header=None).replace(".0,",","))
+			storedatabase = True
+	if storedatabase:
+		syn.store(synapseclient.Table(databaseSynId, updateAllFile))
 
 #Check if an item can become an integer
 def checkInt(element):
