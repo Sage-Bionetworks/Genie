@@ -316,6 +316,7 @@ def _append_rows(new_dataset, databasedf, checkby):
 		#appenddf = appenddf.append(newset)
 		appenddf['ROW_ID'] = pd.np.nan
 		appenddf['ROW_VERSION'] = pd.np.nan
+		appenddf.reset_index(drop=True,inplace=True)
 	else:
 		logger.info("No new rows")
 	return(appenddf)
@@ -351,6 +352,7 @@ def _update_rows(new_dataset, databasedf, checkby):
 		toupdatedf['ROW_ID'] = rowid_version[0].values
 		toupdatedf['ROW_VERSION'] = rowid_version[1].values
 		#updatedf = updatedf.append(toupdatedf)
+		toupdatedf.reset_index(drop=True,inplace=True)
 	else:
 		logger.info("No updated rows")
 	return(toupdatedf)
@@ -366,6 +368,7 @@ def _delete_rows(new_datasetdf, databasedf, checkby):
 	if not deletedf.empty:
 		logger.info("Deleting Rows")
 		delete_rowid_version = pd.DataFrame([[rowid.split("_")[0],rowid.split("_")[1]] for rowid in deletedf.index])
+		delete_rowid_version.reset_index(drop=True,inplace=True)
 	else:
 		delete_rowid_version = pd.DataFrame()
 		logger.info("No deleted rows")
