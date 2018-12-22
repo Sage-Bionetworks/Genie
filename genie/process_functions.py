@@ -304,12 +304,14 @@ def center_convert_back(filePath, anonymizeCenterDf):
 ####################################################################################
 # UPDATING DATABASE
 ####################################################################################
-def _append_rows(new_dataset, databasedf, checkby):
+def _append_rows(new_datasetdf, databasedf, checkby):
 	#All new rows
+	databasedf.fillna('',inplace=True)
+	new_datasetdf.fillna('',inplace=True)
 	if not databasedf.empty:
-		appenddf = new_dataset[~new_dataset[checkby].isin(databasedf[checkby])]
+		appenddf = new_datasetdf[~new_datasetdf[checkby].isin(databasedf[checkby])]
 	else:
-		appenddf = new_dataset.copy()
+		appenddf = new_datasetdf.copy()
 	if not appenddf.empty:
 		logger.info("Adding Rows")
 		del appenddf[checkby]
@@ -321,11 +323,13 @@ def _append_rows(new_dataset, databasedf, checkby):
 		logger.info("No new rows")
 	return(appenddf)
 
-def _update_rows(new_dataset, databasedf, checkby):
+def _update_rows(new_datasetdf, databasedf, checkby):
+	databasedf.fillna('',inplace=True)
+	new_datasetdf.fillna('',inplace=True)
 	toupdatedf = pd.DataFrame()
-	if not databasedf.empty and not new_dataset.empty:
-		updatesetdf = new_dataset[new_dataset[checkby].isin(databasedf[checkby])]
-		updating_databasedf = databasedf[databasedf[checkby].isin(new_dataset[checkby])]
+	if not databasedf.empty and not new_datasetdf.empty:
+		updatesetdf = new_datasetdf[new_datasetdf[checkby].isin(databasedf[checkby])]
+		updating_databasedf = databasedf[databasedf[checkby].isin(new_datasetdf[checkby])]
 	else:
 		updatesetdf = pd.DataFrame()
 		updating_databasedf = pd.DataFrame()
@@ -342,7 +346,6 @@ def _update_rows(new_dataset, databasedf, checkby):
 		updatesetdf = updatesetdf.loc[updating_databasedf.index]
 		differences = updatesetdf != updating_databasedf
 		differentrows = differences.apply(sum, axis=1) >0
-
 	if sum(differentrows) > 0:
 		updating_databasedf.loc[differentrows] = updatesetdf.loc[differentrows]
 		toupdatedf = updating_databasedf.loc[differentrows]
@@ -358,6 +361,8 @@ def _update_rows(new_dataset, databasedf, checkby):
 	return(toupdatedf)
 
 def _delete_rows(new_datasetdf, databasedf, checkby):
+	databasedf.fillna('',inplace=True)
+	new_datasetdf.fillna('',inplace=True)
 	#databasedf.index = allRowIds
 	#If the new dataset is empty, delete everything in the database
 	if not new_datasetdf.empty:

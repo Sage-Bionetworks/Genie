@@ -25,8 +25,17 @@ class test_update_database:
 										  'ROW_ID':[float('nan')],
 										  'ROW_VERSION':[float('nan')]})
 		append_rows = genie.process_functions._append_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
+		append_rows.fillna('',inplace=True)
+		expecteddf.fillna('',inplace=True)
 		assert append_rows.equals(expecteddf)
 
+	def test_append_no_rows(self):
+		new_datadf = pd.DataFrame({'UNIQUE_KEY':['test1','test2','test3'],
+							  "test":['test1','test2','test3'],
+							  "foo":[1,2,3],
+							  "baz":[float('nan'),float('nan'),float('nan')]})
+		append_rows = genie.process_functions._append_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
+		assert append_rows.empty
 
 	def test_update_rows_to_database(self):
 		new_datadf = pd.DataFrame({'UNIQUE_KEY':['test1','test2','test3'],
@@ -34,13 +43,17 @@ class test_update_database:
 							  "foo":[1,3,3],
 							  "baz":[float('nan'),5,float('nan')]})
 
-		expecteddf = pd.DataFrame({"test":['test','test2','test3'],
-							  "foo":[1,3,3],
-							  "baz":[float('nan'),5,float('nan')],
-							  'ROW_ID':['1','2','3'],
-							  'ROW_VERSION':['3','3','5']})
+		expecteddf = pd.DataFrame({"test":['test','test2'],
+							  "foo":[1,3],
+							  "baz":['',5],
+							  'ROW_ID':['1','2'],
+							  'ROW_VERSION':['3','3']})
 		update_rows = genie.process_functions._update_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
 		assert update_rows.equals(expecteddf)
+
+	def test_update_no_rows(self):
+		update_rows = genie.process_functions._update_rows(self.databasedf, self.databasedf, 'UNIQUE_KEY')
+		assert update_rows.empty
 
 	def test_delete_rows_to_database(self):
 		new_datadf = pd.DataFrame({'UNIQUE_KEY':['test1'],
@@ -51,6 +64,17 @@ class test_update_database:
 							  	   1:['3','5']})
 		delete_rows = genie.process_functions._delete_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
 		assert delete_rows.equals(expecteddf)
+
+	def test_delete_no_rows(self):
+		new_datadf = pd.DataFrame({'UNIQUE_KEY':['test1','test2','test3'],
+							  "test":['test1','test2','test3'],
+							  "foo":[1,2,3],
+							  "baz":[float('nan'),float('nan'),float('nan')]})
+		expecteddf = pd.DataFrame({0:['2','3'],
+							  	   1:['3','5']})
+		delete_rows = genie.process_functions._delete_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
+		assert delete_rows.empty
+
 
 		# syn = mock.create_autospec(synapseclient.Synapse) 
 		# return_table = synapseclient.Table("foo")
