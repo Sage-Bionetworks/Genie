@@ -495,7 +495,7 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
 	clinical_key_decreasedbdf = clinical_key_decrease.asDataFrame()
 	genie.process_functions.updateDatabase(syn, clinical_key_decreasedbdf, center_decrease_mapping, clinical_key_decrease_synid, ["CENTER"], toDelete=True)
 
-def run_dashboard(syn, database_mappingdf, release, staging=False):
+def run_dashboard(syn, database_mappingdf, release, staging=False, public=False):
 	'''
 	Function that runs the dashboard scripts
 
@@ -506,13 +506,14 @@ def run_dashboard(syn, database_mappingdf, release, staging=False):
 
 	'''
 	update_release_numbers(syn, database_mappingdf, release = release)
-	update_sample_difference_table(syn, database_mappingdf)
-	update_data_completeness_table(syn, database_mappingdf)
-	print_clinical_values_difference_table(syn, database_mappingdf)
-	if not staging:
+	update_data_release_file_table(syn, database_mappingdf)
+
+	if not staging and not public:
+		print_clinical_values_difference_table(syn, database_mappingdf)
+		update_sample_difference_table(syn, database_mappingdf)
+		update_data_completeness_table(syn, database_mappingdf)
 		update_database_numbers(syn, database_mappingdf)
 		update_oncotree_code_tables(syn, database_mappingdf)
-		update_data_release_file_table(syn, database_mappingdf)
 		update_wiki(syn,database_mappingdf)
 
 def main():
@@ -521,6 +522,7 @@ def main():
 	parser.add_argument("--pem_file", type=str, help="Path to PEM file (genie.pem)")
 	parser.add_argument("--staging", action='store_true', help = "Using staging directory files")
 	parser.add_argument("--debug", action='store_true', help = "Synapse debugging flag")
+	parser.add_argument("--public", action='store_true', help = "Set true if releasing public release")
 	args = parser.parse_args()
 	syn = genie.process_functions.synLogin(args)
 	if args.staging:
@@ -531,7 +533,7 @@ def main():
 	
 	database_mapping = syn.tableQuery('select * from %s' % database_mapping_synid)
 	database_mappingdf = database_mapping.asDataFrame()
-	run_dashboard(syn, database_mappingdf, args.release)
+	run_dashboard(syn, database_mappingdf, args.release, staging=args.staging, public=args.public)
 
 
 if __name__ == "__main__":

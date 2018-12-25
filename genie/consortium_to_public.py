@@ -13,6 +13,7 @@ import time
 import shutil
 import logging
 import create_case_lists
+import dashboard_table_updater
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -165,6 +166,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 			cna = syn.get(entId, followLink=True)
 			cnaDf = pd.read_csv(cna.path, sep="\t")
 			cnaDf = cnaDf[cnaDf.columns[cnaDf.columns.isin(publicReleaseSamples.append(pd.Series("Hugo_Symbol")))]]
+			cnaDf.fillna('NA', inplace=True)
 			text = process.removeFloat(cnaDf)
 			with open(CNA_PATH, "w") as cnaFile:
 				cnaFile.write(text)
@@ -367,7 +369,7 @@ if __name__ == "__main__":
 	if not args.test and not args.staging:
 		with open("cbioValidatorLogsPublic_%s.txt" % args.genieVersion, "w") as cbioLog:
 			cbioLog.write(cbioOutput.decode("utf-8"))
-		syn.store(File("cbioValidatorLogsPublic_%s.txt" % args.genieVersion, parentId = "syn10155804"))
+		syn.store(synapseclient.File("cbioValidatorLogsPublic_%s.txt" % args.genieVersion, parentId = "syn10155804"))
 		os.remove("cbioValidatorLogsPublic_%s.txt" % args.genieVersion)
 	logger.info("REMOVING OLD FILES")
 	process.rmFiles(dbTostaging.CASE_LIST_PATH)
@@ -382,4 +384,14 @@ if __name__ == "__main__":
 		processTrackerDf = processTracker.asDataFrame()
 		processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
 		syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
+
+	if not args.test:
+		logger.info("DASHBOARD UPDATE")
+		dashboard_table_updater.run_dashboard(syn, databaseSynIdMappingDf, args.genieVersion, staging=args.staging, public=True)
+		dashboard_markdown_html_commands = ['Rscript', os.path.join(os.path.dirname(os.path.abspath(__file__)),'dashboard_markdown_generator.R'), args.genieVersion]
+		if args.staging:
+			dashboard_markdown_html_commands.append('--staging')
+		subprocess.check_call(dashboard_markdown_html_commands)
+		logger.info("DASHBOARD UPDATE COMPLETE")
+
 	logger.info("COMPLETED CONSORTIUM TO PUBLIC")
