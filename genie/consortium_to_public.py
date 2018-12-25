@@ -166,8 +166,8 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 			cna = syn.get(entId, followLink=True)
 			cnaDf = pd.read_csv(cna.path, sep="\t")
 			cnaDf = cnaDf[cnaDf.columns[cnaDf.columns.isin(publicReleaseSamples.append(pd.Series("Hugo_Symbol")))]]
-			cnaDf.fillna('NA', inplace=True)
 			text = process.removeFloat(cnaDf)
+			text = text.replace("\t\t","\tNA\t").replace("\t\t","\tNA\t").replace('\t\n',"\tNA\n")
 			with open(CNA_PATH, "w") as cnaFile:
 				cnaFile.write(text)
 			storeFile(syn, CNA_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_CNA.txt")
