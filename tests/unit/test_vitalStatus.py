@@ -4,7 +4,7 @@ import mock
 from nose.tools import assert_raises
 import os
 import sys
-from genie.vitalStatus import vitalStatus
+from genie import vitalStatus
 
 
 def test_processing():

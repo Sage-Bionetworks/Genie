@@ -4,7 +4,7 @@ import mock
 from nose.tools import assert_raises
 import os
 import sys
-from genie.clinical import clinical
+from genie import clinical
 
 
 def test_processing():

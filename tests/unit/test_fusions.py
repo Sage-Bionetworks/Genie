@@ -4,7 +4,7 @@ import mock
 from nose.tools import assert_raises
 import os
 import sys
-from genie.fusions import fusions
+from genie import fusions
 
 def test_processing():
 	def createMockTable(dataframe):

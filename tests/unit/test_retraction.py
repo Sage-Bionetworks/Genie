@@ -5,8 +5,8 @@ from nose.tools import assert_raises
 import os
 import sys
 
-from genie.sampleRetraction import sampleRetraction
-from genie.patientRetraction import patientRetraction
+from genie import sampleRetraction
+from genie import patientRetraction
 
 def test_processing():
 	syn = mock.create_autospec(synapseclient.Synapse) 

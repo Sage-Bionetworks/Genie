@@ -5,7 +5,7 @@ from nose.tools import assert_raises
 import os
 import sys
 
-from genie.patientCounts import patientCounts
+from genie import patientCounts
 
 
 def test_processing():

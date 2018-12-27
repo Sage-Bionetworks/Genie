@@ -4,7 +4,7 @@ import mock
 from nose.tools import assert_raises
 import os
 import sys
-from genie.vcf import vcf
+from genie import vcf
 
 def test_processing():
 	pass

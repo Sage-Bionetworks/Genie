@@ -4,8 +4,8 @@ import mock
 from nose.tools import assert_raises
 import os
 import sys
-from genie.seg import seg
-from genie.cbs import cbs
+from genie import seg
+from genie import cbs
 
 def test_processing():
 

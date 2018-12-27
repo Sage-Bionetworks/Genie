@@ -4,7 +4,7 @@ import mock
 from nose.tools import assert_raises
 import os
 import sys
-from genie.workflow import workflow
+from genie import workflow
 
 def test_processing():
 
