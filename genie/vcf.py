@@ -16,7 +16,7 @@ def contains_whitespace(x):
 	return(sum([" " in i for i in x if isinstance(i, str)]))
 
 
-class vcf(maf.maf):
+class vcf(maf):
 
 	_fileType = "vcf"
 

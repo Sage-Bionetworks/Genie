@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import os
 import pandas as pd
 import logging
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 #     process_functions.updateDatabase(syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete)
         
 
-class mutationsInCis(example_filetype_format.FileTypeFormat):
+class mutationsInCis(FileTypeFormat):
 
     _fileType = "mutationsInCis"
 

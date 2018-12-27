@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class bedSP(bed.bed):
+class bedSP(bed):
 
 	_fileType = "bedSP"
 

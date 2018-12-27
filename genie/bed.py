@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import os
 import logging
 import pandas as pd
@@ -106,7 +106,7 @@ def validateSymbol(x, genePositionDf, returnMappedDf=False):
 	else:
 		return(valid)
 
-class bed(example_filetype_format.FileTypeFormat):
+class bed(FileTypeFormat):
 
 	_fileType = "bed"
 

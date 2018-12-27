@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import os
 import logging
 import pandas as pd
@@ -41,7 +41,7 @@ def removeGreaterThanAndLessThanStr(col):
 		pass
 	return(col)
 
-class clinical(example_filetype_format.FileTypeFormat):
+class clinical(FileTypeFormat):
 
 	_fileType = "clinical"
 

@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 
 import os
 import pandas as pd
@@ -48,7 +48,7 @@ def mergeCNAvalues(x):
 def checkIfOneZero(x):
 	assert len(set(x.tolist())) == 1, "Can only be one unique value"
 
-class cna(example_filetype_format.FileTypeFormat):
+class cna(FileTypeFormat):
    
 	_fileType = "cna"
 

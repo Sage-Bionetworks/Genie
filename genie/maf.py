@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import os
 import logging
 import subprocess
@@ -7,7 +7,7 @@ import pandas as pd
 import synapseclient
 logger = logging.getLogger(__name__)
 
-class maf(example_filetype_format.FileTypeFormat):
+class maf(FileTypeFormat):
 
 	_fileType = "maf"
 

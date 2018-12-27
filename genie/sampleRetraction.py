@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import logging
 import os
 import pandas as pd
@@ -7,7 +7,7 @@ import synapseclient
 import datetime
 logger = logging.getLogger(__name__)
 
-class sampleRetraction(example_filetype_format.FileTypeFormat):
+class sampleRetraction(FileTypeFormat):
 
 	_fileType = "sampleRetraction"
 

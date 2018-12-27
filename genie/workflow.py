@@ -1,12 +1,12 @@
 from __future__ import absolute_import
-from genie import example_filetype_format
+from genie import FileTypeFormat
 import os
 import logging
 import synapseclient
 logger = logging.getLogger(__name__)
 
 
-class workflow(example_filetype_format.FileTypeFormat):
+class workflow(FileTypeFormat):
 
 	_fileType = "md"
 

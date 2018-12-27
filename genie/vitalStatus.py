@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import os
 import logging
 import pandas as pd
@@ -7,7 +7,7 @@ import datetime
 logger = logging.getLogger(__name__)
 
 
-class vitalStatus(example_filetype_format.FileTypeFormat):
+class vitalStatus(FileTypeFormat):
 
 	_fileType = "vitalStatus"
 
