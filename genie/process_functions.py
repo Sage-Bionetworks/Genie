@@ -124,6 +124,15 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 #     return(DF, nonmapped)
 
 def retry_get_url(url):
+	'''
+	Implement retry logic when getting urls.  Timesout at 3 seconds, retries 5 times.
+
+	Args:
+		url:  Http or https url
+
+	Returns:
+		requests.get()
+	'''
 	s = requests.Session()
 	retries = Retry(total=5, backoff_factor=1)
 	s.mount('http://', HTTPAdapter(max_retries=retries))
