@@ -8,6 +8,8 @@ import json
 import httplib2 as http
 import datetime
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 from Crypto.PublicKey import RSA
 import ast
 # try:
@@ -121,9 +123,17 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 #             DF[col][DF[col] == key] = value
 #     return(DF, nonmapped)
 
+def retry_get_url(url):
+	s = requests.Session()
+	retries = Retry(total=5, backoff_factor=1)
+	s.mount('http://', HTTPAdapter(max_retries=retries))
+	s.mount('https://', HTTPAdapter(max_retries=retries))
+	response = s.get(url, timeout=3)
+	return(response)
+
 # Check if oncotree link is live
 def checkUrl(url):
-	temp = requests.get(url)
+	temp = retry_get_url(url)
 	assert temp.status_code == 200, "%s site is down"% url
 
 # VALIDATION: Getting the GENIE mapping synapse tables
@@ -160,7 +170,7 @@ def get_oncotree_codes(oncotree_url):
 	PATTERN = re.compile('.*[(](.*)[)]')
 	# with requests.get(oncotree_url) as oncotreeUrl:
 	# 	oncotree = oncotreeUrl.text.split("\n")
-	oncotreeUrl = requests.get(oncotree_url)
+	oncotreeUrl = retry_get_url(oncotree_url)
 	oncotree = oncotreeUrl.text.split("\n")
 
 	#oncotree = urlopen(oncotree_url).read().split('\n')
@@ -462,7 +472,7 @@ def get_oncotree_code_mappings(oncotree_tumortype_api_endpoint_url):
 
 	#oncotree_raw_response = urlopen(oncotree_tumortype_api_endpoint_url).text
 	#with requests.get(oncotree_tumortype_api_endpoint_url) as oncotreeUrl:
-	oncotreeUrl = requests.get(oncotree_tumortype_api_endpoint_url)
+	oncotreeUrl = retry_get_url(oncotree_tumortype_api_endpoint_url)
 	oncotree_raw_response = oncotreeUrl.text
 	oncotree_response = json.loads(oncotree_raw_response)
 	oncotree_response = oncotree_response['TISSUE']
