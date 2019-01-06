@@ -104,8 +104,6 @@ def test_sample__process():
 	new_sampledf = clin_class._process(sampledf, clinical_template)
 	assert expected_sampledf.equals(new_sampledf[expected_sampledf.columns])
 
-
-
 def test_perfect__validate():
 	patientdf = pd.DataFrame(dict(PATIENT_ID=["ID1","ID2","ID3","ID4","ID5"],
 								  SEX=[1,2,1,2,float('nan')],
@@ -132,10 +130,8 @@ def test_perfect__validate():
 	assert error == ""
 	assert warning == ""
 
-def test_missing__validate():
-	#TEST MISSING COLUMNS
+def test_missingcols__validate():
 	clincaldf = pd.DataFrame()
-	#patientDf = pd.DataFrame()
 	error, warning = clin_class._validate(clincaldf, json_oncotreeurl)
 	expected_errors = ("Sample: clinical file must have SAMPLE_ID column.\n"
 					"Sample/Clinical: clinical files must have PATIENT_ID column.\n"
