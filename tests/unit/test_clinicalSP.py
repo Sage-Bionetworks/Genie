@@ -4,11 +4,12 @@ import mock
 import pytest
 from genie.clinicalSP import clinicalSP
 
-syn = mock.create_autospec(synapseclient.Synapse) 
+def setup_function():
+	syn = mock.create_autospec(synapseclient.Synapse) 
 
-clinsp_class = clinicalSP(syn, "SAGE")
+	clinsp_class = clinicalSP(syn, "SAGE")
 
-def test_filetype():
+def test_filetype(setup_function):
 	assert clinsp_class._fileType == "clinicalSP"
 
 def test_incorrect_validatefilename():
