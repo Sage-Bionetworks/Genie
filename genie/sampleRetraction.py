@@ -34,7 +34,7 @@ class sampleRetraction(example_filetype_format.FileTypeFormat):
 		info = self.syn.get(fileSynId, downloadFile=False)
 		deleteSamples = pd.read_csv(filePath,header=None)
 		deleteSamples = self._process(deleteSamples, info.modifiedOn.split(".")[0])
-		process_functions.updateData(self.syn, databaseSynId, deleteSamples, databaseSynId, filterByColumn="center", toDelete=True)
+		process_functions.updateData(self.syn, databaseSynId, deleteSamples, self.center, filterByColumn="center", toDelete=True)
 		return(newPath)
 
 	def validate_steps(self, filePathList, **kwargs):
