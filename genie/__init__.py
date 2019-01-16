@@ -43,3 +43,5 @@ PROCESS_FILES = {'bed':bed.bed,
 				 'vitalStatus':vitalStatus.vitalStatus}
 #Must import validate after the fact
 from . import validate
+from . import toRetract
+from . import write_invalid_reasons

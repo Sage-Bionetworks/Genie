@@ -13,65 +13,129 @@ import datetime
 import subprocess
 import shutil
 import time
-import toRetract
-import write_invalid_reasons
 
 #Configuration file
-from genie import PROCESS_FILES, process_functions, validate
+from genie import PROCESS_FILES, process_functions, validate, toRetract, write_invalid_reasons
 
-def reNameFile(syn, synId):
-	temp = syn.get(synId)
-	dirname = os.path.dirname(temp.path)
-	newPath = os.path.join(dirname, temp.name)
-	if newPath != temp.path:
-		shutil.copyfile(temp.path, newPath)
-	return(newPath)
+def rename_file(syn, synid):
+	'''
+	Gets file from synapse and renames the file if necessary.
 
-def getCenterInputFiles(syn, synId, center, process="main"):
-	"""
-	This function walks through each center's input directory and validates every file
-	"""
+	Args:
+		syn: Synapse object
+		synid : Synapse id or entity
+
+	Returns:
+		Path of corrected file
+	'''
+	ent = syn.get(synid)
+	dirpath = os.path.dirname(ent.path)
+	expectedpath = os.path.join(dirpath, ent.name)
+	if expectedpath != ent.path:
+		shutil.copyfile(ent.path, expectedpath)
+	return(expectedpath)
+
+def get_center_input_files(syn, synid, center, process="main"):
+	'''
+	This function walks through each center's input directory 
+	to get a list of tuples of center files
+
+	Args:
+		syn: Synapse object
+		synid: Center input folder synid 
+		center: Center name
+		process: Process type includes, main, vcf, maf and mafSP.  Defaults to main such that the vcf 
+	
+	Returns:
+		List of Tuples with the correct format to pass into validation
+	'''
+	logger.info("GETTING {center} INPUT FILES".format(center=center))
+	clinical_pair_name = ["data_clinical_supp_sample_{center}.txt".format(center=center), "data_clinical_supp_patient_{center}.txt".format(center=center)]
+	center_files = synu.walk(syn, synid)
+	clinicalpair = []
+	prepared_center_file_list = []
+	for dirpath, dirname, filenames in center_files:
+		for name, ent_synid in filenames:
+			logger.info(name)
+			paired=False
+			'''
+			Clinical file can come as two files.
+			The two files need to be merged together which is why there is this format
+			'''
+			if name in clinical_pair_name:
+				paired = True
+				clinicalpair.append(ent_synid)
+			if len(clinicalpair) == 2:
+				syns = [i for i in clinicalpair]
+				paths = [rename_file(syn, i) for i in clinicalpair]
+				clinicalpair = []
+				prepared_center_file_list.append((syns,paths))
+			elif not paired:
+				'''
+				This is to remove vcfs from being validated
+				during main processing.  Often there are too many vcf files.
+				Not necessary for them to be run everytime.
+				'''
+				if process == "vcf":
+					prepared_center_file_list.append(([ent_synid],[rename_file(syn, ent_synid)]))
+				elif not name.endswith(".vcf"):
+					prepared_center_file_list.append(([ent_synid],[rename_file(syn, ent_synid)]))
+	return(prepared_center_file_list)
+
+def get_filetype(syn, path_list, center):
+	'''
+	Get the file type of the file by validating its filename
+
+	Args:
+		syn: Synapse object
+		path_list: list of filepaths to center files
+		center: Participating Center
+
+	Returns:
+		str: File type of input files
+	'''
+	filetype = None
+	for file_format in PROCESS_FILES:
+		try:
+			filetype = PROCESS_FILES[file_format](syn, center).validateFilename(path_list)
+		except AssertionError as e:
+			continue
+		#If valid filename, return file type.
+		if filetype is not None:
+			break
+	return(filetype)
+
+def check_existing_file_status(validation_statusdf, error_trackerdf, entities, input_filenames):
+	statuses = []
+	errors = []
+	for ent, input_filename in zip(entities, input_filenames):
+		input_validation_status = validation_statusdf[validation_statusdf['id'] == ent.id]
+		input_error = error_trackerdf[error_trackerdf['id'] == ent.id]
+		if input_validation_status.empty:
+			to_validate = True
+		else:
+			statuses.append(input_validation_status['status'].values[0])
+			if checkError.empty:
+				to_validate = input_validation_status['status'].values[0] == "INVALID"
+			else:
+				to_validate = False
+				errors.append(checkError['errors'].values[0])
+			#Add Name check here (must add name of the entity as a column)
+			if input_validation_status['md5'].values[0] != ent.md5 or \
+			   input_validation_status['name'].values[0] != input_filename:
+				toValidate = True
+			else:
+				to_validate = False
+				logger.info("{filename} FILE STATUS IS: {filestatus}".format(filename=filename, filestatus=input_validation_status['status'].values[0]))
+
+	return({'status_list':statuses,'error_list':errors,'to_validate':to_validate})
+
+def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, testing, oncotreeLink):
 	################################################################
 	##If a file has not changed than it does not need to be processed!!!!
 	################################################################
-	logger.info("GETTING %s INPUT FILES" % center)
-	CLINICAL_PAIR_NAME = ["data_clinical_supp_sample_%s.txt" % center, "data_clinical_supp_patient_%s.txt" % center]
-	walked = synu.walk(syn, synId)
-	clinicalpair = []
-	allFiles = []
-	for dirpath, dirname, filenames in walked:
-		for name, synid in filenames:
-			logger.info(name)
-			paired=False
-			if name in CLINICAL_PAIR_NAME:
-				paired = True
-				clinicalpair.append(synid)
-			if len(clinicalpair) == 2:
-				syns = [i for i in clinicalpair]
-				paths = [reNameFile(syn, i) for i in clinicalpair]
-				clinicalpair = []
-				allFiles.append((syns,paths))
-			elif not paired:
-				if process == "vcf":
-					allFiles.append(([synid],[reNameFile(syn, synid)]))
-				elif not name.endswith(".vcf"):
-					allFiles.append(([synid],[reNameFile(syn, synid)]))
-	return(allFiles)
-
-def getFileType(syn, paths, name, center):
-	fileType = None
-	for fileNameFormat in PROCESS_FILES:
-		try:
-			fileType = PROCESS_FILES[fileNameFormat](syn, center).validateFilename(paths)
-		except AssertionError as e:
-			continue
-		if fileType is not None:
-			break
-	return(fileType)
-
-def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, testing, oncotreeLink):
 	names = [os.path.basename(i) for i in x['filePaths']]
-	logger.info("VALIDATING %s" % ", ".join(names))
+	logger.info("VALIDATING {filenames}".format(filenames=", ".join(names)))
 
 	paths = x['filePaths']
 	name = names[0]
@@ -100,7 +164,7 @@ def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, test
 				toValidate = True
 			else:
 				logger.info("%s FILE STATUS IS: %s" % (filename, checkValid['status'].values[0]))
-	fileType = getFileType(syn, paths, name, center)
+	fileType = get_filetype(syn, paths, center)
 	if toValidate:
 		# If no filetype set, means the file was named incorrectly
 		if fileType is None:
@@ -116,7 +180,9 @@ def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, test
 				message = e
 				valid = False
 		if valid:
-			return([[synId,path,md5,"VALIDATED",name, modifiedOn,fileType] for synId, path, md5, name, modifiedOn in zip(x['synId'],paths, md5s, names, modifiedOns)],None)
+			input_status_list = [[synId,path,md5,"VALIDATED",name, modifiedOn,fileType] for synId, path, md5, name, modifiedOn in zip(x['synId'],paths, md5s, names, modifiedOns)]
+			invalid_errors_list = None
+			#return([[synId,path,md5,"VALIDATED",name, modifiedOn,fileType] for synId, path, md5, name, modifiedOn in zip(x['synId'],paths, md5s, names, modifiedOns)],None)
 		else:
 			#Send email the first time the file is invalid
 			incorrectFiles = ", ".join([name for synId, name in zip(x['synId'],names)])
@@ -124,10 +190,15 @@ def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, test
 			sendEmail = set([incorrectEnt.modifiedBy, incorrectEnt.createdBy])
 			userNames = ", ".join([syn.getUserProfile(user).userName for user in sendEmail])
 			syn.sendMessage(list(sendEmail), "GENIE Validation Error", "Dear %s,\n\nYour files (%s) are invalid! Here are the reasons why:\n\n%s" % (userNames, incorrectFiles, message))
-			return([[synId,path,md5,"INVALID",name,modifiedOn,fileType] for synId, path, md5, name, modifiedOn in zip(x['synId'],paths, md5s, names, modifiedOns)],[[synId, message, name] for synId, name in zip(x['synId'],names)])
+			input_status_list = [[synId,path,md5,"INVALID",name,modifiedOn,fileType] for synId, path, md5, name, modifiedOn in zip(x['synId'],paths, md5s, names, modifiedOns)]
+			invalid_errors_list = [[synId, message, name] for synId, name in zip(x['synId'],names)]
+			#return([[synId,path,md5,"INVALID",name,modifiedOn,fileType] for synId, path, md5, name, modifiedOn in zip(x['synId'],paths, md5s, names, modifiedOns)],[[synId, message, name] for synId, name in zip(x['synId'],names)])
 	else:
-		return([[synId,path,md5,status,name,modifiedOn,fileType] for synId, path, md5, status, name, modifiedOn in zip(x['synId'],paths, md5s, statuses, names, modifiedOns)], [[synId, errorMes, name] for synId, errorMes, name in zip(x['synId'],errors,names)])
+		input_status_list = [[synId,path,md5,status,name,modifiedOn,fileType] for synId, path, md5, status, name, modifiedOn in zip(x['synId'],paths, md5s, statuses, names, modifiedOns)]
+		invalid_errors_list = [[synId, errorMes, name] for synId, errorMes, name in zip(x['synId'],errors,names)]
 
+		#return([[synId,path,md5,status,name,modifiedOn,fileType] for synId, path, md5, status, name, modifiedOn in zip(x['synId'],paths, md5s, statuses, names, modifiedOns)], [[synId, errorMes, name] for synId, errorMes, name in zip(x['synId'],errors,names)])
+	return(input_status_list, invalid_errors_list)
 ########################################################################
 #Processing files
 ########################################################################
@@ -210,7 +281,7 @@ def createMafDatabase(syn, databaseToSynIdMappingDf,testing=False,staging=False)
 def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf, thread, testing, oncotreeLink):
 	centerInputSynId = center_mapping_df['inputSynId'][center_mapping_df['center'] == center][0]
 	logger.info("Center: " + center)
-	allFiles = getCenterInputFiles(syn, centerInputSynId, center, process)
+	allFiles = get_center_input_files(syn, centerInputSynId, center, process)
 
 	allFiles = pd.DataFrame(allFiles,columns=['synId','filePaths'])
 	#If a center has no files, then return empty list
