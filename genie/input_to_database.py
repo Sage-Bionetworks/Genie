@@ -17,6 +17,8 @@ import time
 #Configuration file
 from genie import PROCESS_FILES, process_functions, validate, toRetract, write_invalid_reasons
 
+# TODO: Could potentially get all the inforamation of the file entity right here
+# To avoid the syn.get rest call later which doesn't actually download the file
 def rename_file(syn, synid):
 	'''
 	Gets file from synapse and renames the file if necessary.
@@ -106,6 +108,25 @@ def get_filetype(syn, path_list, center):
 	return(filetype)
 
 def check_existing_file_status(validation_statusdf, error_trackerdf, entities, input_filenames):
+	'''
+	This function checks input files against the existing validation and error
+	tracking dataframe
+
+	Args:
+		validation_statusdf: Validation status dataframe
+		error_trackerdf: Error tracking dataframe
+		entities: list of center input entites
+		input_filenames: List of center input filenames
+	
+	Returns:
+		dict: Input file status
+			status_list: file validation status
+			error_list: Errors of the files if they exist,
+			to_validate: Boolean value for whether of not an input file needs to be validated
+	'''
+	if len(entities) > 2:
+		raise ValueError("There should never be more than 2 files being validated.")
+
 	statuses = []
 	errors = []
 	for ent, input_filename in zip(entities, input_filenames):
@@ -114,88 +135,109 @@ def check_existing_file_status(validation_statusdf, error_trackerdf, entities, i
 		if input_validation_status.empty:
 			to_validate = True
 		else:
+			'''
+			This to_validate is here, because the following is a sequential check 
+			of whether files need to be validated
+			'''
+			to_validate = False
 			statuses.append(input_validation_status['status'].values[0])
-			if checkError.empty:
+			if input_error.empty:
 				to_validate = input_validation_status['status'].values[0] == "INVALID"
 			else:
-				to_validate = False
-				errors.append(checkError['errors'].values[0])
+				errors.append(input_error['errors'].values[0])
 			#Add Name check here (must add name of the entity as a column)
 			if input_validation_status['md5'].values[0] != ent.md5 or \
 			   input_validation_status['name'].values[0] != input_filename:
-				toValidate = True
+				to_validate = True
 			else:
-				to_validate = False
-				logger.info("{filename} FILE STATUS IS: {filestatus}".format(filename=filename, filestatus=input_validation_status['status'].values[0]))
+				logger.info("{filename} FILE STATUS IS: {filestatus}".format(filename=input_filename, filestatus=input_validation_status['status'].values[0]))
 
 	return({'status_list':statuses,'error_list':errors,'to_validate':to_validate})
 
-def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, testing, oncotreeLink):
-	################################################################
-	##If a file has not changed than it does not need to be processed!!!!
-	################################################################
-	names = [os.path.basename(i) for i in x['filePaths']]
-	logger.info("VALIDATING {filenames}".format(filenames=", ".join(names)))
+def validatefile(fileinfo, syn, validation_statusdf, error_trackerdf, center, threads, testing, oncotree_link):
+	'''
+	Function that is applied to a pandas dataframe to 
+	validates each row. If a file has not changed, then it 
+	doesn't need to be validated
 
-	paths = x['filePaths']
-	name = names[0]
-	entities = [syn.get(synId,downloadFile=False) for synId in x['synId']]
-	md5s = [entity.md5 for entity in entities]
-	modifiedOns = [synapseclient.utils.to_unix_epoch_time(datetime.datetime.strptime(entity.modifiedOn.split(".")[0], "%Y-%m-%dT%H:%M:%S")) for entity in entities]
+	Args:
+		fileinfo: A row passed in as a Series through the apply function in pandas
+		syn: Synapse object
+		validation_statusdf: Validation status dataframe
+		error_trackerdf: Invalid files error tracking dataframe
+		center: Center of interest
+		testing: Boolean determining whether using testing parameter
+		oncotree_link: Oncotree url
 
-	toValidate = False
-	statuses = []
-	errors = []
-	# Check validation status and md5 of file
-	for synId,md5,filename in zip(x['synId'],md5s,names):
-		checkValid = validationStatusDf[validationStatusDf['id'] == synId]
-		checkError = errorTracker[errorTracker['id'] == synId]
-		if checkValid.empty:
-			toValidate = True
-		else:
-			statuses.append(checkValid['status'].values[0])
-			if checkError.empty:
-				if checkValid['status'].values[0] == "INVALID":
-					toValidate =True
-			else:
-				errors.append(checkError['errors'].values[0])
-			#Add Name check here (must add name of the entity as a column)
-			if checkValid['md5'].values[0] != md5 or checkValid['name'].values[0] != filename:
-				toValidate = True
-			else:
-				logger.info("%s FILE STATUS IS: %s" % (filename, checkValid['status'].values[0]))
-	fileType = get_filetype(syn, paths, center)
-	if toValidate:
+	Returns:
+		tuple: input_status_list - status of input files, invalid_errors_list- error list
+
+	'''
+
+	filenames = [os.path.basename(i) for i in fileinfo['filePaths']]
+	logger.info("VALIDATING {filenames}".format(filenames=", ".join(filenames)))
+	filepaths = fileinfo['filePaths']
+	entities = [syn.get(synid,downloadFile=False) for synid in fileinfo['synId']]
+	modified_ons = [synapseclient.utils.to_unix_epoch_time(datetime.datetime.strptime(entity.modifiedOn.split(".")[0], "%Y-%m-%dT%H:%M:%S")) for entity in entities]
+	# toValidate = False
+	# statuses = []
+	# errors = []
+	# # Check validation status and md5 of file
+	# for synId,md5,filename in zip(x['synId'],md5s,names):
+	# 	checkValid = validationStatusDf[validationStatusDf['id'] == synId]
+	# 	checkError = errorTracker[errorTracker['id'] == synId]
+	# 	if checkValid.empty:
+	# 		toValidate = True
+	# 	else:
+	# 		statuses.append(checkValid['status'].values[0])
+	# 		if checkError.empty:
+	# 			if checkValid['status'].values[0] == "INVALID":
+	# 				toValidate =True
+	# 		else:
+	# 			errors.append(checkError['errors'].values[0])
+	# 		#Add Name check here (must add name of the entity as a column)
+	# 		if checkValid['md5'].values[0] != md5 or checkValid['name'].values[0] != filename:
+	# 			toValidate = True
+	# 		else:
+	# 			logger.info("%s FILE STATUS IS: %s" % (filename, checkValid['status'].values[0]))
+	check_file_status = check_existing_file_status(validation_statusdf, error_trackerdf, entities, names)
+	status_list = check_file_status['status_list']
+	error_list = check_file_status['error_list']
+	filetype = get_filetype(syn, paths, center)
+	if check_file_status['to_validate']:
 		# If no filetype set, means the file was named incorrectly
-		if fileType is None:
-			message = "%s: Incorrect filenaming convention or can't be processed" % name
+		if filetype is None:
+			message = "{filenames}: Incorrect filenaming convention or can't be processed".format(filenames=", ".join(filenames))
 			logger.error(message)
 			valid=False
 		else:
 			try:
-				message, valid = validate.validate(syn, fileType, paths, center, threads, oncotree_url=oncotreeLink, testing=testing)
+				message, valid = validate.validate(syn, filetype, filepaths, center, threads, oncotree_url=oncotree_link, testing=testing)
 				logger.info("VALIDATION COMPLETE")
 			except ValueError as e:
 				logger.error(e)
 				message = e
 				valid = False
 		if valid:
-			input_status_list = [[synId,path,md5,"VALIDATED",name, modifiedOn,fileType] for synId, path, md5, name, modifiedOn in zip(x['synId'],paths, md5s, names, modifiedOns)]
+			input_status_list = [[ent.id, filepath, ent.md5, "VALIDATED", filename, modifiedon, filetype] \
+							 for ent, filepath, filename, modifiedon in zip(entities, filepaths, filenames, modified_ons)]
 			invalid_errors_list = None
 			#return([[synId,path,md5,"VALIDATED",name, modifiedOn,fileType] for synId, path, md5, name, modifiedOn in zip(x['synId'],paths, md5s, names, modifiedOns)],None)
 		else:
 			#Send email the first time the file is invalid
-			incorrectFiles = ", ".join([name for synId, name in zip(x['synId'],names)])
-			incorrectEnt = syn.get(x['synId'][0])
-			sendEmail = set([incorrectEnt.modifiedBy, incorrectEnt.createdBy])
-			userNames = ", ".join([syn.getUserProfile(user).userName for user in sendEmail])
-			syn.sendMessage(list(sendEmail), "GENIE Validation Error", "Dear %s,\n\nYour files (%s) are invalid! Here are the reasons why:\n\n%s" % (userNames, incorrectFiles, message))
-			input_status_list = [[synId,path,md5,"INVALID",name,modifiedOn,fileType] for synId, path, md5, name, modifiedOn in zip(x['synId'],paths, md5s, names, modifiedOns)]
-			invalid_errors_list = [[synId, message, name] for synId, name in zip(x['synId'],names)]
+			incorrect_files = ", ".join(filenames)
+			incorrect_ent = syn.get(fileinfo['synId'][0])
+			find_file_users = list(set([incorrect_ent.modifiedBy, incorrect_ent.createdBy]))
+			usernames = ", ".join([syn.getUserProfile(user).userName for user in find_file_users])
+			syn.sendMessage(find_file_users, "GENIE Validation Error", "Dear {username},\n\nYour files ({filenames}) are invalid! Here are the reasons why:\n\n{error_messages}".format(username=usernames,filenames=incorrect_files, error_message=message))
+			input_status_list = [[ent.id, path, ent.md5, "INVALID", name, modifiedOn, filetype] \
+								for ent, path, name, modifiedon in zip(entities, paths, filenames, modified_ons)]
+			invalid_errors_list = [[synid, message, filename] for synid, filename in zip(fileinfo['synId'], filenames)]
 			#return([[synId,path,md5,"INVALID",name,modifiedOn,fileType] for synId, path, md5, name, modifiedOn in zip(x['synId'],paths, md5s, names, modifiedOns)],[[synId, message, name] for synId, name in zip(x['synId'],names)])
 	else:
-		input_status_list = [[synId,path,md5,status,name,modifiedOn,fileType] for synId, path, md5, status, name, modifiedOn in zip(x['synId'],paths, md5s, statuses, names, modifiedOns)]
-		invalid_errors_list = [[synId, errorMes, name] for synId, errorMes, name in zip(x['synId'],errors,names)]
+		input_status_list = [[ent.id, path, ent.md5, status, name, modifiedOn, filetype] \
+							for ent, path, status, name, modifiedon in zip(entities, paths, status_list, names, modified_ons)]
+		invalid_errors_list = [[synid, error, name] for synid, error, filename in zip(fileinfo['synId'], error_list, filenames)]
 
 		#return([[synId,path,md5,status,name,modifiedOn,fileType] for synId, path, md5, status, name, modifiedOn in zip(x['synId'],paths, md5s, statuses, names, modifiedOns)], [[synId, errorMes, name] for synId, errorMes, name in zip(x['synId'],errors,names)])
 	return(input_status_list, invalid_errors_list)
@@ -252,30 +294,51 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 
 	logger.info("ALL DATA STORED IN DATABASE")
 
-#Create and archive maf database
-def createMafDatabase(syn, databaseToSynIdMappingDf,testing=False,staging=False):
-	mafDatabaseSynId = process_functions.getDatabaseSynId(syn, "vcf2maf", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
-	mafDatabaseEnt = syn.get(mafDatabaseSynId)
-	mafCols = list(syn.getTableColumns(mafDatabaseSynId))
-	schema = synapseclient.Schema(name='Narrow MAF %s Database' % time.time(), columns=mafCols, parent=process_functions.getDatabaseSynId(syn, "main", databaseToSynIdMappingDf=databaseToSynIdMappingDf))
-	schema.primaryKey = mafDatabaseEnt.primaryKey
-	newMafDb = syn.store(schema)
+# def _create_maf_db(syn, foo)
+# 	maf_database_ent = syn.get(maf_database_synid)
+# 	print(maf_database_ent)
+# 	maf_columns = list(syn.getTableColumns(maf_database_synid))
+# 	schema = synapseclient.Schema(name='Narrow MAF {current_time} Database'.format(current_time=time.time()), columns=maf_columns, parent=process_functions.getDatabaseSynId(syn, "main", databaseToSynIdMappingDf=database_synid_mappingdf))
+# 	schema.primaryKey = maf_database_ent.primaryKey
+# 	new_maf_database = syn.store(schema)
+
+# TODO: Should split this into 3 funcitons so that unit tests are easier to write
+def create_and_archive_maf_database(syn, database_synid_mappingdf):
+	'''
+	Creates new MAF database and archives the old database in the staging site
+
+	Args:
+		syn: Synapse object
+		databaseToSynIdMappingDf: Database to synapse id mapping dataframe
+
+	Return:
+		Editted database to synapse id mapping dataframe
+	'''
+	maf_database_synid = process_functions.getDatabaseSynId(syn, "vcf2maf", databaseToSynIdMappingDf=database_synid_mappingdf)
+	maf_database_ent = syn.get(maf_database_synid)
+	maf_columns = list(syn.getTableColumns(maf_database_synid))
+	schema = synapseclient.Schema(name='Narrow MAF {current_time} Database'.format(current_time=time.time()), columns=maf_columns, parent=process_functions.getDatabaseSynId(syn, "main", databaseToSynIdMappingDf=database_synid_mappingdf))
+	schema.primaryKey = maf_database_ent.primaryKey
+	new_maf_database = syn.store(schema)
 	#Store in the new database synid
-	databaseToSynIdMappingDf['Id'][0] = newMafDb.id
-	syn.store(synapseclient.Table(process_functions.getDatabaseSynId(syn, "dbMapping", test=testing),databaseToSynIdMappingDf))
-	if not staging and not testing:
+	database_synid_mappingdf['Id'][database_synid_mappingdf['Database'] == 'vcf2maf'] = new_maf_database.id
+	#databaseToSynIdMappingDf['Id'][0] = 
+	#syn.store(synapseclient.Table(process_functions.getDatabaseSynId(syn, "dbMapping", databaseToSynIdMappingDf=databaseToSynIdMappingDf),databaseToSynIdMappingDf))
+	#if not staging and not testing:
 		#Make sure to store the newly created maf db synid into the staging synapse mapping
-		databaseToSynIdMapping = syn.tableQuery("SELECT * FROM syn12094210 where Database = 'vcf2maf'")
-		databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
-		databaseToSynIdMappingDf['Id'][0] = newMafDb.id
-		syn.store(synapseclient.Table("syn12094210",databaseToSynIdMappingDf))
-	#Move and archive old mafdatabase
-	mafDatabaseEnt.parentId = "syn7208886"
-	mafDatabaseEnt.name = "ARCHIVED " + mafDatabaseEnt.name
-	syn.store(mafDatabaseEnt)
-	mafDatabaseSynId = newMafDb.id
+	#vcf2maf_mapping = syn.tableQuery("SELECT * FROM syn12094210 where Database = 'vcf2maf'")
+	vcf2maf_mappingdf = database_synid_mappingdf[database_synid_mappingdf['Database'] == 'vcf2maf']
+	#vcf2maf_mappingdf['Id'][0] = newMafDb.id
+	#Update this synid later
+	syn.store(synapseclient.Table("syn12094210",vcf2maf_mappingdf))
+	#Move and archive old mafdatabase (This is the staging synid)
+	maf_database_ent.parentId = "syn7208886"
+	maf_database_ent.name = "ARCHIVED " + maf_database_ent.name
+	syn.store(maf_database_ent)
+	#maf_database_synid = new_maf_database.id
 	#Remove can download permissions from project GENIE team
-	syn.setPermissions(mafDatabaseSynId, 3326313, [])
+	syn.setPermissions(new_maf_database.id, 3326313, [])
+	return(database_synid_mappingdf)
 
 #Validation of all center files
 def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf, thread, testing, oncotreeLink):
@@ -299,7 +362,7 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
 		#VALIDATE FILES
 		validationStatusDf = validationStatus.asDataFrame()
 		errorTrackerDf = errorTracker.asDataFrame()
-		validated = allFiles.apply(lambda x: validateFile(syn, validationStatusDf, errorTrackerDf, center, thread, x, testing, oncotreeLink), axis=1)
+		validated = allFiles.apply(lambda fileinfo: validatefile(fileinfo, syn, validationStatusDf, errorTrackerDf, center, thread, testing, oncotreeLink), axis=1)
 		inputValidStatus = []
 		invalidErrors = []
 		for inputStat, invalErrors in validated:
@@ -465,9 +528,9 @@ def main():
 	parser.add_argument("--reference", type=str, help="Path to VCF reference file")
 
 	#DEFAULT PARAMS
-	parser.add_argument("--vcf2mafPath", type=str, help="Path to vcf2maf", default="~/vcf2maf-1.6.14")
-	parser.add_argument("--vepPath", type=str, help="Path to VEP", default="~/vep")
-	parser.add_argument("--vepData", type=str, help="Path to VEP data", default="~/.vep")
+	parser.add_argument("--vcf2mafPath", type=str, help="Path to vcf2maf", default=os.path.expanduser("~/vcf2maf-1.6.14"))
+	parser.add_argument("--vepPath", type=str, help="Path to VEP", default=os.path.expanduser("~/vep"))
+	parser.add_argument("--vepData", type=str, help="Path to VEP data", default=os.path.expanduser("~/.vep"))
 	parser.add_argument('--thread', type=int, help="Number of threads to use for validation", default=1)
 
 	args = parser.parse_args()
@@ -515,7 +578,7 @@ def main():
 
 	#Create new maf database, should only happen once if its specified
 	if args.createNewMafDatabase:
-		createMafDatabase(syn, databaseToSynIdMappingDf, testing=args.testing)
+		databaseToSynIdMappingDf = create_maf_database(syn, databaseToSynIdMappingDf)
 
 	for center in centers:
 		input_to_database(syn, center, args.process, args.testing, args.onlyValidate, args.vcf2mafPath, args.vepPath, args.vepData, databaseToSynIdMappingDf, center_mapping_df, reference=args.reference, delete_old=args.deleteOld, oncotree_link=args.oncotreeLink, thread=args.thread)
