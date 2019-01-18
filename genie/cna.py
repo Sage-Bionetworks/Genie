@@ -137,7 +137,7 @@ class cna(example_filetype_format.FileTypeFormat):
 			self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
 		return(newPath)
 
-	def _validate(self, cnvDF, noSymbolCheck, test=False):
+	def _validate(self, cnvDF, noSymbolCheck, testing=False):
 		total_error = ""
 		warning = ""
 		cnvDF.columns = [col.upper() for col in cnvDF.columns]
@@ -163,7 +163,7 @@ class cna(example_filetype_format.FileTypeFormat):
 			if haveColumn and not noSymbolCheck:
 				#logger.info("VALIDATING %s GENE SYMBOLS" % os.path.basename(filePath))
 
-				bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=test)
+				bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=testing)
 				bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))
 				bedDf = bed.asDataFrame()
 				cnvDF['remapped'] = cnvDF['HUGO_SYMBOL'].apply(lambda x: validateSymbol(x, bedDf))
@@ -173,19 +173,3 @@ class cna(example_filetype_format.FileTypeFormat):
 				if sum(cnvDF['remapped'].duplicated()) >0:
 					total_error+= "Your CNA file has duplicated Hugo_Symbols (After remapping of genes): %s -> %s.\n" % (",".join(cnvDF['HUGO_SYMBOL'][cnvDF['remapped'].duplicated(keep=False)]), ",".join(cnvDF['remapped'][cnvDF['remapped'].duplicated(keep=False)]))
 		return(total_error, warning)
-
-	# VALIDATION
-	def validate_steps(self, filePathList, **kwargs):
-		"""
-		This function validates the CNV (linear or discrete) file to make sure it adhere to the genomic SOP.
-		
-		:params filePath:     Path to CNV file
-
-		:returns:             Text with all the errors in the CNV file
-		"""
-		filePath = filePathList[0]
-		logger.info("VALIDATING %s" % os.path.basename(filePath))
-		test = kwargs['testing']
-		noSymbolCheck = kwargs['noSymbolCheck']
-		cnvDF = pd.read_csv(filePath,sep="\t",comment="#")
-		return(self._validate(cnvDF, noSymbolCheck, test))

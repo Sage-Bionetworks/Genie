@@ -18,6 +18,14 @@ class mutationsInCis(example_filetype_format.FileTypeFormat):
 
     _validation_kwargs = ["testing"]
 
+    def _get_dataframe(self, filePathList):
+        '''
+        Mutation In Cis is a csv file
+        '''
+        filePath = filePathList[0]
+        df = pd.read_csv(filePath,comment="#")
+        return(df)
+
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "mutationsInCis_filtered_samples.csv"
@@ -33,7 +41,7 @@ class mutationsInCis(example_filetype_format.FileTypeFormat):
         mutationInCis.to_csv(newPath, sep="\t",index=False)
         return(newPath)
 
-    def validate_helper(self, mutationInCisDf, testing=False):
+    def _validate(self, mutationInCisDf, testing=False):
         mutationInCisSynId = process_functions.getDatabaseSynId(self.syn, "mutationsInCis", test=testing)
         #Pull down the correct database
         existingMergeCheck = self.syn.tableQuery("select * from %s where Center = '%s'" % (mutationInCisSynId,self.center))
@@ -41,7 +49,6 @@ class mutationsInCis(example_filetype_format.FileTypeFormat):
 
         total_error = ""
         warning = ""
-
         REQUIRED_HEADERS = pd.Series(['Flag','Center','Tumor_Sample_Barcode','Hugo_Symbol','HGVSp_Short','Variant_Classification','Chromosome','Start_Position','Reference_Allele','Tumor_Seq_Allele2','t_alt_count_num','t_depth'])
         primaryKeys = ['Tumor_Sample_Barcode', 'HGVSp_Short', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2']
         if not all(REQUIRED_HEADERS.isin(mutationInCisDf.columns)):
@@ -54,13 +61,4 @@ class mutationsInCis(example_filetype_format.FileTypeFormat):
             new['primaryAll'] = [" ".join(values.astype(str)) for i, values in new.iterrows()]
             if not all(new.primaryAll.isin(existing.primaryAll)):
                 total_error += "Mutations In Cis Filter File: All variants must come from the original mutationInCis_filtered_samples.csv file in each institution's staging folder.\n"
-        return(total_error, warning)
-
-    # VALIDATION
-    def validate_steps(self, filePathList, **kwargs):
-        logger.info("VALIDATING %s" % os.path.basename(filePathList[0]))
-        testing = kwargs['testing']
-        mutationInCisDf = pd.read_csv(filePathList[0])
-
-        total_error, warning = self.validate_helper(mutationInCisDf, testing)
         return(total_error, warning)

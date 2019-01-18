@@ -1,8 +1,6 @@
 #! /usr/bin/env python
 import logging
 logger = logging.getLogger("genie")
-import process_functions
-import validate
 import synapseclient
 from synapseclient import File, Table
 import synapseutils as synu
@@ -19,7 +17,7 @@ import toRetract
 import write_invalid_reasons
 
 #Configuration file
-from genie import PROCESS_FILES
+from genie import PROCESS_FILES, process_functions, validate
 
 def reNameFile(syn, synId):
 	temp = syn.get(synId)
@@ -111,7 +109,7 @@ def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, test
 			valid=False
 		else:
 			try:
-				message, valid = validate.main(syn, fileType, paths, center, threads, oncotreeLink=oncotreeLink, testing=testing)
+				message, valid = validate.validate(syn, fileType, paths, center, threads, oncotree_url=oncotreeLink, testing=testing)
 				logger.info("VALIDATION COMPLETE")
 			except ValueError as e:
 				logger.error(e)
@@ -136,10 +134,10 @@ def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, test
 #Processing single file
 def processFiles(syn, validFiles, center, path_to_GENIE, threads, 
 				 center_mapping_df, oncotreeLink, databaseToSynIdMappingDf, 
-				 validVCF=None, validMAFs=None, validCBS=None,
+				 validVCF=None, validMAFs=None,
 				 vcf2mafPath=None,
-				 veppath=None,vepdata=None,
-				 processing="main", test=False):
+	   			 veppath=None,vepdata=None,
+				 processing="main", test=False, reference=None):
 
 	logger.info("PROCESSING %s FILES: %d" % (center, len(validFiles)))
 	centerStagingFolder = os.path.join(path_to_GENIE, center)
@@ -157,28 +155,15 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 				synId = None
 			else:
 				synId = synId[0]
-			if fileType is not None and fileType is not "cbs":
-			#if fileType not in [None,"cbs","cna"]:
+			if fileType is not None:
+			#if fileType not in [None,"cna"]:
 				PROCESS_FILES[fileType](syn, center, threads).process(filePath=filePath, newPath=newPath, 
 									parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
 									fileSynId=fileSynId, validVCF=validVCF, 
-									validMAFs=validMAFs, validCBS=validCBS,
+									validMAFs=validMAFs,
 									path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
-									veppath=veppath,vepdata=vepdata,
-									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, test=test)
-		if len(validCBS) > 0:
-			filePath = None
-			newPath = None
-			fileType = None
-			synId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "cbs"][0]
-			fileSynId = None
-			PROCESS_FILES["cbs"](syn, center, threads).process(filePath=filePath, newPath=newPath, 
-										parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
-										fileSynId=fileSynId, validVCF=validVCF, 
-										validMAFs=validMAFs, validCBS=validCBS,
-										path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
-										veppath=veppath,vepdata=vepdata,
-										processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+						   			veppath=veppath,vepdata=vepdata,
+									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, reference=reference, test=test)
 
 	elif processing in ["vcf","maf","mafSP"]:
 		filePath = None
@@ -189,10 +174,11 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 		PROCESS_FILES[processing](syn, center, threads).process(filePath=filePath, newPath=newPath, 
 									parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
 									fileSynId=fileSynId, validVCF=validVCF, 
-									validMAFs=validMAFs, validCBS=validCBS,
+									validMAFs=validMAFs,
 									path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
-									veppath=veppath,vepdata=vepdata,
-									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+						   			veppath=veppath,vepdata=vepdata,
+									processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, reference=reference)
+
 	logger.info("ALL DATA STORED IN DATABASE")
 
 #Create and archive maf database
@@ -253,15 +239,20 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
 		logger.info("CHECK FOR DUPLICATED FILES")
 		##### DUPLICATED FILES ######
 		#check for duplicated filenames.  There should be no duplication, files should be uploaded as new versions and the entire dataset should be uploaded everytime
+		#cbs and seg files should not be duplicated.  There can only be one
 		duplicatedFiles = inputValidStatus[inputValidStatus['name'].duplicated(keep=False)]
-		#No need for this anymore, because any other mutation header, we will just fail
-		#nodups = ["data_mutations_extended"]
-		#allDuplicatedFiles = []
+		cbsSegBool = [os.path.basename(i).endswith('.cbs') or os.path.basename(i).endswith('.seg') for i in inputValidStatus['name']]
+		cbsSegFiles = inputValidStatus[cbsSegBool]
+		if len(cbsSegFiles) >1:
+			duplicatedFiles = duplicatedFiles.append(cbsSegFiles)
+		# nodups = ["data_mutations_extended"]
+		# allDuplicatedFiles = []
 		# for nodup in nodups:
 		# 	checkDups = [name for name in inputValidStatus['name'] if name.startswith(nodup)]
 		# 	if len(checkDups) > 1:
 		# 		allDuplicatedFiles.extend(checkDups)
-		#duplicatedFiles = duplicatedFiles.append(inputValidStatus[inputValidStatus['name'].isin(allDuplicatedFiles)])
+		# duplicatedFiles = duplicatedFiles.append(inputValidStatus[inputValidStatus['name'].isin(allDuplicatedFiles)])
+
 		duplicatedFiles.drop_duplicates("id",inplace=True)
 		inputValidStatus['status'][inputValidStatus['id'].isin(duplicatedFiles['id'])] = "INVALID"
 		duplicatedFiles['errors'] = "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME"
@@ -302,7 +293,7 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
 		validFiles = inputValidStatus[['id','path','fileType']][inputValidStatus['status'] == "VALIDATED"]
 		return(validFiles)
 
-def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path, vep_path, vep_data, database_to_synid_mappingdf, center_mapping_df, delete_old=False, oncotree_link=None, thread=1):
+def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path, vep_path, vep_data, database_to_synid_mappingdf, center_mapping_df, reference=None, delete_old=False, oncotree_link=None, thread=1):
 	if only_validate:
 		log_path = os.path.join(process_functions.SCRIPT_DIR, "%s_validation_log.txt" % center)
 	else:
@@ -343,7 +334,7 @@ def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path
 		validMAF = [i for i in validFiles['path'] if os.path.basename(i) == "data_mutations_extended_%s.txt" % center]
 		validMAFSP = [i for i in validFiles['path'] if os.path.basename(i)  == "nonGENIE_data_mutations_extended_%s.txt" % center]
 		validVCF = [i for i in validFiles['path'] if os.path.basename(i).endswith('.vcf')]
-		validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
+		#validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
 		if process == 'mafSP':
 			validMAFs = validMAFSP
 		else:
@@ -359,12 +350,13 @@ def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path
 		else:
 			processTrackerDf['timeStartProcessing'][0] = str(int(time.time()*1000))
 			syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
+
 		processFiles(syn, validFiles, center, path_to_genie, thread, 
 					 center_mapping_df, oncotree_link, database_to_synid_mappingdf, 
-					 validVCF=validVCF, validMAFs=validMAFs, validCBS=validCBS,
+					 validVCF=validVCF, validMAFs=validMAFs,
 					 vcf2mafPath=vcf2maf_path,
 					 veppath=vep_path,vepdata=vep_data,
-					 test=testing, processing=process)
+					 test=testing, processing=process,reference=reference)
 
 		#Should add in this process end tracking before the deletion of samples
 		processTracker = syn.tableQuery("SELECT timeEndProcessing FROM %s where center = '%s' and processingType = '%s'" % (processTrackerSynId, center, process))
@@ -399,6 +391,7 @@ def main():
 	parser.add_argument("--createNewMafDatabase", action='store_true', help = "Creates a new maf database")
 	parser.add_argument("--testing", action='store_true', help = "Testing the infrastructure!")
 	parser.add_argument("--debug", action='store_true', help = "Add debug mode to synapse")
+	parser.add_argument("--reference", type=str, help="Path to VCF reference file")
 
 	#DEFAULT PARAMS
 	parser.add_argument("--vcf2mafPath", type=str, help="Path to vcf2maf", default="~/vcf2maf-1.6.14")
@@ -454,7 +447,7 @@ def main():
 		createMafDatabase(syn, databaseToSynIdMappingDf, testing=args.testing)
 
 	for center in centers:
-		input_to_database(syn, center, args.process, args.testing, args.onlyValidate, args.vcf2mafPath, args.vepPath, args.vepData, databaseToSynIdMappingDf, center_mapping_df, delete_old=args.deleteOld, oncotree_link=args.oncotreeLink, thread=args.thread)
+		input_to_database(syn, center, args.process, args.testing, args.onlyValidate, args.vcf2mafPath, args.vepPath, args.vepData, databaseToSynIdMappingDf, center_mapping_df, reference=args.reference, delete_old=args.deleteOld, oncotree_link=args.oncotreeLink, thread=args.thread)
 
 	# To ensure that this is the new entity
 	center_mapping_ent = syn.get(center_mapping_id)

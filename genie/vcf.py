@@ -21,14 +21,27 @@ class vcf(maf.maf):
 	_fileType = "vcf"
 
 	_process_kwargs = ["validVCF", "processing", "path_to_GENIE", "databaseToSynIdMappingDf", 
-					   "vcf2mafPath","veppath","vepdata"]
+					   "vcf2mafPath","veppath","vepdata","reference"]
 
 	def _validateFilename(self, filePath):
 		assert os.path.basename(filePath[0]).startswith("GENIE-%s-" % self.center) and os.path.basename(filePath[0]).endswith(".vcf")
-	
+
+	def _get_dataframe(self, filePathList):
+		headers = None
+		filepath = filePathList[0]
+		with open(filepath,"r") as vcffile:
+			for row in vcffile:
+				if row.startswith("#CHROM"):
+					headers = row.replace("\n","").replace("\r","").split("\t")
+		if headers is not None:
+			vcf = pd.read_csv(filepath, sep="\t",comment="#",header=None,names=headers)
+		else:
+			raise ValueError("Your vcf must start with the header #CHROM")
+		return(vcf)
+
 	def process_helper(self, vcffiles, path_to_GENIE, mafSynId, centerMafSynId,
 					   vcf2mafPath,veppath, vepdata, 
-					   reference="/home/tyu/reference/hg19/hg_19_all_chrs.fasta"):
+					   reference=None):
 		logger.info('VCF2MAF %s' % self.center)
 		centerInputFolder = os.path.join(path_to_GENIE, self.center,"input")
 		centerStagingFolder = os.path.join(path_to_GENIE,self.center,"staging")
@@ -92,6 +105,8 @@ class vcf(maf.maf):
 						   '--vcf-tumor-id',tumor,
 						   #'--ref-fasta','/root/.vep/homo_sapiens/86_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa',
 						   '--custom-enst', os.path.join(vcf2mafPath, 'data/isoform_overrides_uniprot')]
+				if reference is not None:
+					command.extend(["--ref-fasta",reference])
 				subprocess.call(command)
 				if (os.path.isfile(newMAFPath)):
 					mafFiles.append(newMAFPath)
@@ -129,11 +144,12 @@ class vcf(maf.maf):
 			vepdata = kwargs['vepdata']
 			validVCF = kwargs['validVCF']
 			path_to_GENIE = kwargs['path_to_GENIE']
+			reference = kwargs['reference']
 			mafProcessing = "mafSP" if self._fileType == "mafSP" else 'vcf2maf'
 			mafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == mafProcessing][0]
 			centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
 			logger.info(validVCF)
-			vcfFilePath = self.process_helper(validVCF, path_to_GENIE, mafSynId,centerMafSynId, vcf2mafPath, veppath, vepdata)
+			vcfFilePath = self.process_helper(validVCF, path_to_GENIE, mafSynId,centerMafSynId, vcf2mafPath, veppath, vepdata,reference=reference)
 			mutationFiles = [vcfFilePath]
 			logger.info("UPDATED DATABASE WITH: %s" % ", ".join(mutationFiles))
 		else:
@@ -200,28 +216,4 @@ class vcf(maf.maf):
 			warning += "Your vcf file should not have any white spaces in any of the columns.\n"
 		#I can also recommend a `bcftools query` command that will parse a VCF in a detailed way, 
 		#and output with warnings or errors if the format is not adhered too
-		return(total_error, warning)
-
-	# Resolve missing read counts
-	def validate_steps(self, filePathList, **kwargs):
-		"""
-		This function validates the VCF file to make sure it adhere to the genomic SOP.
-		
-		:params filePath:     Path to VCF file
-		:returns:             Text with all the errors in the VCF file
-		"""  
-		filePath = filePathList[0]
-		logger.info("VALIDATING %s" % os.path.basename(filePath))
-		#FORMAT is optional
-		headers = None
-		with open(filePath,"r") as foo:
-			for i in foo:
-				if i.startswith("#CHROM"):
-					headers = i.replace("\n","").replace("\r","").split("\t")
-		if headers is not None:
-			vcf = pd.read_csv(filePath, sep="\t",comment="#",header=None,names=headers)
-		else:
-			raise ValueError("Your vcf must start with the header #CHROM")
-
-		total_error, warning = self._validate(vcf)
 		return(total_error, warning)

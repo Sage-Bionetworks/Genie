@@ -29,7 +29,7 @@ def test_processing():
 	syn.tableQuery.side_effect=table_query_results
 	fusionClass = fusions(syn, "SAGE")
 
-	expectedFusionDf = pd.DataFrame({"HUGO_SYMBOL":['AAED1', 'AAK1', 'AAAS'],
+	expectedFusionDf = pd.DataFrame({"HUGO_SYMBOL":['AAED1', 'AAK1', 'AAAS5'],
 								  "ENTREZ_GENE_ID":[0,0,0],
 								  "CENTER":["SAGE", "SAGE", "SAGE"],
 								  "TUMOR_SAMPLE_BARCODE":["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID2-1", "GENIE-SAGE-ID1-3"],
@@ -38,10 +38,10 @@ def test_processing():
 								  "RNA_SUPPORT":["foo",'foo','foo'],
 								  "METHOD":["foo",'foo','foo'],
 								  "FRAME":["foo",'foo','foo'],
-								  "ID":['AAED', 'AAK1', 'AAAS']})
+								  "ID":['AAED', 'AAK1', 'AAAS5']})
 
 
-	fusionDf = pd.DataFrame({"HUGO_SYMBOL":['AAED', 'AAK1', 'AAAS'],
+	fusionDf = pd.DataFrame({"HUGO_SYMBOL":['AAED', 'AAK1', 'AAAS5'],
 						  "ENTREZ_GENE_ID":[0,0,float('nan')],
 						  "CENTER":["SAGE", "SAGE", "SAGE"],
 						  "TUMOR_SAMPLE_BARCODE":["ID1-1", "ID2-1", "ID1-3"],
@@ -94,7 +94,7 @@ def test_validation():
 	assert error == ""
 	assert warning == ""
 
-	fusionDf = pd.DataFrame({"HUGO_SYMBOL":['foo', 'AAK1', 'AAAS'],
+	fusionDf = pd.DataFrame({"HUGO_SYMBOL":[float('nan'), 'AAK1', 'AAAS'],
 						  "CENTER":["SAGE", "SAGE", "SAGE"],
 						  "TUMOR_SAMPLE_BARCODE":["ID1-1", "ID2-1", "ID1-3"],
 						  "FUSION":["AAED-AAK1","AAAS-AAK1","AAAS-AAK1"],
@@ -104,10 +104,11 @@ def test_validation():
 						  "FRAME":["foo",'foo','foo']})
 
 	error, warning = fusionClass._validate(fusionDf, False)
-	expectedErrors = ("Your fusion file must at least have these headers: ENTREZ_GENE_ID.\n")
-	expectedWarnings = ("Any gene names that can't be remapped will be removed.\n")
+	expectedErrors = ("Your fusion file must at least have these headers: ENTREZ_GENE_ID.\n"
+					  "Your fusion file should not have any NA/blank Hugo Symbols.\n")
+
 	assert error == expectedErrors
-	assert warning == expectedWarnings
+	assert warning == ""
 	#Do not check symbols
 	error, warning = fusionClass._validate(fusionDf, True)
 	expectedErrors = ("Your fusion file must at least have these headers: ENTREZ_GENE_ID.\n")

@@ -56,12 +56,12 @@ class patientCounts(example_filetype_format.FileTypeFormat):
 		patientCountsDf.to_csv(newPath, sep="\t",index=False)
 		return(newPath)
 
-	def _validate(self, patCountsDf, oncotree_url):
+	def _validate(self, patCountsDf, oncotreeLink):
 		total_error = ""
 		warning = ""
-		oncotree_mapping = process_functions.get_oncotree_codes(oncotree_url)
+		oncotree_mapping = process_functions.get_oncotree_codes(oncotreeLink)
 		if oncotree_mapping.empty:
-			oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(oncotree_url)
+			oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(oncotreeLink)
 			oncotree_mapping['ONCOTREE_CODE'] = oncotree_mapping_dict.keys()
 		haveColumn = process_functions.checkColExist(patCountsDf, "ONCOTREE_CODE")
 		if haveColumn:
@@ -81,17 +81,3 @@ class patientCounts(example_filetype_format.FileTypeFormat):
 			total_error += "Patient Counts: File must have NUM_PATIENTS_PD1_PDL1 column.\n"
 
 		return(total_error, warning)
-
-	def validate_steps(self, filePathList, **kwargs):
-		"""
-		This function validates the patient count file to make sure it adheres to the SOP
-		
-		:params filePath:     Path to Patient count file
-
-		:returns:             Text with all the errors in the BED file
-		"""
-		filePath = filePathList[0]
-		oncotree_url = kwargs['oncotreeLink']
-		logger.info("VALIDATING %s" % os.path.basename(filePath))
-		patCountsDf = pd.read_csv(filePath, sep="\t")
-		return(self._validate(patCountsDf, oncotree_url))

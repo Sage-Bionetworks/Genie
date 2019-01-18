@@ -12,7 +12,7 @@ class maf(example_filetype_format.FileTypeFormat):
 	_fileType = "maf"
 
 	_process_kwargs = ["databaseToSynIdMappingDf","processing","path_to_GENIE",
-					   "vcf2mafPath","veppath","vepdata",'validMAFs']
+					   "vcf2mafPath","veppath","vepdata",'validMAFs','reference']
 
 	def _validateFilename(self, filePath):
 		assert os.path.basename(filePath[0]) == "data_mutations_extended_%s.txt" % self.center
@@ -50,7 +50,7 @@ class maf(example_filetype_format.FileTypeFormat):
 		return(filePath)
 
 	def process_helper(self, filePath, path_to_GENIE, mafSynId, centerMafSynId,
-					   vcf2mafPath, veppath, vepdata):
+					   vcf2mafPath, veppath, vepdata, reference=None):
 		logger.info('MAF2MAF %s' % filePath)
 		fileName = "data_mutations_extended_%s_MAF.txt" % self.center
 		newMafPath = os.path.join(path_to_GENIE,self.center,"staging",fileName)
@@ -69,6 +69,8 @@ class maf(example_filetype_format.FileTypeFormat):
 					   '--vep-data', vepdata,
 					   #'--ref-fasta','/root/.vep/homo_sapiens/86_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa',
 					   "--custom-enst", os.path.join(vcf2mafPath,"data/isoform_overrides_uniprot")]
+		if reference is not None:
+			commandCall.extend(["--ref-fasta",reference])
 		maf = subprocess.call(commandCall) 
 
 		process_functions.rmFiles(tempdir, recursive=False)
@@ -101,20 +103,20 @@ class maf(example_filetype_format.FileTypeFormat):
 			vepdata = kwargs['vepdata']
 			validMAFs = kwargs['validMAFs']
 			path_to_GENIE = kwargs['path_to_GENIE']
+			reference = kwargs['reference']
 			mafProcessing = "mafSP" if self._fileType == "mafSP" else 'vcf2maf'
 			mafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == mafProcessing][0]
 			centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
 			for filePath in validMAFs:
 				mafFilePath = self.process_helper(filePath, path_to_GENIE, mafSynId, centerMafSynId,
-											 vcf2mafPath, veppath, vepdata)
+											 vcf2mafPath, veppath, vepdata, reference=reference)
 				mutationFiles.append(mafFilePath)
 			logger.info("UPDATED DATABASE WITH: %s" % ", ".join(mutationFiles))
 		else:
 			logger.info("Please run with `--process %s` parameter if you want to reannotate the %s files" % (self._fileType, self._fileType))
 		return(mutationFiles)
 
-
-	def validate_helper(self, mutationDF, SP=False):
+	def _validate(self, mutationDF):
 		"""
 		This function validates the clinical file to make sure it adhere to the clinical SOP.
 		
@@ -123,6 +125,7 @@ class maf(example_filetype_format.FileTypeFormat):
 		"""
 
 		first_header = ['CHROMOSOME','HUGO_SYMBOL','TUMOR_SAMPLE_BARCODE']
+		SP = self._fileType == "mafSP"
 		if SP:
 			correct_column_headers = ['CHROMOSOME','START_POSITION','REFERENCE_ALLELE','TUMOR_SAMPLE_BARCODE','TUMOR_SEQ_ALLELE2'] #T_REF_COUNT + T_ALT_COUNT = T_DEPTH
 		else:
@@ -174,10 +177,8 @@ class maf(example_filetype_format.FileTypeFormat):
 
 		return(total_error, warning)
 
-	def validate_steps(self, filePathList, **kwargs):
-		logger.info("VALIDATING %s" % os.path.basename(filePathList[0]))
+	def _get_dataframe(self, filePathList):
 		mutationDF = pd.read_csv(filePathList[0],sep="\t",comment="#",na_values = ['-1.#IND', '1.#QNAN', '1.#IND', 
-								 '-1.#QNAN', '#N/A N/A', '#N/A', 'N/A', '#NA', 'NULL', 'NaN', 
-								 '-NaN', 'nan','-nan',''],keep_default_na=False)
-		total_error, warning = self.validate_helper(mutationDF)
-		return(total_error, warning)
+						 '-1.#QNAN', '#N/A N/A', '#N/A', 'N/A', '#NA', 'NULL', 'NaN', 
+						 '-NaN', 'nan','-nan',''],keep_default_na=False)
+		return(mutationDF)

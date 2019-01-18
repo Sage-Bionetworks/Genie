@@ -62,7 +62,7 @@ def test_validation():
 				  	        	   t_alt_count_num=[3],
 				  	        	   t_depth=[234]))
 
-	error, warning = mutCis.validate_helper(mutCisDf)
+	error, warning = mutCis._validate(mutCisDf)
 	assert error == ""
 	assert warning == ""
 	mutCisDf = pd.DataFrame(dict(Flag=['mutationsInCis'],
@@ -76,7 +76,7 @@ def test_validation():
 			  	        	   t_alt_count_num=[3],
 			  	        	   t_depth=[234]))
 
-	error, warning = mutCis.validate_helper(mutCisDf)
+	error, warning = mutCis._validate(mutCisDf)
 	expectedErrors = ("Mutations In Cis Filter File: Must at least have these headers: Variant_Classification,Start_Position.\n")
 	assert error == expectedErrors
 
@@ -93,6 +93,6 @@ def test_validation():
 			  	        	   t_alt_count_num=[3],
 			  	        	   t_depth=[234]))
 	
-	error, warning = mutCis.validate_helper(mutCisDf)
+	error, warning = mutCis._validate(mutCisDf)
 	expectedErrors = ("Mutations In Cis Filter File: All variants must come from the original mutationInCis_filtered_samples.csv file in each institution's staging folder.\n")
 	assert error == expectedErrors
