@@ -289,9 +289,9 @@ class clinical(example_filetype_format.FileTypeFormat):
 		if haveColumn:
 			#Make oncotree codes uppercase (SpCC/SPCC)
 			clinicalDF['ONCOTREE_CODE'] = clinicalDF['ONCOTREE_CODE'].astype(str).str.upper()
-			oncotree_codes = clinicalDF['ONCOTREE_CODE'][clinicalDF['ONCOTREE_CODE'] == "UNKNOWN"]
+			oncotree_codes = clinicalDF['ONCOTREE_CODE'][clinicalDF['ONCOTREE_CODE'] != "UNKNOWN"]
 			if not all(oncotree_codes.isin(oncotree_mapping['ONCOTREE_CODE'])):
-				unmapped_oncotrees = oncotree_codes[~clinicalDF['ONCOTREE_CODE'].isin(oncotree_mapping['ONCOTREE_CODE'])]
+				unmapped_oncotrees = oncotree_codes[~oncotree_codes.isin(oncotree_mapping['ONCOTREE_CODE'])]
 				total_error += "Sample: Please double check that all your ONCOTREE CODES exist in the mapping. You have %d samples that don't map. These are the codes that don't map: %s\n" % (len(unmapped_oncotrees),",".join(set(unmapped_oncotrees)))
 			if process_functions.checkColExist(clinicalDF, "SEX") and 'oncotree_mapping_dict' in locals() and havePatientColumn and haveSampleColumn:
 				wrongCodeSamples = []
