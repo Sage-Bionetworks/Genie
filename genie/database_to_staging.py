@@ -275,6 +275,11 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	logger.info("ADD CANCER TYPES")
 	#This removes support for both oncotree urls (only support json)
 	oncotreeDict = process.get_oncotree_code_mappings(oncotree_url)
+	#Add in unknown key which maps to UNKNOWN everything
+	oncotree_mapping_dict['UNKNOWN']= {'CANCER_TYPE': 'UNKNOWN',
+			  'CANCER_TYPE_DETAILED': 'UNKNOWN',
+			  'ONCOTREE_PRIMARY_NODE': 'UNKNOWN',
+			  'ONCOTREE_SECONDARY_NODE': 'UNKNOWN'}
 	clinicalDf['CANCER_TYPE'] = [oncotreeDict[code.upper()].get("CANCER_TYPE",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]
 	clinicalDf['CANCER_TYPE_DETAILED'] = [oncotreeDict[code.upper()].get("CANCER_TYPE_DETAILED",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]
 	clinicalDf['ONCOTREE_PRIMARY_NODE'] = [oncotreeDict[code.upper()].get("ONCOTREE_PRIMARY_NODE",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]

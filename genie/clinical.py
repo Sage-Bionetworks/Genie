@@ -203,6 +203,8 @@ class clinical(example_filetype_format.FileTypeFormat):
 			oncotree_mapping = process_functions.get_oncotree_codes(oncotreeLink)
 			if oncotree_mapping.empty:
 				oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(oncotreeLink)
+				#Add in unknown key for oncotree code
+				oncotree_mapping_dict['UNKNOWN']= {}
 				oncotree_mapping['ONCOTREE_CODE'] = oncotree_mapping_dict.keys()
 			#Make oncotree codes uppercase (SpCC/SPCC)
 			sampleClinical['ONCOTREE_CODE'] = sampleClinical['ONCOTREE_CODE'].astype(str).str.upper()
