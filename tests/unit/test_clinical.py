@@ -198,6 +198,7 @@ def test_validation():
 					  "Patient: All samples must have associated patient information and no null patient ids allowed. These samples are missing patient data: ID4-1\n"
 					  "Sample: Please double check that all your ONCOTREE CODES exist in the mapping. You have 1 samples that don't map. These are the codes that don't map: AMPCAD\n"
 					  "Sample: Please double check your SAMPLE_TYPE column. No null values allowed.\n"
+					  "Sample: Please double check your SEQ_ASSAY_ID columns, there are empty rows.\n"
 					  "Sample: Please make sure your SEQ_ASSAY_IDs start with your center abbreviation: S-SAGE-1.\n"
 					  "Sample: SEQ_DATE must be one of five values- For Jan-March: use Jan-YEAR. For Apr-June: use Apr-YEAR. For July-Sep: use Jul-YEAR. For Oct-Dec: use Oct-YEAR. (ie. Apr-2017) For values that don't have SEQ_DATES that you want released use 'release'.\n"
 					  "Patient: Please double check your PRIMARY_RACE column.  This column must be these values 1, 2, 3, 4, or blank.\n"
@@ -206,7 +207,6 @@ def test_validation():
 					  "Patient: Please double check your SEX column.  This column must be these values 1, 2, or blank.\n"
 					  "Patient: Please double check your ETHNICITY column.  This column must be these values 1, 2, 3, 4, or blank.\n")
 	expectedWarnings = ("Sample: All patients must have associated sample information. These patients are missing sample data: ID6\n"
-						"Sample: Some SAMPLE_IDs have conflicting SEX and ONCOTREE_CODES: ID2-1,ID5-1\n"
-						"Sample: Please double check your SEQ_ASSAY_ID columns, there are empty rows.\n")
+						"Sample: Some SAMPLE_IDs have conflicting SEX and ONCOTREE_CODES: ID2-1,ID5-1\n")
 	assert error == expectedErrors
 	assert warning == expectedWarnings

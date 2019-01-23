@@ -328,7 +328,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 		haveColumn = process_functions.checkColExist(clinicalDF, "SEQ_ASSAY_ID")
 		if haveColumn:
 			if not all([i != "" for i in clinicalDF['SEQ_ASSAY_ID']]):
-				warning += "Sample: Please double check your SEQ_ASSAY_ID columns, there are empty rows.\n"
+				total_error += "Sample: Please double check your SEQ_ASSAY_ID columns, there are empty rows.\n"
 			#must remove empty seq assay ids first
 			#Checking if seq assay ids start with the center name
 			seqAssayIds = clinicalDF.SEQ_ASSAY_ID[clinicalDF.SEQ_ASSAY_ID != ""]
