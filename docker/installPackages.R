@@ -6,3 +6,9 @@ install.packages("UpSetR", repo="https://ftp.osuosl.org/pub/cran/")
 
 source("https://bioconductor.org/biocLite.R")
 biocLite("VariantAnnotation")
+
+library(synapser)
+library(dplyr)
+library(argparse)
+library(UpSetR)
+library(VariantAnnotation)
