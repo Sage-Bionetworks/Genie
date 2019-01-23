@@ -22,7 +22,8 @@ RUN apt-get update && apt-get install -y \
 	libcurl3-dev \ 
 	libffi-dev \
 	libmariadb-client-lgpl-dev \
-	libxml2-dev
+	libxml2-dev \ 
+	libcurl4-openssl-dev
 
 RUN pip3 install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto
@@ -35,8 +36,11 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 #RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.1-1-amd64.deb
 #RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb	
 
+
+
 WORKDIR /root/
-#These are only necessary for now
+#These are only necessary for now, because of SYNR-1378, add back into installPackages.R later
+RUN R -e "install.packages('PythonEmbedInR', repos=c('https://sage-bionetworks.github.io/ran', 'http://cran.fhcrc.org'))"
 RUN git clone -b develop https://github.com/Sage-Bionetworks/synapser.git
 RUN R CMD build synapser/ --no-build-vignettes
 RUN R CMD INSTALL synapser_0.0.0.tar.gz
