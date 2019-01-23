@@ -405,5 +405,5 @@ class clinical(example_filetype_format.FileTypeFormat):
 			try:
 				clinicalDf = clinicalDf.merge(otherClinicalDf, on="PATIENT_ID")
 			except Exception as e:
-				raise ValueError("If submitting separate patient and sample files, they both must have SAMPLE columns")
+				raise ValueError("If submitting separate patient and sample files, they both must have the PATIENT_ID column")
 		return(clinicalDf)
