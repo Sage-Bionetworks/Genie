@@ -6,45 +6,46 @@ import os
 import sys
 from genie.cna import cna
 
+
+def createMockTable(dataframe):
+	table = mock.create_autospec(synapseclient.table.CsvFileTable)
+	table.asDataFrame.return_value= dataframe
+	return(table)
+
+def table_query_results(*args):
+	return(table_query_results_map[args])
+
+database_mapping = pd.DataFrame(dict(Database=['bed'],
+									Id=['syn8457748']))
+symbols = pd.DataFrame(dict(Hugo_Symbol=['AAK1','AAED1','AAAS','AAED1'],
+							ID=['AAK1', 'AAED', 'AAAS','AAD']))
+#This is the gene positions that all bed dataframe will be processed against
+table_query_results_map = {
+("SELECT * FROM syn10967259",) : createMockTable(database_mapping),
+("select Hugo_Symbol, ID from syn8457748 where CENTER = 'SAGE'",) : createMockTable(symbols),
+}   
+
+syn = mock.create_autospec(synapseclient.Synapse) 
+syn.tableQuery.side_effect=table_query_results
+
+cna_class = cna(syn, "SAGE")
+
+
 def test_processing():
-	def createMockTable(dataframe):
-		table = mock.create_autospec(synapseclient.table.CsvFileTable)
-		table.asDataFrame.return_value= dataframe
-		return(table)
 
-	def table_query_results(*args):
-		return(table_query_results_map[args])
-	databaseMapping = pd.DataFrame(dict(Database=['bed'],
-										Id=['syn8457748']))
-	symbols = pd.DataFrame(dict(Hugo_Symbol=['AAK1','AAED1','AAAS','AAED1'],
-								ID=['AAK1', 'AAED', 'AAAS','AAD']))
-	#This is the gene positions that all bed dataframe will be processed against
-	table_query_results_map = {
-	("SELECT * FROM syn10967259",) : createMockTable(databaseMapping),
-	("select Hugo_Symbol, ID from syn8457748 where CENTER = 'SAGE'",) : createMockTable(symbols),
-	}   
-
-	syn = mock.create_autospec(synapseclient.Synapse) 
-	syn.tableQuery.side_effect=table_query_results
-
-	cnaClass = cna(syn, "SAGE")
 	order = ["Hugo_Symbol","Entrez_gene_id","Id1-1","Id2-1"]
 
-	# expectedCnaDf = pd.DataFrame(dict(TUMOR_SAMPLE_BARCODE =['GENIE-SAGE-ID1-1', 'GENIE-SAGE-ID2-1'],
-	# 								  CNAData =["AAED1,AAK1,AAAS\n1,2,0", "AAED1,AAK1,AAAS\n2,1,-1"],
-	# 								  CENTER =['SAGE','SAGE'],
-	# 								  unmappedData =[float('nan'),float('nan')]))
-	expectedCnaDf = pd.DataFrame({"Hugo_Symbol":['AAED1', 'AAK1', 'AAAS'],
+	expected_cnadf = pd.DataFrame({"Hugo_Symbol":['AAED1', 'AAK1', 'AAAS'],
 						  "GENIE-SAGE-Id1-1":[1, 2, 0],
 						  "GENIE-SAGE-Id2-1":[2, 1, -1]})
 
-	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAK1', 'AAAS'],
+	cnadf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAK1', 'AAAS'],
 						  "Entrez_gene_id":[0,0,0],
 						  "Id1-1":[1, 2, 0],
 						  "Id2-1":[2, 1, -1]})
-	cnaDf = cnaDf[order]
-	newCnaDf = cnaClass._process(cnaDf)
-	assert expectedCnaDf.equals(newCnaDf[expectedCnaDf.columns])
+	cnadf = cnadf[order]
+	new_cnaDf = cna_class._process(cnadf)
+	assert expectedCnaDf.equals(newCnaDf[expected_cnadf.columns])
 	
 	# expectedCnaDf = pd.DataFrame(dict(TUMOR_SAMPLE_BARCODE =['GENIE-SAGE-ID1-1',"GENIE-SAGE-ID2-1"],
 	# 								  CNAData =["AAED1\n1","AAED1\n"],
