@@ -21,20 +21,14 @@ class test_update_database:
 							  "baz":[float('nan'),float('nan'),float('nan'),3.2]})
 		expecteddf = pd.DataFrame({'test':['test4'],
 										  'foo':[4],
-										  'baz':[3.2],
-										  'ROW_ID':[float('nan')],
-										  'ROW_VERSION':[float('nan')]})
+										  'baz':[3.2]})
 		append_rows = genie.process_functions._append_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
 		append_rows.fillna('',inplace=True)
 		expecteddf.fillna('',inplace=True)
 		assert append_rows.equals(expecteddf[append_rows.columns])
 
 	def test_append_no_rows(self):
-		new_datadf = pd.DataFrame({'UNIQUE_KEY':['test1','test2','test3'],
-							  "test":['test1','test2','test3'],
-							  "foo":[1,2,3],
-							  "baz":[float('nan'),float('nan'),float('nan')]})
-		append_rows = genie.process_functions._append_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
+		append_rows = genie.process_functions._append_rows(self.databasedf, self.databasedf, 'UNIQUE_KEY')
 		assert append_rows.empty
 
 	def test_update_rows_to_database(self):
@@ -51,6 +45,29 @@ class test_update_database:
 		update_rows = genie.process_functions._update_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
 		assert update_rows.equals(expecteddf[update_rows.columns])
 
+	def test_update_rows_to_database_maintaintype(self):
+		new_datadf = pd.DataFrame({'UNIQUE_KEY':['test1','test2','test3'],
+							  "test":['test1','test2','test3'],
+							  "foo":[1,3,3],
+							  "baz":[float('nan'),5,float('nan')]})
+		#Test that the datatype passed into from new_datadf gets preserved
+		expecteddf = pd.DataFrame({"test":['test2'],
+							  "foo":[3],
+							  "baz":[5],
+							  'ROW_ID':['2'],
+							  'ROW_VERSION':['3']})
+		expecteddf = expecteddf.astype({'baz':object}) 
+		update_rows = genie.process_functions._update_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
+		assert update_rows.equals(expecteddf[update_rows.columns])
+
+	def test_update_empty_database(self):
+		new_datadf = pd.DataFrame({'UNIQUE_KEY':['test4'],
+									  "test":['test'],
+									  "foo":[1],
+									  "baz":[float('nan')]})
+		update_rows = genie.process_functions._update_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
+		assert update_rows.empty
+
 	def test_update_no_rows(self):
 		update_rows = genie.process_functions._update_rows(self.databasedf, self.databasedf, 'UNIQUE_KEY')
 		assert update_rows.empty
@@ -66,19 +83,6 @@ class test_update_database:
 		assert delete_rows.equals(expecteddf)
 
 	def test_delete_no_rows(self):
-		new_datadf = pd.DataFrame({'UNIQUE_KEY':['test1','test2','test3'],
-							  "test":['test1','test2','test3'],
-							  "foo":[1,2,3],
-							  "baz":[float('nan'),float('nan'),float('nan')]})
-		expecteddf = pd.DataFrame({0:['2','3'],
-							  	   1:['3','5']})
-		delete_rows = genie.process_functions._delete_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
+		delete_rows = genie.process_functions._delete_rows(self.databasedf, self.databasedf, 'UNIQUE_KEY')
 		assert delete_rows.empty
 
-
-		# syn = mock.create_autospec(synapseclient.Synapse) 
-		# return_table = synapseclient.Table("foo")
-		# with  mock.patch.object(syn, "store", return_value=return_table) as patch_syn_store:
-		# 	genie.process_functions._append_rows(syn,databasedf, new_datadf,  database_synid, uniqueKeyCols)
-			
-		# 	patch_syn_store.assert_called_once_with(synapseclient.Table(databaseSynId, SCRIPT_DIR))

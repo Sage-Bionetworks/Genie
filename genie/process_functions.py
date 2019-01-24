@@ -339,10 +339,26 @@ def _get_left_diff_df(left, right, checkby):
 	diffdf = left[~left[checkby].isin(right[checkby])]
 	return(diffdf)
 
+def _get_left_union_df(left, right, checkby):
+	'''
+	Subset the dataframe based on 'checkby' by taking the union of 
+	values in the left df with the right df
+
+	Args:
+		left: Dataframe
+		right: Dataframe
+		checkby: Column of values to compare
+
+	Return: 
+		Dataframe: Subset of dataframe from left that also exist in the right
+	'''
+	uniondf = left[left[checkby].isin(right[checkby])]
+	return(uniondf)
+
 def _append_rows(new_datasetdf, databasedf, checkby):
 	'''
-	Compares the dataset from the database and determines which rows to append
-	from the dataset
+	Compares the dataset from the database and determines which rows to 
+	append from the dataset
 
 	Args:
 		new_datasetdf: Input data dataframe
@@ -355,41 +371,77 @@ def _append_rows(new_datasetdf, databasedf, checkby):
 	databasedf.fillna('',inplace=True)
 	new_datasetdf.fillna('',inplace=True)
 
-	appenddf = _get_left_diff_df(new_datasetdf, databasedf, "UNIQUE_KEY")
+	appenddf = _get_left_diff_df(new_datasetdf, databasedf, checkby)
 	if not appenddf.empty:
 		logger.info("Adding Rows")
-		del appenddf[checkby]
-		#appenddf = appenddf.append(newset)
-		appenddf['ROW_ID'] = pd.np.nan
-		appenddf['ROW_VERSION'] = pd.np.nan
-		appenddf.reset_index(drop=True,inplace=True)
 	else:
 		logger.info("No new rows")
+	del appenddf[checkby]
+	appenddf.reset_index(drop=True,inplace=True)
 	return(appenddf)
 
-def _update_rows(new_datasetdf, databasedf, checkby):
+def _delete_rows(new_datasetdf, databasedf, checkby):
+	'''
+	Compares the dataset from the database and determines which rows to
+	delete from the dataset
+
+	Args:
+		new_datasetdf: Input data dataframe
+		databasedf: Existing data dataframe
+		checkby: Column of values to compare
+
+	Return:
+		Dataframe: Dataframe of rows to delete
+	'''
+
 	databasedf.fillna('',inplace=True)
 	new_datasetdf.fillna('',inplace=True)
-	toupdatedf = pd.DataFrame()
-	if not databasedf.empty and not new_datasetdf.empty:
-		updatesetdf = new_datasetdf[new_datasetdf[checkby].isin(databasedf[checkby])]
-		updating_databasedf = databasedf[databasedf[checkby].isin(new_datasetdf[checkby])]
+	#If the new dataset is empty, delete everything in the database
+	deletedf = _get_left_diff_df(databasedf, new_datasetdf, checkby)
+	if not deletedf.empty:
+		logger.info("Deleting Rows")
+		delete_rowid_version = pd.DataFrame([[rowid.split("_")[0],rowid.split("_")[1]] for rowid in deletedf.index])
+		delete_rowid_version.reset_index(drop=True,inplace=True)
 	else:
-		updatesetdf = pd.DataFrame()
-		updating_databasedf = pd.DataFrame()
+		delete_rowid_version = pd.DataFrame()
+		logger.info("No deleted rows")
+	
+	#del deletedf[checkby]
+	return(delete_rowid_version)
+
+def _update_rows(new_datasetdf, databasedf, checkby):
+	'''
+	Compares the dataset from the database and determines which rows to
+	update from the dataset
+
+	Args:
+		new_datasetdf: Input data dataframe
+		databasedf: Existing data dataframe
+		checkby: Column of values to compare
+
+	Return:
+		Dataframe: Dataframe of rows to update
+	'''
+	initial_database = databasedf.copy()
+	databasedf.fillna('',inplace=True)
+	new_datasetdf.fillna('',inplace=True)
+	updatesetdf = _get_left_union_df(new_datasetdf, databasedf, checkby)
+	updating_databasedf = _get_left_union_df(databasedf, new_datasetdf, checkby)
 
 	#If you input the exact same dataframe theres nothing to update
-	if updatesetdf.empty and updating_databasedf.empty:
-		differentrows = []
-	else:
-		rowids = updating_databasedf.index.values
-		updatesetdf.index = updatesetdf[checkby]
-		updating_databasedf.index = updating_databasedf[checkby]
-		#Remove duplicated index values
-		updatesetdf = updatesetdf[~updatesetdf.index.duplicated()]
-		updatesetdf = updatesetdf.loc[updating_databasedf.index]
-		differences = updatesetdf != updating_databasedf
-		differentrows = differences.apply(sum, axis=1) >0
+	#must save row version and ids for later
+	rowids = updating_databasedf.index.values
+	#Set index values to be 'checkby' values
+	updatesetdf.index = updatesetdf[checkby]
+	updating_databasedf.index = updating_databasedf[checkby]
+	#Remove duplicated index values
+	updatesetdf = updatesetdf[~updatesetdf.index.duplicated()]
+	#Reorder dataset index
+	updatesetdf = updatesetdf.loc[updating_databasedf.index]
+	#Index comparison
+	differences = updatesetdf != updating_databasedf
+	differentrows = differences.apply(sum, axis=1) >0
+
 	if sum(differentrows) > 0:
 		updating_databasedf.loc[differentrows] = updatesetdf.loc[differentrows]
 		toupdatedf = updating_databasedf.loc[differentrows]
@@ -398,30 +450,14 @@ def _update_rows(new_datasetdf, databasedf, checkby):
 		rowid_version = pd.DataFrame([[rowid.split("_")[0],rowid.split("_")[1]] for rowid, row in zip(rowids, differentrows) if row])
 		toupdatedf['ROW_ID'] = rowid_version[0].values
 		toupdatedf['ROW_VERSION'] = rowid_version[1].values
-		#updatedf = updatedf.append(toupdatedf)
 		toupdatedf.reset_index(drop=True,inplace=True)
 	else:
+		toupdatedf = pd.DataFrame()
 		logger.info("No updated rows")
+
 	return(toupdatedf)
 
-def _delete_rows(new_datasetdf, databasedf, checkby):
-	databasedf.fillna('',inplace=True)
-	new_datasetdf.fillna('',inplace=True)
-	#databasedf.index = allRowIds
-	#If the new dataset is empty, delete everything in the database
-	if not new_datasetdf.empty:
-		deletedf = databasedf[~databasedf[checkby].isin(new_datasetdf[checkby])]
-	else:
-		deletedf = databasedf
-	del deletedf[checkby]
-	if not deletedf.empty:
-		logger.info("Deleting Rows")
-		delete_rowid_version = pd.DataFrame([[rowid.split("_")[0],rowid.split("_")[1]] for rowid in deletedf.index])
-		delete_rowid_version.reset_index(drop=True,inplace=True)
-	else:
-		delete_rowid_version = pd.DataFrame()
-		logger.info("No deleted rows")
-	return(delete_rowid_version)
+
 
 def updateData(syn, databaseSynId, newData, filterBy, filterByColumn= "CENTER", col=None, toDelete=False):
 	databaseEnt = syn.get(databaseSynId)
