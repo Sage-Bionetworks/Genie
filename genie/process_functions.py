@@ -323,14 +323,39 @@ def center_convert_back(filePath, anonymizeCenterDf):
 ####################################################################################
 # UPDATING DATABASE
 ####################################################################################
+def _get_left_diff_df(left, right, checkby):
+	'''
+	Subset the dataframe based on 'checkby' by taking values in the left df
+	that arent in the right df
+
+	Args:
+		left: Dataframe
+		right: Dataframe
+		checkby: Column of values to compare
+
+	Return: 
+		Dataframe: Subset of dataframe from left that don't exist in the right
+	'''
+	diffdf = left[~left[checkby].isin(right[checkby])]
+	return(diffdf)
+
 def _append_rows(new_datasetdf, databasedf, checkby):
-	#All new rows
+	'''
+	Compares the dataset from the database and determines which rows to append
+	from the dataset
+
+	Args:
+		new_datasetdf: Input data dataframe
+		databasedf: Existing data dataframe
+		checkby: Column of values to compare
+
+	Return:
+		Dataframe: Dataframe of rows to append
+	'''
 	databasedf.fillna('',inplace=True)
 	new_datasetdf.fillna('',inplace=True)
-	if not databasedf.empty:
-		appenddf = new_datasetdf[~new_datasetdf[checkby].isin(databasedf[checkby])]
-	else:
-		appenddf = new_datasetdf.copy()
+
+	appenddf = _get_left_diff_df(new_datasetdf, databasedf, "UNIQUE_KEY")
 	if not appenddf.empty:
 		logger.info("Adding Rows")
 		del appenddf[checkby]
