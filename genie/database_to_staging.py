@@ -276,7 +276,7 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	#This removes support for both oncotree urls (only support json)
 	oncotreeDict = process.get_oncotree_code_mappings(oncotree_url)
 	#Add in unknown key which maps to UNKNOWN everything
-	oncotree_mapping_dict['UNKNOWN']= {'CANCER_TYPE': 'UNKNOWN',
+	oncotreeDict['UNKNOWN']= {'CANCER_TYPE': 'UNKNOWN',
 			  'CANCER_TYPE_DETAILED': 'UNKNOWN',
 			  'ONCOTREE_PRIMARY_NODE': 'UNKNOWN',
 			  'ONCOTREE_SECONDARY_NODE': 'UNKNOWN'}
