@@ -246,7 +246,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 			total_error += "Sample: clinical file must have SAMPLE_ID column.\n"
 		else:
 			if sum(clinicalDF[sampleId].duplicated()) > 0:
-				total_error += "Sample: There can't be any duplicated values for SAMPLE_ID\n"
+				total_error += "Sample: No duplicated SAMPLE_ID in the sample file allowed.\nPatient: No duplicated PATIENT_ID in the patient file allowed.\n"
 
 		#CHECK: PATIENT_ID
 		patientId = "PATIENT_ID"
