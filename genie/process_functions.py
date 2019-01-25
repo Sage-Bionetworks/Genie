@@ -458,7 +458,6 @@ def _update_rows(new_datasetdf, databasedf, checkby):
 	return(toupdatedf)
 
 
-
 def updateData(syn, databaseSynId, newData, filterBy, filterByColumn= "CENTER", col=None, toDelete=False):
 	databaseEnt = syn.get(databaseSynId)
 	database = syn.tableQuery("SELECT * FROM %s where %s ='%s'" % (databaseSynId, filterByColumn, filterBy))
@@ -473,12 +472,16 @@ def updateDatabase(syn, database, new_dataset, databaseSynId, uniqueKeyCols, toD
 	"""
 	Updates synapse tables by a row identifier with another dataset that has the same number and order of columns
 	
-	:param database:   	   The synapse table (pandas dataframe)
-	:param new_dataset:    New dataset (pandas dataframe)
-	:param databaseSynId   Synapse Id of the database table
-	:param uniqueKeyCols:  Column(s) that make up the unique key
+	Args:
+		syn: Synapse object
+		database: The synapse table (pandas dataframe)
+		new_dataset: New dataset (pandas dataframe)
+		databaseSynId: Synapse Id of the database table
+		uniqueKeyCols: Column(s) that make up the unique key
+		toDelete: Delete rows, Defaults to False
 
-	:returns:      		   Don't know yet	
+	Returns:
+		Nothing
 	"""
 	checkBy = 'UNIQUE_KEY'
 	database = database.fillna("")
