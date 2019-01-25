@@ -35,13 +35,13 @@ def test_processing():
 	# 								  CENTER =['SAGE','SAGE'],
 	# 								  unmappedData =[float('nan'),float('nan')]))
 	expectedCnaDf = pd.DataFrame({"Hugo_Symbol":['AAED1', 'AAK1', 'AAAS'],
-						  "GENIE-SAGE-Id1-1":[1, 2, 0],
-						  "GENIE-SAGE-Id2-1":[2, 1, -1]})
+						  "GENIE-SAGE-Id1-1":[-0.5, 2.0, 0.5],
+						  "GENIE-SAGE-Id2-1":[1.0, 1.5, -1.5]})
 
 	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAK1', 'AAAS'],
 						  "Entrez_gene_id":[0,0,0],
-						  "Id1-1":[1, 2, 0],
-						  "Id2-1":[2, 1, -1]})
+						  "Id1-1":[-0.5, 2, 0.5],
+						  "Id2-1":[1, 1.5, -1.5]})
 	cnaDf = cnaDf[order]
 	newCnaDf = cnaClass._process(cnaDf)
 	assert expectedCnaDf.equals(newCnaDf[expectedCnaDf.columns])
@@ -53,8 +53,8 @@ def test_processing():
 	order = ["Hugo_Symbol","Entrez_gene_id","GENIE-SAGE-Id1-1","GENIE-SAGE-Id2-1"]
 
 	expectedCnaDf = pd.DataFrame({"Hugo_Symbol":['AAAS','AAED1'],
-						  "GENIE-SAGE-Id1-1":['NA',1],
-						  "GENIE-SAGE-Id2-1":['NA',2]})
+						  "GENIE-SAGE-Id1-1":[float('nan'),1.0],
+						  "GENIE-SAGE-Id2-1":[float('nan'),2.0]})
 
 	cnaDf = pd.DataFrame({"Hugo_Symbol":['AAED', 'AAED1', 'foo','AAAS','AAD'],
 						  "Entrez_gene_id":[0,0,0,0,0],
