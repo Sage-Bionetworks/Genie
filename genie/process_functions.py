@@ -217,6 +217,19 @@ def removeFloat(df):
 	text = text.replace(".0\n","\n")
 	return(text)
 
+#remove string float
+def removeStringFloat(string):
+	string = string.replace(".0\t","\t")
+	string = string.replace(".0\n","\n")
+	return(string)
+
+#remove decimal for integers due to pandas
+def removePandasDfFloat(df):
+	text = df.to_csv(sep="\t",index=False)
+	text = removeStringFloat(text)
+	return(text)
+
+
 ########################################################################
 # Check if GENIE ID is labelled correctly
 ########################################################################
