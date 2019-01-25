@@ -210,3 +210,30 @@ def test_validation():
 						"Sample: Some SAMPLE_IDs have conflicting SEX and ONCOTREE_CODES: ID2-1,ID5-1\n")
 	assert error == expectedErrors
 	assert warning == expectedWarnings
+
+
+	patientDf = pd.DataFrame(dict(PATIENT_ID=["ID1","ID1","ID3","ID4","ID5"],
+								 SEX=[1,2,1,2,float('nan')],
+								 PRIMARY_RACE=[1,2,3,4,float('nan')],
+								 SECONDARY_RACE=[1,2,3,4,float('nan')],
+								 TERTIARY_RACE=[1,2,3,4,float('nan')],
+								 ETHNICITY=[1,2,3,4,float('nan')],
+								 BIRTH_YEAR=[float('nan'),1990,1990,1990,1990],
+								 CENTER=["FOO","FOO","FOO","FOO","FOO"]))
+
+	sampleDf = pd.DataFrame(dict(SAMPLE_ID=["ID1-1","ID1-1","ID3-1","ID4-1","ID5-1"],
+								 PATIENT_ID=["ID1","ID1","ID3","ID4","ID5"],
+								 AGE_AT_SEQ_REPORT=[100000,100000,100000,100000,100000],
+								 ONCOTREE_CODE=['AMPCA','AMPCA','UNKNOWN','AMPCA','AMPCA'],
+								 SAMPLE_TYPE=[1,2,3,4,4],
+								 SEQ_ASSAY_ID=['SAGE-1-1','SAGE-SAGE-1','SAGE-1','SAGE-1','SAGE-1'],
+								 SEQ_DATE=['Jan-2013','ApR-2013','Jul-2013','Oct-2013','release']))
+
+	clinicalDf = patientDf.merge(sampleDf, on="PATIENT_ID")
+	error, warning = clin._validate(clinicalDf, json_oncotreeurl)
+
+	expectedErrors = ("Sample: No duplicated SAMPLE_ID in the sample file allowed.\n"
+					  "If there are no duplicated SAMPLE_IDs, and both sample and patient files are uploaded, then please check to make sure no duplicated PATIENT_IDs exist in the patient file.\n")
+
+	assert error == expectedErrors
+	assert warning == ""
