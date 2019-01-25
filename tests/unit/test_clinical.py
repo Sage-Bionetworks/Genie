@@ -233,7 +233,7 @@ def test_validation():
 	error, warning = clin._validate(clinicalDf, json_oncotreeurl)
 
 	expectedErrors = ("Sample: No duplicated SAMPLE_ID in the sample file allowed.\n"
-					  "If there are no duplicated SAMPLE_IDs, and both sample and patient file are uploaded, then please check to make sure no duplicated PATIENT_IDs in the patient file.\n")
+					  "If there are no duplicated SAMPLE_IDs, and both sample and patient files are uploaded, then please check to make sure no duplicated PATIENT_IDs exist in the patient file.\n")
 
 	assert error == expectedErrors
 	assert warning == ""
