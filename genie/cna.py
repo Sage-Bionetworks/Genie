@@ -35,7 +35,7 @@ def mergeCNAvalues(x):
 	uniqueValues = set(x.unique())
 	if len(uniqueValues) == 1:
 		returnVal = x.tolist()[0]
-	elif len(uniqueValues) <= 3:
+	elif len(uniqueValues) <= 2:
 		uniqueValues.discard(0)
 		if len(uniqueValues) == 1:
 			returnVal = list(uniqueValues)[0]
