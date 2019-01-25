@@ -130,10 +130,16 @@ class cna(example_filetype_format.FileTypeFormat):
 
 		centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
 		if not newCNA.empty:
+			cnaText = process_functions.removePandasDfFloat(newCNA)
+			#Replace blank with NA's
+			cnaText = cnaText.replace("\t\t","\tNA\t").replace("\t\t","\tNA\t").replace('\t\n',"\tNA\n")
+			with open(newPath, "w") as cnaFile:
+				cnaFile.write(cnaText)
+
 		# 	cols = newCNA.columns   
 		# 	process_functions.updateData(self.syn, databaseSynId, newCNA, self.center, cols, toDelete=True)
 		# 	newCNA.to_csv(newPath, sep="\t",index=False)
-			newCNA.to_csv(newPath, sep="\t",index=False)
+			#newCNA.to_csv(newPath, sep="\t",index=False)
 			self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
 		return(newPath)
 
