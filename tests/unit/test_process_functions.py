@@ -13,7 +13,18 @@ class test_update_database:
 							  "baz":[float('nan'),float('nan'),float('nan')]})
 		self.databasedf.index = ['1_3','2_3','3_5']
 	
-	def test_append_rows_to_database(self):
+
+	def test__get_left_diff_df(self):
+		new_datadf = pd.DataFrame({'UNIQUE_KEY':['test1','test2','test3','test4'],
+							  "test":['test1','test2','test3','test4'],
+							  "foo":[1,2,3,4],
+							  "baz":[float('nan'),float('nan'),float('nan'),3.2]})
+		get_diff = genie.process_functions._get_left_diff_df(new_datadf, self.databasedf, 'UNIQUE_KEY')
+		expecteddf = new_datadf.loc[[3]]
+		assert get_diff.equals(expecteddf[get_diff.columns])
+
+
+	def test_append__append_rows(self):
 
 		new_datadf = pd.DataFrame({'UNIQUE_KEY':['test1','test2','test3','test4'],
 							  "test":['test1','test2','test3','test4'],
@@ -27,11 +38,12 @@ class test_update_database:
 		expecteddf.fillna('',inplace=True)
 		assert append_rows.equals(expecteddf[append_rows.columns])
 
-	def test_append_no_rows(self):
+	def test_norows__append_rows(self):
 		append_rows = genie.process_functions._append_rows(self.databasedf, self.databasedf, 'UNIQUE_KEY')
 		assert append_rows.empty
 
-	def test_update_rows_to_database(self):
+
+	def test_update__update_rows(self):
 		new_datadf = pd.DataFrame({'UNIQUE_KEY':['test1','test2','test3'],
 							  "test":['test','test2','test3'],
 							  "foo":[1,3,3],
@@ -45,7 +57,7 @@ class test_update_database:
 		update_rows = genie.process_functions._update_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
 		assert update_rows.equals(expecteddf[update_rows.columns])
 
-	def test_update_rows_to_database_maintaintype(self):
+	def test_maintaintype__update_rows(self):
 		new_datadf = pd.DataFrame({'UNIQUE_KEY':['test1','test2','test3'],
 							  "test":['test1','test2','test3'],
 							  "foo":[1,3,3],
@@ -60,7 +72,7 @@ class test_update_database:
 		update_rows = genie.process_functions._update_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
 		assert update_rows.equals(expecteddf[update_rows.columns])
 
-	def test_update_empty_database(self):
+	def test_noupdate__update_rows(self):
 		new_datadf = pd.DataFrame({'UNIQUE_KEY':['test4'],
 									  "test":['test'],
 									  "foo":[1],
@@ -68,11 +80,11 @@ class test_update_database:
 		update_rows = genie.process_functions._update_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
 		assert update_rows.empty
 
-	def test_update_no_rows(self):
+	def test_norows__update_rows(self):
 		update_rows = genie.process_functions._update_rows(self.databasedf, self.databasedf, 'UNIQUE_KEY')
 		assert update_rows.empty
 
-	def test_delete_rows_to_database(self):
+	def test_delete__delete_rows(self):
 		new_datadf = pd.DataFrame({'UNIQUE_KEY':['test1'],
 							  "test":['test1'],
 							  "foo":[1],
@@ -82,7 +94,7 @@ class test_update_database:
 		delete_rows = genie.process_functions._delete_rows(new_datadf, self.databasedf, 'UNIQUE_KEY')
 		assert delete_rows.equals(expecteddf)
 
-	def test_delete_no_rows(self):
+	def test_norows__delete_rows(self):
 		delete_rows = genie.process_functions._delete_rows(self.databasedf, self.databasedf, 'UNIQUE_KEY')
 		assert delete_rows.empty
 
