@@ -31,18 +31,18 @@ def makeCNARow(row, symbols):
 	return(totalrow)
 
 def mergeCNAvalues(x):
-	uniqueValues = set(x.tolist())
+	x.dropna(inplace=True)
+	uniqueValues = set(x.unique())
 	if len(uniqueValues) == 1:
 		returnVal = x.tolist()[0]
-	elif len(uniqueValues) <= 3:
+	elif len(uniqueValues) <= 2:
 		uniqueValues.discard(0)
-		uniqueValues.discard('NA')
 		if len(uniqueValues) == 1:
 			returnVal = list(uniqueValues)[0]
 		else:
-			returnVal = 'NA'
+			returnVal = float('nan')
 	else:
-		returnVal = 'NA'
+		returnVal = float('nan')
 	return(returnVal)
 	
 def checkIfOneZero(x):
@@ -77,11 +77,11 @@ class cna(FileTypeFormat):
 		cnaDf['Hugo_Symbol'] = cnaDf['Hugo_Symbol'].apply(lambda x: validateSymbol(x, bedDf))
 		order = cnaDf.columns
 		cnaDf = cnaDf[~cnaDf['Hugo_Symbol'].isnull()]
-		cnaDf = cnaDf.fillna('NA')
+		#cnaDf = cnaDf.applymap(str)
 		duplicatedGenes = pd.DataFrame()
 		for i in cnaDf['Hugo_Symbol'][cnaDf['Hugo_Symbol'].duplicated()].unique():
 			dups = cnaDf[cnaDf['Hugo_Symbol'] == i]
-			newVal = dups[dups.columns[dups.columns!="HUGO_SYMBOL"]].apply(mergeCNAvalues)
+			newVal = dups[dups.columns[dups.columns!="Hugo_Symbol"]].apply(mergeCNAvalues)
 			temp = pd.DataFrame(newVal).transpose()
 			temp['Hugo_Symbol'] = i
 			duplicatedGenes = duplicatedGenes.append(temp)
@@ -97,7 +97,12 @@ class cna(FileTypeFormat):
 
 		centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
 		if not newCNA.empty:
-			newCNA.to_csv(newPath, sep="\t",index=False)
+			cnaText = process_functions.removePandasDfFloat(newCNA)
+			#Replace blank with NA's
+			cnaText = cnaText.replace("\t\t","\tNA\t").replace("\t\t","\tNA\t").replace('\t\n',"\tNA\n")
+			with open(newPath, "w") as cnaFile:
+				cnaFile.write(cnaText)
+
 			self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
 		return(newPath)
 
@@ -119,8 +124,8 @@ class cna(FileTypeFormat):
 		if process_functions.checkColExist(cnvDF, "ENTREZ_GENE_ID"):
 			del cnvDF['ENTREZ_GENE_ID']
 		
-		cnvDF = cnvDF.fillna("NA")
-		if not all(cnvDF.applymap(lambda x: str(x) in ['-2.0','-2','-1.5','-1.0','-1','0.0','0','0.5','1.0','1','1.5','2','2.0','NA']).all()):
+		#cnvDF = cnvDF.fillna('')
+		if not all(cnvDF.applymap(lambda x: str(x) in ['-2.0','-2','-1.5','-1.0','-1','0.0','0','0.5','1.0','1','1.5','2','2.0','nan']).all()):
 			total_error += "All values must be NA/blank, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, or 2.\n"
 		else:
 			cnvDF['HUGO_SYMBOL'] = keepSymbols
