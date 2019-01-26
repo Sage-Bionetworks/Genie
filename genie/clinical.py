@@ -203,6 +203,8 @@ class clinical(example_filetype_format.FileTypeFormat):
 			oncotree_mapping = process_functions.get_oncotree_codes(oncotreeLink)
 			if oncotree_mapping.empty:
 				oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(oncotreeLink)
+				#Add in unknown key for oncotree code
+				oncotree_mapping_dict['UNKNOWN']= {}
 				oncotree_mapping['ONCOTREE_CODE'] = oncotree_mapping_dict.keys()
 			#Make oncotree codes uppercase (SpCC/SPCC)
 			sampleClinical['ONCOTREE_CODE'] = sampleClinical['ONCOTREE_CODE'].astype(str).str.upper()
@@ -244,7 +246,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 			total_error += "Sample: clinical file must have SAMPLE_ID column.\n"
 		else:
 			if sum(clinicalDF[sampleId].duplicated()) > 0:
-				total_error += "Sample: There can't be any duplicated values for SAMPLE_ID\n"
+				total_error += "Sample: No duplicated SAMPLE_ID in the sample file allowed.\nIf there are no duplicated SAMPLE_IDs, and both sample and patient files are uploaded, then please check to make sure no duplicated PATIENT_IDs exist in the patient file.\n"
 
 		#CHECK: PATIENT_ID
 		patientId = "PATIENT_ID"
@@ -289,8 +291,9 @@ class clinical(example_filetype_format.FileTypeFormat):
 		if haveColumn:
 			#Make oncotree codes uppercase (SpCC/SPCC)
 			clinicalDF['ONCOTREE_CODE'] = clinicalDF['ONCOTREE_CODE'].astype(str).str.upper()
-			if not all(clinicalDF['ONCOTREE_CODE'].isin(oncotree_mapping['ONCOTREE_CODE'])):
-				unmapped_oncotrees = clinicalDF['ONCOTREE_CODE'][~clinicalDF['ONCOTREE_CODE'].isin(oncotree_mapping['ONCOTREE_CODE'])]
+			oncotree_codes = clinicalDF['ONCOTREE_CODE'][clinicalDF['ONCOTREE_CODE'] != "UNKNOWN"]
+			if not all(oncotree_codes.isin(oncotree_mapping['ONCOTREE_CODE'])):
+				unmapped_oncotrees = oncotree_codes[~oncotree_codes.isin(oncotree_mapping['ONCOTREE_CODE'])]
 				total_error += "Sample: Please double check that all your ONCOTREE CODES exist in the mapping. You have %d samples that don't map. These are the codes that don't map: %s\n" % (len(unmapped_oncotrees),",".join(set(unmapped_oncotrees)))
 			if process_functions.checkColExist(clinicalDF, "SEX") and 'oncotree_mapping_dict' in locals() and havePatientColumn and haveSampleColumn:
 				wrongCodeSamples = []
