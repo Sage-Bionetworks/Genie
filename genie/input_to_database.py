@@ -446,7 +446,11 @@ def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path
 	# ----------------------------------------
 	# Start input to staging process
 	# ----------------------------------------
-	path_to_genie = os.path.realpath(os.path.join(process_functions.SCRIPT_DIR,"../"))
+
+	#path_to_genie = os.path.realpath(os.path.join(process_functions.SCRIPT_DIR,"../"))
+	#Make the synapsecache dir the genie input folder for now
+	#The main reason for this is because the .synaspecache dir is mounted by batch
+	path_to_genie = os.path.expanduser("~/.synapseCache")
 	#Create input and staging folders
 	if not os.path.exists(os.path.join(path_to_genie,center,"input")):
 		os.makedirs(os.path.join(path_to_genie,center,"input"))
