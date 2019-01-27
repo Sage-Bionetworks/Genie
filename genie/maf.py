@@ -59,7 +59,7 @@ class maf(example_filetype_format.FileTypeFormat):
 		narrowMafColumns = [col['name'] for col in self.syn.getTableColumns(mafSynId) if col['name'] != 'inBED']
 		#Strips out windows indentations \r
 		command = ['dos2unix',filePath]
-		subprocess.call(command)
+		subprocess.check_call(command)
 		tempdir = os.path.join(path_to_GENIE, self.center)
 		commandCall = ["perl",os.path.join(vcf2mafPath,"maf2maf.pl"),
 					   "--input-maf",filePath,
@@ -72,7 +72,7 @@ class maf(example_filetype_format.FileTypeFormat):
 					   "--custom-enst", os.path.join(vcf2mafPath,"data/isoform_overrides_uniprot")]
 		if reference is not None:
 			commandCall.extend(["--ref-fasta",reference])
-		maf = subprocess.call(commandCall) 
+		maf = subprocess.check_call(commandCall) 
 
 		process_functions.rmFiles(tempdir, recursive=False)
 		open(narrowMafPath,"w").close()
