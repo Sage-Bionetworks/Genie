@@ -87,7 +87,7 @@ class vcf(maf.maf):
 				tumor = "TUMOR"
 				normal = "NORMAL"
 			# ### If the tumor name isn't TUMOR, set the sample id to be the tumor name
-			if tumor != "TUMOR":
+			if tumor == "TUMOR":
 				tumorName = vcfName.replace(".vcf","")
 			else:
 				tumorName = tumor
