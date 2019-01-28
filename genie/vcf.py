@@ -74,22 +74,23 @@ class vcf(maf.maf):
 
 			samples = [i for i in cols if i not in vcfCols]
 
-			tumorName = vcfName.replace(".vcf","")
+			#tumorName = vcfName.replace(".vcf","")
 
 			if len(samples) == 1:
 				tumor = samples[0]
 				normal = "NORMAL"
-				### If the tumor name isn't TUMOR, set the sample id to be the tumor name
-				if tumor != "TUMOR":
-					tumorName = tumor
 			elif len(samples) == 2:
-				#Tumor is always first, normal is second
+				#Assumes that Tumor is always first, normal is second
 				tumor = samples[0]
 				normal = samples[1]
-				tumorName = tumor   
 			else:
 				tumor = "TUMOR"
 				normal = "NORMAL"
+			# ### If the tumor name isn't TUMOR, set the sample id to be the tumor name
+			if tumor != "TUMOR":
+				tumorName = vcfName.replace(".vcf","")
+			else:
+				tumorName = tumor
 			newMAFPath = newVCFPath + ".maf"
 			if os.path.isfile(newMAFPath):
 				mafFiles.append(newMAFPath)
