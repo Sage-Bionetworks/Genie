@@ -113,5 +113,7 @@ genieMutData$t_alt_count_num <- NULL
 updateMutData = genieMutData[genieMutData$inBED != oldInBed,]
 
 if (nrow(updateMutData) > 0) { 
-  synStore(Table(mafSynId, updateMutData[c("ROW_ID","ROW_VERSION","inBED")]))
+  write.csv(updateMutData[c("ROW_ID","ROW_VERSION","inBED")],"update_inbed.csv",row.names = F)
+  #synStore(Table(mafSynId, updateMutData[c("ROW_ID","ROW_VERSION","inBED")]))
+  synStore(Table(mafSynId, "update_inbed.csv"))
 }
