@@ -113,7 +113,18 @@ genieMutData$t_alt_count_num <- NULL
 updateMutData = genieMutData[genieMutData$inBED != oldInBed,]
 
 if (nrow(updateMutData) > 0) { 
-  write.csv(updateMutData[c("ROW_ID","ROW_VERSION","inBED")],"update_inbed.csv",row.names = F)
+  #write.csv(updateMutData[c("ROW_ID","ROW_VERSION","inBED")],"update_inbed.csv",row.names = F)
+  #Need to chunk the upload
+  chunk = 100000
+  rows = 0
+  while (rows*chunk < nrow(updateMutData)) {
+    if ((rows + 1)* chunk > nrow(updateMutData)) {
+      to_update = updateMutData[((rows*chunk)+1):nrow(updateMutData),c("ROW_ID","ROW_VERSION","inBED")]
+    } else{
+      to_update = updateMutData[((rows*chunk)+1):((rows+1)*chunk),c("ROW_ID","ROW_VERSION","inBED")]
+    }
+    rows = rows+1
+  }
   #synStore(Table(mafSynId, updateMutData[c("ROW_ID","ROW_VERSION","inBED")]))
-  synStore(Table(mafSynId, "update_inbed.csv"))
+  #synStore(Table(mafSynId, "update_inbed.csv"))
 }
