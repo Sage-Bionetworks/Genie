@@ -129,7 +129,8 @@ def configureMafRow(rowArray, headers, keepSamples, remove_variants):
 	seq = str(rowArray[headers.index('Tumor_Seq_Allele2')])
 	sampleId = str(rowArray[headers.index('Tumor_Sample_Barcode')])
 	variant = chrom +' '+ start+ ' '+end +' '+ref + ' '+ seq+ ' ' + sampleId
-	if pd.Series(sampleId).isin(keepSamples).any() and not pd.Series(variant).isin(remove_variants).any():
+	#if pd.Series(sampleId).isin(keepSamples).any() and not pd.Series(variant).isin(remove_variants).any():
+	if sampleId in keepSamples.tolist() and not variant in remove_variants.tolist():
 		fillnas = ['t_depth','t_ref_count','t_alt_count','n_depth','n_ref_count','n_alt_count']
 		for i in fillnas:
 			#mutationsDf[i] = mutationsDf[i].fillna("NA")
