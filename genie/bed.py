@@ -67,7 +67,7 @@ def validateSymbol(x, genePositionDf, returnMappedDf=False):
 				ratioOverlap = ratioOverlap[ratioOverlap > 0.9]
 				ratioOverlap = ratioOverlap[ratioOverlap <= 1]
 				if not ratioOverlap.empty:
-					endRows = endRows.append(chromRows.ix[[ratioOverlap.idxmax()]])
+					endRows = endRows.append(chromRows.loc[[ratioOverlap.idxmax()]])
 			#End goes over end boundary, but start is contained in gene
 			if sum(chromRows['start_position'] <= x['Start_Position']) > 0:
 				overlap = chromRows['end_position'] - x['Start_Position']
@@ -75,7 +75,7 @@ def validateSymbol(x, genePositionDf, returnMappedDf=False):
 				ratioOverlap = ratioOverlap[ratioOverlap > 0.9]
 				ratioOverlap = ratioOverlap[ratioOverlap <= 1]
 				if not ratioOverlap.empty:
-					endRows = endRows.append(chromRows.ix[[ratioOverlap.idxmax()]])
+					endRows = endRows.append(chromRows.loc[[ratioOverlap.idxmax()]])
 			#Start and end go over gene boundary
 			check = chromRows[chromRows['start_position'] >= x['Start_Position']]
 			check = check[check['end_position'] <= x['End_Position']]
@@ -85,7 +85,7 @@ def validateSymbol(x, genePositionDf, returnMappedDf=False):
 				ratioOverlap = ratioOverlap[ratioOverlap > 0.9]
 				ratioOverlap = ratioOverlap[ratioOverlap <= 1]
 				if not ratioOverlap.empty:
-					endRows = endRows.append(chromRows.ix[[ratioOverlap.idxmax()]])
+					endRows = endRows.append(chromRows.loc[[ratioOverlap.idxmax()]])
 
 		if len(endRows) == 0:
 			logger.warning("%s cannot be remapped. These rows will have an empty gene symbol" % x['Hugo_Symbol'])
