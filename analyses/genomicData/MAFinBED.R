@@ -123,9 +123,9 @@ if (nrow(updateMutData) > 0) {
     } else{
       to_update = updateMutData[((rows*chunk)+1):((rows+1)*chunk),c("ROW_ID","ROW_VERSION","inBED")]
     }
+    synStore(Table(mafSynId, to_update))
     rows = rows+1
   }
-  synStore(Table(mafSynId, to_update))
   #synStore(Table(mafSynId, updateMutData[c("ROW_ID","ROW_VERSION","inBED")]))
   #synStore(Table(mafSynId, "update_inbed.csv"))
 }
