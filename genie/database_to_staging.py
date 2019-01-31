@@ -151,12 +151,15 @@ def configureMafRow(rowArray, headers, keepSamples, remove_variants):
 #Run MAF in BED script, filter data and update MAFinBED database
 def runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test=False, genieVersion="test"):
 	MAFinBED_script = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../analyses/genomicData/MAFinBED.R')
-	command = ['Rscript', MAFinBED_script, str(test)]
+	notinbed_variant_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../analyses/genomicData/notinbed.csv')
+
+	command = ['Rscript', MAFinBED_script, str(test), notinbed_variant_file]
 	subprocess.check_call(command)
 
-	mutationSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "vcf2maf"][0]
-	removedVariants = syn.tableQuery("select Chromosome, Start_Position, End_Position, Reference_Allele, Tumor_Seq_Allele2, Tumor_Sample_Barcode, Center from %s where inBED is False and Center in ('%s')" % (mutationSynId,"','".join(CENTER_MAPPING_DF.center)))
-	removedVariantsDf = removedVariants.asDataFrame()
+	# mutationSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "vcf2maf"][0]
+	# removedVariants = syn.tableQuery("select Chromosome, Start_Position, End_Position, Reference_Allele, Tumor_Seq_Allele2, Tumor_Sample_Barcode, Center from %s where inBED is False and Center in ('%s')" % (mutationSynId,"','".join(CENTER_MAPPING_DF.center)))
+	# removedVariantsDf = removedVariants.asDataFrame()
+	removedVariantsDf = pd.read_csv(notinbed_variant_file)
 	removedVariantsDf['removeVariants'] = removedVariantsDf['Chromosome'].astype(str) + ' ' + removedVariantsDf['Start_Position'].astype(str) + ' ' + removedVariantsDf['End_Position'].astype(str) + ' ' + removedVariantsDf['Reference_Allele'].astype(str) + ' ' + removedVariantsDf['Tumor_Seq_Allele2'].astype(str) + ' ' + removedVariantsDf['Tumor_Sample_Barcode'].astype(str)
 	#Store filtered vairants
 	for center in removedVariantsDf['Center'].unique():

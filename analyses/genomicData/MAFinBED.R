@@ -4,8 +4,8 @@ library(synapser)
 library(VariantAnnotation)
 
 args = commandArgs(trailingOnly=TRUE)
-if (length(args) != 1) {
-  stop("Must supply a boolean value")
+if (length(args) != 2) {
+  stop("Must supply a boolean value and a filepath to write variants not in bed")
 }
 # SAGE login
 tryCatch({
@@ -108,24 +108,28 @@ for (panelName in seq_assays) {
 }
 genieMutData$t_depth_new <- NULL
 genieMutData$t_alt_count_num <- NULL
+# Commented out below because of PFLM-4975
 #Compare old inBED with new inBED column
 #If there are differences, update only the diffs
-updateMutData = genieMutData[genieMutData$inBED != oldInBed,]
+# updateMutData = genieMutData[genieMutData$inBED != oldInBed,]
+# if (nrow(updateMutData) > 0) { 
+#   #write.csv(updateMutData[c("ROW_ID","ROW_VERSION","inBED")],"update_inbed.csv",row.names = F)
+#   #Need to chunk the upload
 
-if (nrow(updateMutData) > 0) { 
-  #write.csv(updateMutData[c("ROW_ID","ROW_VERSION","inBED")],"update_inbed.csv",row.names = F)
-  #Need to chunk the upload
-  chunk = 100000
-  rows = 0
-  while (rows*chunk < nrow(updateMutData)) {
-    if ((rows + 1)* chunk > nrow(updateMutData)) {
-      to_update = updateMutData[((rows*chunk)+1):nrow(updateMutData),c("ROW_ID","ROW_VERSION","inBED")]
-    } else{
-      to_update = updateMutData[((rows*chunk)+1):((rows+1)*chunk),c("ROW_ID","ROW_VERSION","inBED")]
-    }
-    synStore(Table(mafSynId, to_update))
-    rows = rows+1
-  }
-  #synStore(Table(mafSynId, updateMutData[c("ROW_ID","ROW_VERSION","inBED")]))
-  #synStore(Table(mafSynId, "update_inbed.csv"))
-}
+#   #it is an amazon problem, where amazon kills the connection while reading the csv from s3.
+#   chunk = 100000
+#   rows = 0
+#   while (rows*chunk < nrow(updateMutData)) {
+#     if ((rows + 1)* chunk > nrow(updateMutData)) {
+#       to_update = updateMutData[((rows*chunk)+1):nrow(updateMutData),c("ROW_ID","ROW_VERSION","inBED")]
+#     } else{
+#       to_update = updateMutData[((rows*chunk)+1):((rows+1)*chunk),c("ROW_ID","ROW_VERSION","inBED")]
+#     }
+#     synStore(Table(mafSynId, to_update))
+#     rows = rows+1
+#   }
+#   #synStore(Table(mafSynId, updateMutData[c("ROW_ID","ROW_VERSION","inBED")]))
+#   #synStore(Table(mafSynId, "update_inbed.csv"))
+# }
+updateMutData = genieMutData[genieMutData$inBED == FALSE,c('Chromosome', 'Start_Position', 'End_Position', 'Reference_Allele', 'Tumor_Seq_Allele2', 'Tumor_Sample_Barcode', 'Center')]
+write.csv(updateMutData,args[2],row.names = F)
