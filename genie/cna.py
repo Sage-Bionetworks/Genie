@@ -91,9 +91,9 @@ class cna(example_filetype_format.FileTypeFormat):
 			newVal = dups[dups.columns[dups.columns!="Hugo_Symbol"]].apply(mergeCNAvalues)
 			temp = pd.DataFrame(newVal).transpose()
 			temp['Hugo_Symbol'] = i
-			duplicatedGenes = duplicatedGenes.append(temp)
+			duplicatedGenes = duplicatedGenes.append(temp,sort=False)
 		cnaDf.drop_duplicates('Hugo_Symbol',keep=False, inplace=True)
-		cnaDf = cnaDf.append(duplicatedGenes)
+		cnaDf = cnaDf.append(duplicatedGenes,sort=False)
 		cnaDf = cnaDf[order]
 		#symbols = cnaDf['HUGO_SYMBOL']
 		#del cnaDf['HUGO_SYMBOL']
