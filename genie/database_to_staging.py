@@ -283,10 +283,10 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 			  'CANCER_TYPE_DETAILED': 'UNKNOWN',
 			  'ONCOTREE_PRIMARY_NODE': 'UNKNOWN',
 			  'ONCOTREE_SECONDARY_NODE': 'UNKNOWN'}
-	clinicalDf['CANCER_TYPE'] = [oncotreeDict[code.upper()].get("CANCER_TYPE",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]
-	clinicalDf['CANCER_TYPE_DETAILED'] = [oncotreeDict[code.upper()].get("CANCER_TYPE_DETAILED",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]
-	clinicalDf['ONCOTREE_PRIMARY_NODE'] = [oncotreeDict[code.upper()].get("ONCOTREE_PRIMARY_NODE",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]
-	clinicalDf['ONCOTREE_SECONDARY_NODE'] = [oncotreeDict[code.upper()].get("ONCOTREE_SECONDARY_NODE",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]
+	clinicalDf['CANCER_TYPE'] = [oncotreeDict[code.upper()]["CANCER_TYPE"] if code.upper() in oncotreeDict.keys() else float('nan') for code in clinicalDf['ONCOTREE_CODE']]
+	clinicalDf['CANCER_TYPE_DETAILED'] = [oncotreeDict[code.upper()]["CANCER_TYPE_DETAILED"] if code.upper() in oncotreeDict.keys() else float('nan') for code in clinicalDf['ONCOTREE_CODE']]
+	clinicalDf['ONCOTREE_PRIMARY_NODE'] = [oncotreeDict[code.upper()]["ONCOTREE_PRIMARY_NODE"]  if code.upper() in oncotreeDict.keys() else float('nan') for code in clinicalDf['ONCOTREE_CODE']]
+	clinicalDf['ONCOTREE_SECONDARY_NODE'] = [oncotreeDict[code.upper()]["ONCOTREE_SECONDARY_NODE"] if code.upper() in oncotreeDict.keys() else float('nan') for code in clinicalDf['ONCOTREE_CODE']]
 
 	#CANCER TYPES are added which is why the clinical file is written out.
 	#clinicalDf.to_csv(CLINCICAL_PATH, sep="\t", index=False)
