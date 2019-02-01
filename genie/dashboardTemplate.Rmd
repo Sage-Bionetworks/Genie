@@ -104,7 +104,11 @@ plotPrimarySites <- function(clinical, oncotreeLink, release) {
     oncotree_json = data$TISSUE
     oncotreeDict = extract(oncotree_json, "", "")
     clinical$PRIMARY_CODES <- unlist(sapply(clinical$ONCOTREE_CODE, function(code) {
-      oncotreeDict[[toupper(code)]]["ONCOTREE_PRIMARY_NODE"]
+      if (toupper(code) %in% names(oncotreeDict)){
+        oncotreeDict[[toupper(code)]]["ONCOTREE_PRIMARY_NODE"]
+      } else {
+        "DEPRECATED_CODE"
+      }
     }))
   })
   clinical$CENTER = createCenterColumn(clinical)
@@ -288,7 +292,7 @@ kable(samplesPerReleaseDf,row.names = F)
 #primary site distribution
 par(mar=c(10,3,3,1))
 barplot(sort(log(table(this_mut$FILTER)),decreasing = T), main="Log Distribution of Mutation FILTERs",las=2)
-plotPrimarySites(this_samples, "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21","%s")
+plotPrimarySites(this_samples, "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2018_06_01","%s")
 #Center X Race
 plotCenterXRace(this_patient)
 #Center X Ethnicity
