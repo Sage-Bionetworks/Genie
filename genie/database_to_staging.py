@@ -266,8 +266,8 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	#########FILTERING#########
 	logger.info("REMOVING PHI")
 	clinicalDf = reAnnotatePHI(clinicalDf)
-	logger.info("MAF IN BED FILTER")
-	remove_mafInBed_variants = runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test, genieVersion=genieVersion)
+	#logger.info("MAF IN BED FILTER")
+	#remove_mafInBed_variants = runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test, genieVersion=genieVersion)
 	logger.info("MUTATION IN CIS FILTER")
 	remove_mutationInCis_samples = mutation_in_cis_filter(syn, skipMutationsInCis, test, variant_filtering_synId, CENTER_MAPPING_DF, genieVersion=genieVersion)
 	logger.info("SEQ DATE FILTER")
@@ -368,41 +368,41 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	centerMafFileViewSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "centerMafView"][0]
 	centerMafSynIds = syn.tableQuery("select id from %s " % centerMafFileViewSynId + "where name like '%mutation%'")
 	centerMafSynIdsDf = centerMafSynIds.asDataFrame()
-	with open(MUTATIONS_PATH, 'w') as f:
-		f.write(sequenced_samples + "\n") 
-	for index, mafSynId in enumerate(centerMafSynIdsDf.id):
-		mafEnt = syn.get(mafSynId)
-		logger.info(mafEnt.path)
-		with open(mafEnt.path,"r") as mafFile:
-			header = mafFile.readline()
-			headers = header.replace("\n","").split("\t")
-			if index == 0:
-				with open(MUTATIONS_PATH, 'a') as f:
-					f.write(header)
-				#Create maf file per center for their staging directory
-				for center in clinicalDf['CENTER'].unique():
-					with open(MUTATIONS_CENTER_PATH % center, 'w') as f:
-						f.write(header)
-		# with open(mafEnt.path,"r") as newMafFile:
-		# 	newMafFile.readline()
-			center = mafEnt.path.split("_")[3]
-			#Make sure to only write the centers that release = True
-			if center in CENTER_MAPPING_DF.center.tolist():
-				for row in mafFile:
-					rowArray = row.replace("\n","").split("\t")
-					center = rowArray[headers.index('Center')]
-					newMergedRow = configureMafRow(rowArray, headers, keepForMergedConsortiumSamples, remove_mafInBed_variants)
-					if newMergedRow is not None:
-						with open(MUTATIONS_PATH, 'a') as f:
-							f.write(newMergedRow)
-					newCenterRow = configureMafRow(rowArray, headers, keepForCenterConsortiumSamples, remove_mafInBed_variants)
-					if newCenterRow is not None:
-						with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
-							f.write(newCenterRow)
-	storeFile(syn, MUTATIONS_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_mutations_extended.txt", staging=current_release_staging)
-	if not current_release_staging:
-		for center in clinicalDf['CENTER'].unique():
-			storeFile(syn, MUTATIONS_CENTER_PATH % center, genieVersion=genieVersion, parent = CENTER_MAPPING_DF['stagingSynId'][CENTER_MAPPING_DF['center'] == center][0], centerStaging=True)
+	# with open(MUTATIONS_PATH, 'w') as f:
+	# 	f.write(sequenced_samples + "\n") 
+	# for index, mafSynId in enumerate(centerMafSynIdsDf.id):
+	# 	mafEnt = syn.get(mafSynId)
+	# 	logger.info(mafEnt.path)
+	# 	with open(mafEnt.path,"r") as mafFile:
+	# 		header = mafFile.readline()
+	# 		headers = header.replace("\n","").split("\t")
+	# 		if index == 0:
+	# 			with open(MUTATIONS_PATH, 'a') as f:
+	# 				f.write(header)
+	# 			#Create maf file per center for their staging directory
+	# 			for center in clinicalDf['CENTER'].unique():
+	# 				with open(MUTATIONS_CENTER_PATH % center, 'w') as f:
+	# 					f.write(header)
+	# 	# with open(mafEnt.path,"r") as newMafFile:
+	# 	# 	newMafFile.readline()
+	# 		center = mafEnt.path.split("_")[3]
+	# 		#Make sure to only write the centers that release = True
+	# 		if center in CENTER_MAPPING_DF.center.tolist():
+	# 			for row in mafFile:
+	# 				rowArray = row.replace("\n","").split("\t")
+	# 				center = rowArray[headers.index('Center')]
+	# 				newMergedRow = configureMafRow(rowArray, headers, keepForMergedConsortiumSamples, remove_mafInBed_variants)
+	# 				if newMergedRow is not None:
+	# 					with open(MUTATIONS_PATH, 'a') as f:
+	# 						f.write(newMergedRow)
+	# 				newCenterRow = configureMafRow(rowArray, headers, keepForCenterConsortiumSamples, remove_mafInBed_variants)
+	# 				if newCenterRow is not None:
+	# 					with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
+	# 						f.write(newCenterRow)
+	# storeFile(syn, MUTATIONS_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_mutations_extended.txt", staging=current_release_staging)
+	# if not current_release_staging:
+	# 	for center in clinicalDf['CENTER'].unique():
+	# 		storeFile(syn, MUTATIONS_CENTER_PATH % center, genieVersion=genieVersion, parent = CENTER_MAPPING_DF['stagingSynId'][CENTER_MAPPING_DF['center'] == center][0], centerStaging=True)
 
 	#Only need to upload these files once
 	#if filtering:

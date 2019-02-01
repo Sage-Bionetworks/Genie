@@ -256,7 +256,7 @@ def update_oncotree_code_tables(syn, database_mappingdf):
 	oncotree_link_ent = syn.get(oncotree_link_synid)
 	oncotree_link = oncotree_link_ent.externalURL
 	oncotree_mapping = genie.process_functions.get_oncotree_code_mappings(oncotree_link)
-	clinicaldf['PRIMARY_CODES'] = [oncotree_mapping[i.upper()]['ONCOTREE_PRIMARY_NODE'] for i in clinicaldf.ONCOTREE_CODE]
+	clinicaldf['PRIMARY_CODES'] = [oncotree_mapping[i.upper()]['ONCOTREE_PRIMARY_NODE'] if i.upper() in oncotree_mapping.keys() else 'NOT_MAPPED' for i in clinicaldf.ONCOTREE_CODE]
 
 	# ### DISTRIBUTION OF PRIMARY ONCOTREE CODE TABLE UPDATE
 	primary_code_distributiondf = pd.DataFrame(columns=set(clinicaldf['CENTER']), index=set(clinicaldf['PRIMARY_CODES']))
