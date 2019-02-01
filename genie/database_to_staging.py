@@ -266,8 +266,8 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	#########FILTERING#########
 	logger.info("REMOVING PHI")
 	clinicalDf = reAnnotatePHI(clinicalDf)
-	#logger.info("MAF IN BED FILTER")
-	#remove_mafInBed_variants = runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test, genieVersion=genieVersion)
+	logger.info("MAF IN BED FILTER")
+	remove_mafInBed_variants = runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test, genieVersion=genieVersion)
 	logger.info("MUTATION IN CIS FILTER")
 	remove_mutationInCis_samples = mutation_in_cis_filter(syn, skipMutationsInCis, test, variant_filtering_synId, CENTER_MAPPING_DF, genieVersion=genieVersion)
 	logger.info("SEQ DATE FILTER")
@@ -368,41 +368,41 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	centerMafFileViewSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "centerMafView"][0]
 	centerMafSynIds = syn.tableQuery("select id from %s " % centerMafFileViewSynId + "where name like '%mutation%'")
 	centerMafSynIdsDf = centerMafSynIds.asDataFrame()
-	# with open(MUTATIONS_PATH, 'w') as f:
-	# 	f.write(sequenced_samples + "\n") 
-	# for index, mafSynId in enumerate(centerMafSynIdsDf.id):
-	# 	mafEnt = syn.get(mafSynId)
-	# 	logger.info(mafEnt.path)
-	# 	with open(mafEnt.path,"r") as mafFile:
-	# 		header = mafFile.readline()
-	# 		headers = header.replace("\n","").split("\t")
-	# 		if index == 0:
-	# 			with open(MUTATIONS_PATH, 'a') as f:
-	# 				f.write(header)
-	# 			#Create maf file per center for their staging directory
-	# 			for center in clinicalDf['CENTER'].unique():
-	# 				with open(MUTATIONS_CENTER_PATH % center, 'w') as f:
-	# 					f.write(header)
-	# 	# with open(mafEnt.path,"r") as newMafFile:
-	# 	# 	newMafFile.readline()
-	# 		center = mafEnt.path.split("_")[3]
-	# 		#Make sure to only write the centers that release = True
-	# 		if center in CENTER_MAPPING_DF.center.tolist():
-	# 			for row in mafFile:
-	# 				rowArray = row.replace("\n","").split("\t")
-	# 				center = rowArray[headers.index('Center')]
-	# 				newMergedRow = configureMafRow(rowArray, headers, keepForMergedConsortiumSamples, remove_mafInBed_variants)
-	# 				if newMergedRow is not None:
-	# 					with open(MUTATIONS_PATH, 'a') as f:
-	# 						f.write(newMergedRow)
-	# 				newCenterRow = configureMafRow(rowArray, headers, keepForCenterConsortiumSamples, remove_mafInBed_variants)
-	# 				if newCenterRow is not None:
-	# 					with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
-	# 						f.write(newCenterRow)
-	# storeFile(syn, MUTATIONS_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_mutations_extended.txt", staging=current_release_staging)
-	# if not current_release_staging:
-	# 	for center in clinicalDf['CENTER'].unique():
-	# 		storeFile(syn, MUTATIONS_CENTER_PATH % center, genieVersion=genieVersion, parent = CENTER_MAPPING_DF['stagingSynId'][CENTER_MAPPING_DF['center'] == center][0], centerStaging=True)
+	with open(MUTATIONS_PATH, 'w') as f:
+		f.write(sequenced_samples + "\n") 
+	for index, mafSynId in enumerate(centerMafSynIdsDf.id):
+		mafEnt = syn.get(mafSynId)
+		logger.info(mafEnt.path)
+		with open(mafEnt.path,"r") as mafFile:
+			header = mafFile.readline()
+			headers = header.replace("\n","").split("\t")
+			if index == 0:
+				with open(MUTATIONS_PATH, 'a') as f:
+					f.write(header)
+				#Create maf file per center for their staging directory
+				for center in clinicalDf['CENTER'].unique():
+					with open(MUTATIONS_CENTER_PATH % center, 'w') as f:
+						f.write(header)
+		# with open(mafEnt.path,"r") as newMafFile:
+		# 	newMafFile.readline()
+			center = mafEnt.path.split("_")[3]
+			#Make sure to only write the centers that release = True
+			if center in CENTER_MAPPING_DF.center.tolist():
+				for row in mafFile:
+					rowArray = row.replace("\n","").split("\t")
+					center = rowArray[headers.index('Center')]
+					newMergedRow = configureMafRow(rowArray, headers, keepForMergedConsortiumSamples, remove_mafInBed_variants)
+					if newMergedRow is not None:
+						with open(MUTATIONS_PATH, 'a') as f:
+							f.write(newMergedRow)
+					newCenterRow = configureMafRow(rowArray, headers, keepForCenterConsortiumSamples, remove_mafInBed_variants)
+					if newCenterRow is not None:
+						with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
+							f.write(newCenterRow)
+	storeFile(syn, MUTATIONS_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_mutations_extended.txt", staging=current_release_staging)
+	if not current_release_staging:
+		for center in clinicalDf['CENTER'].unique():
+			storeFile(syn, MUTATIONS_CENTER_PATH % center, genieVersion=genieVersion, parent = CENTER_MAPPING_DF['stagingSynId'][CENTER_MAPPING_DF['center'] == center][0], centerStaging=True)
 
 	#Only need to upload these files once
 	#if filtering:
@@ -740,79 +740,79 @@ def main():
 	process.checkUrl(args.oncotreeLink)
 
 	#get syn id of case list folder in consortium release
-	caseListSynId = findCaseListId(syn, consortiumSynId)
+# 	caseListSynId = findCaseListId(syn, consortiumSynId)
 
-	if not args.test and not args.staging:
-		processTrackerSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'processTracker'].values[0]
-		processTracker = syn.tableQuery("SELECT timeStartProcessing FROM %s where center = 'SAGE' and processingType = 'dbToStage'" % processTrackerSynId)
-		processTrackerDf = processTracker.asDataFrame()
-		processTrackerDf['timeStartProcessing'][0] = str(int(time.time()*1000))
-		syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
+# 	if not args.test and not args.staging:
+# 		processTrackerSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'processTracker'].values[0]
+# 		processTracker = syn.tableQuery("SELECT timeStartProcessing FROM %s where center = 'SAGE' and processingType = 'dbToStage'" % processTrackerSynId)
+# 		processTrackerDf = processTracker.asDataFrame()
+# 		processTrackerDf['timeStartProcessing'][0] = str(int(time.time()*1000))
+# 		syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
 
-	syn.table_query_timeout = 50000
-	centerMappingSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'centerMapping'].values[0]
-	#Only release files where release is true
-	CENTER_MAPPING = syn.tableQuery('SELECT * FROM %s where release is true' % centerMappingSynId)
-	CENTER_MAPPING_DF = CENTER_MAPPING.asDataFrame()
-	processingDate = datetime.datetime.strptime(args.processingDate, '%b-%Y')
-#######
-	cbioValidatorPath = os.path.join(args.cbioportalPath,"core/src/main/scripts/importer/validateData.py")
-	assert os.path.exists(cbioValidatorPath), "Please specify correct cbioportalPath"
+# 	syn.table_query_timeout = 50000
+# 	centerMappingSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'centerMapping'].values[0]
+# 	#Only release files where release is true
+# 	CENTER_MAPPING = syn.tableQuery('SELECT * FROM %s where release is true' % centerMappingSynId)
+# 	CENTER_MAPPING_DF = CENTER_MAPPING.asDataFrame()
+# 	processingDate = datetime.datetime.strptime(args.processingDate, '%b-%Y')
+# #######
+# 	cbioValidatorPath = os.path.join(args.cbioportalPath,"core/src/main/scripts/importer/validateData.py")
+# 	assert os.path.exists(cbioValidatorPath), "Please specify correct cbioportalPath"
 
-	logger.info("STAGING TO CONSORTIUM")
-	genePanelEntities = stagingToCbio(syn, processingDate, args.genieVersion, CENTER_MAPPING_DF, databaseSynIdMappingDf, oncotree_url=args.oncotreeLink, consortiumReleaseCutOff= args.consortiumReleaseCutOff, current_release_staging=args.staging, skipMutationsInCis=args.skipMutationsInCis, test=args.test)
+# 	logger.info("STAGING TO CONSORTIUM")
+# 	genePanelEntities = stagingToCbio(syn, processingDate, args.genieVersion, CENTER_MAPPING_DF, databaseSynIdMappingDf, oncotree_url=args.oncotreeLink, consortiumReleaseCutOff= args.consortiumReleaseCutOff, current_release_staging=args.staging, skipMutationsInCis=args.skipMutationsInCis, test=args.test)
 	
-	#No need to run twice anymore
-	#stagingToCbio(syn, processingDate, args.genieVersion, CENTER_MAPPING_DF, databaseSynIdMappingDf, oncotree_url=args.oncotreeLink, consortiumReleaseCutOff= args.consortiumReleaseCutOff, filtering=True, current_release_staging=args.staging, test=args.test)
-	#Create case lists files
-	logger.info("CREATE CASE LIST FILES")
-	#Remove old caselists first
-	if not os.path.exists(CASE_LIST_PATH):
-		os.mkdir(CASE_LIST_PATH)
-	caselists = os.listdir(CASE_LIST_PATH)
-	[os.remove(os.path.join(CASE_LIST_PATH,caselist)) for caselist in caselists]
-	CLINICAL_PATH = os.path.join(GENIE_RELEASE_DIR,'data_clinical_%s.txt' % args.genieVersion)
-	GENE_MATRIX_PATH = os.path.join(GENIE_RELEASE_DIR,"data_gene_matrix_%s.txt" % args.genieVersion)
-	create_case_lists.create_case_lists(CLINICAL_PATH, GENE_MATRIX_PATH, CASE_LIST_PATH, "genie_private")
-	caseListFiles = os.listdir(CASE_LIST_PATH)
-	caseListEntities = []
-	for casePath in caseListFiles:
-		casePath = os.path.join(CASE_LIST_PATH, casePath)
-		caseListEntities.append(storeFile(syn, casePath, parent=caseListSynId, staging=args.staging, caseLists=True, genieVersion=args.genieVersion))
+# 	#No need to run twice anymore
+# 	#stagingToCbio(syn, processingDate, args.genieVersion, CENTER_MAPPING_DF, databaseSynIdMappingDf, oncotree_url=args.oncotreeLink, consortiumReleaseCutOff= args.consortiumReleaseCutOff, filtering=True, current_release_staging=args.staging, test=args.test)
+# 	#Create case lists files
+# 	logger.info("CREATE CASE LIST FILES")
+# 	#Remove old caselists first
+# 	if not os.path.exists(CASE_LIST_PATH):
+# 		os.mkdir(CASE_LIST_PATH)
+# 	caselists = os.listdir(CASE_LIST_PATH)
+# 	[os.remove(os.path.join(CASE_LIST_PATH,caselist)) for caselist in caselists]
+# 	CLINICAL_PATH = os.path.join(GENIE_RELEASE_DIR,'data_clinical_%s.txt' % args.genieVersion)
+# 	GENE_MATRIX_PATH = os.path.join(GENIE_RELEASE_DIR,"data_gene_matrix_%s.txt" % args.genieVersion)
+# 	create_case_lists.create_case_lists(CLINICAL_PATH, GENE_MATRIX_PATH, CASE_LIST_PATH, "genie_private")
+# 	caseListFiles = os.listdir(CASE_LIST_PATH)
+# 	caseListEntities = []
+# 	for casePath in caseListFiles:
+# 		casePath = os.path.join(CASE_LIST_PATH, casePath)
+# 		caseListEntities.append(storeFile(syn, casePath, parent=caseListSynId, staging=args.staging, caseLists=True, genieVersion=args.genieVersion))
 
-	logger.info("REMOVING UNNECESSARY FILES")
-	genie_files = os.listdir(GENIE_RELEASE_DIR)
-	#deletePatterns = ('data_clinical_supp_patient_','data_clinical_supp_sample_','data_CNA_','data_mutations_extended_','data_fusions_','genie_private_data_cna_hg19_')
-	#[os.remove(os.path.join(GENIE_RELEASE_DIR,genieFile)) for genieFile in genie_files if genieFile.startswith(deletePatterns)]
-	[os.remove(os.path.join(GENIE_RELEASE_DIR,genieFile)) for genieFile in genie_files if args.genieVersion not in genieFile and "meta" not in genieFile and "case_lists" not in genieFile]
-	os.remove(CLINICAL_PATH)
-#######	
-	logger.info("REVISE METADATA FILES")
-	command_reviseMetadataFiles(syn, args, databaseSynIdMappingDf)
-	logger.info("CBIO VALIDATION")
-	#Must be exit 0 because the validator sometimes fails, but we still want to capture the output	
-	command = [cbioValidatorPath,'-s',GENIE_RELEASE_DIR,'-n','; exit 0']
-	cbioOutput = subprocess.check_output(" ".join(command), shell=True)
-	logger.info(cbioOutput.decode("utf-8"))
-	if not args.test and not args.staging:
-		with open("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion, "w") as cbioLog:
-			cbioLog.write(cbioOutput.decode("utf-8"))
-		syn.store(File("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion, parentId = "syn10155804"))
-		os.remove("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion)
-	logger.info("REMOVING OLD FILES")
+# 	logger.info("REMOVING UNNECESSARY FILES")
+# 	genie_files = os.listdir(GENIE_RELEASE_DIR)
+# 	#deletePatterns = ('data_clinical_supp_patient_','data_clinical_supp_sample_','data_CNA_','data_mutations_extended_','data_fusions_','genie_private_data_cna_hg19_')
+# 	#[os.remove(os.path.join(GENIE_RELEASE_DIR,genieFile)) for genieFile in genie_files if genieFile.startswith(deletePatterns)]
+# 	[os.remove(os.path.join(GENIE_RELEASE_DIR,genieFile)) for genieFile in genie_files if args.genieVersion not in genieFile and "meta" not in genieFile and "case_lists" not in genieFile]
+# 	os.remove(CLINICAL_PATH)
+# #######	
+# 	logger.info("REVISE METADATA FILES")
+# 	command_reviseMetadataFiles(syn, args, databaseSynIdMappingDf)
+# 	logger.info("CBIO VALIDATION")
+# 	#Must be exit 0 because the validator sometimes fails, but we still want to capture the output	
+# 	command = [cbioValidatorPath,'-s',GENIE_RELEASE_DIR,'-n','; exit 0']
+# 	cbioOutput = subprocess.check_output(" ".join(command), shell=True)
+# 	logger.info(cbioOutput.decode("utf-8"))
+# 	if not args.test and not args.staging:
+# 		with open("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion, "w") as cbioLog:
+# 			cbioLog.write(cbioOutput.decode("utf-8"))
+# 		syn.store(File("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion, parentId = "syn10155804"))
+# 		os.remove("cbioValidatorLogsConsortium_%s.txt" % args.genieVersion)
+# 	logger.info("REMOVING OLD FILES")
 
-	process.rmFiles(CASE_LIST_PATH)
-	if os.path.exists('%s/genie_private_meta_cna_hg19_seg.txt' % GENIE_RELEASE_DIR):
-		os.unlink('%s/genie_private_meta_cna_hg19_seg.txt' % GENIE_RELEASE_DIR)
-	logger.info("CREATING LINK VERSION")
-	createLinkVersion(syn, args.genieVersion, caseListEntities, genePanelEntities, databaseSynIdMappingDf)
+# 	process.rmFiles(CASE_LIST_PATH)
+# 	if os.path.exists('%s/genie_private_meta_cna_hg19_seg.txt' % GENIE_RELEASE_DIR):
+# 		os.unlink('%s/genie_private_meta_cna_hg19_seg.txt' % GENIE_RELEASE_DIR)
+# 	logger.info("CREATING LINK VERSION")
+# 	createLinkVersion(syn, args.genieVersion, caseListEntities, genePanelEntities, databaseSynIdMappingDf)
 
-	if not args.test and not args.staging:
-		processTracker = syn.tableQuery("SELECT timeEndProcessing FROM %s where center = 'SAGE' and processingType = 'dbToStage'" % processTrackerSynId)
-		processTrackerDf = processTracker.asDataFrame()
-		processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
-		syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
-	logger.info("COMPLETED DATABASE TO STAGING")
+# 	if not args.test and not args.staging:
+# 		processTracker = syn.tableQuery("SELECT timeEndProcessing FROM %s where center = 'SAGE' and processingType = 'dbToStage'" % processTrackerSynId)
+# 		processTrackerDf = processTracker.asDataFrame()
+# 		processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
+# 		syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
+# 	logger.info("COMPLETED DATABASE TO STAGING")
 
 	if not args.test:
 		logger.info("DASHBOARD UPDATE")
