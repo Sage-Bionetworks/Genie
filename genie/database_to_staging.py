@@ -305,9 +305,11 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	clinicalDf['AGE_AT_SEQ_REPORT'][clinicalDf['AGE_AT_SEQ_REPORT'] == "<6570"] = "<18"
 
 	############################################################
-	#CENTER SPECIFIC CODE FOR RIGHT NOW (REMOVE UHN-555-V1)
+	#CENTER SPECIFIC CODE FOR RIGHT NOW (REMOVE UHN-555-V1, PHS-TRISEQ-V1)
 	############################################################
 	clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "UHN-555-V1"]
+	clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "PHS-TRISEQ-V1"]
+
 	#clinicalDf = clinicalDf[clinicalDf['CENTER'] != "WAKE"]
 	#clinicalDf = clinicalDf[clinicalDf['CENTER'] != "CRUK"]
 	############################################################
