@@ -266,8 +266,8 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	#########FILTERING#########
 	logger.info("REMOVING PHI")
 	clinicalDf = reAnnotatePHI(clinicalDf)
-	logger.info("MAF IN BED FILTER")
-	remove_mafInBed_variants = runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test, genieVersion=genieVersion)
+	#logger.info("MAF IN BED FILTER")
+	#remove_mafInBed_variants = runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test, genieVersion=genieVersion)
 	logger.info("MUTATION IN CIS FILTER")
 	remove_mutationInCis_samples = mutation_in_cis_filter(syn, skipMutationsInCis, test, variant_filtering_synId, CENTER_MAPPING_DF, genieVersion=genieVersion)
 	logger.info("SEQ DATE FILTER")
