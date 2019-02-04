@@ -127,6 +127,7 @@ for (center in centers) {
     }
     
     # records with count data that preclude a VAF estimate - set VAF to 100% (1/1, alt/depth)
+    genieMutData$t_depth <-  as.numeric(genieMutData$t_depth)
     noVAF.idx = which((genieMutData$t_depth==0)|is.na(genieMutData$t_depth))
     genieMutData$t_alt_count_num = as.numeric(levels(genieMutData$t_alt_count))[genieMutData$t_alt_count]
     genieMutData$t_alt_count_num[noVAF.idx] = 1
