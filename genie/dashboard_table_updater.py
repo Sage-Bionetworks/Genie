@@ -432,6 +432,8 @@ def check_column_decreases(currentdf, olderdf):
 			if any(new_counts - old_counts < 0):
 				logger.info("\tDECREASE IN COLUMN: %s" % col)
 				diff = new_counts[new_counts - old_counts < 0]
+				diffs = new_counts-old_counts
+				logger.info("\t" + ",".join(diffs[diffs<0].index))
 				diff_map[col] = True
 			else:
 				diff_map[col] = False
