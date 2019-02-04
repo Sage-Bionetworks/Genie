@@ -36,6 +36,7 @@ class maf(FileTypeFormat):
 				mafSet = mafDf.to_csv(sep="\t", index=False, header=None)
 			writeOrAppend = "w" if maf else "a"
 			with open(filePath, writeOrAppend) as maf:
+				mafSet = process_functions.removeStringFloat(mafSet)
 				maf.write(mafSet)
 
 	#There is a isNarrow option, but note that the number of rows of the maf file 
