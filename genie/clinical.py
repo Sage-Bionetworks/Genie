@@ -465,11 +465,15 @@ class clinical(example_filetype_format.FileTypeFormat):
 				clinicalDf = clinicalDf.merge(otherClinicalDf, on="PATIENT_ID")
 			except Exception as e:
 				raise ValueError("If submitting separate patient and sample files, they both must have the PATIENT_ID column")
+			#Must figure out which is sample and which is patient
 			if "sample" in filePathList[0]:
-				if not all(clinicalDf['PATIENT_ID'].isin(otherClinicalDf['PATIENT_ID'])):
-					raise ValueError("Patient: All samples must have associated patient information")
+				sample = clinicalDf
+				patient = otherClinicalDf
 			else:
-				if not all(otherClinicalDf['PATIENT_ID'].isin(clinicalDf['PATIENT_ID'])):
-					raise ValueError("Patient: All samples must have associated patient information")
+				sample = otherClinicalDf
+				patient = clinicalDf	
+					
+			if not all(sample['PATIENT_ID'].isin(patient['PATIENT_ID'])):
+				raise ValueError("Patient: All samples must have associated patient information")
 
 		return(clinicalDf)
