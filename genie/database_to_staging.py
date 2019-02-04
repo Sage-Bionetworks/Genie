@@ -129,7 +129,8 @@ def configureMafRow(rowArray, headers, keepSamples, remove_variants):
 	seq = str(rowArray[headers.index('Tumor_Seq_Allele2')])
 	sampleId = str(rowArray[headers.index('Tumor_Sample_Barcode')])
 	variant = chrom +' '+ start+ ' '+end +' '+ref + ' '+ seq+ ' ' + sampleId
-	if pd.Series(sampleId).isin(keepSamples).any() and not pd.Series(variant).isin(remove_variants).any():
+	#if pd.Series(sampleId).isin(keepSamples).any() and not pd.Series(variant).isin(remove_variants).any():
+	if sampleId in keepSamples.tolist() and not variant in remove_variants.tolist():
 		fillnas = ['t_depth','t_ref_count','t_alt_count','n_depth','n_ref_count','n_alt_count']
 		for i in fillnas:
 			#mutationsDf[i] = mutationsDf[i].fillna("NA")
@@ -151,12 +152,15 @@ def configureMafRow(rowArray, headers, keepSamples, remove_variants):
 #Run MAF in BED script, filter data and update MAFinBED database
 def runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test=False, genieVersion="test"):
 	MAFinBED_script = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../analyses/genomicData/MAFinBED.R')
-	command = ['Rscript', MAFinBED_script, str(test)]
+	notinbed_variant_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../analyses/genomicData/notinbed.csv')
+
+	command = ['Rscript', MAFinBED_script, str(test), notinbed_variant_file]
 	subprocess.check_call(command)
 
-	mutationSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "vcf2maf"][0]
-	removedVariants = syn.tableQuery("select Chromosome, Start_Position, End_Position, Reference_Allele, Tumor_Seq_Allele2, Tumor_Sample_Barcode, Center from %s where inBED is False and Center in ('%s')" % (mutationSynId,"','".join(CENTER_MAPPING_DF.center)))
-	removedVariantsDf = removedVariants.asDataFrame()
+	# mutationSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "vcf2maf"][0]
+	# removedVariants = syn.tableQuery("select Chromosome, Start_Position, End_Position, Reference_Allele, Tumor_Seq_Allele2, Tumor_Sample_Barcode, Center from %s where inBED is False and Center in ('%s')" % (mutationSynId,"','".join(CENTER_MAPPING_DF.center)))
+	# removedVariantsDf = removedVariants.asDataFrame()
+	removedVariantsDf = pd.read_csv(notinbed_variant_file)
 	removedVariantsDf['removeVariants'] = removedVariantsDf['Chromosome'].astype(str) + ' ' + removedVariantsDf['Start_Position'].astype(str) + ' ' + removedVariantsDf['End_Position'].astype(str) + ' ' + removedVariantsDf['Reference_Allele'].astype(str) + ' ' + removedVariantsDf['Tumor_Seq_Allele2'].astype(str) + ' ' + removedVariantsDf['Tumor_Sample_Barcode'].astype(str)
 	#Store filtered vairants
 	for center in removedVariantsDf['Center'].unique():
@@ -242,6 +246,8 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	totalSample = ['PATIENT_ID']
 	totalSample.extend(sampleCols)
 	sampleCols = totalSample
+	#Make sure to only grab samples that have patient information
+	sampleDf = sampleDf[sampleDf['PATIENT_ID'].isin(patientDf['PATIENT_ID'])]
 	clinicalDf = sampleDf.merge(patientDf, on="PATIENT_ID",how="outer")
 	#Remove patients without any sample or patient ids
 	clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isnull()]
@@ -280,10 +286,10 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 			  'CANCER_TYPE_DETAILED': 'UNKNOWN',
 			  'ONCOTREE_PRIMARY_NODE': 'UNKNOWN',
 			  'ONCOTREE_SECONDARY_NODE': 'UNKNOWN'}
-	clinicalDf['CANCER_TYPE'] = [oncotreeDict[code.upper()].get("CANCER_TYPE",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]
-	clinicalDf['CANCER_TYPE_DETAILED'] = [oncotreeDict[code.upper()].get("CANCER_TYPE_DETAILED",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]
-	clinicalDf['ONCOTREE_PRIMARY_NODE'] = [oncotreeDict[code.upper()].get("ONCOTREE_PRIMARY_NODE",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]
-	clinicalDf['ONCOTREE_SECONDARY_NODE'] = [oncotreeDict[code.upper()].get("ONCOTREE_SECONDARY_NODE",float('nan')) for code in clinicalDf['ONCOTREE_CODE']]
+	clinicalDf['CANCER_TYPE'] = [oncotreeDict[code.upper()]["CANCER_TYPE"] if code.upper() in oncotreeDict.keys() else float('nan') for code in clinicalDf['ONCOTREE_CODE']]
+	clinicalDf['CANCER_TYPE_DETAILED'] = [oncotreeDict[code.upper()]["CANCER_TYPE_DETAILED"] if code.upper() in oncotreeDict.keys() else float('nan') for code in clinicalDf['ONCOTREE_CODE']]
+	clinicalDf['ONCOTREE_PRIMARY_NODE'] = [oncotreeDict[code.upper()]["ONCOTREE_PRIMARY_NODE"]  if code.upper() in oncotreeDict.keys() else float('nan') for code in clinicalDf['ONCOTREE_CODE']]
+	clinicalDf['ONCOTREE_SECONDARY_NODE'] = [oncotreeDict[code.upper()]["ONCOTREE_SECONDARY_NODE"] if code.upper() in oncotreeDict.keys() else float('nan') for code in clinicalDf['ONCOTREE_CODE']]
 
 	#CANCER TYPES are added which is why the clinical file is written out.
 	#clinicalDf.to_csv(CLINCICAL_PATH, sep="\t", index=False)
@@ -301,9 +307,11 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	clinicalDf['AGE_AT_SEQ_REPORT'][clinicalDf['AGE_AT_SEQ_REPORT'] == "<6570"] = "<18"
 
 	############################################################
-	#CENTER SPECIFIC CODE FOR RIGHT NOW (REMOVE UHN-555-V1)
+	#CENTER SPECIFIC CODE FOR RIGHT NOW (REMOVE UHN-555-V1, PHS-TRISEQ-V1)
 	############################################################
 	clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "UHN-555-V1"]
+	clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "PHS-TRISEQ-V1"]
+
 	#clinicalDf = clinicalDf[clinicalDf['CENTER'] != "WAKE"]
 	#clinicalDf = clinicalDf[clinicalDf['CENTER'] != "CRUK"]
 	############################################################
