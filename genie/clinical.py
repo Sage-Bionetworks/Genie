@@ -273,11 +273,11 @@ class clinical(example_filetype_format.FileTypeFormat):
 		if haveColumn:
 			#Deal with HIPAA converted rows from DFCI
 			#First for loop can't int(text) because there are instances that have <3435
-			age_seq_report_df = clinicalDF[~clinicalDF[age].isin(['Unknown','Not Collected',''])]
+			age_seq_report_df = clinicalDF[~clinicalDF[age].isin(['Unknown',''])]
 			age_seq_report_df[age] = removeGreaterThanAndLessThanStr(age_seq_report_df[age]) 
 
 			if not all([process_functions.checkInt(i) for i in age_seq_report_df[age]]):
-				total_error += "Sample: Please double check your AGE_AT_SEQ_REPORT.  It must be an integer, 'Unknown' or 'Not Collected'.\n"
+				total_error += "Sample: Please double check your AGE_AT_SEQ_REPORT.  It must be an integer or 'Unknown'.\n"
 			else:
 				age_seq_report_df[age] = age_seq_report_df[age].astype(int)
 				median_age = pd.np.median(age_seq_report_df[age])
@@ -371,7 +371,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 			#Deal with HIPAA converted rows from DFCI
 			#First for loop can't int(text) because there are instances that have <YYYY 
 			#Remove '' for blank value support
-			birth_year_df = clinicalDF[~clinicalDF[birth_year].isin(['Unknown','Not Collected',''])]
+			birth_year_df = clinicalDF[~clinicalDF[birth_year].isin(['Unknown',''])]
 			birth_year_df[birth_year] = removeGreaterThanAndLessThanStr(birth_year_df[birth_year])
 			# if not all([isinstance(i, (int,float)) or i == "" for i in clinicalDF[birth_year]]):
 			# 	total_error += "Patient: Please double check your BIRTH_YEAR column.  This column must be integers or blank.\n"
@@ -379,7 +379,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 			try:
 				birth_year_df[birth_year].apply(lambda x: datetime.datetime.strptime(str(int(x)), '%Y'))
 			except:
-				total_error += "Patient: Please double check your BIRTH_YEAR column, it must be an integer in YYYY format, 'Unknown' or 'Not Collected'.  Support for blank values will be deprecated in 7...releases.\n"
+				total_error += "Patient: Please double check your BIRTH_YEAR column, it must be an integer in YYYY format or 'Unknown'.  Support for blank values will be deprecated in 7...releases.\n"
 		else:
 			total_error += "Patient: clinical file must have BIRTH_YEAR column.\n"
 
@@ -425,8 +425,8 @@ class clinical(example_filetype_format.FileTypeFormat):
 		haveColumn = process_functions.checkColExist(clinicalDF, "DEAD")
 		if haveColumn:
 			#Need to have check_bool function
-			if not all([str(i).upper() in ['TRUE','FALSE'] for i in clinicalDF.DEAD if i not in ['Unknown','Not Collected','Not Applicable']]):
-				total_error += "Patient: Please double check your DEAD column, it must be True, False, 'Unknown', 'Not Collected' or 'Not Applicable'.\n"
+			if not all([str(i).upper() in ['TRUE','FALSE'] for i in clinicalDF.DEAD if i not in ['Unknown','Not Collected']]):
+				total_error += "Patient: Please double check your DEAD column, it must be True, False, 'Unknown' or 'Not Collected'.\n"
 		else:
 			warning += "Patient: Must have DEAD column for 7...release uploads.\n"
 

@@ -111,17 +111,17 @@ def test_perfect__validate():
 								  SECONDARY_RACE=[1,2,3,4,float('nan')],
 								  TERTIARY_RACE=[1,2,3,4,float('nan')],
 								  ETHNICITY=[1,2,3,4,float('nan')],
-								  BIRTH_YEAR=[float('nan'),"Unknown","Not Collected",1990,1990],
+								  BIRTH_YEAR=[float('nan'),"Unknown",1920,1990,1990],
 								  CENTER=["FOO","FOO","FOO","FOO","FOO"],
 								  YEAR_DEATH=["Unknown","Not Collected","Not Applicable",1990,1990],
 								  YEAR_CONTACT=["Unknown","Not Collected",1990,1990,1990],
 								  INT_CONTACT=['>32485','<6570', 'Unknown', 'Not Collected', 2000],
 								  INT_DOD=['>32485', '<6570', 'Unknown', 'Not Collected', 'Not Applicable'],
-								  DEAD=[True, False, 'Unknown', 'Not Collected', 'Not Applicable']))
+								  DEAD=[True, False, 'Unknown', 'Not Collected', True]))
 
 	sampledf = pd.DataFrame(dict(SAMPLE_ID=["ID1-1","ID2-1","ID3-1","ID4-1","ID5-1"],
 								 PATIENT_ID=["ID1","ID2","ID3","ID4","ID5"],
-								 AGE_AT_SEQ_REPORT=[100000,"Unknown","Not Collected",float('nan'),100000],
+								 AGE_AT_SEQ_REPORT=[100000,"Unknown",20000,float('nan'),100000],
 								 ONCOTREE_CODE=['AMPCA','AMPCA','Unknown','AMPCA','AMPCA'],
 								 SAMPLE_TYPE=[1,2,3,4,4],
 								 SEQ_ASSAY_ID=['SAGE-1-1','SAGE-SAGE-1','SAGE-1','SAGE-1','SAGE-1'],
@@ -164,7 +164,7 @@ def test_errors__validate():
 	#TEST 
 	sampleDf = pd.DataFrame(dict(SAMPLE_ID=[float('nan'),"ID2-1","ID3-1","ID4-1","ID5-1"],
 								 PATIENT_ID=["ID6","ID2","ID3",float('nan'),"ID5"],
-								 AGE_AT_SEQ_REPORT=[10,100000,100000,100000,100000],
+								 AGE_AT_SEQ_REPORT=[10,100000,"doo",100000,100000],
 								 ONCOTREE_CODE=['AMPCAD','TESTIS','AMPCA','AMPCA','UCEC'],
 								 SAMPLE_TYPE=[1,2,3,4,float('nan')],
 								 SEQ_ASSAY_ID=[float('nan'),'Sage-1','SAGE-1','S-SAGE-1','SAGE-1'],
@@ -182,23 +182,26 @@ def test_errors__validate():
 								 SECONDARY_RACE=[1,2,3,6,float('nan')],
 								 TERTIARY_RACE=[1,2,3,6,float('nan')],
 								 ETHNICITY=[1,2,3,6,float('nan')],
-								 BIRTH_YEAR=[1990,1990,1990,1990,1990],
+								 BIRTH_YEAR=[1990,1990,"foo",1990,1990],
 								 CENTER=["FOO","FOO","FOO","FOO","FOO"]))
 	clinicalDf = patientDf.merge(sampleDf, on="PATIENT_ID")
 
 	error, warning = clin_class._validate(clinicalDf, json_oncotreeurl)
+	print(error)
 	expectedErrors = ("Sample: PATIENT_ID's much be contained in the SAMPLE_ID's (ex. SAGE-1 <-> SAGE-1-2)\n"
 					  "Patient: All samples must have associated patient information and no null patient ids allowed. These samples are missing patient data: ID4-1\n"
+					  "Sample: Please double check your AGE_AT_SEQ_REPORT.  It must be an integer or 'Unknown'.\n"
 					  "Sample: Please double check that all your ONCOTREE CODES exist in the mapping. You have 1 samples that don't map. These are the codes that don't map: AMPCAD\n"
 					  "Sample: Please double check your SAMPLE_TYPE column. No null values allowed.\n"
 					  "Sample: Please double check your SEQ_ASSAY_ID columns, there are empty rows.\n"
 					  "Sample: Please make sure your SEQ_ASSAY_IDs start with your center abbreviation: S-SAGE-1.\n"
 					  "Sample: SEQ_DATE must be one of five values- For Jan-March: use Jan-YEAR. For Apr-June: use Apr-YEAR. For July-Sep: use Jul-YEAR. For Oct-Dec: use Oct-YEAR. (ie. Apr-2017) For values that don't have SEQ_DATES that you want released use 'release'.\n"
+					  "Patient: Please double check your BIRTH_YEAR column, it must be an integer in YYYY format or 'Unknown'.  Support for blank values will be deprecated in 7...releases.\n"
 					  "Patient: Please double check your YEAR_DEATH column, it must be an integer in YYYY format, 'Unknown', 'Not Applicable' or 'Not Collected'.\n"
 					  "Patient: Please double check your YEAR_CONTACT column, it must be an integer in YYYY format, 'Unknown' or 'Not Collected'.\n"
 				      "Patient: Please double check your INT_CONTACT column, it must be an integer, '>32485', '<6570', 'Unknown' or 'Not Collected'.\n"
 					  "Patient: Please double check your INT_DOD column, it must be an integer, '>32485', '<6570', 'Unknown', 'Not Collected' or 'Not Applicable'.\n"
-					  "Patient: Please double check your DEAD column, it must be True, False, 'Unknown', 'Not Collected' or 'Not Applicable'.\n"
+					  "Patient: Please double check your DEAD column, it must be True, False, 'Unknown' or 'Not Collected'.\n"
 					  "Patient: Please double check your PRIMARY_RACE column.  This column must be these values 1, 2, 3, 4, or blank.\n"
 					  "Patient: Please double check your SECONDARY_RACE column.  This column must be these values 1, 2, 3, 4, or blank.\n"
 					  "Patient: Please double check your TERTIARY_RACE column.  This column must be these values 1, 2, 3, 4, or blank.\n"
@@ -223,7 +226,7 @@ def test_duplicated__validate():
 								 YEAR_CONTACT=["Unknown","Not Collected",1990,1990,1990],
 								 INT_CONTACT=['>32485','<6570', 'Unknown', 'Not Collected', 2000],
 								 INT_DOD=['>32485', '<6570', 'Unknown', 'Not Collected', 'Not Applicable'],
-								 DEAD=[True, False, 'Unknown', 'Not Collected', 'Not Applicable']))
+								 DEAD=[True, False, 'Unknown', 'Not Collected', True]))
 
 	sampleDf = pd.DataFrame(dict(SAMPLE_ID=["ID1-1","ID3-1","ID4-1","ID5-1"],
 								 PATIENT_ID=["ID1","ID3","ID4","ID5"],
