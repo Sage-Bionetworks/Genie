@@ -253,7 +253,7 @@ class clinical(example_filetype_format.FileTypeFormat):
 		# #CHECK: PATIENT_ID IN SAMPLE FILE
 		havePatientColumn = process_functions.checkColExist(clinicalDF, patientId)
 		if not havePatientColumn:
-			total_error += "Sample/Clinical: clinical files must have PATIENT_ID column.\n"
+			total_error += "Patient: clinical file must have PATIENT_ID column.\n"
 
 		#CHECK: within the sample file that the sample ids match the patient ids
 		if haveSampleColumn and havePatientColumn:
@@ -463,6 +463,14 @@ class clinical(example_filetype_format.FileTypeFormat):
 			otherClinicalDf = pd.read_csv(filePathList[1],sep="\t",comment="#")
 			try:
 				clinicalDf = clinicalDf.merge(otherClinicalDf, on="PATIENT_ID")
+				if "sample" in filePathList[0]:
+					if not all(clinicalDf['PATIENT_ID'].isin(otherClinicalDf['PATIENT_ID'])):
+						raise ValueError("Patient: All samples must have associated patient information")
+				else:
+					if not all(otherClinicalDf['PATIENT_ID'].isin(clinicalDf['PATIENT_ID'])):
+						raise ValueError("Patient: All samples must have associated patient information")
+
+
 			except Exception as e:
 				raise ValueError("If submitting separate patient and sample files, they both must have the PATIENT_ID column")
 		return(clinicalDf)
