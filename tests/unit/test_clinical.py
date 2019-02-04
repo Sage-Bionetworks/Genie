@@ -139,7 +139,7 @@ def test_missingcols__validate():
 	clincaldf = pd.DataFrame()
 	error, warning = clin_class._validate(clincaldf, json_oncotreeurl)
 	expected_errors = ("Sample: clinical file must have SAMPLE_ID column.\n"
-					"Sample/Clinical: clinical files must have PATIENT_ID column.\n"
+					"Patient: clinical file must have PATIENT_ID column.\n"
 					"Sample: clinical file must have AGE_AT_SEQ_REPORT column.\n"
 					"Sample: clinical file must have ONCOTREE_CODE column.\n"
 					"Sample: clinical file must have SAMPLE_TYPE column.\n"
