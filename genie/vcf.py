@@ -52,16 +52,16 @@ class vcf(maf.maf):
 			newVCFPath = os.path.join(centerInputFolder, vcfName)
 			#remove chr from each row
 			command = ["sed", "'s/^chr//'", path, ">", newVCFPath]
-			subprocess.call(" ".join(command), shell=True)
+			subprocess.check_call(" ".join(command), shell=True)
 			#Empty spaces must be replaced with a period
 			command = ["sed", '-i', "'s/\t\t/\t.\t/g'", newVCFPath]
-			subprocess.call(" ".join(command), shell=True)
+			subprocess.check_call(" ".join(command), shell=True)
 			#All INFO/HGVS values have a whitespace, which is not allowed in VCF specs. Replace that with a comma
 			command = ['sed', '-i', "'s/ p\./,p./'", newVCFPath]
-			subprocess.call(" ".join(command), shell=True)
+			subprocess.check_call(" ".join(command), shell=True)
 			#Strips out windows indentations \r
 			command = ['dos2unix',newVCFPath]
-			subprocess.call(command)
+			subprocess.check_call(command)
 			vcfCols = ["#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO","FORMAT"]
 			with open(newVCFPath,"r") as f:
 				for line in f:
@@ -74,22 +74,23 @@ class vcf(maf.maf):
 
 			samples = [i for i in cols if i not in vcfCols]
 
-			tumorName = vcfName.replace(".vcf","")
+			#tumorName = vcfName.replace(".vcf","")
 
 			if len(samples) == 1:
 				tumor = samples[0]
 				normal = "NORMAL"
-				### If the tumor name isn't TUMOR, set the sample id to be the tumor name
-				if tumor != "TUMOR":
-					tumorName = tumor
 			elif len(samples) == 2:
-				#Tumor is always first, normal is second
+				#Assumes that Tumor is always first, normal is second
 				tumor = samples[0]
 				normal = samples[1]
-				tumorName = tumor   
 			else:
 				tumor = "TUMOR"
 				normal = "NORMAL"
+			# ### If the tumor name isn't TUMOR, set the sample id to be the tumor name
+			if tumor == "TUMOR":
+				tumorName = vcfName.replace(".vcf","")
+			else:
+				tumorName = tumor
 			newMAFPath = newVCFPath + ".maf"
 			if os.path.isfile(newMAFPath):
 				mafFiles.append(newMAFPath)
@@ -107,7 +108,7 @@ class vcf(maf.maf):
 						   '--custom-enst', os.path.join(vcf2mafPath, 'data/isoform_overrides_uniprot')]
 				if reference is not None:
 					command.extend(["--ref-fasta",reference])
-				subprocess.call(command)
+				subprocess.check_call(command)
 				if (os.path.isfile(newMAFPath)):
 					mafFiles.append(newMAFPath)
 		
