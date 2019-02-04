@@ -421,9 +421,14 @@ def check_column_decreases(currentdf, olderdf):
 		new_counts = currentdf[col].value_counts()
 		if olderdf.get(col) is not None:
 			old_counts = olderdf[col].value_counts()
+			#Make sure any values that exist in the new get added to the old to show the decrease
 			new_keys = pd.Series(index=new_counts.keys()[~new_counts.keys().isin(old_counts.keys())])
 			old_counts = old_counts.add(new_keys,fill_value=0)
 			old_counts.fillna(0,inplace=True)
+			#Make sure any values that don't exist in the old get added to show the decrease
+			new_keys = pd.Series(index=old_counts.keys()[~old_counts.keys().isin(new_counts.keys())])
+			new_counts = new_counts.add(new_keys,fill_value=0)
+			new_counts.fillna(0,inplace=True)
 			if any(new_counts - old_counts < 0):
 				logger.info("\tDECREASE IN COLUMN: %s" % col)
 				diff = new_counts[new_counts - old_counts < 0]
