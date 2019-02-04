@@ -463,14 +463,13 @@ class clinical(example_filetype_format.FileTypeFormat):
 			otherClinicalDf = pd.read_csv(filePathList[1],sep="\t",comment="#")
 			try:
 				clinicalDf = clinicalDf.merge(otherClinicalDf, on="PATIENT_ID")
-				if "sample" in filePathList[0]:
-					if not all(clinicalDf['PATIENT_ID'].isin(otherClinicalDf['PATIENT_ID'])):
-						raise ValueError("Patient: All samples must have associated patient information")
-				else:
-					if not all(otherClinicalDf['PATIENT_ID'].isin(clinicalDf['PATIENT_ID'])):
-						raise ValueError("Patient: All samples must have associated patient information")
-
-
 			except Exception as e:
 				raise ValueError("If submitting separate patient and sample files, they both must have the PATIENT_ID column")
+			if "sample" in filePathList[0]:
+				if not all(clinicalDf['PATIENT_ID'].isin(otherClinicalDf['PATIENT_ID'])):
+					raise ValueError("Patient: All samples must have associated patient information")
+			else:
+				if not all(otherClinicalDf['PATIENT_ID'].isin(clinicalDf['PATIENT_ID'])):
+					raise ValueError("Patient: All samples must have associated patient information")
+
 		return(clinicalDf)
