@@ -256,7 +256,7 @@ def update_oncotree_code_tables(syn, database_mappingdf):
 	oncotree_link_ent = syn.get(oncotree_link_synid)
 	oncotree_link = oncotree_link_ent.externalURL
 	oncotree_mapping = genie.process_functions.get_oncotree_code_mappings(oncotree_link)
-	clinicaldf['PRIMARY_CODES'] = [oncotree_mapping[i.upper()]['ONCOTREE_PRIMARY_NODE'] for i in clinicaldf.ONCOTREE_CODE]
+	clinicaldf['PRIMARY_CODES'] = [oncotree_mapping[i.upper()]['ONCOTREE_PRIMARY_NODE'] if i.upper() in oncotree_mapping.keys() else 'DEPRECATED_CODE' for i in clinicaldf.ONCOTREE_CODE]
 
 	# ### DISTRIBUTION OF PRIMARY ONCOTREE CODE TABLE UPDATE
 	primary_code_distributiondf = pd.DataFrame(columns=set(clinicaldf['CENTER']), index=set(clinicaldf['PRIMARY_CODES']))
@@ -421,12 +421,19 @@ def check_column_decreases(currentdf, olderdf):
 		new_counts = currentdf[col].value_counts()
 		if olderdf.get(col) is not None:
 			old_counts = olderdf[col].value_counts()
+			#Make sure any values that exist in the new get added to the old to show the decrease
 			new_keys = pd.Series(index=new_counts.keys()[~new_counts.keys().isin(old_counts.keys())])
 			old_counts = old_counts.add(new_keys,fill_value=0)
 			old_counts.fillna(0,inplace=True)
+			#Make sure any values that don't exist in the old get added to show the decrease
+			new_keys = pd.Series(index=old_counts.keys()[~old_counts.keys().isin(new_counts.keys())])
+			new_counts = new_counts.add(new_keys,fill_value=0)
+			new_counts.fillna(0,inplace=True)
 			if any(new_counts - old_counts < 0):
 				logger.info("\tDECREASE IN COLUMN: %s" % col)
 				diff = new_counts[new_counts - old_counts < 0]
+				diffs = new_counts-old_counts
+				logger.info("\t" + diffs[diffs<0].to_csv().replace("\n","; "))
 				diff_map[col] = True
 			else:
 				diff_map[col] = False
@@ -463,7 +470,8 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
 
 	older_sampledf =  pd.read_csv(older_sample_ent.path,sep="\t",comment="#")
 	older_sampledf['CENTER'] = [patient.split("-")[1] for patient in older_sampledf['PATIENT_ID']]
-	current_sampledf = current_sampledf[current_sampledf['CENTER'].isin(older_sampledf['CENTER'].unique())]
+	#Rather than take the CENTER, must take the SAMPLE_ID to compare
+	current_sampledf = current_sampledf[current_sampledf['SAMPLE_ID'].isin(older_sampledf['SAMPLE_ID'].unique())]
 
 	logger.info("SAMPLE CLINICAL VALUE DECREASES")
 	center_decrease_mapping = dict()
@@ -477,7 +485,8 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
 	older_patient_ent = syn.get(older_clinical_synids['data_clinical_patient.txt'], followLink=True)
 	current_patientdf = pd.read_csv(current_patient_ent.path,sep="\t",comment="#")
 	older_patientdf =  pd.read_csv(older_patient_ent.path,sep="\t",comment="#")
-	current_patientdf = current_patientdf[current_patientdf['CENTER'].isin(older_patientdf['CENTER'].unique())]
+	#Rather than take the CENTER, must take the PATIENT_ID to compare
+	current_patientdf = current_patientdf[current_patientdf['PATIENT_ID'].isin(older_patientdf['PATIENT_ID'].unique())]
 
 	logger.info("PATIENT CLINICAL VALUE DECREASES")
 	for center in older_patientdf['CENTER'].unique():
