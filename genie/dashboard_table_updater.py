@@ -470,7 +470,8 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
 
 	older_sampledf =  pd.read_csv(older_sample_ent.path,sep="\t",comment="#")
 	older_sampledf['CENTER'] = [patient.split("-")[1] for patient in older_sampledf['PATIENT_ID']]
-	current_sampledf = current_sampledf[current_sampledf['CENTER'].isin(older_sampledf['CENTER'].unique())]
+	#Rather than take the CENTER, must take the SAMPLE_ID to compare
+	current_sampledf = current_sampledf[current_sampledf['SAMPLE_ID'].isin(older_sampledf['SAMPLE_ID'].unique())]
 
 	logger.info("SAMPLE CLINICAL VALUE DECREASES")
 	center_decrease_mapping = dict()
@@ -484,7 +485,8 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
 	older_patient_ent = syn.get(older_clinical_synids['data_clinical_patient.txt'], followLink=True)
 	current_patientdf = pd.read_csv(current_patient_ent.path,sep="\t",comment="#")
 	older_patientdf =  pd.read_csv(older_patient_ent.path,sep="\t",comment="#")
-	current_patientdf = current_patientdf[current_patientdf['CENTER'].isin(older_patientdf['CENTER'].unique())]
+	#Rather than take the CENTER, must take the PATIENT_ID to compare
+	current_patientdf = current_patientdf[current_patientdf['PATIENT_ID'].isin(older_patientdf['PATIENT_ID'].unique())]
 
 	logger.info("PATIENT CLINICAL VALUE DECREASES")
 	for center in older_patientdf['CENTER'].unique():
