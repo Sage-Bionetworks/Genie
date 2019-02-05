@@ -377,9 +377,10 @@ class clinical(example_filetype_format.FileTypeFormat):
 			# 	total_error += "Patient: Please double check your BIRTH_YEAR column.  This column must be integers or blank.\n"
 
 			try:
-				birth_year_df[birth_year].apply(lambda x: datetime.datetime.strptime(str(int(x)), '%Y'))
+				years = birth_year_df[birth_year].apply(lambda x: datetime.datetime.strptime(str(int(x)), '%Y').year > datetime.datetime.utcnow().year)
+				assert not years.any()
 			except:
-				total_error += "Patient: Please double check your BIRTH_YEAR column, it must be an integer in YYYY format or 'Unknown'.  Support for blank values will be deprecated in 7...releases.\n"
+				total_error += "Patient: Please double check your BIRTH_YEAR column, it must be an integer in YYYY format > {year} or 'Unknown'.  Support for blank values will be deprecated in 7...releases.\n".format(year=datetime.datetime.utcnow().year)
 		else:
 			total_error += "Patient: clinical file must have BIRTH_YEAR column.\n"
 

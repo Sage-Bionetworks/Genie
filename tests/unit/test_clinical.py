@@ -3,6 +3,7 @@ import pandas as pd
 import mock
 from genie.clinical import clinical
 import pytest
+import datetime
 
 def createMockTable(dataframe):
 	table = mock.create_autospec(synapseclient.table.CsvFileTable)
@@ -182,12 +183,11 @@ def test_errors__validate():
 								 SECONDARY_RACE=[1,2,3,6,float('nan')],
 								 TERTIARY_RACE=[1,2,3,6,float('nan')],
 								 ETHNICITY=[1,2,3,6,float('nan')],
-								 BIRTH_YEAR=[1990,1990,"foo",1990,1990],
+								 BIRTH_YEAR=[1990,1990,datetime.datetime.utcnow().year + 1,1990,1990],
 								 CENTER=["FOO","FOO","FOO","FOO","FOO"]))
 	clinicalDf = patientDf.merge(sampleDf, on="PATIENT_ID")
 
 	error, warning = clin_class._validate(clinicalDf, json_oncotreeurl)
-	print(error)
 	expectedErrors = ("Sample: PATIENT_ID's much be contained in the SAMPLE_ID's (ex. SAGE-1 <-> SAGE-1-2)\n"
 					  "Patient: All samples must have associated patient information and no null patient ids allowed. These samples are missing patient data: ID4-1\n"
 					  "Sample: Please double check your AGE_AT_SEQ_REPORT.  It must be an integer or 'Unknown'.\n"
@@ -196,7 +196,7 @@ def test_errors__validate():
 					  "Sample: Please double check your SEQ_ASSAY_ID columns, there are empty rows.\n"
 					  "Sample: Please make sure your SEQ_ASSAY_IDs start with your center abbreviation: S-SAGE-1.\n"
 					  "Sample: SEQ_DATE must be one of five values- For Jan-March: use Jan-YEAR. For Apr-June: use Apr-YEAR. For July-Sep: use Jul-YEAR. For Oct-Dec: use Oct-YEAR. (ie. Apr-2017) For values that don't have SEQ_DATES that you want released use 'release'.\n"
-					  "Patient: Please double check your BIRTH_YEAR column, it must be an integer in YYYY format or 'Unknown'.  Support for blank values will be deprecated in 7...releases.\n"
+					  "Patient: Please double check your BIRTH_YEAR column, it must be an integer in YYYY format > {year} or 'Unknown'.  Support for blank values will be deprecated in 7...releases.\n"
 					  "Patient: Please double check your YEAR_DEATH column, it must be an integer in YYYY format, 'Unknown', 'Not Applicable' or 'Not Collected'.\n"
 					  "Patient: Please double check your YEAR_CONTACT column, it must be an integer in YYYY format, 'Unknown' or 'Not Collected'.\n"
 				      "Patient: Please double check your INT_CONTACT column, it must be an integer, '>32485', '<6570', 'Unknown' or 'Not Collected'.\n"
@@ -209,7 +209,7 @@ def test_errors__validate():
 					  "Patient: Please double check your ETHNICITY column.  This column must be these values 1, 2, 3, 4, or blank.\n")
 	expectedWarnings = ("Sample: All patients must have associated sample information. These patients are missing sample data: ID6\n"
 						"Sample: Some SAMPLE_IDs have conflicting SEX and ONCOTREE_CODES: ID2-1,ID5-1\n")
-	assert error == expectedErrors
+	assert error == expectedErrors.format(year=datetime.datetime.utcnow().year)
 	assert warning == expectedWarnings
 
 
