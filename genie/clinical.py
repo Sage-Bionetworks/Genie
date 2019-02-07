@@ -68,13 +68,23 @@ class clinical(example_filetype_format.FileTypeFormat):
 		# RACE
 		if x.get('PRIMARY_RACE') is not None:
 			x['PRIMARY_RACE'] = process_functions.getCODE(race_mapping, x['PRIMARY_RACE'])
+		else:
+			x['PRIMARY_RACE'] = "Not Collected"
+
 		if x.get('SECONDARY_RACE') is not None:
 			x['SECONDARY_RACE'] = process_functions.getCODE(race_mapping, x['SECONDARY_RACE'])
+		else:
+			x['SECONDARY_RACE'] = "Not Collected"
+
 		if x.get('TERTIARY_RACE') is not None:
 			x['TERTIARY_RACE'] = process_functions.getCODE(race_mapping, x['TERTIARY_RACE'])
+		else:
+			x['TERTIARY_RACE'] = "Not Collected"
 		# ETHNICITY
 		if x.get('ETHNICITY') is not None:
 			x['ETHNICITY'] = process_functions.getCODE(ethnicity_mapping, x['ETHNICITY'])
+		else:
+			x['ETHNICITY'] = "Not Collected"
 		# BIRTH YEAR
 		if x.get("BIRTH_YEAR") is not None:
 			# BIRTH YEAR (Check if integer)
@@ -157,17 +167,23 @@ class clinical(example_filetype_format.FileTypeFormat):
 	def _process(self, clinical, clinicalTemplate):
 		#Capitalize all clinical dataframe columns
 		clinical.columns = [col.upper() for col in clinical.columns]
-		clinicalMerged = clinical.merge(clinicalTemplate,how='outer')
-		clinicalMerged = clinicalMerged.drop(clinicalMerged.columns[~clinicalMerged.columns.isin(clinicalTemplate.columns)],1)
+		clinical = clinical.fillna("")
+		#clinicalMerged = clinical.merge(clinicalTemplate,how='outer')
+		#Remove unwanted clinical columns prior to update 
+		#clinicalMerged = clinicalMerged.drop(clinicalMerged.columns[~clinicalMerged.columns.isin(clinicalTemplate.columns)],1)
 		ethnicity_mapping =process_functions.getGenieMapping(self.syn, "syn7434242")
 		race_mapping = process_functions.getGenieMapping(self.syn, "syn7434236")
 		sex_mapping = process_functions.getGenieMapping(self.syn, "syn7434222")
 		sampleType_mapping = process_functions.getGenieMapping(self.syn, "syn7434273")
 		sampleType_mapping = sampleType_mapping.append(pd.DataFrame([("","","")],columns=["CODE","CBIO_LABEL","DESCRIPTION"]))
 		#Attach MSK to centers
-		clinicalMerged = clinicalMerged.fillna("")
-		clinicalRemapped = clinicalMerged.apply(lambda x: self.update_clinical(x, sex_mapping, race_mapping, ethnicity_mapping, sampleType_mapping),1)	
+		#clinicalMerged = clinicalMerged.fillna("")
+		clinicalRemapped = clinical.apply(lambda x: self.update_clinical(x, sex_mapping, race_mapping, ethnicity_mapping, sampleType_mapping),1)	
+		#Some columns may have been added during update, remove unwanted columns again 
+		clinicalRemapped = clinicalRemapped.drop(clinicalRemapped.columns[~clinicalRemapped.columns.isin(clinicalTemplate.columns)],1)
+
 		clinicalRemapped['CENTER'] = self.center
+
 		return(clinicalRemapped)
 
 	def process_steps(self, filePath, **kwargs):

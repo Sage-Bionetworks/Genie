@@ -51,7 +51,11 @@ def test_correct_validatefilename():
 	assert clin_class.validateFilename(["data_clinical_supp_SAGE.txt"]) == "clinical"
 	assert clin_class.validateFilename(["data_clinical_supp_sample_SAGE.txt","data_clinical_supp_patient_SAGE.txt"]) == "clinical"
 
-def test_patient__process():
+def test_patient_fillvs__process():
+	'''
+	Test filling out of vital status values
+	This will be removed once vital status values are required
+	'''
 	expected_patientdf = pd.DataFrame(dict(PATIENT_ID=["GENIE-SAGE-ID1","GENIE-SAGE-ID2","GENIE-SAGE-ID3","GENIE-SAGE-ID4","GENIE-SAGE-ID5"],
 									   SEX=['Male','Female','Male','Female','Unknown'],
 									   PRIMARY_RACE=['Test','Why','foo','Me','Unknown'],
@@ -76,15 +80,128 @@ def test_patient__process():
 							   BIRTH_YEAR=[1990,1990,1990,1990,1990],
 							   CENTER=["FOO","FOO","FOO","FOO","FOO"]))
 	patient_cols = ["PATIENT_ID","SEX","PRIMARY_RACE","SECONDARY_RACE",
-				"TERTIARY_RACE","ETHNICITY","BIRTH_YEAR","CENTER",'YEAR_CONTACT',
-				'YEAR_DEATH','INT_CONTACT','INT_DOD','DEAD']
+				"TERTIARY_RACE","ETHNICITY","BIRTH_YEAR","CENTER",
+				'YEAR_CONTACT','YEAR_DEATH','INT_CONTACT','INT_DOD','DEAD']
 	clinical_template = pd.DataFrame(columns=patient_cols)
 	new_patientdf = clin_class._process(patientdf, clinical_template)
-	print(new_patientdf['YEAR_DEATH'])
+
+	assert new_patientdf.columns.isin(expected_patientdf.columns).all()
 	assert expected_patientdf.equals(new_patientdf[expected_patientdf.columns])
 
+def test_patient_lesscoltemplate__process():
+	'''
+	Test when there are less clinical values defined by scope.
+	Only those value defined by the scope will be written out
+	'''
+	expected_patientdf = pd.DataFrame(dict(PATIENT_ID=["GENIE-SAGE-ID1","GENIE-SAGE-ID2","GENIE-SAGE-ID3","GENIE-SAGE-ID4","GENIE-SAGE-ID5"],
+									   SEX=['Male','Female','Male','Female','Unknown'],
+									   PRIMARY_RACE=['Test','Why','foo','Me','Unknown'],
+									   SECONDARY_RACE=['Test','Why','foo','Me','Unknown'],
+									   TERTIARY_RACE=['Test','Why','foo','Me','Unknown'],
+									   ETHNICITY=['Test','Why','foo','Me','Unknown'],
+									   BIRTH_YEAR=[1990,1990,1990,1990,1990],
+									   CENTER=["SAGE","SAGE","SAGE","SAGE","SAGE"],
+									   INT_DOD=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   INT_CONTACT=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   DEAD=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   YEAR_DEATH=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   YEAR_CONTACT=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected']))
+	#TEST patient processing
+	#Clinical file headers are capitalized prior to processing
+	patientdf = pd.DataFrame(dict(PATIENT_Id=["ID1","ID2","ID3","ID4","ID5"],
+							   sex=[1,2,1,2,float('nan')],
+							   PRIMARY_RACE=[1,2,3,4,float('nan')],
+							   Secondary_RACE=[1,2,3,4,float('nan')],
+							   TERTIARY_RACE=[1,2,3,4,float('nan')],
+							   ETHNICITY=[1,2,3,4,float('nan')],
+							   BIRTH_YEAR=[1990,1990,1990,1990,1990],
+							   CENTER=["FOO","FOO","FOO","FOO","FOO"]))
+	patient_cols = ["PATIENT_ID","SEX","PRIMARY_RACE","SECONDARY_RACE",
+				"TERTIARY_RACE","ETHNICITY","BIRTH_YEAR","CENTER",
+				'YEAR_CONTACT','YEAR_DEATH']
+	clinical_template = pd.DataFrame(columns=patient_cols)
+	new_patientdf = clin_class._process(patientdf, clinical_template)
+
+	assert new_patientdf.columns.isin(patient_cols).all()
+	assert expected_patientdf[patient_cols].equals(new_patientdf[patient_cols])
+
+
+def test_patient_fillcols__process():
+	'''
+	Filling in of RACE/ETHNITICY columns as some centers don't require them
+	'''
+	expected_patientdf = pd.DataFrame(dict(PATIENT_ID=["GENIE-SAGE-ID1","GENIE-SAGE-ID2","GENIE-SAGE-ID3","GENIE-SAGE-ID4","GENIE-SAGE-ID5"],
+									   SEX=['Male','Female','Male','Female','Unknown'],
+									   PRIMARY_RACE=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   SECONDARY_RACE=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   TERTIARY_RACE=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   ETHNICITY=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   BIRTH_YEAR=[1990,1990,1990,1990,1990],
+									   CENTER=["SAGE","SAGE","SAGE","SAGE","SAGE"],
+									   INT_DOD=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   INT_CONTACT=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   DEAD=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   YEAR_DEATH=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   YEAR_CONTACT=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected']))
+	#TEST patient processing
+	#Clinical file headers are capitalized prior to processing
+	patientdf = pd.DataFrame(dict(PATIENT_Id=["ID1","ID2","ID3","ID4","ID5"],
+							   sex=[1,2,1,2,float('nan')],
+							   BIRTH_YEAR=[1990,1990,1990,1990,1990],
+							   CENTER=["FOO","FOO","FOO","FOO","FOO"]))
+	patient_cols = ["PATIENT_ID","SEX","PRIMARY_RACE","SECONDARY_RACE",
+				"TERTIARY_RACE","ETHNICITY","BIRTH_YEAR","CENTER",
+				'YEAR_CONTACT','YEAR_DEATH','INT_CONTACT','INT_DOD','DEAD']
+	clinical_template = pd.DataFrame(columns=patient_cols)
+	new_patientdf = clin_class._process(patientdf, clinical_template)
+	assert new_patientdf.columns.isin(expected_patientdf.columns).all()
+	assert expected_patientdf.equals(new_patientdf[expected_patientdf.columns])
+
+
+def test_patient_vs__process():
+	'''
+	Test vital status columns being propogated with same data
+	'''
+	expected_patientdf = pd.DataFrame(dict(PATIENT_ID=["GENIE-SAGE-ID1","GENIE-SAGE-ID2","GENIE-SAGE-ID3","GENIE-SAGE-ID4","GENIE-SAGE-ID5"],
+									   SEX=['Male','Female','Male','Female','Unknown'],
+									   PRIMARY_RACE=['Test','Why','foo','Me','Unknown'],
+									   SECONDARY_RACE=['Test','Why','foo','Me','Unknown'],
+									   TERTIARY_RACE=['Test','Why','foo','Me','Unknown'],
+									   ETHNICITY=['Test','Why','foo','Me','Unknown'],
+									   BIRTH_YEAR=[1990,1990,1990,1990,1990],
+									   CENTER=["SAGE","SAGE","SAGE","SAGE","SAGE"],
+									   YEAR_DEATH=["Unknown","Not Collected","Not Applicable",1990,1990],
+									   YEAR_CONTACT=["Unknown","Not Collected",1990,1990,1990],
+								  	   INT_CONTACT=['>32485','<6570', 'Unknown', 'Not Collected', 2000],
+								  	   INT_DOD=['>32485', '<6570', 'Unknown', 'Not Collected', 'Not Applicable'],
+								  	   DEAD=[True, False, 'Unknown', 'Not Collected', True]))
+	#TEST patient processing
+	#Clinical file headers are capitalized prior to processing
+	patientdf = pd.DataFrame(dict(PATIENT_Id=["ID1","ID2","ID3","ID4","ID5"],
+							   sex=[1,2,1,2,float('nan')],
+							   PRIMARY_RACE=[1,2,3,4,float('nan')],
+							   Secondary_RACE=[1,2,3,4,float('nan')],
+							   TERTIARY_RACE=[1,2,3,4,float('nan')],
+							   ETHNICITY=[1,2,3,4,float('nan')],
+							   BIRTH_YEAR=[1990,1990,1990,1990,1990],
+							   CENTER=["FOO","FOO","FOO","FOO","FOO"],
+							   YEAR_DEATH=["Unknown","Not Collected","Not Applicable",1990,1990],
+							   YEAR_CONTACT=["Unknown","Not Collected",1990,1990,1990],
+							   INT_CONTACT=['>32485','<6570', 'Unknown', 'Not Collected', 2000],
+							   INT_DOD=['>32485', '<6570', 'Unknown', 'Not Collected', 'Not Applicable'],
+							   DEAD=[True, False, 'Unknown', 'Not Collected', True]))
+	patient_cols = ["PATIENT_ID","SEX","PRIMARY_RACE","SECONDARY_RACE",
+				"TERTIARY_RACE","ETHNICITY","BIRTH_YEAR","CENTER",
+				'YEAR_CONTACT','YEAR_DEATH','INT_CONTACT','INT_DOD','DEAD']
+	clinical_template = pd.DataFrame(columns=patient_cols)
+	new_patientdf = clin_class._process(patientdf, clinical_template)
+	assert expected_patientdf.equals(new_patientdf[expected_patientdf.columns])
+
+
 def test_sample__process():
-	#TEST for sample processing
+	'''
+	Test sample processing
+	'''
 	expected_sampledf = pd.DataFrame(dict(SAMPLE_ID=["GENIE-SAGE-ID1-1","GENIE-SAGE-ID2-1","GENIE-SAGE-ID3-1","GENIE-SAGE-ID4-1","GENIE-SAGE-ID5-1"],
 									   PATIENT_ID=["GENIE-SAGE-ID1","GENIE-SAGE-ID2","GENIE-SAGE-ID3","GENIE-SAGE-ID4","GENIE-SAGE-ID5"],
 									   AGE_AT_SEQ_REPORT=[100000,100000,100000,100000,100000],
@@ -109,9 +226,13 @@ def test_sample__process():
 							   SEQ_DATE=['Jan-2012','Apr-2013','JUL-2014','Oct-2015','release']))
 
 	new_sampledf = clin_class._process(sampledf, clinical_template)
+	assert new_sampledf.columns.isin(expected_sampledf.columns).all()
 	assert expected_sampledf.equals(new_sampledf[expected_sampledf.columns])
 
 def test_perfect__validate():
+	'''
+	Test perfect validation
+	'''
 	patientdf = pd.DataFrame(dict(PATIENT_ID=["ID1","ID2","ID3","ID4","ID5"],
 								  SEX=[1,2,1,2,float('nan')],
 								  PRIMARY_RACE=[1,2,3,4,float('nan')],
@@ -143,6 +264,9 @@ def test_perfect__validate():
 	assert warning == ""
 
 def test_missingcols__validate():
+	'''
+	Test for missing column errors
+	'''
 	clincaldf = pd.DataFrame()
 	error, warning = clin_class._validate(clincaldf, json_oncotreeurl)
 	expected_errors = ("Sample: clinical file must have SAMPLE_ID column.\n"
@@ -168,7 +292,9 @@ def test_missingcols__validate():
 	assert warning == expected_warnings
 
 def test_errors__validate():
-	#TEST 
+	'''
+	Test for validation errors
+	'''
 	sampleDf = pd.DataFrame(dict(SAMPLE_ID=[float('nan'),"ID2-1","ID3-1","ID4-1","ID5-1"],
 								 PATIENT_ID=["ID6","ID2","ID3",float('nan'),"ID5"],
 								 AGE_AT_SEQ_REPORT=[10,100000,"doo",100000,100000],
@@ -220,6 +346,10 @@ def test_errors__validate():
 
 
 def test_duplicated__validate():
+	'''
+	Test for duplicated SAMPLE_ID error and and in the case that both sample and patient
+	are uploaded, it could be a duplicated PATIENT_ID error
+	'''
 	patientDf = pd.DataFrame(dict(PATIENT_ID=["ID1","ID1","ID3","ID4","ID5"],
 								 SEX=[1,2,1,2,float('nan')],
 								 PRIMARY_RACE=[1,2,3,4,float('nan')],
