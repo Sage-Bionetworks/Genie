@@ -109,6 +109,27 @@ class clinical(example_filetype_format.FileTypeFormat):
 			x['SEQ_DATE'] = x['SEQ_DATE'].title()
 			x['SEQ_YEAR'] = int(str(x['SEQ_DATE']).split("-")[1]) if str(x['SEQ_DATE']) != "Release" else pd.np.nan
 
+		if x.get('YEAR_CONTACT') is None:
+			x['YEAR_CONTACT'] = 'Not Collected'
+		else:
+			if process_functions.checkInt(x['YEAR_CONTACT']):
+				x['YEAR_CONTACT'] = int(x['YEAR_CONTACT'])
+
+		if x.get('YEAR_DEATH') is None:
+			x['YEAR_DEATH'] = 'Not Collected'
+		else:
+			if process_functions.checkInt(x['YEAR_DEATH']):
+				x['YEAR_DEATH'] = int(x['YEAR_DEATH'])
+
+		if x.get('INT_CONTACT') is None:
+			x['INT_CONTACT'] = 'Not Collected'
+
+		if x.get('INT_DOD') is None:
+			x['INT_DOD'] = 'Not Collected'
+
+		if x.get('DEAD') is None:
+			x['DEAD'] = 'Not Collected'
+
 		#TRIM EVERY COLUMN MAKE ALL DASHES 
 		for i in x.keys():
 			if isinstance(x[i],str):
