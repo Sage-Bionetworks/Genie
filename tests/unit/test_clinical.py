@@ -59,7 +59,12 @@ def test_patient__process():
 									   TERTIARY_RACE=['Test','Why','foo','Me','Unknown'],
 									   ETHNICITY=['Test','Why','foo','Me','Unknown'],
 									   BIRTH_YEAR=[1990,1990,1990,1990,1990],
-									   CENTER=["SAGE","SAGE","SAGE","SAGE","SAGE"]))
+									   CENTER=["SAGE","SAGE","SAGE","SAGE","SAGE"],
+									   INT_DOD=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   INT_CONTACT=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   DEAD=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   YEAR_DEATH=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
+									   YEAR_CONTACT=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected']))
 	#TEST patient processing
 	#Clinical file headers are capitalized prior to processing
 	patientdf = pd.DataFrame(dict(PATIENT_Id=["ID1","ID2","ID3","ID4","ID5"],
@@ -71,10 +76,11 @@ def test_patient__process():
 							   BIRTH_YEAR=[1990,1990,1990,1990,1990],
 							   CENTER=["FOO","FOO","FOO","FOO","FOO"]))
 	patient_cols = ["PATIENT_ID","SEX","PRIMARY_RACE","SECONDARY_RACE",
-				"TERTIARY_RACE","ETHNICITY","BIRTH_YEAR","CENTER"]
+				"TERTIARY_RACE","ETHNICITY","BIRTH_YEAR","CENTER",'YEAR_CONTACT',
+				'YEAR_DEATH','INT_CONTACT','INT_DOD','DEAD']
 	clinical_template = pd.DataFrame(columns=patient_cols)
-	patient=True
 	new_patientdf = clin_class._process(patientdf, clinical_template)
+	print(new_patientdf['YEAR_DEATH'])
 	assert expected_patientdf.equals(new_patientdf[expected_patientdf.columns])
 
 def test_sample__process():

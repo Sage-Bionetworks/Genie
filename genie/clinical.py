@@ -159,7 +159,6 @@ class clinical(example_filetype_format.FileTypeFormat):
 		clinical.columns = [col.upper() for col in clinical.columns]
 		clinicalMerged = clinical.merge(clinicalTemplate,how='outer')
 		clinicalMerged = clinicalMerged.drop(clinicalMerged.columns[~clinicalMerged.columns.isin(clinicalTemplate.columns)],1)
-
 		ethnicity_mapping =process_functions.getGenieMapping(self.syn, "syn7434242")
 		race_mapping = process_functions.getGenieMapping(self.syn, "syn7434236")
 		sex_mapping = process_functions.getGenieMapping(self.syn, "syn7434222")
