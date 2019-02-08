@@ -16,15 +16,14 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
 	_process_kwargs = ["newPath", "databaseSynId"]
 
 	def _validateFilename(self, filepath_list):
-		assert os.path.basename(filepath_list[0]) == "assay_information.txt"
+		assert os.path.basename(filepath_list[0]) == "assay_information.yaml"
 
 	def process_steps(self, filePath, *args, **kwargs):
 		logger.info('PROCESSING %s' % filePath)
 		databaseSynId = kwargs['databaseSynId']
 		assay_info_df = self._get_dataframe(filePath)
 		process_assay_info_df = self._process()
-
-		process_functions.updateData(self.syn, sampleSynId, sampleClinical, self.center, col=sampleCols, toDelete=True)
+		process_functions.updateData(self.syn, databaseSynId, process_assay_info_df, self.center, filterByColumn="CENTER", toDelete=True)
 
 		return(filePath)
 
@@ -55,38 +54,30 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
 		assay_info_df.reset_index(drop=True, inplace=True)
 		return(assay_info_df)
 
-	# def process_steps(self, filePath, **kwargs):
-	# 	logger.info('PROCESSING %s' % filePath)
-	# 	newPath = kwargs['newPath']
-	# 	databaseSynId = kwargs['databaseSynId']
-
-
-	# 	seg = pd.read_csv(filePath, sep="\t")
-	# 	seg = self._process(seg)
-	# 	process_functions.updateData(self.syn, databaseSynId, seg, self.center, toDelete=True)
-	# 	seg.to_csv(newPath,sep="\t",index=False)
-	# 	return(newPath)
-
-	def _validate(self, assay_dict):
+	def _validate(self, assay_info_df):
 		total_error = ""
 		warning = ""
-		segDF.columns = [col.upper() for col in segDF.columns]
+		#assay_info_df.columns = [col.upper() for col in assay_info_df.columns]
 
-		REQUIRED_HEADERS = pd.Series(['ID','CHROM','LOC.START','LOC.END','NUM.MARK','SEG.MEAN'])
+		required_headers = pd.Series(['SEQ_ASSAY_ID','is_paired_end','library_selection','library_strategy','platform','read_length','target_capture_kit','instrument_model','number_of_genes'])
 		
-		if not all(REQUIRED_HEADERS.isin(segDF.columns)):
-			total_error += "Your seg file is missing these headers: %s.\n" % ", ".join(REQUIRED_HEADERS[~REQUIRED_HEADERS.isin(segDF.columns)])
+		if not all(required_headers.isin(assay_info_df.columns)):
+			total_error += "assay_information.yaml: Missing headers: %s.\n" % ", ".join(REQUIRED_HEADERS[~REQUIRED_HEADERS.isin(assay_info_df.columns)])
 		else:
-			intCols = ['LOC.START','LOC.END','NUM.MARK']
-			nonInts = [col for col in intCols if segDF[col].dtype != int]
-			if len(nonInts) > 0:
-				total_error += "Seg: Only integars allowed in these column(s): %s.\n" % ", ".join(sorted(nonInts))
-			if not segDF['SEG.MEAN'].dtype in [float, int]:
-				total_error += "Seg: Only numerical values allowed in SEG.MEAN.\n"
+			all_seq_assays = assay_info_df.SEQ_ASSAY_ID.unique()
+			all_seq_assays.apply(lambda assay: assay.startswith(self.center))
 
-		checkNA = segDF.isna().apply(sum)
-		nullCols = [ind for ind in checkNA.index if checkNA[ind] > 0]
-		if len(nullCols) > 0:
-			total_error += "Seg: No null or empty values allowed in column(s): %s.\n" % ", ".join(sorted(nullCols))
+
+			assay_info_df.is_paired_end.isin([True, False]).all()
+			assay_info_df.library_selection.isin(['Hybrid Selection','PCR','Affinity Enrichment','Poly-T Enrichment','Random','rRNA Depletion','miRNA Size Fractionation','Other']).all()
+			assay_info_df.library_strategy.isin(['ATAC-Seq','Bisulfite-Seq','ChIP-Seq','miRNA-Seq','RNA-Seq','Targeted Sequencing','WGS','WXS']).all()
+			assay_info_df.platform.isin(['Illumina','SOLiD','LS454','Ion Torrent','Complete Genomics','PacBio','Other']).all()
+			assay_info_df.read_length.isin([True, False]).all()
+			#assay_info_df.target_capture_kit.isin([True, False]).all()
+			assay_info_df.instrument_model.isin([True, False]).all()
+			assay_info_df.number_of_genes.isin([True, False]).all()
+
+
+
 
 		return(total_error, warning)
