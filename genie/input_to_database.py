@@ -200,10 +200,10 @@ def validatefile(fileinfo, syn, validation_statusdf, error_trackerdf, center, th
 	# 			toValidate = True
 	# 		else:
 	# 			logger.info("%s FILE STATUS IS: %s" % (filename, checkValid['status'].values[0]))
-	check_file_status = check_existing_file_status(validation_statusdf, error_trackerdf, entities, names)
+	check_file_status = check_existing_file_status(validation_statusdf, error_trackerdf, entities, filenames)
 	status_list = check_file_status['status_list']
 	error_list = check_file_status['error_list']
-	filetype = get_filetype(syn, paths, center)
+	filetype = get_filetype(syn, filepaths, center)
 	if check_file_status['to_validate']:
 		# If no filetype set, means the file was named incorrectly
 		if filetype is None:
@@ -340,8 +340,22 @@ def create_and_archive_maf_database(syn, database_synid_mappingdf):
 	syn.setPermissions(new_maf_database.id, 3326313, [])
 	return(database_synid_mappingdf)
 
-#Validation of all center files
 def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf, thread, testing, oncotreeLink):
+	'''
+	Validation of all center files
+
+	Args:
+		syn: Synapse object
+		center: Center name
+		process: main, vcf, maf
+		center_mapping_df: center mapping dataframe
+		thread: Unused parameter for now
+		testing: True if testing
+		oncotreeLink: Link to oncotree
+
+	Returns:
+		dataframe: Valid files
+	'''
 	centerInputSynId = center_mapping_df['inputSynId'][center_mapping_df['center'] == center][0]
 	logger.info("Center: " + center)
 	allFiles = get_center_input_files(syn, centerInputSynId, center, process)

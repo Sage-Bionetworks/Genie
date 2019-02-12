@@ -5,6 +5,7 @@ import synapseutils as synu
 import mock
 import pandas as pd
 from genie import input_to_database
+from genie import validate
 
 syn = mock.create_autospec(synapseclient.Synapse) 
 sample_clinical_synid = 'syn2222'
@@ -14,6 +15,7 @@ vcf2synid = 'syn8888'
 first = ([('inputs',"syn12345")], [('vcfs','syn33333')], [('data_clinical_supp_sample_SAGE.txt',sample_clinical_synid), ('data_clinical_supp_patient_SAGE.txt',patient_clincal_synid)])
 second = ([('vcfs',"syn33333")], [], [('GENIE-SAGE-000-1111.vcf',vcf1synid), ('GENIE-SAGE-111-2222.vcf',vcf2synid)])
 center = "SAGE"
+oncotreeurl = "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
 
 def test_samename_rename_file():
 	filename = synapseclient.utils.make_bogus_data_file()
@@ -196,4 +198,24 @@ def test_create_and_archive_maf_database():
 
 		assert database_mappingdf['Id'][database_mappingdf['Database'] == 'vcf2maf'].values[0] == new_maf_ent.id
 		assert database_mappingdf['Id'][database_mappingdf['Database'] == 'main'].values[0] == 'syn23455'
+
+
+def test_row_validatefile():
+	validation_statusdf = pd.DataFrame({'id':['syn1234','syn2345'],'status':['VALID','INVALID'],'md5':['3333','44444'],'name':['first.txt','second.txt']})
+	error_trackerdf = pd.DataFrame(columns=['id'],dtype=str)
+	entity = synapseclient.Entity(id='syn2345',md5='44444')
+	entity['modifiedOn']='2019-03-24T12:00:00.Z'
+	entity.modifiedBy='333'
+	entity.createdBy='444'
+	#entities = [entity]
+	center = 'SAGE'
+	threads=0
+	testing=False
+
+	fileinfo = {'filePaths':['/path/to/file.csv'],
+				'synId':['syn1234']}
+	with mock.patch.object(syn, "get", return_value=entity) as patch_syn_get,\
+		 mock.patch.object(validate, "validate", return_value=('valid',True)) as patch_validate:
+		input_to_database.validatefile(fileinfo, syn, validation_statusdf, error_trackerdf, center, threads, testing, oncotreeurl)
+
 
