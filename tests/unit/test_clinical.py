@@ -55,6 +55,10 @@ def test_patient_fillvs__process():
 	'''
 	Test filling out of vital status values
 	This will be removed once vital status values are required
+	- capitalized column headers
+	- remapping of values
+	- Fill out CENTER column
+	- Append GENIE-CENTER-..
 	'''
 	expected_patientdf = pd.DataFrame(dict(PATIENT_ID=["GENIE-SAGE-ID1","GENIE-SAGE-ID2","GENIE-SAGE-ID3","GENIE-SAGE-ID4","GENIE-SAGE-ID5"],
 									   SEX=['Male','Female','Male','Female','Unknown'],
@@ -69,8 +73,7 @@ def test_patient_fillvs__process():
 									   DEAD=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
 									   YEAR_DEATH=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
 									   YEAR_CONTACT=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected']))
-	#TEST patient processing
-	#Clinical file headers are capitalized prior to processing
+
 	patientdf = pd.DataFrame(dict(PATIENT_Id=["ID1","ID2","ID3","ID4","ID5"],
 							   sex=[1,2,1,2,float('nan')],
 							   PRIMARY_RACE=[1,2,3,4,float('nan')],
@@ -90,7 +93,7 @@ def test_patient_fillvs__process():
 
 def test_patient_lesscoltemplate__process():
 	'''
-	Test when there are less clinical values defined by scope.
+	Test scope is excluding values.
 	Only those value defined by the scope will be written out
 	'''
 	expected_patientdf = pd.DataFrame(dict(PATIENT_ID=["GENIE-SAGE-ID1","GENIE-SAGE-ID2","GENIE-SAGE-ID3","GENIE-SAGE-ID4","GENIE-SAGE-ID5"],
@@ -107,7 +110,6 @@ def test_patient_lesscoltemplate__process():
 									   YEAR_DEATH=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected'],
 									   YEAR_CONTACT=['Not Collected','Not Collected','Not Collected','Not Collected','Not Collected']))
 	#TEST patient processing
-	#Clinical file headers are capitalized prior to processing
 	patientdf = pd.DataFrame(dict(PATIENT_Id=["ID1","ID2","ID3","ID4","ID5"],
 							   sex=[1,2,1,2,float('nan')],
 							   PRIMARY_RACE=[1,2,3,4,float('nan')],
@@ -201,6 +203,13 @@ def test_patient_vs__process():
 def test_sample__process():
 	'''
 	Test sample processing
+	- column headers are capitalized
+	- SEQ_DATE is normalized (Mon-YYYY, Release)
+	- Allow UNKNOWN oncotree value
+	- Add on GENIE-CENTER-...
+	- Remapping of SAMPLE_TYPE/SAMPLE_TYPE_DETAILED value
+	- SEQ_YEAR from SEQ_DATE, nan if SEQ_DATE is Release
+
 	'''
 	expected_sampledf = pd.DataFrame(dict(SAMPLE_ID=["GENIE-SAGE-ID1-1","GENIE-SAGE-ID2-1","GENIE-SAGE-ID3-1","GENIE-SAGE-ID4-1","GENIE-SAGE-ID5-1"],
 									   PATIENT_ID=["GENIE-SAGE-ID1","GENIE-SAGE-ID2","GENIE-SAGE-ID3","GENIE-SAGE-ID4","GENIE-SAGE-ID5"],
