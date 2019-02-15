@@ -1,9 +1,10 @@
 from __future__ import absolute_import
-from genie import example_filetype_format
+from genie import example_filetype_format, process_functions
 import os
 import logging
 import synapseclient
 import yaml
+import pandas as pd
 logger = logging.getLogger(__name__)
 
 
@@ -27,26 +28,17 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
 
 		return(filePath)
 
-	def _process(self, seg):
-		seg.columns = [col.upper() for col in seg.columns]
-		newsamples = [process_functions.checkGenieId(i, self.center) for i in seg['ID']]
-		seg['ID'] = newsamples
-		seg = seg.drop_duplicates()
-		seg = seg.rename(columns= {'LOC.START':'LOCSTART','LOC.END':'LOCEND','SEG.MEAN':'SEGMEAN','NUM.MARK':'NUMMARK'})
-		seg['CHROM'] = [str(chrom).replace("chr","") for chrom in seg['CHROM']]
-		seg['CENTER'] = self.center
-		seg['LOCSTART'] = seg['LOCSTART'].astype(int)
-		seg['LOCEND'] = seg['LOCEND'].astype(int)
-		seg['NUMMARK'] = seg['NUMMARK'].astype(int)
-		return(seg)
+	def _process(self, df):
+		()
+		#sequencing_center
 
 
-	def _get_dataframe(self, filePathList):
+	def _get_dataframe(self, filepath_list):
 		'''
-		Return a dict
+		Takes in yaml file, returns dataframe
 		'''
-		filePath = filePathList[0]
-		with open(filePath, 'r') as yamlfile:
+		filepath = filepath_list[0]
+		with open(filepath, 'r') as yamlfile:
 			panel_info_dict = yaml.load(yamlfile)
 		assay_info_df = pd.DataFrame(panel_info_dict)
 		assay_info_df = assay_info_df.transpose()
@@ -57,27 +49,62 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
 	def _validate(self, assay_info_df):
 		total_error = ""
 		warning = ""
-		#assay_info_df.columns = [col.upper() for col in assay_info_df.columns]
 
-		required_headers = pd.Series(['SEQ_ASSAY_ID','is_paired_end','library_selection','library_strategy','platform','read_length','target_capture_kit','instrument_model','number_of_genes'])
-		
-		if not all(required_headers.isin(assay_info_df.columns)):
-			total_error += "assay_information.yaml: Missing headers: %s.\n" % ", ".join(REQUIRED_HEADERS[~REQUIRED_HEADERS.isin(assay_info_df.columns)])
-		else:
+		if process_functions.checkColExist(assay_info_df, "SEQ_ASSAY_ID"):
 			all_seq_assays = assay_info_df.SEQ_ASSAY_ID.unique()
-			all_seq_assays.apply(lambda assay: assay.startswith(self.center))
+			if not all([assay.startswith(self.center) for assay in all_seq_assays]):
+				total_error += "Assay_information.yaml: Please make sure your all your SEQ_ASSAY_IDs start with your center abbreviation."
+		else:
+			total_error += "Assay_information.yaml: Must have SEQ_ASSAY_ID column.\n"
 
+		warn, error = process_functions.check_col_and_values(assay_info_df, 'is_paired_end', [True, False], filename="Assay_information.yaml", required=True)
+		warning += warn
+		total_error  += error 
+		warn, error = process_functions.check_col_and_values(assay_info_df, 'library_selection', ['Hybrid Selection','PCR','Affinity Enrichment','Poly-T Enrichment','Random','rRNA Depletion','miRNA Size Fractionation','Other'], filename="Assay_information.yaml", required=True)
+		warning += warn
+		total_error  += error 
+		warn, error = process_functions.check_col_and_values(assay_info_df, 'library_strategy', ['ATAC-Seq','Bisulfite-Seq','ChIP-Seq','miRNA-Seq','RNA-Seq','Targeted Sequencing','WGS','WXS'], filename="Assay_information.yaml", required=True)
+		warning += warn
+		total_error  += error 
+		warn, error = process_functions.check_col_and_values(assay_info_df, 'platform', ['Illumina','SOLiD','LS454','Ion Torrent','Complete Genomics','PacBio','Other'], filename="Assay_information.yaml", required=True)
+		warning += warn
+		total_error  += error 
 
-			assay_info_df.is_paired_end.isin([True, False]).all()
-			assay_info_df.library_selection.isin(['Hybrid Selection','PCR','Affinity Enrichment','Poly-T Enrichment','Random','rRNA Depletion','miRNA Size Fractionation','Other']).all()
-			assay_info_df.library_strategy.isin(['ATAC-Seq','Bisulfite-Seq','ChIP-Seq','miRNA-Seq','RNA-Seq','Targeted Sequencing','WGS','WXS']).all()
-			assay_info_df.platform.isin(['Illumina','SOLiD','LS454','Ion Torrent','Complete Genomics','PacBio','Other']).all()
-			assay_info_df.read_length.isin([True, False]).all()
-			#assay_info_df.target_capture_kit.isin([True, False]).all()
-			assay_info_df.instrument_model.isin([True, False]).all()
-			assay_info_df.number_of_genes.isin([True, False]).all()
+		instrument_model = ['454 GS FLX Titanium','AB SOLiD 4','AB SOLiD 2','AB SOLiD 3','Complete Genomics','Illumina HiSeq X Ten',
+				'Illumina HiSeq X Five','Illumina Genome Analyzer II','Illumina Genome Analyzer IIx','Illumina HiSeq 2000',
+				'Illumina HiSeq 2500','Illumina HiSeq 4000','Illumina MiSeq','Illumina NextSeq','Ion Torrent PGM',
+				'Ion Torrent Proton','PacBio RS','Other',None]
+		warn, error = process_functions.check_col_and_values(assay_info_df, 'instrument_model', instrument_model, filename="Assay_information.yaml", required=True)
+		warning += warn
+		total_error  += error 
 
+		variant_classes = ['Splice_Site','Nonsense_Mutation','Frame_Shift_Del','Frame_Shift_Ins',
+		'Nonstop_Mutation','Translation_Start_Site','In_Frame_Ins','In_Frame_Del','Missense_Mutation',
+		'Intron','Splice_Region','Silent','RNA',"5'UTR","3'UTR",'IGR',"5'Flank","3'Flank"]
 
+		warn, error = process_functions.check_col_and_values(assay_info_df, 'variant_consequences', variant_classes, filename="Assay_information.yaml")
+		warning += warn
+		total_error  += error 
 
+		if not process_functions.checkColExist(assay_info_df, "target_capture_kit"):
+			total_error += "Assay_information.yaml: Must have target_capture_kit column.\n"
+
+		if process_functions.checkColExist(assay_info_df, "read_length"):
+			if not all([process_functions.checkInt(i) for i in assay_info_df["read_length"]]):
+				total_error += "Assay_information.yaml: Please double check your read_length.  It must be an integer or 'Unknown'.\n"
+		else:
+			total_error += "Assay_information.yaml: Must have read_length column.\n"
+
+		if process_functions.checkColExist(assay_info_df, "number_of_genes"):
+			if not all([process_functions.checkInt(i) for i in assay_info_df["number_of_genes"]]):
+				total_error += "Assay_information.yaml: Please double check your number_of_genes.  It must be an integer or 'Unknown'.\n"
+		else:
+			total_error += "Assay_information.yaml: Must have number_of_genes column.\n"
+		
+		if process_functions.checkColExist(assay_info_df, "gene_padding"):
+			if not all([process_functions.checkInt(i) for i in assay_info_df["gene_padding"]]):
+				total_error += "Assay_information.yaml: Please double check your gene_padding.  It must be an integer or .\n"
+		else:
+			warning += "Assay_information.yaml: gene_padding is by default 10 if not specified.\n"
 
 		return(total_error, warning)

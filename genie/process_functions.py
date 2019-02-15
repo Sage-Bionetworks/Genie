@@ -465,6 +465,37 @@ def checkInt(element):
 	except ValueError:
 		return(False)
 
+
+def check_col_and_values(df, col, possible_values, filename, required=False):
+	'''
+	This function checks if the column exists then checks if the values in the 
+	column have the correct values
+	
+	Args:
+		df: Input dataframe
+		col: Expected column name
+		possible_values: list of possible values
+		filename: Name of file
+		required: If the column is required.  Default is False
+	
+	Returns:
+		tuple: warning, error
+	'''
+	warning = ""
+	error = ""
+	have_column = checkColExist(df, col)
+	if not have_column:
+		if required:
+			error = "{filename}: Must have {col} column.\n".format(filename=filename, col=col)
+		else:
+			warning = "{filename}: Doesn't have {col} column. This column will be added\n".format(filename=filename, col=col)
+	else:
+		if not df[col].isin(possible_values).all():
+			error = "{filename}: Please double check your {col} column.  This column must only be these values: {possible_vals}\n".format(filename=filename, col=col, possible_vals=', '.join([str(value) for value in possible_values]))
+	return(warning, error)
+
+
+
 #CREATE ONCOTREE DICTIONARY MAPPING TO PRIMARY, SECONDARY, CANCER TYPE, AND CANCER DESCRIPTION
 def extract_oncotree_code_mappings_from_oncotree_json(oncotree_json, primary, secondary):
 	oncotree_code_to_info = {}
