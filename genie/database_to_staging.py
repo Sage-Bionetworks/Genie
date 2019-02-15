@@ -253,15 +253,15 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isnull()]
 	clinicalDf = clinicalDf[~clinicalDf['PATIENT_ID'].isnull()]
 
-	#add in vital status
-	logger.info("MERGE VITAL STATUS")
-	vitalStatusSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "vitalStatus"][0]
-	vitalStatus = syn.tableQuery('select * from %s' % vitalStatusSynId)
-	vitalStatusDf = vitalStatus.asDataFrame()
-	del vitalStatusDf['CENTER']
-	#Make sure to grab only the patients that exist in the clinical database
-	vitalStatusDf = vitalStatusDf[vitalStatusDf.PATIENT_ID.isin(clinicalDf.PATIENT_ID)]
-	clinicalDf = clinicalDf.merge(vitalStatusDf, on = "PATIENT_ID",how="outer")
+	# #add in vital status
+	# logger.info("MERGE VITAL STATUS")
+	# vitalStatusSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "vitalStatus"][0]
+	# vitalStatus = syn.tableQuery('select * from %s' % vitalStatusSynId)
+	# vitalStatusDf = vitalStatus.asDataFrame()
+	# del vitalStatusDf['CENTER']
+	# #Make sure to grab only the patients that exist in the clinical database
+	# vitalStatusDf = vitalStatusDf[vitalStatusDf.PATIENT_ID.isin(clinicalDf.PATIENT_ID)]
+	# clinicalDf = clinicalDf.merge(vitalStatusDf, on = "PATIENT_ID",how="outer")
 
 	#########FILTERING#########
 	logger.info("REMOVING PHI")
