@@ -59,16 +59,35 @@ def storeFile(syn, filePath, genieVersion="database", name=None, parent=None, fi
 	# 	process.center_convert_back(filePath, ANONYMIZE_CENTER_DF)
 	return(temp)
 
+def redaction_phi(values):
+	'''
+	Boolean vector of pediatric and PHI rows
+
+	Args:
+		values: Dataframe column or list of values to check
+
+	Returns:
+		tuple: redact and pediatric redaction bool vectors
+	'''
+	phi_cutoff = 365*89
+	pediatric_cutoff = 365*18
+	#Some sites submit redacted values already
+	values =[phi_cutoff - 1 if "<" in str(value) else value for value in values]
+	values =[pediatric_cutoff + 1 if ">" in str(value) else value for value in values]
+	to_redact  = [int(float(value)) > phi_cutoff if value not in ['','Unknown','Not Applicable','Not Collected'] else False for value in values]
+	to_redact_pediatric  = [int(float(value)) < pediatric_cutoff if value not in ['','Unknown','Not Applicable','Not Collected'] else False for value in values]
+	return(to_redact, to_redact_pediatric)
+
 #Remove PHI data
 def reAnnotatePHI(mergedClinical):
-	PHIcutoff = 365*89
-	pedsCutoff = 365*18
+
 	mergedClinical['AGE_AT_SEQ_REPORT'] = mergedClinical['AGE_AT_SEQ_REPORT'].fillna('')
 	mergedClinical['BIRTH_YEAR'] = mergedClinical['BIRTH_YEAR'].fillna('')
-	AGE_AT_SEQ_REPORT =[pedsCutoff - 1 if "<" in str(age) else age for age in mergedClinical['AGE_AT_SEQ_REPORT']]
-	AGE_AT_SEQ_REPORT =[PHIcutoff + 1 if ">" in str(age) else age for age in AGE_AT_SEQ_REPORT]
-	toRedact  = [int(float(age)) > PHIcutoff if age != '' else False for age in AGE_AT_SEQ_REPORT]
-	toRedactPeds  = [int(float(age)) < pedsCutoff if age != '' else False for age in AGE_AT_SEQ_REPORT]
+	toRedact, toRedactPeds = redaction_phi(mergedClinical['AGE_AT_SEQ_REPORT'])
+	# AGE_AT_SEQ_REPORT =[pedsCutoff - 1 if "<" in str(age) else age for age in mergedClinical['AGE_AT_SEQ_REPORT']]
+	# AGE_AT_SEQ_REPORT =[PHIcutoff + 1 if ">" in str(age) else age for age in AGE_AT_SEQ_REPORT]
+	# toRedact  = [int(float(age)) > PHIcutoff if age != '' else False for age in AGE_AT_SEQ_REPORT]
+	# toRedactPeds  = [int(float(age)) < pedsCutoff if age != '' else False for age in AGE_AT_SEQ_REPORT]
 	logger.info("Redacting >89")
 	logger.info(mergedClinical[toRedact])
 	logger.info("Redacting <18")
@@ -84,19 +103,23 @@ def reAnnotatePHI(mergedClinical):
 	#mergedClinical['BIRTH_YEAR'] = BIRTH_YEAR
 	mergedClinical['INT_CONTACT'] = mergedClinical['INT_CONTACT'].fillna('')
 	mergedClinical['INT_DOD'] = mergedClinical['INT_DOD'].fillna('')
-	INT_CONTACT =[pedsCutoff - 1 if "<" in str(age) else age for age in mergedClinical['INT_CONTACT']]
-	INT_CONTACT =[PHIcutoff + 1 if ">" in str(age) else age for age in INT_CONTACT]
-	toRedact  = [int(float(age)) > PHIcutoff if age != '' else False for age in INT_CONTACT]
-	toRedactPeds  = [int(float(age)) < pedsCutoff if age != '' else False for age in INT_CONTACT]
+	toRedact, toRedactPeds = redaction_phi(mergedClinical['INT_CONTACT'])
+
+	# INT_CONTACT =[pedsCutoff - 1 if "<" in str(age) else age for age in mergedClinical['INT_CONTACT']]
+	# INT_CONTACT =[PHIcutoff + 1 if ">" in str(age) else age for age in INT_CONTACT]
+	# toRedact  = [int(float(age)) > PHIcutoff if age != '' else False for age in INT_CONTACT]
+	# toRedactPeds  = [int(float(age)) < pedsCutoff if age != '' else False for age in INT_CONTACT]
 	mergedClinical['INT_CONTACT'][toRedact] = ">32485"
 	mergedClinical['INT_CONTACT'][toRedactPeds] = "<6570"
 	mergedClinical['BIRTH_YEAR'][toRedact] = "cannotReleaseHIPAA"
 	mergedClinical['BIRTH_YEAR'][toRedactPeds] = "withheld"
 
-	INT_DOD =[pedsCutoff - 1 if "<" in str(age) else age for age in mergedClinical['INT_DOD']]
-	INT_DOD =[PHIcutoff + 1 if ">" in str(age) else age for age in INT_DOD]
-	toRedact  = [int(float(age)) > PHIcutoff if age != '' else False for age in INT_DOD]
-	toRedactPeds  = [int(float(age)) < pedsCutoff if age != '' else False for age in INT_DOD]
+	toRedact, toRedactPeds = redaction_phi(mergedClinical['INT_DOD'])
+
+	# INT_DOD =[pedsCutoff - 1 if "<" in str(age) else age for age in mergedClinical['INT_DOD']]
+	# INT_DOD =[PHIcutoff + 1 if ">" in str(age) else age for age in INT_DOD]
+	# toRedact  = [int(float(age)) > PHIcutoff if age != '' else False for age in INT_DOD]
+	# toRedactPeds  = [int(float(age)) < pedsCutoff if age != '' else False for age in INT_DOD]
 	mergedClinical['INT_DOD'][toRedact] = ">32485"
 	mergedClinical['INT_DOD'][toRedactPeds] = "<6570"
 	mergedClinical['BIRTH_YEAR'][toRedact] = "cannotReleaseHIPAA"
@@ -150,11 +173,15 @@ def configureMafRow(rowArray, headers, keepSamples, remove_variants):
 		return(None)
 
 #Run MAF in BED script, filter data and update MAFinBED database
-def runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test=False, genieVersion="test"):
+def runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test=False, genieVersion="test", genie_user=None, genie_pass=None):
 	MAFinBED_script = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../analyses/genomicData/MAFinBED.R')
 	notinbed_variant_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../analyses/genomicData/notinbed.csv')
 
-	command = ['Rscript', MAFinBED_script, str(test), notinbed_variant_file]
+	command = ['Rscript', MAFinBED_script, notinbed_variant_file]
+	if genie_user is not None and genie_pass is not None:
+		command.extend(['--syn_user', genie_user, '--syn_pass', genie_pass])
+	if test:
+		command.append('--testing')
 	subprocess.check_call(command)
 
 	# mutationSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "vcf2maf"][0]
@@ -177,12 +204,15 @@ def seq_date_filter(clinicalDf, processingDate, consortiumReleaseCutOff):
 	removeSeqDateSamples = process.seqDateFilter(clinicalDf, processingDate, consortiumReleaseCutOff)
 	return(removeSeqDateSamples)
 
-def mutation_in_cis_filter(syn, skipMutationsInCis, test, variant_filtering_synId, CENTER_MAPPING_DF, genieVersion):
+def mutation_in_cis_filter(syn, skipMutationsInCis, variant_filtering_synId, CENTER_MAPPING_DF, genieVersion, test=False,  genie_user=None, genie_pass=None):
 	if not skipMutationsInCis:
 		mergeCheck_script = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../analyses/mergeFlag/mergeCheck.R')
-		command = ['Rscript', mergeCheck_script, str(test)]
-		subprocess.check_call(command)
-		# Store each centers mutations in cis to their staging folder
+		command = ['Rscript', mergeCheck_script]
+		if genie_user is not None and genie_pass is not None:
+			command.extend(['--syn_user',genie_user, '--syn_pass',genie_pass])
+		if test:
+			command.append('--testing')
+		subprocess.check_call(command)		# Store each centers mutations in cis to their staging folder
 		mergeCheck = syn.tableQuery("select * from %s where Center in ('%s')" % (variant_filtering_synId,"','".join(CENTER_MAPPING_DF.center)))
 		mergeCheckDf = mergeCheck.asDataFrame()
 		for center in mergeCheckDf.Center.unique():
@@ -205,11 +235,12 @@ def seq_assay_id_filter(clinicalDf):
 
 
 #def stagingToCbio(syn, releaseSynId, releaseDate, filtering=False, release=False, current_release_staging=False):	
-def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, databaseSynIdMappingDf, oncotree_url=None, consortiumReleaseCutOff=183, filtering=False, current_release_staging=False, skipMutationsInCis=False, test=False):	
+def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, databaseSynIdMappingDf, oncotree_url=None, consortiumReleaseCutOff=183, filtering=False, current_release_staging=False, skipMutationsInCis=False, test=False, genie_user=None, genie_pass=None):	
 	CNA_PATH = os.path.join(GENIE_RELEASE_DIR,"data_CNA_%s.txt" % genieVersion)
 	CLINCICAL_PATH = os.path.join(GENIE_RELEASE_DIR,'data_clinical_%s.txt' % genieVersion)
 	CLINCICAL_SAMPLE_PATH = os.path.join(GENIE_RELEASE_DIR,'data_clinical_sample_%s.txt' % genieVersion)
 	CLINCICAL_PATIENT_PATH = os.path.join(GENIE_RELEASE_DIR,'data_clinical_patient_%s.txt' % genieVersion)
+
 	DATA_GENE_PANEL_PATH = os.path.join(GENIE_RELEASE_DIR,'data_gene_matrix_%s.txt' % genieVersion)
 	MUTATIONS_PATH = os.path.join(GENIE_RELEASE_DIR,'data_mutations_extended_%s.txt' % genieVersion)
 	FUSIONS_PATH = os.path.join(GENIE_RELEASE_DIR,'data_fusions_%s.txt' % genieVersion)
@@ -267,9 +298,9 @@ def stagingToCbio(syn, processingDate, genieVersion, CENTER_MAPPING_DF, database
 	logger.info("REMOVING PHI")
 	clinicalDf = reAnnotatePHI(clinicalDf)
 	logger.info("MAF IN BED FILTER")
-	remove_mafInBed_variants = runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test, genieVersion=genieVersion)
+	remove_mafInBed_variants = runMAFinBED(syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test=test, genieVersion=genieVersion, genie_user=genie_user, genie_pass=genie_pass)
 	logger.info("MUTATION IN CIS FILTER")
-	remove_mutationInCis_samples = mutation_in_cis_filter(syn, skipMutationsInCis, test, variant_filtering_synId, CENTER_MAPPING_DF, genieVersion=genieVersion)
+	remove_mutationInCis_samples = mutation_in_cis_filter(syn, skipMutationsInCis, variant_filtering_synId, CENTER_MAPPING_DF, genieVersion=genieVersion, test=test, genie_user=genie_user, genie_pass=genie_pass)
 	logger.info("SEQ DATE FILTER")
 	remove_seqDate_samples = seq_date_filter(clinicalDf, processingDate, consortiumReleaseCutOff)
 	#Only certain samples are removed for the files that go into staging center folder
@@ -715,6 +746,11 @@ def main():
 						help="Synapse debug feature")
 	args = parser.parse_args()
 	syn = process.synLogin(args.pemFile, debug=args.debug)
+	genie_user = os.environ['GENIE_USER']
+	if args.pemFile is not None:
+		genie_pass = process.get_password(args.pemFile)
+	else:
+		genie_pass = None
 
 	assert not (args.test and args.staging), "You can only specify --test or --staging, not both"
 
@@ -760,7 +796,7 @@ def main():
 	assert os.path.exists(cbioValidatorPath), "Please specify correct cbioportalPath"
 
 	logger.info("STAGING TO CONSORTIUM")
-	genePanelEntities = stagingToCbio(syn, processingDate, args.genieVersion, CENTER_MAPPING_DF, databaseSynIdMappingDf, oncotree_url=args.oncotreeLink, consortiumReleaseCutOff= args.consortiumReleaseCutOff, current_release_staging=args.staging, skipMutationsInCis=args.skipMutationsInCis, test=args.test)
+	genePanelEntities = stagingToCbio(syn, processingDate, args.genieVersion, CENTER_MAPPING_DF, databaseSynIdMappingDf, oncotree_url=args.oncotreeLink, consortiumReleaseCutOff= args.consortiumReleaseCutOff, current_release_staging=args.staging, skipMutationsInCis=args.skipMutationsInCis, test=args.test, genie_user=genie_user, genie_pass=genie_pass)
 	
 	#No need to run twice anymore
 	#stagingToCbio(syn, processingDate, args.genieVersion, CENTER_MAPPING_DF, databaseSynIdMappingDf, oncotree_url=args.oncotreeLink, consortiumReleaseCutOff= args.consortiumReleaseCutOff, filtering=True, current_release_staging=args.staging, test=args.test)
