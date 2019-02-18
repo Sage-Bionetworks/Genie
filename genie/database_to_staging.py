@@ -72,8 +72,8 @@ def redaction_phi(values):
 	phi_cutoff = 365*89
 	pediatric_cutoff = 365*18
 	#Some sites submit redacted values already
-	values =[phi_cutoff - 1 if "<" in str(value) else value for value in values]
-	values =[pediatric_cutoff + 1 if ">" in str(value) else value for value in values]
+	values =[pediatric_cutoff - 1 if "<" in str(value) else value for value in values]
+	values =[phi_cutoff + 1 if ">" in str(value) else value for value in values]
 	to_redact  = [int(float(value)) > phi_cutoff if value not in ['','Unknown','Not Applicable','Not Collected'] else False for value in values]
 	to_redact_pediatric  = [int(float(value)) < pediatric_cutoff if value not in ['','Unknown','Not Applicable','Not Collected'] else False for value in values]
 	return(to_redact, to_redact_pediatric)
