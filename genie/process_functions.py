@@ -525,11 +525,6 @@ def getPrimary(code, oncotreeDict, primary):
 	return(toAdd)
 
 
-## READ KEY
-def readKey(pemPath):
-	f = open(pemPath,'r')
-	key = RSA.importKey(f.read())
-	return(key)
 
 # def createKey():
 # 	import Crypto
@@ -588,7 +583,7 @@ def get_password(pemfile_path):
 	'''
 	if not os.path.exists(pemfile_path):
 		raise ValueError("Path to pemFile must be specified if there is no cached credentials")
-	key = read_key(pemFile)
+	key = read_key(pemfile_path)
 	genie_pass = decrypt_message(os.environ['GENIE_PASS'], key)
 	return(genie_pass)
 
