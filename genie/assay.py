@@ -53,7 +53,7 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
 		if process_functions.checkColExist(assay_info_df, "SEQ_ASSAY_ID"):
 			all_seq_assays = assay_info_df.SEQ_ASSAY_ID.unique()
 			if not all([assay.startswith(self.center) for assay in all_seq_assays]):
-				total_error += "Assay_information.yaml: Please make sure your all your SEQ_ASSAY_IDs start with your center abbreviation."
+				total_error += "Assay_information.yaml: Please make sure your all your SEQ_ASSAY_IDs start with your center abbreviation.\n"
 		else:
 			total_error += "Assay_information.yaml: Must have SEQ_ASSAY_ID column.\n"
 
@@ -102,7 +102,7 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
 			total_error += "Assay_information.yaml: Must have number_of_genes column.\n"
 		
 		if process_functions.checkColExist(assay_info_df, "gene_padding"):
-			if not all([process_functions.checkInt(i) for i in assay_info_df["gene_padding"] if i is not None]):
+			if not all([process_functions.checkInt(i) for i in assay_info_df["gene_padding"] if i is not None and not pd.isnull(i)]):
 				total_error += "Assay_information.yaml: Please double check your gene_padding.  It must be an integer or blank.\n"
 		else:
 			warning += "Assay_information.yaml: gene_padding is by default 10 if not specified.\n"
