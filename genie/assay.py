@@ -102,8 +102,8 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
 			total_error += "Assay_information.yaml: Must have number_of_genes column.\n"
 		
 		if process_functions.checkColExist(assay_info_df, "gene_padding"):
-			if not all([process_functions.checkInt(i) for i in assay_info_df["gene_padding"]]):
-				total_error += "Assay_information.yaml: Please double check your gene_padding.  It must be an integer or .\n"
+			if not all([process_functions.checkInt(i) for i in assay_info_df["gene_padding"] if i is not None]):
+				total_error += "Assay_information.yaml: Please double check your gene_padding.  It must be an integer or blank.\n"
 		else:
 			warning += "Assay_information.yaml: gene_padding is by default 10 if not specified.\n"
 
