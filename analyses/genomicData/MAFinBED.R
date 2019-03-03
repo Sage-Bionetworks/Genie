@@ -52,7 +52,7 @@ patientData$CENTER <- NULL
 genieClinData <- merge.data.frame(patientData, sampleData, by="PATIENT_ID")
 
 #EXCLUDE PHS-TRISEQ-V1 SAMPLES
-genieClinData <- genieClinData[genieClinData$SEQ_ASSAY_ID != "PHS-TRISEQ-V1",]
+#genieClinData <- genieClinData[genieClinData$SEQ_ASSAY_ID != "PHS-TRISEQ-V1",]
 
 # read aggregated BED file data
 genieBed = synTableQuery(sprintf('SELECT * FROM %s', bedSynId),includeRowIdAndRowVersion=F)
