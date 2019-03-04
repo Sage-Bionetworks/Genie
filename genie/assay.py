@@ -82,7 +82,7 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
 		'Nonstop_Mutation','Translation_Start_Site','In_Frame_Ins','In_Frame_Del','Missense_Mutation',
 		'Intron','Splice_Region','Silent','RNA',"5'UTR","3'UTR",'IGR',"5'Flank","3'Flank"]
 
-		warn, error = process_functions.check_col_and_values(assay_info_df, 'variant_consequences', variant_classes, filename="Assay_information.yaml")
+		warn, error = process_functions.check_col_and_values(assay_info_df, 'variant_classifications', variant_classes, filename="Assay_information.yaml")
 		warning += warn
 		total_error  += error 
 

@@ -24,7 +24,7 @@ def test_valid__validate():
 	'library_selection':['PCR','PCR'],
 	'platform':['Illumina','Illumina'],
 	'instrument_model':['Illumina HiSeq 4000','Illumina HiSeq 4000'],
-	'variant_consequences':['Frame_Shift_Ins','Frame_Shift_Ins'],
+	'variant_classifications':['Frame_Shift_Ins','Frame_Shift_Ins'],
 	'target_capture_kit':['foo','doo'],
 	'read_length':[22,333],
 	'number_of_genes':[5,20],
@@ -47,6 +47,6 @@ def test_missingcols__validate():
 					   'Assay_information.yaml: Must have read_length column.\n'
 					   'Assay_information.yaml: Must have number_of_genes column.\n')
 	assert error == expected_errors
-	expected_warnings = ("Assay_information.yaml: Doesn't have variant_consequences column. This column will be added\n"
+	expected_warnings = ("Assay_information.yaml: Doesn't have variant_classifications column. This column will be added\n"
 						 "Assay_information.yaml: gene_padding is by default 10 if not specified.\n")
 	assert warning == expected_warnings
