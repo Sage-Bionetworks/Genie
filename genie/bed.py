@@ -165,6 +165,8 @@ class bed(example_filetype_format.FileTypeFormat):
 
 	def _process(self, gene, seq_assay_id, newPath, parentId, createPanel=True):
 		seq_assay_id = seq_assay_id.upper()
+		seq_assay_id = seq_assay_id.replace('_','-')
+
 		if len(gene.columns) > 4:
 			if not all(gene[4].apply(lambda x: isinstance(x, bool))):
 				gene[4] = True
