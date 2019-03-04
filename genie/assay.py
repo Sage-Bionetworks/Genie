@@ -29,7 +29,7 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
 		return(filePath)
 
 	def _process(self, df):
-		()
+		pass
 		#sequencing_center
 
 
