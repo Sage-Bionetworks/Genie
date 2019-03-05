@@ -40,10 +40,10 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 
 WORKDIR /root/
 #These are only necessary for now, because of SYNR-1378, add back into installPackages.R later
-RUN R -e "install.packages('PythonEmbedInR', repos=c('https://sage-bionetworks.github.io/ran', 'http://cran.fhcrc.org'))"
-RUN git clone -b develop https://github.com/Sage-Bionetworks/synapser.git
-RUN R CMD build synapser/ --no-build-vignettes
-RUN R CMD INSTALL synapser_0.0.0.tar.gz
+#RUN R -e "install.packages('PythonEmbedInR', repos=c('https://sage-bionetworks.github.io/ran', 'http://cran.fhcrc.org'))"
+#RUN git clone -b develop https://github.com/Sage-Bionetworks/synapser.git
+#RUN R CMD build synapser/ --no-build-vignettes
+#RUN R CMD INSTALL synapser_0.0.0.tar.gz
 
 COPY docker/installPackages.R /installPackages.R
 RUN Rscript /installPackages.R
