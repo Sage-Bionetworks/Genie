@@ -556,11 +556,6 @@ def getPrimary(code, oncotreeDict, primary):
 	return(toAdd)
 
 
-## READ KEY
-def readKey(pemPath):
-	f = open(pemPath,'r')
-	key = RSA.importKey(f.read())
-	return(key)
 
 # def createKey():
 # 	import Crypto
@@ -578,30 +573,67 @@ def readKey(pemPath):
 # 		geniePem.write(key.exportKey(format='PEM'))
 
 ## READ KEY
-def readKey(pemPath):
-	f = open(pemPath,'r')
+def read_key(pemfile_path):
+	'''
+	Obtain key from pemfile
+
+	Args:
+		pemfile_path:  Path to pemfile
+
+	Returns:
+		RSA key
+	'''
+	f = open(pemfile_path,'r')
 	key = RSA.importKey(f.read())
 	return(key)
 
-def decryptMessage(message, key):
+def decrypt_message(message, key):
+	'''
+	Decrypt message with a pem key from
+	func read_key
+
+	Args:
+		message: Encrypted message
+		key: read_key returned key
+
+	Returns:
+		Decrypted message
+	'''
 	decrypted = key.decrypt(ast.literal_eval(str(message)))
 	return(decrypted.decode("utf-8"))
 
-def synLogin(pemFile, debug=False):
+def get_password(pemfile_path):
+	'''
+	Get password using pemfile
+
+	Args:
+		pemfile_path: Path to pem file
+
+	Return:
+		Password
+	'''
+	if not os.path.exists(pemfile_path):
+		raise ValueError("Path to pemFile must be specified if there is no cached credentials")
+	key = read_key(pemfile_path)
+	genie_pass = decrypt_message(os.environ['GENIE_PASS'], key)
+	return(genie_pass)
+
+def synLogin(pemfile_path, debug=False):
 	'''
 	Use pem file to log into synapse if credentials aren't cached
 
 	Args:
-		pemFile: Path to pem file
+		pemfile_path: Path to pem file
 		debug: Synapse debug feature.  Defaults to False
+
+	Returns:
+		Synapse object logged in
 	'''
 	try:
 		syn = synapseclient.Synapse(debug=debug)
 		syn.login()
 	except:
-		assert os.path.exists(pemFile), "Path to pemFile must be specified if there is no cached credentials"
-		key = readKey(pemFile)
-		geniePass = decryptMessage(os.environ['GENIE_PASS'], key)
+		genie_pass = get_password(pemfile_path)
 		syn = synapseclient.Synapse(debug=debug)
-		syn.login(os.environ['GENIE_USER'], geniePass)
+		syn.login(os.environ['GENIE_USER'], genie_pass)
 	return(syn)

@@ -8,8 +8,8 @@ parser$add_argument("--syn_user", help="Synapse username")
 parser$add_argument("--syn_pass", help="Synapse password")
 
 args <- parser$parse_args()
-genie_user <- args$synUser
-genie_pass <- args$synPass
+genie_user <- args$syn_user
+genie_pass <- args$syn_pass
 release <- args$release
 suppressPackageStartupMessages(library(synapser))
 suppressPackageStartupMessages(library(rmarkdown))
