@@ -19,19 +19,30 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
 	def _validateFilename(self, filepath_list):
 		assert os.path.basename(filepath_list[0]) == "assay_information.yaml"
 
-	def process_steps(self, filePath, *args, **kwargs):
+	def process_steps(self, filePath, newPath, databaseSynId):
 		logger.info('PROCESSING %s' % filePath)
-		databaseSynId = kwargs['databaseSynId']
-		assay_info_df = self._get_dataframe(filePath)
-		process_assay_info_df = self._process()
-		process_functions.updateData(self.syn, databaseSynId, process_assay_info_df, self.center, filterByColumn="CENTER", toDelete=True)
-
+		#databaseSynId = kwargs['databaseSynId']
+		#Must pass in a list
+		assay_info_df = self._get_dataframe([filePath])
+		process_assay_info_df = self._process(assay_info_df)
+		process_functions.updateData(self.syn, databaseSynId, process_assay_info_df, self.center, filterByColumn= "CENTER", toDelete=True)
 		return(filePath)
 
 	def _process(self, df):
-		pass
-		#sequencing_center
+		seq_assay_ids = [assay.upper().replace('_','-') for assay in df['SEQ_ASSAY_ID']]
+		df['SEQ_ASSAY_ID'] = seq_assay_ids 
+		if process_functions.checkColExist(df, "gene_padding"):
+			df['gene_padding'] = df['gene_padding'].fillna(10)
+			df['gene_padding'] = df['gene_padding'].astype(int)
+		else:
+			df['gene_padding'] = 10
 
+		if not process_functions.checkColExist(df, "variant_classifications"):
+			df['variant_classifications'] = pd.np.nan
+
+		df['CENTER'] = self.center
+		return(df)
+		#sequencing_center
 
 	def _get_dataframe(self, filepath_list):
 		'''
@@ -73,16 +84,15 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
 		instrument_model = ['454 GS FLX Titanium','AB SOLiD 4','AB SOLiD 2','AB SOLiD 3','Complete Genomics','Illumina HiSeq X Ten',
 				'Illumina HiSeq X Five','Illumina Genome Analyzer II','Illumina Genome Analyzer IIx','Illumina HiSeq 2000',
 				'Illumina HiSeq 2500','Illumina HiSeq 4000','Illumina MiSeq','Illumina NextSeq','Ion Torrent PGM',
-				'Ion Torrent Proton','PacBio RS','Other',None]
+				'Ion Torrent Proton','PacBio RS','Other', None]
 		warn, error = process_functions.check_col_and_values(assay_info_df, 'instrument_model', instrument_model, filename="Assay_information.yaml", required=True)
 		warning += warn
 		total_error  += error 
 
 		variant_classes = ['Splice_Site','Nonsense_Mutation','Frame_Shift_Del','Frame_Shift_Ins',
 		'Nonstop_Mutation','Translation_Start_Site','In_Frame_Ins','In_Frame_Del','Missense_Mutation',
-		'Intron','Splice_Region','Silent','RNA',"5'UTR","3'UTR",'IGR',"5'Flank","3'Flank"]
-
-		warn, error = process_functions.check_col_and_values(assay_info_df, 'variant_classifications', variant_classes, filename="Assay_information.yaml")
+		'Intron','Splice_Region','Silent','RNA',"5'UTR","3'UTR",'IGR',"5'Flank","3'Flank", None]
+		warn, error = process_functions.check_col_and_values(assay_info_df, 'variant_classifications', variant_classes, filename="Assay_information.yaml", na_allowed=True)
 		warning += warn
 		total_error  += error 
 

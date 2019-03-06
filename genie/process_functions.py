@@ -466,7 +466,7 @@ def checkInt(element):
 		return(False)
 
 
-def check_col_and_values(df, col, possible_values, filename, required=False):
+def check_col_and_values(df, col, possible_values, filename, na_allowed=False, required=False):
 	'''
 	This function checks if the column exists then checks if the values in the 
 	column have the correct values
@@ -490,7 +490,11 @@ def check_col_and_values(df, col, possible_values, filename, required=False):
 		else:
 			warning = "{filename}: Doesn't have {col} column. This column will be added\n".format(filename=filename, col=col)
 	else:
-		if not df[col].isin(possible_values).all():
+		if na_allowed:
+			check_values = df[col].dropna()
+		else:
+			check_values = df[col]
+		if not check_values.isin(possible_values).all():
 			error = "{filename}: Please double check your {col} column.  This column must only be these values: {possible_vals}\n".format(filename=filename, col=col, possible_vals=', '.join([str(value) for value in possible_values]))
 	return(warning, error)
 
