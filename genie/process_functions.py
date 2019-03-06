@@ -462,7 +462,7 @@ def checkInt(element):
 	try:
 		element = float(element)
 		return(element.is_integer())
-	except ValueError:
+	except (ValueError, TypeError):
 		return(False)
 
 
