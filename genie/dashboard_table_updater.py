@@ -111,10 +111,8 @@ def update_cumulative_sample_table(syn, file_mapping, release, cumulative_sample
 	total_counts = total_counts.fillna(0)
 	total_counts = total_counts.applymap(int)
 	total_counts['Center'] =  total_counts.index
-
 	total_counts['Release'] = release
 	genie.process_functions.updateDatabase(syn, sample_count_per_rounddf, total_counts, cumulative_sample_count_synid, ["Center", "Release"])
-
 
 def get_file_mapping(syn, release_folder_synid):
 	"""
@@ -171,7 +169,7 @@ def update_release_numbers(syn, database_mappingdf, release = None):
 
 def update_database_numbers(syn, database_mappingdf):
 	'''
-	Updates database cumulative numbers
+	Updates database cumulative numbers (Only called when not staging)
 	
 	Args:
 		syn: synapse object
@@ -181,7 +179,7 @@ def update_database_numbers(syn, database_mappingdf):
 	# ## Database 
 	database_count = syn.tableQuery("SELECT * FROM %s where Release = 'Database'" % cumulative_sample_count_synid)
 	database_countdf = database_count.asDataFrame()
-	clinical = syn.tableQuery('select * from syn7517674')
+	clinical = syn.tableQuery('select CENTER from syn7517674')
 	clinicaldf = clinical.asDataFrame()
 	clinincal_counts = clinicaldf['CENTER'].value_counts()
 	clinincal_counts['Total'] = sum(clinincal_counts)
@@ -220,7 +218,13 @@ def update_database_numbers(syn, database_mappingdf):
 	db_counts['Center'] =  db_counts.index
 	db_counts['Release'] = "Database"
 	genie.process_functions.updateDatabase(syn, database_countdf, db_counts, cumulative_sample_count_synid, ["Center", "Release"])
-
+	today = datetime.date.today()
+	if today.month in [1,3,4,8,12]:
+		db_count_tracker = db_counts[['Clinical', 'Center', 'Release']]
+		db_count_tracker.rename(columns={'Clinical':'sample_count','Center':'center','Release':'date'},inplace=True)
+		db_count_tracker['date'] = today.strftime("%b-%Y")
+		#Hard coded syn id
+		syn.store(synapseclient.Table("syn18404852",db_count_tracker))
 
 def update_oncotree_code_tables(syn, database_mappingdf):
 	'''
