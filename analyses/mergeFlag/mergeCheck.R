@@ -1,11 +1,20 @@
-# libraries
+library(argparse)
+parser <- ArgumentParser()
+parser$add_argument("--testing", action="store_true", help="Use testing files")
+parser$add_argument("--syn_user", help="Synapse username")
+parser$add_argument("--syn_pass", help="Synapse password")
+args <- parser$parse_args()
+genie_user <- args$syn_user
+genie_pass <- args$syn_pass
+testing <- args$testing
+
 library(synapser)
 library(VariantAnnotation)
 
-args = commandArgs(trailingOnly=TRUE)
-if (length(args) != 1) {
-  stop("Must supply boolean value for whether it is in test mode")
-}
+# args = commandArgs(trailingOnly=TRUE)
+# if (length(args) != 1) {
+#   stop("Must supply boolean value for whether it is in test mode")
+# }
 
 # functions
 uploadToTable <- function(tbl, databaseSynId, subSetSamples, centerMappingDf) {
@@ -54,16 +63,16 @@ uploadToTable <- function(tbl, databaseSynId, subSetSamples, centerMappingDf) {
 tryCatch({
   synLogin()
 }, error = function(err) {
-  genieUser = Sys.getenv("GENIE_USER")
-  geniePass = Sys.getenv("GENIE_PASS")
-  synLogin(genieUser, geniePass)
+  #genieUser = Sys.getenv("GENIE_USER")
+  #geniePass = Sys.getenv("GENIE_PASS")
+  synLogin(genie_user, genie_pass)
 })
 
 # limits
 variant_limit = 100000
 tbl_size_limit = 500
 
-testing = as.logical(args[1])
+#testing = as.logical(args[1])
 if (testing) {
   databaseSynIdMappingId = 'syn11600968'
 } else {
