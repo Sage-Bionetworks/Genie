@@ -14,6 +14,7 @@ setup(name='aacrgenie',
         'console_scripts': ['genie = genie.__main__:main']},
       install_requires=[
         'pandas>=0.20.0',
-        'synapseclient',
-        'httplib2',
-        'pycrypto'])
+        'synapseclient>=1.9',
+        'httplib2>=0.11.3',
+        'pycrypto>=2.6.1',
+        'yaml>=3.11'])
