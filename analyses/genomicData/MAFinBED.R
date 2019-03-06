@@ -1,21 +1,34 @@
+library(argparse)
+parser <- ArgumentParser()
+parser$add_argument("filepath", help="Filepath to write variants")
+parser$add_argument("--testing", action="store_true", help="Use testing files")
+parser$add_argument("--syn_user", help="Synapse username")
+parser$add_argument("--syn_pass", help="Synapse password")
+args <- parser$parse_args()
+genie_user <- args$syn_user
+genie_pass <- args$syn_pass
+testing <- args$testing
+filepath <- args$filepath
+
+
 # libraries
 library(synapser)
 #pyExec("syn.table_query_timeout=50000")
 library(VariantAnnotation)
 
-args = commandArgs(trailingOnly=TRUE)
-if (length(args) != 2) {
-  stop("Must supply a boolean value and a filepath to write variants not in bed")
-}
+# args = commandArgs(trailingOnly=TRUE)
+# if (length(args) != 2) {
+#   stop("Must supply a boolean value and a filepath to write variants not in bed")
+# }
 # SAGE login
 tryCatch({
   synLogin()# set user and password
 }, error = function(err) {
-  genieUser = Sys.getenv("GENIE_USER")
-  geniePass = Sys.getenv("GENIE_PASS")
-  synLogin(genieUser, geniePass)
+  #genieUser = Sys.getenv("GENIE_USER")
+  #geniePass = Sys.getenv("GENIE_PASS")
+  synLogin(genie_user, genie_pass)
 })
-testing = as.logical(args[1])
+#testing = as.logical(args[1])
 if (testing) {
   databaseSynIdMappingId = 'syn11600968'
 } else {
@@ -39,7 +52,7 @@ patientData$CENTER <- NULL
 genieClinData <- merge.data.frame(patientData, sampleData, by="PATIENT_ID")
 
 #EXCLUDE PHS-TRISEQ-V1 SAMPLES
-genieClinData <- genieClinData[genieClinData$SEQ_ASSAY_ID != "PHS-TRISEQ-V1",]
+#genieClinData <- genieClinData[genieClinData$SEQ_ASSAY_ID != "PHS-TRISEQ-V1",]
 
 # read aggregated BED file data
 genieBed = synTableQuery(sprintf('SELECT * FROM %s', bedSynId),includeRowIdAndRowVersion=F)
@@ -136,4 +149,4 @@ genieMutData$t_alt_count_num <- NULL
 #   #synStore(Table(mafSynId, "update_inbed.csv"))
 # }
 updateMutData = genieMutData[genieMutData$inBED == FALSE,c('Chromosome', 'Start_Position', 'End_Position', 'Reference_Allele', 'Tumor_Seq_Allele2', 'Tumor_Sample_Barcode', 'Center')]
-write.csv(updateMutData,args[2],row.names = F)
+write.csv(updateMutData,filepath,row.names = F)

@@ -315,6 +315,7 @@ if (!is.null(this_bed)) {
   if (length(noneExistentAssays) > 0) {
     print(paste("These assays do not have bed files associated with them: ", paste(noneExistentAssays, collapse = ", ")))
   }
+  this_assays = this_assays[this_assays %in% this_bed$SEQ_ASSAY_ID]
   myeloid = this_assays[this_assays %in% c("VICC-01-MYELOID","UHN-54-V1","UCHI-ONCOHEME55-V1")]
   if (length(myeloid) > 1) {
     print("Overlap of myeloid gene panels")
@@ -327,7 +328,7 @@ if (!is.null(this_bed)) {
     panelDf = this_bed[this_bed$SEQ_ASSAY_ID == panel,]
     if (length(table(panelDf$Hugo_Symbol)) < 100) {
       smallPanels = c(smallPanels, panel)
-    } else {
+    } else if (length(table(panelDf$Hugo_Symbol)) < 1500) {
       largePanels = c(largePanels, panel)
     }
   }
