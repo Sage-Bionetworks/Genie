@@ -18,7 +18,8 @@ import dashboard_table_updater
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-GENIE_RELEASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),"GENIE_release")
+#GENIE_RELEASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),"GENIE_release")
+GENIE_RELEASE_DIR = os.path.join(os.path.expanduser("~/.synapseCache"),"GENIE_release")
 CASE_LIST_PATH = os.path.join(GENIE_RELEASE_DIR,'case_lists')
 CNA_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR,"data_CNA_%s.txt")
 SAMPLE_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR,'data_clinical_supp_sample_%s.txt')
