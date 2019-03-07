@@ -6,4 +6,4 @@ logger = logging.getLogger(__name__)
 
 class patientRetraction(sampleRetraction.sampleRetraction):
 
-	_fileType = "patientRetraction"
+    _fileType = "patientRetraction"
