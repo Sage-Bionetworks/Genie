@@ -1,21 +1,20 @@
-import synapseclient
 import pandas as pd
-import mock
 import genie
 
-databasedf = pd.DataFrame({'UNIQUE_KEY':['test1','test2','test3'],
-							  "test":['test1','test2','test3'],
-							  "foo":[1,2,3],
-							  "baz":[float('nan'),float('nan'),float('nan')]})
-databasedf.index = ['1_3','2_3','3_5']
-	
+databasedf = pd.DataFrame({'UNIQUE_KEY': ['test1', 'test2', 'test3'],
+							  "test": ['test1', 'test2', 'test3'],
+							  "foo": [1, 2, 3],
+							  "baz": [float('nan'), float('nan'), float('nan')]})
+databasedf.index = ['1_3', '2_3', '3_5']
+
 
 def test__get_left_diff_df():
-	new_datadf = pd.DataFrame({'UNIQUE_KEY':['test1','test2','test3','test4'],
-						  "test":['test1','test2','test3','test4'],
-						  "foo":[1,2,3,4],
-						  "baz":[float('nan'),float('nan'),float('nan'),3.2]})
-	get_diff = genie.process_functions._get_left_diff_df(new_datadf, databasedf, 'UNIQUE_KEY')
+	new_datadf = pd.DataFrame({'UNIQUE_KEY': ['test1', 'test2', 'test3', 'test4'],
+						  "test": ['test1', 'test2', 'test3', 'test4'],
+						  "foo": [1, 2, 3, 4],
+						  "baz": [float('nan'), float('nan'), float('nan'), 3.2]})
+	get_diff = genie.process_functions._get_left_diff_df(
+		new_datadf, databasedf, 'UNIQUE_KEY')
 	expecteddf = new_datadf.loc[[3]]
 	assert get_diff.equals(expecteddf[get_diff.columns])
 
