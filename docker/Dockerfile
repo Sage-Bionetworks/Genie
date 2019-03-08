@@ -40,7 +40,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 
 RUN apt-get install -y cpanminus
 RUN apt-get install -y libmysqlclient-dev
-RUN apt-get install -y libxml2-dev
+RUN apt-get install -y libxml2-dev libgd-perl
 
 RUN cpanm CPAN::Meta \
 	Archive::Zip \

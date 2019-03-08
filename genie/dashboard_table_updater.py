@@ -515,9 +515,9 @@ def run_dashboard(syn, database_mappingdf, release, staging=False, public=False)
 
 	'''
 	update_release_numbers(syn, database_mappingdf, release = release)
-	update_data_release_file_table(syn, database_mappingdf)
 
 	if not staging and not public:
+		update_data_release_file_table(syn, database_mappingdf)
 		print_clinical_values_difference_table(syn, database_mappingdf)
 		update_sample_difference_table(syn, database_mappingdf)
 		update_data_completeness_table(syn, database_mappingdf)
