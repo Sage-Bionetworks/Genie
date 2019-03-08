@@ -9,30 +9,30 @@ logger = logging.getLogger(__name__)
 
 class sampleRetraction(example_filetype_format.FileTypeFormat):
 
-	_fileType = "sampleRetraction"
+    _fileType = "sampleRetraction"
 
-	_process_kwargs = ["newPath", "databaseSynId","fileSynId"]
+    _process_kwargs = ["newPath", "databaseSynId","fileSynId"]
 
-	def _validateFilename(self, filePath):
-		assert os.path.basename(filePath[0]) == "%s.csv" % self._fileType
+    def _validateFilename(self, filePath):
+        assert os.path.basename(filePath[0]) == "%s.csv" % self._fileType
 
-	def _process(self, deleteSamplesDf, modifiedOn):
-		col = 'genieSampleId' if self._fileType == "sampleRetraction" else 'geniePatientId'
-		deleteSamplesDf.rename(columns = {0:col}, inplace=True)
-		samples = [process_functions.checkGenieId(sample, self.center) for sample in deleteSamplesDf[col]]
-		deleteSamplesDf[col] = samples
-		modifiedOn = synapseclient.utils.to_unix_epoch_time(datetime.datetime.strptime(modifiedOn, "%Y-%m-%dT%H:%M:%S"))
-		deleteSamplesDf['retractionDate'] = modifiedOn
-		deleteSamplesDf['center'] = self.center
-		return(deleteSamplesDf)
+    def _process(self, deleteSamplesDf, modifiedOn):
+        col = 'genieSampleId' if self._fileType == "sampleRetraction" else 'geniePatientId'
+        deleteSamplesDf.rename(columns = {0:col}, inplace=True)
+        samples = [process_functions.checkGenieId(sample, self.center) for sample in deleteSamplesDf[col]]
+        deleteSamplesDf[col] = samples
+        modifiedOn = synapseclient.utils.to_unix_epoch_time(datetime.datetime.strptime(modifiedOn, "%Y-%m-%dT%H:%M:%S"))
+        deleteSamplesDf['retractionDate'] = modifiedOn
+        deleteSamplesDf['center'] = self.center
+        return(deleteSamplesDf)
 
-	def process_steps(self, filePath, **kwargs):
-		logger.info('PROCESSING %s' % filePath)
-		fileSynId = kwargs['fileSynId']
-		databaseSynId = kwargs['databaseSynId']
-		newPath = kwargs['newPath']
-		info = self.syn.get(fileSynId, downloadFile=False)
-		deleteSamples = pd.read_csv(filePath,header=None)
-		deleteSamples = self._process(deleteSamples, info.modifiedOn.split(".")[0])
-		process_functions.updateData(self.syn, databaseSynId, deleteSamples, self.center, filterByColumn="center", toDelete=True)
-		return(newPath)
+    def process_steps(self, filePath, **kwargs):
+        logger.info('PROCESSING %s' % filePath)
+        fileSynId = kwargs['fileSynId']
+        databaseSynId = kwargs['databaseSynId']
+        newPath = kwargs['newPath']
+        info = self.syn.get(fileSynId, downloadFile=False)
+        deleteSamples = pd.read_csv(filePath,header=None)
+        deleteSamples = self._process(deleteSamples, info.modifiedOn.split(".")[0])
+        process_functions.updateData(self.syn, databaseSynId, deleteSamples, self.center, filterByColumn="center", toDelete=True)
+        return(newPath)
