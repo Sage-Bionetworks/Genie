@@ -336,6 +336,15 @@ def center_convert_back(filePath, anonymizeCenterDf):
 ####################################################################################
 # UPDATING DATABASE
 ####################################################################################
+def _check_valid_df(df, checkby):
+	'''
+	Checking if variable is a pandas dataframe and column specified exist
+	'''
+	if not isinstance(df, pd.DataFrame):
+		raise ValueError("Must pass in pandas dataframes")
+	if df.get(checkby) is None:
+		raise ValueError("{} column must exist in both dataframes".format(checkby))
+
 def _get_left_diff_df(left, right, checkby):
 	'''
 	Subset the dataframe based on 'checkby' by taking values in the left df
@@ -346,9 +355,11 @@ def _get_left_diff_df(left, right, checkby):
 		right: Dataframe
 		checkby: Column of values to compare
 
-	Return: 
+	Return:
 		Dataframe: Subset of dataframe from left that don't exist in the right
 	'''
+	_check_valid_df(left, checkby)
+	_check_valid_df(right, checkby)
 	diffdf = left[~left[checkby].isin(right[checkby])]
 	return(diffdf)
 
@@ -365,6 +376,8 @@ def _get_left_union_df(left, right, checkby):
 	Return: 
 		Dataframe: Subset of dataframe from left that also exist in the right
 	'''
+	_check_valid_df(left, checkby)
+	_check_valid_df(right, checkby)
 	uniondf = left[left[checkby].isin(right[checkby])]
 	return(uniondf)
 
