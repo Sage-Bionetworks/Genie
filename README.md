@@ -29,11 +29,12 @@ genie validate clinical data_clincal_supp_SAGE.txt SAGE
 
 # SAGE BIONETWORKS USE ONLY
 ## Batch Processing instructions
-1. Log into AWS Batch
-2. Run `genie-job-mainprocess`
-3. Run `genie-job-mafprocess` (Make sure to add `--createdMafDatabase` flag)
-4. Run `genie-job-vcfprocess`
-5. Run `genie-job-release` (Make sure to update release version and number)
+1. Check docker hub builds to see if theres any failures
+2. Log into AWS Batch
+3. Run `genie-job-mainprocess`
+4. Run `genie-job-mafprocess` (Make sure to add `--createdMafDatabase` flag)
+5. Run `genie-job-vcfprocess`
+6. Run `genie-job-release` (Make sure to update release version and number)
 
 ## Processing on EC2
 
