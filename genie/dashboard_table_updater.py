@@ -515,15 +515,17 @@ def run_dashboard(syn, database_mappingdf, release, staging=False, public=False)
 
     '''
     update_release_numbers(syn, database_mappingdf, release = release)
-    update_data_release_file_table(syn, database_mappingdf)
 
-    if not staging and not public:
-        print_clinical_values_difference_table(syn, database_mappingdf)
-        update_sample_difference_table(syn, database_mappingdf)
-        update_data_completeness_table(syn, database_mappingdf)
-        update_database_numbers(syn, database_mappingdf)
-        update_oncotree_code_tables(syn, database_mappingdf)
-        update_wiki(syn,database_mappingdf)
+    if not staging:
+        update_data_release_file_table(syn, database_mappingdf)
+        if not public:
+            print_clinical_values_difference_table(syn, database_mappingdf)
+            update_sample_difference_table(syn, database_mappingdf)
+            update_data_completeness_table(syn, database_mappingdf)
+            update_database_numbers(syn, database_mappingdf)
+            update_oncotree_code_tables(syn, database_mappingdf)
+            update_wiki(syn,database_mappingdf)
+
 
 def main():
     parser = argparse.ArgumentParser(description='Update dashboard tables')
