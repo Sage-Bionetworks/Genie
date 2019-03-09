@@ -494,10 +494,15 @@ def update_wiki(syn, database_mappingdf):
 
     '''
     # Updates to query and date dashboard was updated
-    cumulative_sample_count_synid = database_mappingdf['Id'][database_mappingdf['Database'] == 'cumulativeSampleCount'].values[0]
-    primary_code_synId = database_mappingdf['Id'][database_mappingdf['Database'] == 'primaryCode'].values[0]
+    cumulative_sample_count_synid = database_mappingdf['Id'][
+        database_mappingdf['Database'] == 'cumulativeSampleCount'].values[0]
 
-    centers = syn.tableQuery('select distinct(CENTER) as CENTER from syn7517674')
+    primary_code_synId = database_mappingdf['Id'][
+        database_mappingdf['Database'] == 'primaryCode'].values[0]
+
+    centers = syn.tableQuery(
+        'select distinct(CENTER) as CENTER from syn7517674')
+
     centersdf = centers.asDataFrame()
     now = datetime.datetime.now()
     markdown = ["_Updated %s/%s/%s_\n\n" % (now.month, now.day, now.year),
@@ -526,18 +531,33 @@ def string_to_unix_epoch_time_milliseconds(string_time):
 def update_data_release_file_table(syn, database_mappingdf):
     release_folder_fileview_synid = database_mappingdf['Id'][
         database_mappingdf['Database'] == 'releaseFolder'].values[0]
-    release_folder = syn.tableQuery("select id,name from %s" % release_folder_fileview_synid + " where name not like 'Release%' and name <> 'case_lists' and name not like '0.%'")
+    release_folder = syn.tableQuery(
+        "select id,name from %s" % release_folder_fileview_synid +
+        " where name not like 'Release%' and name <> 'case_lists' " +
+        "and name not like '0.%'")
     release_folderdf = release_folder.asDataFrame()
 
     data_release_table_synid = "syn16804261"
-    data_release_table = syn.tableQuery("select * from %s" % data_release_table_synid)
+    data_release_table = syn.tableQuery(
+        "select * from %s" % data_release_table_synid)
     data_release_tabledf = data_release_table.asDataFrame()
 
-    not_in_release_tabledf = release_folderdf[~release_folderdf.name.isin(data_release_tabledf.release)]
+    not_in_release_tabledf = release_folderdf[
+        ~release_folderdf.name.isin(data_release_tabledf.release)]
 
-    for synid, name in zip(not_in_release_tabledf.id, not_in_release_tabledf.name):
+    for synid, name in \
+            zip(not_in_release_tabledf.id, not_in_release_tabledf.name):
         release_files = syn.getChildren(synid)
-        append_rows = [[release_file['name'], release_file['id'], name, string_to_unix_epoch_time_milliseconds(release_file['modifiedOn']), synid] for release_file in release_files if release_file['name'] != "case_lists"]
+
+        append_rows = [
+            [release_file['name'],
+             release_file['id'],
+             name,
+             string_to_unix_epoch_time_milliseconds(
+                release_file['modifiedOn']), synid]
+            for release_file in release_files
+            if release_file['name'] != "case_lists"]
+
         syn.store(synapseclient.Table(data_release_table_synid, append_rows))
 
 
@@ -554,12 +574,14 @@ def check_column_decreases(currentdf, olderdf):
         new_counts = currentdf[col].value_counts()
         if olderdf.get(col) is not None:
             old_counts = olderdf[col].value_counts()
-            # Make sure any values that exist in the new get added to the old to show the decrease
+            # Make sure any values that exist in the new get added
+            # to the old to show the decrease
             new_keys = pd.Series(index=new_counts.keys()[
                 ~new_counts.keys().isin(old_counts.keys())])
             old_counts = old_counts.add(new_keys, fill_value=0)
-            old_counts.fillna(0,inplace=True)
-            # Make sure any values that don't exist in the old get added to show the decrease
+            old_counts.fillna(0, inplace=True)
+            # Make sure any values that don't exist in the old get added
+            # to show the decrease
             new_keys = pd.Series(index=old_counts.keys()[
                 ~old_counts.keys().isin(new_counts.keys())])
             new_counts = new_counts.add(new_keys, fill_value=0)
@@ -585,61 +607,107 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
         syn: synapse object
         database_mappingdf: mapping between synapse ids and database
     '''
-    release_folder_fileview_synid = database_mappingdf['Id'][database_mappingdf['Database'] == 'releaseFolder'].values[0]
-    clinical_key_decrease_synid = database_mappingdf['Id'][database_mappingdf['Database'] == 'clinicalKeyDecrease'].values[0]
+    release_folder_fileview_synid = database_mappingdf['Id'][
+        database_mappingdf['Database'] == 'releaseFolder'].values[0]
 
-    release_folder = syn.tableQuery("select id,name from %s" % release_folder_fileview_synid + " where name not like 'Release%' and name <> 'case_lists' and name not like '%.0.%' and name not like '%-public'")
+    clinical_key_decrease_synid = database_mappingdf['Id'][
+        database_mappingdf['Database'] == 'clinicalKeyDecrease'].values[0]
+
+    release_folder = syn.tableQuery(
+        "select id,name from %s" % release_folder_fileview_synid +
+        " where name not like 'Release%' and name <> 'case_lists' " +
+        "and name not like '%.0.%' and name not like '%-public'")
+
     release_folderdf = release_folder.asDataFrame()
-    release_folderdf.sort_values("name",ascending=False,inplace=True)
+    release_folderdf.sort_values("name", ascending=False, inplace=True)
     current_release = release_folderdf['id'][0]
     older_release = release_folderdf['id'][1]
 
     current_release_files = syn.getChildren(current_release)
-    current_clinical_synids = {file['name']:file['id'] for file in current_release_files if file['name'] in ['data_clinical_sample.txt','data_clinical_patient.txt']}
+    current_clinical_synids = {
+        file['name']: file['id']
+        for file in current_release_files if file['name'] in
+        ['data_clinical_sample.txt', 'data_clinical_patient.txt']}
 
     older_release_files = syn.getChildren(older_release)
-    older_clinical_synids = {file['name']:file['id'] for file in older_release_files if file['name'] in ['data_clinical_sample.txt','data_clinical_patient.txt']}
 
-    current_sample_ent = syn.get(current_clinical_synids['data_clinical_sample.txt'], followLink=True)
-    older_sample_ent = syn.get(older_clinical_synids['data_clinical_sample.txt'], followLink=True)
-    current_sampledf = pd.read_csv(current_sample_ent.path,sep="\t",comment="#")
-    current_sampledf['CENTER'] = [patient.split("-")[1] for patient in current_sampledf['PATIENT_ID']]
+    older_clinical_synids = {
+        file['name']: file['id']
+        for file in older_release_files if file['name'] in
+        ['data_clinical_sample.txt', 'data_clinical_patient.txt']}
 
-    older_sampledf =  pd.read_csv(older_sample_ent.path,sep="\t",comment="#")
-    older_sampledf['CENTER'] = [patient.split("-")[1] for patient in older_sampledf['PATIENT_ID']]
+    current_sample_ent = syn.get(
+        current_clinical_synids['data_clinical_sample.txt'], followLink=True)
+
+    older_sample_ent = syn.get(
+        older_clinical_synids['data_clinical_sample.txt'], followLink=True)
+    current_sampledf = pd.read_csv(
+        current_sample_ent.path, sep="\t", comment="#")
+
+    current_sampledf['CENTER'] = [
+        patient.split("-")[1] for patient in current_sampledf['PATIENT_ID']]
+
+    older_sampledf = pd.read_csv(older_sample_ent.path, sep="\t", comment="#")
+    older_sampledf['CENTER'] = [
+        patient.split("-")[1] for patient in older_sampledf['PATIENT_ID']]
     # Rather than take the CENTER, must take the SAMPLE_ID to compare
-    current_sampledf = current_sampledf[current_sampledf['SAMPLE_ID'].isin(older_sampledf['SAMPLE_ID'].unique())]
+    current_sampledf = current_sampledf[current_sampledf['SAMPLE_ID'].isin(
+        older_sampledf['SAMPLE_ID'].unique())]
 
     logger.info("SAMPLE CLINICAL VALUE DECREASES")
     center_decrease_mapping = dict()
     for center in older_sampledf['CENTER'].unique():
-        current_center_sampledf = current_sampledf[current_sampledf['CENTER'] == center]
-        older_center_sampledf = older_sampledf[older_sampledf['CENTER'] == center]
+        current_center_sampledf = current_sampledf[
+            current_sampledf['CENTER'] == center]
+
+        older_center_sampledf = older_sampledf[
+            older_sampledf['CENTER'] == center]
+
         logger.info(center)
-        decrease_map = check_column_decreases(current_center_sampledf, older_center_sampledf)
+
+        decrease_map = check_column_decreases(
+            current_center_sampledf, older_center_sampledf)
         center_decrease_mapping[center] = decrease_map
-    current_patient_ent = syn.get(current_clinical_synids['data_clinical_patient.txt'], followLink=True)
-    older_patient_ent = syn.get(older_clinical_synids['data_clinical_patient.txt'], followLink=True)
-    current_patientdf = pd.read_csv(current_patient_ent.path,sep="\t",comment="#")
-    older_patientdf = pd.read_csv(older_patient_ent.path,sep="\t",comment="#")
-    #Rather than take the CENTER, must take the PATIENT_ID to compare
-    current_patientdf = current_patientdf[current_patientdf['PATIENT_ID'].isin(older_patientdf['PATIENT_ID'].unique())]
+
+    current_patient_ent = syn.get(
+        current_clinical_synids['data_clinical_patient.txt'], followLink=True)
+
+    older_patient_ent = syn.get(
+        older_clinical_synids['data_clinical_patient.txt'], followLink=True)
+
+    current_patientdf = pd.read_csv(
+        current_patient_ent.path, sep="\t", comment="#")
+
+    older_patientdf = pd.read_csv(
+        older_patient_ent.path, sep="\t", comment="#")
+    # Rather than take the CENTER, must take the PATIENT_ID to compare
+    current_patientdf = current_patientdf[current_patientdf['PATIENT_ID'].isin(
+        older_patientdf['PATIENT_ID'].unique())]
 
     logger.info("PATIENT CLINICAL VALUE DECREASES")
     for center in older_patientdf['CENTER'].unique():
-        current_center_patientdf = current_patientdf[current_patientdf['CENTER'] == center]
-        older_center_patientdf = older_patientdf[older_patientdf['CENTER'] == center]
+        current_center_patientdf = current_patientdf[
+            current_patientdf['CENTER'] == center]
+
+        older_center_patientdf = older_patientdf[
+            older_patientdf['CENTER'] == center]
+
         logger.info(center)
-        patient_decrease_map = check_column_decreases(current_center_patientdf, older_center_patientdf)
+        patient_decrease_map = check_column_decreases(
+            current_center_patientdf, older_center_patientdf)
+
         center_decrease_mapping[center].update(patient_decrease_map)
 
     center_decrease_mapping = pd.DataFrame(center_decrease_mapping)
     center_decrease_mapping = center_decrease_mapping.transpose()
     center_decrease_mapping['CENTER'] = center_decrease_mapping.index
 
-    clinical_key_decrease = syn.tableQuery("select * from {0}".format(clinical_key_decrease_synid))
+    clinical_key_decrease = syn.tableQuery("select * from {0}".format(
+        clinical_key_decrease_synid))
     clinical_key_decreasedbdf = clinical_key_decrease.asDataFrame()
-    genie.process_functions.updateDatabase(syn, clinical_key_decreasedbdf, center_decrease_mapping, clinical_key_decrease_synid, ["CENTER"], toDelete=True)
+    genie.process_functions.updateDatabase(
+        syn, clinical_key_decreasedbdf, center_decrease_mapping,
+        clinical_key_decrease_synid, ["CENTER"], toDelete=True)
 
 
 def run_dashboard(
@@ -654,15 +722,16 @@ def run_dashboard(
 
     '''
     update_release_numbers(syn, database_mappingdf, release=release)
-    update_data_release_file_table(syn, database_mappingdf)
 
-    if not staging and not public:
-        print_clinical_values_difference_table(syn, database_mappingdf)
-        update_sample_difference_table(syn, database_mappingdf)
-        update_data_completeness_table(syn, database_mappingdf)
-        update_database_numbers(syn, database_mappingdf)
-        update_oncotree_code_tables(syn, database_mappingdf)
-        update_wiki(syn, database_mappingdf)
+    if not staging:
+        update_data_release_file_table(syn, database_mappingdf)
+        if not public:
+            print_clinical_values_difference_table(syn, database_mappingdf)
+            update_sample_difference_table(syn, database_mappingdf)
+            update_data_completeness_table(syn, database_mappingdf)
+            update_database_numbers(syn, database_mappingdf)
+            update_oncotree_code_tables(syn, database_mappingdf)
+            update_wiki(syn, database_mappingdf)
 
 
 def main():
