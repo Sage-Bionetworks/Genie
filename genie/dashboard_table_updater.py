@@ -331,21 +331,36 @@ def update_oncotree_code_tables(syn, database_mappingdf):
     oncotree_mapping = \
         genie.process_functions.get_oncotree_code_mappings(oncotree_link)
 
-    clinicaldf['PRIMARY_CODES'] = [oncotree_mapping[i.upper()]['ONCOTREE_PRIMARY_NODE'] if i.upper() in oncotree_mapping.keys() else 'DEPRECATED_CODE' for i in clinicaldf.ONCOTREE_CODE]
+    clinicaldf['PRIMARY_CODES'] = \
+        [oncotree_mapping[i.upper()]['ONCOTREE_PRIMARY_NODE']
+         if i.upper() in oncotree_mapping.keys() else 'DEPRECATED_CODE'
+         for i in clinicaldf.ONCOTREE_CODE]
 
     # ### DISTRIBUTION OF PRIMARY ONCOTREE CODE TABLE UPDATE
-    primary_code_distributiondf = pd.DataFrame(columns=set(clinicaldf['CENTER']), index=set(clinicaldf['PRIMARY_CODES']))
+    primary_code_distributiondf = pd.DataFrame(
+        columns=set(clinicaldf['CENTER']),
+        index=set(clinicaldf['PRIMARY_CODES']))
+
     for center in primary_code_distributiondf.columns:
-        onc_counts = clinicaldf['PRIMARY_CODES'][clinicaldf['CENTER'] == center].value_counts()
+        onc_counts = clinicaldf['PRIMARY_CODES'][
+            clinicaldf['CENTER'] == center].value_counts()
         primary_code_distributiondf[center] = onc_counts
     primary_code_distributiondf = primary_code_distributiondf.fillna(0)
     primary_code_distributiondf = primary_code_distributiondf.applymap(int)
-    primary_code_distributiondf['Total'] = primary_code_distributiondf.apply(sum, axis=1)
-    primary_code_distributiondf['Oncotree_Code'] = primary_code_distributiondf.index
+    primary_code_distributiondf['Total'] = \
+        primary_code_distributiondf.apply(sum, axis=1)
+    primary_code_distributiondf['Oncotree_Code'] = \
+        primary_code_distributiondf.index
 
-    primary_code_dist_db = syn.tableQuery('SELECT %s FROM %s' % ("Oncotree_Code," + ",".join(clinicaldf['CENTER'].unique()) + ",Total",primary_code_synId))
+    primary_code_dist_db = syn.tableQuery(
+        'SELECT %s FROM %s' %
+        ("Oncotree_Code," + ",".join(clinicaldf['CENTER'].unique()) +
+         ",Total", primary_code_synId))
+
     primary_code_dist_dbdf = primary_code_dist_db.asDataFrame()
-    genie.process_functions.updateDatabase(syn, primary_code_dist_dbdf, primary_code_distributiondf, primary_code_synId, ["Oncotree_Code"], toDelete=True)
+    genie.process_functions.updateDatabase(
+        syn, primary_code_dist_dbdf, primary_code_distributiondf,
+        primary_code_synId, ["Oncotree_Code"], toDelete=True)
 
 
 def update_sample_difference_table(syn, database_mappingdf):
@@ -478,7 +493,7 @@ def update_wiki(syn, database_mappingdf):
         database_mappingdf: mapping between synapse ids and database
 
     '''
-    #Updates to query and date dashboard was updated
+    # Updates to query and date dashboard was updated
     cumulative_sample_count_synid = database_mappingdf['Id'][database_mappingdf['Database'] == 'cumulativeSampleCount'].values[0]
     primary_code_synId = database_mappingdf['Id'][database_mappingdf['Database'] == 'primaryCode'].values[0]
 
