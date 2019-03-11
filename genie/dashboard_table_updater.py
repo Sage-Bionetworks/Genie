@@ -505,11 +505,20 @@ def update_wiki(syn, database_mappingdf):
 
     centersdf = centers.asDataFrame()
     now = datetime.datetime.now()
-    markdown = ["_Updated %s/%s/%s_\n\n" % (now.month, now.day, now.year),
-                "##Count of Clinical Samples\n",
-                "${synapsetable?query=SELECT Center%2C Clinical%2C Release FROM " + cumulative_sample_count_synid+ "}\n\n",
-                "\n\n##Primary Oncotree Codes\n\n",
-                "${synapsetable?query=SELECT Oncotree%5FCode%2C " + "%2C ".join(centersdf['CENTER'].unique()) + "%2C Total FROM " +  primary_code_synId + " ORDER BY Total DESC&limit=15}\n\n"]
+    markdown = \
+        ["_Updated {month}/{day}/{year}_\n\n".format(
+            month=now.month,
+            day=now.day,
+            year=now.year),
+         "##Count of Clinical Samples\n",
+         "${synapsetable?query=SELECT Center%2C Clinical%2C Release FROM " +
+            cumulative_sample_count_synid + "}\n\n",
+         "\n\n##Primary Oncotree Codes\n\n",
+         "${synapsetable?query=SELECT Oncotree%5FCode%2C " +
+            "%2C ".join(centersdf['CENTER'].unique()) +
+            "%2C Total FROM " + primary_code_synId +
+            " ORDER BY Total DESC&limit=15}\n\n"]
+
     wikiPage = syn.getWiki("syn3380222", 235803)
     wikiPage.markdown = "".join(markdown)
     syn.store(wikiPage)
