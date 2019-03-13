@@ -24,9 +24,18 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
         # Must pass in a list
         assay_info_df = self._get_dataframe([filePath])
         process_assay_info_df = self._process(assay_info_df)
+        col = ['SEQ_ASSAY_ID', 'is_paired_end', 'library_selection',
+               'library_strategy', 'platform', 'read_length',
+               'instrument_model', 'gene_padding', 'number_of_genes',
+               'variant_classifications', 'CENTER']
         process_functions.updateData(
-            self.syn, databaseSynId, process_assay_info_df,
-            self.center, filterByColumn="CENTER", toDelete=True)
+            self.syn,
+            databaseSynId,
+            process_assay_info_df,
+            self.center,
+            col=col,
+            filterByColumn="CENTER",
+            toDelete=True)
         return(filePath)
 
     def _process(self, df):
@@ -163,18 +172,19 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
         warning += warn
         total_error += error
 
-        if not process_functions.checkColExist(
-                assay_info_df, "target_capture_kit"):
-            total_error += ("Assay_information.yaml: "
-                            "Must have target_capture_kit column.\n")
+        # if not process_functions.checkColExist(
+        #         assay_info_df, "target_capture_kit"):
+        #     total_error += ("Assay_information.yaml: "
+        #                     "Must have target_capture_kit column.\n")
 
         if process_functions.checkColExist(assay_info_df, "read_length"):
             if not all([process_functions.checkInt(i)
-                       for i in assay_info_df["read_length"]]):
+                       for i in assay_info_df["read_length"]
+                       if i is not None and not pd.isnull(i)]):
                 total_error += \
                     ("Assay_information.yaml: "
                      "Please double check your read_length.  "
-                     "It must be an integer or 'Unknown'.\n")
+                     "It must be an integer or null.\n")
         else:
             total_error += \
                 ("Assay_information.yaml: "
@@ -185,8 +195,8 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
                        for i in assay_info_df["number_of_genes"]]):
                 total_error += \
                     ("Assay_information.yaml: "
-                     "Please double check your number_of_genes.  "
-                     "It must be an integer or 'Unknown'.\n")
+                     "Please double check your number_of_genes. "
+                     "It must be an integer.\n")
         else:
             total_error += \
                 ("Assay_information.yaml: "

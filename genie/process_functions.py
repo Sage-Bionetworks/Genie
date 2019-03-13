@@ -639,7 +639,7 @@ def synLogin(pemfile_path, debug=False):
     try:
         syn = synapseclient.Synapse(debug=debug)
         syn.login()
-    except:
+    except Exception:
         genie_pass = get_password(pemfile_path)
         syn = synapseclient.Synapse(debug=debug)
         syn.login(os.environ['GENIE_USER'], genie_pass)
