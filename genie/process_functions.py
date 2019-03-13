@@ -457,15 +457,52 @@ def updateDatabase(syn, database, new_dataset, databaseSynId, uniqueKeyCols, toD
     if storeDatabase:
         syn.store(synapseclient.Table(syn.get(databaseSynId), updateAllFile))
 
+
 #Check if an item can become an integer
 def checkInt(element):
     try:
         element = float(element)
         return(element.is_integer())
-    except ValueError:
+    except (ValueError, TypeError):
         return(False)
 
-#CREATE ONCOTREE DICTIONARY MAPPING TO PRIMARY, SECONDARY, CANCER TYPE, AND CANCER DESCRIPTION
+
+def check_col_and_values(
+        df, col, possible_values, filename, na_allowed=False, required=False):
+    '''
+    This function checks if the column exists then checks if the values in the
+    column have the correct values
+
+    Args:
+        df: Input dataframe
+        col: Expected column name
+        possible_values: list of possible values
+        filename: Name of file
+        required: If the column is required.  Default is False
+
+    Returns:
+        tuple: warning, error
+    '''
+    warning = ""
+    error = ""
+    have_column = checkColExist(df, col)
+    if not have_column:
+        if required:
+            error = "{filename}: Must have {col} column.\n".format(
+                filename=filename, col=col)
+        else:
+            warning = "{filename}: Doesn't have {col} column. This column will be added\n".format(filename=filename, col=col)
+    else:
+        if na_allowed:
+            check_values = df[col].dropna()
+        else:
+            check_values = df[col]
+        if not check_values.isin(possible_values).all():
+            error = "{filename}: Please double check your {col} column.  This column must only be these values: {possible_vals}\n".format(filename=filename, col=col, possible_vals=', '.join([str(value) for value in possible_values]))
+    return(warning, error)
+
+
+# CREATE ONCOTREE DICTIONARY MAPPING TO PRIMARY, SECONDARY, CANCER TYPE, AND CANCER DESCRIPTION
 def extract_oncotree_code_mappings_from_oncotree_json(oncotree_json, primary, secondary):
     oncotree_code_to_info = {}
 
@@ -488,7 +525,8 @@ def extract_oncotree_code_mappings_from_oncotree_json(oncotree_json, primary, se
             recurseDict = extract_oncotree_code_mappings_from_oncotree_json(data[node], primary, secondary)
             oncotree_code_to_info.update(recurseDict)
     return oncotree_code_to_info
-    
+
+
 #CREATE ONCOTREE DICTIONARY MAPPING TO PRIMARY, SECONDARY, CANCER TYPE, AND CANCER DESCRIPTION
 def get_oncotree_code_mappings(oncotree_tumortype_api_endpoint_url):
 
@@ -601,8 +639,27 @@ def synLogin(pemfile_path, debug=False):
     try:
         syn = synapseclient.Synapse(debug=debug)
         syn.login()
-    except:
+    except Exception:
         genie_pass = get_password(pemfile_path)
         syn = synapseclient.Synapse(debug=debug)
         syn.login(os.environ['GENIE_USER'], genie_pass)
     return(syn)
+
+
+def get_gdc_data_dictionary(filetype):
+    '''
+    Use the GDC API to get the values allowed for columns of
+    different filetypes (ie. disease_type in the case file)
+
+    Args:
+        filetype: GDC file type (ie. case, read_group)
+
+    Return:
+        json:  Dictionary of allowed columns for the filetype and
+               allowed values for those columns
+    '''
+    gdc_dict = retry_get_url(
+        "https://api.gdc.cancer.gov/v0/submission/_dictionary/{filetype}"
+        .format(filetype=filetype))
+    gdc_response = json.loads(gdc_dict.text)
+    return(gdc_response)
