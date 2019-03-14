@@ -387,10 +387,27 @@ def stagingToCbio(
         syn, processingDate, genieVersion,
         CENTER_MAPPING_DF, databaseSynIdMappingDf,
         oncotree_url=None, consortiumReleaseCutOff=183,
-        filtering=False, current_release_staging=False,
+        current_release_staging=False,
         skipMutationsInCis=False, test=False,
         genie_user=None, genie_pass=None):
+    '''
+    Main function that takes the GENIE database and creates release files
 
+    Args:
+        syn: Synapse object
+        processingDate: Processing date in form of Apr-XXXX
+        genieVersion: GENIE version. Default is test.
+        CENTER_MAPPING_DF: center mapping dataframe
+        databaseSynIdMappingDf: Database to Synapse Id mapping
+        oncotree_url: Oncotree link
+        consortiumReleaseCutOff: Release cut off days
+        current_release_staging: Is it staging. Default is False.
+        skipMutationsInCis: Skip mutation in cis filter. Default is False.
+        test: Testing parameter. Default is False.
+        genie_user: Synapse username. Default is None.
+        genie_pass: Synapse password.  Default is None.
+
+    '''
     CNA_PATH = os.path.join(
         GENIE_RELEASE_DIR, "data_CNA_%s.txt" % genieVersion)
     CLINCICAL_PATH = os.path.join(
@@ -598,12 +615,14 @@ def stagingToCbio(
 
     clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isin(
         removeForMergedConsortiumSamples)]
-    # This must happen here because the seq assay filter 
+    # This must happen here because the seq assay filter
     # must happen after all the other filters
     # logger.info("SEQ ASSAY FILTER")
     # remove_seqAssayId_samples = seq_assay_id_filter(clinicalDf)
-    # removeForMergedConsortiumSamples = removeForMergedConsortiumSamples.union(set(remove_seqAssayId_samples))
-    # clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isin(remove_seqAssayId_samples)]
+    # removeForMergedConsortiumSamples = \
+    #     removeForMergedConsortiumSamples.union(set(remove_seqAssayId_samples))
+    # clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isin(
+    #    remove_seqAssayId_samples)]
 
     keepForCenterConsortiumSamples = clinicalDfStaging.SAMPLE_ID
     keepForMergedConsortiumSamples = clinicalDf.SAMPLE_ID
@@ -711,8 +730,6 @@ def stagingToCbio(
                 centerStaging=True)
 
     # Only need to upload these files once
-    # if filtering:
-        # Normalize gene panels
     logger.info("STORING GENE PANELS FILES")
     fileviewSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == "fileview"][0]
