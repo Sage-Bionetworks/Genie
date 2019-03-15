@@ -7,6 +7,7 @@ parser$add_argument("--testing", action="store_true", help="Use testing files")
 parser$add_argument("--syn_user", help="Synapse username")
 parser$add_argument("--syn_pass", help="Synapse password")
 
+
 args <- parser$parse_args()
 genie_user <- args$syn_user
 genie_pass <- args$syn_pass
