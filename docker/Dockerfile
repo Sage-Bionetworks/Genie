@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y \
 	libffi-dev 
 
 RUN pip3 install --upgrade pip
-RUN pip install synapseclient httplib2 pycrypto
+RUN pip install synapseclient httplib2 pycrypto PyYAML
 RUN pip install pandas numexpr --upgrade
 
 RUN rm /usr/bin/python 
@@ -40,6 +40,8 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 
 RUN apt-get install -y cpanminus
 RUN apt-get install -y libmysqlclient-dev
+RUN apt-get install -y libxml2-dev libgd-perl
+
 RUN cpanm CPAN::Meta \
 	Archive::Zip \
 	DBI \

@@ -484,7 +484,10 @@ def _update_rows(new_datasetdf, databasedf, checkby):
     return(toupdatedf)
 
 
-def updateData(syn, databaseSynId, newData, filterBy, filterByColumn= "CENTER", col=None, toDelete=False):
+def updateData(
+        syn, databaseSynId, newData,
+        filterBy, filterByColumn="CENTER",
+        col=None, toDelete=False):
     databaseEnt = syn.get(databaseSynId)
     database = syn.tableQuery("SELECT * FROM %s where %s ='%s'" % (databaseSynId, filterByColumn, filterBy))
     database = database.asDataFrame()
@@ -493,11 +496,15 @@ def updateData(syn, databaseSynId, newData, filterBy, filterByColumn= "CENTER", 
     else:
         newData = newData[database.columns]
     updateDatabase(syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete)
-    
-def updateDatabase(syn, database, new_dataset, databaseSynId, uniqueKeyCols, toDelete=False):
+
+
+def updateDatabase(
+        syn, database, new_dataset, databaseSynId,
+        uniqueKeyCols, toDelete=False):
     """
-    Updates synapse tables by a row identifier with another dataset that has the same number and order of columns
-    
+    Updates synapse tables by a row identifier with another
+    dataset that has the same number and order of columns
+
     Args:
         syn: Synapse object
         database: The synapse table (pandas dataframe)
@@ -512,17 +519,19 @@ def updateDatabase(syn, database, new_dataset, databaseSynId, uniqueKeyCols, toD
     checkBy = 'UNIQUE_KEY'
     database = database.fillna("")
     origDatabaseCols = database.columns
-    columnOrder = ['ROW_ID','ROW_VERSION']
+    columnOrder = ['ROW_ID', 'ROW_VERSION']
     columnOrder.extend(origDatabaseCols.tolist())
     new_dataset = new_dataset.fillna("")
-    #Columns must be in the same order
+    # Columns must be in the same order
     new_dataset = new_dataset[origDatabaseCols]
     database[uniqueKeyCols] = database[uniqueKeyCols].applymap(str)
-    database[checkBy] = database[uniqueKeyCols].apply(lambda x: ' '.join(x), axis=1)
-    new_dataset[uniqueKeyCols] = new_dataset[uniqueKeyCols].applymap(str)
-    new_dataset[checkBy] = new_dataset[uniqueKeyCols].apply(lambda x: ' '.join(x), axis=1)
+    database[checkBy] = database[
+        uniqueKeyCols].apply(lambda x: ' '.join(x), axis=1)
 
-    #allRowIds = database.index.values
+    new_dataset[uniqueKeyCols] = new_dataset[uniqueKeyCols].applymap(str)
+    new_dataset[checkBy] = new_dataset[
+        uniqueKeyCols].apply(lambda x: ' '.join(x), axis=1)
+
     allupdates = pd.DataFrame()
     appendrows = _append_rows(new_dataset, database, checkBy)
     updaterows = _update_rows(new_dataset, database, checkBy)
@@ -534,28 +543,69 @@ def updateDatabase(syn, database, new_dataset, databaseSynId, uniqueKeyCols, toD
     allupdates = allupdates.append(updaterows)
 
     storedatabase = False
-    updateAllFile = os.path.join(SCRIPT_DIR,"toUpdateAll.csv")
-    with open(updateAllFile,"w") as updateFile:
-        #Must write out the headers in case there are no appends or updates
+    updateAllFile = os.path.join(SCRIPT_DIR, "toUpdateAll.csv")
+    with open(updateAllFile, "w") as updateFile:
+        # Must write out the headers in case there are no appends or updates
         updateFile.write(",".join(columnOrder) + "\n")
         if not allupdates.empty:
-            updateFile.write(allupdates[columnOrder].to_csv(index=False,header=None).replace(".0,",","))
+            updateFile.write(
+                allupdates[columnOrder].to_csv(
+                    index=False, header=None).replace(".0,", ","))
             storedatabase = True
         if not deleterows.empty:
-            updateFile.write(deleterows.to_csv(index=False,header=None).replace(".0,",","))
+            updateFile.write(
+                deleterows.to_csv(
+                    index=False, header=None).replace(".0,", ","))
             storedatabase = True
     if storedatabase:
         syn.store(synapseclient.Table(databaseSynId, updateAllFile))
 
-#Check if an item can become an integer
+
 def checkInt(element):
+    # Check if an item can become an integer
+
     try:
         element = float(element)
         return(element.is_integer())
-    except ValueError:
+    except (ValueError, TypeError):
         return(False)
 
-#CREATE ONCOTREE DICTIONARY MAPPING TO PRIMARY, SECONDARY, CANCER TYPE, AND CANCER DESCRIPTION
+
+def check_col_and_values(
+        df, col, possible_values, filename, na_allowed=False, required=False):
+    '''
+    This function checks if the column exists then checks if the values in the
+    column have the correct values
+
+    Args:
+        df: Input dataframe
+        col: Expected column name
+        possible_values: list of possible values
+        filename: Name of file
+        required: If the column is required.  Default is False
+
+    Returns:
+        tuple: warning, error
+    '''
+    warning = ""
+    error = ""
+    have_column = checkColExist(df, col)
+    if not have_column:
+        if required:
+            error = "{filename}: Must have {col} column.\n".format(
+                filename=filename, col=col)
+        else:
+            warning = "{filename}: Doesn't have {col} column. This column will be added\n".format(filename=filename, col=col)
+    else:
+        if na_allowed:
+            check_values = df[col].dropna()
+        else:
+            check_values = df[col]
+        if not check_values.isin(possible_values).all():
+            error = "{filename}: Please double check your {col} column.  This column must only be these values: {possible_vals}\n".format(filename=filename, col=col, possible_vals=', '.join([str(value) for value in possible_values]))
+    return(warning, error)
+
+
 def extract_oncotree_code_mappings_from_oncotree_json(oncotree_json, primary, secondary):
     oncotree_code_to_info = {}
 
@@ -573,15 +623,15 @@ def extract_oncotree_code_mappings_from_oncotree_json(oncotree_json, primary, se
         cancer_type_detailed = data[node]['name']
         if not cancer_type_detailed:
             cancer_type_detailed = ''
-        oncotree_code_to_info[node.upper()] = { 'CANCER_TYPE' : cancer_type, 'CANCER_TYPE_DETAILED' : cancer_type_detailed , 'ONCOTREE_PRIMARY_NODE': primary, 'ONCOTREE_SECONDARY_NODE':secondary}
+        oncotree_code_to_info[node.upper()] = {'CANCER_TYPE': cancer_type, 'CANCER_TYPE_DETAILED' : cancer_type_detailed , 'ONCOTREE_PRIMARY_NODE': primary, 'ONCOTREE_SECONDARY_NODE':secondary}
         if len(data[node]['children']) > 0:
             recurseDict = extract_oncotree_code_mappings_from_oncotree_json(data[node], primary, secondary)
             oncotree_code_to_info.update(recurseDict)
     return oncotree_code_to_info
-    
-#CREATE ONCOTREE DICTIONARY MAPPING TO PRIMARY, SECONDARY, CANCER TYPE, AND CANCER DESCRIPTION
-def get_oncotree_code_mappings(oncotree_tumortype_api_endpoint_url):
 
+
+def get_oncotree_code_mappings(oncotree_tumortype_api_endpoint_url):
+    # CREATE ONCOTREE DICTIONARY MAPPING TO PRIMARY, SECONDARY, CANCER TYPE, AND CANCER DESCRIPTION
     #oncotree_raw_response = urlopen(oncotree_tumortype_api_endpoint_url).text
     #with requests.get(oncotree_tumortype_api_endpoint_url) as oncotreeUrl:
     oncotreeUrl = retry_get_url(oncotree_tumortype_api_endpoint_url)
@@ -591,7 +641,7 @@ def get_oncotree_code_mappings(oncotree_tumortype_api_endpoint_url):
     return extract_oncotree_code_mappings_from_oncotree_json(oncotree_response, '', '')
 
 
-#Get mapping code #Add USE DESCRIPTION sampletypedetailed -> public
+# Get mapping code #Add USE DESCRIPTION sampletypedetailed -> public
 def getCODE(mapping, key, useDescription=False):
     if useDescription:
         value = mapping['DESCRIPTION'][mapping['CODE'] == key].values
@@ -601,6 +651,7 @@ def getCODE(mapping, key, useDescription=False):
         return(value[0])
     else:
         return("")
+
 
 def getPrimary(code, oncotreeDict, primary):
     if code != "":
@@ -613,7 +664,6 @@ def getPrimary(code, oncotreeDict, primary):
     else:
         toAdd = "NOT_ANNOTATED"
     return(toAdd)
-
 
 
 # def createKey():
@@ -642,9 +692,10 @@ def read_key(pemfile_path):
     Returns:
         RSA key
     '''
-    f = open(pemfile_path,'r')
+    f = open(pemfile_path, 'r')
     key = RSA.importKey(f.read())
     return(key)
+
 
 def decrypt_message(message, key):
     '''
@@ -660,6 +711,7 @@ def decrypt_message(message, key):
     '''
     decrypted = key.decrypt(ast.literal_eval(str(message)))
     return(decrypted.decode("utf-8"))
+
 
 def get_password(pemfile_path):
     '''
@@ -677,6 +729,7 @@ def get_password(pemfile_path):
     genie_pass = decrypt_message(os.environ['GENIE_PASS'], key)
     return(genie_pass)
 
+
 def synLogin(pemfile_path, debug=False):
     '''
     Use pem file to log into synapse if credentials aren't cached
@@ -691,8 +744,27 @@ def synLogin(pemfile_path, debug=False):
     try:
         syn = synapseclient.Synapse(debug=debug)
         syn.login()
-    except:
+    except Exception:
         genie_pass = get_password(pemfile_path)
         syn = synapseclient.Synapse(debug=debug)
         syn.login(os.environ['GENIE_USER'], genie_pass)
     return(syn)
+
+
+def get_gdc_data_dictionary(filetype):
+    '''
+    Use the GDC API to get the values allowed for columns of
+    different filetypes (ie. disease_type in the case file)
+
+    Args:
+        filetype: GDC file type (ie. case, read_group)
+
+    Return:
+        json:  Dictionary of allowed columns for the filetype and
+               allowed values for those columns
+    '''
+    gdc_dict = retry_get_url(
+        "https://api.gdc.cancer.gov/v0/submission/_dictionary/{filetype}"
+        .format(filetype=filetype))
+    gdc_response = json.loads(gdc_dict.text)
+    return(gdc_response)
