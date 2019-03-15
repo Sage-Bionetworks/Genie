@@ -1,10 +1,12 @@
 import pandas as pd
 import genie
 import pytest
-DATABASE_DF = pd.DataFrame({'UNIQUE_KEY': ['test1', 'test2', 'test3'],
-                              "test": ['test1', 'test2', 'test3'],
-                              "foo": [1, 2, 3],
-                              "baz": [float('nan'), float('nan'), float('nan')]})
+
+DATABASE_DF = pd.DataFrame({
+    'UNIQUE_KEY': ['test1', 'test2', 'test3'],
+    "test": ['test1', 'test2', 'test3'],
+    "foo": [1, 2, 3],
+    "baz": [float('nan'), float('nan'), float('nan')]})
 DATABASE_DF.index = ['1_3', '2_3', '3_5']
 
 
@@ -20,10 +22,11 @@ def test_invalid__check_valid_df():
 
 
 def test__get_left_diff_df():
-    new_datadf = pd.DataFrame({'UNIQUE_KEY': ['test1', 'test2', 'test3', 'test4'],
-                          "test": ['test1', 'test2', 'test3', 'test4'],
-                          "foo": [1, 2, 3, 4],
-                          "baz": [float('nan'), float('nan'), float('nan'), 3.2]})
+    new_datadf = pd.DataFrame({
+        'UNIQUE_KEY': ['test1', 'test2', 'test3', 'test4'],
+        "test": ['test1', 'test2', 'test3', 'test4'],
+        "foo": [1, 2, 3, 4],
+        "baz": [float('nan'), float('nan'), float('nan'), 3.2]})
     get_diff = genie.process_functions._get_left_diff_df(
         new_datadf, DATABASE_DF, 'UNIQUE_KEY')
     expecteddf = new_datadf.loc[[3]]
@@ -37,30 +40,35 @@ def test_norows_get_left_diff_df():
 
 
 def test_append__append_rows():
-    new_datadf = pd.DataFrame({'UNIQUE_KEY': ['test1', 'test2', 'test3', 'test4'],
-                          "test": ['test1', 'test2', 'test3', 'test4'],
-                          "foo": [1, 2, 3, 4],
-                          "baz": [float('nan'), float('nan'), float('nan'), 3.2]})
-    expecteddf = pd.DataFrame({'test': ['test4'],
-                                      'foo': [4],
-                                      'baz': [3.2]})
-    append_rows = genie.process_functions._append_rows(new_datadf, DATABASE_DF, 'UNIQUE_KEY')
+    new_datadf = pd.DataFrame({
+        'UNIQUE_KEY': ['test1', 'test2', 'test3', 'test4'],
+        "test": ['test1', 'test2', 'test3', 'test4'],
+        "foo": [1, 2, 3, 4],
+        "baz": [float('nan'), float('nan'), float('nan'), 3.2]})
+    expecteddf = pd.DataFrame({
+        'test': ['test4'],
+        'foo': [4],
+        'baz': [3.2]})
+    append_rows = genie.process_functions._append_rows(
+        new_datadf, DATABASE_DF, 'UNIQUE_KEY')
     append_rows.fillna('', inplace=True)
     expecteddf.fillna('', inplace=True)
     assert append_rows.equals(expecteddf[append_rows.columns])
 
 
 def test___get_left_union_df():
-    new_datadf = pd.DataFrame({'UNIQUE_KEY': ['test1', 'test5', 'test4'],
-                          "test": ['test', 'test2', 'test3'],
-                          "foo": [1, 3, 3],
-                          "baz": [float('nan'), 5, float('nan')]})
+    new_datadf = pd.DataFrame({
+        'UNIQUE_KEY': ['test1', 'test5', 'test4'],
+        "test": ['test', 'test2', 'test3'],
+        "foo": [1, 3, 3],
+        "baz": [float('nan'), 5, float('nan')]})
     left_union = genie.process_functions._get_left_union_df(
         new_datadf, DATABASE_DF, 'UNIQUE_KEY')
-    expecteddf = pd.DataFrame({'UNIQUE_KEY': ['test1'],
-                                'test': ['test'],
-                                  'foo': [1],
-                                  'baz': [float('nan')]})
+    expecteddf = pd.DataFrame({
+        'UNIQUE_KEY': ['test1'],
+        'test': ['test'],
+        'foo': [1],
+        'baz': [float('nan')]})
     assert left_union.equals(expecteddf[left_union.columns])
 
 

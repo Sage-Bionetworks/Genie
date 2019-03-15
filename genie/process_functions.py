@@ -595,24 +595,34 @@ def check_col_and_values(
             error = "{filename}: Must have {col} column.\n".format(
                 filename=filename, col=col)
         else:
-            warning = "{filename}: Doesn't have {col} column. This column will be added\n".format(filename=filename, col=col)
+            warning = (
+                "{filename}: Doesn't have {col} column. "
+                "This column will be added\n".format(
+                    filename=filename, col=col))
     else:
         if na_allowed:
             check_values = df[col].dropna()
         else:
             check_values = df[col]
         if not check_values.isin(possible_values).all():
-            error = "{filename}: Please double check your {col} column.  This column must only be these values: {possible_vals}\n".format(filename=filename, col=col, possible_vals=', '.join([str(value) for value in possible_values]))
+            error = (
+                "{filename}: Please double check your {col} column.  "
+                "This column must only be these values: {possible_vals}\n"
+                .format(filename=filename,
+                        col=col,
+                        possible_vals=', '.join([
+                            str(value) for value in possible_values])))
     return(warning, error)
 
 
-def extract_oncotree_code_mappings_from_oncotree_json(oncotree_json, primary, secondary):
+def extract_oncotree_code_mappings_from_oncotree_json(
+        oncotree_json, primary, secondary):
     oncotree_code_to_info = {}
-
     data = oncotree_json['children']
     for node in data:
         # if not node['code']:
-        #     sys.stderr.write('Encountered oncotree node without oncotree code : ' + node + '\n')
+        #     sys.stderr.write('Encountered oncotree node without '
+        #                       'oncotree code : ' + node + '\n')
         #     continue
         if data[node]['level'] == 1:
             primary = node
@@ -623,22 +633,32 @@ def extract_oncotree_code_mappings_from_oncotree_json(oncotree_json, primary, se
         cancer_type_detailed = data[node]['name']
         if not cancer_type_detailed:
             cancer_type_detailed = ''
-        oncotree_code_to_info[node.upper()] = {'CANCER_TYPE': cancer_type, 'CANCER_TYPE_DETAILED' : cancer_type_detailed , 'ONCOTREE_PRIMARY_NODE': primary, 'ONCOTREE_SECONDARY_NODE':secondary}
+        oncotree_code_to_info[node.upper()] = {
+            'CANCER_TYPE': cancer_type,
+            'CANCER_TYPE_DETAILED': cancer_type_detailed,
+            'ONCOTREE_PRIMARY_NODE': primary,
+            'ONCOTREE_SECONDARY_NODE': secondary}
+
         if len(data[node]['children']) > 0:
-            recurseDict = extract_oncotree_code_mappings_from_oncotree_json(data[node], primary, secondary)
+            recurseDict = extract_oncotree_code_mappings_from_oncotree_json(
+                data[node], primary, secondary)
             oncotree_code_to_info.update(recurseDict)
     return oncotree_code_to_info
 
 
 def get_oncotree_code_mappings(oncotree_tumortype_api_endpoint_url):
-    # CREATE ONCOTREE DICTIONARY MAPPING TO PRIMARY, SECONDARY, CANCER TYPE, AND CANCER DESCRIPTION
-    #oncotree_raw_response = urlopen(oncotree_tumortype_api_endpoint_url).text
-    #with requests.get(oncotree_tumortype_api_endpoint_url) as oncotreeUrl:
+    '''
+    CREATE ONCOTREE DICTIONARY MAPPING TO PRIMARY, SECONDARY,
+    CANCER TYPE, AND CANCER DESCRIPTION
+    '''
+    # oncotree_raw_response = urlopen(oncotree_tumortype_api_endpoint_url).text
+    # with requests.get(oncotree_tumortype_api_endpoint_url) as oncotreeUrl:
     oncotreeUrl = retry_get_url(oncotree_tumortype_api_endpoint_url)
     oncotree_raw_response = oncotreeUrl.text
     oncotree_response = json.loads(oncotree_raw_response)
     oncotree_response = oncotree_response['TISSUE']
-    return extract_oncotree_code_mappings_from_oncotree_json(oncotree_response, '', '')
+    return extract_oncotree_code_mappings_from_oncotree_json(
+        oncotree_response, '', '')
 
 
 # Get mapping code #Add USE DESCRIPTION sampletypedetailed -> public
@@ -659,7 +679,7 @@ def getPrimary(code, oncotreeDict, primary):
             if sum(oncotreeDict[level] == code) > 0:
                 toAdd = primary[oncotreeDict[level] == code].values[0]
                 break
-            else: 
+            else:
                 toAdd = code
     else:
         toAdd = "NOT_ANNOTATED"
@@ -672,7 +692,8 @@ def getPrimary(code, oncotreeDict, primary):
 #   from Crypto import Random
 
 #   random_generator = Random.new().read
-#   key = RSA.generate(1024, random_generator) #generate public and private keys
+#   generate public and private keys
+#   key = RSA.generate(1024, random_generator)
 
 #   #publickey = key.publickey # pub key export for exchange
 #   encrypted = key.encrypt(geniePassword, 32)
@@ -681,7 +702,7 @@ def getPrimary(code, oncotreeDict, primary):
 #   with open("genie.pem","w") as geniePem:
 #       geniePem.write(key.exportKey(format='PEM'))
 
-## READ KEY
+
 def read_key(pemfile_path):
     '''
     Obtain key from pemfile
@@ -724,7 +745,9 @@ def get_password(pemfile_path):
         Password
     '''
     if not os.path.exists(pemfile_path):
-        raise ValueError("Path to pemFile must be specified if there is no cached credentials")
+        raise ValueError(
+            "Path to pemFile must be specified if there "
+            "is no cached credentials")
     key = read_key(pemfile_path)
     genie_pass = decrypt_message(os.environ['GENIE_PASS'], key)
     return(genie_pass)
