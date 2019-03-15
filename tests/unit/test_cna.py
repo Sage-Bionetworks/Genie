@@ -1,7 +1,7 @@
 import synapseclient
 import pandas as pd
 import mock
-from nose.tools import assert_raises
+import pytest
 from genie.cna import cna
 
 
@@ -72,8 +72,8 @@ def test_processing():
 
 
 def test_validation():
-
-    assert_raises(AssertionError, cna_class.validateFilename, ["foo"])
+    with pytest.raises(AssertionError):
+        cna_class.validateFilename(["foo"])
     assert cna_class.validateFilename(["data_CNA_SAGE.txt"]) == "cna"
 
     order = ["Hugo_Symbol", "Entrez_gene_id",

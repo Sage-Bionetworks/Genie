@@ -1,7 +1,7 @@
 import synapseclient
 import pandas as pd
 import mock
-from nose.tools import assert_raises
+import pytest
 from genie.fusions import fusions
 
 
@@ -63,7 +63,8 @@ def test_processing():
 
 
 def test_validation():
-    assert_raises(AssertionError, fusionClass.validateFilename, ["foo"])
+    with pytest.raises(AssertionError):
+        fusionClass.validateFilename(['foo'])
     assert fusionClass.validateFilename(["data_fusions_SAGE.txt"]) == "fusions"
 
     fusionDf = pd.DataFrame({
