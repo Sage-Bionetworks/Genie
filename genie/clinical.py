@@ -222,27 +222,27 @@ class clinical(example_filetype_format.FileTypeFormat):
         newClinicalDf = self._process(clinicalDf, clinicalTemplate)
 
         if patient:
-            seqColumn = "BIRTH_YEAR"
-            patientCols.append(seqColumn + "_NUMERICAL")
-            newClinicalDf[seqColumn + "_NUMERICAL"] = [int(year) if process_functions.checkInt(year) else pd.np.nan for year in newClinicalDf[seqColumn]]
+            # seqColumn = "BIRTH_YEAR"
+            # patientCols.append(seqColumn + "_NUMERICAL")
+            # newClinicalDf[seqColumn + "_NUMERICAL"] = [int(year) if process_functions.checkInt(year) else pd.np.nan for year in newClinicalDf[seqColumn]]
             patientClinical = newClinicalDf[patientCols].drop_duplicates("PATIENT_ID")
             self.uploadMissingData(patientClinical, "PATIENT_ID", patientSynId, centerStagingSynId)#retractedPatientSynId)
             process_functions.updateData(self.syn, patientSynId, patientClinical, self.center, col=patientCols, toDelete=True)
         if sample:
-            seqColumn = "AGE_AT_SEQ_REPORT"
-            sampleCols.extend([seqColumn + "_NUMERICAL"])
-            newClinicalDf[seqColumn + "_NUMERICAL"] = [int(year) if process_functions.checkInt(year) else pd.np.nan for year in newClinicalDf[seqColumn]]
+            # seqColumn = "AGE_AT_SEQ_REPORT"
+            # sampleCols.extend([seqColumn + "_NUMERICAL"])
+            # newClinicalDf[seqColumn + "_NUMERICAL"] = [int(year) if process_functions.checkInt(year) else pd.np.nan for year in newClinicalDf[seqColumn]]
             if sum(newClinicalDf["SAMPLE_ID"].duplicated()) >0:
                 logger.error("There are duplicated samples, and the duplicates are removed")
             sampleClinical = newClinicalDf[sampleCols].drop_duplicates("SAMPLE_ID")
-            #Exclude all clinical samples with wrong oncotree codes
+            # Exclude all clinical samples with wrong oncotree codes
             oncotree_mapping = process_functions.get_oncotree_codes(oncotreeLink)
             if oncotree_mapping.empty:
                 oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(oncotreeLink)
-                #Add in unknown key for oncotree code
+                # Add in unknown key for oncotree code
                 oncotree_mapping_dict['UNKNOWN']= {}
                 oncotree_mapping['ONCOTREE_CODE'] = oncotree_mapping_dict.keys()
-            #Make oncotree codes uppercase (SpCC/SPCC)
+            # Make oncotree codes uppercase (SpCC/SPCC)
             sampleClinical['ONCOTREE_CODE'] = sampleClinical['ONCOTREE_CODE'].astype(str).str.upper()
             sampleClinical = sampleClinical[sampleClinical['ONCOTREE_CODE'].isin(oncotree_mapping['ONCOTREE_CODE'])]
             self.uploadMissingData(sampleClinical, "SAMPLE_ID", sampleSynId, centerStagingSynId)#, retractedSampleSynId)
