@@ -68,7 +68,7 @@ class maf(FileTypeFormat):
             narrowMafColumns = [col['name'] for col in self.syn.getTableColumns(mafSynId) if col['name'] != 'inBED']
             #Strips out windows indentations \r
             command = ['dos2unix',filePath]
-            subprocess.call(command)
+            subprocess.check_call(command)
             tempdir = os.path.join(path_to_GENIE, self.center)
             commandCall = ["perl",os.path.join(vcf2mafPath,"maf2maf.pl"),
                            "--input-maf",filePath,
@@ -81,7 +81,7 @@ class maf(FileTypeFormat):
                            "--custom-enst", os.path.join(vcf2mafPath,"data/isoform_overrides_uniprot")]
             if reference is not None:
                 commandCall.extend(["--ref-fasta",reference])
-            maf = subprocess.call(commandCall) 
+            maf = subprocess.check_call(commandCall) 
 
             process_functions.rmFiles(tempdir, recursive=False)
             open(narrowMafPath,"w").close()
@@ -104,29 +104,6 @@ class maf(FileTypeFormat):
         else:
             logger.info("Please run with `--process %s` parameter if you want to reannotate the %s files" % (self._fileType, self._fileType))
         return(filePath)
-
-    # def process_steps(self, filePath, **kwargs): 
-    #   processing = kwargs['processing']
-    #   mutationFiles = []
-    #   if processing == self._fileType:
-    #       databaseToSynIdMappingDf = kwargs['databaseToSynIdMappingDf']
-    #       vcf2mafPath = kwargs['vcf2mafPath']
-    #       veppath = kwargs['veppath']
-    #       vepdata = kwargs['vepdata']
-    #       validMAFs = kwargs['validMAFs']
-    #       path_to_GENIE = kwargs['path_to_GENIE']
-    #       reference = kwargs['reference']
-    #       mafProcessing = "mafSP" if self._fileType == "mafSP" else 'vcf2maf'
-    #       mafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == mafProcessing][0]
-    #       centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
-    #       for filePath in validMAFs:
-    #           mafFilePath = self.process_helper(filePath, path_to_GENIE, mafSynId, centerMafSynId,
-    #                                        vcf2mafPath, veppath, vepdata, reference=reference)
-    #           mutationFiles.append(mafFilePath)
-    #       logger.info("UPDATED DATABASE WITH: %s" % ", ".join(mutationFiles))
-    #   else:
-    #       logger.info("Please run with `--process %s` parameter if you want to reannotate the %s files" % (self._fileType, self._fileType))
-    #   return(mutationFiles)
 
     def _validate(self, mutationDF):
         """
