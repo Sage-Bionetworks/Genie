@@ -465,15 +465,19 @@ def addClinicalHeaders(
 ##############################################################################
 
 
-def _check_valid_df(df, checkby):
+def _check_valid_df(df, col):
     '''
     Checking if variable is a pandas dataframe and column specified exist
+
+    Args:
+        df: Pandas dataframe
+        col: Column name
     '''
     if not isinstance(df, pd.DataFrame):
         raise ValueError("Must pass in pandas dataframes")
-    if df.get(checkby) is None:
-        raise ValueError("{} column must exist in both dataframes".format(
-            checkby))
+    if df.get(col) is None:
+        raise ValueError("{} column must exist in dataframe".format(
+            col))
 
 
 def _get_left_diff_df(left, right, checkby):
