@@ -45,7 +45,7 @@ def test_validation():
         YEAR_CONTACT=[1999, 2000, float('nan'), 2342, 1999],
         INT_CONTACT=[1, 2, ">32485", float('nan'), "<6570"],
         INT_DOD=[1, ">32485", 3, "<6570", float('nan')],
-        sDEAD=[True, False, True, False, float('nan')]))
+        DEAD=[True, False, True, False, float('nan')]))
 
     error, warning = vs._validate(vsDf)
     assert error == ""
