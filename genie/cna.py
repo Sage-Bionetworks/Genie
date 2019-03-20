@@ -1,12 +1,12 @@
 from __future__ import absolute_import
 from genie import FileTypeFormat, process_functions
-
 import os
 import pandas as pd
 import logging
 from functools import partial
 import synapseclient
 logger = logging.getLogger(__name__)
+
 
 def validateSymbol(gene, bedDf, returnMappedDf=True):
     valid=False
@@ -25,10 +25,12 @@ def validateSymbol(gene, bedDf, returnMappedDf=True):
     else:
         return(valid)
 
+
 def makeCNARow(row, symbols):
     totalrow = "%s\n%s" % (",".join(symbols),",".join(row.astype(str)))
     totalrow = totalrow.replace(".0","")
     return(totalrow)
+
 
 def mergeCNAvalues(x):
     x.dropna(inplace=True)
@@ -44,6 +46,7 @@ def mergeCNAvalues(x):
     else:
         returnVal = float('nan')
     return(returnVal)
+
     
 def checkIfOneZero(x):
     assert len(set(x.tolist())) == 1, "Can only be one unique value"
@@ -53,6 +56,7 @@ class cna(FileTypeFormat):
     _fileType = "cna"
 
     _process_kwargs = ["newPath",'test','databaseToSynIdMappingDf']
+
 
     _validation_kwargs = ['testing','noSymbolCheck']
 
@@ -70,7 +74,6 @@ class cna(FileTypeFormat):
         index = [i for i, col in enumerate(cnaDf.columns) if col.upper() == "ENTREZ_GENE_ID"]
         if len(index) > 0:
             del cnaDf[cnaDf.columns[index][0]]
-
         bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=test)
         bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))
         bedDf = bed.asDataFrame()
@@ -93,6 +96,7 @@ class cna(FileTypeFormat):
         return(cnaDf)
 
     def process_steps(self, cnaDf, newPath, databaseToSynIdMappingDf, test):
+
         newCNA = self._process(cnaDf, test=test)
 
         centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
@@ -102,7 +106,6 @@ class cna(FileTypeFormat):
             cnaText = cnaText.replace("\t\t","\tNA\t").replace("\t\t","\tNA\t").replace('\t\n',"\tNA\n")
             with open(newPath, "w") as cnaFile:
                 cnaFile.write(cnaText)
-
             self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
         return(newPath)
 

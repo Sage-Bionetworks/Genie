@@ -7,6 +7,7 @@ import pandas as pd
 import synapseclient
 logger = logging.getLogger(__name__)
 
+
 class maf(FileTypeFormat):
 
     _fileType = "maf"

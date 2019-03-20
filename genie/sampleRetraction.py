@@ -7,6 +7,7 @@ import synapseclient
 import datetime
 logger = logging.getLogger(__name__)
 
+
 class sampleRetraction(FileTypeFormat):
 
     _fileType = "sampleRetraction"

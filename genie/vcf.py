@@ -17,7 +17,6 @@ def contains_whitespace(x):
 
 
 class vcf(maf):
-
     _fileType = "vcf"
 
     _process_kwargs = ["validVCF", "processing", "path_to_GENIE", "databaseToSynIdMappingDf", 
@@ -148,7 +147,6 @@ class vcf(maf):
         else:
             logger.info("Please run with `--process %s` parameter if you want to reannotate the %s files" % (self._fileType, self._fileType))
         return(mutationFiles)
-
 
     def _validate(self, vcf):
         REQUIRED_HEADERS = pd.Series(["#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO"])

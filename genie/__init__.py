@@ -17,29 +17,32 @@ from .patientRetraction import patientRetraction
 from .patientCounts import patientCounts
 from .mutationsInCis import mutationsInCis
 from .vitalStatus import vitalStatus
+from .assay import Assayinfo
 from . import process_functions
 from . import create_case_lists
 
-PROCESS_FILES = {'bed':bed,
-                 'bedSP':bedSP,
-                 'maf':maf,
-                 'mafSP':mafSP,
-                 'clinical':clinical,
-                 'clinicalSP':clinicalSP,
-                 'vcf':vcf,
-                 'cbs':cbs,
-                 'cna':cna,
-                 'fusions':fusions,
-                 'md':workflow,
-                 'seg':seg,
-                 'patientRetraction':patientRetraction,
-                 'sampleRetraction':sampleRetraction,
-                 'patientCounts':patientCounts,
-                 'mutationsInCis':mutationsInCis,
-                 'vitalStatus':vitalStatus}
-#Must import validate after the fact
+PROCESS_FILES = {'bed': bed,
+                 'bedSP': bedSP,
+                 'maf': maf,
+                 'mafSP': mafSP,
+                 'clinical': clinical,
+                 'clinicalSP': clinicalSP,
+                 'vcf': vcf,
+                 'cbs': cbs,
+                 'cna': cna,
+                 'fusions': fusions,
+                 'md': workflow,
+                 'seg': seg,
+                 'patientRetraction': patientRetraction,
+                 'sampleRetraction': sampleRetraction,
+                 'patientCounts': patientCounts,
+                 'mutationsInCis': mutationsInCis,
+                 'vitalStatus': vitalStatus,
+                 'assayinfo': Assayinfo}
+
+# Must import validate after the fact
 from . import validate
-#Import logging last to not take in synapseclient logging
+# Import logging last to not take in synapseclient logging
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("genie")

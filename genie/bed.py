@@ -3,7 +3,6 @@ from genie import FileTypeFormat, process_functions
 import os
 import logging
 import pandas as pd
-from functools import partial
 import subprocess
 logger = logging.getLogger(__name__)
 
@@ -43,10 +42,17 @@ logger = logging.getLogger(__name__)
 
 
 def validateSymbol(x, genePositionDf, returnMappedDf=False):
-    #The apply function of a DataFrame is called twice on the first row (known pandas behavior)
+    '''
+    The apply function of a DataFrame is called twice on the first row (known
+    pandas behavior)
+    '''
     valid = True
-    matchWithGeneDb = genePositionDf[genePositionDf['hgnc_symbol'] == x['Hugo_Symbol']]
-    #Make sure there are no overlaps in the submitted gene symbol and the gene position database
+    matchWithGeneDb = genePositionDf[
+        genePositionDf['hgnc_symbol'] == x['Hugo_Symbol']]
+    '''
+    Make sure there are no overlaps in the submitted gene symbol and the gene
+    position database
+    '''
     toMap = True
     if not matchWithGeneDb.empty:
         if (matchWithGeneDb['start_position'].values[0] >= x['Start_Position'] and matchWithGeneDb['end_position'].values[0] <= x['End_Position']) or (matchWithGeneDb['start_position'].values[0] <= x['End_Position'] and matchWithGeneDb['end_position'].values[0] >= x['Start_Position']):
@@ -54,21 +60,22 @@ def validateSymbol(x, genePositionDf, returnMappedDf=False):
     if toMap:
         chromRows = genePositionDf[genePositionDf['chromosome_name'] == str(x['Chromosome'])]
         startRows = chromRows[chromRows['start_position'] <= x['Start_Position']]
-        endRows  = startRows[startRows['end_position'] >= x['End_Position']]
-        #geneDiff = chromRows['end_position'] - chromRows['start_position']
+
+        endRows = startRows[startRows['end_position'] >= x['End_Position']]
+        # geneDiff = chromRows['end_position'] - chromRows['start_position']
         bedLength = x['End_Position'] - x['Start_Position']
-        #as long as the strand is 90% within the boundary of the 
-        #Start goes over start boundary, but end is contained in gene
+        # as long as the strand is 90% within the boundary of the
+        # Start goes over start boundary, but end is contained in gene
         if len(endRows) == 0:
             if sum(chromRows['end_position'] >= x['End_Position']) > 0:
                 overlap = x['End_Position'] - chromRows['start_position']
-                #difference =  difference * -1.0
+                # difference =  difference * -1.0
                 ratioOverlap = overlap / bedLength
                 ratioOverlap = ratioOverlap[ratioOverlap > 0.9]
                 ratioOverlap = ratioOverlap[ratioOverlap <= 1]
                 if not ratioOverlap.empty:
                     endRows = endRows.append(chromRows.loc[[ratioOverlap.idxmax()]])
-            #End goes over end boundary, but start is contained in gene
+            # End goes over end boundary, but start is contained in gene
             if sum(chromRows['start_position'] <= x['Start_Position']) > 0:
                 overlap = chromRows['end_position'] - x['Start_Position']
                 ratioOverlap = overlap / bedLength
@@ -76,7 +83,7 @@ def validateSymbol(x, genePositionDf, returnMappedDf=False):
                 ratioOverlap = ratioOverlap[ratioOverlap <= 1]
                 if not ratioOverlap.empty:
                     endRows = endRows.append(chromRows.loc[[ratioOverlap.idxmax()]])
-            #Start and end go over gene boundary
+            # Start and end go over gene boundary
             check = chromRows[chromRows['start_position'] >= x['Start_Position']]
             check = check[check['end_position'] <= x['End_Position']]
             if not check.empty:
@@ -93,7 +100,7 @@ def validateSymbol(x, genePositionDf, returnMappedDf=False):
             valid = False
         elif len(endRows) > 1:
             if x['Hugo_Symbol'] not in endRows['hgnc_symbol'].tolist():
-                #if "MLL4", then the HUGO symbol should be KMT2D and KMT2B
+                # if "MLL4", then the HUGO symbol should be KMT2D and KMT2B
                 logger.warning("%s can be mapped to different symbols: %s. Please correct or it will be removed." % (x['Hugo_Symbol'], ", ".join(endRows['hgnc_symbol'])))
                 x['Hugo_Symbol'] = pd.np.nan
                 valid = False
@@ -106,6 +113,7 @@ def validateSymbol(x, genePositionDf, returnMappedDf=False):
     else:
         return(valid)
 
+
 class bed(FileTypeFormat):
 
     _fileType = "bed"
@@ -115,8 +123,8 @@ class bed(FileTypeFormat):
     def _get_dataframe(self, filePathList):
         filePath = filePathList[0]
         try:
-            beddf = pd.read_csv(filePath, sep="\t",header=None)
-        except:
+            beddf = pd.read_csv(filePath, sep="\t", header=None)
+        except Exception:
             raise ValueError("Can't read in your bed file. Please make sure the BED file is not binary and does not contain a comment/header line")
         if not str(beddf[0][0]).isdigit() and not str(beddf[0][0]).startswith("chr"):
             raise ValueError("Please make sure your bed file does not contain a comment/header line")
@@ -125,12 +133,15 @@ class bed(FileTypeFormat):
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]).startswith("%s-" % self.center) and os.path.basename(filePath[0]).endswith(".bed")
 
-    def createdBEDandGenePanel(self, bed, seq_assay_id, genePanelPath, parentId, createGenePanel=True):
+    def createdBEDandGenePanel(self, bed, seq_assay_id,
+                               genePanelPath, parentId,
+                               createGenePanel=True):
         logger.info("REMAPPING %s" % seq_assay_id)
-        bedname = seq_assay_id + ".bed"
-        bed.columns = ["Chromosome","Start_Position","End_Position","Hugo_Symbol","includeInPanel"]
-        #Validate gene symbols
-        #Gene symbols can be split by ; and _ and : and .
+        # bedname = seq_assay_id + ".bed"
+        bed.columns = ["Chromosome", "Start_Position", "End_Position", 
+                       "Hugo_Symbol", "includeInPanel"]
+        # Validate gene symbols
+        # Gene symbols can be split by ; and _ and : and .
         bed['Hugo_Symbol'] = [i.split(";")[0].split("_")[0].split(":")[0].split(".")[0] for i in bed['Hugo_Symbol']]
         bed['Chromosome'] = [str(i).replace("chr","") for i in bed['Chromosome']]
         bed['Start_Position'] = bed['Start_Position'].apply(int)
@@ -184,17 +195,16 @@ class bed(FileTypeFormat):
         bed['CENTER'] =self.center
         bed['Chromosome'] = bed['Chromosome'].astype(str)
         return(bed)
-    
+
     def preprocess(self, filePath, **kwargs):
-# - clinical
-# - maf
-# - vcf
-        seq_assay_id = os.path.basename(filePath).replace(".bed","").upper()
-        return({'seq_assay_id':seq_assay_id})
+        # - clinical
+        # - maf
+        # - vcf
+        seq_assay_id = os.path.basename(filePath).replace(".bed", "")
+        seq_assay_id = seq_assay_id.upper().replace("_", "-")
+        return({'seq_assay_id': seq_assay_id})
 
     def process_steps(self, gene, newPath, parentId, databaseSynId, seq_assay_id):
-        #standardize all SEQ_ASSAY_IDs
-        #seq_assay_id = os.path.basename(filePath).replace(".bed","").upper()
         bed = self._process(gene, seq_assay_id, newPath, parentId)
         process_functions.updateData(self.syn, databaseSynId, bed, seq_assay_id, filterByColumn="SEQ_ASSAY_ID", toDelete=True)
         bed.to_csv(newPath, sep="\t",index=False)

@@ -5,8 +5,9 @@ import logging
 import pandas as pd
 logger = logging.getLogger(__name__)
 
+
 class clinicalSP(FileTypeFormat):
-    
+
     _fileType = "clinicalSP"
 
     # VALIDATE FILENAME

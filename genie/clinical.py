@@ -41,7 +41,9 @@ def removeGreaterThanAndLessThanStr(col):
         pass
     return(col)
 
+
 class clinical(FileTypeFormat):
+
 
     _fileType = "clinical"
 

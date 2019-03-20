@@ -14,7 +14,6 @@ class vitalStatus(FileTypeFormat):
     ## VALIDATING FILENAME
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "vital_status.txt"
-        
 
     def _validate(self, vitalStatusDf):
         total_error = ""
@@ -75,7 +74,6 @@ class vitalStatus(FileTypeFormat):
             total_error += "Vital status file: Must have DEAD column.\n"
 
         return(total_error, warning)
-    
 
     def _process(self, vitalStatusDf):
         vitalStatusDf.PATIENT_ID = [process_functions.checkGenieId(patient, self.center) for patient in vitalStatusDf.PATIENT_ID]

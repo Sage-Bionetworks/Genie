@@ -3,6 +3,7 @@ import logging
 import os
 logger = logging.getLogger(__name__)
 
+
 class FileTypeFormat(object):
 
     _process_kwargs = ["newPath", "databaseSynId"]
@@ -15,12 +16,12 @@ class FileTypeFormat(object):
         self.syn = syn
         self.center = center
         #self.pool = multiprocessing.Pool(poolSize)
-    
+
     def _get_dataframe(self, filePathList):
         '''
         This function by defaults assumes the filePathList is length of 1 
         and is a tsv file.  Could change depending on file type.
-        
+
         Args:
             filePathList:  A list of file paths (Max is 2 for the two clinical files)
 
@@ -38,7 +39,7 @@ class FileTypeFormat(object):
 
         Args:
             filePathList:  A list of file paths (Max is 2 for the two clinical files)
-        
+
         Returns:
             df: Pandas dataframe of file
         '''
@@ -54,7 +55,6 @@ class FileTypeFormat(object):
         '''
         pass
 
-
     def validateFilename(self, filePath):
         '''
         Validation of file name.  The filename is what maps the file
@@ -68,8 +68,6 @@ class FileTypeFormat(object):
         '''
         self._validateFilename(filePath)
         return(self._fileType)
-
-
 
     def process_steps(self, df, **kwargs):
         '''
@@ -86,7 +84,6 @@ class FileTypeFormat(object):
             filePath: Path to file
         '''
         return(dict())
-
 
     def process(self, filePath, **kwargs):
         '''
@@ -133,7 +130,7 @@ class FileTypeFormat(object):
 
     def validate(self, filePathList, **kwargs):
         '''
-        This is the main validation function. 
+        This is the main validation function.
         Every file type calls self._validate, which is different.
 
         Args:

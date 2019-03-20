@@ -5,6 +5,7 @@ import os
 import pandas as pd
 logger = logging.getLogger(__name__)
 
+
 class seg(FileTypeFormat):
 
     _fileType = "seg"

@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y \
 	libcurl4-openssl-dev
 
 RUN pip3 install --upgrade pip
-RUN pip install synapseclient httplib2 pycrypto
+RUN pip install synapseclient httplib2 pycrypto PyYAML
 RUN pip install pandas numexpr --upgrade
 
 RUN rm /usr/bin/python 
