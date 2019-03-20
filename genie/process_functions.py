@@ -698,12 +698,12 @@ def updateDatabase(
         if not allupdates.empty:
             updateFile.write(
                 allupdates[columnOrder].to_csv(
-                    index=False, header=None).replace(".0,", ","))
+                    index=False, header=None).replace(".0,", ",").replace(".0\n", "\n"))
             storedatabase = True
         if not deleterows.empty:
             updateFile.write(
                 deleterows.to_csv(
-                    index=False, header=None).replace(".0,", ","))
+                    index=False, header=None).replace(".0,", ",").replace(".0\n", "\n"))
             storedatabase = True
     if storedatabase:
         syn.store(synapseclient.Table(databaseSynId, updateAllFile))
