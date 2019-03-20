@@ -453,9 +453,9 @@ def stagingToCbio(
             sampleSynId, "','".join(CENTER_MAPPING_DF.center)))
     patientDf = patient.asDataFrame()
     sampleDf = sample.asDataFrame()
-    del sampleDf['AGE_AT_SEQ_REPORT_NUMERICAL']
+    # del sampleDf['AGE_AT_SEQ_REPORT_NUMERICAL']
     del sampleDf['CENTER']
-    del patientDf['BIRTH_YEAR_NUMERICAL']
+    # del patientDf['BIRTH_YEAR_NUMERICAL']
     # Clinical release scope filter
     # If private -> Don't release to public
     clinicalReleaseScope = syn.tableQuery(
