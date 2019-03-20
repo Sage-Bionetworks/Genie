@@ -21,22 +21,22 @@ from . import process_functions
 from . import create_case_lists
 
 PROCESS_FILES = {'bed':bed,
-				 'bedSP':bedSP,
-				 'maf':maf,
-				 'mafSP':mafSP,
-				 'clinical':clinical,
-				 'clinicalSP':clinicalSP,
-				 'vcf':vcf,
-				 'cbs':cbs,
-				 'cna':cna,
-				 'fusions':fusions,
-				 'md':workflow,
-				 'seg':seg,
-				 'patientRetraction':patientRetraction,
-				 'sampleRetraction':sampleRetraction,
-				 'patientCounts':patientCounts,
-				 'mutationsInCis':mutationsInCis,
-				 'vitalStatus':vitalStatus}
+                 'bedSP':bedSP,
+                 'maf':maf,
+                 'mafSP':mafSP,
+                 'clinical':clinical,
+                 'clinicalSP':clinicalSP,
+                 'vcf':vcf,
+                 'cbs':cbs,
+                 'cna':cna,
+                 'fusions':fusions,
+                 'md':workflow,
+                 'seg':seg,
+                 'patientRetraction':patientRetraction,
+                 'sampleRetraction':sampleRetraction,
+                 'patientCounts':patientCounts,
+                 'mutationsInCis':mutationsInCis,
+                 'vitalStatus':vitalStatus}
 #Must import validate after the fact
 from . import validate
 #Import logging last to not take in synapseclient logging
