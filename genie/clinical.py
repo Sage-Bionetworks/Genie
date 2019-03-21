@@ -49,7 +49,7 @@ class clinical(FileTypeFormat):
 
     #_process_kwargs = ["newPath", "patientSynId", "sampleSynId","parentId","retractedSampleSynId","retractedPatientSynId"]
 
-    _process_kwargs = ["newPath", "patientSynId", "sampleSynId","parentId","oncotreeLink"]
+    _process_kwargs = ["newPath", "parentId", "databaseToSynIdMappingDf", "oncotreeLink"]
 
     _validation_kwargs = ["oncotreeLink"]
 
@@ -156,13 +156,6 @@ class clinical(FileTypeFormat):
         self.syn.store(synapseclient.File(path, parent=stagingSynId))
         os.remove(path)
 
-    def preprocess(self, filePath, **kwargs):
-        databaseToSynIdMappingDf = kwargs['databaseToSynIdMappingDf']
-        patientSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "patient"][0]
-        sampleSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "sample"][0]
-        return({"patientSynId":patientSynId,"sampleSynId":sampleSynId})
-
-
     def _process(self, clinical, clinicalTemplate):
         #Capitalize all clinical dataframe columns
         clinical.columns = [col.upper() for col in clinical.columns]
@@ -185,7 +178,10 @@ class clinical(FileTypeFormat):
 
         return(clinicalRemapped)
 
-    def process_steps(self, filePath, patientSynId, sampleSynId, newPath, parentId, oncotreeLink):
+    def process_steps(self, filePath, databaseToSynIdMappingDf, newPath, parentId, oncotreeLink):
+        patientSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "patient"][0]
+        sampleSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "sample"][0]
+
         clinicalDf = pd.read_csv(filePath, sep="\t", comment="#")
 
         patient= False
@@ -210,16 +206,16 @@ class clinical(FileTypeFormat):
         newClinicalDf = self._process(clinicalDf, clinicalTemplate)
 
         if patient:
-            seqColumn = "BIRTH_YEAR"
-            patientCols.append(seqColumn + "_NUMERICAL")
-            newClinicalDf[seqColumn + "_NUMERICAL"] = [int(year) if process_functions.checkInt(year) else pd.np.nan for year in newClinicalDf[seqColumn]]
+            #seqColumn = "BIRTH_YEAR"
+            #patientCols.append(seqColumn + "_NUMERICAL")
+            #newClinicalDf[seqColumn + "_NUMERICAL"] = [int(year) if process_functions.checkInt(year) else pd.np.nan for year in newClinicalDf[seqColumn]]
             patientClinical = newClinicalDf[patientCols].drop_duplicates("PATIENT_ID")
             self.uploadMissingData(patientClinical, "PATIENT_ID", patientSynId, parentId)#retractedPatientSynId)
             process_functions.updateData(self.syn, patientSynId, patientClinical, self.center, col=patientCols, toDelete=True)
         if sample:
-            seqColumn = "AGE_AT_SEQ_REPORT"
-            sampleCols.extend([seqColumn + "_NUMERICAL"])
-            newClinicalDf[seqColumn + "_NUMERICAL"] = [int(year) if process_functions.checkInt(year) else pd.np.nan for year in newClinicalDf[seqColumn]]
+            #seqColumn = "AGE_AT_SEQ_REPORT"
+            #sampleCols.extend([seqColumn + "_NUMERICAL"])
+            #newClinicalDf[seqColumn + "_NUMERICAL"] = [int(year) if process_functions.checkInt(year) else pd.np.nan for year in newClinicalDf[seqColumn]]
             if sum(newClinicalDf["SAMPLE_ID"].duplicated()) >0:
                 logger.error("There are duplicated samples, and the duplicates are removed")
             sampleClinical = newClinicalDf[sampleCols].drop_duplicates("SAMPLE_ID")
