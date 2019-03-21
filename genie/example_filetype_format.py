@@ -78,10 +78,10 @@ class FileTypeFormat(object):
         '''
         pass
 
-    def preprocess(self, filePath, **kwargs):
+    def preprocess(self, filePath):
         '''
-        This is for any preprocessing that has to occur to obtain kwargs for
-        processing.
+        This is for any preprocessing that has to occur to the filepath name
+        to add to kwargs for processing.
 
         Args:
             filePath: Path to file
@@ -99,7 +99,7 @@ class FileTypeFormat(object):
         Returns:
             str: file path of processed file
         '''
-        preprocess_args = self.preprocess(filePath, **kwargs)
+        preprocess_args = self.preprocess(filePath)
         kwargs.update(preprocess_args)
         mykwargs = {}
         for required_parameter in self._process_kwargs:

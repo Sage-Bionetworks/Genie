@@ -196,10 +196,7 @@ class bed(FileTypeFormat):
         bed['Chromosome'] = bed['Chromosome'].astype(str)
         return(bed)
 
-    def preprocess(self, filePath, **kwargs):
-        # - clinical
-        # - maf
-        # - vcf
+    def preprocess(self, filePath):
         seq_assay_id = os.path.basename(filePath).replace(".bed", "")
         seq_assay_id = seq_assay_id.upper().replace("_", "-")
         return({'seq_assay_id': seq_assay_id})
