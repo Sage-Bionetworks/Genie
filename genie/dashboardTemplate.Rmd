@@ -342,7 +342,7 @@ this_assays = as.character(unique(this_samples$SEQ_ASSAY_ID))
 this_mut <- getFileDf("data_mutations_extended.txt", releaseFiles)
 black_list_variants <- synTableQuery("select * from syn18459663",
                                      includeRowIdAndRowVersion = F)
-black_list_variantsdf = black_list_variants@as.data.frame()
+black_list_variantsdf = black_list_variants$asDataFrame()
 # this_cna <- getFileDf("data_CNA.txt", releaseFiles)
 #this_fus <- getFileDf("data_fusions.txt", releaseFiles)
 ```
@@ -359,10 +359,15 @@ samplesPerReleaseDf = rbind(samplesPerReleaseDf,
                             data.frame("Center" = "Total",
                                        "Samples" = sum(sampleCounts)))
 kable(samplesPerReleaseDf,row.names = F)
+blacklist_variants = paste(black_list_variantsdf$Hugo_Symbol,
+                           black_list_variantsdf$HGVSp_Short)
 subset_mut = this_mut[this_mut$Hugo_Symbol %in% black_list_variantsdf$Hugo_Symbol,
                       c("Hugo_Symbol","Center","HGVSp_Short")]
-subset_mut = subset_mut[subset_mut$HGVSp_Short %in% black_list_variantsdf$HGVSp_Short,]
-
+subset_mut$blacklist = paste(subset_mut$Hugo_Symbol,
+                             subset_mut$HGVSp_Short)
+subset_mut = subset_mut[subset_mut$blacklist %in% blacklist_variants,]
+kable(table(subset_mut$Center, subset_mut$blacklist),
+      caption = "Blacklist variant count")
 # row.names(sampleCountNoTotalDf) <- sampleCountNoTotalDf$Center
 # sampleCountNoTotalDf$Center <- NULL
 # sampleCountNoTotalDf <- t(sampleCountNoTotalDf)
@@ -372,9 +377,9 @@ subset_mut = subset_mut[subset_mut$HGVSp_Short %in% black_list_variantsdf$HGVSp_
 
 ```{r primaryPlots}
 #primary site distribution
-par(mar=c(10,3,3,1))
+par(mar = c(10,3,3,1))
 barplot(sort(log(table(this_mut$FILTER)),decreasing = T),
-        main="Log Distribution of Mutation FILTERs",las=2)
+        main = "Log Distribution of Mutation FILTERs", las = 2)
 plotPrimarySites(this_samples, 
                  "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2018_06_01",
                  "%s")
