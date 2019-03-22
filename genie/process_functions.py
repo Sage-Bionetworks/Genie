@@ -576,6 +576,37 @@ def _delete_rows(new_datasetdf, databasedf, checkby):
     return(delete_rowid_version)
 
 
+def _create_update_rowsdf(
+        updating_databasedf, updatesetdf, rowids, differentrows):
+    '''
+    Create the update dataset dataframe
+
+    Args:
+        updating_databasedf: Update database dataframe
+        updatesetdf:  Update dataset dataframe
+        rowids: rowids of the database (Synapse ROW_ID, ROW_VERSION)
+        differentrows: vector of booleans for rows that need to be updated
+                       True for update, False for not
+
+    Returns:
+        dataframe: Update dataframe
+    '''
+    if sum(differentrows) > 0:
+        updating_databasedf.loc[differentrows] = updatesetdf.loc[differentrows]
+        toupdatedf = updating_databasedf.loc[differentrows]
+        logger.info("Updating rows")
+        rowid_version = pd.DataFrame([[
+            rowid.split("_")[0], rowid.split("_")[1]]
+            for rowid, row in zip(rowids, differentrows) if row])
+        toupdatedf['ROW_ID'] = rowid_version[0].values
+        toupdatedf['ROW_VERSION'] = rowid_version[1].values
+        toupdatedf.reset_index(drop=True, inplace=True)
+    else:
+        toupdatedf = pd.DataFrame()
+        logger.info("No updated rows")
+    return(toupdatedf)
+
+
 def _update_rows(new_datasetdf, databasedf, checkby):
     '''
     Compares the dataset from the database and determines which rows to
@@ -602,6 +633,9 @@ def _update_rows(new_datasetdf, databasedf, checkby):
     # Set index values to be 'checkby' values
     updatesetdf.index = updatesetdf[checkby]
     updating_databasedf.index = updating_databasedf[checkby]
+    del updatesetdf[checkby]
+    del updating_databasedf[checkby]
+
     # Remove duplicated index values
     updatesetdf = updatesetdf[~updatesetdf.index.duplicated()]
     # Reorder dataset index
@@ -610,20 +644,8 @@ def _update_rows(new_datasetdf, databasedf, checkby):
     differences = updatesetdf != updating_databasedf
     differentrows = differences.apply(sum, axis=1) > 0
 
-    if sum(differentrows) > 0:
-        updating_databasedf.loc[differentrows] = updatesetdf.loc[differentrows]
-        toupdatedf = updating_databasedf.loc[differentrows]
-        del toupdatedf[checkby]
-        logger.info("Updating rows")
-        rowid_version = pd.DataFrame([[
-            rowid.split("_")[0], rowid.split("_")[1]]
-            for rowid, row in zip(rowids, differentrows) if row])
-        toupdatedf['ROW_ID'] = rowid_version[0].values
-        toupdatedf['ROW_VERSION'] = rowid_version[1].values
-        toupdatedf.reset_index(drop=True, inplace=True)
-    else:
-        toupdatedf = pd.DataFrame()
-        logger.info("No updated rows")
+    toupdatedf = _create_update_rowsdf(
+        updating_databasedf, updatesetdf, rowids, differentrows)
 
     return(toupdatedf)
 
