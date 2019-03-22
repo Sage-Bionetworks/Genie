@@ -359,6 +359,14 @@ samplesPerReleaseDf = rbind(samplesPerReleaseDf,
                             data.frame("Center" = "Total",
                                        "Samples" = sum(sampleCounts)))
 kable(samplesPerReleaseDf,row.names = F)
+# row.names(sampleCountNoTotalDf) <- sampleCountNoTotalDf$Center
+# sampleCountNoTotalDf$Center <- NULL
+# sampleCountNoTotalDf <- t(sampleCountNoTotalDf)
+# barplot(sampleCountNoTotalDf, main="Release {Release} Sample Counts per File", col=c("light blue","dark green","coral","blue","red"), width=2, beside=TRUE,ylim=c(0,ceiling(max(sampleCountNoTotalDf) * 1.0 / 1000) * 1000))
+# legend("topright",fill=c("light blue","dark green","coral","blue","red"), legend=rownames(sampleCountNoTotalDf))
+```
+
+```{r blacklist}
 blacklist_variants = paste(black_list_variantsdf$Hugo_Symbol,
                            black_list_variantsdf$HGVSp_Short)
 subset_mut = this_mut[this_mut$Hugo_Symbol %in% black_list_variantsdf$Hugo_Symbol,
@@ -368,11 +376,6 @@ subset_mut$blacklist = paste(subset_mut$Hugo_Symbol,
 subset_mut = subset_mut[subset_mut$blacklist %in% blacklist_variants,]
 kable(table(subset_mut$Center, subset_mut$blacklist),
       caption = "Blacklist variant count")
-# row.names(sampleCountNoTotalDf) <- sampleCountNoTotalDf$Center
-# sampleCountNoTotalDf$Center <- NULL
-# sampleCountNoTotalDf <- t(sampleCountNoTotalDf)
-# barplot(sampleCountNoTotalDf, main="Release {Release} Sample Counts per File", col=c("light blue","dark green","coral","blue","red"), width=2, beside=TRUE,ylim=c(0,ceiling(max(sampleCountNoTotalDf) * 1.0 / 1000) * 1000))
-# legend("topright",fill=c("light blue","dark green","coral","blue","red"), legend=rownames(sampleCountNoTotalDf))
 ```
 
 ```{r primaryPlots}
