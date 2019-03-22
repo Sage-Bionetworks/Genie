@@ -49,7 +49,7 @@ getFileDf <- function(fileName, releaseFiles) {
   }))
   if (length(synId) > 0) {
     ent = synGet(synId,followLink = T)
-    df = read.csv(ent$path,sep = "\t",comment.char = "#",stringsAsFactors = F)
+    df = read.csv(ent$path,sep = "\t", comment.char = "#", stringsAsFactors = F)
     return(df)
   } else {
     return(NULL)
@@ -111,7 +111,7 @@ plotPrimarySites <- function(clinical, oncotreeLink, release) {
     oncotree_json = data$TISSUE
     oncotreeDict = extract(oncotree_json, "", "")
     clinical$PRIMARY_CODES <- unlist(sapply(clinical$ONCOTREE_CODE, function(code) {
-      if (toupper(code) %in% names(oncotreeDict)){
+      if (toupper(code) %in% names(oncotreeDict)) {
         oncotreeDict[[toupper(code)]]["ONCOTREE_PRIMARY_NODE"]
       } else {
         "DEPRECATED_CODE"
@@ -223,7 +223,7 @@ plotCenterXRace <- function(genieClinData) {
               drop = "n")
   colnames(t)[colnames(t) == "time"] = "Race"
   t$Race = factor(t$Race,l)
-  plot(ggplot(t,aes(Race,Percentage,group = Center)) + 
+  plot(ggplot(t,aes(Race, Percentage, group = Center)) + 
          geom_bar(stat = "identity") +
          facet_wrap(~Center, ncol = 4) +
          ylim(0,1) +
@@ -358,7 +358,8 @@ colnames(samplesPerReleaseDf) = c("Center","Samples")
 samplesPerReleaseDf = rbind(samplesPerReleaseDf,
                             data.frame("Center" = "Total",
                                        "Samples" = sum(sampleCounts)))
-kable(samplesPerReleaseDf,row.names = F)
+kable(samplesPerReleaseDf, row.names = F,
+      caption = "Sample count")
 # row.names(sampleCountNoTotalDf) <- sampleCountNoTotalDf$Center
 # sampleCountNoTotalDf$Center <- NULL
 # sampleCountNoTotalDf <- t(sampleCountNoTotalDf)
