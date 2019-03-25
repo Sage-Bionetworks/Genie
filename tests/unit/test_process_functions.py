@@ -56,6 +56,48 @@ def test_append__append_rows():
     assert append_rows.equals(expecteddf[append_rows.columns])
 
 
+def test___create_update_rowsdf():
+    differentrows = [True, True, False]
+    database = pd.DataFrame({
+        "test": ['test', 'test2', 'test3'],
+        "foo": [1, 3, 3],
+        "baz": [float('nan'), 5, float('nan')]},
+        index=['test1', 'test5', 'test4'])
+    new_datadf = pd.DataFrame({
+        "test": ['test1', 'test4', 'test3'],
+        "foo": [2, 3, 3],
+        "baz": [3, 5, float('nan')]},
+        index=['test1', 'test5', 'test4'])
+
+    to_update_rowsdf = genie.process_functions._create_update_rowsdf(
+        database, new_datadf, DATABASE_DF.index, differentrows)
+    expecteddf = pd.DataFrame({
+        "test": ['test1', 'test4'],
+        "foo": [2, 3],
+        "baz": [3.0, 5.0],
+        "ROW_ID": ["1", "2"],
+        "ROW_VERSION": ["3", "3"]})
+    assert to_update_rowsdf.equals(expecteddf[to_update_rowsdf.columns])
+
+
+def test_none__create_update_rowsdf():
+    differentrows = [False, False, False]
+    database = pd.DataFrame({
+        "test": ['test', 'test2', 'test3'],
+        "foo": [1, 3, 3],
+        "baz": [float('nan'), 5, float('nan')]},
+        index=['test1', 'test5', 'test4'])
+    new_datadf = pd.DataFrame({
+        "test": ['test1', 'test4', 'test3'],
+        "foo": [2, 3, 3],
+        "baz": [3, 5, float('nan')]},
+        index=['test1', 'test5', 'test4'])
+
+    to_update_rowsdf = genie.process_functions._create_update_rowsdf(
+        database, new_datadf, DATABASE_DF.index, differentrows)
+    assert to_update_rowsdf.empty
+
+
 def test___get_left_union_df():
     new_datadf = pd.DataFrame({
         'UNIQUE_KEY': ['test1', 'test5', 'test4'],
@@ -84,6 +126,9 @@ def test_none__get_left_union_df():
 
 
 def test_update__update_rows():
+    '''
+    Tests index comparison for updating rows
+    '''
     new_datadf = pd.DataFrame({
         'UNIQUE_KEY': ['test1', 'test2', 'test3'],
         "test": ['test', 'test2', 'test3'],
@@ -102,6 +147,9 @@ def test_update__update_rows():
 
 
 def test_maintaintype__update_rows():
+    '''
+    Test pandas behavior.  Integer -> Float if NA exists
+    '''
     new_datadf = pd.DataFrame({
         'UNIQUE_KEY': ['test1', 'test2', 'test3'],
         "test": ['test1', 'test2', 'test3'],
@@ -121,6 +169,9 @@ def test_maintaintype__update_rows():
 
 
 def test_noupdate__update_rows():
+    '''
+    Tests the index comparison to get no updates
+    '''
     new_datadf = pd.DataFrame({
         'UNIQUE_KEY': ['test4'],
         "test": ['test'],

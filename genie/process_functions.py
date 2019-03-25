@@ -669,8 +669,8 @@ def updateData(
 
 
 def updateDatabase(
-        syn, database, new_dataset, databaseSynId,
-        uniqueKeyCols, toDelete=False):
+        syn, database, new_dataset, database_synid,
+        primary_key_cols, to_delete=False):
     """
     Updates synapse tables by a row identifier with another
     dataset that has the same number and order of columns
@@ -686,49 +686,60 @@ def updateDatabase(
     Returns:
         Nothing
     """
-    checkBy = 'UNIQUE_KEY'
+    primary_key = 'UNIQUE_KEY'
     database = database.fillna("")
-    origDatabaseCols = database.columns
-    columnOrder = ['ROW_ID', 'ROW_VERSION']
-    columnOrder.extend(origDatabaseCols.tolist())
+    orig_database_cols = database.columns
+    col_order = ['ROW_ID', 'ROW_VERSION']
+    col_order.extend(orig_database_cols.tolist())
     new_dataset = new_dataset.fillna("")
     # Columns must be in the same order
-    new_dataset = new_dataset[origDatabaseCols]
-    database[uniqueKeyCols] = database[uniqueKeyCols].applymap(str)
-    database[checkBy] = database[
-        uniqueKeyCols].apply(lambda x: ' '.join(x), axis=1)
+    new_dataset = new_dataset[orig_database_cols]
+    database[primary_key_cols] = database[primary_key_cols].applymap(str)
+    database[primary_key] = database[
+        primary_key_cols].apply(lambda x: ' '.join(x), axis=1)
 
-    new_dataset[uniqueKeyCols] = new_dataset[uniqueKeyCols].applymap(str)
-    new_dataset[checkBy] = new_dataset[
-        uniqueKeyCols].apply(lambda x: ' '.join(x), axis=1)
+    new_dataset[primary_key_cols] = new_dataset[primary_key_cols].applymap(str)
+    new_dataset[primary_key] = new_dataset[
+        primary_key_cols].apply(lambda x: ' '.join(x), axis=1)
 
     allupdates = pd.DataFrame()
-    appendrows = _append_rows(new_dataset, database, checkBy)
-    updaterows = _update_rows(new_dataset, database, checkBy)
-    if toDelete:
-        deleterows = _delete_rows(new_dataset, database, checkBy)
+    to_append_rows = _append_rows(new_dataset, database, primary_key)
+    to_update_rows = _update_rows(new_dataset, database, primary_key)
+    if to_delete:
+        to_delete_rows = _delete_rows(new_dataset, database, primary_key)
     else:
-        deleterows = pd.DataFrame()
-    allupdates = allupdates.append(appendrows)
-    allupdates = allupdates.append(updaterows)
+        to_delete_rows = pd.DataFrame()
+    allupdates = allupdates.append(to_append_rows)
+    allupdates = allupdates.append(to_update_rows)
 
     storedatabase = False
-    updateAllFile = os.path.join(SCRIPT_DIR, "toUpdateAll.csv")
-    with open(updateAllFile, "w") as updateFile:
+    update_all_file = os.path.join(SCRIPT_DIR, "toUpdateAll.csv")
+    with open(update_all_file, "w") as updatefile:
         # Must write out the headers in case there are no appends or updates
-        updateFile.write(",".join(columnOrder) + "\n")
+        updatefile.write(",".join(col_order) + "\n")
         if not allupdates.empty:
-            updateFile.write(
-                allupdates[columnOrder].to_csv(
-                    index=False, header=None).replace(".0,", ",").replace(".0\n", "\n"))
+            '''
+            This is done because of pandas typing.
+            An integer column with one NA/blank value
+            will be cast as a double.
+            '''
+            updatefile.write(
+                allupdates[col_order]
+                .to_csv(index=False, header=None)
+                .replace(".0,", ",")
+                .replace(".0\n", "\n"))
             storedatabase = True
-        if not deleterows.empty:
-            updateFile.write(
-                deleterows.to_csv(
-                    index=False, header=None).replace(".0,", ",").replace(".0\n", "\n"))
+        if not to_delete_rows.empty:
+            updatefile.write(
+                to_delete_rows
+                .to_csv(index=False, header=None)
+                .replace(".0,", ",")
+                .replace(".0\n", "\n"))
             storedatabase = True
     if storedatabase:
-        syn.store(synapseclient.Table(databaseSynId, updateAllFile))
+        syn.store(synapseclient.Table(database_synid, update_all_file))
+    # Delete the update file
+    os.unlink(update_all_file)
 
 
 def checkInt(element):
