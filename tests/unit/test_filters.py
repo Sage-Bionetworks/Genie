@@ -3,11 +3,10 @@ import datetime
 import os
 import sys
 from genie.process_functions import seqDateFilter
-
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(SCRIPT_DIR, "../../genie"))
-from database_to_staging import seq_assay_id_filter, reAnnotatePHI
-#     mutation_in_cis_filter, runMAFinBED
+from database_to_staging import seq_assay_id_filter, reAnnotatePHI,\
+                                no_genepanel_filter
 from consortium_to_public import commonVariantFilter
 
 
@@ -197,3 +196,21 @@ def test_commonvariantfilter():
     maf = commonVariantFilter(mutationDf)
     expected = ["test1", "test2", "test3"]
     assert all(maf['FILTER'] == expected)
+
+
+def test_no_genepanel_filter():
+    '''
+    Tests the filter to remove samples
+    with no bed files
+    '''
+    sagetest = ["SAGE-TEST-1"]*51
+    beddf = pd.DataFrame(sagetest)
+    beddf.rename(columns={0: "SEQ_ASSAY_ID"}, inplace=True)
+    sagetest.extend(["SAGE-TEST-2"]*10)
+
+    clinicaldf = pd.DataFrame(sagetest)
+    clinicaldf.rename(columns={0: "SEQ_ASSAY_ID"}, inplace=True)
+    clinicaldf['SAMPLE_ID'] = sagetest
+
+    remove_samples = no_genepanel_filter(clinicaldf, beddf)
+    assert all(remove_samples == ["SAGE-TEST-2"]*10)

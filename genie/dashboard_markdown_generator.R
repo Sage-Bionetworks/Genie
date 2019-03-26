@@ -1,11 +1,18 @@
 #suppressPackageStartupMessages(library(synapserutils))
 suppressPackageStartupMessages(library(argparse))
 parser <- ArgumentParser()
-parser$add_argument("release", help="Release version (ie. 5.3-consortium)")
-parser$add_argument("--staging", action="store_true", help="Use staging files")
-parser$add_argument("--testing", action="store_true", help="Use testing files")
-parser$add_argument("--syn_user", help="Synapse username")
-parser$add_argument("--syn_pass", help="Synapse password")
+parser$add_argument("release",
+                    help = "Release version (ie. 5.3-consortium)")
+parser$add_argument("--staging",
+                    action = "store_true",
+                    help = "Use staging files")
+parser$add_argument("--testing",
+                    action = "store_true",
+                    help = "Use testing files")
+parser$add_argument("--syn_user",
+                    help = "Synapse username")
+parser$add_argument("--syn_pass",
+                    help = "Synapse password")
 
 
 args <- parser$parse_args()
@@ -32,10 +39,12 @@ create_markdown <- function(release, release_folder_synid, template) {
         fill_in_text = release_folder_synid
       }
       if (grepl("%s",line)) {
-        final_text = paste(final_text,sprintf(line,fill_in_text),sep = "\n")
+        final_text = paste(final_text, 
+                           sprintf(line, fill_in_text),
+                           sep = "\n")
         count = count + 1
       } else{
-        final_text = paste(final_text,line,sep = "\n")
+        final_text = paste(final_text, line, sep = "\n")
       }
     } else {
       #This is so that the start of the Rmd isn't an empty line
@@ -43,8 +52,8 @@ create_markdown <- function(release, release_folder_synid, template) {
     }
   }
   #The file that gets written out is the release.Rmd
-  write(final_text, sprintf("%s.Rmd",release))
-  return(sprintf("%s.Rmd",release))
+  write(final_text, sprintf("%s.Rmd", release))
+  return(sprintf("%s.Rmd", release))
 }
 
 
