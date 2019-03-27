@@ -397,34 +397,45 @@ def create_and_archive_maf_database(syn, database_synid_mappingdf):
     Return:
         Editted database to synapse id mapping dataframe
     '''
-    maf_database_synid = process_functions.getDatabaseSynId(syn, "vcf2maf", databaseToSynIdMappingDf=database_synid_mappingdf)
+    maf_database_synid = process_functions.getDatabaseSynId(
+        syn, "vcf2maf", databaseToSynIdMappingDf=database_synid_mappingdf)
     maf_database_ent = syn.get(maf_database_synid)
     maf_columns = list(syn.getTableColumns(maf_database_synid))
-    schema = synapseclient.Schema(name='Narrow MAF {current_time} Database'.format(current_time=time.time()), columns=maf_columns, parent=process_functions.getDatabaseSynId(syn, "main", databaseToSynIdMappingDf=database_synid_mappingdf))
+    schema = synapseclient.Schema(
+        name='Narrow MAF {current_time} Database'.format(
+            current_time=time.time()),
+        columns=maf_columns,
+        parent=process_functions.getDatabaseSynId(
+            syn, "main", databaseToSynIdMappingDf=database_synid_mappingdf))
     schema.primaryKey = maf_database_ent.primaryKey
     new_maf_database = syn.store(schema)
-    #Store in the new database synid
-    database_synid_mappingdf['Id'][database_synid_mappingdf['Database'] == 'vcf2maf'] = new_maf_database.id
-    #databaseToSynIdMappingDf['Id'][0] = 
-    #syn.store(synapseclient.Table(process_functions.getDatabaseSynId(syn, "dbMapping", databaseToSynIdMappingDf=databaseToSynIdMappingDf),databaseToSynIdMappingDf))
-    #if not staging and not testing:
-        #Make sure to store the newly created maf db synid into the staging synapse mapping
-    #vcf2maf_mapping = syn.tableQuery("SELECT * FROM syn12094210 where Database = 'vcf2maf'")
-    vcf2maf_mappingdf = database_synid_mappingdf[database_synid_mappingdf['Database'] == 'vcf2maf']
-    #vcf2maf_mappingdf['Id'][0] = newMafDb.id
-    #Update this synid later
-    syn.store(synapseclient.Table("syn12094210",vcf2maf_mappingdf))
-    #Move and archive old mafdatabase (This is the staging synid)
+    # Store in the new database synid
+    database_synid_mappingdf['Id'][
+        database_synid_mappingdf['Database'] == 'vcf2maf'] = new_maf_database.id
+    # databaseToSynIdMappingDf['Id'][0] = 
+    # syn.store(synapseclient.Table(process_functions.getDatabaseSynId(syn, "dbMapping", databaseToSynIdMappingDf=databaseToSynIdMappingDf),databaseToSynIdMappingDf))
+    # if not staging and not testing:
+    # Make sure to store the newly created maf db synid into the staging synapse mapping
+    # vcf2maf_mapping = syn.tableQuery("SELECT * FROM syn12094210 where Database = 'vcf2maf'")
+    vcf2maf_mappingdf = database_synid_mappingdf[
+        database_synid_mappingdf['Database'] == 'vcf2maf']
+    # vcf2maf_mappingdf['Id'][0] = newMafDb.id
+    # Update this synid later
+    syn.store(synapseclient.Table("syn12094210", vcf2maf_mappingdf))
+    # Move and archive old mafdatabase (This is the staging synid)
     maf_database_ent.parentId = "syn7208886"
     maf_database_ent.name = "ARCHIVED " + maf_database_ent.name
     syn.store(maf_database_ent)
-    #maf_database_synid = new_maf_database.id
-    #Remove can download permissions from project GENIE team
+    # maf_database_synid = new_maf_database.id
+    # Remove can download permissions from project GENIE team
     syn.setPermissions(new_maf_database.id, 3326313, [])
     return(database_synid_mappingdf)
 
 
-def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf, thread, testing, oncotreeLink):
+def validation(
+        syn, center, process,
+        center_mapping_df, databaseToSynIdMappingDf,
+        thread, testing, oncotreeLink):
     '''
     Validation of all center files
 
@@ -440,42 +451,74 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
     Returns:
         dataframe: Valid files
     '''
-    centerInputSynId = center_mapping_df['inputSynId'][center_mapping_df['center'] == center][0]
+    centerInputSynId = center_mapping_df['inputSynId'][
+        center_mapping_df['center'] == center][0]
     logger.info("Center: " + center)
     allFiles = get_center_input_files(syn, centerInputSynId, center, process)
 
-    allFiles = pd.DataFrame(allFiles,columns=['synId','filePaths'])
-    #If a center has no files, then return empty list
+    allFiles = pd.DataFrame(allFiles, columns=['synId', 'filePaths'])
+    # If a center has no files, then return empty list
     if allFiles.empty:
         logger.info("%s has not uploaded any files" % center)
         return([])
     else:
-        #Make sure the vcf validation statuses don't get wiped away
+        # Make sure the vcf validation statuses don't get wiped away
         if process != "vcf":
             addToQuery = "and name not like '%.vcf'"
         else:
             addToQuery = ''
-        validationStatus = syn.tableQuery("SELECT * FROM %s where center = '%s' %s" % (process_functions.getDatabaseSynId(syn, "validationStatus", databaseToSynIdMappingDf=databaseToSynIdMappingDf), center, addToQuery))
-        errorTracker = syn.tableQuery("SELECT * FROM %s where center = '%s' %s"  % (process_functions.getDatabaseSynId(syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf), center,addToQuery))
-        #VALIDATE FILES
+        validationStatus = syn.tableQuery(
+            "SELECT * FROM {} where center = '{}' {}".format(
+                process_functions.getDatabaseSynId(
+                    syn, "validationStatus",
+                    databaseToSynIdMappingDf=databaseToSynIdMappingDf),
+                center,
+                addToQuery))
+
+        errorTracker = syn.tableQuery(
+            "SELECT * FROM {} where center = '{}' {}".format(
+                process_functions.getDatabaseSynId(
+                    syn, "errorTracker",
+                    databaseToSynIdMappingDf=databaseToSynIdMappingDf),
+                center,
+                addToQuery))
+
+        # VALIDATE FILES
         validationStatusDf = validationStatus.asDataFrame()
         errorTrackerDf = errorTracker.asDataFrame()
-        validated = allFiles.apply(lambda fileinfo: validatefile(fileinfo, syn, validationStatusDf, errorTrackerDf, center, thread, testing, oncotreeLink), axis=1)
+        validated = allFiles.apply(
+            lambda fileinfo: validatefile(
+                fileinfo, syn, validationStatusDf,
+                errorTrackerDf, center, thread,
+                testing, oncotreeLink), axis=1)
+
         inputValidStatus = []
         invalidErrors = []
         for inputStat, invalErrors in validated:
             inputValidStatus.extend(inputStat)
             if invalErrors is not None:
                 invalidErrors.extend(invalErrors)
-        inputValidStatus = pd.DataFrame(inputValidStatus, columns = ["id",'path','md5','status','name','modifiedOn','fileType'])
+        inputValidStatus = pd.DataFrame(
+            inputValidStatus,
+            columns=[
+                "id", 'path', 'md5', 'status',
+                'name', 'modifiedOn', 'fileType'])
+
         logger.info("CHECK FOR DUPLICATED FILES")
-        ##### DUPLICATED FILES ######
-        #check for duplicated filenames.  There should be no duplication, files should be uploaded as new versions and the entire dataset should be uploaded everytime
-        #cbs and seg files should not be duplicated.  There can only be one
-        duplicatedFiles = inputValidStatus[inputValidStatus['name'].duplicated(keep=False)]
-        cbsSegBool = [os.path.basename(i).endswith('.cbs') or os.path.basename(i).endswith('.seg') for i in inputValidStatus['name']]
+        '''
+        Check for duplicated filenames.
+        There should be no duplication, files should be uploaded as
+        new versions and the entire dataset should be uploaded everytime
+        cbs and seg files should not be duplicated.  There can only be one
+        '''
+        duplicatedFiles = inputValidStatus[
+            inputValidStatus['name'].duplicated(keep=False)]
+        cbsSegBool = [
+            os.path.basename(i).endswith('.cbs') or
+            os.path.basename(i).endswith('.seg')
+            for i in inputValidStatus['name']]
         cbsSegFiles = inputValidStatus[cbsSegBool]
-        if len(cbsSegFiles) >1:
+        if len(cbsSegFiles) > 1:
             duplicatedFiles = duplicatedFiles.append(cbsSegFiles)
         # nodups = ["data_mutations_extended"]
         # allDuplicatedFiles = []
@@ -488,7 +531,7 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
         duplicatedFiles.drop_duplicates("id",inplace=True)
         inputValidStatus['status'][inputValidStatus['id'].isin(duplicatedFiles['id'])] = "INVALID"
         duplicatedFiles['errors'] = "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME"
-        #Send an email if there are any duplicated files
+        # Send an email if there are any duplicated files
         if not duplicatedFiles.empty:
             incorrectFiles = ", ".join([name for synId, name in zip(duplicatedFiles['id'],duplicatedFiles['name'])])
             incorrectEnt = syn.get(duplicatedFiles['id'].iloc[0])
