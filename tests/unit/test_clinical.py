@@ -1,7 +1,7 @@
 import synapseclient
 import pandas as pd
 import mock
-from genie.clinical import clinical
+from genie import clinical
 import pytest
 import datetime
 

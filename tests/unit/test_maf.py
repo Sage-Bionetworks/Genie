@@ -2,8 +2,8 @@ import synapseclient
 import pandas as pd
 import mock
 import pytest
-from genie.maf import maf
-from genie.mafSP import mafSP
+from genie import maf
+from genie import mafSP
 
 syn = mock.create_autospec(synapseclient.Synapse)
 

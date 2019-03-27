@@ -2,7 +2,7 @@ import synapseclient
 import pandas as pd
 import mock
 import pytest
-from genie.patientCounts import patientCounts
+from genie import patientCounts
 
 oncotree_url = 'http://oncotree.mskcc.org/api/tumor_types.txt?version=oncotree_latest_stable'
 json_oncotreeurl = "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"

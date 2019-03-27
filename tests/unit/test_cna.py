@@ -2,7 +2,7 @@ import synapseclient
 import pandas as pd
 import mock
 import pytest
-from genie.cna import cna
+from genie import cna
 
 
 def createMockTable(dataframe):

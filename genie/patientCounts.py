@@ -1,13 +1,14 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import logging
 import os
 import pandas as pd
 import re
 logger = logging.getLogger(__name__)
 
-class patientCounts(example_filetype_format.FileTypeFormat):
-    
+
+class patientCounts(FileTypeFormat):
+
     _fileType = "patientCounts"
 
     _process_kwargs = ["newPath", "oncotreeLink", "databaseSynId"]
@@ -43,15 +44,8 @@ class patientCounts(example_filetype_format.FileTypeFormat):
             patientCountsDf['PRIMARY_CODE'] = patientCountsDf.ONCOTREE_CODE.apply(lambda code: process_functions.getPrimary(code, oncotreeDict, primary))
         return(patientCountsDf)
 
-    def process_steps(self, filePath, **kwargs):
-        logger.info('PROCESSING %s' % filePath)
-
-        newPath = kwargs['newPath']
-        oncotreeLink = kwargs['oncotreeLink']
-        databaseSynId = kwargs['databaseSynId']
-
-        patientCounts = pd.read_csv(filePath, sep="\t",comment="#")
-        patientCountsDf = self._process(patientCounts, oncotreeLink)
+    def process_steps(self, patientCountsDf, newPath, oncotreeLink, databaseSynId):
+        patientCountsDf = self._process(patientCountsDf, oncotreeLink)
         process_functions.updateData(self.syn, databaseSynId, patientCountsDf, self.center)
         patientCountsDf.to_csv(newPath, sep="\t",index=False)
         return(newPath)

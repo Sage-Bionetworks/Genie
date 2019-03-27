@@ -2,7 +2,7 @@ import synapseclient
 import pandas as pd
 import mock
 import pytest
-from genie.fusions import fusions
+from genie import fusions
 
 
 def createMockTable(dataframe):

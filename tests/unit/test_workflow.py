@@ -1,7 +1,7 @@
 import synapseclient
 import mock
 import pytest
-from genie.workflow import workflow
+from genie import workflow
 
 syn = mock.create_autospec(synapseclient.Synapse)
 workflowClass = workflow(syn, "SAGE")

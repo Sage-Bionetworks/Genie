@@ -1,7 +1,7 @@
 import synapseclient
 import pandas as pd
 import mock
-from genie.vitalStatus import vitalStatus
+from genie import vitalStatus
 import pytest
 
 syn = mock.create_autospec(synapseclient.Synapse)

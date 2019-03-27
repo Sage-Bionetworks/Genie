@@ -2,7 +2,7 @@ import synapseclient
 import pandas as pd
 import mock
 import pytest
-from genie.mutationsInCis import mutationsInCis
+from genie import mutationsInCis
 
 
 def createMockTable(dataframe):

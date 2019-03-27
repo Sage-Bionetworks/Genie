@@ -2,9 +2,8 @@ import synapseclient
 import pandas as pd
 import mock
 import pytest
-from genie.sampleRetraction import sampleRetraction
-from genie.patientRetraction import patientRetraction
-
+from genie import sampleRetraction
+from genie import patientRetraction
 
 syn = mock.create_autospec(synapseclient.Synapse)
 

@@ -1,11 +1,12 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import logging
 import os
 import pandas as pd
 logger = logging.getLogger(__name__)
 
-class seg(example_filetype_format.FileTypeFormat):
+
+class seg(FileTypeFormat):
 
     _fileType = "seg"
 
@@ -27,16 +28,7 @@ class seg(example_filetype_format.FileTypeFormat):
         seg['NUMMARK'] = seg['NUMMARK'].astype(int)
         return(seg)
 
-    def process_steps(self, filePath, **kwargs):
-        #For CBS files
-        if kwargs.get("path") is not None:
-            filePath = kwargs['path']
-            newPath = filePath
-        else:
-            newPath = kwargs['newPath']
-        logger.info('PROCESSING %s' % filePath)
-        databaseSynId = kwargs['databaseSynId']
-        seg = pd.read_csv(filePath, sep="\t")
+    def process_steps(self, seg, newPath, databaseSynId):
         seg = self._process(seg)
         process_functions.updateData(self.syn, databaseSynId, seg, self.center, toDelete=True)
         seg.to_csv(newPath,sep="\t",index=False)

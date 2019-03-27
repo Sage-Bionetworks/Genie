@@ -2,8 +2,8 @@ import synapseclient
 import pandas as pd
 import mock
 import pytest
-from genie.bed import bed
-from genie.bedSP import bedSP
+from genie import bed
+from genie import bedSP
 
 
 def create_mock_table(dataframe):

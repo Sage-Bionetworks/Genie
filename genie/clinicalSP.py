@@ -1,12 +1,13 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import os
 import logging
 import pandas as pd
 logger = logging.getLogger(__name__)
 
-class clinicalSP(example_filetype_format.FileTypeFormat):
-    
+
+class clinicalSP(FileTypeFormat):
+
     _fileType = "clinicalSP"
 
     # VALIDATE FILENAME
@@ -19,11 +20,7 @@ class clinicalSP(example_filetype_format.FileTypeFormat):
         clinicalSPDf['PATIENT_ID'] = [process_functions.checkGenieId(sample, self.center) for sample in clinicalSPDf['PATIENT_ID']]
         return(clinicalSPDf)
 
-    def process_steps(self, filePath, **kwargs):
-        logger.info('PROCESSING %s' % filePath)
-        newPath = kwargs['newPath']
-        databaseSynId = kwargs['databaseSynId']
-        clinicalSPDf = pd.read_csv(filePath, sep="\t", comment="#")
+    def process_steps(self, clinicalSPDf, newPath, databaseSynId):
         clinicalSPDf = self._process(clinicalSPDf)
         process_functions.updateData(self.syn, databaseSynId, clinicalSPDf, self.center)
         clinicalSPDf.to_csv(newPath, sep="\t",index=False)

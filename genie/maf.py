@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import os
 import logging
 import subprocess
@@ -7,12 +7,13 @@ import pandas as pd
 import synapseclient
 logger = logging.getLogger(__name__)
 
-class maf(example_filetype_format.FileTypeFormat):
+
+class maf(FileTypeFormat):
 
     _fileType = "maf"
 
-    _process_kwargs = ["databaseToSynIdMappingDf","processing","path_to_GENIE",
-                       "vcf2mafPath","veppath","vepdata",'validMAFs','reference']
+    _process_kwargs = ["processing", "path_to_GENIE", 'databaseToSynIdMappingDf',
+                       "vcf2mafPath","veppath","vepdata",'reference']
 
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "data_mutations_extended_%s.txt" % self.center
@@ -50,72 +51,56 @@ class maf(example_filetype_format.FileTypeFormat):
             self.syn.store(synapseclient.File(filePath, parentId=centerMafSynId))
         return(filePath)
 
-    def process_helper(self, filePath, path_to_GENIE, mafSynId, centerMafSynId,
-                       vcf2mafPath, veppath, vepdata, reference=None):
-        logger.info('MAF2MAF %s' % filePath)
-        fileName = "data_mutations_extended_%s_MAF.txt" % self.center
-        newMafPath = os.path.join(path_to_GENIE,self.center,"staging",fileName)
-        narrowMafPath = os.path.join(path_to_GENIE,self.center,"staging","data_mutations_extended_%s_MAF_narrow.txt" % self.center)
-        narrowMafColumns = [col['name'] for col in self.syn.getTableColumns(mafSynId) if col['name'] != 'inBED']
-        #Strips out windows indentations \r
-        command = ['dos2unix',filePath]
-        subprocess.check_call(command)
-        tempdir = os.path.join(path_to_GENIE, self.center)
-        commandCall = ["perl",os.path.join(vcf2mafPath,"maf2maf.pl"),
-                       "--input-maf",filePath,
-                       "--output-maf",newMafPath,
-                       "--vep-fork", '8',
-                       "--tmp-dir",tempdir,
-                       '--vep-path', veppath,
-                       '--vep-data', vepdata,
-                       #'--ref-fasta','/root/.vep/homo_sapiens/86_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa',
-                       "--custom-enst", os.path.join(vcf2mafPath,"data/isoform_overrides_uniprot")]
-        if reference is not None:
-            commandCall.extend(["--ref-fasta",reference])
-        maf = subprocess.check_call(commandCall) 
-
-        process_functions.rmFiles(tempdir, recursive=False)
-        open(narrowMafPath,"w").close()
-        if os.path.exists(newMafPath):
-            #This needs to switch to streaming at some point
-            mafDf = pd.read_csv(newMafPath,sep="\t",comment="#")
-            mafDf = self.formatMAF(mafDf)
-            self.createFinalMaf(mafDf, newMafPath, maf=True)
-            narrowMafDf = mafDf[narrowMafColumns]
-            self.createFinalMaf(narrowMafDf, narrowMafPath, maf=True)
-            #These functions have to be next to each other, because no modifications can happen 
-            #Store Narrow MAF into db
-            if self._fileType == "maf":
-                self.storeProcessedMaf(narrowMafPath, mafSynId, centerMafSynId, isNarrow=True)
-            #Store MAF flat file into synapse
-            self.storeProcessedMaf(newMafPath, mafSynId, centerMafSynId)
-        else:
-            logger.error('ERROR PROCESSING %s' % filePath)
-            filePath = "NOTPROCESSED"
-        return(filePath)
-
-    def process_steps(self, filePath, **kwargs): 
-        processing = kwargs['processing']
-        mutationFiles = []
+    def process_steps(self, filePath, path_to_GENIE, databaseToSynIdMappingDf,
+                      vcf2mafPath, veppath, vepdata, processing, reference=None):
         if processing == self._fileType:
-            databaseToSynIdMappingDf = kwargs['databaseToSynIdMappingDf']
-            vcf2mafPath = kwargs['vcf2mafPath']
-            veppath = kwargs['veppath']
-            vepdata = kwargs['vepdata']
-            validMAFs = kwargs['validMAFs']
-            path_to_GENIE = kwargs['path_to_GENIE']
-            reference = kwargs['reference']
             mafProcessing = "mafSP" if self._fileType == "mafSP" else 'vcf2maf'
             mafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == mafProcessing][0]
-            centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
-            for filePath in validMAFs:
-                mafFilePath = self.process_helper(filePath, path_to_GENIE, mafSynId, centerMafSynId,
-                                             vcf2mafPath, veppath, vepdata, reference=reference)
-                mutationFiles.append(mafFilePath)
-            logger.info("UPDATED DATABASE WITH: %s" % ", ".join(mutationFiles))
+            centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]        # retractedSampleSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "sampleRetraction"][0]
+
+            logger.info('MAF2MAF %s' % filePath)
+            fileName = "data_mutations_extended_%s_MAF.txt" % self.center
+            newMafPath = os.path.join(path_to_GENIE,self.center,"staging",fileName)
+            narrowMafPath = os.path.join(path_to_GENIE,self.center,"staging","data_mutations_extended_%s_MAF_narrow.txt" % self.center)
+            narrowMafColumns = [col['name'] for col in self.syn.getTableColumns(mafSynId) if col['name'] != 'inBED']
+            #Strips out windows indentations \r
+            command = ['dos2unix',filePath]
+            subprocess.check_call(command)
+            tempdir = os.path.join(path_to_GENIE, self.center)
+            commandCall = ["perl",os.path.join(vcf2mafPath,"maf2maf.pl"),
+                           "--input-maf",filePath,
+                           "--output-maf",newMafPath,
+                           "--vep-fork", '8',
+                           "--tmp-dir",tempdir,
+                           '--vep-path', veppath,
+                           '--vep-data', vepdata,
+                           #'--ref-fasta','/root/.vep/homo_sapiens/86_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa',
+                           "--custom-enst", os.path.join(vcf2mafPath,"data/isoform_overrides_uniprot")]
+            if reference is not None:
+                commandCall.extend(["--ref-fasta",reference])
+            maf = subprocess.check_call(commandCall) 
+
+            process_functions.rmFiles(tempdir, recursive=False)
+            open(narrowMafPath,"w").close()
+            if os.path.exists(newMafPath):
+                #This needs to switch to streaming at some point
+                mafDf = pd.read_csv(newMafPath,sep="\t",comment="#")
+                mafDf = self.formatMAF(mafDf)
+                self.createFinalMaf(mafDf, newMafPath, maf=True)
+                narrowMafDf = mafDf[narrowMafColumns]
+                self.createFinalMaf(narrowMafDf, narrowMafPath, maf=True)
+                #These functions have to be next to each other, because no modifications can happen 
+                #Store Narrow MAF into db
+                if self._fileType == "maf":
+                    self.storeProcessedMaf(narrowMafPath, mafSynId, centerMafSynId, isNarrow=True)
+                #Store MAF flat file into synapse
+                self.storeProcessedMaf(newMafPath, mafSynId, centerMafSynId)
+            else:
+                logger.error('ERROR PROCESSING %s' % filePath)
+                filePath = "NOTPROCESSED"
         else:
             logger.info("Please run with `--process %s` parameter if you want to reannotate the %s files" % (self._fileType, self._fileType))
-        return(mutationFiles)
+        return(filePath)
 
     def _validate(self, mutationDF):
         """
