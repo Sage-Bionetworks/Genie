@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+
+from genie import PROCESS_FILES
 import pandas as pd
 assert pd.__version__ >= "0.20.0", "Please make sure your pandas version is at least 0.20.0.  If not, please do pip install pandas --upgrade"
 import synapseclient
@@ -12,16 +14,14 @@ import datetime
 from functools import partial
 import re
 import warnings
-from genie import PROCESS_FILES
 
-warnings.simplefilter(action='ignore', category=pd.errors.DtypeWarning)
+#warnings.simplefilter(action='ignore', category=pd.errors.DtypeWarning)
 try:
     from urlparse import urlparse
 except ImportError:
     from urllib.parse import urlparse
 import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('genie')
 
 # Validates annotations on Synapse
 # def validateAnnotations(fileList):

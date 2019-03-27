@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import os
 import logging
 import pandas as pd
@@ -60,6 +60,7 @@ def validateSymbol(x, genePositionDf, returnMappedDf=False):
     if toMap:
         chromRows = genePositionDf[genePositionDf['chromosome_name'] == str(x['Chromosome'])]
         startRows = chromRows[chromRows['start_position'] <= x['Start_Position']]
+
         endRows = startRows[startRows['end_position'] >= x['End_Position']]
         # geneDiff = chromRows['end_position'] - chromRows['start_position']
         bedLength = x['End_Position'] - x['Start_Position']
@@ -113,11 +114,11 @@ def validateSymbol(x, genePositionDf, returnMappedDf=False):
         return(valid)
 
 
-class bed(example_filetype_format.FileTypeFormat):
+class bed(FileTypeFormat):
 
     _fileType = "bed"
 
-    _process_kwargs = ["newPath", "parentId", "databaseSynId"]
+    _process_kwargs = ["newPath", "parentId", "databaseSynId",'seq_assay_id']
 
     def _get_dataframe(self, filePathList):
         filePath = filePathList[0]
@@ -195,14 +196,12 @@ class bed(example_filetype_format.FileTypeFormat):
         bed['Chromosome'] = bed['Chromosome'].astype(str)
         return(bed)
 
-    def process_steps(self, filePath, **kwargs):
-        newPath = kwargs['newPath']
-        parentId = kwargs['parentId']
-        databaseSynId = kwargs['databaseSynId']
-        logger.info('PROCESSING %s' % filePath)
-        #standardize all SEQ_ASSAY_IDs
-        seq_assay_id = os.path.basename(filePath).replace(".bed","").upper()
-        gene = pd.read_csv(filePath, sep="\t",header=None)
+    def preprocess(self, filePath):
+        seq_assay_id = os.path.basename(filePath).replace(".bed", "")
+        seq_assay_id = seq_assay_id.upper().replace("_", "-")
+        return({'seq_assay_id': seq_assay_id})
+
+    def process_steps(self, gene, newPath, parentId, databaseSynId, seq_assay_id):
         bed = self._process(gene, seq_assay_id, newPath, parentId)
         process_functions.updateData(self.syn, databaseSynId, bed, seq_assay_id, filterByColumn="SEQ_ASSAY_ID", toDelete=True)
         bed.to_csv(newPath, sep="\t",index=False)

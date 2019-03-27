@@ -5,8 +5,8 @@ from nose.tools import assert_raises
 import os
 import sys
 
-from genie.maf import maf
-from genie.mafSP import mafSP
+from genie import maf
+from genie import mafSP
 
 def test_processing():
 

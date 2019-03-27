@@ -383,6 +383,27 @@ def seq_assay_id_filter(clinicaldf):
     return(clinicaldf.SAMPLE_ID)
 
 
+def no_genepanel_filter(clinicaldf, beddf):
+    '''
+    Remove samples that don't have bed files associated with
+    them
+
+    Args:
+        clinicaldf:  Clinical data
+        beddf: bed data
+
+    Returns:
+        series: samples to remove
+    '''
+
+    logger.info("NO GENE PANEL FILTER")
+    has_seq_assay = clinicaldf['SEQ_ASSAY_ID'].isin(beddf['SEQ_ASSAY_ID'])
+    remove_samples = clinicaldf['SAMPLE_ID'][~has_seq_assay]
+    logger.info("Removing samples with no bed file: {}".format(
+        ",".join(remove_samples)))
+    return(remove_samples)
+
+
 def stagingToCbio(
         syn, processingDate, genieVersion,
         CENTER_MAPPING_DF, databaseSynIdMappingDf,
@@ -443,6 +464,8 @@ def stagingToCbio(
         databaseSynIdMappingDf['Database'] == "patient"][0]
     sampleSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == "sample"][0]
+    bedSynId = databaseSynIdMappingDf['Id'][
+        databaseSynIdMappingDf['Database'] == "bed"][0]
 
     # Using center mapping df to gate centers in release fileStage
     patient = syn.tableQuery(
@@ -451,9 +474,15 @@ def stagingToCbio(
     sample = syn.tableQuery(
         "SELECT * FROM {} where CENTER in ('{}')".format(
             sampleSynId, "','".join(CENTER_MAPPING_DF.center)))
+    bed = syn.tableQuery(
+        "SELECT Chromosome,Start_Position,End_Position,Hugo_Symbol,ID,"
+        "SEQ_ASSAY_ID,Feature_Type,includeInPanel FROM"
+        " {} where CENTER in ('{}')".format(
+            bedSynId, "','".join(CENTER_MAPPING_DF.center)))
     patientDf = patient.asDataFrame()
     sampleDf = sample.asDataFrame()
     # del sampleDf['AGE_AT_SEQ_REPORT_NUMERICAL']
+    bedDf = bed.asDataFrame()
     del sampleDf['CENTER']
     # del patientDf['BIRTH_YEAR_NUMERICAL']
     # Clinical release scope filter
@@ -505,19 +534,22 @@ def stagingToCbio(
         genieVersion=genieVersion, test=test,
         genie_user=genie_user, genie_pass=genie_pass)
 
+    remove_no_genepanel_samples = no_genepanel_filter(clinicalDf, bedDf)
+
     logger.info("SEQ DATE FILTER")
     remove_seqDate_samples = seq_date_filter(
         clinicalDf, processingDate, consortiumReleaseCutOff)
     # Only certain samples are removed for the files that go into
     # staging center folder
-    removeForCenterConsortiumSamples = remove_mutationInCis_samples
+    removeForCenterConsortiumSamples = set(remove_mutationInCis_samples).union(
+        set(remove_no_genepanel_samples))
     # Most filteres are applied for the files that go into the merged
     # consortium release
     removeForMergedConsortiumSamples = set(remove_seqDate_samples)
     # set(remove_seqAssayId_samples)#.union(set(remove_seqDate_samples))
     removeForMergedConsortiumSamples = \
-        set(removeForMergedConsortiumSamples).union(set(
-            removeForCenterConsortiumSamples))
+        removeForMergedConsortiumSamples.union(
+            removeForCenterConsortiumSamples)
 
     logger.info("ADD CANCER TYPES")
     # This removes support for both oncotree urls (only support json)
@@ -1003,14 +1035,6 @@ def stagingToCbio(
 
     # BED
     logger.info("STORING COMBINED BED FILE")
-    bedSynId = databaseSynIdMappingDf['Id'][
-        databaseSynIdMappingDf['Database'] == "bed"][0]
-    bed = syn.tableQuery(
-        "SELECT Chromosome,Start_Position,End_Position,Hugo_Symbol,ID,"
-        "SEQ_ASSAY_ID,Feature_Type,includeInPanel FROM"
-        " {} where CENTER in ('{}')".format(
-            bedSynId, "','".join(CENTER_MAPPING_DF.center)))
-    bedDf = bed.asDataFrame()
     if not current_release_staging:
         for seqAssay in bedDf['SEQ_ASSAY_ID'].unique():
             bedSeqDf = bedDf[bedDf['SEQ_ASSAY_ID'] == seqAssay]

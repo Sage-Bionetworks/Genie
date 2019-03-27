@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import os
 import logging
 import pandas as pd
@@ -61,7 +61,7 @@ def remove_greaterthan_lessthan_str(col):
     return(col)
 
 
-class clinical(example_filetype_format.FileTypeFormat):
+class clinical(FileTypeFormat):
 
     _fileType = "clinical"
 
@@ -70,7 +70,7 @@ class clinical(example_filetype_format.FileTypeFormat):
     #     "parentId", "retractedSampleSynId", "retractedPatientSynId"]
 
     _process_kwargs = [
-        "newPath", "patientSynId", "sampleSynId", "parentId", "oncotreeLink"]
+        "newPath", "parentId", "databaseToSynIdMappingDf", "oncotreeLink"]
 
     _validation_kwargs = ["oncotreeLink"]
 
@@ -197,25 +197,6 @@ class clinical(example_filetype_format.FileTypeFormat):
         self.syn.store(synapseclient.File(path, parent=stagingSynId))
         os.remove(path)
 
-    def preprocess(self, filePath, **kwargs):
-        databaseToSynIdMappingDf = kwargs['databaseToSynIdMappingDf']
-        patientSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == "patient"][0]
-        sampleSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == "sample"][0]
-        # retractedSampleSynId = databaseToSynIdMappingDf.Id[
-        #     databaseToSynIdMappingDf['Database'] == "sampleRetraction"][0]
-        # retractedPatientSynId = databaseToSynIdMappingDf.Id[
-        #     databaseToSynIdMappingDf['Database'] == "patientRetraction"][0]
-        # path = process_helper(
-        #     syn, filePath, center, newPath,
-        #     patientSynId, sampleSynId, centerStagingSynId, fileType)
-        return({
-            "patientSynId": patientSynId,
-            "sampleSynId": sampleSynId})
-        # "retractedSampleSynId":retractedSampleSynId,
-        # "retractedPatientSynId":retractedPatientSynId})
-
     def _process(self, clinical, clinicalTemplate):
         # Capitalize all clinical dataframe columns
         clinical.columns = [col.upper() for col in clinical.columns]
@@ -247,17 +228,14 @@ class clinical(example_filetype_format.FileTypeFormat):
 
         return(clinicalRemapped)
 
-    def process_steps(self, filePath, **kwargs):
-        logger.info('PROCESSING %s' % filePath)
-        patientSynId = kwargs['patientSynId']
-        sampleSynId = kwargs['patientSynId']
-        newPath = kwargs['newPath']
-        patientSynId = kwargs['patientSynId']
-        sampleSynId = kwargs['sampleSynId']
-        centerStagingSynId = kwargs['parentId']
-        oncotreeLink = kwargs['oncotreeLink']
-        # retractedSampleSynId = kwargs['retractedSampleSynId']
-        # retractedPatientSynId = kwargs['retractedPatientSynId']
+    def process_steps(
+            self, filePath,
+            databaseToSynIdMappingDf, newPath,
+            parentId, oncotreeLink):
+        patientSynId = databaseToSynIdMappingDf.Id[
+            databaseToSynIdMappingDf['Database'] == "patient"][0]
+        sampleSynId = databaseToSynIdMappingDf.Id[
+            databaseToSynIdMappingDf['Database'] == "sample"][0]
 
         clinicalDf = pd.read_csv(filePath, sep="\t", comment="#")
 
@@ -293,7 +271,7 @@ class clinical(example_filetype_format.FileTypeFormat):
                 patientCols].drop_duplicates("PATIENT_ID")
             self.uploadMissingData(
                 patientClinical, "PATIENT_ID",
-                patientSynId, centerStagingSynId)
+                patientSynId, parentId)
             # retractedPatientSynId)
             process_functions.updateData(
                 self.syn, patientSynId, patientClinical,
@@ -322,7 +300,7 @@ class clinical(example_filetype_format.FileTypeFormat):
             sampleClinical = sampleClinical[sampleClinical[
                 'ONCOTREE_CODE'].isin(oncotree_mapping['ONCOTREE_CODE'])]
             self.uploadMissingData(
-                sampleClinical, "SAMPLE_ID", sampleSynId, centerStagingSynId)
+                sampleClinical, "SAMPLE_ID", sampleSynId, parentId)
             # ,retractedSampleSynId)
             process_functions.updateData(
                 self.syn, sampleSynId, sampleClinical,
