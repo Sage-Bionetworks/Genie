@@ -5,8 +5,8 @@ from nose.tools import assert_raises
 import os
 import sys
 
-from genie.bed import bed
-from genie.bedSP import bedSP
+from genie import bed
+from genie import bedSP
 
 def test_processing():
     def createMockTable(dataframe):

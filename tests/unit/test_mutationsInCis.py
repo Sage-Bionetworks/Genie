@@ -5,7 +5,7 @@ from nose.tools import assert_raises
 import os
 import sys
 
-from genie.mutationsInCis import mutationsInCis
+from genie import mutationsInCis
 
 def test_processing():
     pass

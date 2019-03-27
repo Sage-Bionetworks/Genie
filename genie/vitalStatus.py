@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import os
 import logging
 import pandas as pd
@@ -7,14 +7,13 @@ import datetime
 logger = logging.getLogger(__name__)
 
 
-class vitalStatus(example_filetype_format.FileTypeFormat):
+class vitalStatus(FileTypeFormat):
 
     _fileType = "vitalStatus"
 
     ## VALIDATING FILENAME
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "vital_status.txt"
-        
 
     def _validate(self, vitalStatusDf):
         total_error = ""
@@ -75,27 +74,15 @@ class vitalStatus(example_filetype_format.FileTypeFormat):
             total_error += "Vital status file: Must have DEAD column.\n"
 
         return(total_error, warning)
-    
 
     def _process(self, vitalStatusDf):
-        #vitalStatus_mapping = process_functions.getGenieMapping(self.syn, "syn10888675")
-
-        #noPhiCols = pd.Series(['PATIENT_ID','YEAR_DEATH','YEAR_CONTACT','INT_CONTACT','INT_DOD','DEAD'])
-
-        #vitalStatusDf.VITAL_STATUS = [process_functions.getCODE(vitalStatus_mapping, status) for status in vitalStatusDf.VITAL_STATUS]
         vitalStatusDf.PATIENT_ID = [process_functions.checkGenieId(patient, self.center) for patient in vitalStatusDf.PATIENT_ID]
         vitalStatusDf['CENTER'] = self.center
-
         return(vitalStatusDf)
 
     # PROCESS
-    def process_steps(self, filePath, **kwargs):
-        logger.info('PROCESSING %s' % filePath)
-        databaseSynId = kwargs['databaseSynId']
-        newPath = kwargs['newPath']
-        vitalStatusDf = pd.read_csv(filePath, sep="\t", comment="#")
+    def process_steps(self, vitalStatusDf, databaseSynId, newPath):
         vitalStatusDf = self._process(vitalStatusDf)
-        #cols = vitalStatusDf.columns
         process_functions.updateData(self.syn, databaseSynId, vitalStatusDf, self.center)
         vitalStatusDf.to_csv(newPath, sep="\t",index=False)
         return(newPath)
