@@ -528,44 +528,77 @@ def validation(
         #       allDuplicatedFiles.extend(checkDups)
         # duplicatedFiles = duplicatedFiles.append(inputValidStatus[inputValidStatus['name'].isin(allDuplicatedFiles)])
 
-        duplicatedFiles.drop_duplicates("id",inplace=True)
-        inputValidStatus['status'][inputValidStatus['id'].isin(duplicatedFiles['id'])] = "INVALID"
-        duplicatedFiles['errors'] = "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME"
+        duplicatedFiles.drop_duplicates("id", inplace=True)
+        inputValidStatus['status'][
+            inputValidStatus['id'].isin(duplicatedFiles['id'])] = "INVALID"
+        duplicatedFileError = (
+            "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS "
+            "AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME")
+        duplicatedFiles['errors'] = duplicatedFileError
         # Send an email if there are any duplicated files
         if not duplicatedFiles.empty:
-            incorrectFiles = ", ".join([name for synId, name in zip(duplicatedFiles['id'],duplicatedFiles['name'])])
+            incorrectFiles = ", ".join(
+                [name for synId, name in
+                 zip(duplicatedFiles['id'], duplicatedFiles['name'])])
             incorrectEnt = syn.get(duplicatedFiles['id'].iloc[0])
             sendEmail = set([incorrectEnt.modifiedBy, incorrectEnt.createdBy])
-            userNames = ", ".join([syn.getUserProfile(user).userName for user in sendEmail])
-            syn.sendMessage(list(sendEmail), "GENIE Validation Error", "Dear %s,\n\nYour files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME" % (userNames, incorrectFiles))
-        logger.info("THERE ARE %d DUPLICATED FILES" % len(duplicatedFiles))
-        ##### DUPLICATED FILES ######
+            userNames = ", ".join(
+                [syn.getUserProfile(user).userName for user in sendEmail])
+            errorEmail = (
+                "Dear %s,\n\n"
+                "Your files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS "
+                "NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE "
+                "UPLOADED EVERYTIME".format(userNames, incorrectFiles))
+            syn.sendMessage(
+                list(sendEmail), "GENIE Validation Error", errorEmail)
 
-        #Create invalid error synapse table
+        logger.info("THERE ARE %d DUPLICATED FILES" % len(duplicatedFiles))
+
+        # Create invalid error synapse table
         logger.info("UPDATE INVALID FILE REASON DATABASE")
-        invalidErrors = pd.DataFrame(invalidErrors, columns = ["id",'errors','name'])
+        invalidErrors = pd.DataFrame(
+            invalidErrors, columns=["id", 'errors', 'name'])
         # Remove fixed duplicated files
-        dupIds = invalidErrors['id'][invalidErrors['errors'] == "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME"]
+        dupIds = invalidErrors['id'][
+            invalidErrors['errors'] == duplicatedFileError]
         removeIds = dupIds[~dupIds.isin(duplicatedFiles['id'])]
         invalidErrors = invalidErrors[~invalidErrors['id'].isin(removeIds)]
         # Append duplicated file errors
-        invalidErrors = invalidErrors.append(duplicatedFiles[['id','errors','name']])
+        invalidErrors = invalidErrors.append(
+            duplicatedFiles[['id', 'errors', 'name']])
         invalidErrors['center'] = center
-        invalidIds = inputValidStatus['id'][inputValidStatus['status'] == "INVALID"]
+        invalidIds = inputValidStatus['id'][
+            inputValidStatus['status'] == "INVALID"]
         invalidErrors = invalidErrors[invalidErrors['id'].isin(invalidIds)]
-        process_functions.updateDatabase(syn, errorTracker.asDataFrame(), invalidErrors, process_functions.getDatabaseSynId(syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf), ["id"], toDelete=True)
+        process_functions.updateDatabase(
+            syn, errorTracker.asDataFrame(), invalidErrors,
+            process_functions.getDatabaseSynId(
+                syn, "errorTracker",
+                databaseToSynIdMappingDf=databaseToSynIdMappingDf),
+            ["id"], toDelete=True)
 
         paths = inputValidStatus['path']
-        filenames = [os.path.basename(name) for name in paths]
+        # filenames = [os.path.basename(name) for name in paths]
         del inputValidStatus['path']
         logger.info("UPDATE VALIDATION STATUS DATABASE")
         inputValidStatus['center'] = center
-        #Remove fixed duplicated files
-        inputValidStatus = inputValidStatus[~inputValidStatus['id'].isin(removeIds)]
+        # Remove fixed duplicated files
+        inputValidStatus = inputValidStatus[
+            ~inputValidStatus['id'].isin(removeIds)]
 
-        process_functions.updateDatabase(syn, validationStatus.asDataFrame(), inputValidStatus[["id",'md5','status','name','center','modifiedOn']], process_functions.getDatabaseSynId(syn, "validationStatus", databaseToSynIdMappingDf=databaseToSynIdMappingDf), ["id"], toDelete=True)
+        process_functions.updateDatabase(
+            syn,
+            validationStatus.asDataFrame(),
+            inputValidStatus[
+                ["id", 'md5', 'status','name', 'center', 'modifiedOn']],
+            process_functions.getDatabaseSynId(
+                syn, "validationStatus",
+                databaseToSynIdMappingDf=databaseToSynIdMappingDf),
+            ["id"],
+            toDelete=True)
         inputValidStatus['path'] = paths
-        validFiles = inputValidStatus[['id','path','fileType']][inputValidStatus['status'] == "VALIDATED"]
+        validFiles = inputValidStatus[['id', 'path', 'fileType']][
+            inputValidStatus['status'] == "VALIDATED"]
         return(validFiles)
 
 
@@ -606,29 +639,32 @@ def input_to_database(
     is mounted by batch
     '''
     path_to_genie = os.path.expanduser("~/.synapseCache")
-    #Create input and staging folders
-    if not os.path.exists(os.path.join(path_to_genie,center,"input")):
-        os.makedirs(os.path.join(path_to_genie,center,"input"))
-    if not os.path.exists(os.path.join(path_to_genie,center,"staging")):
-        os.makedirs(os.path.join(path_to_genie,center,"staging"))
+    # Create input and staging folders
+    if not os.path.exists(os.path.join(path_to_genie, center, "input")):
+        os.makedirs(os.path.join(path_to_genie, center, "input"))
+    if not os.path.exists(os.path.join(path_to_genie, center, "staging")):
+        os.makedirs(os.path.join(path_to_genie, center, "staging"))
 
     if delete_old:
-        process_functions.rmFiles(os.path.join(path_to_genie,center))
+        process_functions.rmFiles(os.path.join(path_to_genie, center))
 
-    validFiles = validation(syn, center, process, center_mapping_df, database_to_synid_mappingdf, thread, testing, oncotree_link)
+    validFiles = validation(
+        syn, center, process, center_mapping_df,
+        database_to_synid_mappingdf, thread,
+        testing, oncotree_link)
 
     if len(validFiles) > 0 and not only_validate:
-        #Reorganize so BED file are always validated and processed first
+        # Reorganize so BED file are always validated and processed first
         validBED = [os.path.basename(i).endswith('.bed') for i in validFiles['path']]
         beds = validFiles[validBED]
         validFiles = beds.append(validFiles)
         validFiles.drop_duplicates(inplace=True)
-        #Valid vcf files
+        # Valid vcf files
         validVCF = [i for i in validFiles['path'] if os.path.basename(i).endswith('.vcf')]
-        #validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
+        # validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
 
         processTrackerSynId = process_functions.getDatabaseSynId(syn, "processTracker", databaseToSynIdMappingDf = database_to_synid_mappingdf)
-        #Add process tracker for time start
+        # Add process tracker for time start
         processTracker = syn.tableQuery("SELECT timeStartProcessing FROM %s where center = '%s' and processingType = '%s'" % (processTrackerSynId, center, process))
         processTrackerDf = processTracker.asDataFrame()
         if len(processTrackerDf) == 0:
