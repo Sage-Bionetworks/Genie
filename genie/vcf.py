@@ -16,8 +16,7 @@ def contains_whitespace(x):
     return(sum([" " in i for i in x if isinstance(i, str)]))
 
 
-class vcf(maf.maf):
-
+class vcf(maf):
     _fileType = "vcf"
 
     _process_kwargs = ["validVCF", "processing", "path_to_GENIE", "databaseToSynIdMappingDf", 
@@ -135,17 +134,9 @@ class vcf(maf.maf):
             self.storeProcessedMaf(newMafPath, mafSynId, centerMafSynId)
         return(newMafPath)
 
-    def process_steps(self, filePath, **kwargs): 
-        processing = kwargs['processing']
+    def process_steps(self, filePath, processing, databaseToSynIdMappingDf, vcf2mafPath, veppath, vepdata, validVCF, path_to_GENIE, reference): 
         mutationFiles = []
         if processing == self._fileType:
-            databaseToSynIdMappingDf = kwargs['databaseToSynIdMappingDf']
-            vcf2mafPath = kwargs['vcf2mafPath']
-            veppath = kwargs['veppath']
-            vepdata = kwargs['vepdata']
-            validVCF = kwargs['validVCF']
-            path_to_GENIE = kwargs['path_to_GENIE']
-            reference = kwargs['reference']
             mafProcessing = "mafSP" if self._fileType == "mafSP" else 'vcf2maf'
             mafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == mafProcessing][0]
             centerMafSynId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
@@ -156,7 +147,6 @@ class vcf(maf.maf):
         else:
             logger.info("Please run with `--process %s` parameter if you want to reannotate the %s files" % (self._fileType, self._fileType))
         return(mutationFiles)
-
 
     def _validate(self, vcf):
         REQUIRED_HEADERS = pd.Series(["#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO"])

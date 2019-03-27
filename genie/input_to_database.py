@@ -134,9 +134,8 @@ def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, test
 #Processing single file
 def processFiles(syn, validFiles, center, path_to_GENIE, threads, 
                  center_mapping_df, oncotreeLink, databaseToSynIdMappingDf, 
-                 validVCF=None, validMAFs=None,
-                 vcf2mafPath=None,
-                 veppath=None,vepdata=None,
+                 validVCF=None, vcf2mafPath=None,
+                 veppath=None, vepdata=None,
                  processing="main", test=False, reference=None):
 
     logger.info("PROCESSING %s FILES: %d" % (center, len(validFiles)))
@@ -160,7 +159,6 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
                 PROCESS_FILES[fileType](syn, center, threads).process(filePath=filePath, newPath=newPath, 
                                     parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
                                     fileSynId=fileSynId, validVCF=validVCF, 
-                                    validMAFs=validMAFs,
                                     path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
                                     veppath=veppath,vepdata=vepdata,
                                     processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, reference=reference, test=test)
@@ -173,8 +171,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
         fileSynId = None
         PROCESS_FILES[processing](syn, center, threads).process(filePath=filePath, newPath=newPath, 
                                     parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
-                                    fileSynId=fileSynId, validVCF=validVCF, 
-                                    validMAFs=validMAFs,
+                                    fileSynId=fileSynId, validVCF=validVCF,
                                     path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
                                     veppath=veppath,vepdata=vepdata,
                                     processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, reference=reference)
@@ -334,15 +331,9 @@ def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path
         beds = validFiles[validBED]
         validFiles = beds.append(validFiles)
         validFiles.drop_duplicates(inplace=True)
-        #Valid maf, mafsp, vcf and cbs files
-        validMAF = [i for i in validFiles['path'] if os.path.basename(i) == "data_mutations_extended_%s.txt" % center]
-        validMAFSP = [i for i in validFiles['path'] if os.path.basename(i)  == "nonGENIE_data_mutations_extended_%s.txt" % center]
+        #Valid vcf files
         validVCF = [i for i in validFiles['path'] if os.path.basename(i).endswith('.vcf')]
         #validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
-        if process == 'mafSP':
-            validMAFs = validMAFSP
-        else:
-            validMAFs = validMAF
 
         processTrackerSynId = process_functions.getDatabaseSynId(syn, "processTracker", databaseToSynIdMappingDf = database_to_synid_mappingdf)
         #Add process tracker for time start
@@ -357,7 +348,7 @@ def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path
 
         processFiles(syn, validFiles, center, path_to_genie, thread, 
                      center_mapping_df, oncotree_link, database_to_synid_mappingdf, 
-                     validVCF=validVCF, validMAFs=validMAFs,
+                     validVCF=validVCF,
                      vcf2mafPath=vcf2maf_path,
                      veppath=vep_path,vepdata=vep_data,
                      test=testing, processing=process,reference=reference)

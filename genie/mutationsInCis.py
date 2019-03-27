@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import os
 import pandas as pd
 import logging
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 #     process_functions.updateDatabase(syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete)
         
 
-class mutationsInCis(example_filetype_format.FileTypeFormat):
+class mutationsInCis(FileTypeFormat):
 
     _fileType = "mutationsInCis"
 
@@ -31,12 +31,7 @@ class mutationsInCis(example_filetype_format.FileTypeFormat):
         assert os.path.basename(filePath[0]) == "mutationsInCis_filtered_samples.csv"
     
     # PROCESS
-    def process_steps(self, filePath, **kwargs):
-        logger.info('PROCESSING %s' % filePath)
-        newPath = kwargs['newPath']
-        databaseSynId = kwargs['databaseSynId']
-        mutationInCis = pd.read_csv(filePath, comment="#")
-        #cols = mutationInCis.columns
+    def process_steps(self, mutationInCis, newPath, databaseSynId):
         process_functions.updateData(self.syn, databaseSynId, mutationInCis, self.center, filterByColumn="Center")
         mutationInCis.to_csv(newPath, sep="\t",index=False)
         return(newPath)
