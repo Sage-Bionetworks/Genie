@@ -48,8 +48,8 @@ def get_center_input_files(syn, synid, center, process="main"):
         syn: Synapse object
         synid: Center input folder synid
         center: Center name
-        process: Process type includes, main, vcf, maf and mafSP.  
-                 Defaults to main such that the vcf 
+        process: Process type includes, main, vcf, maf and mafSP.
+                 Defaults to main such that the vcf
 
     Returns:
         List of Tuples with the correct format to pass into validation
@@ -68,7 +68,7 @@ def get_center_input_files(syn, synid, center, process="main"):
             paired = False
             '''
             Clinical file can come as two files.
-            The two files need to be merged together which is 
+            The two files need to be merged together which is
             why there is this format
             '''
             if name in clinical_pair_name:
@@ -135,7 +135,7 @@ def check_existing_file_status(
         dict: Input file status
             status_list: file validation status
             error_list: Errors of the files if they exist,
-            to_validate: Boolean value for whether of not an input 
+            to_validate: Boolean value for whether of not an input
                          file needs to be validated
     '''
     if len(entities) > 2:
@@ -219,27 +219,7 @@ def validatefile(
             datetime.datetime.strptime(
                 entity.modifiedOn.split(".")[0], "%Y-%m-%dT%H:%M:%S"))
         for entity in entities]
-    # toValidate = False
-    # statuses = []
-    # errors = []
-    # # Check validation status and md5 of file
-    # for synId,md5,filename in zip(x['synId'],md5s,names):
-    #   checkValid = validationStatusDf[validationStatusDf['id'] == synId]
-    #   checkError = errorTracker[errorTracker['id'] == synId]
-    #   if checkValid.empty:
-    #       toValidate = True
-    #   else:
-    #       statuses.append(checkValid['status'].values[0])
-    #       if checkError.empty:
-    #           if checkValid['status'].values[0] == "INVALID":
-    #               toValidate =True
-    #       else:
-    #           errors.append(checkError['errors'].values[0])
-    #       #Add Name check here (must add name of the entity as a column)
-    #       if checkValid['md5'].values[0] != md5 or checkValid['name'].values[0] != filename:
-    #           toValidate = True
-    #       else:
-    #           logger.info("%s FILE STATUS IS: %s" % (filename, checkValid['status'].values[0]))
+
     check_file_status = check_existing_file_status(
         validation_statusdf, error_trackerdf, entities, filenames)
 
@@ -377,15 +357,22 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 
     logger.info("ALL DATA STORED IN DATABASE")
 
-# def _create_maf_db(syn, foo)
-#   maf_database_ent = syn.get(maf_database_synid)
-#   print(maf_database_ent)
-#   maf_columns = list(syn.getTableColumns(maf_database_synid))
-#   schema = synapseclient.Schema(name='Narrow MAF {current_time} Database'.format(current_time=time.time()), columns=maf_columns, parent=process_functions.getDatabaseSynId(syn, "main", databaseToSynIdMappingDf=database_synid_mappingdf))
-#   schema.primaryKey = maf_database_ent.primaryKey
-#   new_maf_database = syn.store(schema)
+# def _create_maf_db(syn, foo):
+#     maf_database_ent = syn.get(maf_database_synid)
+#     print(maf_database_ent)
+#     maf_columns = list(syn.getTableColumns(maf_database_synid))
+#     schema = synapseclient.Schema(
+#         name='Narrow MAF {current_time} Database'.format(
+#             current_time=time.time()),
+#         columns=maf_columns,
+#         parent=process_functions.getDatabaseSynId(
+#             syn, "main",
+#             databaseToSynIdMappingDf=database_synid_mappingdf))
+#     schema.primaryKey = maf_database_ent.primaryKey
+#     new_maf_database = syn.store(schema)
 
-# TODO: Should split this into 3 funcitons so that unit tests are easier to write
+# TODO: Should split this into 3 funcitons 
+# so that unit tests are easier to write
 def create_and_archive_maf_database(syn, database_synid_mappingdf):
     '''
     Creates new MAF database and archives the old database in the staging site
@@ -411,12 +398,9 @@ def create_and_archive_maf_database(syn, database_synid_mappingdf):
     new_maf_database = syn.store(schema)
     # Store in the new database synid
     database_synid_mappingdf['Id'][
-        database_synid_mappingdf['Database'] == 'vcf2maf'] = new_maf_database.id
-    # databaseToSynIdMappingDf['Id'][0] = 
-    # syn.store(synapseclient.Table(process_functions.getDatabaseSynId(syn, "dbMapping", databaseToSynIdMappingDf=databaseToSynIdMappingDf),databaseToSynIdMappingDf))
-    # if not staging and not testing:
-    # Make sure to store the newly created maf db synid into the staging synapse mapping
-    # vcf2maf_mapping = syn.tableQuery("SELECT * FROM syn12094210 where Database = 'vcf2maf'")
+        database_synid_mappingdf[
+            'Database'] == 'vcf2maf'] = new_maf_database.id
+
     vcf2maf_mappingdf = database_synid_mappingdf[
         database_synid_mappingdf['Database'] == 'vcf2maf']
     # vcf2maf_mappingdf['Id'][0] = newMafDb.id
@@ -590,7 +574,7 @@ def validation(
             syn,
             validationStatus.asDataFrame(),
             inputValidStatus[
-                ["id", 'md5', 'status','name', 'center', 'modifiedOn']],
+                ["id", 'md5', 'status', 'name', 'center', 'modifiedOn']],
             process_functions.getDatabaseSynId(
                 syn, "validationStatus",
                 databaseToSynIdMappingDf=databaseToSynIdMappingDf),
@@ -655,20 +639,33 @@ def input_to_database(
 
     if len(validFiles) > 0 and not only_validate:
         # Reorganize so BED file are always validated and processed first
-        validBED = [os.path.basename(i).endswith('.bed') for i in validFiles['path']]
+        validBED = [
+            os.path.basename(i).endswith('.bed') for i in validFiles['path']]
         beds = validFiles[validBED]
         validFiles = beds.append(validFiles)
         validFiles.drop_duplicates(inplace=True)
         # Valid vcf files
-        validVCF = [i for i in validFiles['path'] if os.path.basename(i).endswith('.vcf')]
+        validVCF = [
+            i for i in validFiles['path']
+            if os.path.basename(i).endswith('.vcf')]
         # validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
 
-        processTrackerSynId = process_functions.getDatabaseSynId(syn, "processTracker", databaseToSynIdMappingDf = database_to_synid_mappingdf)
+        processTrackerSynId = process_functions.getDatabaseSynId(
+            syn, "processTracker",
+            databaseToSynIdMappingDf=database_to_synid_mappingdf)
         # Add process tracker for time start
-        processTracker = syn.tableQuery("SELECT timeStartProcessing FROM %s where center = '%s' and processingType = '%s'" % (processTrackerSynId, center, process))
+        processTracker = syn.tableQuery(
+            "SELECT timeStartProcessing FROM {} "
+            "where center = '{}' and "
+            "processingType = '{}'".format(
+                processTrackerSynId, center, process))
         processTrackerDf = processTracker.asDataFrame()
         if len(processTrackerDf) == 0:
-            new_rows = [[center,str(int(time.time()*1000)), str(int(time.time()*1000)), process]] 
+            new_rows = [[
+                center,
+                str(int(time.time()*1000)),
+                str(int(time.time()*1000)),
+                process]]
 
             syn.store(synapseclient.Table(
                 processTrackerSynId, new_rows))
