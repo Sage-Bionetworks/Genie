@@ -264,11 +264,11 @@ def validatefile(
             find_file_users = \
                 list(set([incorrect_ent.modifiedBy, incorrect_ent.createdBy]))
             usernames = ", ".join([
-                syn.getUserProfile(user).userName for user in find_file_users])
+                syn.getUserProfile(user)['userName'] for user in find_file_users])
             email_message = (
                 "Dear {username},\n\n"
                 "Your files ({filenames}) are invalid! "
-                "Here are the reasons why:\n\n{error_messages}".format(
+                "Here are the reasons why:\n\n{error_message}".format(
                     username=usernames,
                     filenames=incorrect_files,
                     error_message=message))
@@ -371,8 +371,10 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
 #     schema.primaryKey = maf_database_ent.primaryKey
 #     new_maf_database = syn.store(schema)
 
-# TODO: Should split this into 3 funcitons 
+# TODO: Should split this into 3 funcitons
 # so that unit tests are easier to write
+
+
 def create_and_archive_maf_database(syn, database_synid_mappingdf):
     '''
     Creates new MAF database and archives the old database in the staging site
