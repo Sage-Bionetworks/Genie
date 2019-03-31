@@ -264,7 +264,8 @@ def validatefile(
             find_file_users = \
                 list(set([incorrect_ent.modifiedBy, incorrect_ent.createdBy]))
             usernames = ", ".join([
-                syn.getUserProfile(user)['userName'] for user in find_file_users])
+                syn.getUserProfile(user)['userName']
+                for user in find_file_users])
             email_message = (
                 "Dear {username},\n\n"
                 "Your files ({filenames}) are invalid! "
@@ -506,13 +507,6 @@ def validation(
         cbsSegFiles = inputValidStatus[cbsSegBool]
         if len(cbsSegFiles) > 1:
             duplicatedFiles = duplicatedFiles.append(cbsSegFiles)
-        # nodups = ["data_mutations_extended"]
-        # allDuplicatedFiles = []
-        # for nodup in nodups:
-        #   checkDups = [name for name in inputValidStatus['name'] if name.startswith(nodup)]
-        #   if len(checkDups) > 1:
-        #       allDuplicatedFiles.extend(checkDups)
-        # duplicatedFiles = duplicatedFiles.append(inputValidStatus[inputValidStatus['name'].isin(allDuplicatedFiles)])
 
         duplicatedFiles.drop_duplicates("id", inplace=True)
         inputValidStatus['status'][
@@ -588,7 +582,7 @@ def validation(
         return(validFiles)
 
 
-def input_to_database(
+def center_input_to_database(
         syn, center, process, testing,
         only_validate, vcf2maf_path, vep_path,
         vep_data, database_to_synid_mappingdf,
@@ -650,7 +644,6 @@ def input_to_database(
         validVCF = [
             i for i in validFiles['path']
             if os.path.basename(i).endswith('.vcf')]
-        # validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
 
         processTrackerSynId = process_functions.getDatabaseSynId(
             syn, "processTracker",
@@ -712,10 +705,14 @@ def input_to_database(
     logger.info("ALL PROCESSES COMPLETE")
 
 
+def input_to_database():
+    pass
+
+
 def main():
     """Set up argument parser and returns"""
     parser = argparse.ArgumentParser(
-        description='GENIE center inputs to database')
+        description='GENIE center ')
     parser.add_argument(
         "process",
         choices=['vcf', 'maf', 'main', 'mafSP'],
@@ -794,6 +791,7 @@ def main():
             "if `--process {vcf,maf,mafSP}` is used")
 
     if args.testing:
+        database_to_synid_mapping_synid
         databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
     else:
         databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
@@ -846,7 +844,7 @@ def main():
             create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
 
     for center in centers:
-        input_to_database(
+        center_input_to_database(
             syn, center, args.process,
             args.testing, args.onlyValidate,
             args.vcf2mafPath, args.vepPath,

@@ -5,7 +5,7 @@ import synapseutils as synu
 import mock
 import pandas as pd
 from genie import input_to_database
-from genie import validate
+#from genie import validate
 
 syn = mock.create_autospec(synapseclient.Synapse)
 sample_clinical_synid = 'syn2222'
@@ -362,15 +362,15 @@ def test_create_and_archive_maf_database():
             new_maf_ent.id, 3326313, [])
 
 
-def test_row_validatefile():
-    validation_statusdf = pd.DataFrame({
-        'id': ['syn1234', 'syn2345'],
-        'status': ['VALID', 'INVALID'],
-        'md5': ['3333', '44444'],
-        'name': ['first.txt', 'second.txt']})
-    error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
-    entity = synapseclient.Entity(id='syn2345', md5='44444')
+def test_valid_validatefile():
+    '''
+
+    '''
+    validation_statusdf = pd.DataFrame()
+    error_trackerdf = pd.DataFrame()
+    entity = synapseclient.Entity(id='syn1234', md5='44444')
     entity['modifiedOn'] = '2019-03-24T12:00:00.Z'
+    # This modifiedOn translates to: 1553428800000
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     # entities = [entity]
@@ -378,14 +378,70 @@ def test_row_validatefile():
     threads = 0
     testing = False
 
-    fileinfo = {'filePaths': ['/path/to/file.csv'],
+    fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
                 'synId': ['syn1234']}
+    # status_list = check_file_status['status_list']
+    # error_list = check_file_status['error_list']
+    # filetype = get_filetype(syn, filepaths, center)
+    # if check_file_status['to_validate']:
     with mock.patch.object(
             syn, "get", return_value=entity) as patch_syn_get,\
-        mock.patch.object(
-            syn, "getUserProfile", return_value={'userName': 'trial'}),\
         mock.patch(
-            "genie.validate", return_value=('valid', True)) as patch_validate:
-        input_to_database.validatefile(
+            "genie.input_to_database.check_existing_file_status",
+            return_value={
+                'status_list': [],
+                'error_list': [],
+                'to_validate': True}) as patch_check, \
+        mock.patch(
+            "genie.validate.validate",
+            return_value=('valid', True)) as patch_validate:
+        validate_results = input_to_database.validatefile(
             fileinfo, syn, validation_statusdf,
             error_trackerdf, center, threads, testing, oncotreeurl)
+        expected_validate_results = ([[
+            fileinfo['synId'][0],
+            fileinfo['filePaths'][0],
+            '44444',
+            'VALIDATED',
+            'data_clinical_supp_SAGE.txt',
+            1553428800000,
+            'clinical']], None)
+        print(validate_results)
+        assert expected_validate_results == validate_results
+        patch_validate.assert_called_once()
+        patch_syn_get.assert_called_once()
+        patch_check.assert_called_once()
+        # patch_syn_getuserprofile.assert_called_once()
+
+
+# def test_invalid_validatefile():
+#     validation_statusdf = pd.DataFrame({
+#         'id': ['syn1234', 'syn2345'],
+#         'status': ['VALID', 'INVALID'],
+#         'md5': ['3333', '44444'],
+#         'name': ['first.txt', 'second.txt']})
+#     error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
+#     entity = synapseclient.Entity(id='syn2345', md5='44444')
+#     entity['modifiedOn'] = '2019-03-24T12:00:00.Z'
+#     entity.modifiedBy = '333'
+#     entity.createdBy = '444'
+#     # entities = [entity]
+#     center = 'SAGE'
+#     threads = 0
+#     testing = False
+
+#     fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
+#                 'synId': ['syn1234']}
+#     with mock.patch.object(
+#             syn, "get", return_value=entity) as patch_syn_get,\
+#         mock.patch.object(
+#             syn, "getUserProfile",
+#             return_value={'userName': 'trial'}) as patch_syn_getuserprofile,\
+#         mock.patch(
+#             "genie.validate.validate",
+#             return_value=('valid', True)) as patch_validate:
+#         foo = input_to_database.validatefile(
+#             fileinfo, syn, validation_statusdf,
+#             error_trackerdf, center, threads, testing, oncotreeurl)
+#         patch_validate.assert_called_once()
+#         patch_syn_get.assert_called_once()
