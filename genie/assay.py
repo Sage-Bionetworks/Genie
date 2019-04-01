@@ -72,7 +72,9 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
         '''
         filepath = filepath_list[0]
         with open(filepath, 'r') as yamlfile:
-            panel_info_dict = yaml.load(yamlfile)
+            # https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation
+            # Must add this because yaml load deprecation
+            panel_info_dict = yaml.load(yamlfile, Loader=yaml.FullLoader)
         assay_info_df = pd.DataFrame(panel_info_dict)
         assay_info_df = assay_info_df.transpose()
         assay_info_df['SEQ_ASSAY_ID'] = assay_info_df.index
