@@ -82,6 +82,12 @@ class maf(FileTypeFormat):
         Stores the processed maf
         There is a isNarrow option, but note that the number of rows
         of the maf file DOES NOT change in this function
+
+        Args:
+            filePath: Path to maf file
+            mafSynId: database synid
+            centerMafSynid: center flat file folder synid
+            isNarrow: Is the file a narrow maf. Defaul to False.
         '''
         logger.info('STORING %s' % filePath)
         database = self.syn.get(mafSynId)
@@ -96,6 +102,9 @@ class maf(FileTypeFormat):
     def process_steps(
             self, filePath, path_to_GENIE, databaseToSynIdMappingDf,
             vcf2mafPath, veppath, vepdata, processing, reference=None):
+        '''
+        Processing maf files
+        '''
         if processing == self._fileType:
             mafProcessing = "mafSP" if self._fileType == "mafSP" else 'vcf2maf'
             mafSynId = databaseToSynIdMappingDf.Id[
