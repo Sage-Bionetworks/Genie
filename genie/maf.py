@@ -9,7 +9,9 @@ logger = logging.getLogger(__name__)
 
 
 class maf(FileTypeFormat):
-
+    '''
+    MAF file format validation / processing
+    '''
     _fileType = "maf"
 
     _process_kwargs = [
@@ -17,8 +19,12 @@ class maf(FileTypeFormat):
         "vcf2mafPath", "veppath", "vepdata", 'reference']
 
     def _validateFilename(self, filePath):
+        '''
+        Validates filename.  Should be
+        data_mutations_extended_CENTER.txt
+        '''
         assert os.path.basename(filePath[0]) == \
-             "data_mutations_extended_{}.txt".format(self.center)
+            "data_mutations_extended_{}.txt".format(self.center)
 
     def formatMAF(self, mafDf):
         '''
@@ -268,6 +274,9 @@ class maf(FileTypeFormat):
         return(total_error, warning)
 
     def _get_dataframe(self, filePathList):
+        '''
+        Get mutation dataframe
+        '''
         mutationDF = pd.read_csv(
             filePathList[0],
             sep="\t",
