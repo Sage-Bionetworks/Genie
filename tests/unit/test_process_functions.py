@@ -41,6 +41,19 @@ def test_norows_get_left_diff_df():
     assert append_rows.empty
 
 
+def test_validation_get_left_diff_df():
+    '''
+    This checks to make sure that validation is called
+    - In a situation where someone comments out the validation
+    line, this will cause an error
+    '''
+    with pytest.raises(
+            ValueError,
+            match="'FOO' column must exist in dataframe"):
+        genie.process_functions._get_left_diff_df(
+            DATABASE_DF, DATABASE_DF, 'FOO')
+
+
 def test_append__append_rows():
     new_datadf = pd.DataFrame({
         'UNIQUE_KEY': ['test1', 'test2', 'test3', 'test4'],
