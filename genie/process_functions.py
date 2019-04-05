@@ -474,9 +474,9 @@ def _check_valid_df(df, col):
         col: Column name
     '''
     if not isinstance(df, pd.DataFrame):
-        raise ValueError("Must pass in pandas dataframes")
+        raise ValueError("Must pass in pandas dataframe")
     if df.get(col) is None:
-        raise ValueError("{} column must exist in dataframe".format(
+        raise ValueError("'{}' column must exist in dataframe".format(
             col))
 
 

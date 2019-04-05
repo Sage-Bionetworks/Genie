@@ -15,9 +15,11 @@ def test_valid__check_valid_df():
 
 
 def test_invalid__check_valid_df():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Must pass in pandas dataframe"):
         genie.process_functions._check_valid_df("foo", "test")
-    with pytest.raises(ValueError):
+    with pytest.raises(
+            ValueError,
+            match="'error' column must exist in dataframe"):
         genie.process_functions._check_valid_df(DATABASE_DF, "error")
 
 
