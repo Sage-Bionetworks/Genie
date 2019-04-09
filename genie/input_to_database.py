@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python3
 import logging
 logger = logging.getLogger("genie")
 import synapseclient
@@ -705,12 +705,120 @@ def center_input_to_database(
     logger.info("ALL PROCESSES COMPLETE")
 
 
-def input_to_database():
-    pass
+def main(process,
+         center=None,
+         pemfile=None,
+         delete_old=False,
+         only_validate=False,
+         oncotreelink=None,
+         create_new_maf_database=False,
+         testing=False,
+         debug=False,
+         reference=None,
+         vcf2maf_path=None,
+         vep_path=None,
+         vep_data=None,
+         thread=1):
+
+    syn = process_functions.synLogin(pemfile, debug=debug)
+    # Must specify correct paths to vcf2maf, VEP and VEP data
+    # if trying to process vcf, maf and mafSP
+    if process in ['vcf', 'maf', 'mafSP'] and not only_validate:
+        assert os.path.exists(vcf2maf_path), (
+            "Path to vcf2maf (--vcf2mafPath) must be specified "
+            "if `--process {vcf,maf,mafSP}` is used")
+        assert os.path.exists(vep_path), (
+            "Path to VEP (--vepPath) must be specified "
+            "if `--process {vcf,maf,mafSP}` is used")
+        assert os.path.exists(vep_data), (
+            "Path to VEP data (--vepData) must be specified "
+            "if `--process {vcf,maf,mafSP}` is used")
+
+    if testing:
+        database_to_synid_mapping_synid = "syn11600968"
+    else:
+        database_to_synid_mapping_synid = "syn10967259"
+
+    databaseToSynIdMapping = syn.tableQuery(
+        'SELECT * FROM {}'.format(database_to_synid_mapping_synid))
+    databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
+
+    center_mapping_id = process_functions.getDatabaseSynId(
+        syn, "centerMapping",
+        databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+
+    center_mapping = syn.tableQuery('SELECT * FROM %s' % center_mapping_id)
+    center_mapping_df = center_mapping.asDataFrame()
+
+    if center is not None:
+        assert center in center_mapping_df.center.tolist(), (
+            "Must specify one of these centers: {}".format(
+                ", ".join(center_mapping_df.center)))
+        centers = [center]
+    else:
+        center_mapping_df = \
+            center_mapping_df[~center_mapping_df['inputSynId'].isnull()]
+        # release is a bool column
+        center_mapping_df = center_mapping_df[center_mapping_df['release']]
+        centers = center_mapping_df.center
+
+    if oncotreelink is None:
+        onco_link = databaseToSynIdMappingDf['Id'][
+            databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
+        onco_link_ent = syn.get(onco_link)
+        oncotreelink = onco_link_ent.externalURL
+    # Check if you can connect to oncotree link,
+    # if not then don't run validation / processing
+    process_functions.checkUrl(oncotreelink)
+
+    center_mapping_ent = syn.get(center_mapping_id)
+    if center_mapping_ent.get('isProcessing', ['True'])[0] == 'True':
+        raise Exception(
+            "Processing/validation is currently happening.  "
+            "Please change/add the 'isProcessing' annotation on {} "
+            "to False to enable processing".format(center_mapping_id))
+    else:
+        center_mapping_ent.isProcessing = "True"
+        center_mapping_ent = syn.store(center_mapping_ent)
+    # remove this query timeout and see what happens
+    # syn.table_query_timeout = 50000
+
+    # Create new maf database, should only happen once if its specified
+    if create_new_maf_database:
+        databaseToSynIdMappingDf = \
+            create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
+
+    for center in centers:
+        center_input_to_database(
+            syn, center, process,
+            testing, only_validate,
+            vcf2maf_path, vep_path,
+            vep_data, databaseToSynIdMappingDf,
+            center_mapping_df, reference=reference,
+            delete_old=delete_old,
+            oncotree_link=oncotreelink,
+            thread=thread)
+
+    # To ensure that this is the new entity
+    center_mapping_ent = syn.get(center_mapping_id)
+    center_mapping_ent.isProcessing = "False"
+    center_mapping_ent = syn.store(center_mapping_ent)
+
+    error_tracker_synid = process_functions.getDatabaseSynId(
+        syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+    # Only write out invalid reasons if the center
+    # isnt specified and if only validate
+    if center is None and only_validate:
+        logging.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
+        write_invalid_reasons.write_invalid_reasons(
+            syn, center_mapping_df, error_tracker_synid)
 
 
-def main():
-    """Set up argument parser and returns"""
+if __name__ == "__main__":
+    '''
+    Argument parsers
+    TODO: Fix case of arguments
+    '''
     parser = argparse.ArgumentParser(
         description='GENIE center ')
     parser.add_argument(
@@ -769,6 +877,9 @@ def main():
         type=str,
         help="Path to VEP data",
         default=os.path.expanduser("~/.vep"))
+    '''
+    TODO: Remove thread
+    '''
     parser.add_argument(
         '--thread',
         type=int,
@@ -776,98 +887,18 @@ def main():
         default=1)
 
     args = parser.parse_args()
-    syn = process_functions.synLogin(args.pemFile, debug=args.debug)
-    # Must specify correct paths to vcf2maf, VEP and VEP data
-    # if trying to process vcf, maf and mafSP
-    if args.process in ['vcf', 'maf', 'mafSP'] and not args.onlyValidate:
-        assert os.path.exists(args.vcf2mafPath), (
-            "Path to vcf2maf (--vcf2mafPath) must be specified "
-            "if `--process {vcf,maf,mafSP}` is used")
-        assert os.path.exists(args.vepPath), (
-            "Path to VEP (--vepPath) must be specified "
-            "if `--process {vcf,maf,mafSP}` is used")
-        assert os.path.exists(args.vepData), (
-            "Path to VEP data (--vepData) must be specified "
-            "if `--process {vcf,maf,mafSP}` is used")
 
-    if args.testing:
-        database_to_synid_mapping_synid
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
-    else:
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
-
-    databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
-
-    center_mapping_id = process_functions.getDatabaseSynId(
-        syn, "centerMapping",
-        databaseToSynIdMappingDf=databaseToSynIdMappingDf)
-
-    center_mapping = syn.tableQuery('SELECT * FROM %s' % center_mapping_id)
-    center_mapping_df = center_mapping.asDataFrame()
-
-    if args.center is not None:
-        assert args.center in center_mapping_df.center.tolist(), (
-            "Must specify one of these centers: {}".format(
-                ", ".join(center_mapping_df.center)))
-        centers = [args.center]
-    else:
-        center_mapping_df = center_mapping_df[
-            ~center_mapping_df['inputSynId'].isnull()]
-        # release is a bool column
-        center_mapping_df = center_mapping_df[center_mapping_df['release']]
-        centers = center_mapping_df.center
-
-    if args.oncotreeLink is None:
-        onco_link = databaseToSynIdMappingDf['Id'][
-            databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
-        onco_link_ent = syn.get(onco_link)
-        args.oncotreeLink = onco_link_ent.externalURL
-    # Check if you can connect to oncotree link,
-    # if not then don't run validation / processing
-    process_functions.checkUrl(args.oncotreeLink)
-
-    center_mapping_ent = syn.get(center_mapping_id)
-    if center_mapping_ent.get('isProcessing', ['True'])[0] == 'True':
-        raise Exception(
-            "Processing/validation is currently happening.  "
-            "Please change/add the 'isProcessing' annotation on {} "
-            "to False to enable processing".format(center_mapping_id))
-    else:
-        center_mapping_ent.isProcessing = "True"
-        center_mapping_ent = syn.store(center_mapping_ent)
-    # remove this query timeout and see what happens
-    # syn.table_query_timeout = 50000
-
-    # Create new maf database, should only happen once if its specified
-    if args.createNewMafDatabase:
-        databaseToSynIdMappingDf = \
-            create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
-
-    for center in centers:
-        center_input_to_database(
-            syn, center, args.process,
-            args.testing, args.onlyValidate,
-            args.vcf2mafPath, args.vepPath,
-            args.vepData, databaseToSynIdMappingDf,
-            center_mapping_df, reference=args.reference,
-            delete_old=args.deleteOld,
-            oncotree_link=args.oncotreeLink,
-            thread=args.thread)
-
-    # To ensure that this is the new entity
-    center_mapping_ent = syn.get(center_mapping_id)
-    center_mapping_ent.isProcessing = "False"
-    center_mapping_ent = syn.store(center_mapping_ent)
-
-    error_tracker_synid = process_functions.getDatabaseSynId(
-        syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
-    # Only write out invalid reasons if the center
-    # isnt specified and if only validate
-    if args.center is None and args.onlyValidate:
-        logging.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
-        write_invalid_reasons.write_invalid_reasons(
-            syn, center_mapping_df, error_tracker_synid)
-
-
-if __name__ == "__main__":
-    main()
+    main(args.process,
+         center=args.center,
+         pemfile=args.pemFile,
+         delete_old=args.deleteOld,
+         only_validate=args.onlyValidate,
+         oncotreelink=args.oncotreeLink,
+         create_new_maf_database=args.createNewMafDatabase,
+         testing=args.testing,
+         debug=args.debug,
+         reference=args.reference,
+         vcf2maf_path=args.vcf2mafPath,
+         vep_path=args.vepPath,
+         vep_data=args.vepData,
+         thread=args.thread)

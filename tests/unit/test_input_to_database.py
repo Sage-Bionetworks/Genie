@@ -406,7 +406,6 @@ def test_valid_validatefile():
             'data_clinical_supp_SAGE.txt',
             1553428800000,
             'clinical']], None)
-        print(validate_results)
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once()
         patch_syn_get.assert_called_once()
