@@ -14,7 +14,6 @@ parser$add_argument("--syn_user",
 parser$add_argument("--syn_pass",
                     help = "Synapse password")
 
-
 args <- parser$parse_args()
 genie_user <- args$syn_user
 genie_pass <- args$syn_pass
