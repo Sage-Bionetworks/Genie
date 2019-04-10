@@ -4,15 +4,26 @@ import pytest
 from genie import workflow
 
 syn = mock.create_autospec(synapseclient.Synapse)
-workflowClass = workflow(syn, "SAGE")
+workflow_class = workflow(syn, "SAGE")
 
 
 def test_processing():
     pass
 
 
-def test_validation():
+@pytest.fixture(params=[
+    (["foo"]),
+    (["SAGE-test.txt"])
+    ])
+def filename_fileformat_map(request):
+    return request.param
+
+
+def test_incorrect_validatefilename(filename_fileformat_map):
+    filepath_list = filename_fileformat_map
     with pytest.raises(AssertionError):
-        workflowClass.validateFilename(["foo"])
-        workflowClass.validateFilename(["SAGE-test.txt"])
-    assert workflowClass.validateFilename(["SAGE-test.md"]) == "md"
+        workflow_class.validateFilename(filepath_list)
+
+
+def test_correct_validatefilename():
+    assert workflow_class.validateFilename(["SAGE-test.md"]) == "md"

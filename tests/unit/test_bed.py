@@ -102,12 +102,20 @@ def test_filetype():
     assert bedsp_class._fileType == "bedSP"
 
 
-def test_incorrect_validatefilename():
+@pytest.fixture(params=[
+    (["foo"]),
+    (["SAGE-test.txt"]),
+    (["foo"]),
+    (["nonGENIE_SAGE-test.txt"])
+    ])
+def filename_fileformat_map(request):
+    return request.param
+
+
+def test_incorrect_validatefilename(filename_fileformat_map):
+    filepath_list = filename_fileformat_map
     with pytest.raises(AssertionError):
-        bed_class.validateFilename(['foo'])
-        bed_class.validateFilename(['SAGE-test.txt'])
-        bedsp_class.validateFilename(['foo'])
-        bedsp_class.validateFilename(['nonGENIE_SAGE-test.txt'])
+        bed_class.validateFilename(filepath_list)
 
 
 def test_correct_validatefilename():

@@ -51,11 +51,18 @@ def test_filetype():
     assert clin_class._fileType == "clinical"
 
 
-def test_incorrect_validatefilename():
+@pytest.fixture(params=[
+    (["foo"]),
+    (["foo", "data_clinical_supp_sample_SAGE.txt"])
+    ])
+def filename_fileformat_map(request):
+    return request.param
+
+
+def test_incorrect_validatefilename(filename_fileformat_map):
+    filepath_list = filename_fileformat_map
     with pytest.raises(AssertionError):
-        clin_class.validateFilename(['foo'])
-        clin_class.validateFilename(
-            ["foo", "data_clinical_supp_sample_SAGE.txt"])
+        clin_class.validateFilename(filepath_list)
 
 
 def test_correct_validatefilename():

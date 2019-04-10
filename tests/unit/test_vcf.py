@@ -13,10 +13,21 @@ def test_processing():
     pass
 
 
-def test_validation():
+@pytest.fixture(params=[
+    (["foo"]),
+    (["GENIE-SAGE-ID1.bed"])
+    ])
+def filename_fileformat_map(request):
+    return request.param
+
+
+def test_incorrect_validatefilename(filename_fileformat_map):
+    filepath_list = filename_fileformat_map
     with pytest.raises(AssertionError):
-        vcfClass.validateFilename(["foo"])
-        vcfClass.validateFilename(["GENIE-SAGE-ID1.bed"])
+        vcfClass.validateFilename(filepath_list)
+
+
+def test_validation():
     assert vcfClass.validateFilename(["GENIE-SAGE-ID1.vcf"]) == "vcf"
 
     vcfDf = pd.DataFrame({
