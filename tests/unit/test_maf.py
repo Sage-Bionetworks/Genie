@@ -8,15 +8,10 @@ from genie import mafSP
 syn = mock.create_autospec(synapseclient.Synapse)
 
 maf_class = maf(syn, "SAGE")
-mafSPClass = mafSP(syn, "SAGE")
+mafsp_class = mafSP(syn, "SAGE")
 
 
 def test_processing():
-
-    # syn = mock.create_autospec(synapseclient.Synapse)
-
-    # maf_class = maf(syn, "SAGE")
-
     keep_maf_columns = [
         'Hugo_Symbol', 'Entrez_Gene_Id', 'Center',
         'NCBI_Build', 'Chromosome', 'Start_Position',
@@ -79,6 +74,9 @@ def test_perfect_validation():
         TUMOR_SEQ_ALLELE2=["A", "A", "A", "A", "A"]))
 
     error, warning = maf_class._validate(mafDf)
+    assert error == ""
+    assert warning == ""
+    error, warning = mafsp_class._validate(mafDf)
     assert error == ""
     assert warning == ""
 
