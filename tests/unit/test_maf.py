@@ -8,15 +8,10 @@ from genie import mafSP
 syn = mock.create_autospec(synapseclient.Synapse)
 
 maf_class = maf(syn, "SAGE")
-mafSPClass = mafSP(syn, "SAGE")
+mafsp_class = mafSP(syn, "SAGE")
 
 
 def test_processing():
-
-    # syn = mock.create_autospec(synapseclient.Synapse)
-
-    # maf_class = maf(syn, "SAGE")
-
     keep_maf_columns = [
         'Hugo_Symbol', 'Entrez_Gene_Id', 'Center',
         'NCBI_Build', 'Chromosome', 'Start_Position',
@@ -54,26 +49,17 @@ def test_processing():
     assert expected_mafdf.equals(formatted_mafdf[expected_mafdf.columns])
 
 
-def test_validation():
-
-    # syn = mock.create_autospec(synapseclient.Synapse)
-
-    # mafClass = maf(syn, "SAGE")
-    # mafSPClass = mafSP(syn, "SAGE")
-
+def test_invalidname_validateFilename():
     with pytest.raises(AssertionError):
         maf_class.validateFilename(['foo'])
 
+
+def test_valid_validateFilename():
     assert maf_class.validateFilename([
         "data_mutations_extended_SAGE.txt"]) == "maf"
 
-    # correct_column_headers = [
-    #     'CHROMOSOME', 'START_POSITION', 'REFERENCE_ALLELE',
-    #     'TUMOR_SAMPLE_BARCODE', 'T_ALT_COUNT']
-    # T_REF_COUNT + T_ALT_COUNT = T_DEPTH
-    # optional_headers = ['T_REF_COUNT','N_DEPTH','N_REF_COUNT','N_ALT_COUNT']
-    # tumors = ['TUMOR_SEQ_ALLELE2', 'TUMOR_SEQ_ALLELE1']
 
+def test_perfect_validation():
     mafDf = pd.DataFrame(dict(
         CHROMOSOME=[1, 2, 3, 4, 5],
         START_POSITION=[1, 2, 3, 4, 2],
@@ -90,7 +76,38 @@ def test_validation():
     error, warning = maf_class._validate(mafDf)
     assert error == ""
     assert warning == ""
+    error, warning = mafsp_class._validate(mafDf)
+    assert error == ""
+    assert warning == ""
 
+
+def test_quotes_validation():
+    mafDf = pd.DataFrame({
+        '"CHROMOSOME"': [1, 2, 3, 4, 5],
+        "START_POSITION": [1, 2, 3, 4, 2],
+        "REFERENCE_ALLELE": ["A", "A", "A", "A", "A"],
+        "TUMOR_SAMPLE_BARCODE": ["ID1-1", "ID1-1", "ID1-1", "ID1-1", "ID1-1"],
+        "T_ALT_COUNT": [1, 2, 3, 4, 3],
+        "T_DEPTH": [1, 2, 3, 4, 3],
+        "T_REF_COUNT": [1, 2, 3, 4, 3],
+        "N_DEPTH": [1, 2, 3, 4, 3],
+        "N_REF_COUNT": [1, 2, 3, 4, 3],
+        "N_ALT_COUNT": [1, 2, 3, 4, 3],
+        "TUMOR_SEQ_ALLELE2": ["A", "A", "A", "A", "A"]})
+
+    error, warning = maf_class._validate(mafDf)
+    expectedErrors = (
+        "Mutation File: First column header must be "
+        "one of these: CHROMOSOME, HUGO_SYMBOL, TUMOR_SAMPLE_BARCODE."
+        "If you are writing your maf file with R, please make"
+        "sure to specify the 'quote=FALSE' parameter.\n"
+        "Mutation File: "
+        "Must at least have these headers: CHROMOSOME.\n")
+    assert error == expectedErrors
+    assert warning == ""
+
+
+def test_missingcols_validation():
     mafDf = pd.DataFrame(dict(
         CHROMOSOME=[1, "chr2", "WT", 4, 5],
         START_POSITION=[1, 2, 3, 4, 2],
@@ -121,6 +138,8 @@ def test_validation():
     assert error == expectedErrors
     assert warning == expectedWarnings
 
+
+def test_invalid_validation():
     mafDf = pd.DataFrame(dict(
         START_POSITION=[1, 2, 3, 4, 2],
         REFERENCE_ALLELE=["A", "A", "A", "A", "A"],
@@ -134,7 +153,9 @@ def test_validation():
     error, warning = maf_class._validate(mafDf)
     expectedErrors = (
         "Mutation File: First column header must be "
-        "one of these: CHROMOSOME, HUGO_SYMBOL, TUMOR_SAMPLE_BARCODE.\n"
+        "one of these: CHROMOSOME, HUGO_SYMBOL, TUMOR_SAMPLE_BARCODE."
+        "If you are writing your maf file with R, please make"
+        "sure to specify the 'quote=FALSE' parameter.\n"
         "Mutation File: "
         "If you are missing T_DEPTH, you must have T_REF_COUNT!\n"
         "Mutation File: Must at least have these headers: CHROMOSOME.\n"
