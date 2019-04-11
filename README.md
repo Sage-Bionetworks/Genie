@@ -1,11 +1,11 @@
 [![Docker Automated](https://img.shields.io/docker/automated/sagebionetworks/genie.svg)](https://hub.docker.com/r/sagebionetworks/genie) ![Docker Build](https://img.shields.io/docker/build/sagebionetworks/genie.svg)
 
 
-# AACR Project GENIE
+# VEO-IBD Consortium Data Processing
 
 ## Introduction
 
-This repository documents code used to gather, QC, standardize, and analyze data uploaded by institutes participating in AACR's Project GENIE (Genomics, Evidence, Neoplasia, Information, Exchange). 
+This repository documents code used to gather, QC, standardize, and analyze data uploaded by institutes participating in the VEO-IBD consortium. 
 
 ## Dependencies
 
@@ -18,7 +18,7 @@ These are tools or packages you will need, to be able to reproduce these results
 
 ## File Validator
 ```
-pip install git+https://github.com/Sage-Bionetworks/Genie.git
+pip install git+https://github.com/veo-ibd/data-pipeline.git
 ```
 
 This will install all the necessary components for you to run the validator locally on all of your files, including the Synapse client.  Please view the help to see how to run to validator.  
@@ -39,7 +39,7 @@ genie validate clinical data_clincal_supp_SAGE.txt SAGE
 ## Processing on EC2
 
 1. Input to database: `python input_to_database.py -h`
-2. Create GENIE Files
+2. Create Files
 **Example Releases**
 a. release 4.1-consortium and 4.0-public
 ```
@@ -63,11 +63,11 @@ sudo rm -rf /var/lib/ecs/data/ecs_agent_data.json
 
 2. Rebuild the AMI above, specify the size of the image and put whatever you want in the instance that you would want to bind 
 
-## Adding GENIE sites
+## Adding VEO-IBD sites
 
-1. Invite users to GENIE participant Team 
+1. Invite users to VEO-IBD participant Team 
 2. Creates CENTER (input/staging) folder (Set up ACLs) 
 3. Update Center Mapping table https://www.synapse.org/#!Synapse:syn10061452/tables/
 4. Add center to distribution tables: https://www.synapse.org/#!Synapse:syn10627220/tables/, https://www.synapse.org/#!Synapse:syn7268822/tables/
-3. Add users to their GENIE folder
+3. Add users to their VEO-IBD folder
 
