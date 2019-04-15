@@ -481,10 +481,15 @@ def stagingToCbio(
             bedSynId, "','".join(CENTER_MAPPING_DF.center)))
     patientDf = patient.asDataFrame()
     sampleDf = sample.asDataFrame()
+    # Remove this when these columns are removed from both databases
+    if sampleDf.get("AGE_AT_SEQ_REPORT_NUMERICAL") is not None:
+        del sampleDf['AGE_AT_SEQ_REPORT_NUMERICAL']
     bedDf = bed.asDataFrame()
-    del sampleDf['AGE_AT_SEQ_REPORT_NUMERICAL']
     del sampleDf['CENTER']
-    del patientDf['BIRTH_YEAR_NUMERICAL']
+    # Remove this when these columns are removed from both databases
+    if patientDf.get("BIRTH_YEAR_NUMERICAL") is not None:
+        del patientDf['BIRTH_YEAR_NUMERICAL']
+    # del patientDf['BIRTH_YEAR_NUMERICAL']
     # Clinical release scope filter
     # If private -> Don't release to public
     clinicalReleaseScope = syn.tableQuery(
