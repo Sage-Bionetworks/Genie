@@ -546,7 +546,7 @@ def test_duplicated__validate():
         assert warning == ""
 
 
-class oncotree():
+class fake_oncotree():
     import json
     text = json.dumps({
         'TISSUE': {
@@ -590,7 +590,7 @@ def test_get_oncotree_code_mappings():
     from genie import process_functions
     with mock.patch(
             "genie.process_functions.retry_get_url",
-            return_value=oncotree) as retry_get_url:
+            return_value=fake_oncotree) as retry_get_url:
         onco_mapping = \
             process_functions.get_oncotree_code_mappings(json_oncotreeurl)
         retry_get_url.called_once_with(json_oncotreeurl)
