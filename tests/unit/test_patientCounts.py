@@ -4,8 +4,8 @@ import mock
 import pytest
 from genie import patientCounts
 
-oncotree_url = 'http://oncotree.mskcc.org/api/tumor_types.txt?version=oncotree_latest_stable'
-json_oncotreeurl = "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
+json_oncotreeurl = \
+    "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
 
 syn = mock.create_autospec(synapseclient.Synapse)
 
@@ -26,7 +26,7 @@ def test_processing():
         ONCOTREE_CODE=['LUAD', 'AMPCA', 'CHOL', 'IHCH', 'UCA'],
         NUM_PATIENTS_PD1_PDL1=[1, 2, 3, 4, 3]))
 
-    newpcDf = pc._process(pcDf, oncotree_url)
+    newpcDf = pc._process(pcDf, json_oncotreeurl)
     assert expectedpcDf.equals(newpcDf[expectedpcDf.columns])
 
 
@@ -40,9 +40,6 @@ def test_validation():
         ONCOTREE_CODE=['LUAD', 'AMPCA', 'CHOL', 'IHCH', 'UCA'],
         NUM_PATIENTS_PD1_PDL1=[1, 2, 3, 4, 3]))
 
-    error, warning = pc._validate(pcDf, oncotree_url)
-    assert error == ""
-    assert warning == ""
     error, warning = pc._validate(pcDf, json_oncotreeurl)
     assert error == ""
     assert warning == ""
