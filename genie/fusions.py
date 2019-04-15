@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import os
 import logging
 import pandas as pd
@@ -43,7 +43,7 @@ def remapFusion(gene_dict, DF, col):
     DF[col] = total 
     return(DF, nonmapped)
 
-class fusions(example_filetype_format.FileTypeFormat):
+class fusions(FileTypeFormat):
    
     _fileType = "fusions"
 
@@ -89,12 +89,7 @@ class fusions(example_filetype_format.FileTypeFormat):
         return(fusion)
 
     #PROCESSING
-    def process_steps(self, filePath, **kwargs):
-        logger.info('PROCESSING %s' % filePath)
-        databaseSynId = kwargs['databaseSynId']
-        newPath = kwargs['newPath']
-        test = kwargs['test']
-        fusion = pd.read_csv(filePath, sep="\t",comment="#")
+    def process_steps(self, fusion, databaseSynId, newPath, test):
         fusion = self._process(fusion, test)
         process_functions.updateData(self.syn, databaseSynId, fusion, self.center, toDelete=True)
         fusion.to_csv(newPath, sep="\t",index=False)

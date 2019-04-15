@@ -1,97 +1,117 @@
-import synapseclient
 import pandas as pd
-import random
 import datetime
 import os
 import sys
-import mock
 from genie.process_functions import seqDateFilter
-
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(SCRIPT_DIR,"../../genie"))
-from database_to_staging import seq_assay_id_filter, reAnnotatePHI, mutation_in_cis_filter, runMAFinBED, no_genepanel_filter
+sys.path.append(os.path.join(SCRIPT_DIR, "../../genie"))
+from database_to_staging import seq_assay_id_filter, reAnnotatePHI,\
+                                no_genepanel_filter
 from consortium_to_public import commonVariantFilter
 
-#syn = synapseclient.login()
+
+# syn = synapseclient.login()
 def test_seqassayfilter():
-    #SEQ ASSAY ID filter, only seq assay ids with more than
+    # SEQ ASSAY ID filter, only seq assay ids with more than
     sagetest = ["SAGE-TEST-1"]*51
     sagetest.extend(["SAGE-TEST-2"]*10)
 
     clinicalDf = pd.DataFrame(sagetest)
-    clinicalDf.rename(columns={0:"SEQ_ASSAY_ID"}, inplace=True)
-    clinicalDf['SAMPLE_ID'] = range(0,len(sagetest))
-    #Make sure that only samples of seq assay ids that have 50 or more samples are returned
+    clinicalDf.rename(columns={0: "SEQ_ASSAY_ID"}, inplace=True)
+    clinicalDf['SAMPLE_ID'] = range(0, len(sagetest))
+    # Make sure that only samples of seq assay ids that have 50 or
+    # more samples are returned
     samples = seq_assay_id_filter(clinicalDf).reset_index()
-    #Must make sure that seq assays have the same index to do comparisons
+    # Must make sure that seq assays have the same index to do comparisons
     del samples['index']
     samples = samples['SAMPLE_ID']
-    assert all(samples == pd.Series(range(51,61)))
+    assert all(samples == pd.Series(range(51, 61)))
+
 
 def test_seqdatefilter():
-
-    #Check that seq date filter works correctly
+    # Check that seq date filter works correctly
     SEQ_DATE = "Jan-2018"
     processingDate = datetime.datetime.strptime(SEQ_DATE, '%b-%Y')
-    clinicalDf = pd.DataFrame(['SAGE-TEST-1','SAGE-TEST-2','SAGE-TEST-3','SAGE-TEST-4','SAGE-TEST-5','SAGE-TEST-6','SAGE-TEST-7'])
-    clinicalDf.rename(columns={0:"SAMPLE_ID"}, inplace=True)
-    expected = ['SAGE-TEST-1','SAGE-TEST-2','SAGE-TEST-3','SAGE-TEST-4','SAGE-TEST-5','SAGE-TEST-6']
-    clinicalDf['SEQ_DATE'] = ["Jan-2018","Apr-2018","Oct-2017","Jul-2017","Apr-2017","Jan-2017","Oct-2016"]
+    clinicalDf = pd.DataFrame([
+        'SAGE-TEST-1', 'SAGE-TEST-2', 'SAGE-TEST-3',
+        'SAGE-TEST-4', 'SAGE-TEST-5', 'SAGE-TEST-6', 'SAGE-TEST-7'])
+    clinicalDf.rename(columns={0: "SAMPLE_ID"}, inplace=True)
+    expected = [
+        'SAGE-TEST-1', 'SAGE-TEST-2', 'SAGE-TEST-3',
+        'SAGE-TEST-4', 'SAGE-TEST-5', 'SAGE-TEST-6']
+    clinicalDf['SEQ_DATE'] = [
+        "Jan-2018", "Apr-2018", "Oct-2017",
+        "Jul-2017", "Apr-2017", "Jan-2017", "Oct-2016"]
     samples = seqDateFilter(clinicalDf, processingDate, 366)
     assert all(samples == expected)
 
-    #Half year filter
+    # Half year filter
     samples = seqDateFilter(clinicalDf, processingDate, 184)
-    expected = ['SAGE-TEST-1','SAGE-TEST-2','SAGE-TEST-3','SAGE-TEST-4']
+    expected = ['SAGE-TEST-1', 'SAGE-TEST-2', 'SAGE-TEST-3', 'SAGE-TEST-4']
     assert all(samples == expected)
 
-    #Test leap year
+    # Test leap year
     SEQ_DATE = "Jan-2017"
     processingDate = datetime.datetime.strptime(SEQ_DATE, '%b-%Y')
-    clinicalDf = pd.DataFrame(['SAGE-TEST-1','SAGE-TEST-2','SAGE-TEST-3','SAGE-TEST-4','SAGE-TEST-5','SAGE-TEST-6','SAGE-TEST-7'])
-    clinicalDf.rename(columns={0:"SAMPLE_ID"}, inplace=True)
-    clinicalDf['SEQ_DATE'] = ["Jan-2017","Apr-2017","Oct-2016","Jul-2016","Apr-2016","Jan-2016","Oct-2015"]
-    expected = ['SAGE-TEST-1','SAGE-TEST-2','SAGE-TEST-3','SAGE-TEST-4','SAGE-TEST-5','SAGE-TEST-6']
+    clinicalDf = pd.DataFrame([
+        'SAGE-TEST-1', 'SAGE-TEST-2', 'SAGE-TEST-3',
+        'SAGE-TEST-4', 'SAGE-TEST-5', 'SAGE-TEST-6', 'SAGE-TEST-7'])
+    clinicalDf.rename(columns={0: "SAMPLE_ID"}, inplace=True)
+    clinicalDf['SEQ_DATE'] = [
+        "Jan-2017", "Apr-2017", "Oct-2016",
+        "Jul-2016", "Apr-2016", "Jan-2016", "Oct-2015"]
+    expected = [
+        'SAGE-TEST-1', 'SAGE-TEST-2', 'SAGE-TEST-3',
+        'SAGE-TEST-4', 'SAGE-TEST-5', 'SAGE-TEST-6']
     samples = seqDateFilter(clinicalDf, processingDate, 366)
     assert all(samples == expected)
 
-    #Check half year release date during leap year
+    # Check half year release date during leap year
     SEQ_DATE = "Jul-2016"
     processingDate = datetime.datetime.strptime(SEQ_DATE, '%b-%Y')
     samples = seqDateFilter(clinicalDf, processingDate, 184)
     assert all(samples == expected)
 
-def test_reAnnotatePHI():
-    #Remove PHI, "Make sure that removePHI fills in the right values"
-    clinicalDf = pd.DataFrame(['SAGE-TEST-1','SAGE-TEST-2','SAGE-TEST-3','SAGE-TEST-4','SAGE-TEST-5','SAGE-TEST-6'])
-    clinicalDf.rename(columns={0:"SAMPLE_ID"}, inplace=True)
-    clinicalDf['AGE_AT_SEQ_REPORT'] = [32850, 32485, 6570, 6569, '<foo','>testing']
 
-    clinicalDf['BIRTH_YEAR'] = [1900,1901,1902,1903,1900,1900]
-    clinicalDf['INT_CONTACT'] = [32850, 32485, 6570, 6569, '<foo','>testing']
-    clinicalDf['INT_DOD'] = [32850, 32485, 6570, 6569, '<foo','>testing']
+def test_reAnnotatePHI():
+    # Remove PHI, "Make sure that removePHI fills in the right values"
+    clinicalDf = pd.DataFrame([
+        'SAGE-TEST-1', 'SAGE-TEST-2', 'SAGE-TEST-3', 'SAGE-TEST-4',
+        'SAGE-TEST-5', 'SAGE-TEST-6'])
+    clinicalDf.rename(columns={0: "SAMPLE_ID"}, inplace=True)
+    clinicalDf['AGE_AT_SEQ_REPORT'] = [
+        32850, 32485, 6570, 6569, '<foo', '>testing']
+
+    clinicalDf['BIRTH_YEAR'] = [1900, 1901, 1902, 1903, 1900, 1900]
+    clinicalDf['INT_CONTACT'] = [32850, 32485, 6570, 6569, '<foo', '>testing']
+    clinicalDf['INT_DOD'] = [32850, 32485, 6570, 6569, '<foo', '>testing']
 
     finalClin = reAnnotatePHI(clinicalDf)
-    expectedAge = pd.Series(['>32485',32485,6570,'<6570','<6570','>32485'])
-    expectedBirth = pd.Series(['cannotReleaseHIPAA',1901,1902,'withheld','withheld','cannotReleaseHIPAA'])
+    expectedAge = pd.Series([
+        '>32485', 32485, 6570, '<6570', '<6570', '>32485'])
+    expectedBirth = pd.Series([
+        'cannotReleaseHIPAA', 1901, 1902,
+        'withheld', 'withheld', 'cannotReleaseHIPAA'])
 
     assert all(finalClin['AGE_AT_SEQ_REPORT'] == expectedAge)
     assert all(finalClin['INT_CONTACT'] == expectedAge)
     assert all(finalClin['INT_DOD'] == expectedAge)
     assert all(finalClin['BIRTH_YEAR'] == expectedBirth)
 
-    #Test for if the other columns will redact BIRTH_YEAR as well
-    expectedBirth = pd.Series(['cannotReleaseHIPAA','cannotReleaseHIPAA','withheld','withheld','withheld','cannotReleaseHIPAA'])
-    clinicalDf['AGE_AT_SEQ_REPORT'] = [32850, 32485, 6570, 6570, '<foo',32485]
-    clinicalDf['INT_CONTACT'] = [32485, 32850, 6569, 6570, 6570,32485]
-    clinicalDf['INT_DOD'] = [32485, 32485, 6570, 6569, 6570,'>testing']
-    clinicalDf['BIRTH_YEAR'] = [1900,1901,1902,1903,1900,1900]
+    # Test for if the other columns will redact BIRTH_YEAR as well
+    expectedBirth = pd.Series([
+        'cannotReleaseHIPAA', 'cannotReleaseHIPAA', 'withheld',
+        'withheld', 'withheld', 'cannotReleaseHIPAA'])
+    clinicalDf['AGE_AT_SEQ_REPORT'] = [32850, 32485, 6570, 6570, '<foo', 32485]
+    clinicalDf['INT_CONTACT'] = [32485, 32850, 6569, 6570, 6570, 32485]
+    clinicalDf['INT_DOD'] = [32485, 32485, 6570, 6569, 6570, '>testing']
+    clinicalDf['BIRTH_YEAR'] = [1900, 1901, 1902, 1903, 1900, 1900]
     finalClin = reAnnotatePHI(clinicalDf)
     assert all(finalClin['BIRTH_YEAR'] == expectedBirth)
 
-    #Test to check if > or < submitted in BIRTH_YEAR.  If so, redact
-    expectedBirth = pd.Series(['cannotReleaseHIPAA','withheld'])
-    clinicalDf = pd.DataFrame(['SAGE-TEST-1','SAGE-TEST-2'])
+    # Test to check if > or < submitted in BIRTH_YEAR.  If so, redact
+    expectedBirth = pd.Series(['cannotReleaseHIPAA', 'withheld'])
+    clinicalDf = pd.DataFrame(['SAGE-TEST-1', 'SAGE-TEST-2'])
     clinicalDf['AGE_AT_SEQ_REPORT'] = [32485, 6570]
     clinicalDf['INT_CONTACT'] = [32485, 6570]
     clinicalDf['INT_DOD'] = [32485, 6570]
@@ -100,19 +120,21 @@ def test_reAnnotatePHI():
     assert all(finalClin['BIRTH_YEAR'] == expectedBirth)
 
 # def test_MAFinBED():
-#   syn = mock.create_autospec(synapseclient.Synapse) 
-#   # MAF in BED filter (Make sure that the only Hugo symbol that passes through this filter is the ERRFI1 gene)
+#   syn = mock.create_autospec(synapseclient.Synapse)
+#   # MAF in BED filter (Make sure that the only Hugo symbol that
+    # passes through this filter is the ERRFI1 gene)
 #   databaseSynIdMapping = syn.tableQuery('select * from syn11600968')
 #   databaseSynIdMappingDf = databaseSynIdMapping.asDataFrame()
-#   CENTER_MAPPING = syn.tableQuery('SELECT * FROM syn11601248 where stagingSynId is not null')
+    # CENTER_MAPPING = syn.tableQuery(
+    #     'SELECT * FROM syn11601248 where stagingSynId is not null')
 #   CENTER_MAPPING_DF = CENTER_MAPPING.asDataFrame()
 #   mafPath = os.path.join(SCRIPT_DIR,"testingmaf.txt")
-#   temp = runMAFinBED(syn, mafPath, CENTER_MAPPING_DF, databaseSynIdMappingDf, test=True)
-    
+    # temp = runMAFinBED(
+    #     syn, mafPath, CENTER_MAPPING_DF, databaseSynIdMappingDf, test=True)
 #   maf = pd.read_csv(mafPath,sep="\t")
 #   assert all(maf['Hugo_Symbol'][maf['inBED'] ==  True].unique() == "ERRFI1")
 #   os.unlink(mafPath)
-    
+
 # def test_MutationInCis():
 #   def createMockTable(dataframe):
 #       table = mock.create_autospec(synapseclient.table.CsvFileTable)
@@ -142,25 +164,37 @@ def test_reAnnotatePHI():
 #                                  t_alt_count_num=[3],
 #                                  t_depth=[234]))
 
-#   #This is the gene positions that all bed dataframe will be processed against
-#   table_query_results_map = {
-#   ('select * from syn11600968',) : createMockTable(databaseMapping),
-#   ('SELECT * FROM syn11601248 where stagingSynId is not null',): createMockTable(centerMapping),
-#   ("select * from syn7765462 where Center = 'SAGE'",) : createMockTable(mutCisDf)
-#   }   
+#   #This is the gene positions that all bed
+#   dataframe will be processed against
+    # table_query_results_map = {
+    #     ('select * from syn11600968',):
+    #         createMockTable(databaseMapping),
+    #     ('SELECT * FROM syn11601248 where staginsgSynId is not null',):
+    #         createMockTable(centerMapping),
+    #     ("select * from syn7765462 where Center = 'SAGE'",):
+    #         createMockTable(mutCisDf)
+    # }
 
-#   syn = mock.create_autospec(synapseclient.Synapse) 
+#   syn = mock.create_autospec(synapseclient.Synapse)
 #   syn.tableQuery.side_effect=table_query_results
-#   # Mutation in cis filter check (There is one TOSS sample, it should be GENIE-TEST-0-1)
-#   remove_samples = mutation_in_cis_filter(syn, True, None, None, "syn11601206", None)
+#   # Mutation in cis filter check (There is one TOSS sample,
+#   it should be GENIE-TEST-0-1)
+    # remove_samples = mutation_in_cis_filter(
+    #     syn, True, None, None, "syn11601206", None)
 #   assert  all(remove_samples == "GENIE-TEST-0-1")
 
+
 def test_commonvariantfilter():
-    #Test common variant filter, make sure none of the common_variant rows are kept
-    mutationDf = pd.DataFrame(["common_variant","test1","asdfasd:common_variant","fo;common_variant","test2","test3"])
-    mutationDf.rename(columns={0:"FILTER"}, inplace=True)
+    '''
+    Test common variant filter, make sure none
+    of the common_variant rows are kept
+    '''
+    mutationDf = pd.DataFrame([
+        "common_variant", "test1", "asdfasd:common_variant",
+        "fo;common_variant", "test2", "test3"])
+    mutationDf.rename(columns={0: "FILTER"}, inplace=True)
     maf = commonVariantFilter(mutationDf)
-    expected = ["test1","test2","test3"]
+    expected = ["test1", "test2", "test3"]
     assert all(maf['FILTER'] == expected)
 
 
