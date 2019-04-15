@@ -449,10 +449,10 @@ def updateDatabase(syn, database, new_dataset, databaseSynId, uniqueKeyCols, toD
         #Must write out the headers in case there are no appends or updates
         updateFile.write(",".join(columnOrder) + "\n")
         if not allUpdates.empty:
-            updateFile.write(allUpdates[columnOrder].to_csv(index=False,header=None).replace(".0,",","))
+            updateFile.write(allUpdates[columnOrder].to_csv(index=False,header=None).replace(".0,",",").replace(".0\n", "\n"))
             storeDatabase = True
         if not deleteSets.empty:
-            updateFile.write(rowIdVersion.to_csv(index=False,header=None).replace(".0,",","))
+            updateFile.write(rowIdVersion.to_csv(index=False,header=None).replace(".0,",",").replace(".0\n", "\n"))
             storeDatabase = True
     if storeDatabase:
         syn.store(synapseclient.Table(syn.get(databaseSynId), updateAllFile))
@@ -491,7 +491,9 @@ def check_col_and_values(
             error = "{filename}: Must have {col} column.\n".format(
                 filename=filename, col=col)
         else:
-            warning = "{filename}: Doesn't have {col} column. This column will be added\n".format(filename=filename, col=col)
+            warning = (
+                "{filename}: Doesn't have {col} column. "
+                "This column will be added\n".format(filename=filename, col=col))
     else:
         if na_allowed:
             check_values = df[col].dropna()
