@@ -26,8 +26,9 @@ def get_center_data_completion(center, df):
     total = len(centerdf)
     center_data = pd.DataFrame()
     for col in centerdf:
-        if col not in ['CENTER', 'PATIENT_ID',
-                       'SAMPLE_ID', 'SAMPLE_TYPE_DETAILED']:
+        # Remove this when _NUMERICAL cols are removed from master table
+        if not col.endswith("_NUMERICAL") and col not in \
+                ['CENTER', 'PATIENT_ID', 'SAMPLE_ID', 'SAMPLE_TYPE_DETAILED']:
             not_missing = [not pd.isnull(value) for value in centerdf[col]]
             completeness = float(sum(not_missing)) / int(total)
             returned = pd.DataFrame([[col, center, total, completeness]])
