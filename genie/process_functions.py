@@ -491,14 +491,24 @@ def check_col_and_values(
             error = "{filename}: Must have {col} column.\n".format(
                 filename=filename, col=col)
         else:
-            warning = "{filename}: Doesn't have {col} column. This column will be added\n".format(filename=filename, col=col)
+            warning = (
+                "{filename}: Doesn't have {col} column. "
+                "This column will be added\n".format(
+                    filename=filename, col=col))
     else:
         if na_allowed:
             check_values = df[col].dropna()
         else:
             check_values = df[col]
         if not check_values.isin(possible_values).all():
-            error = "{filename}: Please double check your {col} column.  This column must only be these values: {possible_vals}\n".format(filename=filename, col=col, possible_vals=', '.join([str(value) for value in possible_values]))
+            error = (
+                "{filename}: Please double check your {col} column.  "
+                "This column must only be these values: "
+                "{possible_vals}\n".format(
+                    filename=filename,
+                    col=col,
+                    possible_vals=', '.join([
+                        str(value) for value in possible_values])))
     return(warning, error)
 
 

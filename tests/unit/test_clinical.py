@@ -46,6 +46,41 @@ oncotree_url = \
 json_oncotreeurl = \
  "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
 
+onco_map_dict = {
+  "AMPCA": {
+    'CANCER_TYPE': "cancertype",
+    'CANCER_TYPE_DETAILED': "detailed",
+    'ONCOTREE_PRIMARY_NODE': "primary",
+    'ONCOTREE_SECONDARY_NODE': "secondary"},
+  "TESTIS": {
+    'CANCER_TYPE': "cancertype",
+    'CANCER_TYPE_DETAILED': "detailed",
+    'ONCOTREE_PRIMARY_NODE': "primary",
+    'ONCOTREE_SECONDARY_NODE': "secondary"},
+  "UCEC": {
+    'CANCER_TYPE': "cancertype",
+    'CANCER_TYPE_DETAILED': "detailed",
+    'ONCOTREE_PRIMARY_NODE': "primary",
+    'ONCOTREE_SECONDARY_NODE': "secondary"}}
+# oncomapping = {
+#   'TISSUE': {
+#     'children': {
+#       'AMPCA': {
+#         'level': 1,
+#         'mainType': 'Cancer type',
+#         'name': 'cancername',
+#         'children': {
+#           'TESTIS': {
+#             'level': 2,
+#             'mainType': 'Cancer type',
+#             'name': 'cancername',
+#             'children': []},
+#           'UCEC': {
+#             'level': 2,
+#             'mainType': 'Cancer type',
+#             'name': 'cancername',
+#             'children': []}}}}}}
+
 
 def test_filetype():
     assert clin_class._fileType == "clinical"
@@ -337,55 +372,23 @@ def test_perfect__validate():
 
     clinicaldf = patientdf.merge(sampledf, on="PATIENT_ID")
 
-    # oncomapping = {
-    #   'TISSUE': {
-    #     'children': {
-    #       'AMPCA': {
-    #         'level': 1,
-    #         'mainType': 'Cancer type',
-    #         'name': 'cancername',
-    #         'children': {
-    #           'TESTIS': {
-    #             'level': 2,
-    #             'mainType': 'Cancer type',
-    #             'name': 'cancername',
-    #             'children': []},
-    #           'UCEC': {
-    #             'level': 2,
-    #             'mainType': 'Cancer type',
-    #             'name': 'cancername',
-    #             'children': []}}}}}}
-    onco_map_dict = {
-      "AMPCA": {
-        'CANCER_TYPE': "cancertype",
-        'CANCER_TYPE_DETAILED': "detailed",
-        'ONCOTREE_PRIMARY_NODE': "primary",
-        'ONCOTREE_SECONDARY_NODE':"secondary"},
-      "TESTIS": {
-        'CANCER_TYPE': "cancertype",
-        'CANCER_TYPE_DETAILED': "detailed",
-        'ONCOTREE_PRIMARY_NODE': "primary",
-        'ONCOTREE_SECONDARY_NODE':"secondary"},
-      "UCEC": {
-        'CANCER_TYPE': "cancertype",
-        'CANCER_TYPE_DETAILED': "detailed",
-        'ONCOTREE_PRIMARY_NODE': "primary",
-        'ONCOTREE_SECONDARY_NODE':"secondary"}}
     with mock.patch(
-        "genie.process_functions.get_oncotree_codes",
-        return_value=pd.DataFrame()) as mock_get_codes, \
-         mock.patch(
-        "genie.process_functions.get_oncotree_code_mappings",
-        return_value=onco_map_dict) as mock_get_onco_map:
-      error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
-      assert error == ""
-      assert warning == ""
-    #error, warning = clin_class._validate(clinicaldf, oncotree_url)
-    #assert error == ""
-    #assert warning == ""
-    #error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
-    #assert error == ""
-    #assert warning == ""
+            "genie.process_functions.get_oncotree_codes",
+            return_value=pd.DataFrame()) as mock_get_codes, \
+        mock.patch(
+            "genie.process_functions.get_oncotree_code_mappings",
+            return_value=onco_map_dict) as mock_get_onco_map:
+        error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
+        mock_get_codes.called_once_with(json_oncotreeurl)
+        mock_get_onco_map.called_once_with(json_oncotreeurl)
+        assert error == ""
+        assert warning == ""
+    # error, warning = clin_class._validate(clinicaldf, oncotree_url)
+    # assert error == ""
+    # assert warning == ""
+    # error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
+    # assert error == ""
+    # assert warning == ""
 
 
 def test_missingcols__validate():
