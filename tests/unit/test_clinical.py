@@ -265,12 +265,56 @@ def test_perfect__validate():
                                  SEQ_DATE=['Jan-2013','ApR-2013','Jul-2013','Oct-2013','release']))
 
     clinicaldf = patientdf.merge(sampledf, on="PATIENT_ID")
-    error, warning = clin_class._validate(clinicaldf, oncotree_url)
-    assert error == ""
-    assert warning == ""
-    error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
-    assert error == ""
-    assert warning == ""
+
+    # oncomapping = {
+    #   'TISSUE': {
+    #     'children': {
+    #       'AMPCA': {
+    #         'level': 1,
+    #         'mainType': 'Cancer type',
+    #         'name': 'cancername',
+    #         'children': {
+    #           'TESTIS': {
+    #             'level': 2,
+    #             'mainType': 'Cancer type',
+    #             'name': 'cancername',
+    #             'children': []},
+    #           'UCEC': {
+    #             'level': 2,
+    #             'mainType': 'Cancer type',
+    #             'name': 'cancername',
+    #             'children': []}}}}}}
+    onco_map_dict = {
+      "AMPCA": {
+        'CANCER_TYPE': "cancertype",
+        'CANCER_TYPE_DETAILED': "detailed",
+        'ONCOTREE_PRIMARY_NODE': "primary",
+        'ONCOTREE_SECONDARY_NODE':"secondary"},
+      "TESTIS": {
+        'CANCER_TYPE': "cancertype",
+        'CANCER_TYPE_DETAILED': "detailed",
+        'ONCOTREE_PRIMARY_NODE': "primary",
+        'ONCOTREE_SECONDARY_NODE':"secondary"},
+      "UCEC": {
+        'CANCER_TYPE': "cancertype",
+        'CANCER_TYPE_DETAILED': "detailed",
+        'ONCOTREE_PRIMARY_NODE': "primary",
+        'ONCOTREE_SECONDARY_NODE':"secondary"}}
+    with mock.patch(
+        "genie.process_functions.get_oncotree_codes",
+        return_value=pd.DataFrame()) as mock_get_codes, \
+         mock.patch(
+        "genie.process_functions.get_oncotree_code_mappings",
+        return_value=onco_map_dict) as mock_get_onco_map:
+      error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
+      assert error == ""
+      assert warning == ""
+    #error, warning = clin_class._validate(clinicaldf, oncotree_url)
+    #assert error == ""
+    #assert warning == ""
+    #error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
+    #assert error == ""
+    #assert warning == ""
 
 def test_missingcols__validate():
     '''
