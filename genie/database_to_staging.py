@@ -404,6 +404,42 @@ def no_genepanel_filter(clinicaldf, beddf):
     return(remove_samples)
 
 
+def store_gene_panel_files(
+        syn,
+        databaseSynIdMappingDf,
+        genieVersion,
+        data_gene_panel,
+        consortiumReleaseSynId,
+        current_release_staging):
+    # Only need to upload these files once
+    logger.info("STORING GENE PANELS FILES")
+    fileviewSynId = databaseSynIdMappingDf['Id'][
+        databaseSynIdMappingDf['Database'] == "fileview"][0]
+    genePanels = syn.tableQuery(
+        "select id from %s where cBioFileFormat = 'genePanel' "
+        "and fileStage = 'staging'" % fileviewSynId)
+    genePanelDf = genePanels.asDataFrame()
+    genePanelEntities = []
+    for synId in genePanelDf['id']:
+        genePanel = syn.get(synId)
+        panelNames = set(data_gene_panel['mutations'])
+        genePanelName = os.path.basename(genePanel.path)
+        newGenePanelPath = os.path.join(
+            GENIE_RELEASE_DIR,
+            genePanelName.replace(".txt", "_%s.txt" % genieVersion))
+        if genePanelName.replace(".txt", "").replace(
+                "data_gene_panel_", "") in panelNames:
+            os.rename(genePanel.path, newGenePanelPath)
+            genePanelEntities.append(storeFile(
+                syn, newGenePanelPath,
+                parent=consortiumReleaseSynId,
+                genieVersion=genieVersion,
+                name=genePanelName,
+                cBioFileFormat="genePanel",
+                staging=current_release_staging))
+    return(genePanelEntities)
+
+
 def stagingToCbio(
         syn, processingDate, genieVersion,
         CENTER_MAPPING_DF, databaseSynIdMappingDf,
@@ -429,24 +465,23 @@ def stagingToCbio(
         genie_pass: Synapse password.  Default is None.
 
     '''
-    CNA_PATH = os.path.join(
+    cna_path = os.path.join(
         GENIE_RELEASE_DIR, "data_CNA_%s.txt" % genieVersion)
-    CLINCICAL_PATH = os.path.join(
+    clinical_path = os.path.join(
         GENIE_RELEASE_DIR, 'data_clinical_%s.txt' % genieVersion)
-    CLINCICAL_SAMPLE_PATH = os.path.join(
+    clinical_sample_path = os.path.join(
         GENIE_RELEASE_DIR, 'data_clinical_sample_%s.txt' % genieVersion)
-    CLINCICAL_PATIENT_PATH = os.path.join(
+    clinical_patient_path = os.path.join(
         GENIE_RELEASE_DIR, 'data_clinical_patient_%s.txt' % genieVersion)
-
-    DATA_GENE_PANEL_PATH = os.path.join(
+    data_gene_panel_path = os.path.join(
         GENIE_RELEASE_DIR, 'data_gene_matrix_%s.txt' % genieVersion)
-    MUTATIONS_PATH = os.path.join(
+    mutations_path = os.path.join(
         GENIE_RELEASE_DIR, 'data_mutations_extended_%s.txt' % genieVersion)
-    FUSIONS_PATH = os.path.join(
+    fusions_path = os.path.join(
         GENIE_RELEASE_DIR, 'data_fusions_%s.txt' % genieVersion)
-    SEG_PATH = os.path.join(
+    seg_path = os.path.join(
         GENIE_RELEASE_DIR, 'genie_private_data_cna_hg19_%s.seg' % genieVersion)
-    COMBINED_BED_PATH = os.path.join(
+    combined_bed_path = os.path.join(
         GENIE_RELEASE_DIR, 'genie_combined_%s.bed' % genieVersion)
     consortiumReleaseSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == "consortium"][0]
@@ -481,10 +516,10 @@ def stagingToCbio(
             bedSynId, "','".join(CENTER_MAPPING_DF.center)))
     patientDf = patient.asDataFrame()
     sampleDf = sample.asDataFrame()
+    bedDf = bed.asDataFrame()
     # Remove this when these columns are removed from both databases
     if sampleDf.get("AGE_AT_SEQ_REPORT_NUMERICAL") is not None:
         del sampleDf['AGE_AT_SEQ_REPORT_NUMERICAL']
-    bedDf = bed.asDataFrame()
     del sampleDf['CENTER']
     # Remove this when these columns are removed from both databases
     if patientDf.get("BIRTH_YEAR_NUMERICAL") is not None:
@@ -510,19 +545,6 @@ def stagingToCbio(
     # Remove patients without any sample or patient ids
     clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isnull()]
     clinicalDf = clinicalDf[~clinicalDf['PATIENT_ID'].isnull()]
-
-    # #add in vital status
-    # logger.info("MERGE VITAL STATUS")
-    # vitalStatusSynId = databaseSynIdMappingDf['Id'][
-    #    databaseSynIdMappingDf['Database'] == "vitalStatus"][0]
-    # vitalStatus = syn.tableQuery('select * from %s' % vitalStatusSynId)
-    # vitalStatusDf = vitalStatus.asDataFrame()
-    # del vitalStatusDf['CENTER']
-    # #Make sure to grab only the patients that exist in the clinical database
-    # vitalStatusDf = vitalStatusDf[
-    #    vitalStatusDf.PATIENT_ID.isin(clinicalDf.PATIENT_ID)]
-    # clinicalDf = clinicalDf.merge(
-    #    vitalStatusDf, on = "PATIENT_ID",how="outer")
 
     ''' FILTERING '''
     logger.info("REMOVING PHI")
@@ -586,13 +608,6 @@ def stagingToCbio(
         if code.upper() in oncotreeDict.keys() else float('nan')
         for code in clinicalDf['ONCOTREE_CODE']]
 
-    # CANCER TYPES are added which is why the clinical file is written out.
-    # clinicalDf.to_csv(CLINCICAL_PATH, sep="\t", index=False)
-    # add_cancerType_script = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../analyses/clinicalData/oncotree_code_converter.py')
-    # command = ['python',add_cancerType_script,'-o',oncotree_url,'-c',CLINCICAL_PATH]
-    # subprocess.check_call(command)
-    # clinicalDf = pd.read_csv(CLINCICAL_PATH, sep="\t", comment="#")
-
     # All cancer types that are null should have null oncotree codes
     clinicalDf['ONCOTREE_CODE'][
         clinicalDf['CANCER_TYPE'].isnull()] = float('nan')
@@ -613,7 +628,6 @@ def stagingToCbio(
     ############################################################
     clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "UHN-555-V1"]
     # clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "PHS-TRISEQ-V1"]
-
     # clinicalDf = clinicalDf[clinicalDf['CENTER'] != "WAKE"]
     # clinicalDf = clinicalDf[clinicalDf['CENTER'] != "CRUK"]
     ############################################################
@@ -670,24 +684,24 @@ def stagingToCbio(
 
     process.addClinicalHeaders(
         clinicalDf, mapping, patientCols, sampleCols,
-        CLINCICAL_SAMPLE_PATH, CLINCICAL_PATIENT_PATH)
+        clinical_sample_path, clinical_patient_path)
     storeFile(
-        syn, CLINCICAL_SAMPLE_PATH,
+        syn, clinical_sample_path,
         parent=consortiumReleaseSynId,
         genieVersion=genieVersion,
         name="data_clinical_sample.txt",
         staging=current_release_staging)
 
     storeFile(
-        syn, CLINCICAL_PATIENT_PATH,
+        syn, clinical_patient_path,
         parent=consortiumReleaseSynId,
         genieVersion=genieVersion,
         name="data_clinical_patient.txt",
         staging=current_release_staging)
 
-    clinicalDf.to_csv(CLINCICAL_PATH, sep="\t", index=False)
+    clinicalDf.to_csv(clinical_path, sep="\t", index=False)
     storeFile(
-        syn, CLINCICAL_PATH,
+        syn, clinical_path,
         parent=consortiumReleaseSynId,
         name="data_clinical.txt",
         staging=current_release_staging)
@@ -713,7 +727,7 @@ def stagingToCbio(
         "select id from %s " % centerMafFileViewSynId +
         "where name like '%mutation%'")
     centerMafSynIdsDf = centerMafSynIds.asDataFrame()
-    with open(MUTATIONS_PATH, 'w') as f:
+    with open(mutations_path, 'w') as f:
         f.write(sequenced_samples + "\n")
     for index, mafSynId in enumerate(centerMafSynIdsDf.id):
         mafEnt = syn.get(mafSynId)
@@ -722,7 +736,7 @@ def stagingToCbio(
             header = mafFile.readline()
             headers = header.replace("\n", "").split("\t")
             if index == 0:
-                with open(MUTATIONS_PATH, 'a') as f:
+                with open(mutations_path, 'a') as f:
                     f.write(header)
                 # Create maf file per center for their staging directory
                 for center in clinicalDf['CENTER'].unique():
@@ -741,7 +755,7 @@ def stagingToCbio(
                         keepForMergedConsortiumSamples,
                         remove_mafInBed_variants)
                     if newMergedRow is not None:
-                        with open(MUTATIONS_PATH, 'a') as f:
+                        with open(mutations_path, 'a') as f:
                             f.write(newMergedRow)
                     newCenterRow = configureMafRow(
                         rowArray, headers,
@@ -751,7 +765,7 @@ def stagingToCbio(
                         with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
                             f.write(newCenterRow)
     storeFile(
-        syn, MUTATIONS_PATH,
+        syn, mutations_path,
         parent=consortiumReleaseSynId,
         genieVersion=genieVersion,
         name="data_mutations_extended.txt",
@@ -766,32 +780,13 @@ def stagingToCbio(
                     CENTER_MAPPING_DF['center'] == center][0],
                 centerStaging=True)
 
-    # Only need to upload these files once
-    logger.info("STORING GENE PANELS FILES")
-    fileviewSynId = databaseSynIdMappingDf['Id'][
-        databaseSynIdMappingDf['Database'] == "fileview"][0]
-    genePanels = syn.tableQuery(
-        "select id from %s where cBioFileFormat = 'genePanel' "
-        "and fileStage = 'staging'" % fileviewSynId)
-    genePanelDf = genePanels.asDataFrame()
-    genePanelEntities = []
-    for synId in genePanelDf['id']:
-        genePanel = syn.get(synId)
-        panelNames = set(data_gene_panel['mutations'])
-        genePanelName = os.path.basename(genePanel.path)
-        newGenePanelPath = os.path.join(
-            GENIE_RELEASE_DIR,
-            genePanelName.replace(".txt", "_%s.txt" % genieVersion))
-        if genePanelName.replace(".txt", "").replace(
-                "data_gene_panel_", "") in panelNames:
-            os.rename(genePanel.path, newGenePanelPath)
-            genePanelEntities.append(storeFile(
-                syn, newGenePanelPath,
-                parent=consortiumReleaseSynId,
-                genieVersion=genieVersion,
-                name=genePanelName,
-                cBioFileFormat="genePanel",
-                staging=current_release_staging))
+    genePanelEntities = store_gene_panel_files(
+        syn,
+        databaseSynIdMappingDf,
+        genieVersion,
+        data_gene_panel,
+        consortiumReleaseSynId,
+        current_release_staging)
 
     # CNA
     logger.info("MERING, FILTERING, STORING CNA FILES")
@@ -812,7 +807,7 @@ def stagingToCbio(
                 set(line.split("\t")[0] for line in cnaFile))
     cnaTemplate = pd.DataFrame({"Hugo_Symbol": list(allSymbols)})
     cnaTemplate.sort_values("Hugo_Symbol", inplace=True)
-    cnaTemplate.to_csv(CNA_PATH, sep="\t", index=False)
+    cnaTemplate.to_csv(cna_path, sep="\t", index=False)
     # Loop through to create finalized CNA file
     withCenterHugoSymbol = pd.Series("Hugo_Symbol")
     withCenterHugoSymbol = withCenterHugoSymbol.append(
@@ -863,77 +858,26 @@ def stagingToCbio(
                 cnaFile.write(cnaText)
             # Join CNA file
             cnaSamples.extend(merged.columns[1:].tolist())
-            joinCommand = ["join", CNA_PATH, CNA_CENTER_PATH % center]
+            joinCommand = ["join", cna_path, CNA_CENTER_PATH % center]
             output = subprocess.check_output(joinCommand)
-            with open(CNA_PATH, "w") as cnaFile:
+            with open(cna_path, "w") as cnaFile:
                 cnaFile.write(output.decode("utf-8").replace(" ", "\t"))
 
     storeFile(
-        syn, CNA_PATH,
+        syn, cna_path,
         parent=consortiumReleaseSynId,
         genieVersion=genieVersion,
         name="data_CNA.txt",
         staging=current_release_staging)
-
-    # cnaText = process.removePandasDfFloat(mergedCNA)
-    # with open(CNA_PATH, "w") as cnaFile:
-    #   cnaFile.write(cnaText)
-    # storeFile(syn, CNA_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_CNA.txt", staging=current_release_staging)
-    # mergedCNA = pd.DataFrame(columns=["Hugo_Symbol"],index=[])
-    # cnaSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == "cna"][0]
-    # for center in CENTER_MAPPING_DF.center:
-    #   logger.info("MERGING %s CNA" % center)
-    #   cna = syn.tableQuery("SELECT TUMOR_SAMPLE_BARCODE,CNAData FROM %s where CENTER = '%s'" % (cnaSynId,center))
-    #   cnaDf = cna.asDataFrame()
-    #   if not cnaDf.empty:
-    #       allSymbols = set()
-    #       for data in cnaDf['CNAData']:
-    #           cnadata = data.split("\n")
-    #           symbols = cnadata[0].split(",")
-    #           allSymbols.update(set(symbols))
-    #       center_cna = pd.DataFrame(index = allSymbols)
-    #       if len(symbols) == len(allSymbols):
-    #           center_cna = center_cna.ix[symbols]
-    #       for sample,data in zip(cnaDf['TUMOR_SAMPLE_BARCODE'],cnaDf['CNAData']):
-    #           cnadata = data.split("\n")
-    #           symbols = cnadata[0].split(",")
-    #           cnavalues = cnadata[1].split(",")
-    #           indexMethod = True
-    #           if len(center_cna.index) == len(symbols):
-    #               if all(center_cna.index == symbols):
-    #                   center_cna[sample] = cnavalues
-    #                   indexMethod = False
-    #           if indexMethod:
-    #               center_cna[sample] = 0
-    #               center_cna[sample].ix[symbols] = cnavalues
-    #       #missing = center_cna.columns[~center_cna.columns.isin(samples)]
-    #       center_cna = center_cna[center_cna.columns[center_cna.columns.isin(keepForCenterConsortiumSamples)]]
-    #       center_cna['Hugo_Symbol'] = center_cna.index
-    #       center_cna = center_cna.fillna('NA')
-    #       cols = center_cna.columns.tolist()
-    #       cols = cols[-1:] + cols[:-1]
-    #       center_cna = center_cna[cols]
-    #       cnaText = process.removePandasDfFloat(center_cna)
-    #       with open(CNA_CENTER_PATH % center, "w") as cnaFile:
-    #           cnaFile.write(cnaText)
-    #       if not current_release_staging:
-    #           storeFile(syn,CNA_CENTER_PATH % center, genieVersion=genieVersion, parent = CENTER_MAPPING_DF['stagingSynId'][CENTER_MAPPING_DF['center'] == center][0], centerStaging=True)
-    #       mergedCNA = mergedCNA.merge(center_cna, on='Hugo_Symbol', how="outer")
-    # mergedCNA = mergedCNA[mergedCNA.columns[mergedCNA.columns.isin(keepForMergedConsortiumSamples.append(pd.Series("Hugo_Symbol")))]]
-    # mergedCNA = mergedCNA.fillna('NA')
-    # cnaText = process.removePandasDfFloat(mergedCNA)
-    # with open(CNA_PATH, "w") as cnaFile:
-    #   cnaFile.write(cnaText)
-    # storeFile(syn, CNA_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_CNA.txt", staging=current_release_staging)
 
     # Add in CNA column into gene panel file
     cnaSeqIds = data_gene_panel['mutations'][
         data_gene_panel['SAMPLE_ID'].isin(cnaSamples)].unique()
     data_gene_panel['cna'] = data_gene_panel['mutations']
     data_gene_panel['cna'][~data_gene_panel['cna'].isin(cnaSeqIds)] = "NA"
-    data_gene_panel.to_csv(DATA_GENE_PANEL_PATH, sep="\t", index=False)
+    data_gene_panel.to_csv(data_gene_panel_path, sep="\t", index=False)
     storeFile(
-        syn, DATA_GENE_PANEL_PATH,
+        syn, data_gene_panel_path,
         parent=consortiumReleaseSynId,
         genieVersion=genieVersion,
         name="data_gene_matrix.txt",
@@ -986,10 +930,10 @@ def stagingToCbio(
         ['Hugo_Symbol', 'Tumor_Sample_Barcode', 'Fusion']].duplicated()]
     # FusionsDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
     fusionText = process.removePandasDfFloat(FusionsDf)
-    with open(FUSIONS_PATH, "w") as fusionFile:
+    with open(fusions_path, "w") as fusionFile:
         fusionFile.write(fusionText)
     storeFile(
-        syn, FUSIONS_PATH,
+        syn, fusions_path,
         parent=consortiumReleaseSynId,
         genieVersion=genieVersion,
         name="data_fusions.txt",
@@ -1029,10 +973,10 @@ def stagingToCbio(
     del segDf['CENTER']
     segDf = segDf[segDf['ID'].isin(keepForMergedConsortiumSamples)]
     segText = process.removePandasDfFloat(segDf)
-    with open(SEG_PATH, "w") as segFile:
+    with open(seg_path, "w") as segFile:
         segFile.write(segText)
     storeFile(
-        syn, SEG_PATH,
+        syn, seg_path,
         parent=consortiumReleaseSynId,
         genieVersion=genieVersion,
         name="genie_private_data_cna_hg19.seg",
@@ -1057,9 +1001,9 @@ def stagingToCbio(
                     centerStaging=True)
     # This clinicalDf is already filtered through most of the filters
     bedDf = bedDf[bedDf['SEQ_ASSAY_ID'].isin(clinicalDf.SEQ_ASSAY_ID)]
-    bedDf.to_csv(COMBINED_BED_PATH, sep="\t", index=False)
+    bedDf.to_csv(combined_bed_path, sep="\t", index=False)
     storeFile(
-        syn, COMBINED_BED_PATH,
+        syn, combined_bed_path,
         parent=consortiumReleaseSynId,
         genieVersion=genieVersion,
         name="genie_combined.bed",
@@ -1319,14 +1263,14 @@ def main(genie_version,
     caselists = os.listdir(CASE_LIST_PATH)
     [os.remove(os.path.join(CASE_LIST_PATH, caselist))
         for caselist in caselists]
-    CLINICAL_PATH = os.path.join(
+    clinical_path = os.path.join(
         GENIE_RELEASE_DIR,
         'data_clinical_{}.txt'.format(genie_version))
     GENE_MATRIX_PATH = os.path.join(
         GENIE_RELEASE_DIR,
         "data_gene_matrix_{}.txt".format(genie_version))
     create_case_lists.create_case_lists(
-        CLINICAL_PATH,
+        clinical_path,
         GENE_MATRIX_PATH,
         CASE_LIST_PATH,
         "genie_private")
@@ -1354,11 +1298,11 @@ def main(genie_version,
     # [os.remove(os.path.join(GENIE_RELEASE_DIR, genieFile))
     #     for genieFile in genie_files
     #     if genieFile.startswith(deletePatterns)]
-    [os.remove(os.path.join(GENIE_RELEASE_DIR, genieFile))
-        for genieFile in genie_files
-        if genie_version not in genieFile
-        and "meta" not in genieFile and "case_lists" not in genieFile]
-    os.remove(CLINICAL_PATH)
+    for genieFile in genie_files:
+        if genie_version not in genieFile and \
+             "meta" not in genieFile and "case lists" not in genieFile:
+            os.remove(os.path.join(GENIE_RELEASE_DIR, genieFile))
+    os.remove(clinical_path)
 
     logger.info("REVISE METADATA FILES")
     reviseMetadataFiles(syn, staging, databaseSynIdMappingDf, genie_version)
