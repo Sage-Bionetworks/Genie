@@ -449,10 +449,10 @@ def updateDatabase(syn, database, new_dataset, databaseSynId, uniqueKeyCols, toD
         #Must write out the headers in case there are no appends or updates
         updateFile.write(",".join(columnOrder) + "\n")
         if not allUpdates.empty:
-            updateFile.write(allUpdates[columnOrder].to_csv(index=False,header=None).replace(".0,",","))
+            updateFile.write(allUpdates[columnOrder].to_csv(index=False,header=None).replace(".0,",",").replace(".0\n", "\n"))
             storeDatabase = True
         if not deleteSets.empty:
-            updateFile.write(rowIdVersion.to_csv(index=False,header=None).replace(".0,",","))
+            updateFile.write(rowIdVersion.to_csv(index=False,header=None).replace(".0,",",").replace(".0\n", "\n"))
             storeDatabase = True
     if storeDatabase:
         syn.store(synapseclient.Table(syn.get(databaseSynId), updateAllFile))
