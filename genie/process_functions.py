@@ -702,15 +702,15 @@ def updateDatabase(
     new_dataset[primary_key] = new_dataset[
         primary_key_cols].apply(lambda x: ' '.join(x), axis=1)
 
-    allupdates = pd.DataFrame()
+    allupdates = pd.DataFrame(columns=col_order)
     to_append_rows = _append_rows(new_dataset, database, primary_key)
     to_update_rows = _update_rows(new_dataset, database, primary_key)
     if to_delete:
         to_delete_rows = _delete_rows(new_dataset, database, primary_key)
     else:
         to_delete_rows = pd.DataFrame()
-    allupdates = allupdates.append(to_append_rows)
-    allupdates = allupdates.append(to_update_rows)
+    allupdates = allupdates.append(to_append_rows, sort=False)
+    allupdates = allupdates.append(to_update_rows, sort=False)
 
     storedatabase = False
     update_all_file = os.path.join(SCRIPT_DIR, "toUpdateAll.csv")
