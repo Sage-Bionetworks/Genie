@@ -151,9 +151,8 @@ def write_case_list_cnaseq(cna_samples, output_directory, study_id):
         study_id: cBioPortal study id
     '''
     case_list_ids = '\t'.join(cna_samples)
-    with open(os.path.abspath(
-            output_directory + '/' +
-            'case_list_cnaseq.txt'), 'w') as case_list_file:
+    with open(os.path.abspath(os.path.join(
+            output_directory, 'case_list_cnaseq.txt')), 'w') as case_list_file:
         case_list_file_text = CASE_LIST_TEXT_TEMPLATE.format(
             study_id=study_id,
             stable_id=study_id + '_cnaseq',
