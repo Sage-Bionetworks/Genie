@@ -41,45 +41,27 @@ syn = mock.create_autospec(synapseclient.Synapse)
 syn.tableQuery.side_effect = table_query_results
 clin_class = clinical(syn, "SAGE")
 
-oncotree_url = \
- 'http://oncotree.mskcc.org/api/tumor_types.txt?version=oncotree_latest_stable'
+# oncotree_url = \
+#  'http://oncotree.mskcc.org/api/tumor_types.txt?version=oncotree_latest_stable'
 json_oncotreeurl = \
  "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
 
 onco_map_dict = {
   "AMPCA": {
-    'CANCER_TYPE': "cancertype",
-    'CANCER_TYPE_DETAILED': "detailed",
-    'ONCOTREE_PRIMARY_NODE': "primary",
-    'ONCOTREE_SECONDARY_NODE': "secondary"},
+    'CANCER_TYPE': "Ampullary Cancer",
+    'CANCER_TYPE_DETAILED': "Ampullary Carcinoma",
+    'ONCOTREE_PRIMARY_NODE': "AMPULLA_OF_VATER",
+    'ONCOTREE_SECONDARY_NODE': "AMPCA"},
   "TESTIS": {
-    'CANCER_TYPE': "cancertype",
-    'CANCER_TYPE_DETAILED': "detailed",
-    'ONCOTREE_PRIMARY_NODE': "primary",
-    'ONCOTREE_SECONDARY_NODE': "secondary"},
+    'CANCER_TYPE': "Testicular Cancer, NOS",
+    'CANCER_TYPE_DETAILED': "Testis",
+    'ONCOTREE_PRIMARY_NODE': "TESTIS",
+    'ONCOTREE_SECONDARY_NODE': ''},
   "UCEC": {
-    'CANCER_TYPE': "cancertype",
-    'CANCER_TYPE_DETAILED': "detailed",
-    'ONCOTREE_PRIMARY_NODE': "primary",
-    'ONCOTREE_SECONDARY_NODE': "secondary"}}
-# oncomapping = {
-#   'TISSUE': {
-#     'children': {
-#       'AMPCA': {
-#         'level': 1,
-#         'mainType': 'Cancer type',
-#         'name': 'cancername',
-#         'children': {
-#           'TESTIS': {
-#             'level': 2,
-#             'mainType': 'Cancer type',
-#             'name': 'cancername',
-#             'children': []},
-#           'UCEC': {
-#             'level': 2,
-#             'mainType': 'Cancer type',
-#             'name': 'cancername',
-#             'children': []}}}}}}
+    'CANCER_TYPE': "Endometrial Cancer",
+    'CANCER_TYPE_DETAILED': "Endometrial Carcinoma",
+    'ONCOTREE_PRIMARY_NODE': "UTERUS",
+    'ONCOTREE_SECONDARY_NODE': "UCEC"}}
 
 
 def test_filetype():
@@ -371,59 +353,52 @@ def test_perfect__validate():
         SEQ_DATE=['Jan-2013', 'ApR-2013', 'Jul-2013', 'Oct-2013', 'release']))
 
     clinicaldf = patientdf.merge(sampledf, on="PATIENT_ID")
-
     with mock.patch(
-            "genie.process_functions.get_oncotree_codes",
-            return_value=pd.DataFrame()) as mock_get_codes, \
-        mock.patch(
             "genie.process_functions.get_oncotree_code_mappings",
             return_value=onco_map_dict) as mock_get_onco_map:
         error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
-        mock_get_codes.called_once_with(json_oncotreeurl)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         assert error == ""
         assert warning == ""
-    # error, warning = clin_class._validate(clinicaldf, oncotree_url)
-    # assert error == ""
-    # assert warning == ""
-    # error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
-    # assert error == ""
-    # assert warning == ""
 
 
 def test_missingcols__validate():
     '''
     Test for missing column errors
     '''
-    clincaldf = pd.DataFrame()
-    error, warning = clin_class._validate(clincaldf, json_oncotreeurl)
-    expected_errors = (
-        "Sample: clinical file must have SAMPLE_ID column.\n"
-        "Patient: clinical file must have PATIENT_ID column.\n"
-        "Sample: clinical file must have AGE_AT_SEQ_REPORT column.\n"
-        "Sample: clinical file must have ONCOTREE_CODE column.\n"
-        "Sample: clinical file must have SAMPLE_TYPE column.\n"
-        "Sample: clinical file must have SEQ_ASSAY_ID column.\n"
-        "Sample: clinical file must SEQ_DATE column\n"
-        "Patient: clinical file must have BIRTH_YEAR column.\n"
-        "Patient: clinical file must have SEX column.\n")
+    clinicaldf = pd.DataFrame()
+    with mock.patch(
+            "genie.process_functions.get_oncotree_code_mappings",
+            return_value=onco_map_dict) as mock_get_onco_map:
+        error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
+        mock_get_onco_map.called_once_with(json_oncotreeurl)
+        expected_errors = (
+            "Sample: clinical file must have SAMPLE_ID column.\n"
+            "Patient: clinical file must have PATIENT_ID column.\n"
+            "Sample: clinical file must have AGE_AT_SEQ_REPORT column.\n"
+            "Sample: clinical file must have ONCOTREE_CODE column.\n"
+            "Sample: clinical file must have SAMPLE_TYPE column.\n"
+            "Sample: clinical file must have SEQ_ASSAY_ID column.\n"
+            "Sample: clinical file must SEQ_DATE column\n"
+            "Patient: clinical file must have BIRTH_YEAR column.\n"
+            "Patient: clinical file must have SEX column.\n")
 
-    expected_warnings = (
-        "Patient: Must have YEAR_DEATH column for 7...release uploads.\n"
-        "Patient: Must have YEAR_CONTACT column for 7...release uploads.\n"
-        "Patient: Must have INT_CONTACT column for 7...release uploads.\n"
-        "Patient: Must have INT_DOD column for 7...release uploads.\n"
-        "Patient: Must have DEAD column for 7...release uploads.\n"
-        "Patient: clinical file doesn't have PRIMARY_RACE column. "
-        "A blank column will be added\n"
-        "Patient: clinical file doesn't have SECONDARY_RACE column. "
-        "A blank column will be added\n"
-        "Patient: clinical file doesn't have TERTIARY_RACE column. "
-        "A blank column will be added\n"
-        "Patient: clinical file doesn't have ETHNICITY column. "
-        "A blank column will be added\n")
-    assert error == expected_errors
-    assert warning == expected_warnings
+        expected_warnings = (
+            "Patient: Must have YEAR_DEATH column for 7...release uploads.\n"
+            "Patient: Must have YEAR_CONTACT column for 7...release uploads.\n"
+            "Patient: Must have INT_CONTACT column for 7...release uploads.\n"
+            "Patient: Must have INT_DOD column for 7...release uploads.\n"
+            "Patient: Must have DEAD column for 7...release uploads.\n"
+            "Patient: clinical file doesn't have PRIMARY_RACE column. "
+            "A blank column will be added\n"
+            "Patient: clinical file doesn't have SECONDARY_RACE column. "
+            "A blank column will be added\n"
+            "Patient: clinical file doesn't have TERTIARY_RACE column. "
+            "A blank column will be added\n"
+            "Patient: clinical file doesn't have ETHNICITY column. "
+            "A blank column will be added\n")
+        assert error == expected_errors
+        assert warning == expected_warnings
 
 
 def test_errors__validate():
@@ -455,62 +430,71 @@ def test_errors__validate():
                     1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"]))
     clinicalDf = patientDf.merge(sampleDf, on="PATIENT_ID")
+    with mock.patch(
+            "genie.process_functions.get_oncotree_code_mappings",
+            return_value=onco_map_dict) as mock_get_onco_map:
+        error, warning = clin_class._validate(clinicalDf, json_oncotreeurl)
+        mock_get_onco_map.called_once_with(json_oncotreeurl)
 
-    error, warning = clin_class._validate(clinicalDf, json_oncotreeurl)
-    expectedErrors = (
-        "Sample: PATIENT_ID's much be contained in the SAMPLE_ID's "
-        "(ex. SAGE-1 <-> SAGE-1-2)\n"
-        "Patient: All samples must have associated patient information and "
-        "no null patient ids allowed. "
-        "These samples are missing patient data: ID4-1\n"
-        "Sample: Please double check your AGE_AT_SEQ_REPORT.  "
-        "It must be an integer or 'Unknown'.\n"
-        "Sample: Please double check that all your ONCOTREE CODES exist in "
-        "the mapping. You have 1 samples that don't map. "
-        "These are the codes that don't map: AMPCAD\n"
-        "Sample: Please double check your SAMPLE_TYPE column. "
-        "No null values allowed.\n"
-        "Sample: Please double check your SEQ_ASSAY_ID columns, "
-        "there are empty rows.\n"
-        "Sample: Please make sure your SEQ_ASSAY_IDs start with your center "
-        "abbreviation: S-SAGE-1.\n"
-        "Sample: SEQ_DATE must be one of five values- For Jan-March: "
-        "use Jan-YEAR. For Apr-June: use Apr-YEAR. For July-Sep: use Jul-YEAR."
-        " For Oct-Dec: use Oct-YEAR. (ie. Apr-2017) For values that don't have"
-        " SEQ_DATES that you want released use 'release'.\n"
-        "Patient: Please double check your BIRTH_YEAR column, "
-        "it must be an integer in YYYY format > {year} or 'Unknown'.  "
-        "Support for blank values will be deprecated in 7...releases.\n"
-        "Patient: Please double check your YEAR_DEATH column, it must be "
-        "an integer in YYYY format, 'Unknown', 'Not Applicable' "
-        "or 'Not Collected'.\n"
-        "Patient: Please double check your YEAR_CONTACT column, "
-        "it must be an integer in YYYY format, 'Unknown' or 'Not Collected'.\n"
-        "Patient: Please double check your INT_CONTACT column, "
-        "it must be an integer, '>32485', '<6570', 'Unknown' or "
-        "'Not Collected'.\n"
-        "Patient: Please double check your INT_DOD column, it must be "
-        "an integer, '>32485', '<6570', 'Unknown', 'Not Collected' or "
-        "'Not Applicable'.\n"
-        "Patient: Please double check your DEAD column, it must be "
-        "True, False, 'Unknown' or 'Not Collected'.\n"
-        "Patient: Please double check your PRIMARY_RACE column.  "
-        "This column must be these values 1, 2, 3, 4, or blank.\n"
-        "Patient: Please double check your SECONDARY_RACE column.  "
-        "This column must be these values 1, 2, 3, 4, or blank.\n"
-        "Patient: Please double check your TERTIARY_RACE column.  "
-        "This column must be these values 1, 2, 3, 4, or blank.\n"
-        "Patient: Please double check your SEX column.  "
-        "This column must be these values 1, 2, or blank.\n"
-        "Patient: Please double check your ETHNICITY column.  "
-        "This column must be these values 1, 2, 3, 4, or blank.\n")
-    expectedWarnings = (
-        "Sample: All patients must have associated sample information. "
-        "These patients are missing sample data: ID6\n"
-        "Sample: Some SAMPLE_IDs have conflicting SEX and "
-        "ONCOTREE_CODES: ID2-1,ID5-1\n")
-    assert error == expectedErrors.format(year=datetime.datetime.utcnow().year)
-    assert warning == expectedWarnings
+        expectedErrors = (
+            "Sample: PATIENT_ID's much be contained in the SAMPLE_ID's "
+            "(ex. SAGE-1 <-> SAGE-1-2)\n"
+            "Patient: All samples must have associated patient information "
+            "and no null patient ids allowed. "
+            "These samples are missing patient data: ID4-1\n"
+            "Sample: Please double check your AGE_AT_SEQ_REPORT.  "
+            "It must be an integer or 'Unknown'.\n"
+            "Sample: Please double check that all your ONCOTREE CODES exist "
+            "in the mapping. You have 1 samples that don't map. "
+            "These are the codes that don't map: AMPCAD\n"
+            "Sample: Please double check your SAMPLE_TYPE column. "
+            "No null values allowed.\n"
+            "Sample: Please double check your SEQ_ASSAY_ID columns, "
+            "there are empty rows.\n"
+            "Sample: Please make sure your SEQ_ASSAY_IDs start with your "
+            "center abbreviation: S-SAGE-1.\n"
+            "Sample: SEQ_DATE must be one of five values- "
+            "For Jan-March: use Jan-YEAR. "
+            "For Apr-June: use Apr-YEAR. "
+            "For July-Sep: use Jul-YEAR. "
+            "For Oct-Dec: use Oct-YEAR. (ie. Apr-2017) "
+            "For values that don't have SEQ_DATES that you want "
+            "released use 'release'.\n"
+            "Patient: Please double check your BIRTH_YEAR column, "
+            "it must be an integer in YYYY format > {year} or 'Unknown'.  "
+            "Support for blank values will be deprecated in 7...releases.\n"
+            "Patient: Please double check your YEAR_DEATH column, it must be "
+            "an integer in YYYY format, 'Unknown', 'Not Applicable' "
+            "or 'Not Collected'.\n"
+            "Patient: Please double check your YEAR_CONTACT column, it must "
+            "be an integer in YYYY format, 'Unknown' or 'Not Collected'.\n"
+            "Patient: Please double check your INT_CONTACT column, "
+            "it must be an integer, '>32485', '<6570', 'Unknown' or "
+            "'Not Collected'.\n"
+            "Patient: Please double check your INT_DOD column, it must be "
+            "an integer, '>32485', '<6570', 'Unknown', 'Not Collected' or "
+            "'Not Applicable'.\n"
+            "Patient: Please double check your DEAD column, it must be "
+            "True, False, 'Unknown' or 'Not Collected'.\n"
+            "Patient: Please double check your PRIMARY_RACE column.  "
+            "This column must be these values 1, 2, 3, 4, or blank.\n"
+            "Patient: Please double check your SECONDARY_RACE column.  "
+            "This column must be these values 1, 2, 3, 4, or blank.\n"
+            "Patient: Please double check your TERTIARY_RACE column.  "
+            "This column must be these values 1, 2, 3, 4, or blank.\n"
+            "Patient: Please double check your SEX column.  "
+            "This column must be these values 1, 2, or blank.\n"
+            "Patient: Please double check your ETHNICITY column.  "
+            "This column must be these values 1, 2, 3, 4, or blank.\n")
+        expectedWarnings = (
+            "Sample: All patients must have associated sample information. "
+            "These patients are missing sample data: ID6\n"
+            "Sample: Some SAMPLE_IDs have conflicting SEX and "
+            "ONCOTREE_CODES: ID2-1,ID5-1\n")
+        assert error == expectedErrors.format(
+            year=datetime.datetime.utcnow().year)
+        print(warning)
+        assert warning == expectedWarnings
 
 
 def test_duplicated__validate():
@@ -546,14 +530,68 @@ def test_duplicated__validate():
         SEQ_DATE=['Jan-2013', 'Jul-2013', 'Oct-2013', 'release']))
 
     clinicalDf = patientDf.merge(sampleDf, on="PATIENT_ID")
-    error, warning = clin_class._validate(clinicalDf, json_oncotreeurl)
+    with mock.patch(
+            "genie.process_functions.get_oncotree_code_mappings",
+            return_value=onco_map_dict) as mock_get_onco_map:
+        error, warning = clin_class._validate(clinicalDf, json_oncotreeurl)
+        mock_get_onco_map.called_once_with(json_oncotreeurl)
+        expectedErrors = (
+            "Sample: No duplicated SAMPLE_ID in the "
+            "sample file allowed.\n"
+            "If there are no duplicated SAMPLE_IDs, and both sample and "
+            "patient files are uploaded, then please check to make sure no "
+            "duplicated PATIENT_IDs exist in the patient file.\n")
 
-    expectedErrors = (
-        "Sample: No duplicated SAMPLE_ID in the "
-        "sample file allowed.\n"
-        "If there are no duplicated SAMPLE_IDs, and both sample and "
-        "patient files are uploaded, then please check to make sure no "
-        "duplicated PATIENT_IDs exist in the patient file.\n")
+        assert error == expectedErrors
+        assert warning == ""
 
-    assert error == expectedErrors
-    assert warning == ""
+
+class oncotree():
+    import json
+    text = json.dumps({
+        'TISSUE': {
+            'children': {
+              'AMPCA': {
+                'level': 1,
+                'mainType': 'Ampullary Cancer',
+                'name': 'Ampullary Carcinoma',
+                'children': {
+                    'TESTIS': {
+                        'level': 2,
+                        'mainType': 'Testicular Cancer, NOS',
+                        'name': 'Testis',
+                        'children': []},
+                    'UCEC': {
+                        'level': 2,
+                        'mainType': 'Endometrial Cancer',
+                        'name': 'Endometrial Carcinoma',
+                        'children': []}}}}}})
+
+
+expected_onco_mapping = {
+    'AMPCA': {
+        'CANCER_TYPE': 'Ampullary Cancer',
+        'CANCER_TYPE_DETAILED': 'Ampullary Carcinoma',
+        'ONCOTREE_PRIMARY_NODE': 'AMPCA',
+        'ONCOTREE_SECONDARY_NODE': ''},
+    'TESTIS': {
+        'CANCER_TYPE': 'Testicular Cancer, NOS',
+        'CANCER_TYPE_DETAILED': 'Testis',
+        'ONCOTREE_PRIMARY_NODE': 'AMPCA',
+        'ONCOTREE_SECONDARY_NODE': 'TESTIS'},
+    'UCEC': {
+        'CANCER_TYPE': 'Endometrial Cancer',
+        'CANCER_TYPE_DETAILED': 'Endometrial Carcinoma',
+        'ONCOTREE_PRIMARY_NODE': 'AMPCA',
+        'ONCOTREE_SECONDARY_NODE': 'UCEC'}}
+
+
+def test_get_oncotree_code_mappings():
+    from genie import process_functions
+    with mock.patch(
+            "genie.process_functions.retry_get_url",
+            return_value=oncotree) as retry_get_url:
+        onco_mapping = \
+            process_functions.get_oncotree_code_mappings(json_oncotreeurl)
+        retry_get_url.called_once_with(json_oncotreeurl)
+        assert onco_mapping == expected_onco_mapping
