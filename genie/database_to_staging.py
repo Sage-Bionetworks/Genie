@@ -1419,9 +1419,9 @@ def main(genie_version,
     centerMappingSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == 'centerMapping'].values[0]
     # Only release files where release is true
-    CENTER_MAPPING = syn.tableQuery(
+    center_mapping = syn.tableQuery(
         'SELECT * FROM {} where release is true'.format(centerMappingSynId))
-    CENTER_MAPPING_DF = CENTER_MAPPING.asDataFrame()
+    center_mappingdf = center_mapping.asDataFrame()
     processingDate = datetime.datetime.strptime(processing_date, '%b-%Y')
 
     cbioValidatorPath = os.path.join(
@@ -1434,7 +1434,7 @@ def main(genie_version,
         syn,
         processingDate,
         genie_version,
-        CENTER_MAPPING_DF,
+        center_mappingdf,
         databaseSynIdMappingDf,
         oncotree_url=oncotree_link,
         consortiumReleaseCutOff=consortium_release_cutoff,
@@ -1455,12 +1455,12 @@ def main(genie_version,
     clinical_path = os.path.join(
         GENIE_RELEASE_DIR,
         'data_clinical_{}.txt'.format(genie_version))
-    GENE_MATRIX_PATH = os.path.join(
+    gene_matrix_path = os.path.join(
         GENIE_RELEASE_DIR,
         "data_gene_matrix_{}.txt".format(genie_version))
     create_case_lists.create_case_lists(
         clinical_path,
-        GENE_MATRIX_PATH,
+        gene_matrix_path,
         CASE_LIST_PATH,
         "genie_private")
     caseListFiles = os.listdir(CASE_LIST_PATH)
