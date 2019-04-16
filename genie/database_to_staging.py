@@ -1376,7 +1376,7 @@ def main():
     GENE_MATRIX_PATH = os.path.join(
         GENIE_RELEASE_DIR,
         "data_gene_matrix_{}.txt".format(args.genieVersion))
-    create_case_lists.create_case_lists(
+    create_case_lists.main(
         CLINICAL_PATH,
         GENE_MATRIX_PATH,
         CASE_LIST_PATH,

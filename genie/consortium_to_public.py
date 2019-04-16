@@ -106,7 +106,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
     storeFile(syn, DATA_GENE_PANEL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_gene_matrix.txt")
     storeFile(syn, CLINICAL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_clinical.txt")
     
-    create_case_lists.create_case_lists(CLINICAL_PATH, DATA_GENE_PANEL_PATH, dbTostaging.CASE_LIST_PATH, "genie_public")
+    create_case_lists.main(CLINICAL_PATH, DATA_GENE_PANEL_PATH, dbTostaging.CASE_LIST_PATH, "genie_public")
 
     caseListFiles = os.listdir(dbTostaging.CASE_LIST_PATH)
     caseListEntities = []
