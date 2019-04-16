@@ -440,6 +440,71 @@ def store_gene_panel_files(
     return(genePanelEntities)
 
 
+def store_fusion_files(
+        syn,
+        consortiumReleaseSynId,
+        genieVersion,
+        databaseSynIdMappingDf,
+        keepForCenterConsortiumSamples,
+        keepForMergedConsortiumSamples,
+        current_release_staging,
+        CENTER_MAPPING_DF):
+    # FUSIONS
+    logger.info("MERING, FILTERING, STORING FUSION FILES")
+    fusionSynId = databaseSynIdMappingDf['Id'][
+        databaseSynIdMappingDf['Database'] == "fusions"][0]
+    Fusions = syn.tableQuery(
+        'SELECT HUGO_SYMBOL,ENTREZ_GENE_ID,CENTER,TUMOR_SAMPLE_BARCODE,FUSION,'
+        'DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME FROM %s' % fusionSynId)
+    FusionsDf = Fusions.asDataFrame()
+    FusionsDf['ENTREZ_GENE_ID'][FusionsDf['ENTREZ_GENE_ID'] == 0] = pd.np.nan
+
+    if not current_release_staging:
+        FusionsStagingDf = FusionsDf[FusionsDf['TUMOR_SAMPLE_BARCODE'].isin(
+            keepForCenterConsortiumSamples)]
+        for center in CENTER_MAPPING_DF.center:
+            center_fusion = FusionsStagingDf[
+                FusionsStagingDf['CENTER'] == center]
+            if not center_fusion.empty:
+                center_fusion.to_csv(
+                    FUSIONS_CENTER_PATH % center,
+                    sep="\t", index=False)
+                storeFile(
+                    syn, FUSIONS_CENTER_PATH % center,
+                    genieVersion=genieVersion,
+                    parent=CENTER_MAPPING_DF['stagingSynId'][
+                        CENTER_MAPPING_DF['center'] == center][0],
+                    centerStaging=True)
+
+    FusionsDf = FusionsDf[FusionsDf['TUMOR_SAMPLE_BARCODE'].isin(
+        keepForMergedConsortiumSamples)]
+    FusionsDf = FusionsDf.rename(columns={
+        'HUGO_SYMBOL': 'Hugo_Symbol',
+        'ENTREZ_GENE_ID': 'Entrez_Gene_Id',
+        'CENTER': 'Center',
+        'TUMOR_SAMPLE_BARCODE': 'Tumor_Sample_Barcode',
+        'FUSION': 'Fusion',
+        'DNA_SUPPORT': 'DNA_support',
+        'RNA_SUPPORT': 'RNA_support',
+        'METHOD': 'Method',
+        'FRAME': 'Frame'})
+    # Remove duplicated Fusions
+    FusionsDf = FusionsDf[~FusionsDf[
+        ['Hugo_Symbol', 'Tumor_Sample_Barcode', 'Fusion']].duplicated()]
+    # FusionsDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
+    fusionText = process.removePandasDfFloat(FusionsDf)
+    fusions_path = os.path.join(
+        GENIE_RELEASE_DIR, 'data_fusions_%s.txt' % genieVersion)
+    with open(fusions_path, "w") as fusionFile:
+        fusionFile.write(fusionText)
+    storeFile(
+        syn, fusions_path,
+        parent=consortiumReleaseSynId,
+        genieVersion=genieVersion,
+        name="data_fusions.txt",
+        staging=current_release_staging)
+
+
 def stagingToCbio(
         syn, processingDate, genieVersion,
         CENTER_MAPPING_DF, databaseSynIdMappingDf,
@@ -477,8 +542,6 @@ def stagingToCbio(
         GENIE_RELEASE_DIR, 'data_gene_matrix_%s.txt' % genieVersion)
     mutations_path = os.path.join(
         GENIE_RELEASE_DIR, 'data_mutations_extended_%s.txt' % genieVersion)
-    fusions_path = os.path.join(
-        GENIE_RELEASE_DIR, 'data_fusions_%s.txt' % genieVersion)
     seg_path = os.path.join(
         GENIE_RELEASE_DIR, 'genie_private_data_cna_hg19_%s.seg' % genieVersion)
     combined_bed_path = os.path.join(
@@ -883,61 +946,15 @@ def stagingToCbio(
         name="data_gene_matrix.txt",
         staging=current_release_staging)
 
-    # FUSIONS
-    logger.info("MERING, FILTERING, STORING FUSION FILES")
-    fusionSynId = databaseSynIdMappingDf['Id'][
-        databaseSynIdMappingDf['Database'] == "fusions"][0]
-
-    Fusions = syn.tableQuery(
-        'SELECT HUGO_SYMBOL,ENTREZ_GENE_ID,CENTER,TUMOR_SAMPLE_BARCODE,FUSION,'
-        'DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME FROM %s' % fusionSynId)
-    FusionsDf = Fusions.asDataFrame()
-    # FusionsDf['ENTREZ_GENE_ID'] = FusionsDf['ENTREZ_GENE_ID'].fillna(0).apply(int)
-    FusionsDf['ENTREZ_GENE_ID'][FusionsDf['ENTREZ_GENE_ID'] == 0] = pd.np.nan
-    # missing = FusionsDf[~FusionsDf['TUMOR_SAMPLE_BARCODE'].isin(samples)]['TUMOR_SAMPLE_BARCODE']
-    # missing.drop_duplicates().to_csv("fusion_missing.txt",sep="\t",index=False)
-    if not current_release_staging:
-        FusionsStagingDf = FusionsDf[FusionsDf['TUMOR_SAMPLE_BARCODE'].isin(
-            keepForCenterConsortiumSamples)]
-        for center in CENTER_MAPPING_DF.center:
-            center_fusion = FusionsStagingDf[
-                FusionsStagingDf['CENTER'] == center]
-            if not center_fusion.empty:
-                center_fusion.to_csv(
-                    FUSIONS_CENTER_PATH % center,
-                    sep="\t", index=False)
-                storeFile(
-                    syn, FUSIONS_CENTER_PATH % center,
-                    genieVersion=genieVersion,
-                    parent=CENTER_MAPPING_DF['stagingSynId'][
-                        CENTER_MAPPING_DF['center'] == center][0],
-                    centerStaging=True)
-
-    FusionsDf = FusionsDf[FusionsDf['TUMOR_SAMPLE_BARCODE'].isin(
-        keepForMergedConsortiumSamples)]
-    FusionsDf = FusionsDf.rename(columns={
-        'HUGO_SYMBOL': 'Hugo_Symbol',
-        'ENTREZ_GENE_ID': 'Entrez_Gene_Id',
-        'CENTER': 'Center',
-        'TUMOR_SAMPLE_BARCODE': 'Tumor_Sample_Barcode',
-        'FUSION': 'Fusion',
-        'DNA_SUPPORT': 'DNA_support',
-        'RNA_SUPPORT': 'RNA_support',
-        'METHOD': 'Method',
-        'FRAME': 'Frame'})
-    # Remove duplicated Fusions
-    FusionsDf = FusionsDf[~FusionsDf[
-        ['Hugo_Symbol', 'Tumor_Sample_Barcode', 'Fusion']].duplicated()]
-    # FusionsDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
-    fusionText = process.removePandasDfFloat(FusionsDf)
-    with open(fusions_path, "w") as fusionFile:
-        fusionFile.write(fusionText)
-    storeFile(
-        syn, fusions_path,
-        parent=consortiumReleaseSynId,
-        genieVersion=genieVersion,
-        name="data_fusions.txt",
-        staging=current_release_staging)
+    store_fusion_files(
+            syn,
+            consortiumReleaseSynId,
+            genieVersion,
+            databaseSynIdMappingDf,
+            keepForCenterConsortiumSamples,
+            keepForMergedConsortiumSamples,
+            current_release_staging,
+            CENTER_MAPPING_DF)
 
     # SEG
     logger.info("MERING, FILTERING, STORING SEG FILES")
