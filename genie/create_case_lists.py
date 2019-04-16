@@ -27,7 +27,6 @@ def create_case_lists_map(clinical_file_name):
               value = list of sample ids
     '''
     with open(clinical_file_name, 'rU') as clinical_file:
-        # clinical_file = open(clinical_file_name, 'rU')
         clinical_file_map = {}
         reader = csv.DictReader(clinical_file, dialect='excel-tab')
         for row in reader:
@@ -35,7 +34,6 @@ def create_case_lists_map(clinical_file_name):
                 clinical_file_map[row['CANCER_TYPE']] = [row['SAMPLE_ID']]
             else:
                 clinical_file_map[row['CANCER_TYPE']].append(row['SAMPLE_ID'])
-        # clinical_file.close()
     return(clinical_file_map)
 
 
@@ -75,14 +73,14 @@ def create_sequenced_samples(gene_matrix_file_name):
     Returns:
         tuple: list of clinical samples and cna samples
     '''
-    gene_matrix_file = open(gene_matrix_file_name, 'r')
-    reader = csv.DictReader(gene_matrix_file, dialect='excel-tab')
-    clinical_samples = []
-    cna_samples = []
-    for row in reader:
-        if row['cna'] != "NA":
-            cna_samples.append(row['SAMPLE_ID'])
-        clinical_samples.append(row['SAMPLE_ID'])
+    with open(gene_matrix_file_name, 'r') as gene_matrix_file:
+        reader = csv.DictReader(gene_matrix_file, dialect='excel-tab')
+        clinical_samples = []
+        cna_samples = []
+        for row in reader:
+            if row['cna'] != "NA":
+                cna_samples.append(row['SAMPLE_ID'])
+            clinical_samples.append(row['SAMPLE_ID'])
 
     return(clinical_samples, cna_samples)
 
