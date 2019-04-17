@@ -901,38 +901,39 @@ def store_seg_files(
     '''
     logger.info("MERING, FILTERING, STORING SEG FILES")
     seg_path = os.path.join(
-        GENIE_RELEASE_DIR, 'genie_private_data_cna_hg19_%s.seg' % genie_version)
+        GENIE_RELEASE_DIR,
+        'genie_private_data_cna_hg19_%s.seg' % genie_version)
     seg = syn.tableQuery(
         'SELECT ID,CHROM,LOCSTART,LOCEND,NUMMARK,SEGMEAN'
         ',CENTER FROM %s' % seg_synid)
-    segDf = seg.asDataFrame()
-    segDf = segDf.rename(columns={
+    segdf = seg.asDataFrame()
+    segdf = segdf.rename(columns={
         'CHROM': 'chrom',
         'LOCSTART': 'loc.start',
         'LOCEND': 'loc.end',
         'SEGMEAN': 'seg.mean',
         'NUMMARK': 'num.mark'})
     if not current_release_staging:
-        segStagingDf = segDf[segDf['ID'].isin(
+        segStagingDf = segdf[segdf['ID'].isin(
             keep_for_center_consortium_samples)]
         for center in center_mappingdf.center:
             center_seg = segStagingDf[segStagingDf['CENTER'] == center]
             if not center_seg.empty:
                 del center_seg['CENTER']
-                segText = process.removePandasDfFloat(center_seg)
-                with open(SEG_CENTER_PATH % center, "w") as segFile:
-                    segFile.write(segText)
+                segtext = process.removePandasDfFloat(center_seg)
+                with open(SEG_CENTER_PATH % center, "w") as segfile:
+                    segfile.write(segtext)
                 storeFile(
                     syn, SEG_CENTER_PATH % center,
                     genieVersion=genie_version,
                     parent=center_mappingdf['stagingSynId'][
                         center_mappingdf['center'] == center][0],
                     centerStaging=True)
-    del segDf['CENTER']
-    segDf = segDf[segDf['ID'].isin(keep_for_merged_consortium_samples)]
-    segText = process.removePandasDfFloat(segDf)
-    with open(seg_path, "w") as segFile:
-        segFile.write(segText)
+    del segdf['CENTER']
+    segdf = segdf[segdf['ID'].isin(keep_for_merged_consortium_samples)]
+    segtext = process.removePandasDfFloat(segdf)
+    with open(seg_path, "w") as segfile:
+        segfile.write(segtext)
     storeFile(
         syn, seg_path,
         parent=release_synid,
@@ -975,10 +976,10 @@ def store_data_gene_matrix(
     data_gene_matrix.drop_duplicates("SAMPLE_ID", inplace=True)
     # Gene panel file is written below CNA, because of the "cna" column
     # Add in CNA column into gene panel file
-    cnaSeqIds = data_gene_matrix['mutations'][
+    cna_seqids = data_gene_matrix['mutations'][
         data_gene_matrix['SAMPLE_ID'].isin(cna_samples)].unique()
     data_gene_matrix['cna'] = data_gene_matrix['mutations']
-    data_gene_matrix['cna'][~data_gene_matrix['cna'].isin(cnaSeqIds)] = "NA"
+    data_gene_matrix['cna'][~data_gene_matrix['cna'].isin(cna_seqids)] = "NA"
     data_gene_matrix.to_csv(data_gene_matrix_path, sep="\t", index=False)
 
     storeFile(
