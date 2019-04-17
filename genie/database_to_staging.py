@@ -501,24 +501,40 @@ def store_fusion_files(
 
 def store_maf_files(
         syn,
-        genieVersion,
-        centerMafFileViewSynId,
-        consortiumReleaseSynId,
-        clinicalDf,
-        CENTER_MAPPING_DF,
-        keepForMergedConsortiumSamples,
-        keepForCenterConsortiumSamples,
-        remove_mafInBed_variants,
+        genie_version,
+        flatfiles_view_synid,
+        release_synid,
+        clinicaldf,
+        center_mappingdf,
+        keep_for_merged_consortium_samples,
+        keep_for_center_consortium_samples,
+        remove_mafinbed_variants,
         current_release_staging):
+    '''
+    Create, filter, configure, and store maf file
+
+    Args:
+        syn: Synapse object
+        genie_version: GENIE version (ie. v6.1-consortium)
+        flatfiles_view_synid: Synapse id of fileview with all the flat files
+        release_synid: Synapse id to store release file
+        clinicaldf: Clinical dataframe with SAMPLE_ID and CENTER
+        center_mappingdf: Center mapping dataframe
+        keep_for_merged_consortium_samples: Samples to keep for merged file
+        keep_for_center_consortium_samples: Samples to keep for center files
+        remove_mafinbed_variants: Variants to remove
+        current_release_staging: Staging flag
+    '''
+
     logger.info("FILTERING, STORING MUTATION FILES")
     centerMafSynIds = syn.tableQuery(
-        "select id from %s " % centerMafFileViewSynId +
-        "where name like '%mutation%'")
+        "select id from {} where name like '%mutation%'".format(
+            flatfiles_view_synid))
     centerMafSynIdsDf = centerMafSynIds.asDataFrame()
     mutations_path = os.path.join(
-        GENIE_RELEASE_DIR, 'data_mutations_extended_%s.txt' % genieVersion)
+        GENIE_RELEASE_DIR, 'data_mutations_extended_%s.txt' % genie_version)
     sequenced_samples = "#sequenced_samples: {}".format(
-        " ".join(clinicalDf['SAMPLE_ID']))
+        " ".join(clinicaldf['SAMPLE_ID']))
     with open(mutations_path, 'w') as f:
         f.write(sequenced_samples + "\n")
     for index, mafSynId in enumerate(centerMafSynIdsDf.id):
@@ -531,45 +547,45 @@ def store_maf_files(
                 with open(mutations_path, 'a') as f:
                     f.write(header)
                 # Create maf file per center for their staging directory
-                for center in clinicalDf['CENTER'].unique():
+                for center in clinicaldf['CENTER'].unique():
                     with open(MUTATIONS_CENTER_PATH % center, 'w') as f:
                         f.write(header)
         # with open(mafEnt.path,"r") as newMafFile:
         #   newMafFile.readline()
             center = mafEnt.path.split("_")[3]
             # Make sure to only write the centers that release = True
-            if center in CENTER_MAPPING_DF.center.tolist():
+            if center in center_mappingdf.center.tolist():
                 for row in mafFile:
                     rowArray = row.replace("\n", "").split("\t")
                     center = rowArray[headers.index('Center')]
                     newMergedRow = configureMafRow(
                         rowArray, headers,
-                        keepForMergedConsortiumSamples,
-                        remove_mafInBed_variants)
+                        keep_for_merged_consortium_samples,
+                        remove_mafinbed_variants)
                     if newMergedRow is not None:
                         with open(mutations_path, 'a') as f:
                             f.write(newMergedRow)
                     newCenterRow = configureMafRow(
                         rowArray, headers,
-                        keepForCenterConsortiumSamples,
-                        remove_mafInBed_variants)
+                        keep_for_center_consortium_samples,
+                        remove_mafinbed_variants)
                     if newCenterRow is not None:
                         with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
                             f.write(newCenterRow)
     storeFile(
         syn, mutations_path,
-        parent=consortiumReleaseSynId,
-        genieVersion=genieVersion,
+        parent=release_synid,
+        genieVersion=genie_version,
         name="data_mutations_extended.txt",
         staging=current_release_staging)
 
     if not current_release_staging:
-        for center in clinicalDf['CENTER'].unique():
+        for center in clinicaldf['CENTER'].unique():
             storeFile(
                 syn, MUTATIONS_CENTER_PATH % center,
-                genieVersion=genieVersion,
-                parent=CENTER_MAPPING_DF['stagingSynId'][
-                    CENTER_MAPPING_DF['center'] == center][0],
+                genieVersion=genie_version,
+                parent=center_mappingdf['stagingSynId'][
+                    center_mappingdf['center'] == center][0],
                 centerStaging=True)
 
 
@@ -577,16 +593,40 @@ def run_genie_filters(
         syn,
         genie_user,
         genie_pass,
-        genieVersion,
+        genie_version,
         variant_filtering_synId,
-        clinicalDf,
-        bedDf,
-        sampleCols,
-        CENTER_MAPPING_DF,
-        processingDate,
-        skipMutationsInCis,
-        consortiumReleaseCutOff,
+        clinicaldf,
+        beddf,
+        sample_cols,
+        center_mappingdf,
+        processing_date,
+        skip_mutationsincis,
+        consortium_release_cutoff,
         test):
+    '''
+    Run GENIE filters and returns variants and samples to remove
+
+    Args:
+        syn: Synapse object
+        genie_user: Synapse username
+        genie_pass: Synapse password
+        genie_version: GENIE version (ie. v6.1-consortium)
+        variant_filtering_synId: Synapse id of mutationInCis table
+        clinicaldf: Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID
+        beddf: Bed dataframe
+        sample_cols: Clinical sample columns
+        center_mappingdf: Center mapping dataframe
+        processing_date: Processing date
+        skip_mutationsincis: Skip mutation in cis filter
+        consortium_release_cutoff: Release cutoff in days
+        test: Test flag
+
+    Returns:
+        pandas.Series: Variants to remove
+        set: samples to remove for release files
+        set: samples to remove for center files
+    '''
+
     # ADD CHECKS TO CODE BEFORE UPLOAD.
     # Throw error if things don't go through
     logger.info("RUN GENIE FILTERS")
@@ -594,37 +634,37 @@ def run_genie_filters(
 
     ''' FILTERING '''
     logger.info("MAF IN BED FILTER")
-    remove_mafInBed_variants = runMAFinBED(
-        syn, CENTER_MAPPING_DF, test=test,
-        genieVersion=genieVersion,
+    remove_mafinbed_variants = runMAFinBED(
+        syn, center_mappingdf, test=test,
+        genieVersion=genie_version,
         genie_user=genie_user, genie_pass=genie_pass)
 
     logger.info("MUTATION IN CIS FILTER")
-    remove_mutationInCis_samples = mutation_in_cis_filter(
-        syn, skipMutationsInCis, variant_filtering_synId, CENTER_MAPPING_DF,
-        genieVersion=genieVersion, test=test,
+    remove_mutationincis_samples = mutation_in_cis_filter(
+        syn, skip_mutationsincis, variant_filtering_synId, center_mappingdf,
+        genieVersion=genie_version, test=test,
         genie_user=genie_user, genie_pass=genie_pass)
 
-    remove_no_genepanel_samples = no_genepanel_filter(clinicalDf, bedDf)
+    remove_no_genepanel_samples = no_genepanel_filter(clinicaldf, beddf)
 
     logger.info("SEQ DATE FILTER")
-    remove_seqDate_samples = seq_date_filter(
-        clinicalDf, processingDate, consortiumReleaseCutOff)
+    remove_seqdate_samples = seq_date_filter(
+        clinicaldf, processing_date, consortium_release_cutoff)
     # Only certain samples are removed for the files that go into
     # staging center folder
-    removeForCenterConsortiumSamples = set(remove_mutationInCis_samples).union(
+    remove_center_consortium_samples = set(remove_mutationincis_samples).union(
         set(remove_no_genepanel_samples))
     # Most filteres are applied for the files that go into the merged
     # consortium release
-    removeForMergedConsortiumSamples = set(remove_seqDate_samples)
+    remove_merged_consortium_samples = set(remove_seqdate_samples)
     # set(remove_seqAssayId_samples)#.union(set(remove_seqDate_samples))
-    removeForMergedConsortiumSamples = \
-        removeForMergedConsortiumSamples.union(
-            removeForCenterConsortiumSamples)
+    remove_merged_consortium_samples = \
+        remove_merged_consortium_samples.union(
+            remove_center_consortium_samples)
 
-    return(remove_mafInBed_variants,
-           removeForMergedConsortiumSamples,
-           removeForCenterConsortiumSamples)
+    return(remove_mafinbed_variants,
+           remove_merged_consortium_samples,
+           remove_center_consortium_samples)
 
 
 def store_clinical_files(
