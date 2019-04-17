@@ -1548,6 +1548,12 @@ def main(genie_version,
     # if not then don't run validation / processing
     process.checkUrl(oncotree_link)
 
+    cbioValidatorPath = os.path.join(
+        cbioportal_path, "core/src/main/scripts/importer/validateData.py")
+    assert os.path.exists(cbioValidatorPath),\
+        "Please specify correct cbioportalPath"
+    syn.table_query_timeout = 50000
+
     consortiumSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == 'consortium'].values[0]
     processTrackerSynId = databaseSynIdMappingDf['Id'][
@@ -1559,7 +1565,6 @@ def main(genie_version,
         update_process_trackingdf(
             syn, processTrackerSynId, 'SAGE', 'dbToStage', start=True)
 
-    syn.table_query_timeout = 50000
     centerMappingSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == 'centerMapping'].values[0]
     # Only release files where release is true
@@ -1567,11 +1572,6 @@ def main(genie_version,
         'SELECT * FROM {} where release is true'.format(centerMappingSynId))
     center_mappingdf = center_mapping.asDataFrame()
     processingDate = datetime.datetime.strptime(processing_date, '%b-%Y')
-
-    cbioValidatorPath = os.path.join(
-        cbioportal_path, "core/src/main/scripts/importer/validateData.py")
-    assert os.path.exists(cbioValidatorPath),\
-        "Please specify correct cbioportalPath"
 
     logger.info("STAGING TO CONSORTIUM")
     genePanelEntities = stagingToCbio(
