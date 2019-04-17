@@ -809,9 +809,8 @@ def store_cna_files(
         "select id from %s " % flatfiles_view_synid +
         "where name like 'data_CNA%'")
     center_cna_synidsdf = center_cna_synids.asDataFrame()
-    # Grab all unique symbols and form cnaTemplate
+    # Grab all unique symbols and form cna_template
     all_symbols = set()
-
     for cna_synid in center_cna_synidsdf['id']:
         cna_ent = syn.get(cna_synid)
         with open(cna_ent.path, "r") as cna_file:
