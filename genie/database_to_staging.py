@@ -701,9 +701,9 @@ def store_clinical_files(
     # descriptions can match
     clinicaldf['AGE_AT_SEQ_REPORT_DAYS'] = clinicaldf['AGE_AT_SEQ_REPORT']
     clinicaldf['AGE_AT_SEQ_REPORT'] = [
-        int(math.floor(int(float(i))/365.25))
-        if process.checkInt(i) else i
-        for i in clinicaldf['AGE_AT_SEQ_REPORT']]
+        int(math.floor(int(float(age))/365.25))
+        if process.checkInt(age) else age
+        for age in clinicaldf['AGE_AT_SEQ_REPORT']]
     clinicaldf['AGE_AT_SEQ_REPORT'][
         clinicaldf['AGE_AT_SEQ_REPORT'] == ">32485"] = ">89"
     clinicaldf['AGE_AT_SEQ_REPORT'][
