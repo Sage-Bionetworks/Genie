@@ -879,19 +879,32 @@ def store_cna_files(
 # SEG
 def store_seg_files(
         syn,
-        genieVersion,
-        segSynId,
-        consortiumReleaseSynId,
-        keepForCenterConsortiumSamples,
-        keepForMergedConsortiumSamples,
-        CENTER_MAPPING_DF,
+        genie_version,
+        seg_synid,
+        release_synid,
+        keep_for_center_consortium_samples,
+        keep_for_merged_consortium_samples,
+        center_mappingdf,
         current_release_staging):
+    '''
+    Create, filter and store seg file
+
+    Args:
+        syn: Synapse object
+        genie_version: GENIE version (ie. v6.1-consortium)
+        seg_synid: Seg database synid
+        release_synid: Synapse id to store release file
+        keep_for_center_consortium_samples: Samples to keep for center files
+        keep_for_merged_consortium_samples: Samples to keep for merged file
+        center_mappingdf: Center mapping dataframe
+        current_release_staging: Staging flag
+    '''
     logger.info("MERING, FILTERING, STORING SEG FILES")
     seg_path = os.path.join(
-        GENIE_RELEASE_DIR, 'genie_private_data_cna_hg19_%s.seg' % genieVersion)
+        GENIE_RELEASE_DIR, 'genie_private_data_cna_hg19_%s.seg' % genie_version)
     seg = syn.tableQuery(
         'SELECT ID,CHROM,LOCSTART,LOCEND,NUMMARK,SEGMEAN'
-        ',CENTER FROM %s' % segSynId)
+        ',CENTER FROM %s' % seg_synid)
     segDf = seg.asDataFrame()
     segDf = segDf.rename(columns={
         'CHROM': 'chrom',
@@ -899,11 +912,10 @@ def store_seg_files(
         'LOCEND': 'loc.end',
         'SEGMEAN': 'seg.mean',
         'NUMMARK': 'num.mark'})
-    # missing = segDf[~segDf['ID'].isin(samples)]['ID']
-    # missing.drop_duplicates().to_csv("seg_missing.txt",sep="\t",index=False)
     if not current_release_staging:
-        segStagingDf = segDf[segDf['ID'].isin(keepForCenterConsortiumSamples)]
-        for center in CENTER_MAPPING_DF.center:
+        segStagingDf = segDf[segDf['ID'].isin(
+            keep_for_center_consortium_samples)]
+        for center in center_mappingdf.center:
             center_seg = segStagingDf[segStagingDf['CENTER'] == center]
             if not center_seg.empty:
                 del center_seg['CENTER']
@@ -912,37 +924,51 @@ def store_seg_files(
                     segFile.write(segText)
                 storeFile(
                     syn, SEG_CENTER_PATH % center,
-                    genieVersion=genieVersion,
-                    parent=CENTER_MAPPING_DF['stagingSynId'][
-                        CENTER_MAPPING_DF['center'] == center][0],
+                    genieVersion=genie_version,
+                    parent=center_mappingdf['stagingSynId'][
+                        center_mappingdf['center'] == center][0],
                     centerStaging=True)
     del segDf['CENTER']
-    segDf = segDf[segDf['ID'].isin(keepForMergedConsortiumSamples)]
+    segDf = segDf[segDf['ID'].isin(keep_for_merged_consortium_samples)]
     segText = process.removePandasDfFloat(segDf)
     with open(seg_path, "w") as segFile:
         segFile.write(segText)
     storeFile(
         syn, seg_path,
-        parent=consortiumReleaseSynId,
-        genieVersion=genieVersion,
+        parent=release_synid,
+        genieVersion=genie_version,
         name="genie_private_data_cna_hg19.seg",
         staging=current_release_staging)
 
 
 def store_data_gene_matrix(
         syn,
-        genieVersion,
-        clinicalDf,
-        cnaSamples,
-        consortiumReleaseSynId,
+        genie_version,
+        clinicaldf,
+        cna_samples,
+        release_synid,
         current_release_staging):
+    '''
+    Create and store data gene matrix file
+
+    Args:
+        syn: Synapse object
+        genie_version: GENIE version (ie. v6.1-consortium)
+        clinicaldf: Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID
+        cna_samples: Samples with CNA
+        release_synid: Synapse id to store release file
+        current_release_staging: Staging flag
+
+    Returns:
+        dataframe: data gene matrix dataframe
+    '''
     logger.info("STORING DATA GENE MATRIX FILE")
-    data_gene_panel_path = os.path.join(
-        GENIE_RELEASE_DIR, 'data_gene_matrix_%s.txt' % genieVersion)
+    data_gene_matrix_path = os.path.join(
+        GENIE_RELEASE_DIR, 'data_gene_matrix_%s.txt' % genie_version)
     # Samples have already been removed
     data_gene_matrix = pd.DataFrame(columns=["SAMPLE_ID", "SEQ_ASSAY_ID"])
     data_gene_matrix = data_gene_matrix.append(
-        clinicalDf[['SAMPLE_ID', 'SEQ_ASSAY_ID']])
+        clinicaldf[['SAMPLE_ID', 'SEQ_ASSAY_ID']])
     data_gene_matrix = data_gene_matrix.rename(
         columns={"SEQ_ASSAY_ID": "mutations"})
     data_gene_matrix = data_gene_matrix[data_gene_matrix['SAMPLE_ID'] != ""]
@@ -950,15 +976,15 @@ def store_data_gene_matrix(
     # Gene panel file is written below CNA, because of the "cna" column
     # Add in CNA column into gene panel file
     cnaSeqIds = data_gene_matrix['mutations'][
-        data_gene_matrix['SAMPLE_ID'].isin(cnaSamples)].unique()
+        data_gene_matrix['SAMPLE_ID'].isin(cna_samples)].unique()
     data_gene_matrix['cna'] = data_gene_matrix['mutations']
     data_gene_matrix['cna'][~data_gene_matrix['cna'].isin(cnaSeqIds)] = "NA"
-    data_gene_matrix.to_csv(data_gene_panel_path, sep="\t", index=False)
+    data_gene_matrix.to_csv(data_gene_matrix_path, sep="\t", index=False)
 
     storeFile(
-        syn, data_gene_panel_path,
-        parent=consortiumReleaseSynId,
-        genieVersion=genieVersion,
+        syn, data_gene_matrix_path,
+        parent=release_synid,
+        genieVersion=genie_version,
         name="data_gene_matrix.txt",
         staging=current_release_staging)
     return(data_gene_matrix)
@@ -966,38 +992,50 @@ def store_data_gene_matrix(
 
 def store_bed_files(
         syn,
-        genieVersion,
-        bedDf,
-        clinicalDf,
-        CENTER_MAPPING_DF,
+        genie_version,
+        beddf,
+        seq_assay_ids,
+        center_mappingdf,
         current_release_staging,
-        consortiumReleaseSynId):
-    # BED
+        release_synid):
+    '''
+    Store bed files, store the bed regions that had symbols remapped
+    Filters bed file by clinical dataframe seq assays
+
+    Args:
+        syn: Synapse object
+        genie_version: GENIE version (ie. v6.1-consortium)
+        beddf: Bed dataframe
+        seq_assay_ids: All SEQ_ASSAY_IDs in the clinical file
+        center_mappingdf: Center mapping dataframe
+        current_release_staging: Staging flag
+        release_synid: Synapse id to store release file
+    '''
     logger.info("STORING COMBINED BED FILE")
     combined_bed_path = os.path.join(
-        GENIE_RELEASE_DIR, 'genie_combined_%s.bed' % genieVersion)
+        GENIE_RELEASE_DIR, 'genie_combined_%s.bed' % genie_version)
     if not current_release_staging:
-        for seqAssay in bedDf['SEQ_ASSAY_ID'].unique():
-            bedSeqDf = bedDf[bedDf['SEQ_ASSAY_ID'] == seqAssay]
-            center = seqAssay.split("-")[0]
-            bedSeqDf = bedSeqDf[bedSeqDf['Hugo_Symbol'] != bedSeqDf['ID']]
-            if not bedSeqDf.empty:
-                bedSeqDf.to_csv(
-                    BED_DIFFS_SEQASSAY_PATH % seqAssay,
+        for seq_assay in beddf['SEQ_ASSAY_ID'].unique():
+            bed_seq_df = beddf[beddf['SEQ_ASSAY_ID'] == seq_assay]
+            center = seq_assay.split("-")[0]
+            bed_seq_df = bed_seq_df[bed_seq_df['Hugo_Symbol'] != bed_seq_df['ID']]
+            if not bed_seq_df.empty:
+                bed_seq_df.to_csv(
+                    BED_DIFFS_SEQASSAY_PATH % seq_assay,
                     index=False)
                 storeFile(
-                    syn, BED_DIFFS_SEQASSAY_PATH % seqAssay,
-                    genieVersion=genieVersion,
-                    parent=CENTER_MAPPING_DF['stagingSynId'][
-                        CENTER_MAPPING_DF['center'] == center][0],
+                    syn, BED_DIFFS_SEQASSAY_PATH % seq_assay,
+                    genieVersion=genie_version,
+                    parent=center_mappingdf['stagingSynId'][
+                        center_mappingdf['center'] == center][0],
                     centerStaging=True)
     # This clinicalDf is already filtered through most of the filters
-    bedDf = bedDf[bedDf['SEQ_ASSAY_ID'].isin(clinicalDf.SEQ_ASSAY_ID)]
-    bedDf.to_csv(combined_bed_path, sep="\t", index=False)
+    beddf = beddf[beddf['SEQ_ASSAY_ID'].isin(seq_assay_ids)]
+    beddf.to_csv(combined_bed_path, sep="\t", index=False)
     storeFile(
         syn, combined_bed_path,
-        parent=consortiumReleaseSynId,
-        genieVersion=genieVersion,
+        parent=release_synid,
+        genieVersion=genie_version,
         name="genie_combined.bed",
         staging=current_release_staging)
 
@@ -1189,7 +1227,7 @@ def stagingToCbio(
         syn,
         genieVersion,
         bedDf,
-        clinicalDf,
+        clinicalDf['SEQ_ASSAY_ID'].unique(),
         CENTER_MAPPING_DF,
         current_release_staging,
         consortiumReleaseSynId)
