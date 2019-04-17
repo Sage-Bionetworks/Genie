@@ -1209,6 +1209,7 @@ def update_process_trackingdf(
         process_type: processing type (ie. dbToStage)
         start: Start or end of processing.  Default is True for start
     '''
+    logger.info("UPDATE PROCESS TRACKING TABLE")
     column = 'timeStartProcessing' if start else 'timeEndProcessing'
     process_tracker = syn.tableQuery(
         "SELECT {col} FROM {tableid} where center = '{center}' "
@@ -1236,7 +1237,7 @@ def update_process_trackingdf(
 
 
 def reviseMetadataFiles(
-        syn, staging, databaseSynIdMappingDf, genieVersion=None):
+        syn, staging, consortiumId, genieVersion=None):
     '''
     Rewrite metadata files with the correct GENIE version
 
@@ -1246,8 +1247,6 @@ def reviseMetadataFiles(
         databaseSynIdMappingDf: database to synapse id mapping df
         genieVersion: GENIE version, Default to None
     '''
-    consortiumId = databaseSynIdMappingDf['Id'][
-        databaseSynIdMappingDf['Database'] == 'consortium'].values[0]
     allFiles = syn.getChildren(consortiumId)
     metadataEnts = [
         syn.get(i['id'],
@@ -1272,8 +1271,8 @@ def reviseMetadataFiles(
 
             if version != genieVersion:
                 metaText = metaText.replace(
-                    "AACR Project GENIE Cohort v{}".format(version),
-                    "AACR Project GENIE Cohort v{}".format(genieVersion))
+                    "GENIE Cohort v{}".format(version),
+                    "GENIE Cohort v{}".format(genieVersion))
 
                 metaText = metaText.replace(
                     "GENIE v{}".format(version),
@@ -1401,10 +1400,10 @@ def main(genie_version,
     databaseSynIdMapping = syn.tableQuery(
         'select * from {}'.format(databaseSynIdMappingId))
     databaseSynIdMappingDf = databaseSynIdMapping.asDataFrame()
-    consortiumSynId = databaseSynIdMappingDf['Id'][
-        databaseSynIdMappingDf['Database'] == 'consortium'].values[0]
-    processTrackerSynId = databaseSynIdMappingDf['Id'][
-        databaseSynIdMappingDf['Database'] == 'processTracker'].values[0]
+    # databaseSynIdMappingDf.index = databaseSynIdMappingDf.Database
+    # del databaseSynIdMappingDf['Database']
+    # databaseSynIdMappingDf.to_dict()
+
     if oncotree_link is None:
         oncoLink = databaseSynIdMappingDf['Id'][
             databaseSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
@@ -1415,10 +1414,14 @@ def main(genie_version,
     # if not then don't run validation / processing
     process.checkUrl(oncotree_link)
 
+    consortiumSynId = databaseSynIdMappingDf['Id'][
+        databaseSynIdMappingDf['Database'] == 'consortium'].values[0]
+    processTrackerSynId = databaseSynIdMappingDf['Id'][
+        databaseSynIdMappingDf['Database'] == 'processTracker'].values[0]
     # get syn id of case list folder in consortium release
     caseListSynId = findCaseListId(syn, consortiumSynId)
 
-    if not test and not staging:
+    if not staging:
         update_process_trackingdf(
             syn, processTrackerSynId, 'SAGE', 'dbToStage', start=True)
 
@@ -1501,7 +1504,7 @@ def main(genie_version,
     os.remove(clinical_path)
 
     logger.info("REVISE METADATA FILES")
-    reviseMetadataFiles(syn, staging, databaseSynIdMappingDf, genie_version)
+    reviseMetadataFiles(syn, staging, consortiumSynId, genie_version)
     logger.info("CBIO VALIDATION")
     '''
     Must be exit 0 because the validator sometimes fails,
@@ -1530,7 +1533,7 @@ def main(genie_version,
         syn, genie_version, caseListEntities,
         genePanelEntities, databaseSynIdMappingDf)
 
-    if not test and not staging:
+    if not staging:
         update_process_trackingdf(
             syn, processTrackerSynId, 'SAGE', 'dbToStage', start=False)
 
