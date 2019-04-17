@@ -1034,7 +1034,8 @@ def store_bed_files(
         for seq_assay in beddf['SEQ_ASSAY_ID'].unique():
             bed_seq_df = beddf[beddf['SEQ_ASSAY_ID'] == seq_assay]
             center = seq_assay.split("-")[0]
-            bed_seq_df = bed_seq_df[bed_seq_df['Hugo_Symbol'] != bed_seq_df['ID']]
+            bed_seq_df = \
+                bed_seq_df[bed_seq_df['Hugo_Symbol'] != bed_seq_df['ID']]
             if not bed_seq_df.empty:
                 bed_seq_df.to_csv(
                     BED_DIFFS_SEQASSAY_PATH % seq_assay,
