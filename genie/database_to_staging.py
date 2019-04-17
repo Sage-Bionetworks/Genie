@@ -103,7 +103,8 @@ def redaction_phi(values):
         values: Dataframe column or list of values to check
 
     Returns:
-        tuple: redact and pediatric redaction bool vectors
+        list: redact and bool vectors
+        list: pediatric redaction
     '''
     phi_cutoff = 365*89
     pediatric_cutoff = 365*18
@@ -128,6 +129,15 @@ def redaction_phi(values):
 
 
 def reAnnotatePHI(mergedClinical):
+    '''
+    Re annotate PHI data
+
+    Args:
+        mergedClinical: merged clinical dataframe
+
+    Returns:
+        pandas.DataFrame: Re-annotated clinical file
+    '''
     # Remove PHI data
     mergedClinical['AGE_AT_SEQ_REPORT'] = \
         mergedClinical['AGE_AT_SEQ_REPORT'].fillna('')
@@ -323,7 +333,6 @@ def mutation_in_cis_filter(
 
     Returns:
         pd.Series: Samples to remove
-
     '''
     if not skipMutationsInCis:
         mergeCheck_script = os.path.join(
@@ -373,6 +382,9 @@ def seq_assay_id_filter(clinicaldf):
 
     Args:
         clinicalDf: Sample clinical dataframe
+
+    Returns:
+        pd.Series: samples to remove
     '''
     remove_seqassayId = clinicaldf['SEQ_ASSAY_ID'].value_counts()[
         clinicaldf['SEQ_ASSAY_ID'].value_counts() < 50]
@@ -391,7 +403,7 @@ def no_genepanel_filter(clinicaldf, beddf):
         beddf: bed data
 
     Returns:
-        series: samples to remove
+        pd.Series: samples to remove
     '''
 
     logger.info("NO GENE PANEL FILTER")
