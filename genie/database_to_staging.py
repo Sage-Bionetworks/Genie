@@ -823,6 +823,9 @@ def store_cna_files(
         genie_version: GENIE version (ie. v6.1-consortium)
         release_synid: Synapse id to store release file
         current_release_staging: Staging flag
+
+    Returns:
+        list: CNA samples
     '''
     logger.info("MERING, FILTERING, STORING CNA FILES")
     cna_path = os.path.join(
@@ -998,7 +1001,7 @@ def store_data_gene_matrix(
         current_release_staging: Staging flag
 
     Returns:
-        dataframe: data gene matrix dataframe
+        pandas.DataFrame: data gene matrix dataframe
     '''
     logger.info("STORING DATA GENE MATRIX FILE")
     data_gene_matrix_path = os.path.join(
@@ -1103,6 +1106,8 @@ def stagingToCbio(
         genie_user: Synapse username. Default is None.
         genie_pass: Synapse password.  Default is None.
 
+    Returns:
+        list: Gene panel entities
     '''
     if not os.path.exists(GENIE_RELEASE_DIR):
         os.mkdir(GENIE_RELEASE_DIR)
