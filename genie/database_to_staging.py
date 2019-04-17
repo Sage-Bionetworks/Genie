@@ -1460,8 +1460,8 @@ def main(genie_version,
     if not os.path.exists(CASE_LIST_PATH):
         os.mkdir(CASE_LIST_PATH)
     caselists = os.listdir(CASE_LIST_PATH)
-    [os.remove(os.path.join(CASE_LIST_PATH, caselist))
-        for caselist in caselists]
+    for caselist in caselists:
+        os.remove(os.path.join(CASE_LIST_PATH, caselist))
     clinical_path = os.path.join(
         GENIE_RELEASE_DIR,
         'data_clinical_{}.txt'.format(genie_version))
@@ -1487,16 +1487,6 @@ def main(genie_version,
 
     logger.info("REMOVING UNNECESSARY FILES")
     genie_files = os.listdir(GENIE_RELEASE_DIR)
-    # deletePatterns = (
-    #     'data_clinical_supp_patient_',
-    #     'data_clinical_supp_sample_',
-    #     'data_CNA_',
-    #     'data_mutations_extended_',
-    #     'data_fusions_',
-    #     'genie_private_data_cna_hg19_')
-    # [os.remove(os.path.join(GENIE_RELEASE_DIR, genieFile))
-    #     for genieFile in genie_files
-    #     if genieFile.startswith(deletePatterns)]
     for genieFile in genie_files:
         if genie_version not in genieFile and \
              "meta" not in genieFile and "case_lists" not in genieFile:
