@@ -629,107 +629,129 @@ def run_genie_filters(
 
 def store_clinical_files(
         syn,
-        genieVersion,
-        clinicalDf,
+        genie_version,
+        clinicaldf,
         oncotree_url,
-        sampleCols,
-        patientCols,
-        removeForCenterConsortiumSamples,
-        removeForMergedConsortiumSamples,
-        consortiumReleaseSynId,
+        sample_cols,
+        patient_cols,
+        remove_center_consortium_samples,
+        remove_merged_consortium_samples,
+        release_synid,
         current_release_staging,
-        CENTER_MAPPING_DF):
+        center_mappingdf):
+    '''
+    Create, filter, configure, and store clinical file
+
+    Args:
+        syn: Synapse object
+        genie_version: GENIE version (ie. v6.1-consortium)
+        clinicaldf: Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID
+        oncotree_url: Oncotree URL
+        sample_cols: Clinical sample columns
+        patient_cols: Clinical patient columns
+        remove_center_consortium_samples: Samples to remove for center files
+        remove_merged_consortium_samples: Samples to remove for merged file
+        release_synid: Synapse id to store release file
+        current_release_staging: Staging flag
+        center_mappingdf: Center mapping dataframe
+
+    Returns:
+        pandas.DataFrame: configured clinical dataframe
+        pandas.Series: samples to keep for center files
+        pandas.Series: samples to keep for release files
+    '''
+
     logger.info("CONFIGURING CLINICAL FILES")
     logger.info("REMOVING PHI")
-    clinicalDf = reAnnotatePHI(clinicalDf)
+    clinicaldf = reAnnotatePHI(clinicaldf)
     logger.info("ADD CANCER TYPES")
     # This removes support for both oncotree urls (only support json)
-    oncotreeDict = process.get_oncotree_code_mappings(oncotree_url)
+    oncotree_dict = process.get_oncotree_code_mappings(oncotree_url)
     # Add in unknown key which maps to UNKNOWN everything
-    oncotreeDict['UNKNOWN'] = {
+    oncotree_dict['UNKNOWN'] = {
         'CANCER_TYPE': 'UNKNOWN',
         'CANCER_TYPE_DETAILED': 'UNKNOWN',
         'ONCOTREE_PRIMARY_NODE': 'UNKNOWN',
         'ONCOTREE_SECONDARY_NODE': 'UNKNOWN'}
 
-    clinicalDf['CANCER_TYPE'] = [
-        oncotreeDict[code.upper()]["CANCER_TYPE"]
-        if code.upper() in oncotreeDict.keys() else float('nan')
-        for code in clinicalDf['ONCOTREE_CODE']]
+    clinicaldf['CANCER_TYPE'] = [
+        oncotree_dict[code.upper()]["CANCER_TYPE"]
+        if code.upper() in oncotree_dict.keys() else float('nan')
+        for code in clinicaldf['ONCOTREE_CODE']]
 
-    clinicalDf['CANCER_TYPE_DETAILED'] = [
-        oncotreeDict[code.upper()]["CANCER_TYPE_DETAILED"]
-        if code.upper() in oncotreeDict.keys() else float('nan')
-        for code in clinicalDf['ONCOTREE_CODE']]
+    clinicaldf['CANCER_TYPE_DETAILED'] = [
+        oncotree_dict[code.upper()]["CANCER_TYPE_DETAILED"]
+        if code.upper() in oncotree_dict.keys() else float('nan')
+        for code in clinicaldf['ONCOTREE_CODE']]
 
-    clinicalDf['ONCOTREE_PRIMARY_NODE'] = [
-        oncotreeDict[code.upper()]["ONCOTREE_PRIMARY_NODE"]
-        if code.upper() in oncotreeDict.keys() else float('nan')
-        for code in clinicalDf['ONCOTREE_CODE']]
+    clinicaldf['ONCOTREE_PRIMARY_NODE'] = [
+        oncotree_dict[code.upper()]["ONCOTREE_PRIMARY_NODE"]
+        if code.upper() in oncotree_dict.keys() else float('nan')
+        for code in clinicaldf['ONCOTREE_CODE']]
 
-    clinicalDf['ONCOTREE_SECONDARY_NODE'] = [
-        oncotreeDict[code.upper()]["ONCOTREE_SECONDARY_NODE"]
-        if code.upper() in oncotreeDict.keys() else float('nan')
-        for code in clinicalDf['ONCOTREE_CODE']]
+    clinicaldf['ONCOTREE_SECONDARY_NODE'] = [
+        oncotree_dict[code.upper()]["ONCOTREE_SECONDARY_NODE"]
+        if code.upper() in oncotree_dict.keys() else float('nan')
+        for code in clinicaldf['ONCOTREE_CODE']]
 
     # All cancer types that are null should have null oncotree codes
-    clinicalDf['ONCOTREE_CODE'][
-        clinicalDf['CANCER_TYPE'].isnull()] = float('nan')
+    clinicaldf['ONCOTREE_CODE'][
+        clinicaldf['CANCER_TYPE'].isnull()] = float('nan')
     # Suggest using AGE_AT_SEQ_REPORT_DAYS instead so that the
     # descriptions can match
-    clinicalDf['AGE_AT_SEQ_REPORT_DAYS'] = clinicalDf['AGE_AT_SEQ_REPORT']
-    clinicalDf['AGE_AT_SEQ_REPORT'] = [
+    clinicaldf['AGE_AT_SEQ_REPORT_DAYS'] = clinicaldf['AGE_AT_SEQ_REPORT']
+    clinicaldf['AGE_AT_SEQ_REPORT'] = [
         int(math.floor(int(float(i))/365.25))
         if process.checkInt(i) else i
-        for i in clinicalDf['AGE_AT_SEQ_REPORT']]
-    clinicalDf['AGE_AT_SEQ_REPORT'][
-        clinicalDf['AGE_AT_SEQ_REPORT'] == ">32485"] = ">89"
-    clinicalDf['AGE_AT_SEQ_REPORT'][
-        clinicalDf['AGE_AT_SEQ_REPORT'] == "<6570"] = "<18"
+        for i in clinicaldf['AGE_AT_SEQ_REPORT']]
+    clinicaldf['AGE_AT_SEQ_REPORT'][
+        clinicaldf['AGE_AT_SEQ_REPORT'] == ">32485"] = ">89"
+    clinicaldf['AGE_AT_SEQ_REPORT'][
+        clinicaldf['AGE_AT_SEQ_REPORT'] == "<6570"] = "<18"
 
     ############################################################
     # CENTER SPECIFIC CODE FOR RIGHT NOW (REMOVE UHN-555-V1)
     ############################################################
-    clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "UHN-555-V1"]
+    clinicaldf = clinicaldf[clinicaldf['SEQ_ASSAY_ID'] != "UHN-555-V1"]
     # clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "PHS-TRISEQ-V1"]
     # clinicalDf = clinicalDf[clinicalDf['CENTER'] != "WAKE"]
     # clinicalDf = clinicalDf[clinicalDf['CENTER'] != "CRUK"]
     ############################################################
     ############################################################
 
-    clinicalDf.drop_duplicates("SAMPLE_ID", inplace=True)
+    clinicaldf.drop_duplicates("SAMPLE_ID", inplace=True)
 
     logger.info("STORING CLINICAL FILES")
     # samples must be removed after reading in the clinical file again
-    clinicalDfStaging = clinicalDf[
-        ~clinicalDf['SAMPLE_ID'].isin(removeForCenterConsortiumSamples)]
+    staging_clinicaldf = clinicaldf[
+        ~clinicaldf['SAMPLE_ID'].isin(remove_center_consortium_samples)]
     if not current_release_staging:
-        for center in CENTER_MAPPING_DF.center:
-            center_clinical = clinicalDfStaging[
-                clinicalDfStaging['CENTER'] == center]
-            center_sample = center_clinical[
-                sampleCols].drop_duplicates('SAMPLE_ID')
-            center_patient = center_clinical[
-                patientCols].drop_duplicates('PATIENT_ID')
+        for center in center_mappingdf.center:
+            center_clinical = \
+                staging_clinicaldf[staging_clinicaldf['CENTER'] == center]
+            center_sample = \
+                center_clinical[sample_cols].drop_duplicates('SAMPLE_ID')
+            center_patient = \
+                center_clinical[patient_cols].drop_duplicates('PATIENT_ID')
             center_sample.to_csv(
                 SAMPLE_CENTER_PATH % center, sep="\t", index=False)
             center_patient.to_csv(
                 PATIENT_CENTER_PATH % center, sep="\t", index=False)
             storeFile(
                 syn, SAMPLE_CENTER_PATH % center,
-                genieVersion=genieVersion,
-                parent=CENTER_MAPPING_DF['stagingSynId'][
-                    CENTER_MAPPING_DF['center'] == center][0],
+                genieVersion=genie_version,
+                parent=center_mappingdf['stagingSynId'][
+                    center_mappingdf['center'] == center][0],
                 centerStaging=True)
             storeFile(
                 syn, PATIENT_CENTER_PATH % center,
-                genieVersion=genieVersion,
-                parent=CENTER_MAPPING_DF['stagingSynId'][
-                    CENTER_MAPPING_DF['center'] == center][0],
+                genieVersion=genie_version,
+                parent=center_mappingdf['stagingSynId'][
+                    center_mappingdf['center'] == center][0],
                 centerStaging=True)
 
-    clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isin(
-        removeForMergedConsortiumSamples)]
+    clinicaldf = clinicaldf[~clinicaldf['SAMPLE_ID'].isin(
+        remove_merged_consortium_samples)]
     # This must happen here because the seq assay filter
     # must happen after all the other filters
     # logger.info("SEQ ASSAY FILTER")
@@ -739,45 +761,45 @@ def store_clinical_files(
     # clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isin(
     #    remove_seqAssayId_samples)]
 
-    keepForCenterConsortiumSamples = clinicalDfStaging.SAMPLE_ID
-    keepForMergedConsortiumSamples = clinicalDf.SAMPLE_ID
+    keep_center_consortium_samples = staging_clinicaldf.SAMPLE_ID
+    keep_merged_consortium_samples = clinicaldf.SAMPLE_ID
     # This mapping table is the GENIE clinical code to description
     # mapping to generate the headers of the clinical file
     mapping_table = syn.tableQuery('SELECT * FROM syn9621600')
     mapping = mapping_table.asDataFrame()
     clinical_path = os.path.join(
-        GENIE_RELEASE_DIR, 'data_clinical_%s.txt' % genieVersion)
+        GENIE_RELEASE_DIR, 'data_clinical_%s.txt' % genie_version)
     clinical_sample_path = os.path.join(
-        GENIE_RELEASE_DIR, 'data_clinical_sample_%s.txt' % genieVersion)
+        GENIE_RELEASE_DIR, 'data_clinical_sample_%s.txt' % genie_version)
     clinical_patient_path = os.path.join(
-        GENIE_RELEASE_DIR, 'data_clinical_patient_%s.txt' % genieVersion)
+        GENIE_RELEASE_DIR, 'data_clinical_patient_%s.txt' % genie_version)
     process.addClinicalHeaders(
-        clinicalDf, mapping, patientCols, sampleCols,
+        clinicaldf, mapping, patient_cols, sample_cols,
         clinical_sample_path, clinical_patient_path)
     storeFile(
         syn, clinical_sample_path,
-        parent=consortiumReleaseSynId,
-        genieVersion=genieVersion,
+        parent=release_synid,
+        genieVersion=genie_version,
         name="data_clinical_sample.txt",
         staging=current_release_staging)
 
     storeFile(
         syn, clinical_patient_path,
-        parent=consortiumReleaseSynId,
-        genieVersion=genieVersion,
+        parent=release_synid,
+        genieVersion=genie_version,
         name="data_clinical_patient.txt",
         staging=current_release_staging)
 
-    clinicalDf.to_csv(clinical_path, sep="\t", index=False)
+    clinicaldf.to_csv(clinical_path, sep="\t", index=False)
     storeFile(
         syn, clinical_path,
-        parent=consortiumReleaseSynId,
+        parent=release_synid,
         name="data_clinical.txt",
         staging=current_release_staging)
 
-    return(clinicalDf,
-           keepForCenterConsortiumSamples,
-           keepForMergedConsortiumSamples)
+    return(clinicaldf,
+           keep_center_consortium_samples,
+           keep_merged_consortium_samples)
 
 
 def store_cna_files(
