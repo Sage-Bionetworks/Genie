@@ -782,98 +782,114 @@ def store_clinical_files(
 
 def store_cna_files(
         syn,
-        centerMafFileViewSynId,
-        keepForCenterConsortiumSamples,
-        keepForMergedConsortiumSamples,
-        CENTER_MAPPING_DF,
-        genieVersion,
-        consortiumReleaseSynId,
+        flatfiles_view_synid,
+        keep_for_center_consortium_samples,
+        keep_for_merged_consortium_samples,
+        center_mappingdf,
+        genie_version,
+        release_synid,
         current_release_staging):
-    # CNA
+    '''
+    Create, filter and store cna file
+
+    Args:
+        syn: Synapse object
+        flatfiles_view_synid: Synapse id of fileview with all the flat files
+        keep_for_center_consortium_samples: Samples to keep for center files
+        keep_for_merged_consortium_samples: Samples to keep for merged file
+        center_mappingdf: Center mapping dataframe
+        genie_version: GENIE version (ie. v6.1-consortium)
+        release_synid: Synapse id to store release file
+        current_release_staging: Staging flag
+    '''
     logger.info("MERING, FILTERING, STORING CNA FILES")
     cna_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_CNA_%s.txt" % genieVersion)
-    centerCNASynIds = syn.tableQuery(
-        "select id from %s " % centerMafFileViewSynId +
+        GENIE_RELEASE_DIR, "data_CNA_%s.txt" % genie_version)
+    center_cna_synids = syn.tableQuery(
+        "select id from %s " % flatfiles_view_synid +
         "where name like 'data_CNA%'")
-    centerCNASynIdsDf = centerCNASynIds.asDataFrame()
+    center_cna_synidsdf = center_cna_synids.asDataFrame()
     # Grab all unique symbols and form cnaTemplate
-    allSymbols = set()
+    all_symbols = set()
 
-    for cnaSynId in centerCNASynIdsDf.id:
-        cnaEnt = syn.get(cnaSynId)
-        with open(cnaEnt.path, "r") as cnaFile:
+    for cna_synid in center_cna_synidsdf['id']:
+        cna_ent = syn.get(cna_synid)
+        with open(cna_ent.path, "r") as cna_file:
             # Read first line first
-            cnaFile.readline()
+            cna_file.readline()
             # Get all hugo symbols
-            allSymbols = allSymbols.union(
-                set(line.split("\t")[0] for line in cnaFile))
-    cnaTemplate = pd.DataFrame({"Hugo_Symbol": list(allSymbols)})
-    cnaTemplate.sort_values("Hugo_Symbol", inplace=True)
-    cnaTemplate.to_csv(cna_path, sep="\t", index=False)
+            all_symbols = all_symbols.union(
+                set(line.split("\t")[0] for line in cna_file))
+    cna_template = pd.DataFrame({"Hugo_Symbol": list(all_symbols)})
+    cna_template.sort_values("Hugo_Symbol", inplace=True)
+    cna_template.to_csv(cna_path, sep="\t", index=False)
     # Loop through to create finalized CNA file
-    withCenterHugoSymbol = pd.Series("Hugo_Symbol")
-    withCenterHugoSymbol = withCenterHugoSymbol.append(
-        pd.Series(keepForCenterConsortiumSamples))
+    with_center_hugo_symbol = pd.Series("Hugo_Symbol")
+    with_center_hugo_symbol = with_center_hugo_symbol.append(
+        pd.Series(keep_for_center_consortium_samples))
 
-    withMergedHugoSymbol = pd.Series("Hugo_Symbol")
-    withMergedHugoSymbol = withMergedHugoSymbol.append(
-        pd.Series(keepForMergedConsortiumSamples))
+    with_merged_hugo_symbol = pd.Series("Hugo_Symbol")
+    with_merged_hugo_symbol = with_merged_hugo_symbol.append(
+        pd.Series(keep_for_merged_consortium_samples))
 
-    cnaSamples = []
+    cna_samples = []
 
-    for cnaSynId in centerCNASynIdsDf.id:
-        cnaEnt = syn.get(cnaSynId)
-        center = cnaEnt.name.replace("data_CNA_", "").replace(".txt", "")
-        logger.info(cnaEnt.path)
-        if center in CENTER_MAPPING_DF.center.tolist():
-            centerCNA = pd.read_csv(cnaEnt.path, sep="\t")
-            merged = cnaTemplate.merge(
-                centerCNA, on="Hugo_Symbol", how="outer")
-            merged.sort_values("Hugo_Symbol", inplace=True)
+    for cna_synId in center_cna_synidsdf['id']:
+        cna_ent = syn.get(cna_synId)
+        center = cna_ent.name.replace("data_CNA_", "").replace(".txt", "")
+        logger.info(cna_ent.path)
+        if center in center_mappingdf.center.tolist():
+            center_cna = pd.read_csv(cna_ent.path, sep="\t")
+            merged_cna = cna_template.merge(
+                center_cna, on="Hugo_Symbol", how="outer")
+            merged_cna.sort_values("Hugo_Symbol", inplace=True)
 
-            merged = merged[merged.columns[
-                merged.columns.isin(withCenterHugoSymbol)]]
+            merged_cna = merged_cna[merged_cna.columns[
+                merged_cna.columns.isin(with_center_hugo_symbol)]]
 
-            cnaText = process.removePandasDfFloat(merged)
+            cna_text = process.removePandasDfFloat(merged_cna)
             # Replace blank with NA's
-            cnaText = cnaText.replace("\t\t", "\tNA\t").replace(
-                "\t\t", "\tNA\t").replace('\t\n', "\tNA\n")
+            cna_text = cna_text.replace(
+                "\t\t", "\tNA\t").replace(
+                "\t\t", "\tNA\t").replace(
+                '\t\n', "\tNA\n")
 
             # Store center CNA file in staging dir
-            with open(CNA_CENTER_PATH % center, "w") as cnaFile:
-                cnaFile.write(cnaText)
+            with open(CNA_CENTER_PATH % center, "w") as cna_file:
+                cna_file.write(cna_text)
             storeFile(
                 syn, CNA_CENTER_PATH % center,
-                genieVersion=genieVersion,
-                parent=CENTER_MAPPING_DF['stagingSynId'][
-                    CENTER_MAPPING_DF['center'] == center][0],
+                genieVersion=genie_version,
+                parent=center_mappingdf['stagingSynId'][
+                    center_mappingdf['center'] == center][0],
                 centerStaging=True)
             # This is to remove more samples for the final cna file
-            merged = merged[merged.columns[
-                merged.columns.isin(withMergedHugoSymbol)]]
+            merged_cna = merged_cna[merged_cna.columns[
+                merged_cna.columns.isin(with_merged_hugo_symbol)]]
 
-            cnaText = process.removePandasDfFloat(merged)
-            cnaText = cnaText.replace("\t\t", "\tNA\t").replace(
-                "\t\t", "\tNA\t").replace('\t\n', "\tNA\n")
+            cna_text = process.removePandasDfFloat(merged_cna)
+            cna_text = cna_text.replace(
+                "\t\t", "\tNA\t").replace(
+                "\t\t", "\tNA\t").replace(
+                '\t\n', "\tNA\n")
 
-            with open(CNA_CENTER_PATH % center, "w") as cnaFile:
-                cnaFile.write(cnaText)
+            with open(CNA_CENTER_PATH % center, "w") as cna_file:
+                cna_file.write(cna_text)
             # Join CNA file
-            cnaSamples.extend(merged.columns[1:].tolist())
-            joinCommand = ["join", cna_path, CNA_CENTER_PATH % center]
-            output = subprocess.check_output(joinCommand)
-            with open(cna_path, "w") as cnaFile:
-                cnaFile.write(output.decode("utf-8").replace(" ", "\t"))
+            cna_samples.extend(merged_cna.columns[1:].tolist())
+            linux_join_command = ["join", cna_path, CNA_CENTER_PATH % center]
+            output = subprocess.check_output(linux_join_command)
+            with open(cna_path, "w") as cna_file:
+                cna_file.write(output.decode("utf-8").replace(" ", "\t"))
 
     storeFile(
         syn, cna_path,
-        parent=consortiumReleaseSynId,
-        genieVersion=genieVersion,
+        parent=release_synid,
+        genieVersion=genie_version,
         name="data_CNA.txt",
         staging=current_release_staging)
 
-    return(cnaSamples)
+    return(cna_samples)
 
 
 # SEG
@@ -914,10 +930,10 @@ def store_seg_files(
         'SEGMEAN': 'seg.mean',
         'NUMMARK': 'num.mark'})
     if not current_release_staging:
-        segStagingDf = segdf[segdf['ID'].isin(
+        staging_segdf = segdf[segdf['ID'].isin(
             keep_for_center_consortium_samples)]
         for center in center_mappingdf.center:
-            center_seg = segStagingDf[segStagingDf['CENTER'] == center]
+            center_seg = staging_segdf[staging_segdf['CENTER'] == center]
             if not center_seg.empty:
                 del center_seg['CENTER']
                 segtext = process.removePandasDfFloat(center_seg)
