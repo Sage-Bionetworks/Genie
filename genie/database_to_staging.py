@@ -936,8 +936,8 @@ def store_seg_files(
             if not center_seg.empty:
                 del center_seg['CENTER']
                 segtext = process.removePandasDfFloat(center_seg)
-                with open(SEG_CENTER_PATH % center, "w") as segfile:
-                    segfile.write(segtext)
+                with open(SEG_CENTER_PATH % center, "w") as seg_file:
+                    seg_file.write(segtext)
                 storeFile(
                     syn, SEG_CENTER_PATH % center,
                     genieVersion=genie_version,
@@ -947,8 +947,8 @@ def store_seg_files(
     del segdf['CENTER']
     segdf = segdf[segdf['ID'].isin(keep_for_merged_consortium_samples)]
     segtext = process.removePandasDfFloat(segdf)
-    with open(seg_path, "w") as segfile:
-        segfile.write(segtext)
+    with open(seg_path, "w") as seg_file:
+        seg_file.write(segtext)
     storeFile(
         syn, seg_path,
         parent=release_synid,
