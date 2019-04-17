@@ -215,7 +215,6 @@ def configureMafRow(rowArray, headers, keepSamples, remove_variants):
 def runMAFinBED(
         syn,
         center_mappingdf,
-        databaseSynIdMappingDf,
         test=False,
         genieVersion="test",
         genie_user=None,
@@ -226,7 +225,6 @@ def runMAFinBED(
     Args:
         syn: Synapse object
         center_mappingdf: center mapping dataframe
-        databaseSynIdMappingDf: Database to Synapse Id mapping
         test: Testing parameter. Default is False.
         genieVersion: GENIE version. Default is test.
         genie_user: Synapse username. Default is None.
@@ -406,15 +404,13 @@ def no_genepanel_filter(clinicaldf, beddf):
 
 def store_gene_panel_files(
         syn,
-        databaseSynIdMappingDf,
+        fileviewSynId,
         genieVersion,
         data_gene_panel,
         consortiumReleaseSynId,
         current_release_staging):
     # Only need to upload these files once
     logger.info("STORING GENE PANELS FILES")
-    fileviewSynId = databaseSynIdMappingDf['Id'][
-        databaseSynIdMappingDf['Database'] == "fileview"][0]
     genePanels = syn.tableQuery(
         "select id from %s where cBioFileFormat = 'genePanel' "
         "and fileStage = 'staging'" % fileviewSynId)
@@ -444,15 +440,13 @@ def store_fusion_files(
         syn,
         consortiumReleaseSynId,
         genieVersion,
-        databaseSynIdMappingDf,
+        fusionSynId,
         keepForCenterConsortiumSamples,
         keepForMergedConsortiumSamples,
         current_release_staging,
         CENTER_MAPPING_DF):
     # FUSIONS
     logger.info("MERING, FILTERING, STORING FUSION FILES")
-    fusionSynId = databaseSynIdMappingDf['Id'][
-        databaseSynIdMappingDf['Database'] == "fusions"][0]
     Fusions = syn.tableQuery(
         'SELECT HUGO_SYMBOL,ENTREZ_GENE_ID,CENTER,TUMOR_SAMPLE_BARCODE,FUSION,'
         'DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME FROM %s' % fusionSynId)
@@ -510,7 +504,6 @@ def store_maf_files(
         genieVersion,
         centerMafFileViewSynId,
         consortiumReleaseSynId,
-        sequenced_samples,
         clinicalDf,
         CENTER_MAPPING_DF,
         keepForMergedConsortiumSamples,
@@ -524,6 +517,8 @@ def store_maf_files(
     centerMafSynIdsDf = centerMafSynIds.asDataFrame()
     mutations_path = os.path.join(
         GENIE_RELEASE_DIR, 'data_mutations_extended_%s.txt' % genieVersion)
+    sequenced_samples = "#sequenced_samples: {}".format(
+        " ".join(clinicalDf['SAMPLE_ID']))
     with open(mutations_path, 'w') as f:
         f.write(sequenced_samples + "\n")
     for index, mafSynId in enumerate(centerMafSynIdsDf.id):
@@ -583,7 +578,7 @@ def run_genie_filters(
         genie_user,
         genie_pass,
         genieVersion,
-        databaseSynIdMappingDf,
+        variant_filtering_synId,
         clinicalDf,
         bedDf,
         sampleCols,
@@ -594,14 +589,13 @@ def run_genie_filters(
         test):
     # ADD CHECKS TO CODE BEFORE UPLOAD.
     # Throw error if things don't go through
-    logger.info("MERING, FILTERING, STORING CLINICAL FILES")
+    logger.info("RUN GENIE FILTERS")
     # STORING CLINICAL FILES INTO CBIOPORTAL
-    variant_filtering_synId = databaseSynIdMappingDf['Id'][
-        databaseSynIdMappingDf['Database'] == "mutationsInCis"][0]
+
     ''' FILTERING '''
     logger.info("MAF IN BED FILTER")
     remove_mafInBed_variants = runMAFinBED(
-        syn, CENTER_MAPPING_DF, databaseSynIdMappingDf, test=test,
+        syn, CENTER_MAPPING_DF, test=test,
         genieVersion=genieVersion,
         genie_user=genie_user, genie_pass=genie_pass)
 
@@ -645,6 +639,9 @@ def store_clinical_files(
         consortiumReleaseSynId,
         current_release_staging,
         CENTER_MAPPING_DF):
+    logger.info("CONFIGURING CLINICAL FILES")
+    logger.info("REMOVING PHI")
+    clinicalDf = reAnnotatePHI(clinicalDf)
     logger.info("ADD CANCER TYPES")
     # This removes support for both oncotree urls (only support json)
     oncotreeDict = process.get_oncotree_code_mappings(oncotree_url)
@@ -702,8 +699,8 @@ def store_clinical_files(
 
     clinicalDf.drop_duplicates("SAMPLE_ID", inplace=True)
 
+    logger.info("STORING CLINICAL FILES")
     # samples must be removed after reading in the clinical file again
-
     clinicalDfStaging = clinicalDf[
         ~clinicalDf['SAMPLE_ID'].isin(removeForCenterConsortiumSamples)]
     if not current_release_staging:
@@ -883,7 +880,7 @@ def store_cna_files(
 def store_seg_files(
         syn,
         genieVersion,
-        databaseSynIdMappingDf,
+        segSynId,
         consortiumReleaseSynId,
         keepForCenterConsortiumSamples,
         keepForMergedConsortiumSamples,
@@ -892,8 +889,6 @@ def store_seg_files(
     logger.info("MERING, FILTERING, STORING SEG FILES")
     seg_path = os.path.join(
         GENIE_RELEASE_DIR, 'genie_private_data_cna_hg19_%s.seg' % genieVersion)
-    segSynId = databaseSynIdMappingDf['Id'][
-        databaseSynIdMappingDf['Database'] == "seg"][0]
     seg = syn.tableQuery(
         'SELECT ID,CHROM,LOCSTART,LOCEND,NUMMARK,SEGMEAN'
         ',CENTER FROM %s' % segSynId)
@@ -966,6 +961,7 @@ def store_data_gene_matrix(
         genieVersion=genieVersion,
         name="data_gene_matrix.txt",
         staging=current_release_staging)
+    return(data_gene_matrix)
 
 
 def store_bed_files(
@@ -1031,21 +1027,26 @@ def stagingToCbio(
         genie_pass: Synapse password.  Default is None.
 
     '''
+    if not os.path.exists(GENIE_RELEASE_DIR):
+        os.mkdir(GENIE_RELEASE_DIR)
     consortiumReleaseSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == "consortium"][0]
     centerMafFileViewSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == "centerMafView"][0]
-
-    if not os.path.exists(GENIE_RELEASE_DIR):
-        os.mkdir(GENIE_RELEASE_DIR)
-
     patientSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == "patient"][0]
     sampleSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == "sample"][0]
     bedSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == "bed"][0]
-
+    fileviewSynId = databaseSynIdMappingDf['Id'][
+        databaseSynIdMappingDf['Database'] == "fileview"][0]
+    segSynId = databaseSynIdMappingDf['Id'][
+        databaseSynIdMappingDf['Database'] == "seg"][0]
+    variant_filtering_synId = databaseSynIdMappingDf['Id'][
+        databaseSynIdMappingDf['Database'] == "mutationsInCis"][0]
+    fusionSynId = databaseSynIdMappingDf['Id'][
+        databaseSynIdMappingDf['Database'] == "fusions"][0]
     # Using center mapping df to gate centers in release fileStage
     patient = syn.tableQuery(
         "SELECT * FROM {} where CENTER in ('{}')".format(
@@ -1091,8 +1092,6 @@ def stagingToCbio(
     # Remove patients without any sample or patient ids
     clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isnull()]
     clinicalDf = clinicalDf[~clinicalDf['PATIENT_ID'].isnull()]
-    logger.info("REMOVING PHI")
-    clinicalDf = reAnnotatePHI(clinicalDf)
 
     remove_mafInBed_variants, \
         removeForMergedConsortiumSamples, \
@@ -1102,7 +1101,7 @@ def stagingToCbio(
             genie_user,
             genie_pass,
             genieVersion,
-            databaseSynIdMappingDf,
+            variant_filtering_synId,
             clinicalDf,
             bedDf,
             sampleCols,
@@ -1128,20 +1127,17 @@ def stagingToCbio(
 
     assert not clinicalDf['SAMPLE_ID'].duplicated().any()
 
-    sequenced_samples = "#sequenced_samples: " + " ".join(clinicalDf['SAMPLE_ID'])
-
     store_maf_files(
-            syn,
-            genieVersion,
-            centerMafFileViewSynId,
-            consortiumReleaseSynId,
-            sequenced_samples,
-            clinicalDf,
-            CENTER_MAPPING_DF,
-            keepForMergedConsortiumSamples,
-            keepForCenterConsortiumSamples,
-            remove_mafInBed_variants,
-            current_release_staging)
+        syn,
+        genieVersion,
+        centerMafFileViewSynId,
+        consortiumReleaseSynId,
+        clinicalDf[['SAMPLE_ID', 'CENTER']],
+        CENTER_MAPPING_DF,
+        keepForMergedConsortiumSamples,
+        keepForCenterConsortiumSamples,
+        remove_mafInBed_variants,
+        current_release_staging)
 
     cnaSamples = store_cna_files(
         syn,
@@ -1163,7 +1159,7 @@ def stagingToCbio(
 
     genePanelEntities = store_gene_panel_files(
         syn,
-        databaseSynIdMappingDf,
+        fileviewSynId,
         genieVersion,
         data_gene_matrix,
         consortiumReleaseSynId,
@@ -1173,7 +1169,7 @@ def stagingToCbio(
         syn,
         consortiumReleaseSynId,
         genieVersion,
-        databaseSynIdMappingDf,
+        fusionSynId,
         keepForCenterConsortiumSamples,
         keepForMergedConsortiumSamples,
         current_release_staging,
@@ -1182,7 +1178,7 @@ def stagingToCbio(
     store_seg_files(
         syn,
         genieVersion,
-        databaseSynIdMappingDf,
+        segSynId,
         consortiumReleaseSynId,
         keepForCenterConsortiumSamples,
         keepForMergedConsortiumSamples,
@@ -1199,6 +1195,31 @@ def stagingToCbio(
         consortiumReleaseSynId)
 
     return(genePanelEntities)
+
+
+def update_process_trackingdf(
+        syn, process_trackerdb_synid, center, process_type, start=True):
+    '''
+    Updates the processing tracking database
+
+    Args:
+        syn: synapse object
+        process_trackerdb_synid: Synapse id of process tracking db
+        center: GENIE center (ie. SAGE)
+        process_type: processing type (ie. dbToStage)
+        start: Start or end of processing.  Default is True for start
+    '''
+    column = 'timeStartProcessing' if start else 'timeEndProcessing'
+    process_tracker = syn.tableQuery(
+        "SELECT {col} FROM {tableid} where center = '{center}' "
+        "and processingType = '{process_type}'".format(
+            col=column,
+            tableid=process_trackerdb_synid,
+            center=center,
+            process_type=process_type))
+    process_trackerdf = process_tracker.asDataFrame()
+    process_trackerdf[column][0] = str(int(time.time()*1000))
+    syn.store(synapseclient.Table(process_trackerdb_synid, process_trackerdf))
 
 
 # def command_reviseMetadataFiles(syn, args, databaseSynIdMappingDf):
@@ -1324,14 +1345,6 @@ def createLinkVersion(
                 parent=secondReleaseFolderSynId,
                 targetVersion=ents['versionNumber']))
 
-    # [syn.store(
-    #     synapseclient.Link(
-    #         ents['id'],
-    #         parent=secondReleaseFolderSynId,
-    #         targetVersion=ents['versionNumber']))
-    #  for ents in consortiumRelease
-    #  if ents['type'] != "org.sagebionetworks.repo.model.Folder"
-    #  and not ents['name'].startswith("data_gene_panel")]
     releaseFiles = syn.getChildren(secondReleaseFolderSynId)
     clinEnt = [
         ents['id']
@@ -1390,7 +1403,8 @@ def main(genie_version,
     databaseSynIdMappingDf = databaseSynIdMapping.asDataFrame()
     consortiumSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == 'consortium'].values[0]
-
+    processTrackerSynId = databaseSynIdMappingDf['Id'][
+        databaseSynIdMappingDf['Database'] == 'processTracker'].values[0]
     if oncotree_link is None:
         oncoLink = databaseSynIdMappingDf['Id'][
             databaseSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
@@ -1405,15 +1419,8 @@ def main(genie_version,
     caseListSynId = findCaseListId(syn, consortiumSynId)
 
     if not test and not staging:
-        processTrackerSynId = databaseSynIdMappingDf['Id'][
-            databaseSynIdMappingDf['Database'] == 'processTracker'].values[0]
-        processTracker = syn.tableQuery(
-            "SELECT timeStartProcessing FROM {}"
-            " where center = 'SAGE' and processingType = 'dbToStage'".format(
-                processTrackerSynId))
-        processTrackerDf = processTracker.asDataFrame()
-        processTrackerDf['timeStartProcessing'][0] = str(int(time.time()*1000))
-        syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
+        update_process_trackingdf(
+            syn, processTrackerSynId, 'SAGE', 'dbToStage', start=True)
 
     syn.table_query_timeout = 50000
     centerMappingSynId = databaseSynIdMappingDf['Id'][
@@ -1458,7 +1465,7 @@ def main(genie_version,
     gene_matrix_path = os.path.join(
         GENIE_RELEASE_DIR,
         "data_gene_matrix_{}.txt".format(genie_version))
-    create_case_lists.create_case_lists(
+    create_case_lists.main(
         clinical_path,
         gene_matrix_path,
         CASE_LIST_PATH,
@@ -1503,8 +1510,8 @@ def main(genie_version,
     command = [cbioValidatorPath, '-s', GENIE_RELEASE_DIR, '-n', '; exit 0']
     cbioOutput = subprocess.check_output(" ".join(command), shell=True)
     logger.info(cbioOutput.decode("utf-8"))
-    cbio_validator_log = "cbioValidatorLogsConsortium_{}.txt".format(
-        genie_version)
+    cbio_validator_log = \
+        "cbioValidatorLogsConsortium_{}.txt".format(genie_version)
     if not test and not staging:
         with open(cbio_validator_log, "w") as cbioLog:
             cbioLog.write(cbioOutput.decode("utf-8"))
@@ -1524,12 +1531,9 @@ def main(genie_version,
         genePanelEntities, databaseSynIdMappingDf)
 
     if not test and not staging:
-        processTracker = syn.tableQuery(
-            "SELECT timeEndProcessing FROM %s where center = 'SAGE' "
-            "and processingType = 'dbToStage'" % processTrackerSynId)
-        processTrackerDf = processTracker.asDataFrame()
-        processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
-        syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
+        update_process_trackingdf(
+            syn, processTrackerSynId, 'SAGE', 'dbToStage', start=False)
+
     logger.info("COMPLETED DATABASE TO STAGING")
 
     if not test:
