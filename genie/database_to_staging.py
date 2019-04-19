@@ -1360,72 +1360,61 @@ def update_process_trackingdf(
     syn.store(synapseclient.Table(process_trackerdb_synid, process_trackerdf))
 
 
-# def command_reviseMetadataFiles(syn, args, databaseSynIdMappingDf):
-#     '''
-#     Command to call metadata files with args
-
-#     Args:
-#         syn: Synapse object
-#         args: Argument list
-#         databaseSynIdMappingDf: database to synapse id mapping df
-#     '''
-#     reviseMetadataFiles(
-#         syn, args.staging, databaseSynIdMappingDf, args.genieVersion)
-
-
-def reviseMetadataFiles(
-        syn, staging, consortiumId, genieVersion=None):
+def revise_metadata_files(
+        syn, staging, consortiumid, genie_version=None):
     '''
     Rewrite metadata files with the correct GENIE version
 
     Args:
         syn: Synapse object
         staging: staging flag
-        databaseSynIdMappingDf: database to synapse id mapping df
-        genieVersion: GENIE version, Default to None
+        consortiumid: Synapse id of consortium release folder
+        genie_version: GENIE version, Default to None
     '''
-    allFiles = syn.getChildren(consortiumId)
-    metadataEnts = [
+    release_files = syn.getChildren(consortiumid)
+    meta_file_ents = [
         syn.get(i['id'],
                 downloadLocation=GENIE_RELEASE_DIR,
                 ifcollision="overwrite.local")
-        for i in allFiles if 'meta' in i['name']]
+        for i in release_files if 'meta' in i['name']]
 
-    for metaEnt in metadataEnts:
-        with open(metaEnt.path, "r+") as meta:
-            metaText = meta.read()
-            if "meta_study" not in metaEnt.path:
+    for meta_ent in meta_file_ents:
+        with open(meta_ent.path, "r+") as meta:
+            meta_text = meta.read()
+            if "meta_study" not in meta_ent.path:
                 version = ''
             else:
-                version = re.search(".+GENIE.+v(.+)", metaText).group(1)
+                version = re.search(".+GENIE.+v(.+)", meta_text).group(1)
             # Fix this line
-            genieVersion = version if genieVersion is None else genieVersion
-            dataFileVersion = re.search(".+data_(.+)[.]txt", metaText)
-            if dataFileVersion is None:
-                dataFileVersion = re.search(".+data_(.+)[.]seg", metaText)
-            if dataFileVersion is not None:
-                dataFileVersion = dataFileVersion.group(1).split("_")[-1]
+            genie_version = version if genie_version is None else genie_version
+            version_on_file = re.search(".+data_(.+)[.]txt", meta_text)
+            if version_on_file is None:
+                version_on_file = re.search(".+data_(.+)[.]seg", meta_text)
+            if version_on_file is not None:
+                version_on_file = version_on_file.group(1).split("_")[-1]
 
-            if version != genieVersion:
-                metaText = metaText.replace(
+            if version != genie_version:
+                meta_text = meta_text.replace(
                     "GENIE Cohort v{}".format(version),
-                    "GENIE Cohort v{}".format(genieVersion))
+                    "GENIE Cohort v{}".format(genie_version))
 
-                metaText = metaText.replace(
+                meta_text = meta_text.replace(
                     "GENIE v{}".format(version),
-                    "GENIE v{}".format(genieVersion))
+                    "GENIE v{}".format(genie_version))
 
-                if dataFileVersion is not None:
-                    metaText = metaText.replace(dataFileVersion, genieVersion)
-                    metaText = metaText.replace(dataFileVersion, genieVersion)
+                if version_on_file is not None:
+                    meta_text = meta_text.replace(
+                        version_on_file, genie_version)
+                    meta_text = meta_text.replace(
+                        version_on_file, genie_version)
                 meta.seek(0)
-                meta.write(metaText)
+                meta.write(meta_text)
                 meta.truncate()
                 storeFile(
                     syn,
-                    metaEnt.path,
-                    parent=consortiumId,
-                    genieVersion=genieVersion,
+                    meta_ent.path,
+                    parent=consortiumid,
+                    genieVersion=genie_version,
                     staging=staging)
 
 
@@ -1616,7 +1605,9 @@ def main(genie_version,
     processTrackerSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == 'processTracker'].values[0]
     # get syn id of case list folder in consortium release
-    caseListSynId = findCaseListId(syn, consortiumSynId)
+    # caseListSynId = findCaseListId(syn, consortiumSynId)
+    caseListSynId, already_exists = search_and_create_folder(
+        syn, consortiumSynId, "case_lists")
 
     if not staging:
         update_process_trackingdf(
@@ -1685,7 +1676,8 @@ def main(genie_version,
     os.remove(clinical_path)
 
     logger.info("REVISE METADATA FILES")
-    reviseMetadataFiles(syn, staging, consortiumSynId, genie_version)
+    revise_metadata_files(syn, staging, consortiumSynId, genie_version)
+
     logger.info("CBIO VALIDATION")
     '''
     Must be exit 0 because the validator sometimes fails,
