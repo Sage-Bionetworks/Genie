@@ -1511,7 +1511,29 @@ def main(genie_version,
          staging=False,
          debug=False,
          skip_mutationsincis=False):
+    '''
+    - Does parameter checks
+    - Updates process tracking start
+    - initiates database to staging
+    - create case lists
+    - revise meta files
+    - run cBioPortal validation
+    - create link versions
+    - update process tracking end
+    - Create dashboard tables and plots
 
+    Args:
+        genie_version,
+        processing_date,
+        cbioportal_path,
+        oncotree_link=None,
+        consortium_release_cutoff=184,
+        pemfile=None,
+        test=False,
+        staging=False,
+        debug=False,
+        skip_mutationsincis=False
+    '''
     syn = process.synLogin(pemfile, debug=debug)
     genie_user = os.environ['GENIE_USER']
     if pemfile is not None:
