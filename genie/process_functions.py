@@ -16,7 +16,7 @@ import ast
 #   from urllib.request import urlopen
 # except ImportError:
 #   from urllib2 import urlopen
-#Ignore SettingWithCopyWarning warning
+# Ignore SettingWithCopyWarning warning
 pd.options.mode.chained_assignment = None
 
 logger = logging.getLogger(__name__)
@@ -125,7 +125,8 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def retry_get_url(url):
     '''
-    Implement retry logic when getting urls.  Timesout at 3 seconds, retries 5 times.
+    Implement retry logic when getting urls.
+    Timesout at 3 seconds, retries 5 times.
 
     Args:
         url:  Http or https url
@@ -140,55 +141,72 @@ def retry_get_url(url):
     response = s.get(url, timeout=3)
     return(response)
 
-# Check if oncotree link is live
-def checkUrl(url):
-    temp = retry_get_url(url)
-    assert temp.status_code == 200, "%s site is down"% url
 
-# VALIDATION: Getting the GENIE mapping synapse tables
+def checkUrl(url):
+    '''
+    Check if URL link is live
+    '''
+    temp = retry_get_url(url)
+    assert temp.status_code == 200, "%s site is down" % url
+
+
 def getGenieMapping(syn, synId):
     """
     This function gets the GENIE mapping tables
-    
+
     :params synId:          Synapse Id of synapse table
 
     :returns:               Table dataframe
     """
-    table_ent = syn.tableQuery('SELECT * FROM %s' %synId)
+    table_ent = syn.tableQuery('SELECT * FROM %s' % synId)
     table = table_ent.asDataFrame()
     table = table.fillna("")
     return(table)
 
-# VALIDATION: Check if the column exists
+
 def checkColExist(DF, key):
     """
-    This function checks if the key exists as a header in a dataframe
-    
-    :params DF:             Pandas dataframe
-    :params key:            Expected header column name
+    This function checks if the column exists in a dataframe
 
-    :returns:               An error message or an empty string
+    Args:
+        DF: pandas dataframe
+        key: Expected column header name
+
+    Returns:
+        bool:  True if column exists
     """
     result = False if DF.get(key) is None else True
     return(result)
 
-# VALIDATION: get oncotree codes from oncotree URL
-def get_oncotree_codes(oncotree_url): 
-    """ Gets the oncotree data from the specified url """
-    #PATTERN = re.compile('([A-Za-z\' ,-/]*) \\(([A-Za-z_]*)\\)')
-    PATTERN = re.compile('.*[(](.*)[)]')
-    # with requests.get(oncotree_url) as oncotreeUrl:
-    #   oncotree = oncotreeUrl.text.split("\n")
-    oncotreeUrl = retry_get_url(oncotree_url)
-    oncotree = oncotreeUrl.text.split("\n")
 
-    #oncotree = urlopen(oncotree_url).read().split('\n')
-    allCodes = []
-    for row in oncotree[:-1]:
-        data = row.split("\t")
-        allCodes.extend([PATTERN.match(i).group(1) for i in data[0:5] if PATTERN.match(i)])
-    codes = pd.DataFrame({"ONCOTREE_CODE":list(set(allCodes))})
-    return(codes)
+# def get_oncotree_codes(oncotree_url):
+#     '''
+#     Deprecated
+#     Gets the oncotree data from the specified url.
+
+#     Args:
+#         oncotree_url: Oncotree url
+
+#     Returns:
+#         dataframe: oncotree codes
+#     '''
+#     # PATTERN = re.compile('([A-Za-z\' ,-/]*) \\(([A-Za-z_]*)\\)')
+#     PATTERN = re.compile('.*[(](.*)[)]')
+#     # with requests.get(oncotree_url) as oncotreeUrl:
+#     #   oncotree = oncotreeUrl.text.split("\n")
+#     oncotreeUrl = retry_get_url(oncotree_url)
+#     oncotree = oncotreeUrl.text.split("\n")
+
+#     # oncotree = urlopen(oncotree_url).read().split('\n')
+#     allCodes = []
+#     for row in oncotree[:-1]:
+#         data = row.split("\t")
+#         allCodes.extend([
+#             PATTERN.match(i).group(1)
+#             for i in data[0:5] if PATTERN.match(i)])
+#     codes = pd.DataFrame({"ONCOTREE_CODE": list(set(allCodes))})
+#     return(codes)
+
 
 def getDatabaseSynId(syn, tableName, test=False, databaseToSynIdMappingDf=None):
     if databaseToSynIdMappingDf is None:
@@ -493,18 +511,25 @@ def check_col_and_values(
         else:
             warning = (
                 "{filename}: Doesn't have {col} column. "
-                "This column will be added\n".format(filename=filename, col=col))
+                "This column will be added\n".format(
+                    filename=filename, col=col))
     else:
         if na_allowed:
             check_values = df[col].dropna()
         else:
             check_values = df[col]
         if not check_values.isin(possible_values).all():
-            error = "{filename}: Please double check your {col} column.  This column must only be these values: {possible_vals}\n".format(filename=filename, col=col, possible_vals=', '.join([str(value) for value in possible_values]))
+            error = (
+                "{filename}: Please double check your {col} column.  "
+                "This column must only be these values: "
+                "{possible_vals}\n".format(
+                    filename=filename,
+                    col=col,
+                    possible_vals=', '.join([
+                        str(value) for value in possible_values])))
     return(warning, error)
 
 
-# CREATE ONCOTREE DICTIONARY MAPPING TO PRIMARY, SECONDARY, CANCER TYPE, AND CANCER DESCRIPTION
 def extract_oncotree_code_mappings_from_oncotree_json(oncotree_json, primary, secondary):
     oncotree_code_to_info = {}
 
