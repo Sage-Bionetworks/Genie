@@ -1459,7 +1459,7 @@ def search_and_create_folder(syn, parentid, folder_name):
     return(folder_synid, already_exists)
 
 
-def createLinkVersion(
+def create_link_version(
         syn,
         genie_version,
         case_list_entities,
@@ -1482,10 +1482,11 @@ def createLinkVersion(
     major_release = genie_version.split(".")[0]
     all_releases_synid = database_synid_mappingdf['Id'][
         database_synid_mappingdf['Database'] == 'release'].values[0]
-
+    # Create major release folder
     major_release_folder_synid, already_exists = search_and_create_folder(
         syn, all_releases_synid, "Release {}".format(major_release))
-
+    # If the major release folder didn't exist, go ahead and create the
+    # release folder
     if not already_exists:
         release_folder_ent = synapseclient.Folder(
             genie_version,
@@ -1494,37 +1495,37 @@ def createLinkVersion(
     else:
         release_folder_synid, already_exists = search_and_create_folder(
             syn, major_release_folder_synid, genie_version)
-
-    caselistId, already_exists = search_and_create_folder(
+    # Search or create case lists folder
+    caselist_folder_synid, already_exists = search_and_create_folder(
         syn, release_folder_synid, "case_lists")
 
     # caselistId = findCaseListId(syn, release_folder_synid)
-    consortiumSynId = database_synid_mappingdf['Id'][
+    consortium_synid = database_synid_mappingdf['Id'][
         database_synid_mappingdf['Database'] == 'consortium'].values[0]
-    consortiumRelease = syn.getChildren(consortiumSynId)
+    consortium_release_files = syn.getChildren(consortium_synid)
     # data_clinical.txt MUST be pulled in because the clinical file is
     # needed in the consortium_to_public.py
-    for ents in consortiumRelease:
-        if ents['type'] != "org.sagebionetworks.repo.model.Folder" \
-                and not ents['name'].startswith("data_gene_panel"):
+    for release_file in consortium_release_files:
+        if release_file['type'] != "org.sagebionetworks.repo.model.Folder" \
+                and not release_file['name'].startswith("data_gene_panel"):
             syn.store(synapseclient.Link(
-                ents['id'],
+                release_file['id'],
                 parent=release_folder_synid,
-                targetVersion=ents['versionNumber']))
+                targetVersion=release_file['versionNumber']))
 
-    releaseFiles = syn.getChildren(release_folder_synid)
-    clinEnt = [
+    release_files = syn.getChildren(release_folder_synid)
+    clinical_ent = [
         ents['id']
-        for ents in releaseFiles
+        for ents in release_files
         if ents['name'] == "data_clinical.txt"][0]
-    # Set private permission for the data_clinical.txt Link
-    syn.setPermissions(clinEnt, principalId=3346558, accessType=[])
-    syn.setPermissions(clinEnt, principalId=3326313, accessType=[])
-    # caselistEnts = syn.getChildren("syn9689663")
+    # Set private permission for the data_clinical.txt link
+    syn.setPermissions(clinical_ent, principalId=3346558, accessType=[])
+    syn.setPermissions(clinical_ent, principalId=3326313, accessType=[])
+
     for ents in case_list_entities:
         syn.store(synapseclient.Link(
             ents.id,
-            parent=caselistId,
+            parent=caselist_folder_synid,
             targetVersion=ents.versionNumber))
 
     # Store gene panels
@@ -1708,8 +1709,9 @@ def main(genie_version,
         '%s/genie_private_meta_cna_hg19_seg.txt' % GENIE_RELEASE_DIR
     if os.path.exists(private_cna_meta_path):
         os.unlink(private_cna_meta_path)
+
     logger.info("CREATING LINK VERSION")
-    createLinkVersion(
+    create_link_version(
         syn, genie_version, caseListEntities,
         genePanelEntities, databaseSynIdMappingDf)
 
