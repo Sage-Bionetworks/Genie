@@ -47,6 +47,9 @@ def findCaseListId(syn, parentId):
     Args:
         syn: Synapse object
         parentId: Synapse Id of Folder or Project
+
+    Returns:
+        string: Synapse id of case list
     '''
     releaseEnts = synu.walk(syn, parentId)
     releaseFolders = next(releaseEnts)
@@ -1426,47 +1429,78 @@ def reviseMetadataFiles(
                     staging=staging)
 
 
+def search_and_create_folder(syn, parentid, folder_name):
+    '''
+    This function will search for an existing directory given a parent id
+    It will create the Synapse folder if it doesn't exist
+
+    Args:
+        syn: Synapse object
+        parentid: Synapse id of a project or folder
+        folder_name: Folder being searched for
+
+    Returns:
+        string: Synapse folder id
+        boolean: Checks if the folder already existed.  True if it did
+    '''
+    folders = syn.getChildren(parentid, includeTypes=['folder'])
+    search_for_folder = \
+        filter(lambda folder: folder['name'] == folder_name, folders)
+    search_for_folder = list(search_for_folder)
+    if len(search_for_folder) == 0:
+        folder_ent = synapseclient.Folder(name=folder_name, parent=parentid)
+        folder_synid = syn.store(folder_ent)['id']
+        already_exists = False
+    elif len(search_for_folder) == 1:
+        folder_synid = search_for_folder[0]['id']
+        already_exists = True
+    else:
+        raise ValueError("There should not be any duplicated folder names")
+    return(folder_synid, already_exists)
+
+
 def createLinkVersion(
         syn,
-        genieVersion,
-        caseListEntities,
-        genePanelEntities,
-        databaseSynIdMappingDf):
-    versioning = genieVersion.split(".")
-    main = versioning[0]
-    # second = ".".join(versioning[1:])
-    releaseSynId = databaseSynIdMappingDf['Id'][
-        databaseSynIdMappingDf['Database'] == 'release'].values[0]
-    releases = synu.walk(syn, releaseSynId)
-    mainReleaseFolders = next(releases)[1]
-    releaseFolderSynId = [
-        synId for folderName, synId in mainReleaseFolders
-        if folderName == "Release {}".format(main)]
+        genie_version,
+        case_list_entities,
+        gene_panel_entities,
+        database_synid_mappingdf):
+    '''
+    Create release links from the actual entity and version
 
-    if len(releaseFolderSynId) > 0:
-        secondRelease = synu.walk(syn, releaseFolderSynId[0])
-        secondReleaseFolders = next(secondRelease)[1]
-        secondReleaseFolderSynIdList = [
-            synId for folderName, synId in secondReleaseFolders
-            if folderName == genieVersion]
+    TODO: Refactor to use fileviews
 
-        if len(secondReleaseFolderSynIdList) > 0:
-            secondReleaseFolderSynId = secondReleaseFolderSynIdList[0]
-        else:
-            secondReleaseFolderSynId = syn.store(
-                synapseclient.Folder(genieVersion,
-                                     parent=releaseFolderSynId[0]))
+    Args:
+        syn: Synapse object
+        genie_version: GENIE version number
+        case_list_entities: Case list entities
+        gene_panel_entities: Gene panel entities
+        database_synid_mappingdf: dataframe containing database to
+                                  synapse id mapping
+    '''
+    # Grab major release numbers (ie 1,2,3 ...)
+    major_release = genie_version.split(".")[0]
+    all_releases_synid = database_synid_mappingdf['Id'][
+        database_synid_mappingdf['Database'] == 'release'].values[0]
+
+    major_release_folder_synid, already_exists = search_and_create_folder(
+        syn, all_releases_synid, "Release {}".format(major_release))
+
+    if not already_exists:
+        release_folder_ent = synapseclient.Folder(
+            genie_version,
+            parent=major_release_folder_synid)
+        release_folder_synid = syn.store(release_folder_ent)['id']
     else:
-        mainReleaseFolderId = syn.store(
-            synapseclient.Folder("Release %s" % main,
-                                 parent=releaseSynId)).id
-        secondReleaseFolderSynId = syn.store(
-            synapseclient.Folder(genieVersion,
-                                 parent=mainReleaseFolderId)).id
+        release_folder_synid, already_exists = search_and_create_folder(
+            syn, major_release_folder_synid, genie_version)
 
-    caselistId = findCaseListId(syn, secondReleaseFolderSynId)
-    consortiumSynId = databaseSynIdMappingDf['Id'][
-        databaseSynIdMappingDf['Database'] == 'consortium'].values[0]
+    caselistId, already_exists = search_and_create_folder(
+        syn, release_folder_synid, "case_lists")
+
+    # caselistId = findCaseListId(syn, release_folder_synid)
+    consortiumSynId = database_synid_mappingdf['Id'][
+        database_synid_mappingdf['Database'] == 'consortium'].values[0]
     consortiumRelease = syn.getChildren(consortiumSynId)
     # data_clinical.txt MUST be pulled in because the clinical file is
     # needed in the consortium_to_public.py
@@ -1475,10 +1509,10 @@ def createLinkVersion(
                 and not ents['name'].startswith("data_gene_panel"):
             syn.store(synapseclient.Link(
                 ents['id'],
-                parent=secondReleaseFolderSynId,
+                parent=release_folder_synid,
                 targetVersion=ents['versionNumber']))
 
-    releaseFiles = syn.getChildren(secondReleaseFolderSynId)
+    releaseFiles = syn.getChildren(release_folder_synid)
     clinEnt = [
         ents['id']
         for ents in releaseFiles
@@ -1487,17 +1521,17 @@ def createLinkVersion(
     syn.setPermissions(clinEnt, principalId=3346558, accessType=[])
     syn.setPermissions(clinEnt, principalId=3326313, accessType=[])
     # caselistEnts = syn.getChildren("syn9689663")
-    for ents in caseListEntities:
+    for ents in case_list_entities:
         syn.store(synapseclient.Link(
             ents.id,
             parent=caselistId,
             targetVersion=ents.versionNumber))
 
     # Store gene panels
-    for ents in genePanelEntities:
+    for ents in gene_panel_entities:
         syn.store(synapseclient.Link(
             ents.id,
-            parent=secondReleaseFolderSynId,
+            parent=release_folder_synid,
             targetVersion=ents.versionNumber))
 
 
@@ -1523,16 +1557,16 @@ def main(genie_version,
     - Create dashboard tables and plots
 
     Args:
-        genie_version,
-        processing_date,
-        cbioportal_path,
-        oncotree_link=None,
-        consortium_release_cutoff=184,
-        pemfile=None,
-        test=False,
-        staging=False,
-        debug=False,
-        skip_mutationsincis=False
+        genie_version: GENIE version,
+        processing_date: processing date
+        cbioportal_path: Path to cbioportal validator
+        oncotree_link: Link to oncotree codes
+        consortium_release_cutoff: release cut off value in days
+        pemfile: Path to private key file
+        test: Test flag, uses test databases
+        staging: Staging flag, uses staging databases
+        debug:  Synapse debug flag
+        skip_mutationsincis: Skip mutation in cis filter
     '''
     syn = process.synLogin(pemfile, debug=debug)
     genie_user = os.environ['GENIE_USER']
