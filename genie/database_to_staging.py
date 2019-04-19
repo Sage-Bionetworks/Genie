@@ -451,27 +451,45 @@ def store_gene_panel_files(
     return(genePanelEntities)
 
 
+def return_syn_tablequerydf(syn, query):
+    table = syn.tableQuery(query)
+    return(table.asDataFrame())
+
+
 def store_fusion_files(
         syn,
-        consortiumReleaseSynId,
-        genieVersion,
-        fusionSynId,
-        keepForCenterConsortiumSamples,
-        keepForMergedConsortiumSamples,
+        release_synid,
+        genie_version,
+        fusion_synid,
+        keep_for_center_consortium_samples,
+        keep_for_merged_consortium_samples,
         current_release_staging,
-        CENTER_MAPPING_DF):
-    # FUSIONS
+        center_mappingdf):
+    '''
+    Create, filter, configure, and store fusion file
+
+    Args:
+        syn: Synapse object
+        release_synid: Synapse id to store release file
+        genie_version: GENIE version (ie. v6.1-consortium)
+        fusion_synid: Fusion database synid
+        keep_for_center_consortium_samples: Samples to keep for center files
+        keep_for_merged_consortium_samples: Samples to keep for merged file
+        current_release_staging: Staging flag
+        center_mappingdf: Center mapping dataframe
+    '''
     logger.info("MERING, FILTERING, STORING FUSION FILES")
-    Fusions = syn.tableQuery(
-        'SELECT HUGO_SYMBOL,ENTREZ_GENE_ID,CENTER,TUMOR_SAMPLE_BARCODE,FUSION,'
-        'DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME FROM %s' % fusionSynId)
-    FusionsDf = Fusions.asDataFrame()
+    FusionsDf = return_syn_tablequerydf(
+        syn,
+        'select HUGO_SYMBOL,ENTREZ_GENE_ID,CENTER,TUMOR_SAMPLE_BARCODE,FUSION,'
+        'DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME from {}'.format(fusion_synid))
+    # FusionsDf = Fusions.asDataFrame()
     FusionsDf['ENTREZ_GENE_ID'][FusionsDf['ENTREZ_GENE_ID'] == 0] = pd.np.nan
 
     if not current_release_staging:
         FusionsStagingDf = FusionsDf[FusionsDf['TUMOR_SAMPLE_BARCODE'].isin(
-            keepForCenterConsortiumSamples)]
-        for center in CENTER_MAPPING_DF.center:
+            keep_for_center_consortium_samples)]
+        for center in center_mappingdf.center:
             center_fusion = FusionsStagingDf[
                 FusionsStagingDf['CENTER'] == center]
             if not center_fusion.empty:
@@ -479,14 +497,15 @@ def store_fusion_files(
                     FUSIONS_CENTER_PATH % center,
                     sep="\t", index=False)
                 storeFile(
-                    syn, FUSIONS_CENTER_PATH % center,
-                    genieVersion=genieVersion,
-                    parent=CENTER_MAPPING_DF['stagingSynId'][
-                        CENTER_MAPPING_DF['center'] == center][0],
+                    syn,
+                    FUSIONS_CENTER_PATH % center,
+                    genieVersion=genie_version,
+                    parent=center_mappingdf['stagingSynId'][
+                        center_mappingdf['center'] == center][0],
                     centerStaging=True)
 
     FusionsDf = FusionsDf[FusionsDf['TUMOR_SAMPLE_BARCODE'].isin(
-        keepForMergedConsortiumSamples)]
+        keep_for_merged_consortium_samples)]
     FusionsDf = FusionsDf.rename(columns={
         'HUGO_SYMBOL': 'Hugo_Symbol',
         'ENTREZ_GENE_ID': 'Entrez_Gene_Id',
@@ -503,13 +522,13 @@ def store_fusion_files(
     # FusionsDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
     fusionText = process.removePandasDfFloat(FusionsDf)
     fusions_path = os.path.join(
-        GENIE_RELEASE_DIR, 'data_fusions_%s.txt' % genieVersion)
+        GENIE_RELEASE_DIR, 'data_fusions_%s.txt' % genie_version)
     with open(fusions_path, "w") as fusionFile:
         fusionFile.write(fusionText)
     storeFile(
         syn, fusions_path,
-        parent=consortiumReleaseSynId,
-        genieVersion=genieVersion,
+        parent=release_synid,
+        genieVersion=genie_version,
         name="data_fusions.txt",
         staging=current_release_staging)
 
