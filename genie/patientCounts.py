@@ -21,12 +21,12 @@ class patientCounts(FileTypeFormat):
 
     def _process(self, patientCountsDf, oncotreeLink):
         patientCountsDf['CENTER'] = self.center
-
         oncotree_mapping_dict = \
             process_functions.get_oncotree_code_mappings(oncotreeLink)
         patientCountsDf['PRIMARY_CODE'] = [
             oncotree_mapping_dict[i.upper()]['ONCOTREE_PRIMARY_NODE']
             for i in patientCountsDf.ONCOTREE_CODE]
+
         return(patientCountsDf)
 
     def process_steps(
@@ -46,8 +46,10 @@ class patientCounts(FileTypeFormat):
         oncotree_mapping_dict = \
             process_functions.get_oncotree_code_mappings(oncotreeLink)
         oncotree_mapping['ONCOTREE_CODE'] = oncotree_mapping_dict.keys()
+
         haveColumn = \
             process_functions.checkColExist(patCountsDf, "ONCOTREE_CODE")
+
         if haveColumn:
             if sum(patCountsDf['ONCOTREE_CODE'].duplicated()) > 0:
                 total_error += (
@@ -71,6 +73,7 @@ class patientCounts(FileTypeFormat):
 
         haveColumn = process_functions.checkColExist(
             patCountsDf, "NUM_PATIENTS_PD1_PDL1")
+
         if haveColumn:
             if not all([isinstance(i, int)
                         for i in patCountsDf['NUM_PATIENTS_PD1_PDL1']]):
