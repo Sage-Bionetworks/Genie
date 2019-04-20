@@ -364,12 +364,34 @@ class bed(FileTypeFormat):
         return(bed)
 
     def preprocess(self, filePath):
+        '''
+        Standardize and grab seq assay id from the bed file path
+
+        Args:
+            filePath: bed file path
+
+        Returns:
+            dict: GENIE seq assay id
+        '''
         seq_assay_id = os.path.basename(filePath).replace(".bed", "")
         seq_assay_id = seq_assay_id.upper().replace("_", "-")
         return({'seq_assay_id': seq_assay_id})
 
     def process_steps(
             self, gene, newPath, parentId, databaseSynId, seq_assay_id):
+        '''
+        Process bed file, update bed database, write bed file to path
+
+        Args:
+            gene: Bed dataframe
+            newPath: Path to new bed file
+            parentId: Synapse id to store gene panel file
+            databaseSynId: Synapse id of bed database
+            seq_assay_id: GENIE seq assay id
+
+        Returns:
+            string: Path to new bed file
+        '''
         bed = self._process(gene, seq_assay_id, newPath, parentId)
         process_functions.updateData(
             self.syn, databaseSynId, bed, seq_assay_id,
@@ -378,6 +400,16 @@ class bed(FileTypeFormat):
         return(newPath)
 
     def _validate(self, bed):
+        '''
+        Validate bed file
+
+        Args:
+            bed: Bed dataframe
+
+        Returns:
+            total_error: all the errors
+            warning: all the warnings
+        '''
         total_error = ""
         warning = ""
         newCols = [
