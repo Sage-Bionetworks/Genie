@@ -241,7 +241,7 @@ class bed(FileTypeFormat):
             genePanelPath: Gene panel folder path
             parentId: Synapse id of gene panel folder
             createGenePanel: To create data gene panel files. Default is True
-        
+
         Returns:
             pd.DataFrame: configured bed dataframe
         '''
@@ -316,6 +316,19 @@ class bed(FileTypeFormat):
 
     def _process(
             self, gene, seq_assay_id, newPath, parentId, createPanel=True):
+        '''
+        Process bed file, add feature type
+
+        Args:
+            gene: bed dataframe
+            seq_assay_id: GENIE SEQ_ASSAY_ID
+            newPath: new GENIE path
+            parentId: Synapse id to store the gene panel
+            createPanel: Create gene panel
+
+        Returns:
+            pd.DataFrame: Conigured bed dataframe
+        '''
         seq_assay_id = seq_assay_id.upper()
         seq_assay_id = seq_assay_id.replace('_', '-')
 
