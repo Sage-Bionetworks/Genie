@@ -1,7 +1,7 @@
 import synapseclient
 import os
 import pandas as pd
-import re
+# import re
 import logging
 import json
 # import httplib2 as http
