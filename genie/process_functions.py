@@ -143,7 +143,10 @@ def retry_get_url(url):
 
 def checkUrl(url):
     '''
-    Check if oncotree link is live
+    Check if URL link is live
+
+    Args:
+        url: web URL
     '''
     temp = retry_get_url(url)
     assert temp.status_code == 200, "%s site is down" % url
@@ -166,47 +169,47 @@ def getGenieMapping(syn, synId):
 
 
 def checkColExist(DF, key):
-    '''
-    This function checks if the key exists as a header in a dataframe
+    """
+    This function checks if the column exists in a dataframe
 
     Args:
-        DF: Pandas dataframe
-        key: Expected header column name
+        DF: pandas dataframe
+        key: Expected column header name
 
     Returns:
-        str: An error message or an empty string
-    '''
+        bool:  True if column exists
+    """
     result = False if DF.get(key) is None else True
     return(result)
 
 
-def get_oncotree_codes(oncotree_url):
-    '''
-    Deprecated - Oncotree no longer uses this format
-    Gets the oncotree data from the specified url
+# def get_oncotree_codes(oncotree_url):
+#     '''
+#     Deprecated
+#     Gets the oncotree data from the specified url.
 
-    Args:
-        oncotree_url: URL to oncotree
+#     Args:
+#         oncotree_url: Oncotree url
 
-    Returns:
-        df: Oncotree codes in a dataframe
-    '''
-    # PATTERN = re.compile('([A-Za-z\' ,-/]*) \\(([A-Za-z_]*)\\)')
-    PATTERN = re.compile('.*[(](.*)[)]')
-    # with requests.get(oncotree_url) as oncotreeUrl:
-    #   oncotree = oncotreeUrl.text.split("\n")
-    oncotreeUrl = retry_get_url(oncotree_url)
-    oncotree = oncotreeUrl.text.split("\n")
+#     Returns:
+#         dataframe: oncotree codes
+#     '''
+#     # PATTERN = re.compile('([A-Za-z\' ,-/]*) \\(([A-Za-z_]*)\\)')
+#     PATTERN = re.compile('.*[(](.*)[)]')
+#     # with requests.get(oncotree_url) as oncotreeUrl:
+#     #   oncotree = oncotreeUrl.text.split("\n")
+#     oncotreeUrl = retry_get_url(oncotree_url)
+#     oncotree = oncotreeUrl.text.split("\n")
 
-    # oncotree = urlopen(oncotree_url).read().split('\n')
-    allCodes = []
-    for row in oncotree[:-1]:
-        data = row.split("\t")
-        allCodes.extend([
-            PATTERN.match(i).group(1)
-            for i in data[0:5] if PATTERN.match(i)])
-    codes = pd.DataFrame({"ONCOTREE_CODE": list(set(allCodes))})
-    return(codes)
+#     # oncotree = urlopen(oncotree_url).read().split('\n')
+#     allCodes = []
+#     for row in oncotree[:-1]:
+#         data = row.split("\t")
+#         allCodes.extend([
+#             PATTERN.match(i).group(1)
+#             for i in data[0:5] if PATTERN.match(i)])
+#     codes = pd.DataFrame({"ONCOTREE_CODE": list(set(allCodes))})
+#     return(codes)
 
 
 def getDatabaseSynId(
