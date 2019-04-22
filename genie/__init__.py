@@ -14,7 +14,7 @@ from .cna import cna
 from .fusions import fusions
 from .sampleRetraction import sampleRetraction
 from .patientRetraction import patientRetraction
-from .patientCounts import patientCounts
+# from .patientCounts import patientCounts
 from .mutationsInCis import mutationsInCis
 from .vitalStatus import vitalStatus
 from .assay import Assayinfo
@@ -35,7 +35,7 @@ PROCESS_FILES = {'bed': bed,
                  'seg': seg,
                  'patientRetraction': patientRetraction,
                  'sampleRetraction': sampleRetraction,
-                 'patientCounts': patientCounts,
+                 # 'patientCounts': patientCounts,
                  'mutationsInCis': mutationsInCis,
                  'vitalStatus': vitalStatus,
                  'assayinfo': Assayinfo}
