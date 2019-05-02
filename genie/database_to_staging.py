@@ -475,9 +475,7 @@ def stagingToCbio(
         "SELECT * FROM {} where CENTER in ('{}')".format(
             sampleSynId, "','".join(CENTER_MAPPING_DF.center)))
     bed = syn.tableQuery(
-        "SELECT Chromosome,Start_Position,End_Position,Hugo_Symbol,ID,"
-        "SEQ_ASSAY_ID,Feature_Type,includeInPanel FROM"
-        " {} where CENTER in ('{}')".format(
+        "SELECT * FROM {} where CENTER in ('{}')".format(
             bedSynId, "','".join(CENTER_MAPPING_DF.center)))
     patientDf = patient.asDataFrame()
     sampleDf = sample.asDataFrame()
@@ -485,6 +483,7 @@ def stagingToCbio(
     if sampleDf.get("AGE_AT_SEQ_REPORT_NUMERICAL") is not None:
         del sampleDf['AGE_AT_SEQ_REPORT_NUMERICAL']
     bedDf = bed.asDataFrame()
+    del bedDf['CENTER']
     del sampleDf['CENTER']
     # Remove this when these columns are removed from both databases
     if patientDf.get("BIRTH_YEAR_NUMERICAL") is not None:
