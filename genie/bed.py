@@ -413,12 +413,14 @@ class bed(FileTypeFormat):
         total_error = ""
         warning = ""
         newCols = [
-            "Chromosome", "Start_Position", "End_Position", "Hugo_Symbol"]
+            "Chromosome", "Start_Position",
+            "End_Position", "Hugo_Symbol",
+            "includeInPanel"]
         if len(bed.columns) < len(newCols):
             total_error += (
-                "Your BED file must at least have four columns in this "
-                "order: {}.  Make sure there are no headers "
-                "in your BED file.\n".format(", ".join(newCols)))
+                "BED file: Must at least have five columns in this "
+                "order: {}. Make sure there are "
+                "no headers.\n".format(", ".join(newCols)))
         else:
             newCols.extend(range(0, len(bed.columns) - len(newCols)))
             bed.columns = newCols
@@ -426,19 +428,22 @@ class bed(FileTypeFormat):
             if not all(bed['Start_Position'].apply(
                     lambda x: isinstance(x, int))):
                 total_error += (
+                    "BED file: "
                     "The Start_Position column must only be integers. "
-                    "Make sure there are no headers in your BED file.\n")
+                    "Make sure there are no headers.\n")
                 toValidateSymbol = False
             if not all(bed['End_Position'].apply(
                     lambda x: isinstance(x, int))):
                 total_error += (
+                    "BED file: "
                     "The End_Position column must only be integers. "
-                    "Make sure there are no headers in your BED file.\n")
+                    "Make sure there are no headers.\n")
                 toValidateSymbol = False
 
             logger.info("VALIDATING GENE SYMBOLS")
             if any(bed['Hugo_Symbol'].isnull()):
-                total_error += "You cannot submit any null symbols.\n"
+                total_error += \
+                    "BED file: You cannot submit any null symbols.\n"
             bed = bed[~bed['Hugo_Symbol'].isnull()]
             bed["Hugo_Symbol"] = [
                 str(hugo).split(";")[0].split("_")[0].split(":")[0]
@@ -446,8 +451,17 @@ class bed(FileTypeFormat):
             if sum(bed['Hugo_Symbol'] == "+") != 0 or \
                sum(bed['Hugo_Symbol'] == "-") != 0:
                 total_error += (
-                    "Fourth column must be the Hugo_Symbol column, "
+                    "BED file: Fourth column must be the Hugo_Symbol column, "
                     "not the strand column\n")
+
+            warn, error = process_functions.check_col_and_values(
+                bed,
+                'includeInPanel',
+                [True, False],
+                filename="BED file",
+                required=True)
+            warning += warn
+            total_error += error
 
             if toValidateSymbol:
                 genePosition = self.syn.tableQuery('SELECT * FROM syn11806563')
@@ -457,10 +471,13 @@ class bed(FileTypeFormat):
                         x, genePositionDf, returnMappedDf=True), axis=1)
 
                 if any(bed['Hugo_Symbol'].isnull()):
-                    warning += \
-                        "Any gene names that can't be remapped will be null.\n"
+                    warning += (
+                        "BED file: "
+                        "Any gene names that can't be "
+                        "remapped will be null.\n")
                 if all(bed['Hugo_Symbol'].isnull()):
                     total_error += (
+                        "BED file: "
                         "You have no correct gene symbols. "
                         "Make sure your gene symbol column (4th column) "
                         "is formatted like so: SYMBOL(;optionaltext).  "
