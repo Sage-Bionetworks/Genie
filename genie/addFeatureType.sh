@@ -14,7 +14,7 @@ awk '{print $0"\texon"}' $script_dir/genie_exons.bed > $script_dir/genie_combine
 awk '{print $0"\tintron"}' $script_dir/genie_introns.bed >> $script_dir/genie_combined.bed
 awk '{print $0"\tintergenic"}' $script_dir/genie_intergenic.bed >> $script_dir/genie_combined.bed
 sort -k5 $script_dir/genie_combined.bed > $script_dir/sorted_genie.bed && mv $script_dir/sorted_genie.bed genie_combined.bed
-echo -e "Chromosome\tStart_Position\tEnd_Position\tHugo_Symbol\tincludeInPanel\tID\tSEQ_ASSAY_ID\tFeature_Type" > $script_dir/headers.txt
+echo -e "Chromosome\tStart_Position\tEnd_Position\tHugo_Symbol\tincludeInPanel\tclinicalReported\tID\tSEQ_ASSAY_ID\tFeature_Type" > $script_dir/headers.txt
 cat $script_dir/headers.txt $script_dir/genie_combined.bed > $script_dir/new_combined.bed
 mv $script_dir/new_combined.bed $script_dir/genie_combined.bed
 #synapse store genie_combined.bed --id syn7444851

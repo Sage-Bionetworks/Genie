@@ -248,7 +248,7 @@ class bed(FileTypeFormat):
         logger.info("REMAPPING %s" % seq_assay_id)
         # bedname = seq_assay_id + ".bed"
         bed.columns = ["Chromosome", "Start_Position", "End_Position",
-                       "Hugo_Symbol", "includeInPanel"]
+                       "Hugo_Symbol", "includeInPanel", "clinicalReported"]
         # Validate gene symbols
         # Gene symbols can be split by ; and _ and : and .
         bed['Hugo_Symbol'] = [
@@ -283,7 +283,8 @@ class bed(FileTypeFormat):
             temp = pd.read_csv(genie_exon_path, sep="\t", header=None)
             temp.columns = [
                 "Chromosome", "Start_Position", "End_Position",
-                "Hugo_Symbol", "includeInPanel", "ID", "SEQ_ASSAY_ID"]
+                "Hugo_Symbol", "includeInPanel", "clinicalReported",
+                "ID", "SEQ_ASSAY_ID"]
             # Only include genes that should be included in the panels
             temp = temp[temp['includeInPanel']]
             # Write gene panel
@@ -332,12 +333,13 @@ class bed(FileTypeFormat):
         seq_assay_id = seq_assay_id.upper()
         seq_assay_id = seq_assay_id.replace('_', '-')
 
-        if len(gene.columns) > 4:
-            if not all(gene[4].apply(lambda x: isinstance(x, bool))):
-                gene[4] = True
+        # Add in 6th column which is the clinicalReported
+        if len(gene.columns) > 5:
+            if not all(gene[5].apply(lambda x: isinstance(x, bool))):
+                gene[5] = pd.np.nan
         else:
-            gene[4] = True
-        bed = gene[[0, 1, 2, 3, 4]]
+            gene[5] = pd.np.nan
+        bed = gene[[0, 1, 2, 3, 4, 5]]
         genePanelPath = os.path.dirname(newPath)
         exon_gtf_path = os.path.join(process_functions.SCRIPT_DIR, "exon.gtf")
         gene_gtf_path = os.path.join(process_functions.SCRIPT_DIR, "gene.gtf")

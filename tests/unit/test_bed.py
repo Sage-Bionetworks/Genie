@@ -44,6 +44,7 @@ def test_perfect___process():
         End_Position=[69901480, 99417584, 53718647, 44084638, 44084638],
         Hugo_Symbol=['AAK1', 'AAED1', 'AAAS', 'XRCC1', 'PINLYP'],
         includeInPanel=[True, True, True, True, True],
+        clinicalReported=[True, True, False, False, True],
         ID=['AAK1', 'AAED1', 'AAAS', 'XRCC1', 'foo'],
         SEQ_ASSAY_ID=['SAGE-TEST', 'SAGE-TEST',
                       'SAGE-TEST', 'SAGE-TEST', 'SAGE-TEST'],
@@ -57,7 +58,8 @@ def test_perfect___process():
         1: [69688533, 99401860, 53701241, 44084466, 44084466],
         2: [69901480, 99417584, 53718647, 44084638, 44084638],
         3: ['AAK1', 'AAED1', 'AAAS', 'XRCC1', 'foo'],
-        4: ['d', 'd', 'd', 'd', 'd']})
+        4: [True, True, True, True, True],
+        5: [True, True, False, False, True]})
 
     new_beddf = bed_class._process(
         beddf, seq_assay_id, new_path, parentid, createPanel=False)
@@ -73,6 +75,7 @@ def test_includeinpanel___process():
         End_Position=[69689532, 1111, 53719548, 44084624],
         Hugo_Symbol=['AAK1', float('nan'), 'AAAS', float('nan')],
         includeInPanel=[True, True, False, True],
+        clinicalReported=[float('nan')]*4,
         ID=['foo', 'bar', 'baz', 'boo'],
         SEQ_ASSAY_ID=['SAGE-TEST', 'SAGE-TEST', 'SAGE-TEST', 'SAGE-TEST'],
         Feature_Type=['exon', 'intergenic', 'exon', 'exon'],
@@ -89,6 +92,39 @@ def test_includeinpanel___process():
         2: [69689532, 1111, 53719548, 44084624],
         3: ['foo', 'bar', 'baz', 'boo'],
         4: [True, True, False, True]})
+
+    new_beddf = bedsp_class._process(
+        beddf, seq_assay_id, new_path, parentid, createPanel=False)
+    new_beddf.sort_values("Chromosome", inplace=True)
+    new_beddf.reset_index(drop=True, inplace=True)
+    assert expected_beddf.equals(new_beddf[expected_beddf.columns])
+
+
+def test_clinicalreport___process():
+    expected_beddf = pd.DataFrame(dict(
+        Chromosome=['2', '9', '12', '19'],
+        Start_Position=[69688432, 1111, 53700240, 44080953],
+        End_Position=[69689532, 1111, 53719548, 44084624],
+        Hugo_Symbol=['AAK1', float('nan'), 'AAAS', float('nan')],
+        includeInPanel=[True, True, False, True],
+        clinicalReported=[float('nan')]*4,
+        ID=['foo', 'bar', 'baz', 'boo'],
+        SEQ_ASSAY_ID=['SAGE-TEST', 'SAGE-TEST', 'SAGE-TEST', 'SAGE-TEST'],
+        Feature_Type=['exon', 'intergenic', 'exon', 'exon'],
+        CENTER=['SAGE', 'SAGE', 'SAGE', 'SAGE']))
+
+    expected_beddf.sort_values("Chromosome", inplace=True)
+    expected_beddf.reset_index(drop=True, inplace=True)
+
+    # symbols that can't be map should be null,
+    # includeInPanel column should be included if it exists
+    beddf = pd.DataFrame({
+        0: ['2', '9', '12', '19'],
+        1: [69688432, 1111, 53700240, 44080953],
+        2: [69689532, 1111, 53719548, 44084624],
+        3: ['foo', 'bar', 'baz', 'boo'],
+        4: [True, True, False, True],
+        5: [True, float('nan'), False, True]})
 
     new_beddf = bedsp_class._process(
         beddf, seq_assay_id, new_path, parentid, createPanel=False)
