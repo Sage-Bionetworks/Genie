@@ -66,8 +66,8 @@ RUN cpanm CPAN::Meta \
 	Module::Build --force
 
 WORKDIR /root
-RUN wget https://github.com/mskcc/vcf2maf/archive/v1.6.14.zip
-RUN unzip v1.6.14.zip
+RUN wget https://github.com/mskcc/vcf2maf/archive/v1.6.17.zip
+RUN unzip v1.6.17.zip
 RUN git clone https://github.com/cBioPortal/cbioportal.git
 RUN git clone https://github.com/Sage-Bionetworks/Genie.git
 
