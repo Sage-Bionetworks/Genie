@@ -1423,10 +1423,12 @@ def main():
     cbio_validator_log = "cbioValidatorLogsConsortium_{}.txt".format(
         args.genieVersion)
     if not args.test and not args.staging:
+        log_folder_synid = databaseSynIdMappingDf['Id'][
+            databaseSynIdMappingDf['Database'] == 'logs'].values[0]
         with open(cbio_validator_log, "w") as cbioLog:
             cbioLog.write(cbioOutput.decode("utf-8"))
         syn.store(synapseclient.File(
-            cbio_validator_log, parentId="syn10155804"))
+            cbio_validator_log, parentId=log_folder_synid))
         os.remove(cbio_validator_log)
     logger.info("REMOVING OLD FILES")
 
