@@ -407,7 +407,7 @@ def main():
         assert os.path.exists(args.vepPath), "Path to VEP (--vepPath) must be specified if `--process {vcf,maf,mafSP}` is used"
         assert os.path.exists(args.vepData), "Path to VEP data (--vepData) must be specified if `--process {vcf,maf,mafSP}` is used"
     
-    databaseToSynIdMapping = syn.tableQuery('SELECT * FROM {}'.format(config.get('databaseToSynIdMapping')))
+    databaseToSynIdMapping = syn.tableQuery('SELECT * FROM {}'.format(config.get('database_to_synid_mapping')))
 
     databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
 
