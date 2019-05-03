@@ -481,10 +481,15 @@ def stagingToCbio(
             bedSynId, "','".join(CENTER_MAPPING_DF.center)))
     patientDf = patient.asDataFrame()
     sampleDf = sample.asDataFrame()
+    # Remove this when these columns are removed from both databases
+    if sampleDf.get("AGE_AT_SEQ_REPORT_NUMERICAL") is not None:
+        del sampleDf['AGE_AT_SEQ_REPORT_NUMERICAL']
     bedDf = bed.asDataFrame()
-    del sampleDf['AGE_AT_SEQ_REPORT_NUMERICAL']
     del sampleDf['CENTER']
-    del patientDf['BIRTH_YEAR_NUMERICAL']
+    # Remove this when these columns are removed from both databases
+    if patientDf.get("BIRTH_YEAR_NUMERICAL") is not None:
+        del patientDf['BIRTH_YEAR_NUMERICAL']
+    # del patientDf['BIRTH_YEAR_NUMERICAL']
     # Clinical release scope filter
     # If private -> Don't release to public
     clinicalReleaseScope = syn.tableQuery(
@@ -1371,7 +1376,7 @@ def main():
     GENE_MATRIX_PATH = os.path.join(
         GENIE_RELEASE_DIR,
         "data_gene_matrix_{}.txt".format(args.genieVersion))
-    create_case_lists.create_case_lists(
+    create_case_lists.main(
         CLINICAL_PATH,
         GENE_MATRIX_PATH,
         CASE_LIST_PATH,
@@ -1419,10 +1424,12 @@ def main():
     cbio_validator_log = "cbioValidatorLogsConsortium_{}.txt".format(
         args.genieVersion)
     if not args.test and not args.staging:
+        log_folder_synid = databaseSynIdMappingDf['Id'][
+            databaseSynIdMappingDf['Database'] == 'logs'].values[0]
         with open(cbio_validator_log, "w") as cbioLog:
             cbioLog.write(cbioOutput.decode("utf-8"))
         syn.store(synapseclient.File(
-            cbio_validator_log, parentId="syn10155804"))
+            cbio_validator_log, parentId=log_folder_synid))
         os.remove(cbio_validator_log)
     logger.info("REMOVING OLD FILES")
 

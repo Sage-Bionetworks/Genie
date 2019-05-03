@@ -106,7 +106,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
     storeFile(syn, DATA_GENE_PANEL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_gene_matrix.txt")
     storeFile(syn, CLINICAL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_clinical.txt")
     
-    create_case_lists.create_case_lists(CLINICAL_PATH, DATA_GENE_PANEL_PATH, dbTostaging.CASE_LIST_PATH, "genie_public")
+    create_case_lists.main(CLINICAL_PATH, DATA_GENE_PANEL_PATH, dbTostaging.CASE_LIST_PATH, "genie_public")
 
     caseListFiles = os.listdir(dbTostaging.CASE_LIST_PATH)
     caseListEntities = []
@@ -367,9 +367,10 @@ if __name__ == "__main__":
     cbioOutput = subprocess.check_output(" ".join(command), shell=True)
     logger.info(cbioOutput.decode("utf-8"))
     if not args.test and not args.staging:
+        log_folder_synid = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'logs'].values[0]
         with open("cbioValidatorLogsPublic_%s.txt" % args.genieVersion, "w") as cbioLog:
             cbioLog.write(cbioOutput.decode("utf-8"))
-        syn.store(synapseclient.File("cbioValidatorLogsPublic_%s.txt" % args.genieVersion, parentId = "syn10155804"))
+        syn.store(synapseclient.File("cbioValidatorLogsPublic_%s.txt" % args.genieVersion, parentId=log_folder_synid))
         os.remove("cbioValidatorLogsPublic_%s.txt" % args.genieVersion)
     logger.info("REMOVING OLD FILES")
     process.rmFiles(dbTostaging.CASE_LIST_PATH)
