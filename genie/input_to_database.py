@@ -366,8 +366,10 @@ def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path
         messageOut = "%s does not have any valid files" if not only_validate else "ONLY VALIDATION OCCURED FOR %s"
         logger.info(messageOut % center)
 
-    #Store log file
-    syn.store(synapseclient.File(log_path, parentId="syn10155804"))
+    # Store log file
+    log_folder_synid = process_functions.getDatabaseSynId(
+        syn, "logs", databaseToSynIdMappingDf=database_to_synid_mappingdf)
+    syn.store(synapseclient.File(log_path, parentId=log_folder_synid))
     os.remove(log_path)
     logger.info("ALL PROCESSES COMPLETE")
 
