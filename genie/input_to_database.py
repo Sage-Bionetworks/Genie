@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 import logging
 logger = logging.getLogger("genie")
 import synapseclient
@@ -15,6 +15,7 @@ import shutil
 import time
 import toRetract
 import write_invalid_reasons
+import json
 
 #Configuration file
 from genie import PROCESS_FILES, process_functions, validate
@@ -378,6 +379,7 @@ def main():
         description='GENIE center inputs to database')
     parser.add_argument("process",choices=['vcf','maf','main','mafSP'],
                         help='Process vcf, maf or the rest of the files')
+    parser.add_argument('--config', help='JSON config file.')
     parser.add_argument('--center', help='The centers')
     parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
     parser.add_argument("--deleteOld", action='store_true', help = "Delete all old processed and temp files")
@@ -395,6 +397,9 @@ def main():
     parser.add_argument('--thread', type=int, help="Number of threads to use for validation", default=1)
 
     args = parser.parse_args()
+
+    config = json.load(open(args.config))
+
     syn = process_functions.synLogin(args.pemFile, debug=args.debug)
     #Must specify path to vcf2maf, VEP and VEP data is these types are specified
     if args.process in ['vcf','maf','mafSP'] and not args.onlyValidate:
@@ -402,14 +407,11 @@ def main():
         assert os.path.exists(args.vepPath), "Path to VEP (--vepPath) must be specified if `--process {vcf,maf,mafSP}` is used"
         assert os.path.exists(args.vepData), "Path to VEP data (--vepData) must be specified if `--process {vcf,maf,mafSP}` is used"
     
-    if args.testing:
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
-    else:
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
+    databaseToSynIdMapping = syn.tableQuery('SELECT * FROM {}'.format(config.get('databaseToSynIdMapping')))
 
     databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
 
-    center_mapping_id = process_functions.getDatabaseSynId(syn, "centerMapping", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+    center_mapping_id = config.get('center_mapping_id')
     center_mapping = syn.tableQuery('SELECT * FROM %s' % center_mapping_id)
     center_mapping_df = center_mapping.asDataFrame()
 
