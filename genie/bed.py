@@ -52,6 +52,33 @@ logger = logging.getLogger(__name__)
 #         databaseEnt.primaryKey, toDelete=True)
 #     return(genes)
 
+def create_gtf(dirname):
+    '''
+    Create exon.gtf and gene.gtf from GRCh37 gtf
+
+    Args:
+        dirname: Directory where these files should live
+    '''
+    download_cmd = [
+        'wget',
+        'http://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz',
+        '-P', dirname]
+    subprocess.check_call(download_cmd)
+    gtfgz_path = os.path.join(dirname, "Homo_sapiens.GRCh37.75.gtf.gz")
+    gunzip_cmd = ['gunzip', '-f', gtfgz_path]
+    subprocess.check_call(gunzip_cmd)
+    gtf_path = os.path.join(dirname, "Homo_sapiens.GRCh37.75.gtf")
+    exon_gtf_path = os.path.join(dirname, "exon.gtf")
+    gene_gtf_path = os.path.join(dirname, "gene.gtf")
+    exon_awk_cmd = ['awk', '$3 == "exon" {print}', gtf_path]
+    exon_gtf = subprocess.check_output(exon_awk_cmd, universal_newlines=True)
+    with open(exon_gtf_path, "w") as gtf_file:
+        gtf_file.write(exon_gtf)
+    gene_awk_cmd = ['awk', '$3 == "gene" {print}', gtf_path]
+    gene_gtf = subprocess.check_output(gene_awk_cmd, universal_newlines=True)
+    with open(gene_gtf_path, "w") as gtf_file:
+        gtf_file.write(gene_gtf)
+
 
 def _check_to_map(x, gene_positiondf):
     '''
@@ -346,10 +373,11 @@ class bed(FileTypeFormat):
 
         if not os.path.exists(exon_gtf_path) or \
            not os.path.exists(gene_gtf_path):
-            create_gft_path = os.path.join(
-                process_functions.SCRIPT_DIR, 'createGTF.sh')
-            command = ['bash', create_gft_path]
-            subprocess.check_call(command)
+            create_gtf(process_functions.SCRIPT_DIR)
+            # create_gft_path = os.path.join(
+            #    process_functions.SCRIPT_DIR, 'createGTF.sh')
+            # command = ['bash', create_gft_path]
+            # subprocess.check_call(command)
 
         add_featuretype_path = os.path.join(
             process_functions.SCRIPT_DIR, 'addFeatureType.sh')
