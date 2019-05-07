@@ -78,6 +78,61 @@ def create_gtf(dirname):
     gene_gtf = subprocess.check_output(gene_awk_cmd, universal_newlines=True)
     with open(gene_gtf_path, "w") as gtf_file:
         gtf_file.write(gene_gtf)
+    return(exon_gtf_path, gene_gtf_path)
+
+
+def _add_feature_type_todf(filepath, featuretype):
+    df = pd.read_csv(filepath, sep="\t", header=None)
+    df.columns = [
+        "Chromosome", "Start_Position", "End_Position",
+        "Hugo_Symbol", "includeInPanel", "clincialReported",
+        "ID", "SEQ_ASSAY_ID"]
+    df['FeatureType'] = featuretype
+    return(df)
+
+
+def add_feature_type(
+        temp_bed_path, exon_gtf_path, gene_gtf_path, gene_path,
+        genie_gene_path, genie_intron_path, genie_intergenic_path,
+        genie_exon_path, intron_intergenic_path, genie_combined_path):
+    command = [
+        'bedtools', 'intersect', '-a',
+        temp_bed_path, '-b', exon_gtf_path, '-wa',
+        '|', 'sort', '|', 'uniq', '>', genie_exon_path]
+    subprocess.check_call(" ".join(command), shell=True)
+    command = [
+        'bedtools', 'intersect', '-a',
+        temp_bed_path, '-b', exon_gtf_path, '-wa', '-v'
+        '|', 'sort', '|', 'uniq', '>', intron_intergenic_path]
+    subprocess.check_call(" ".join(command), shell=True)
+    command = [
+        'bedtools', 'intersect', '-a',
+        temp_bed_path, '-b', gene_gtf_path, '-wa',
+        '|', 'sort', '|', 'uniq', '>', gene_path]
+    subprocess.check_call(" ".join(command), shell=True)
+    command = [
+        'diff', genie_gene_path, genie_exon_path, '|',
+        'grep', '<', '|', 'sed', "'s/< //'", '>',
+        genie_intron_path]
+    subprocess.check_call(" ".join(command), shell=True)
+    command = [
+        'diff', intron_intergenic_path, genie_intron_path, '|',
+        'grep', '<', '|', 'sed', "'s/< //'", '>',
+        genie_intergenic_path]
+    subprocess.check_call(" ".join(command), shell=True)
+    genie_exondf = pd.read_csv(genie_exon_path, sep="\t", header=None)
+    genie_exondf.columns = [
+        "Chromosome", "Start_Position", "End_Position",
+        "Hugo_Symbol", "includeInPanel", "clincialReported",
+        "ID", "SEQ_ASSAY_ID"]
+    genie_exondf = _add_feature_type_todf(genie_exon_path, "exon")
+    genie_introndf = _add_feature_type_todf(genie_intron_path, "exon")
+    genie_intergenicdf = _add_feature_type_todf(genie_intergenic_path, "exon")
+
+    genie_combineddf = genie_exondf.append(genie_introndf)
+    genie_combineddf = genie_combineddf.append(genie_intergenicdf)
+    # genie_combineddf.sort_values()
+    genie_combineddf.to_csv(genie_combined_path, sep="\t", index=False)
 
 
 def _check_to_map(x, gene_positiondf):
@@ -302,8 +357,14 @@ class bed(FileTypeFormat):
             'bedtools', 'intersect', '-a',
             temp_bed_path,
             '-b', os.path.join(process_functions.SCRIPT_DIR, 'exon.gtf'),
-            '-u', '>', genie_exon_path]
-        subprocess.check_call(" ".join(command), shell=True)
+            '-u']
+
+        genie_exon_text = subprocess.check_output(
+            command, universal_newlines=True)
+        with open(genie_exon_path, "w") as genie_exon:
+            genie_exon.write(genie_exon_text)
+
+        # subprocess.check_call(" ".join(command), shell=True)
 
         genie_exon_stat = os.stat(genie_exon_path)
         if genie_exon_stat.st_size > 0 and createGenePanel:
