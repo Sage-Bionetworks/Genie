@@ -481,8 +481,7 @@ class bed(FileTypeFormat):
             createGenePanel=createPanel)
         genie_combined_path = \
             add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path)
-        # command = ['bash', add_featuretype_path]
-        # subprocess.check_call(command)
+
         bed = pd.read_csv(genie_combined_path, sep="\t")
         bed['CENTER'] = self.center
         bed['Chromosome'] = bed['Chromosome'].astype(str)
