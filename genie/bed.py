@@ -59,25 +59,30 @@ def create_gtf(dirname):
     Args:
         dirname: Directory where these files should live
     '''
-    download_cmd = [
-        'wget',
-        'http://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz',
-        '-P', dirname]
-    subprocess.check_call(download_cmd)
-    gtfgz_path = os.path.join(dirname, "Homo_sapiens.GRCh37.75.gtf.gz")
-    gunzip_cmd = ['gunzip', '-f', gtfgz_path]
-    subprocess.check_call(gunzip_cmd)
-    gtf_path = os.path.join(dirname, "Homo_sapiens.GRCh37.75.gtf")
     exon_gtf_path = os.path.join(dirname, "exon.gtf")
     gene_gtf_path = os.path.join(dirname, "gene.gtf")
-    exon_awk_cmd = ['awk', '$3 == "exon" {print}', gtf_path]
-    exon_gtf = subprocess.check_output(exon_awk_cmd, universal_newlines=True)
-    with open(exon_gtf_path, "w") as gtf_file:
-        gtf_file.write(exon_gtf)
-    gene_awk_cmd = ['awk', '$3 == "gene" {print}', gtf_path]
-    gene_gtf = subprocess.check_output(gene_awk_cmd, universal_newlines=True)
-    with open(gene_gtf_path, "w") as gtf_file:
-        gtf_file.write(gene_gtf)
+
+    if not os.path.exists(exon_gtf_path) or not os.path.exists(gene_gtf_path):
+        download_cmd = [
+            'wget',
+            'http://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz',
+            '-P', dirname]
+        subprocess.check_call(download_cmd)
+        gtfgz_path = os.path.join(dirname, "Homo_sapiens.GRCh37.75.gtf.gz")
+        gunzip_cmd = ['gunzip', '-f', gtfgz_path]
+        subprocess.check_call(gunzip_cmd)
+        gtf_path = os.path.join(dirname, "Homo_sapiens.GRCh37.75.gtf")
+
+        exon_awk_cmd = ['awk', '$3 == "exon" {print}', gtf_path]
+        exon_gtf = subprocess.check_output(
+            exon_awk_cmd, universal_newlines=True)
+        with open(exon_gtf_path, "w") as gtf_file:
+            gtf_file.write(exon_gtf)
+        gene_awk_cmd = ['awk', '$3 == "gene" {print}', gtf_path]
+        gene_gtf = subprocess.check_output(
+            gene_awk_cmd, universal_newlines=True)
+        with open(gene_gtf_path, "w") as gtf_file:
+            gtf_file.write(gene_gtf)
     return(exon_gtf_path, gene_gtf_path)
 
 
@@ -91,10 +96,19 @@ def _add_feature_type_todf(filepath, featuretype):
     return(df)
 
 
-def add_feature_type(
-        temp_bed_path, exon_gtf_path, gene_gtf_path, gene_path,
-        genie_gene_path, genie_intron_path, genie_intergenic_path,
-        genie_exon_path, intron_intergenic_path, genie_combined_path):
+def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
+    genie_exon_path = \
+        os.path.join(process_functions.SCRIPT_DIR, 'genie_exons.bed')
+    genie_intron_path = \
+        os.path.join(process_functions.SCRIPT_DIR, 'genie_introns.bed')
+    genie_intergenic_path = \
+        os.path.join(process_functions.SCRIPT_DIR, 'genie_intergenic.bed')
+    intron_intergenic_path = \
+        os.path.join(process_functions.SCRIPT_DIR, 'intron_intergenic.bed')
+    gene_path = \
+        os.path.join(process_functions.SCRIPT_DIR, 'gene.bed')
+    genie_combined_path = \
+        os.path.join(process_functions.SCRIPT_DIR, "genie_combined.bed")
     command = [
         'bedtools', 'intersect', '-a',
         temp_bed_path, '-b', exon_gtf_path, '-wa',
@@ -111,13 +125,13 @@ def add_feature_type(
         '|', 'sort', '|', 'uniq', '>', gene_path]
     subprocess.check_call(" ".join(command), shell=True)
     command = [
-        'diff', genie_gene_path, genie_exon_path, '|',
-        'grep', '<', '|', 'sed', "'s/< //'", '>',
+        'diff', gene_path, genie_exon_path, '|',
+        'grep', "'<'", '|', 'sed', "'s/< //'", '>',
         genie_intron_path]
     subprocess.check_call(" ".join(command), shell=True)
     command = [
         'diff', intron_intergenic_path, genie_intron_path, '|',
-        'grep', '<', '|', 'sed', "'s/< //'", '>',
+        'grep', "'<'", '|', 'sed', "'s/< //'", '>',
         genie_intergenic_path]
     subprocess.check_call(" ".join(command), shell=True)
     genie_exondf = pd.read_csv(genie_exon_path, sep="\t", header=None)
@@ -133,6 +147,7 @@ def add_feature_type(
     genie_combineddf = genie_combineddf.append(genie_intergenicdf)
     # genie_combineddf.sort_values()
     genie_combineddf.to_csv(genie_combined_path, sep="\t", index=False)
+    return(genie_combined_path)
 
 
 def _check_to_map(x, gene_positiondf):
@@ -313,6 +328,7 @@ class bed(FileTypeFormat):
     def createdBEDandGenePanel(
             self, bed, seq_assay_id,
             genePanelPath, parentId,
+            exon_gtf_path,
             createGenePanel=True):
         '''
         Create bed file and gene panel files from the bed file
@@ -322,6 +338,7 @@ class bed(FileTypeFormat):
             seq_assay_id: GENIE SEQ_ASSAY_ID
             genePanelPath: Gene panel folder path
             parentId: Synapse id of gene panel folder
+            exon_gtf_path: Exon GTF path, created by create_gtf()
             createGenePanel: To create data gene panel files. Default is True
 
         Returns:
@@ -347,8 +364,6 @@ class bed(FileTypeFormat):
         bed = bed.apply(lambda x: validateSymbol(
             x, genePositionDf, returnMappedDf=True), axis=1)
 
-        genie_exon_path = \
-            os.path.join(process_functions.SCRIPT_DIR, 'genie_exons.bed')
         temp_bed_path = \
             os.path.join(process_functions.SCRIPT_DIR, "temp.bed")
         bed['SEQ_ASSAY_ID'] = seq_assay_id
@@ -356,15 +371,15 @@ class bed(FileTypeFormat):
         command = [
             'bedtools', 'intersect', '-a',
             temp_bed_path,
-            '-b', os.path.join(process_functions.SCRIPT_DIR, 'exon.gtf'),
+            '-b', exon_gtf_path,
             '-u']
-
+        # Create GENIE genie_exons.bed for gene panel file
+        genie_exon_path = \
+            os.path.join(process_functions.SCRIPT_DIR, 'genie_exons.bed')
         genie_exon_text = subprocess.check_output(
             command, universal_newlines=True)
         with open(genie_exon_path, "w") as genie_exon:
             genie_exon.write(genie_exon_text)
-
-        # subprocess.check_call(" ".join(command), shell=True)
 
         genie_exon_stat = os.stat(genie_exon_path)
         if genie_exon_stat.st_size > 0 and createGenePanel:
@@ -386,11 +401,7 @@ class bed(FileTypeFormat):
                     num_genes=len(allgenes),
                     genelist="\t".join(allgenes)))
             genepanelname = "data_gene_panel_" + seq_assay_id + ".txt"
-            # metaStableId = "stable_id: %s\n"
-            # description = (
-            #     "description: %s, "
-            #     "Number of Genes - %d\n" % (seq_assay_id, len(allgenes)))
-            # genes = "gene_list:\t%s"
+
             with open(os.path.join(genePanelPath, genepanelname), "w+") as f:
                 f.write(gene_panel_text)
             process_functions.storeFile(
@@ -401,7 +412,7 @@ class bed(FileTypeFormat):
                 fileFormat="bed",
                 dataSubType="metadata",
                 cBioFileFormat="genePanel")
-        return(bed)
+        return(bed, temp_bed_path)
 
     def _process(
             self, gene, seq_assay_id, newPath, parentId, createPanel=True):
@@ -429,26 +440,17 @@ class bed(FileTypeFormat):
             gene[5] = pd.np.nan
         bed = gene[[0, 1, 2, 3, 4, 5]]
         genePanelPath = os.path.dirname(newPath)
-        exon_gtf_path = os.path.join(process_functions.SCRIPT_DIR, "exon.gtf")
-        gene_gtf_path = os.path.join(process_functions.SCRIPT_DIR, "gene.gtf")
 
-        if not os.path.exists(exon_gtf_path) or \
-           not os.path.exists(gene_gtf_path):
+        exon_gtf_path, gene_gtf_path = \
             create_gtf(process_functions.SCRIPT_DIR)
-            # create_gft_path = os.path.join(
-            #    process_functions.SCRIPT_DIR, 'createGTF.sh')
-            # command = ['bash', create_gft_path]
-            # subprocess.check_call(command)
 
-        add_featuretype_path = os.path.join(
-            process_functions.SCRIPT_DIR, 'addFeatureType.sh')
-        genie_combined_path = os.path.join(
-            process_functions.SCRIPT_DIR, "genie_combined.bed")
-        bed = self.createdBEDandGenePanel(
-            bed, seq_assay_id, genePanelPath, parentId,
+        bed, temp_bed_path = self.createdBEDandGenePanel(
+            bed, seq_assay_id, genePanelPath, parentId, exon_gtf_path,
             createGenePanel=createPanel)
-        command = ['bash', add_featuretype_path]
-        subprocess.check_call(command)
+        genie_combined_path = \
+            add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path)
+        # command = ['bash', add_featuretype_path]
+        # subprocess.check_call(command)
         bed = pd.read_csv(genie_combined_path, sep="\t")
         bed['CENTER'] = self.center
         bed['Chromosome'] = bed['Chromosome'].astype(str)
