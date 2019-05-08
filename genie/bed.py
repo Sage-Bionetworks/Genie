@@ -58,6 +58,10 @@ def create_gtf(dirname):
 
     Args:
         dirname: Directory where these files should live
+
+    Returns:
+        exon_gtf_path: exon GTF
+        gene_gtf_path: gene GTF
     '''
     exon_gtf_path = os.path.join(dirname, "exon.gtf")
     gene_gtf_path = os.path.join(dirname, "gene.gtf")
@@ -87,16 +91,41 @@ def create_gtf(dirname):
 
 
 def _add_feature_type_todf(filepath, featuretype):
-    df = pd.read_csv(filepath, sep="\t", header=None)
-    df.columns = [
-        "Chromosome", "Start_Position", "End_Position",
-        "Hugo_Symbol", "includeInPanel", "clincialReported",
-        "ID", "SEQ_ASSAY_ID"]
-    df['FeatureType'] = featuretype
+    '''
+    Add Feature_Type to dataframe
+
+    Args:
+        filepath: path to bed
+        featuretype: exon, intron, or intergenic
+
+    Returns:
+        df: empty dataframe or dataframe with appended feature type
+    '''
+    # No need to add anything if the dataframe is empty
+    if os.stat(filepath).st_size != 0:
+        df = pd.read_csv(filepath, sep="\t", header=None)
+        df.columns = [
+            "Chromosome", "Start_Position", "End_Position",
+            "Hugo_Symbol", "includeInPanel", "clinicalReported",
+            "ID", "SEQ_ASSAY_ID"]
+        df['Feature_Type'] = featuretype
+    else:
+        df = pd.DataFrame()
     return(df)
 
 
 def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
+    '''
+    Add Feature_Type to bed file (exon, intron, intergenic)
+
+    Args:
+        temp_bed_path: BED file without feature type
+        exon_gtf_path: exon gtf
+        gene_gtf_path: gene gtf
+
+    Returns:
+        genie_combined_path: Path to final bed file
+    '''
     genie_exon_path = \
         os.path.join(process_functions.SCRIPT_DIR, 'genie_exons.bed')
     genie_intron_path = \
@@ -107,8 +136,7 @@ def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
         os.path.join(process_functions.SCRIPT_DIR, 'intron_intergenic.bed')
     gene_path = \
         os.path.join(process_functions.SCRIPT_DIR, 'gene.bed')
-    genie_combined_path = \
-        os.path.join(process_functions.SCRIPT_DIR, "genie_combined.bed")
+
     command = [
         'bedtools', 'intersect', '-a',
         temp_bed_path, '-b', exon_gtf_path, '-wa',
@@ -134,18 +162,22 @@ def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
         'grep', "'<'", '|', 'sed', "'s/< //'", '>',
         genie_intergenic_path]
     subprocess.check_call(" ".join(command), shell=True)
-    genie_exondf = pd.read_csv(genie_exon_path, sep="\t", header=None)
-    genie_exondf.columns = [
-        "Chromosome", "Start_Position", "End_Position",
-        "Hugo_Symbol", "includeInPanel", "clincialReported",
-        "ID", "SEQ_ASSAY_ID"]
-    genie_exondf = _add_feature_type_todf(genie_exon_path, "exon")
-    genie_introndf = _add_feature_type_todf(genie_intron_path, "exon")
-    genie_intergenicdf = _add_feature_type_todf(genie_intergenic_path, "exon")
 
-    genie_combineddf = genie_exondf.append(genie_introndf)
+    genie_exondf = _add_feature_type_todf(genie_exon_path, "exon")
+    genie_introndf = _add_feature_type_todf(genie_intron_path, "intron")
+    genie_intergenicdf = _add_feature_type_todf(
+        genie_intergenic_path, "intergenic")
+    # Specify the combined df in case there no bed hits at all
+    genie_combineddf = pd.DataFrame(columns=[
+        "Chromosome", "Start_Position", "End_Position",
+        "Hugo_Symbol", "includeInPanel", "clinicalReported",
+        "ID", "SEQ_ASSAY_ID", "Feature_Type"])
+    genie_combineddf = genie_combineddf.append(genie_exondf)
+    genie_combineddf = genie_combineddf.append(genie_introndf)
     genie_combineddf = genie_combineddf.append(genie_intergenicdf)
     # genie_combineddf.sort_values()
+    genie_combined_path = \
+        os.path.join(process_functions.SCRIPT_DIR, "genie_combined.bed")
     genie_combineddf.to_csv(genie_combined_path, sep="\t", index=False)
     return(genie_combined_path)
 
