@@ -5,12 +5,14 @@ import os
 study_id = "test"
 
 clinical_file_map = {
-    "Test1 Now, Please/foo": ["wow"],
     '': ['FOOBAR', 'NEED'],
-    'UNKNOWN': ['test1']}
+    'UNKNOWN': ['test1'],
+    "Test1 Now, Please/foo": ["wow"]}
 
 case_list_files = create_case_lists.write_case_list_files(
     clinical_file_map, "./", study_id)
+#sequenced_case_list_files = create_case_lists.write_case_list_sequenced(
+#    ['test1', 'test2'], "./", study_id)
 
 
 def test_filenames_write_case_list_files():
