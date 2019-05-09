@@ -50,6 +50,8 @@ def write_case_list_files(clinical_file_map, output_directory, study_id):
     for cancer_type, ids in iteritems(clinical_file_map):
         cancer_type_no_spaces = \
             cancer_type.replace(' ', '_').replace(',', '').replace("/", "_")
+        cancer_type_no_spaces = 'no_oncotree_code' \
+            if cancer_type_no_spaces == '' else cancer_type_no_spaces
         case_list_text = CASE_LIST_TEXT_TEMPLATE.format(
             study_id=study_id,
             stable_id=study_id + '_' + cancer_type_no_spaces,
@@ -58,7 +60,7 @@ def write_case_list_files(clinical_file_map, output_directory, study_id):
             case_list_ids='\t'.join(ids))
         with open(os.path.abspath(os.path.join(
                 output_directory,
-                'case_list_' + cancer_type_no_spaces + '.txt')),
+                'cases_' + cancer_type_no_spaces + '.txt')),
                 'w') as case_list_file:
             case_list_file.write(case_list_text)
 
@@ -98,7 +100,7 @@ def write_case_list_sequenced(clinical_samples, output_directory, study_id):
     case_list_ids = '\t'.join(clinical_samples)
     with open(os.path.abspath(os.path.join(
             output_directory,
-            'case_list_sequenced.txt')), 'w') as case_list_sequenced_file:
+            'cases_sequenced.txt')), 'w') as case_list_sequenced_file:
         case_list_file_text = CASE_LIST_TEXT_TEMPLATE.format(
             study_id=study_id,
             stable_id=study_id + '_sequenced',
@@ -108,7 +110,7 @@ def write_case_list_sequenced(clinical_samples, output_directory, study_id):
         case_list_sequenced_file.write(case_list_file_text)
     with open(os.path.abspath(os.path.join(
             output_directory,
-            'case_list_all.txt')), 'w') as case_list_all_file:
+            'cases_all.txt')), 'w') as case_list_all_file:
         case_list_file_text = CASE_LIST_TEXT_TEMPLATE.format(
             study_id=study_id,
             stable_id=study_id + '_all',
@@ -129,7 +131,7 @@ def write_case_list_cna(cna_samples, output_directory, study_id):
     '''
     case_list_ids = '\t'.join(cna_samples)
     with open(os.path.abspath(os.path.join(
-            output_directory, 'case_list_cna.txt')), 'w') as case_list_file:
+            output_directory, 'cases_cna.txt')), 'w') as case_list_file:
         case_list_file_text = CASE_LIST_TEXT_TEMPLATE.format(
             study_id=study_id,
             stable_id=study_id + '_cna',
@@ -150,7 +152,7 @@ def write_case_list_cnaseq(cna_samples, output_directory, study_id):
     '''
     case_list_ids = '\t'.join(cna_samples)
     with open(os.path.abspath(os.path.join(
-            output_directory, 'case_list_cnaseq.txt')), 'w') as case_list_file:
+            output_directory, 'cases_cnaseq.txt')), 'w') as case_list_file:
         case_list_file_text = CASE_LIST_TEXT_TEMPLATE.format(
             study_id=study_id,
             stable_id=study_id + '_cnaseq',
