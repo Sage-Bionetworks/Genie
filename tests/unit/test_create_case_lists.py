@@ -11,8 +11,12 @@ clinical_file_map = {
 
 case_list_files = create_case_lists.write_case_list_files(
     clinical_file_map, "./", study_id)
-# sequenced_case_list_files = create_case_lists.write_case_list_sequenced(
-#     ['test1', 'test2'], "./", study_id)
+sequenced_case_list_files = create_case_lists.write_case_list_sequenced(
+    ['test1', 'test2'], "./", study_id)
+case_list_cna_path = create_case_lists.write_case_list_cna(
+    ['test1', 'test2'], "./", study_id)
+case_list_cnaseq_path = create_case_lists.write_case_list_cnaseq(
+    ['test1', 'test2'], "./", study_id)
 
 
 def test_filenames_write_case_list_files():
@@ -62,3 +66,70 @@ def test_nochange_write_case_list_files():
         caselist_text = case_list.read()
     assert caselist_text == expected_text
     os.remove(case_list_files[1])
+
+
+def test_filenames_write_case_list_sequenced():
+    first = os.path.basename(sequenced_case_list_files[0])
+    assert first == "cases_sequenced.txt"
+    second = os.path.basename(sequenced_case_list_files[1])
+    assert second == "cases_all.txt"
+
+
+def test_sequencetext_write_case_list_sequenced():
+    expected_text = (
+        'cancer_study_identifier: test\n'
+        'stable_id: test_sequenced\n'
+        'case_list_name: Sequenced Tumors\n'
+        'case_list_description: All sequenced samples\n'
+        'case_list_ids: test1\ttest2')
+    with open(sequenced_case_list_files[0], 'r') as case_list:
+        caselist_text = case_list.read()
+    assert caselist_text == expected_text
+    os.remove(sequenced_case_list_files[0])
+
+
+def test_all_write_case_list_sequenced():
+    expected_text = (
+        'cancer_study_identifier: test\n'
+        'stable_id: test_all\n'
+        'case_list_name: All samples\n'
+        'case_list_description: All samples\n'
+        'case_list_ids: test1\ttest2')
+    with open(sequenced_case_list_files[1], 'r') as case_list:
+        caselist_text = case_list.read()
+    assert caselist_text == expected_text
+    os.remove(sequenced_case_list_files[1])
+
+
+def test_filename_write_case_list_cna():
+    assert os.path.basename(case_list_cna_path) == "cases_cna.txt"
+
+
+def test_filename_write_case_list_cnaseq():
+    assert os.path.basename(case_list_cnaseq_path) == "cases_cnaseq.txt"
+
+
+def test_cnatext_write_case_list_cna():
+    expected_text = (
+        'cancer_study_identifier: test\n'
+        'stable_id: test_cna\n'
+        'case_list_name: Samples with CNA\n'
+        'case_list_description: Samples with CNA\n'
+        'case_list_ids: test1\ttest2')
+    with open(case_list_cna_path, 'r') as case_list:
+        caselist_text = case_list.read()
+    assert caselist_text == expected_text
+    os.remove(case_list_cna_path)
+
+
+def test_cnaseq_write_case_list_cnaseq():
+    expected_text = (
+        'cancer_study_identifier: test\n'
+        'stable_id: test_cnaseq\n'
+        'case_list_name: Samples with CNA and mutation\n'
+        'case_list_description: Samples with CNA and mutation\n'
+        'case_list_ids: test1\ttest2')
+    with open(case_list_cnaseq_path, 'r') as case_list:
+        caselist_text = case_list.read()
+    assert caselist_text == expected_text
+    os.remove(case_list_cnaseq_path)

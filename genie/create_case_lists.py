@@ -46,6 +46,9 @@ def write_case_list_files(clinical_file_map, output_directory, study_id):
                            create_case_lists_map
         output_directory: Directory to write case lists
         study_id: cBioPortal study id
+
+    Returns:
+        list: oncotree code case list files
     '''
     case_list_files = []
     for cancer_type, ids in iteritems(clinical_file_map):
@@ -99,11 +102,16 @@ def write_case_list_sequenced(clinical_samples, output_directory, study_id):
         clinical_samples: List of clinical samples
         output_directory: Directory to write case lists
         study_id: cBioPortal study id
+
+    Returns:
+        list: case list sequenced and all
     '''
+    caselist_files = []
     case_list_ids = '\t'.join(clinical_samples)
-    with open(os.path.abspath(os.path.join(
-            output_directory,
-            'cases_sequenced.txt')), 'w') as case_list_sequenced_file:
+    case_sequenced_path = os.path.abspath(os.path.join(
+        output_directory,
+        'cases_sequenced.txt'))
+    with open(case_sequenced_path, 'w') as case_list_sequenced_file:
         case_list_file_text = CASE_LIST_TEXT_TEMPLATE.format(
             study_id=study_id,
             stable_id=study_id + '_sequenced',
@@ -111,9 +119,10 @@ def write_case_list_sequenced(clinical_samples, output_directory, study_id):
             case_list_description='All sequenced samples',
             case_list_ids=case_list_ids)
         case_list_sequenced_file.write(case_list_file_text)
-    with open(os.path.abspath(os.path.join(
-            output_directory,
-            'cases_all.txt')), 'w') as case_list_all_file:
+    cases_all_path = os.path.abspath(os.path.join(
+        output_directory,
+        'cases_all.txt'))
+    with open(cases_all_path, 'w') as case_list_all_file:
         case_list_file_text = CASE_LIST_TEXT_TEMPLATE.format(
             study_id=study_id,
             stable_id=study_id + '_all',
@@ -121,6 +130,8 @@ def write_case_list_sequenced(clinical_samples, output_directory, study_id):
             case_list_description='All samples',
             case_list_ids=case_list_ids)
         case_list_all_file.write(case_list_file_text)
+    caselist_files.extend([case_sequenced_path, cases_all_path])
+    return(caselist_files)
 
 
 def write_case_list_cna(cna_samples, output_directory, study_id):
@@ -133,8 +144,9 @@ def write_case_list_cna(cna_samples, output_directory, study_id):
         study_id: cBioPortal study id
     '''
     case_list_ids = '\t'.join(cna_samples)
-    with open(os.path.abspath(os.path.join(
-            output_directory, 'cases_cna.txt')), 'w') as case_list_file:
+    cna_caselist_path = os.path.abspath(os.path.join(
+        output_directory, 'cases_cna.txt'))
+    with open(cna_caselist_path, 'w') as case_list_file:
         case_list_file_text = CASE_LIST_TEXT_TEMPLATE.format(
             study_id=study_id,
             stable_id=study_id + '_cna',
@@ -142,6 +154,7 @@ def write_case_list_cna(cna_samples, output_directory, study_id):
             case_list_description='Samples with CNA',
             case_list_ids=case_list_ids)
         case_list_file.write(case_list_file_text)
+    return(cna_caselist_path)
 
 
 def write_case_list_cnaseq(cna_samples, output_directory, study_id):
@@ -154,8 +167,9 @@ def write_case_list_cnaseq(cna_samples, output_directory, study_id):
         study_id: cBioPortal study id
     '''
     case_list_ids = '\t'.join(cna_samples)
-    with open(os.path.abspath(os.path.join(
-            output_directory, 'cases_cnaseq.txt')), 'w') as case_list_file:
+    cnaseq_caselist_path = os.path.abspath(os.path.join(
+        output_directory, 'cases_cnaseq.txt'))
+    with open(cnaseq_caselist_path, 'w') as case_list_file:
         case_list_file_text = CASE_LIST_TEXT_TEMPLATE.format(
             study_id=study_id,
             stable_id=study_id + '_cnaseq',
@@ -163,6 +177,7 @@ def write_case_list_cnaseq(cna_samples, output_directory, study_id):
             case_list_description='Samples with CNA and mutation',
             case_list_ids=case_list_ids)
         case_list_file.write(case_list_file_text)
+    return(cnaseq_caselist_path)
 
 
 def main(clinical_file_name,
