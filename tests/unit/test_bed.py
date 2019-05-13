@@ -44,6 +44,7 @@ def test_perfect___process():
         End_Position=[69901480, 99417584, 53718647, 44084638, 44084638],
         Hugo_Symbol=['AAK1', 'AAED1', 'AAAS', 'XRCC1', 'PINLYP'],
         includeInPanel=[True, True, True, True, True],
+        clinicalReported=[True, True, False, False, True],
         ID=['AAK1', 'AAED1', 'AAAS', 'XRCC1', 'foo'],
         SEQ_ASSAY_ID=['SAGE-TEST', 'SAGE-TEST',
                       'SAGE-TEST', 'SAGE-TEST', 'SAGE-TEST'],
@@ -57,7 +58,8 @@ def test_perfect___process():
         1: [69688533, 99401860, 53701241, 44084466, 44084466],
         2: [69901480, 99417584, 53718647, 44084638, 44084638],
         3: ['AAK1', 'AAED1', 'AAAS', 'XRCC1', 'foo'],
-        4: ['d', 'd', 'd', 'd', 'd']})
+        4: [True, True, True, True, True],
+        5: [True, True, False, False, True]})
 
     new_beddf = bed_class._process(
         beddf, seq_assay_id, new_path, parentid, createPanel=False)
@@ -73,6 +75,7 @@ def test_includeinpanel___process():
         End_Position=[69689532, 1111, 53719548, 44084624],
         Hugo_Symbol=['AAK1', float('nan'), 'AAAS', float('nan')],
         includeInPanel=[True, True, False, True],
+        clinicalReported=[float('nan')]*4,
         ID=['foo', 'bar', 'baz', 'boo'],
         SEQ_ASSAY_ID=['SAGE-TEST', 'SAGE-TEST', 'SAGE-TEST', 'SAGE-TEST'],
         Feature_Type=['exon', 'intergenic', 'exon', 'exon'],
@@ -89,6 +92,39 @@ def test_includeinpanel___process():
         2: [69689532, 1111, 53719548, 44084624],
         3: ['foo', 'bar', 'baz', 'boo'],
         4: [True, True, False, True]})
+
+    new_beddf = bedsp_class._process(
+        beddf, seq_assay_id, new_path, parentid, createPanel=False)
+    new_beddf.sort_values("Chromosome", inplace=True)
+    new_beddf.reset_index(drop=True, inplace=True)
+    assert expected_beddf.equals(new_beddf[expected_beddf.columns])
+
+
+def test_clinicalreport___process():
+    expected_beddf = pd.DataFrame(dict(
+        Chromosome=['2', '9', '12', '19'],
+        Start_Position=[69688432, 1111, 53700240, 44080953],
+        End_Position=[69689532, 1111, 53719548, 44084624],
+        Hugo_Symbol=['AAK1', float('nan'), 'AAAS', float('nan')],
+        includeInPanel=[True, True, False, True],
+        clinicalReported=[float('nan')]*4,
+        ID=['foo', 'bar', 'baz', 'boo'],
+        SEQ_ASSAY_ID=['SAGE-TEST', 'SAGE-TEST', 'SAGE-TEST', 'SAGE-TEST'],
+        Feature_Type=['exon', 'intergenic', 'exon', 'exon'],
+        CENTER=['SAGE', 'SAGE', 'SAGE', 'SAGE']))
+
+    expected_beddf.sort_values("Chromosome", inplace=True)
+    expected_beddf.reset_index(drop=True, inplace=True)
+
+    # symbols that can't be map should be null,
+    # includeInPanel column should be included if it exists
+    beddf = pd.DataFrame({
+        0: ['2', '9', '12', '19'],
+        1: [69688432, 1111, 53700240, 44080953],
+        2: [69689532, 1111, 53719548, 44084624],
+        3: ['foo', 'bar', 'baz', 'boo'],
+        4: [True, True, False, True],
+        5: [True, float('nan'), False, True]})
 
     new_beddf = bedsp_class._process(
         beddf, seq_assay_id, new_path, parentid, createPanel=False)
@@ -129,7 +165,8 @@ def test_perfect__validate():
         b=[69688533, 99401860, 53701241],
         c=[69901480, 99417584, 53718647],
         d=['AAK1', 'AAED1', 'AAAS'],
-        e=[True, True, True]))
+        e=[True, True, False],
+        f=[True, True, False]))
 
     error, warning = bed_class._validate(bedDf)
     assert error == ""
@@ -142,23 +179,20 @@ def test_90percent_boundary__validate():
         b=[69688432, 99416585, 53700240],
         c=[69689532, 99417685, 53719548],
         d=['AAK1', 'AAED1', 'AAAS'],
-        e=[True, True, True]))
+        e=[True, True, False],
+        f=[True, True, False]))
     error, warning = bed_class._validate(bedDf)
     assert error == ""
     assert warning == ""
 
 
 def test_missingcols_failure__validate():
-    bedDf = pd.DataFrame(dict(
-        b=[69688533, 99401860, 53701241],
-        c=[69901480, 99417584, 53718647],
-        d=['AAK1', 'AAED1', 'AAAS']))
-
-    error, warning = bed_class._validate(bedDf)
+    emptydf = pd.DataFrame()
+    error, warning = bed_class._validate(emptydf)
     expected_errors = (
-        "Your BED file must at least have four columns in this order: "
-        "Chromosome, Start_Position, End_Position, Hugo_Symbol.  "
-        "Make sure there are no headers in your BED file.\n")
+        "BED file: Must at least have five columns in this order: "
+        "Chromosome, Start_Position, End_Position, Hugo_Symbol, "
+        "includeInPanel. Make sure there are no headers.\n")
     assert error == expected_errors
     assert warning == ""
 
@@ -168,29 +202,33 @@ def test_hugosymbol_failure__validate():
         a=['2', '9', '12'],
         b=[69688533, 99401860, 53701241],
         c=[69901480, 99417584, 53718647],
-        d=['+', float('nan'), 'AAAS']))
+        d=['+', float('nan'), 'AAAS'],
+        e=[True, True, False]))
     error, warning = bed_class._validate(bedDf)
     expected_errors = (
-        "You cannot submit any null symbols.\n"
-        "Fourth column must be the Hugo_Symbol column, "
+        "BED file: You cannot submit any null symbols.\n"
+        "BED file: Fourth column must be the Hugo_Symbol column, "
         "not the strand column\n")
     assert error == expected_errors
     assert warning == ""
 
 
-def test_integer_failure__validate():
+def test_badinputs_failure__validate():
     bedDf = pd.DataFrame(dict(
         a=['2', '9', '12'],
         b=['69688533', 99401860, 53701241],
         c=[69901480, '99417584', 53718647],
-        d=['AAK1', 'AAED1', 'AAAS']))
+        d=['AAK1', 'AAED1', 'AAAS'],
+        e=[True, False, "foobar"]))
 
     error, warning = bed_class._validate(bedDf)
     expected_errors = (
-        "The Start_Position column must only be integers. "
-        "Make sure there are no headers in your BED file.\n"
-        "The End_Position column must only be integers. "
-        "Make sure there are no headers in your BED file.\n")
+        "BED file: The Start_Position column must only be integers. "
+        "Make sure there are no headers.\n"
+        "BED file: The End_Position column must only be integers. "
+        "Make sure there are no headers.\n"
+        "BED file: Please double check your includeInPanel column.  "
+        "This column must only be these values: True, False\n")
     assert error == expected_errors
     assert warning == ""
 
@@ -201,15 +239,16 @@ def test_90percentboundary_failure__validate():
         a=['2', '9', '12'],
         b=[69901381, 4345, 11111],
         c=[69911481, 99417590, 11113],
-        d=['foo', 'foo', 'AAAS']))
+        d=['foo', 'foo', 'AAAS'],
+        e=[True, True, False]))
 
     error, warning = bedsp_class._validate(bedDf)
     expected_errors = (
-        "You have no correct gene symbols. "
+        "BED file: You have no correct gene symbols. "
         "Make sure your gene symbol column (4th column) is formatted like so: "
         "SYMBOL(;optionaltext).  Optional text can be semi-colon separated.\n")
     expected_warnings = (
-        "Any gene names that can't be remapped will be null.\n")
+        "BED file: Any gene names that can't be remapped will be null.\n")
     assert error == expected_errors
     assert warning == expected_warnings
 
@@ -220,7 +259,8 @@ def test_overlapping__validate():
         a=['2', '9'],
         b=[1111, 4345],
         c=[69880186, 99417590],
-        d=['AAK1', 'AAED1']))
+        d=['AAK1', 'AAED1'],
+        e=[True, False]))
 
     error, warning = bedsp_class._validate(bedDf)
     assert error == ""
@@ -233,14 +273,15 @@ def test_symbolnull_failure__validate():
         a=['19'],
         b=[44080953],
         c=[44084624],
-        d=['AAK1']))
+        d=['AAK1'],
+        e=[False]))
 
     error, warning = bedsp_class._validate(bedDf)
     expected_errors = (
-        "You have no correct gene symbols. "
+        "BED file: You have no correct gene symbols. "
         "Make sure your gene symbol column (4th column) is formatted like so: "
         "SYMBOL(;optionaltext).  Optional text can be semi-colon separated.\n")
     expected_warnings = (
-        "Any gene names that can't be remapped will be null.\n")
+        "BED file: Any gene names that can't be remapped will be null.\n")
     assert error == expected_errors
     assert warning == expected_warnings
