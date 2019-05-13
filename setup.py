@@ -17,4 +17,4 @@ setup(name='aacrgenie',
         'synapseclient>=1.9',
         'httplib2>=0.11.3',
         'pycrypto>=2.6.1',
-        'PyYAML>=5.11'])
+        'PyYAML>=5.1'])
