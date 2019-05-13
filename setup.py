@@ -9,13 +9,12 @@ setup(name='aacrgenie',
       license='MIT',
       packages=find_packages(),
       zip_safe=False,
-      data_files=[('genie',['genie/addFeatureType.sh','genie/createGTF.sh'])],
       python_requires='>=3.0',
-      entry_points = {
+      entry_points={
         'console_scripts': ['genie = genie.__main__:main']},
       install_requires=[
         'pandas>=0.20.0',
         'synapseclient>=1.9',
         'httplib2>=0.11.3',
         'pycrypto>=2.6.1',
-        'PyYAML>=3.11'])
+        'PyYAML>=5.11'])
