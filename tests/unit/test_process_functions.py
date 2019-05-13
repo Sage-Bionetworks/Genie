@@ -41,7 +41,7 @@ def test_norows_get_left_diff_df():
     assert append_rows.empty
 
 
-def test_validation_get_left_diff_df():
+def test_first_validation_get_left_diff_df():
     '''
     This checks to make sure that validation is called
     - In a situation where someone comments out the validation
@@ -52,6 +52,21 @@ def test_validation_get_left_diff_df():
             match="'FOO' column must exist in dataframe"):
         genie.process_functions._get_left_diff_df(
             DATABASE_DF, DATABASE_DF, 'FOO')
+
+
+def test_second_validation_get_left_diff_df():
+    '''
+    This checks to make sure that validation is called
+    - In a situation where someone comments out the validation
+    line, this will cause an error
+    '''
+    testing = DATABASE_DF.copy()
+    testing['FOO'] = float('nan')
+    with pytest.raises(
+            ValueError,
+            match="'FOO' column must exist in dataframe"):
+        genie.process_functions._get_left_diff_df(
+            testing, DATABASE_DF, 'FOO')
 
 
 def test_first_validation_get_left_union_df():
@@ -79,7 +94,7 @@ def test_second_validation_get_left_union_df():
             ValueError,
             match="'FOO' column must exist in dataframe"):
         genie.process_functions._get_left_union_df(
-            DATABASE_DF, DATABASE_DF, 'FOO')
+            testing, DATABASE_DF, 'FOO')
 
 
 def test_append__append_rows():
