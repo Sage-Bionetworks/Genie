@@ -54,6 +54,34 @@ def test_validation_get_left_diff_df():
             DATABASE_DF, DATABASE_DF, 'FOO')
 
 
+def test_first_validation_get_left_union_df():
+    '''
+    This checks to make sure that validation is called
+    - In a situation where someone comments out the 1st validation
+    line, this will cause an error
+    '''
+    with pytest.raises(
+            ValueError,
+            match="'FOO' column must exist in dataframe"):
+        genie.process_functions._get_left_union_df(
+            DATABASE_DF, DATABASE_DF, 'FOO')
+
+
+def test_second_validation_get_left_union_df():
+    '''
+    This checks to make sure that validation is called
+    - In a situation where someone comments out the 2nd validation
+    line, this will cause an error
+    '''
+    testing = DATABASE_DF.copy()
+    testing['FOO'] = float('nan')
+    with pytest.raises(
+            ValueError,
+            match="'FOO' column must exist in dataframe"):
+        genie.process_functions._get_left_union_df(
+            DATABASE_DF, DATABASE_DF, 'FOO')
+
+
 def test_append__append_rows():
     new_datadf = pd.DataFrame({
         'UNIQUE_KEY': ['test1', 'test2', 'test3', 'test4'],
