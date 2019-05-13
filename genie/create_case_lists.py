@@ -85,21 +85,6 @@ def write_case_list_files(clinical_file_map, output_directory, study_id):
     '''
     case_list_files = []
     for cancer_type, ids in iteritems(clinical_file_map):
-        # cancer_type = 'NA' if cancer_type == '' else cancer_type
-        # cancer_type_no_spaces = \
-        #     cancer_type.replace(' ', '_').replace(',', '').replace("/", "_")
-        # cancer_type_no_spaces = 'no_oncotree_code' \
-        #     if cancer_type_no_spaces == 'NA' else cancer_type_no_spaces
-        # case_list_text = CASE_LIST_TEXT_TEMPLATE.format(
-        #     study_id=study_id,
-        #     stable_id=study_id + '_' + cancer_type_no_spaces,
-        #     case_list_name='Tumor Type: ' + cancer_type,
-        #     case_list_description='All tumors with cancer type ' + cancer_type,
-        #     case_list_ids='\t'.join(ids))
-        # case_list_path = os.path.abspath(os.path.join(
-        #     output_directory, 'cases_' + cancer_type_no_spaces + '.txt'))
-        # with open(case_list_path, 'w') as case_list_file:
-        #     case_list_file.write(case_list_text)
         case_list_path = _write_single_oncotree_case_list(
             cancer_type, ids, study_id, output_directory)
         case_list_files.append(case_list_path)
