@@ -1,4 +1,4 @@
-# import pytest
+import pytest
 from genie import create_case_lists
 import os
 
@@ -8,9 +8,6 @@ clinical_file_map = {'': ['FOOBAR', 'NEED']}
 clinical_file_map['Testing2'] = ['test1']
 clinical_file_map['Test1 Now, Please/foo'] = ['wow']
 
-
-case_list_files = create_case_lists.write_case_list_files(
-    clinical_file_map, "./", study_id)
 sequenced_case_list_files = create_case_lists.write_case_list_sequenced(
     ['test1', 'test2'], "./", study_id)
 case_list_cna_path = create_case_lists.write_case_list_cna(
@@ -20,52 +17,61 @@ case_list_cnaseq_path = create_case_lists.write_case_list_cnaseq(
 
 
 def test_filenames_write_case_list_files():
-    first = os.path.basename(case_list_files[2])
-    assert first == "cases_Test1_Now_Please_foo.txt"
-    second = os.path.basename(case_list_files[0])
-    assert second == "cases_no_oncotree_code.txt"
-    third = os.path.basename(case_list_files[1])
-    assert third == "cases_Testing2.txt"
+    case_list_files = create_case_lists.write_case_list_files(
+        clinical_file_map, "./", study_id)
+    required_files = [
+        "cases_Test1_Now_Please_foo.txt",
+        "cases_no_oncotree_code.txt",
+        "cases_Testing2.txt"]
+    basenames = [
+        os.path.basename(case_file) for case_file in case_list_files]
+
+    assert all([req_file in basenames for req_file in required_files])
 
 
-def test_textfix_write_case_list_files():
-    expected_text = (
-        'cancer_study_identifier: test\n'
-        'stable_id: test_Test1_Now_Please_foo\n'
-        'case_list_name: Tumor Type: Test1 Now, Please/foo\n'
-        'case_list_description: All tumors with cancer type '
-        'Test1 Now, Please/foo\n'
-        'case_list_ids: wow')
-    with open(case_list_files[2], 'r') as case_list:
+expected_change_text = (
+    'cancer_study_identifier: test\n'
+    'stable_id: test_Test1_Now_Please_foo\n'
+    'case_list_name: Tumor Type: Test1 Now, Please/foo\n'
+    'case_list_description: All tumors with cancer type '
+    'Test1 Now, Please/foo\n'
+    'case_list_ids: wow')
+
+expected_same_text = (
+    'cancer_study_identifier: test\n'
+    'stable_id: test_Testing2\n'
+    'case_list_name: Tumor Type: Testing2\n'
+    'case_list_description: All tumors with cancer type Testing2\n'
+    'case_list_ids: test1')
+
+expected_nocode_text = (
+    'cancer_study_identifier: test\n'
+    'stable_id: test_no_oncotree_code\n'
+    'case_list_name: Tumor Type: NA\n'
+    'case_list_description: All tumors with cancer type NA\n'
+    'case_list_ids: FOOBAR\tNEED')
+
+
+@pytest.fixture(params=[
+    # tuple with (input, expectedOutput)
+    ('', clinical_file_map[''], expected_nocode_text),
+    ('Testing2', clinical_file_map['Testing2'], expected_same_text),
+    ('Test1 Now, Please/foo',
+        clinical_file_map['Test1 Now, Please/foo'],
+        expected_change_text)])
+def oncotree_write_params(request):
+    return request.param
+
+
+def test__write_single_oncotree_case_list(oncotree_write_params):
+    (cancer_type, ids, expected_text) = oncotree_write_params
+    caselist_path = \
+        create_case_lists._write_single_oncotree_case_list(
+            cancer_type, ids, study_id, "./")
+    with open(caselist_path, 'r') as case_list:
         caselist_text = case_list.read()
     assert caselist_text == expected_text
-    os.remove(case_list_files[2])
-
-
-def test_nocode_write_case_list_files():
-    expected_text = (
-        'cancer_study_identifier: test\n'
-        'stable_id: test_no_oncotree_code\n'
-        'case_list_name: Tumor Type: NA\n'
-        'case_list_description: All tumors with cancer type NA\n'
-        'case_list_ids: FOOBAR\tNEED')
-    with open(case_list_files[0], 'r') as case_list:
-        caselist_text = case_list.read()
-    assert caselist_text == expected_text
-    os.remove(case_list_files[0])
-
-
-def test_nochange_write_case_list_files():
-    expected_text = (
-        'cancer_study_identifier: test\n'
-        'stable_id: test_Testing2\n'
-        'case_list_name: Tumor Type: Testing2\n'
-        'case_list_description: All tumors with cancer type Testing2\n'
-        'case_list_ids: test1')
-    with open(case_list_files[1], 'r') as case_list:
-        caselist_text = case_list.read()
-    assert caselist_text == expected_text
-    os.remove(case_list_files[1])
+    os.remove(caselist_path)
 
 
 def test_filenames_write_case_list_sequenced():
