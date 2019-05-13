@@ -11,8 +11,6 @@ before_install:
 matrix:
   include:
     - os: linux
-      python: 2.7.14
-    - os: linux
       python: 3.5.3
     - os: linux
       python: 3.6.2

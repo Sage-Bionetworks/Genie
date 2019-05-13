@@ -10,6 +10,7 @@ setup(name='aacrgenie',
       packages=find_packages(),
       zip_safe=False,
       data_files=[('genie',['genie/addFeatureType.sh','genie/createGTF.sh'])],
+      python_requires='>=3.0',
       entry_points = {
         'console_scripts': ['genie = genie.__main__:main']},
       install_requires=[
