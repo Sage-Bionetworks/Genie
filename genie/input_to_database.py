@@ -700,7 +700,9 @@ def center_input_to_database(
         logger.info(messageOut.format(center))
 
     # Store log file
-    syn.store(synapseclient.File(log_path, parentId="syn10155804"))
+    log_folder_synid = process_functions.getDatabaseSynId(
+        syn, "logs", databaseToSynIdMappingDf=database_to_synid_mappingdf)
+    syn.store(synapseclient.File(log_path, parentId=log_folder_synid))
     os.remove(log_path)
     logger.info("ALL PROCESSES COMPLETE")
 
