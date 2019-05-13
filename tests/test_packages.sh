@@ -22,4 +22,3 @@ genie validate sampleRetraction sampleRetraction.csv SAGE --test
 genie validate seg genie_data_cna_hg19_SAGE.seg SAGE --test
 genie validate fusions data_fusions_SAGE.txt SAGE --test
 genie validate vitalStatus vital_status.txt SAGE --test
-genie validate patientCounts patient_counts.txt SAGE --test

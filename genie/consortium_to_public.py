@@ -367,9 +367,10 @@ if __name__ == "__main__":
     cbioOutput = subprocess.check_output(" ".join(command), shell=True)
     logger.info(cbioOutput.decode("utf-8"))
     if not args.test and not args.staging:
+        log_folder_synid = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'logs'].values[0]
         with open("cbioValidatorLogsPublic_%s.txt" % args.genieVersion, "w") as cbioLog:
             cbioLog.write(cbioOutput.decode("utf-8"))
-        syn.store(synapseclient.File("cbioValidatorLogsPublic_%s.txt" % args.genieVersion, parentId = "syn10155804"))
+        syn.store(synapseclient.File("cbioValidatorLogsPublic_%s.txt" % args.genieVersion, parentId=log_folder_synid))
         os.remove("cbioValidatorLogsPublic_%s.txt" % args.genieVersion)
     logger.info("REMOVING OLD FILES")
     process.rmFiles(dbTostaging.CASE_LIST_PATH)
