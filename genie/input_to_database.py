@@ -555,7 +555,7 @@ def validation(
             process_functions.getDatabaseSynId(
                 syn, "errorTracker",
                 databaseToSynIdMappingDf=databaseToSynIdMappingDf),
-            ["id"], toDelete=True)
+            ["id"], to_delete=True)
 
         paths = inputValidStatus['path']
         # filenames = [os.path.basename(name) for name in paths]
@@ -575,7 +575,8 @@ def validation(
                 syn, "validationStatus",
                 databaseToSynIdMappingDf=databaseToSynIdMappingDf),
             ["id"],
-            toDelete=True)
+            to_delete=True)
+
         inputValidStatus['path'] = paths
         validFiles = inputValidStatus[['id', 'path', 'fileType']][
             inputValidStatus['status'] == "VALIDATED"]
