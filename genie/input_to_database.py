@@ -275,7 +275,7 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
         invalidErrors['center'] = center
         invalidIds = inputValidStatus['id'][inputValidStatus['status'] == "INVALID"]
         invalidErrors = invalidErrors[invalidErrors['id'].isin(invalidIds)]
-        process_functions.updateDatabase(syn, errorTracker.asDataFrame(), invalidErrors, process_functions.getDatabaseSynId(syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf), ["id"], toDelete=True)
+        process_functions.updateDatabase(syn, errorTracker.asDataFrame(), invalidErrors, process_functions.getDatabaseSynId(syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf), ["id"], to_delete=True)
 
         paths = inputValidStatus['path']
         filenames = [os.path.basename(name) for name in paths]
@@ -285,7 +285,7 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
         #Remove fixed duplicated files
         inputValidStatus = inputValidStatus[~inputValidStatus['id'].isin(removeIds)]
 
-        process_functions.updateDatabase(syn, validationStatus.asDataFrame(), inputValidStatus[["id",'md5','status','name','center','modifiedOn']], process_functions.getDatabaseSynId(syn, "validationStatus", databaseToSynIdMappingDf=databaseToSynIdMappingDf), ["id"], toDelete=True)
+        process_functions.updateDatabase(syn, validationStatus.asDataFrame(), inputValidStatus[["id",'md5','status','name','center','modifiedOn']], process_functions.getDatabaseSynId(syn, "validationStatus", databaseToSynIdMappingDf=databaseToSynIdMappingDf), ["id"], to_delete=True)
         inputValidStatus['path'] = paths
         validFiles = inputValidStatus[['id','path','fileType']][inputValidStatus['status'] == "VALIDATED"]
         return(validFiles)
