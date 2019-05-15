@@ -360,8 +360,9 @@ def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path
         processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
         syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
 
-        logger.info("SAMPLE/PATIENT RETRACTION")
-        toRetract.retract(syn, testing)
+        # Resolve with https://github.com/Sage-Bionetworks/Genie/issues/94
+        # logger.info("SAMPLE/PATIENT RETRACTION")
+        # toRetract.retract(syn, testing)
 
     else:
         messageOut = "%s does not have any valid files" if not only_validate else "ONLY VALIDATION OCCURED FOR %s"
@@ -432,12 +433,12 @@ def main():
     #Check if you can connect to oncotree link, if not then don't run validation / processing
     process_functions.checkUrl(args.oncotreeLink)
 
-    center_mapping_ent = syn.get(center_mapping_id)
-    if center_mapping_ent.get('isProcessing',['True'])[0] == 'True':
-        raise Exception("Processing/validation is currently happening.  Please change/add the 'isProcessing' annotation on %s to False to enable processing" % center_mapping_id)
-    else:
-        center_mapping_ent.isProcessing="True"
-        center_mapping_ent = syn.store(center_mapping_ent)
+    # center_mapping_ent = syn.get(center_mapping_id)
+    # if center_mapping_ent.get('isProcessing',['True'])[0] == 'True':
+    #     raise Exception("Processing/validation is currently happening.  Please change/add the 'isProcessing' annotation on %s to False to enable processing" % center_mapping_id)
+    # else:
+    #     center_mapping_ent.isProcessing="True"
+    #     center_mapping_ent = syn.store(center_mapping_ent)
     #remove this query timeout and see what happens
     #syn.table_query_timeout = 50000
 
