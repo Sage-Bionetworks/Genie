@@ -21,16 +21,16 @@ from .assay import Assayinfo
 from . import process_functions
 from . import create_case_lists
 
-PROCESS_FILES = {'bed': bed,
-                 'bedSP': bedSP,
+PROCESS_FILES = {# 'bed': bed,
+                 # 'bedSP': bedSP,
                  'maf': maf,
                  'mafSP': mafSP,
                  'clinical': clinical,
                  'clinicalSP': clinicalSP,
                  'vcf': vcf,
                  'cbs': cbs,
-                 'cna': cna,
-                 'fusions': fusions,
+                 # 'cna': cna,
+                 # 'fusions': fusions,
                  'md': workflow,
                  'seg': seg,
                  'patientRetraction': patientRetraction,
