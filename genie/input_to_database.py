@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 import logging
 logger = logging.getLogger("genie")
 import synapseclient
@@ -15,6 +15,7 @@ import shutil
 import time
 import toRetract
 import write_invalid_reasons
+import json
 
 #Configuration file
 from genie import PROCESS_FILES, process_functions, validate
@@ -359,15 +360,18 @@ def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path
         processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
         syn.store(synapseclient.Table(processTrackerSynId,processTrackerDf))
 
-        logger.info("SAMPLE/PATIENT RETRACTION")
-        toRetract.retract(syn, testing)
+        # Resolve with https://github.com/Sage-Bionetworks/Genie/issues/94
+        # logger.info("SAMPLE/PATIENT RETRACTION")
+        # toRetract.retract(syn, testing)
 
     else:
         messageOut = "%s does not have any valid files" if not only_validate else "ONLY VALIDATION OCCURED FOR %s"
         logger.info(messageOut % center)
 
-    #Store log file
-    syn.store(synapseclient.File(log_path, parentId="syn10155804"))
+    # Store log file
+    log_folder_synid = process_functions.getDatabaseSynId(
+        syn, "logs", databaseToSynIdMappingDf=database_to_synid_mappingdf)
+    syn.store(synapseclient.File(log_path, parentId=log_folder_synid))
     os.remove(log_path)
     logger.info("ALL PROCESSES COMPLETE")
 
@@ -378,6 +382,7 @@ def main():
         description='GENIE center inputs to database')
     parser.add_argument("process",choices=['vcf','maf','main','mafSP'],
                         help='Process vcf, maf or the rest of the files')
+    parser.add_argument('--config', help='JSON config file.')
     parser.add_argument('--center', help='The centers')
     parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
     parser.add_argument("--deleteOld", action='store_true', help = "Delete all old processed and temp files")
@@ -395,6 +400,9 @@ def main():
     parser.add_argument('--thread', type=int, help="Number of threads to use for validation", default=1)
 
     args = parser.parse_args()
+
+    config = json.load(open(args.config))
+
     syn = process_functions.synLogin(args.pemFile, debug=args.debug)
     #Must specify path to vcf2maf, VEP and VEP data is these types are specified
     if args.process in ['vcf','maf','mafSP'] and not args.onlyValidate:
@@ -402,14 +410,11 @@ def main():
         assert os.path.exists(args.vepPath), "Path to VEP (--vepPath) must be specified if `--process {vcf,maf,mafSP}` is used"
         assert os.path.exists(args.vepData), "Path to VEP data (--vepData) must be specified if `--process {vcf,maf,mafSP}` is used"
     
-    if args.testing:
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
-    else:
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
+    databaseToSynIdMapping = syn.tableQuery('SELECT * FROM {}'.format(config.get('database_to_synid_mapping')))
 
     databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
 
-    center_mapping_id = process_functions.getDatabaseSynId(syn, "centerMapping", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+    center_mapping_id = config.get('center_mapping_id')
     center_mapping = syn.tableQuery('SELECT * FROM %s' % center_mapping_id)
     center_mapping_df = center_mapping.asDataFrame()
 
@@ -428,12 +433,12 @@ def main():
     #Check if you can connect to oncotree link, if not then don't run validation / processing
     process_functions.checkUrl(args.oncotreeLink)
 
-    center_mapping_ent = syn.get(center_mapping_id)
-    if center_mapping_ent.get('isProcessing',['True'])[0] == 'True':
-        raise Exception("Processing/validation is currently happening.  Please change/add the 'isProcessing' annotation on %s to False to enable processing" % center_mapping_id)
-    else:
-        center_mapping_ent.isProcessing="True"
-        center_mapping_ent = syn.store(center_mapping_ent)
+    # center_mapping_ent = syn.get(center_mapping_id)
+    # if center_mapping_ent.get('isProcessing',['True'])[0] == 'True':
+    #     raise Exception("Processing/validation is currently happening.  Please change/add the 'isProcessing' annotation on %s to False to enable processing" % center_mapping_id)
+    # else:
+    #     center_mapping_ent.isProcessing="True"
+    #     center_mapping_ent = syn.store(center_mapping_ent)
     #remove this query timeout and see what happens
     #syn.table_query_timeout = 50000
 

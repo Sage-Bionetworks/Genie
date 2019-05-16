@@ -14,30 +14,30 @@ from .cna import cna
 from .fusions import fusions
 from .sampleRetraction import sampleRetraction
 from .patientRetraction import patientRetraction
-from .patientCounts import patientCounts
+# from .patientCounts import patientCounts
 from .mutationsInCis import mutationsInCis
 from .vitalStatus import vitalStatus
 from .assay import Assayinfo
 from . import process_functions
 from . import create_case_lists
 
-PROCESS_FILES = {'bed': bed,
-                 'bedSP': bedSP,
-                 'maf': maf,
-                 'mafSP': mafSP,
+PROCESS_FILES = {# 'bed': bed,
+                 # 'bedSP': bedSP,
+                 # 'maf': maf,
+                 # 'mafSP': mafSP,
                  'clinical': clinical,
                  'clinicalSP': clinicalSP,
                  'vcf': vcf,
-                 'cbs': cbs,
-                 'cna': cna,
-                 'fusions': fusions,
+                 # 'cbs': cbs,
+                 # 'cna': cna,
+                 # 'fusions': fusions,
                  'md': workflow,
-                 'seg': seg,
-                 'patientRetraction': patientRetraction,
-                 'sampleRetraction': sampleRetraction,
-                 'patientCounts': patientCounts,
-                 'mutationsInCis': mutationsInCis,
-                 'vitalStatus': vitalStatus,
+                 # 'seg': seg,
+                 # 'patientRetraction': patientRetraction,
+                 # 'sampleRetraction': sampleRetraction,
+                 # 'patientCounts': patientCounts,
+                 # 'mutationsInCis': mutationsInCis,
+                 # 'vitalStatus': vitalStatus,
                  'assayinfo': Assayinfo}
 
 # Must import validate after the fact
