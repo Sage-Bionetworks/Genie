@@ -61,7 +61,7 @@ def remove_greaterthan_lessthan_str(col):
     return(col)
 
 
-class clinical_sample(FileTypeFormat):
+class clinical_individual(FileTypeFormat):
 
     _fileType = "clinical"
 
@@ -74,8 +74,8 @@ class clinical_sample(FileTypeFormat):
             "Individual clinical filename is not correct."
 
     # PROCESSING
-    def uploadMissingData(
-            self, df, col, dbSynId, stagingSynId, retractionSynId=None):
+    def uploadMissingData(self, df, col, dbSynId, 
+                          stagingSynId, retractionSynId=None):
         samples = "','".join(df[col])
         path = os.path.join(
             process_functions.SCRIPT_DIR,
@@ -89,23 +89,8 @@ class clinical_sample(FileTypeFormat):
 
     def _process(self, clinical, clinicalTemplate):
         # Capitalize all clinical dataframe columns
-        clinical.columns = [col.upper() for col in clinical.columns]
         clinical = clinical.fillna("")
-        # clinicalMerged = clinical.merge(clinicalTemplate,how='outer')
-        # Remove unwanted clinical columns prior to update
-        # clinicalMerged = clinicalMerged.drop(clinicalMerged.columns[
-        #    ~clinicalMerged.columns.isin(clinicalTemplate.columns)],1)
-        ethnicity_mapping = process_functions.getGenieMapping(
-            self.syn, "syn7434242")
-        race_mapping = process_functions.getGenieMapping(
-            self.syn, "syn7434236")
-        sex_mapping = process_functions.getGenieMapping(self.syn, "syn7434222")
-        sampleType_mapping = process_functions.getGenieMapping(
-            self.syn, "syn7434273")
-        sampleType_mapping = sampleType_mapping.append(pd.DataFrame([
-            ("", "", "")], columns=["CODE", "CBIO_LABEL", "DESCRIPTION"]))
-
-        clinical['CENTER'] = self.center
+        clinical['center'] = self.center
 
         return(clinical)
 
@@ -115,23 +100,8 @@ class clinical_sample(FileTypeFormat):
             parentId, oncotreeLink):
         patientSynId = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == "patient"][0]
-        sampleSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == "sample"][0]
 
         clinicalDf = pd.read_csv(filePath, sep="\t", comment="#")
-
-        patient = False
-        sample = False
-        # These synapse ids for the clinical tier release scope is
-        # hardcoded because it never changes
-        patientColsTable = self.syn.tableQuery(
-            'select fieldName from syn8545211 where patient is '
-            'True and inClinicalDb is True')
-        patientCols = patientColsTable.asDataFrame()['fieldName'].tolist()
-        sampleColsTable = self.syn.tableQuery(
-            'select fieldName from syn8545211 where sample is True '
-            'and inClinicalDb is True')
-        sampleCols = sampleColsTable.asDataFrame()['fieldName'].tolist()
 
         if "patient" in filePath.lower():
             clinicalTemplate = pd.DataFrame(columns=patientCols)
@@ -310,70 +280,6 @@ class clinical_sample(FileTypeFormat):
         else:
             total_error += \
                 "Sample: clinical file must have AGE_AT_SEQ_REPORT column.\n"
-
-        # CHECK: ONCOTREE_CODE
-        haveColumn = \
-            process_functions.checkColExist(clinicalDF, "ONCOTREE_CODE")
-        maleOncoCodes = ["TESTIS", "PROSTATE", "PENIS"]
-        womenOncoCodes = ["CERVIX", "VULVA", "UTERUS", "OVARY"]
-        if haveColumn:
-            # Make oncotree codes uppercase (SpCC/SPCC)
-            clinicalDF['ONCOTREE_CODE'] = \
-                clinicalDF['ONCOTREE_CODE'].astype(str).str.upper()
-
-            oncotree_codes = clinicalDF['ONCOTREE_CODE'][
-                clinicalDF['ONCOTREE_CODE'] != "UNKNOWN"]
-
-            if not all(oncotree_codes.isin(oncotree_mapping['ONCOTREE_CODE'])):
-                unmapped_oncotrees = oncotree_codes[
-                    ~oncotree_codes.isin(oncotree_mapping['ONCOTREE_CODE'])]
-                total_error += (
-                    "Sample: Please double check that all your ONCOTREE CODES "
-                    "exist in the mapping. You have {} samples that don't "
-                    "map. These are the codes that don't map: {}\n".format(
-                        len(unmapped_oncotrees),
-                        ",".join(set(unmapped_oncotrees))))
-
-            if process_functions.checkColExist(clinicalDF, "SEX") and \
-               'oncotree_mapping_dict' in locals() and \
-               havePatientColumn and \
-               haveSampleColumn:
-
-                wrongCodeSamples = []
-                # This is to check if oncotree codes match the sex,
-                # returns list of samples that have conflicting codes and sex
-                for code, patient, sample in zip(
-                        clinicalDF['ONCOTREE_CODE'],
-                        clinicalDF['PATIENT_ID'],
-                        clinicalDF['SAMPLE_ID']):
-
-                    if oncotree_mapping_dict.get(code) is not None and \
-                       sum(clinicalDF['PATIENT_ID'] == patient) > 0:
-
-                        primaryCode = oncotree_mapping_dict[code][
-                            'ONCOTREE_PRIMARY_NODE']
-
-                        sex = clinicalDF['SEX'][
-                            clinicalDF['PATIENT_ID'] == patient].values[0]
-                        sex = float('nan') if sex == '' else float(sex)
-                        if oncotree_mapping_dict[code][
-                                'ONCOTREE_PRIMARY_NODE'] in maleOncoCodes and \
-                           sex != 1.0:
-
-                            wrongCodeSamples.append(sample)
-                        if oncotree_mapping_dict[code][
-                                'ONCOTREE_PRIMARY_NODE'] in womenOncoCodes and\
-                           sex != 2.0:
-
-                            wrongCodeSamples.append(sample)
-                if len(wrongCodeSamples) > 0:
-                    warning += (
-                        "Sample: Some SAMPLE_IDs have conflicting SEX and "
-                        "ONCOTREE_CODES: {}\n".format(
-                            ",".join(wrongCodeSamples)))
-        else:
-            total_error += \
-                "Sample: clinical file must have ONCOTREE_CODE column.\n"
 
         # CHECK: SAMPLE_TYPE
         haveColumn = process_functions.checkColExist(clinicalDF, "SAMPLE_TYPE")
