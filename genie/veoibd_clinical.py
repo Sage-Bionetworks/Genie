@@ -74,104 +74,6 @@ class clinical_sample(FileTypeFormat):
             "Individual clinical filename is not correct."
 
     # PROCESSING
-    # Update clinical file with the correct mappings
-    def update_clinical(
-            self, x, sex_mapping,
-            race_mapping, ethnicity_mapping, sample_type):
-        # PATIENT ID
-        if x.get("PATIENT_ID") is not None:
-            x['PATIENT_ID'] = process_functions.checkGenieId(
-                x['PATIENT_ID'], self.center)
-        # RACE
-        if x.get('PRIMARY_RACE') is not None:
-            x['PRIMARY_RACE'] = process_functions.getCODE(
-                race_mapping, x['PRIMARY_RACE'])
-        else:
-            x['PRIMARY_RACE'] = "Not Collected"
-
-        if x.get('SECONDARY_RACE') is not None:
-            x['SECONDARY_RACE'] = process_functions.getCODE(
-                race_mapping, x['SECONDARY_RACE'])
-        else:
-            x['SECONDARY_RACE'] = "Not Collected"
-
-        if x.get('TERTIARY_RACE') is not None:
-            x['TERTIARY_RACE'] = process_functions.getCODE(
-                race_mapping, x['TERTIARY_RACE'])
-        else:
-            x['TERTIARY_RACE'] = "Not Collected"
-        # ETHNICITY
-        if x.get('ETHNICITY') is not None:
-            x['ETHNICITY'] = process_functions.getCODE(
-                ethnicity_mapping, x['ETHNICITY'])
-        else:
-            x['ETHNICITY'] = "Not Collected"
-        # BIRTH YEAR
-        if x.get("BIRTH_YEAR") is not None:
-            # BIRTH YEAR (Check if integer)
-            if process_functions.checkInt(x['BIRTH_YEAR']):
-                x['BIRTH_YEAR'] = int(x['BIRTH_YEAR'])
-        # SEX
-        if x.get("SEX") is not None:
-            x['SEX'] = process_functions.getCODE(sex_mapping, x['SEX'])
-        # TRIM EVERY COLUMN MAKE ALL DASHES
-        # SAMPLE ID
-        if x.get('SAMPLE_ID') is not None:
-            x['SAMPLE_ID'] = process_functions.checkGenieId(
-                x['SAMPLE_ID'], self.center)
-        # AGE AT SEQ REPORT
-        if x.get('AGE_AT_SEQ_REPORT') is not None:
-            if process_functions.checkInt(x['AGE_AT_SEQ_REPORT']):
-                x['AGE_AT_SEQ_REPORT'] = int(x['AGE_AT_SEQ_REPORT'])
-
-        # SEQ ASSAY ID
-        if x.get('SEQ_ASSAY_ID') is not None:
-            x['SEQ_ASSAY_ID'] = x['SEQ_ASSAY_ID'].replace('_', '-')
-            # standardize all SEQ_ASSAY_ID with uppercase
-            x['SEQ_ASSAY_ID'] = x['SEQ_ASSAY_ID'].upper()
-
-        # SAMPLE_TYPE
-        if x.get('SAMPLE_TYPE') is not None:
-            sampleType = x['SAMPLE_TYPE']
-            x['SAMPLE_TYPE'] = process_functions.getCODE(
-                sample_type, sampleType)
-            # Trim spaces
-            x['SAMPLE_TYPE_DETAILED'] = process_functions.getCODE(
-                sample_type, sampleType, useDescription=True)
-
-        if x.get('SEQ_DATE') is not None:
-            x['SEQ_DATE'] = x['SEQ_DATE'].title()
-            x['SEQ_YEAR'] = \
-                int(str(x['SEQ_DATE']).split("-")[1]) \
-                if str(x['SEQ_DATE']) != "Release" else pd.np.nan
-
-        if x.get('YEAR_CONTACT') is None:
-            x['YEAR_CONTACT'] = 'Not Collected'
-        else:
-            if process_functions.checkInt(x['YEAR_CONTACT']):
-                x['YEAR_CONTACT'] = int(x['YEAR_CONTACT'])
-
-        if x.get('YEAR_DEATH') is None:
-            x['YEAR_DEATH'] = 'Not Collected'
-        else:
-            if process_functions.checkInt(x['YEAR_DEATH']):
-                x['YEAR_DEATH'] = int(x['YEAR_DEATH'])
-
-        if x.get('INT_CONTACT') is None:
-            x['INT_CONTACT'] = 'Not Collected'
-
-        if x.get('INT_DOD') is None:
-            x['INT_DOD'] = 'Not Collected'
-
-        if x.get('DEAD') is None:
-            x['DEAD'] = 'Not Collected'
-
-        # TRIM EVERY COLUMN MAKE ALL DASHES
-        for i in x.keys():
-            if isinstance(x[i], str):
-                x[i] = x[i].strip(" ")
-        return(x)
-
     def uploadMissingData(
             self, df, col, dbSynId, stagingSynId, retractionSynId=None):
         samples = "','".join(df[col])
@@ -202,19 +104,10 @@ class clinical_sample(FileTypeFormat):
             self.syn, "syn7434273")
         sampleType_mapping = sampleType_mapping.append(pd.DataFrame([
             ("", "", "")], columns=["CODE", "CBIO_LABEL", "DESCRIPTION"]))
-        # Attach MSK to centers
-        # clinicalMerged = clinicalMerged.fillna("")
-        clinicalRemapped = clinical.apply(lambda x: self.update_clinical(
-            x, sex_mapping, race_mapping,
-            ethnicity_mapping, sampleType_mapping), 1)
-        # Some columns may have been added during update,
-        # remove unwanted columns again
-        clinicalRemapped = clinicalRemapped.drop(clinicalRemapped.columns[
-            ~clinicalRemapped.columns.isin(clinicalTemplate.columns)], 1)
 
-        clinicalRemapped['CENTER'] = self.center
+        clinical['CENTER'] = self.center
 
-        return(clinicalRemapped)
+        return(clinical)
 
     def process_steps(
             self, filePath,
