@@ -61,29 +61,17 @@ def remove_greaterthan_lessthan_str(col):
     return(col)
 
 
-class clinical(FileTypeFormat):
+class clinical_sample(FileTypeFormat):
 
     _fileType = "clinical"
 
-    # _process_kwargs = [
-    #     "newPath", "patientSynId", "sampleSynId",
-    #     "parentId", "retractedSampleSynId", "retractedPatientSynId"]
-
     _process_kwargs = [
-        "newPath", "parentId", "databaseToSynIdMappingDf", "oncotreeLink"]
-
-    _validation_kwargs = ["oncotreeLink"]
+        "newPath", "parentId", "databaseToSynIdMappingDf"]
 
     # VALIDATE FILE NAME
     def _validateFilename(self, filePath):
-        if len(filePath) == 1:
-            assert os.path.basename(filePath[0]) == \
-                "data_clinical_supp_{}.txt".format(self.center)
-        else:
-            required = pd.Series([
-                "data_clinical_supp_sample_{}.txt".format(self.center),
-                "data_clinical_supp_patient_{}.txt".format(self.center)])
-            assert all(required.isin([os.path.basename(i) for i in filePath]))
+        assert os.path.basename(filePath) == "clinical_individual.csv", \
+            "Individual clinical filename is not correct."
 
     # PROCESSING
     # Update clinical file with the correct mappings
