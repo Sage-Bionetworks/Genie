@@ -1,4 +1,64 @@
 library(VariantAnnotation)
+library(synapser)
+
+# Update mutation in cis table
+uploadToTable <- function(tbl, databaseSynId, subSetSamples, centerMappingDf) {
+  # Old samples
+  # filterCenters = centerMappingDf$center[centerMappingDf$mutationInCisFilter == TRUE]
+  keepCenters = centerMappingDf$center[centerMappingDf$mutationInCisFilter == "OFF"]
+  flagCenters = centerMappingDf$center[centerMappingDf$mutationInCisFilter == "FLAG"]
+  query_string = sprintf("SELECT * FROM %s where Tumor_Sample_Barcode in ('%s')",
+                         databaseSynId,
+                         subSetSamples)
+  annotated <- synapser::synTableQuery(query_string)
+  annotated_df <- synapser::as.data.frame(annotated)
+  annotated_df$HGVSp_Short[is.na(annotated_df$HGVSp_Short)] <- ""
+  samples = paste(annotated_df$Tumor_Sample_Barcode,
+                  "Sp:", annotated_df$HGVSp_Short,
+                  "str:", annotated_df$Start_Position,
+                  "ref:", annotated_df$Reference_Allele,
+                  "tumor:", annotated_df$Tumor_Seq_Allele2)
+  # New samples
+  #tbl$HGVSp_Short[is.na(tbl$HGVSp_Short)] <- ""
+  #This has to be done because HGVSp_Short is a factor
+  nodup_tbl <- tbl[!duplicated(tbl),]
+  hgvsp = as.character(nodup_tbl$HGVSp_Short)
+  hgvsp[is.na(hgvsp)] <- ""
+  new_samples = paste(nodup_tbl$Tumor_Sample_Barcode,
+                      "Sp:", hgvsp,
+                      "str:", nodup_tbl$Start_Position,
+                      "ref:", nodup_tbl$Reference_Allele,
+                      "tumor:", nodup_tbl$Tumor_Seq_Allele2)
+  #Any data that is not the current output but in the database will be changed to FIXED
+  if (nrow(annotated_df) > 0 ) {
+    if (any(annotated_df$Flag[!samples %in% new_samples] == "TOSS")) {
+      annotated_df$Flag[!samples %in% new_samples][
+        annotated_df$Flag[!samples %in% new_samples] == "TOSS"] = "FIXED"
+    } 
+    if (any(annotated_df$Center %in% keepCenters)) {
+      annotated_df$Flag[annotated_df$Center %in% keepCenters] = "KEEP"
+    }
+    synapser::synStore(Table(databaseSynId, annotated_df))
+  }
+  
+  #Append any new data
+  new_rows = nodup_tbl[!new_samples %in% samples,]
+  #Even when nodup_tbl is empty, it can be subsetted, causing one NA row to be uploaded.
+  if (nrow(new_rows) > 0 && nrow(nodup_tbl) > 0) {
+    #By default everything is labelled TOSS unless the default filter is FALSE
+    #NOTE:  If a center is set from default filter TRUE -> FALSE then switches back,
+    #       This center's mutationInCis KEEP data will have to be erased.
+    #       And processing will have to be run again after mutationsInCis is run on this center
+    #       Due to the centers mutationInCis input file.
+    new_rows$Flag = "TOSS"
+    new_rows$Flag[new_rows$Center %in% keepCenters] = "KEEP"
+    new_rows$Flag[new_rows$Center %in% flagCenters] = "FLAG"
+    tableToAppend <- synapser::Table(databaseSynId, new_rows)
+    synapser::synStore(tableToAppend)
+  }
+}
+
+# Flag variants to merge
 flag_variants_to_merge <- function(genieMutData, genieClinData, samplesToRun) {
   
   genieMutData <- data.frame( lapply( genieMutData , factor ))
@@ -89,6 +149,23 @@ flag_variants_to_merge <- function(genieMutData, genieClinData, samplesToRun) {
         }
       }
     }
+    # time ticker per 100 cases
+    if ((i %% 100) == 0) {
+      print(i)
+      t[2] = Sys.time()
+      print(t[2] - t[1])
+      t[1] = t[2]
+    }
+    #HAve to keep track of how far it is in the chunk
+    if (nrow(tbl) > tbl_size_limit || i == length(samplesToRun)) {
+      uploadToTable(tbl, mutationsInCisSynId, paste(samplesRun, collapse = "','"), centerMappingDf)
+      tbl = genieMutData[1,c("Center","Tumor_Sample_Barcode","Hugo_Symbol",
+                             "HGVSp_Short","Variant_Classification","Chromosome",
+                             "Start_Position","Reference_Allele","Tumor_Seq_Allele2",
+                             "t_alt_count_num","t_depth")]
+      tbl = tbl[-1,]
+      samplesRun = c()
+    }
   }
-  tbl
 }
+
