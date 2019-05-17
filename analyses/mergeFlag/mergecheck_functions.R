@@ -74,15 +74,12 @@ flag_variants_to_merge <- function(genieMutData, genieClinData, samplesToRun) {
       dBP = distance(mafVR[idx[1:(l - 1)]], mafVR[idx[2:(l)]])
       # get difference in VAFs of variants
       dVAF = abs(diff(vaf[idx]))
-      
-      print(dBP)
-      print(dVAF)
+
       # potential matches - criteria of difference in BPs between of > 0 & < 6 bps difference, < 5% VAF difference
       pm = which((dBP > 0) & (dBP < 6) & (dVAF < .05))
       for (m in pm) {
         # calc difference in codon number
         codonDiff = abs(diff(as.numeric(sapply(strsplit(as.character(genieMutData$Protein_position[c(idx[m],idx[m + 1])]),split = "/"),"[",1))))
-        print(codonDiff)
         if (is.na(codonDiff) | (codonDiff == 1)) {
           tbl = rbind(tbl,genieMutData[c(idx[m],idx[m + 1]),
                                        c("Center","Tumor_Sample_Barcode","Hugo_Symbol",

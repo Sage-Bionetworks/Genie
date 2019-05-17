@@ -16,6 +16,7 @@ testing <- args$testing
 
 library(synapser)
 library(VariantAnnotation)
+source("mergecheck_functions.R")
 # functions
 uploadToTable <- function(tbl, databaseSynId, subSetSamples, centerMappingDf) {
   # Old samples
