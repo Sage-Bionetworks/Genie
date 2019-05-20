@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-import collections.abc
+import collections.Sequence
 
 from genie import FileTypeFormat, process_functions
 import os
@@ -82,7 +82,7 @@ class clinical_individual(FileTypeFormat):
     # VALIDATE FILE NAME
     def _validateFilename(self, filePath):
 
-        if isinstance(filePath, collections.abc.Sequence):
+        if isinstance(filePath, collections.Sequence):
             filePath = filePath[0]
         
         if os.path.basename(filePath) == "clinical_individual.csv":        
