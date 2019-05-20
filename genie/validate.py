@@ -94,11 +94,9 @@ def validate(syn, fileType, filePath, center, threads, oncotree_url=None, offlin
         [syn.store(synapseclient.File(path, parent=uploadToSynapse)) for path in filePath]
     return(message, valid)
 
-def perform_validate(syn, args):    
-    if args.testing:
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
-    else:
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
+def perform_validate(syn, config, args):
+
+    databaseToSynIdMapping = syn.tableQuery('SELECT * FROM {}'.format(config.get('database_to_synid_mapping')))
 
     databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
     synId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMapping"]
