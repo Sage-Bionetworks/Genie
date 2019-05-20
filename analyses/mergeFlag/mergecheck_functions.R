@@ -1,8 +1,8 @@
 library(VariantAnnotation)
-library(synapser)
 
 # Update mutation in cis table
 uploadToTable <- function(tbl, databaseSynId, subSetSamples, centerMappingDf) {
+  library(synapser)
   # Old samples
   # filterCenters = centerMappingDf$center[centerMappingDf$mutationInCisFilter == TRUE]
   keepCenters = centerMappingDf$center[centerMappingDf$mutationInCisFilter == "OFF"]
@@ -59,7 +59,7 @@ uploadToTable <- function(tbl, databaseSynId, subSetSamples, centerMappingDf) {
 }
 
 # Flag variants to merge
-flag_variants_to_merge <- function(genieMutData, genieClinData, samplesToRun) {
+flag_variants_to_merge <- function(genieMutData, genieClinData, samplesToRun, upload = TRUE) {
   
   genieMutData <- data.frame( lapply( genieMutData , factor ))
   # Create factors for clinical data
@@ -149,22 +149,26 @@ flag_variants_to_merge <- function(genieMutData, genieClinData, samplesToRun) {
         }
       }
     }
-    # time ticker per 100 cases
-    if ((i %% 100) == 0) {
-      print(i)
-      t[2] = Sys.time()
-      print(t[2] - t[1])
-      t[1] = t[2]
-    }
-    #HAve to keep track of how far it is in the chunk
-    if (nrow(tbl) > tbl_size_limit || i == length(samplesToRun)) {
-      uploadToTable(tbl, mutationsInCisSynId, paste(samplesRun, collapse = "','"), centerMappingDf)
-      tbl = genieMutData[1,c("Center","Tumor_Sample_Barcode","Hugo_Symbol",
-                             "HGVSp_Short","Variant_Classification","Chromosome",
-                             "Start_Position","Reference_Allele","Tumor_Seq_Allele2",
-                             "t_alt_count_num","t_depth")]
-      tbl = tbl[-1,]
-      samplesRun = c()
+    if (upload) {
+      # time ticker per 100 cases
+      if ((i %% 100) == 0) {
+        print(i)
+        t[2] = Sys.time()
+        print(t[2] - t[1])
+        t[1] = t[2]
+      }
+      #HAve to keep track of how far it is in the chunk
+      if (nrow(tbl) > tbl_size_limit || i == length(samplesToRun)) {
+        uploadToTable(tbl, mutationsInCisSynId, paste(samplesRun, collapse = "','"), centerMappingDf)
+        tbl = genieMutData[1,c("Center","Tumor_Sample_Barcode","Hugo_Symbol",
+                               "HGVSp_Short","Variant_Classification","Chromosome",
+                               "Start_Position","Reference_Allele","Tumor_Seq_Allele2",
+                               "t_alt_count_num","t_depth")]
+        tbl = tbl[-1,]
+        samplesRun = c()
+      }
+    } else {
+      return(tbl)
     }
   }
 }

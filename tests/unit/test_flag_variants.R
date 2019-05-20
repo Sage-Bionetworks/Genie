@@ -1,5 +1,17 @@
-# source("~/sage_projects/Genie/analyses/mergeFlag/mergecheck_functions.R")
-source("mergecheck_functions.R")
+get_working_dir <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return("./")
+  }
+}
+source(file.path(get_working_dir(),
+                 "../../analyses/mergeFlag/mergecheck_functions.R"))
 library(testthat)
 genieMutData = matrix(nrow = 2, ncol = 13)
 colnames(genieMutData) = c("Chromosome", "Hugo_Symbol", "Start_Position", "End_Position", "Reference_Allele",
@@ -24,7 +36,7 @@ genieClinData = data.frame(SAMPLE_ID = c("SAGE1"),
                            stringsAsFactors = F)
 
 test_that("Mutations are flagged, same starts and ends", {
-  tbl = flag_variants_to_merge(genieMutData, genieClinData, c("SAGE1"))
+  tbl = flag_variants_to_merge(genieMutData, genieClinData, c("SAGE1"), upload=F)
   expected = genieMutData[, c("Center", "Tumor_Sample_Barcode", "Hugo_Symbol",
                               "Variant_Classification", "Chromosome", "Start_Position",
                               "Reference_Allele", "Tumor_Seq_Allele2","t_depth",
@@ -40,7 +52,7 @@ test_that("Mutations are flagged, same starts and ends", {
 genieMutData$Start_Position = "15"
 genieMutData$End_Position = "15"
 test_that("Mutations are not flagged", {
-  tbl = flag_variants_to_merge(genieMutData, genieClinData, c("SAGE1"))
+  tbl = flag_variants_to_merge(genieMutData, genieClinData, c("SAGE1"), upload=F)
   expect_equal(nrow(tbl), 0)
   expect_equal(colnames(tbl), c("Center", "Tumor_Sample_Barcode", "Hugo_Symbol", "HGVSp_Short",
                                 "Variant_Classification", "Chromosome", "Start_Position",
@@ -51,7 +63,7 @@ test_that("Mutations are not flagged", {
 genieMutData$Start_Position = c("1", "10")
 genieMutData$End_Position = c("5", "12")
 test_that("Mutations are flagged, different starts and ends", {
-  tbl = flag_variants_to_merge(genieMutData, genieClinData, c("SAGE1"))
+  tbl = flag_variants_to_merge(genieMutData, genieClinData, c("SAGE1"), upload=F)
   expected = genieMutData[, c("Center", "Tumor_Sample_Barcode", "Hugo_Symbol",
                               "Variant_Classification", "Chromosome", "Start_Position",
                               "Reference_Allele", "Tumor_Seq_Allele2","t_depth",
@@ -68,7 +80,7 @@ test_that("Mutations are flagged, different starts and ends", {
 genieMutData$Start_Position = c("1", "10")
 genieMutData$End_Position = c("5", "12")
 test_that("Mutations not flagged, different starts and ends", {
-  tbl = flag_variants_to_merge(genieMutData, genieClinData, c("SAGE1"))
+  tbl = flag_variants_to_merge(genieMutData, genieClinData, c("SAGE1"), upload=F)
   expected = genieMutData[, c("Center", "Tumor_Sample_Barcode", "Hugo_Symbol",
                               "Variant_Classification", "Chromosome", "Start_Position",
                               "Reference_Allele", "Tumor_Seq_Allele2","t_depth",

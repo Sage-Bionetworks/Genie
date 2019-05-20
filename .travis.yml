@@ -3,9 +3,12 @@ language: python
 script:
   - python setup.py install
   - pytest -vs tests/unit
+  - Rscript tests/unit/test_flag_variants.R
 
 before_install:
-  - sudo apt-get install -y bedtools gzip
+  - sudo apt-get install -y bedtools gzip r-base
+  - R -e "install.packages('BiocManager', repos='http://cran.rstudio.com/')"
+  - R -e "BiocManager::install('VariantAnnotation')"
   - pip install pandas synapseclient pycrypto
 
 matrix:
