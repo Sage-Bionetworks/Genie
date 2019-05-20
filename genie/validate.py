@@ -107,10 +107,10 @@ def perform_validate(syn, config, args):
     center_mapping_df = center_mapping.asDataFrame()
     assert args.center in center_mapping_df.center.tolist(), "Must specify one of these centers: %s" % ", ".join(center_mapping_df.center)
 
-    if args.oncotreeLink is None:
-        oncoLink = databaseToSynIdMappingDf['Id'][databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
-        oncoLinkEnt = syn.get(oncoLink)
-        args.oncotreeLink = oncoLinkEnt.externalURL
+    # if args.oncotreeLink is None:
+    #     oncoLink = databaseToSynIdMappingDf['Id'][databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
+    #     oncoLinkEnt = syn.get(oncoLink)
+    #     args.oncotreeLink = oncoLinkEnt.externalURL
 
     if args.uploadToSynapse is not None:
         if args.offline:
