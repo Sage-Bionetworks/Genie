@@ -77,6 +77,8 @@ class clinical_individual(FileTypeFormat):
                          "degree_two_with_ibd","initial_dx","gi_site","eim",
                          "dx_perianal","dx_medication","comments"]
 
+    _primary_key_columns = ["individual_id"]
+
     # VALIDATE FILE NAME
     def _validateFilename(self, filePath):
 
@@ -153,26 +155,19 @@ class clinical_individual(FileTypeFormat):
         #     process_functions.getGenieMapping(self.syn, "syn7434222")
 
         # CHECK: SAMPLE_ID
-        individualIdColumn = 'individual_id'
-        haveIndivIdColumn = process_functions.checkColExist(data, 
-                                                            individualIdColumn)
+        _hasColumnDict = dict()
+        for column in self._required_columns:
+            _hasColumnDict[column] = process_functions.checkColExist(data, 
+                                                                     column)
 
-        if not haveIndivIdColumn:
+            if not _hasColumnDict[column]:
             total_error += \
-                "File must have {} column.\n".format(individualIdColumn)
-        else:
-            if sum(data[individualIdColumn].duplicated()) > 0:
-                total_error += "Found duplicated {indivIdCol}'s in the file which is not allowed.".format(indivIdCol=individualIdColumn)
+                    "File must have {} column.\n".format(column)
 
-        # # CHECK: PATIENT_ID
-        # patientId = "PATIENT_ID"
-        # # #CHECK: PATIENT_ID IN SAMPLE FILE
-        # havePatientColumn = \
-        #     process_functions.checkColExist(clinicalDF, patientId)
-
-        # if not havePatientColumn:
-        #     total_error += \
-        #         "Patient: clinical file must have PATIENT_ID column.\n"
+        # Check if the count of the primary key is not distinct
+        res = data.groupby(self._primary_key_columns).size()
+        if (res > 1).any():
+            total_error += "Found duplicated {primaryKey}'s in the file.".format(primaryKey=self._primary_key_columns)
 
         # # CHECK: within the sample file that the sample ids match
         # # the patient ids
