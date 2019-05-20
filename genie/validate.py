@@ -78,7 +78,7 @@ def validate(syn, fileType, filePath, center, threads, oncotree_url=None, offlin
     #Complete error message
     message = "----------------ERRORS----------------\n"
     if total_error == "":
-        message = "YOUR FILE IS VALIDATED!\n"
+        message = "The {} file is valid.\n".format(fileType)
         logger.info(message)
         valid = True
     else:
