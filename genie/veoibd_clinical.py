@@ -161,7 +161,7 @@ class clinical_individual(FileTypeFormat):
                                                                      column)
 
             if not _hasColumnDict[column]:
-            total_error += \
+                total_error += \
                     "File must have {} column.\n".format(column)
 
         # Check if the count of the primary key is not distinct
