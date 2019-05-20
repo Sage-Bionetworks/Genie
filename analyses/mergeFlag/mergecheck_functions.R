@@ -1,8 +1,5 @@
-library(VariantAnnotation)
-
 # Update mutation in cis table
 uploadToTable <- function(tbl, databaseSynId, subSetSamples, centerMappingDf) {
-  library(synapser)
   # Old samples
   # filterCenters = centerMappingDf$center[centerMappingDf$mutationInCisFilter == TRUE]
   keepCenters = centerMappingDf$center[centerMappingDf$mutationInCisFilter == "OFF"]

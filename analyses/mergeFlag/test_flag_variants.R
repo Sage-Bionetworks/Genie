@@ -1,17 +1,3 @@
-get_working_dir <- function() {
-  cmdArgs <- commandArgs(trailingOnly = FALSE)
-  needle <- "--file="
-  match <- grep(needle, cmdArgs)
-  if (length(match) > 0) {
-    # Rscript
-    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
-  } else {
-    # 'source'd via R console
-    return("./")
-  }
-}
-source(file.path(get_working_dir(),
-                 "../../analyses/mergeFlag/mergecheck_functions.R"))
 library(testthat)
 genieMutData = matrix(nrow = 2, ncol = 13)
 colnames(genieMutData) = c("Chromosome", "Hugo_Symbol", "Start_Position", "End_Position", "Reference_Allele",

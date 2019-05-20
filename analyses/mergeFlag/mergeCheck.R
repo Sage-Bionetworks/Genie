@@ -31,7 +31,8 @@ get_working_dir <- function() {
 }
 working_dir = get_working_dir()
 source(file.path(working_dir, "mergecheck_functions.R"))
-
+# Run quick unit test to make sure that the function hasn't be changed
+source(file.path(working_dir, "test_flag_variants.R"))
 
 # login to synapse
 tryCatch({
