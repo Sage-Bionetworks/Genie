@@ -1,7 +1,7 @@
 import synapseclient
 import pandas as pd
 import mock
-from genie import clinical
+from genie import veoibd_clinical
 import pytest
 import datetime
 
@@ -39,7 +39,7 @@ table_query_results_map = {
 
 syn = mock.create_autospec(synapseclient.Synapse)
 syn.tableQuery.side_effect = table_query_results
-clin_class = clinical(syn, "SAGE")
+clin_class = veoibd_clinical.clinical_individual(syn, "SAGE")
 
 
 def test_filetype():
@@ -48,13 +48,15 @@ def test_filetype():
 
 @pytest.fixture(params=[
     (["foo"]),
-    (["foo", "data_clinical_supp_sample_SAGE.txt"])
+    (["foo", "clinical_individual.csv"])
     ])
 def filename_fileformat_map(request):
     return request.param
 
 
 def test_incorrect_validatefilename(filename_fileformat_map):
+    """Each parameter passed from filename_fileformat_map should fail with an assertion error.
+    """
     filepath_list = filename_fileformat_map
     with pytest.raises(AssertionError):
         clin_class.validateFilename(filepath_list)
@@ -62,11 +64,8 @@ def test_incorrect_validatefilename(filename_fileformat_map):
 
 def test_correct_validatefilename():
     assert clin_class.validateFilename(
-        ["data_clinical_supp_SAGE.txt"]) == "clinical"
-    assert clin_class.validateFilename(
-        ["data_clinical_supp_sample_SAGE.txt",
-         "data_clinical_supp_patient_SAGE.txt"]) == "clinical"
-
+        ["clinical_individual.csv"]) == "clinical"
+    
 
 def test_patient_fillvs__process():
     '''
@@ -162,51 +161,6 @@ def test_patient_lesscoltemplate__process():
 
     assert new_patientdf.columns.isin(patient_cols).all()
     assert expected_patientdf[patient_cols].equals(new_patientdf[patient_cols])
-
-
-def test_patient_fillcols__process():
-    '''
-    Filling in of RACE/ETHNITICY columns as some centers don't require them
-    '''
-    expected_patientdf = pd.DataFrame(dict(
-        PATIENT_ID=["GENIE-SAGE-ID1", "GENIE-SAGE-ID2", "GENIE-SAGE-ID3",
-                    "GENIE-SAGE-ID4", "GENIE-SAGE-ID5"],
-        SEX=['Male', 'Female', 'Male', 'Female', 'Unknown'],
-        PRIMARY_RACE=['Not Collected', 'Not Collected', 'Not Collected',
-                      'Not Collected', 'Not Collected'],
-        SECONDARY_RACE=['Not Collected', 'Not Collected', 'Not Collected',
-                        'Not Collected', 'Not Collected'],
-        TERTIARY_RACE=['Not Collected', 'Not Collected', 'Not Collected',
-                       'Not Collected', 'Not Collected'],
-        ETHNICITY=['Not Collected', 'Not Collected', 'Not Collected',
-                   'Not Collected', 'Not Collected'],
-        BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
-        CENTER=["SAGE", "SAGE", "SAGE", "SAGE", "SAGE"],
-        INT_DOD=['Not Collected', 'Not Collected', 'Not Collected',
-                 'Not Collected', 'Not Collected'],
-        INT_CONTACT=['Not Collected', 'Not Collected', 'Not Collected',
-                     'Not Collected', 'Not Collected'],
-        DEAD=['Not Collected', 'Not Collected', 'Not Collected',
-              'Not Collected', 'Not Collected'],
-        YEAR_DEATH=['Not Collected', 'Not Collected', 'Not Collected',
-                    'Not Collected', 'Not Collected'],
-        YEAR_CONTACT=['Not Collected', 'Not Collected', 'Not Collected',
-                      'Not Collected', 'Not Collected']))
-    # TEST patient processing
-    # Clinical file headers are capitalized prior to processing
-    patientdf = pd.DataFrame(dict(
-        PATIENT_Id=["ID1", "ID2", "ID3", "ID4", "ID5"],
-        sex=[1, 2, 1, 2, float('nan')],
-        BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
-        CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"]))
-    patient_cols = [
-        "PATIENT_ID", "SEX", "PRIMARY_RACE", "SECONDARY_RACE",
-        "TERTIARY_RACE", "ETHNICITY", "BIRTH_YEAR", "CENTER",
-        'YEAR_CONTACT', 'YEAR_DEATH', 'INT_CONTACT', 'INT_DOD', 'DEAD']
-    clinical_template = pd.DataFrame(columns=patient_cols)
-    new_patientdf = clin_class._process(patientdf, clinical_template)
-    assert new_patientdf.columns.isin(expected_patientdf.columns).all()
-    assert expected_patientdf.equals(new_patientdf[expected_patientdf.columns])
 
 
 def test_patient_vs__process():
