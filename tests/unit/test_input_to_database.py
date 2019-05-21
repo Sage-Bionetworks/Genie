@@ -538,3 +538,9 @@ def test_already_validated_validatefile():
         patch_check.assert_called_once()
         patch_get_filetype.assert_called_once_with(
             syn, fileinfo['filePaths'], center)
+
+
+def test_filetypenone__check_valid():
+    input_to_database._check_valid(
+        syn, filepaths, center, filetype, filenames,
+         oncotree_link, threads, testing)
