@@ -540,7 +540,7 @@ def test_already_validated_validatefile():
             syn, fileinfo['filePaths'], center)
 
 
-def test_filetypenone__check_valid():
-    input_to_database._check_valid(
-        syn, filepaths, center, filetype, filenames,
-         oncotree_link, threads, testing)
+# def test_filetypenone__check_valid():
+#     input_to_database._check_valid(
+#         syn, filepaths, center, filetype, filenames,
+#          oncotree_link, threads, testing)
