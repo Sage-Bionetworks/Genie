@@ -119,8 +119,8 @@ def get_filetype(syn, path_list, center):
     return(filetype)
 
 
-def check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities, input_filenames):
+def check_existing_file_status(validation_statusdf, error_trackerdf,
+                               entities, input_filenames):
     '''
     This function checks input files against the existing validation and error
     tracking dataframe
@@ -249,15 +249,14 @@ def _get_status_and_error_list(syn, fileinfo, valid, message, filetype,
     return(input_status_list, invalid_errors_list)
 
 
-def validatefile(
-        fileinfo,
-        syn,
-        validation_statusdf,
-        error_trackerdf,
-        center,
-        threads,
-        testing,
-        oncotree_link):
+def validatefile(fileinfo,
+                 syn,
+                 validation_statusdf,
+                 error_trackerdf,
+                 center,
+                 threads,
+                 testing,
+                 oncotree_link):
     '''
     Function that is applied to a pandas dataframe to
     validates each row. If a file has not changed, then it
@@ -298,66 +297,11 @@ def validatefile(
     error_list = check_file_status['error_list']
     filetype = get_filetype(syn, filepaths, center)
     if check_file_status['to_validate']:
+
         valid, message = _check_valid(
             syn, filepaths, center, filetype, filenames,
             oncotree_link, threads, testing)
 
-        # If no filetype set, means the file was named incorrectly
-        # if filetype is None:
-        #     message = (
-        #         "{filenames}: Incorrect filenaming convention or can't be "
-        #         "processed".format(filenames=", ".join(filenames)))
-        #     logger.error(message)
-        #     valid = False
-        # else:
-        #     try:
-        #         message, valid = validate.validate(
-        #             syn,
-        #             filetype,
-        #             filepaths,
-        #             center,
-        #             threads,
-        #             oncotree_url=oncotree_link,
-        #             testing=testing)
-        #         logger.info("VALIDATION COMPLETE")
-        #     except ValueError as e:
-        #         logger.error(e)
-        #         message = e
-        #         valid = False
-        # if valid:
-        #     input_status_list = [
-        #         [ent.id, filepath, ent.md5, "VALIDATED",
-        #          filename, modifiedon, filetype]
-        #         for ent, filepath, filename, modifiedon in
-        #         zip(entities, filepaths, filenames, modified_ons)]
-
-        #     invalid_errors_list = None
-        # else:
-        #     # Send email the first time the file is invalid
-        #     incorrect_files = ", ".join(filenames)
-        #     incorrect_ent = syn.get(fileinfo['synId'][0])
-        #     find_file_users = \
-        #         list(set([incorrect_ent.modifiedBy, incorrect_ent.createdBy]))
-        #     usernames = ", ".join([
-        #         syn.getUserProfile(user)['userName']
-        #         for user in find_file_users])
-        #     email_message = (
-        #         "Dear {username},\n\n"
-        #         "Your files ({filenames}) are invalid! "
-        #         "Here are the reasons why:\n\n{error_message}".format(
-        #             username=usernames,
-        #             filenames=incorrect_files,
-        #             error_message=message))
-        #     syn.sendMessage(
-        #         find_file_users, "GENIE Validation Error", email_message)
-        #     input_status_list = [
-        #         [ent.id, path, ent.md5, "INVALID", name, modifiedon, filetype]
-        #         for ent, path, name, modifiedon in
-        #         zip(entities, filepaths, filenames, modified_ons)]
-
-        #     invalid_errors_list = [
-        #         [synid, message, filename]
-        #         for synid, filename in zip(fileinfo['synId'], filenames)]
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             syn, fileinfo, valid, message, filetype,
             entities, filepaths, filenames, modified_ons)
@@ -498,10 +442,9 @@ def create_and_archive_maf_database(syn, database_synid_mappingdf):
     return(database_synid_mappingdf)
 
 
-def validation(
-        syn, center, process,
-        center_mapping_df, databaseToSynIdMappingDf,
-        thread, testing, oncotreeLink):
+def validation(syn, center, process,
+               center_mapping_df, databaseToSynIdMappingDf,
+               thread, testing, oncotreeLink):
     '''
     Validation of all center files
 
