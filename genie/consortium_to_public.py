@@ -1,5 +1,5 @@
 import synapseclient
-import synapseutils as synu 
+import synapseutils
 import pandas as pd
 import math
 import os
@@ -75,7 +75,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
     
     # SEQ_DATE filter
     # Jun-2015, given processing date (today) -> public release (processing date - Jun-2015 > 12 months)
-    consortiumReleaseWalk = synu.walk(syn, releaseId)
+    consortiumReleaseWalk = synapseutils.walk(syn, releaseId)
 
     consortiumRelease = next(consortiumReleaseWalk)
     clinical = [syn.get(synid, followLink=True) for filename, synid in consortiumRelease[2] if filename == "data_clinical.txt"][0]
@@ -210,7 +210,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
             genePanelEntities.append(storeFile(syn, genePanelPath, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name=entName))
         else:
             ent = syn.get(entId, followLink=True, downloadFile=False)
-            copiedId = synu.copy(syn, ent, PUBLIC_RELEASE_PREVIEW, version=ent.versionNumber, updateExisting=True, setProvenance = None, skipCopyAnnotations=True)
+            copiedId = synapseutils.copy(syn, ent, PUBLIC_RELEASE_PREVIEW, version=ent.versionNumber, updateExisting=True, setProvenance = None, skipCopyAnnotations=True)
             copiedEnt = syn.get(copiedId[ent.id],downloadFile=False)
             #Set version comment
             copiedEnt.versionComment=genie_version
@@ -271,11 +271,11 @@ def createLinkVersion(syn, genie_version, caseListEntities, genePanelEntities, d
     releaseSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'release'].values[0]
     publicSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'public'].values[0]
     #second = ".".join(versioning[1:])
-    releases = synu.walk(syn, releaseSynId)
+    releases = synapseutils.walk(syn, releaseSynId)
     mainReleaseFolders = next(releases)[1]
     releaseFolderSynId = [synId for folderName, synId in mainReleaseFolders if folderName == "Release %s" % main] 
     if len(releaseFolderSynId) > 0:
-        secondRelease = synu.walk(syn, releaseFolderSynId[0])
+        secondRelease = synapseutils.walk(syn, releaseFolderSynId[0])
         secondReleaseFolders = next(secondRelease)[1]
         secondReleaseFolderSynIdList = [synId for folderName, synId in secondReleaseFolders if folderName == genie_version] 
         if len(secondReleaseFolderSynIdList) > 0:
@@ -332,7 +332,7 @@ if __name__ == "__main__":
     databaseSynIdMappingDf = databaseSynIdMapping.asDataFrame()
     releaseSynId = databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'release'].values[0]
     
-    temp = synu.walk(syn, releaseSynId)
+    temp = synapseutils.walk(syn, releaseSynId)
     officialPublic = dict()
     for dirpath, dirnames, filenames in temp:
         release = os.path.basename(dirpath[0])

@@ -2,7 +2,7 @@
 import logging
 logger = logging.getLogger("genie")
 import synapseclient
-import synapseutils as synu
+import synapseutils
 import argparse
 import os
 import pandas as pd
@@ -59,7 +59,7 @@ def get_center_input_files(syn, synid, center, process="main"):
         "data_clinical_supp_sample_{center}.txt".format(center=center),
         "data_clinical_supp_patient_{center}.txt".format(center=center)]
 
-    center_files = synu.walk(syn, synid)
+    center_files = synapseutils.walk(syn, synid)
     clinicalpair = []
     prepared_center_file_list = []
     for dirpath, dirname, filenames in center_files:
