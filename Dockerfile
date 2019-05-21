@@ -53,16 +53,17 @@ RUN git clone https://github.com/cBioPortal/cbioportal.git
 #Only copy necessary files, so no data is copied ever and most recent changes 
 #in code are always installed
 WORKDIR /root/Genie
-COPY ./genie/*.py ./genie/
-COPY ./genie/dashboard_markdown_generator.R ./genie/dashboard_markdown_generator.R
-COPY ./genie/dashboardTemplate.Rmd ./genie/dashboardTemplate.Rmd
-COPY ./genie/*.sh ./genie/
-COPY setup.py ./
-COPY MANIFEST.in ./
+COPY ./ ./
+#COPY ./genie/*.py ./genie/
+#COPY ./genie/dashboard_markdown_generator.R ./genie/dashboard_markdown_generator.R
+#COPY ./genie/dashboardTemplate.Rmd ./genie/dashboardTemplate.Rmd
+#COPY ./genie/*.sh ./genie/
+#COPY setup.py ./
+#COPY MANIFEST.in ./
 #No need for oncotree_code_converter script
 #COPY ./analyses/clinicalData/oncotree_code_converter.py ./analyses/clinicalData/
-COPY ./analyses/genomicData/MAFinBED.R ./analyses/genomicData/
-COPY ./analyses/mergeFlag/*.R ./analyses/mergeFlag/
+#COPY ./analyses/genomicData/MAFinBED.R ./analyses/genomicData/
+#COPY ./analyses/mergeFlag/*.R ./analyses/mergeFlag/
 RUN python3 setup.py sdist
 RUN python3 setup.py develop
 
