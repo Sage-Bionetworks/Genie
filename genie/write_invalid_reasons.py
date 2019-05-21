@@ -1,9 +1,13 @@
-import logging
-logger = logging.getLogger("genie")
-import synapseclient
-import os
-from genie import process_functions
 import argparse
+import logging
+import os
+
+from genie import process_functions
+import synapseclient
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 def write_file_invalid_reasons(x, syn, error_file):
     ent = syn.get(x['id'],downloadFile=False)
