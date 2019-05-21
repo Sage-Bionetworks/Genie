@@ -1,12 +1,15 @@
-import genie
-import os
-import synapseclient
-import pandas as pd
 import argparse
 import datetime
 import logging
-logger = logging.getLogger(__name__)
+import os
 
+import synapseclient
+import genie
+import pandas as pd
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 def get_center_data_completion(center, df):
     '''
