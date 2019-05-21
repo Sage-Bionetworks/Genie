@@ -36,18 +36,18 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.1-1-amd64.deb
 RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb	
 
-WORKDIR /root/
-
-COPY docker/installPackages.R /installPackages.R
-RUN Rscript /installPackages.R
-
-RUN git clone https://github.com/cBioPortal/cbioportal.git
-
 # Only copy most recent changes in code are always installed
 # Do not build from local computer
 WORKDIR /root/Genie
 COPY ./ ./
 RUN python3 setup.py sdist
 RUN python3 setup.py develop
+
+RUN Rscript docker/installPackages.R
+
+WORKDIR /root/
+# Must move this git clone to after the install of Genie,
+# because must update cbioportal
+RUN git clone https://github.com/cBioPortal/cbioportal.git
 
 WORKDIR /root/Genie/genie
