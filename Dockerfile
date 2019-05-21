@@ -62,7 +62,7 @@ COPY MANIFEST.in ./
 #No need for oncotree_code_converter script
 #COPY ./analyses/clinicalData/oncotree_code_converter.py ./analyses/clinicalData/
 COPY ./analyses/genomicData/MAFinBED.R ./analyses/genomicData/
-COPY ./analyses/mergeFlag/mergeCheck.R ./analyses/mergeFlag/
+COPY ./analyses/mergeFlag/*.R ./analyses/mergeFlag/
 RUN python3 setup.py sdist
 RUN python3 setup.py develop
 
