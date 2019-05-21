@@ -67,7 +67,7 @@ def remove_greaterthan_lessthan_str(col):
 
 class clinical_individual(FileTypeFormat):
 
-    _fileType = "clinical"
+    _fileType = "veoibd_clinical"
 
     _process_kwargs = [
         "newPath", "parentId", "databaseToSynIdMappingDf"]
