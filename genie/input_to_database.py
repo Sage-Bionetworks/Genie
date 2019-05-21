@@ -10,7 +10,6 @@ from multiprocessing import Pool
 import pandas as pd
 import subprocess
 import datetime
-import subprocess
 import shutil
 import time
 import toRetract
