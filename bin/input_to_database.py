@@ -12,6 +12,20 @@ from genie import input_to_database
 from genie import write_invalid_reasons
 from genie import process_functions
 
+def get_config(config_obj):
+    """Utility to get configuration from different sources.
+
+    Args:
+        config_obj: An object holding a configuration.
+        
+    Currently allows a path to a JSON file.
+    """
+
+    if os.path.exists(config_obj) and config_obj.endswith('json'):
+        config = json.load(open(config_obj))
+    
+    return config
+
 def main(process,
          center=None,
          pemfile=None,
@@ -41,14 +55,7 @@ def main(process,
             "Path to VEP data (--vepData) must be specified "
             "if `--process {vcf,maf,mafSP}` is used")
 
-    if testing:
-        database_to_synid_mapping_synid = "syn11600968"
-    else:
-        database_to_synid_mapping_synid = "syn10967259"
-
-    databaseToSynIdMapping = syn.tableQuery(
-        'SELECT * FROM {}'.format(database_to_synid_mapping_synid))
-    databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
+    databaseToSynIdMapping = syn.tableQuery('SELECT * FROM {}'.format(config.get('database_to_synid_mapping')))
 
     center_mapping_id = process_functions.getDatabaseSynId(
         syn, "centerMapping",
@@ -128,6 +135,9 @@ if __name__ == "__main__":
     '''
     parser = argparse.ArgumentParser(
         description='GENIE center ')
+
+    parser.add_argument('--config', help='JSON config file.')
+
     parser.add_argument(
         "process",
         choices=['vcf', 'maf', 'main', 'mafSP'],
@@ -194,8 +204,10 @@ if __name__ == "__main__":
         default=1)
 
     args = parser.parse_args()
+    config = get_config(args.config)
 
     main(args.process,
+         config=config,
          center=args.center,
          pemfile=args.pemFile,
          delete_old=args.deleteOld,
