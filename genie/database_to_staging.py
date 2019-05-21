@@ -10,7 +10,7 @@ import datetime
 import time
 import re
 import subprocess
-import synapseutils as synu
+import synapseutils
 import create_case_lists
 import dashboard_table_updater
 
@@ -48,7 +48,7 @@ def findCaseListId(syn, parentId):
         syn: Synapse object
         parentId: Synapse Id of Folder or Project
     '''
-    releaseEnts = synu.walk(syn, parentId)
+    releaseEnts = synapseutils.walk(syn, parentId)
     releaseFolders = next(releaseEnts)
     if len(releaseFolders[1]) == 0:
         caselistId = syn.store(
@@ -1149,14 +1149,14 @@ def createLinkVersion(
     # second = ".".join(versioning[1:])
     releaseSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == 'release'].values[0]
-    releases = synu.walk(syn, releaseSynId)
+    releases = synapseutils.walk(syn, releaseSynId)
     mainReleaseFolders = next(releases)[1]
     releaseFolderSynId = [
         synId for folderName, synId in mainReleaseFolders
         if folderName == "Release {}".format(main)]
 
     if len(releaseFolderSynId) > 0:
-        secondRelease = synu.walk(syn, releaseFolderSynId[0])
+        secondRelease = synapseutils.walk(syn, releaseFolderSynId[0])
         secondReleaseFolders = next(secondRelease)[1]
         secondReleaseFolderSynIdList = [
             synId for folderName, synId in secondReleaseFolders
