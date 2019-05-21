@@ -9,7 +9,7 @@ import pandas as pd
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 def get_center_data_completion(center, df):
     '''
