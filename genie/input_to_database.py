@@ -178,6 +178,77 @@ def check_existing_file_status(
         'to_validate': to_validate})
 
 
+def _check_valid(syn, filepaths, center, filetype, filenames,
+                 oncotree_link, threads, testing):
+    '''
+    Function to validate a file
+    '''
+    # If no filetype set, means the file was named incorrectly
+    if filetype is None:
+        message = (
+            "{filenames}: Incorrect filenaming convention or can't be "
+            "processed".format(filenames=", ".join(filenames)))
+        logger.error(message)
+        valid = False
+    else:
+        try:
+            message, valid = validate.validate(
+                syn,
+                filetype,
+                filepaths,
+                center,
+                threads,
+                oncotree_url=oncotree_link,
+                testing=testing)
+            logger.info("VALIDATION COMPLETE")
+        except ValueError as e:
+            logger.error(e)
+            message = e
+            valid = False
+    return(valid, message)
+
+
+def _get_status_and_error_list(syn, fileinfo, valid, message, filetype,
+                               entities, filepaths, filenames, modified_ons):
+    '''
+    '''
+    if valid:
+        input_status_list = [
+            [ent.id, filepath, ent.md5, "VALIDATED",
+             filename, modifiedon, filetype]
+            for ent, filepath, filename, modifiedon in
+            zip(entities, filepaths, filenames, modified_ons)]
+
+        invalid_errors_list = None
+    else:
+        # Send email the first time the file is invalid
+        incorrect_files = ", ".join(filenames)
+        incorrect_ent = syn.get(fileinfo['synId'][0])
+        find_file_users = \
+            list(set([incorrect_ent.modifiedBy, incorrect_ent.createdBy]))
+        usernames = ", ".join([
+            syn.getUserProfile(user)['userName']
+            for user in find_file_users])
+        email_message = (
+            "Dear {username},\n\n"
+            "Your files ({filenames}) are invalid! "
+            "Here are the reasons why:\n\n{error_message}".format(
+                username=usernames,
+                filenames=incorrect_files,
+                error_message=message))
+        syn.sendMessage(
+            find_file_users, "GENIE Validation Error", email_message)
+        input_status_list = [
+            [ent.id, path, ent.md5, "INVALID", name, modifiedon, filetype]
+            for ent, path, name, modifiedon in
+            zip(entities, filepaths, filenames, modified_ons)]
+
+        invalid_errors_list = [
+            [synid, message, filename]
+            for synid, filename in zip(fileinfo['synId'], filenames)]
+    return(input_status_list, invalid_errors_list)
+
+
 def validatefile(
         fileinfo,
         syn,
@@ -227,62 +298,70 @@ def validatefile(
     error_list = check_file_status['error_list']
     filetype = get_filetype(syn, filepaths, center)
     if check_file_status['to_validate']:
+        valid, message = _check_valid(
+            syn, filepaths, center, filetype, filenames,
+            oncotree_link, threads, testing)
+
         # If no filetype set, means the file was named incorrectly
-        if filetype is None:
-            message = (
-                "{filenames}: Incorrect filenaming convention or can't be "
-                "processed".format(filenames=", ".join(filenames)))
-            logger.error(message)
-            valid = False
-        else:
-            try:
-                message, valid = validate.validate(
-                    syn,
-                    filetype,
-                    filepaths,
-                    center,
-                    threads,
-                    oncotree_url=oncotree_link,
-                    testing=testing)
-                logger.info("VALIDATION COMPLETE")
-            except ValueError as e:
-                logger.error(e)
-                message = e
-                valid = False
-        if valid:
-            input_status_list = [
-                [ent.id, filepath, ent.md5, "VALIDATED",
-                 filename, modifiedon, filetype]
-                for ent, filepath, filename, modifiedon in
-                zip(entities, filepaths, filenames, modified_ons)]
+        # if filetype is None:
+        #     message = (
+        #         "{filenames}: Incorrect filenaming convention or can't be "
+        #         "processed".format(filenames=", ".join(filenames)))
+        #     logger.error(message)
+        #     valid = False
+        # else:
+        #     try:
+        #         message, valid = validate.validate(
+        #             syn,
+        #             filetype,
+        #             filepaths,
+        #             center,
+        #             threads,
+        #             oncotree_url=oncotree_link,
+        #             testing=testing)
+        #         logger.info("VALIDATION COMPLETE")
+        #     except ValueError as e:
+        #         logger.error(e)
+        #         message = e
+        #         valid = False
+        # if valid:
+        #     input_status_list = [
+        #         [ent.id, filepath, ent.md5, "VALIDATED",
+        #          filename, modifiedon, filetype]
+        #         for ent, filepath, filename, modifiedon in
+        #         zip(entities, filepaths, filenames, modified_ons)]
 
-            invalid_errors_list = None
-        else:
-            # Send email the first time the file is invalid
-            incorrect_files = ", ".join(filenames)
-            incorrect_ent = syn.get(fileinfo['synId'][0])
-            find_file_users = \
-                list(set([incorrect_ent.modifiedBy, incorrect_ent.createdBy]))
-            usernames = ", ".join([
-                syn.getUserProfile(user)['userName']
-                for user in find_file_users])
-            email_message = (
-                "Dear {username},\n\n"
-                "Your files ({filenames}) are invalid! "
-                "Here are the reasons why:\n\n{error_message}".format(
-                    username=usernames,
-                    filenames=incorrect_files,
-                    error_message=message))
-            syn.sendMessage(
-                find_file_users, "GENIE Validation Error", email_message)
-            input_status_list = [
-                [ent.id, path, ent.md5, "INVALID", name, modifiedon, filetype]
-                for ent, path, name, modifiedon in
-                zip(entities, filepaths, filenames, modified_ons)]
+        #     invalid_errors_list = None
+        # else:
+        #     # Send email the first time the file is invalid
+        #     incorrect_files = ", ".join(filenames)
+        #     incorrect_ent = syn.get(fileinfo['synId'][0])
+        #     find_file_users = \
+        #         list(set([incorrect_ent.modifiedBy, incorrect_ent.createdBy]))
+        #     usernames = ", ".join([
+        #         syn.getUserProfile(user)['userName']
+        #         for user in find_file_users])
+        #     email_message = (
+        #         "Dear {username},\n\n"
+        #         "Your files ({filenames}) are invalid! "
+        #         "Here are the reasons why:\n\n{error_message}".format(
+        #             username=usernames,
+        #             filenames=incorrect_files,
+        #             error_message=message))
+        #     syn.sendMessage(
+        #         find_file_users, "GENIE Validation Error", email_message)
+        #     input_status_list = [
+        #         [ent.id, path, ent.md5, "INVALID", name, modifiedon, filetype]
+        #         for ent, path, name, modifiedon in
+        #         zip(entities, filepaths, filenames, modified_ons)]
 
-            invalid_errors_list = [
-                [synid, message, filename]
-                for synid, filename in zip(fileinfo['synId'], filenames)]
+        #     invalid_errors_list = [
+        #         [synid, message, filename]
+        #         for synid, filename in zip(fileinfo['synId'], filenames)]
+        input_status_list, invalid_errors_list = _get_status_and_error_list(
+            syn, fileinfo, valid, message, filetype,
+            entities, filepaths, filenames, modified_ons)
+
     else:
         input_status_list = [
             [ent.id, path, ent.md5, status, filename, modifiedon, filetype]
