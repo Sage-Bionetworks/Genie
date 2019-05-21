@@ -179,12 +179,27 @@ def check_existing_file_status(validation_statusdf, error_trackerdf,
 def _check_valid(syn, filepaths, center, filetype, filenames,
                  oncotree_link, threads, testing):
     '''
-    Function to validate a file
+    Helper function to validate a file
+
+    Args:
+        syn: Synapse object
+        filepaths: List of file paths
+        center: Center of interest
+        filetype: File Type of file
+        filenames: List of file names
+        oncotree_link: Oncotree url
+        threads: Threads
+        testing: Boolean determining whether using testing parameter
+
+    Returns:
+        tuple: valid - Boolean value
+               message - Invalid error message
+
     '''
-    # If no filetype set, means the file was named incorrectly
-    # The filetype is retrieved by looping through the filetypes
-    # and checking the filename by get_filetype.
     if filetype is None:
+        # If no filetype set, means the file was named incorrectly
+        # The filetype is retrieved by looping through the filetypes
+        # and checking the filename by get_filetype.
         message = (
             "{filenames}: Incorrect filenaming convention or can't be "
             "processed".format(filenames=", ".join(filenames)))
