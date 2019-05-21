@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-import collections.Sequence
+from collections.abc import Sequence
 
 from genie import FileTypeFormat, process_functions
 import os
@@ -82,7 +82,7 @@ class clinical_individual(FileTypeFormat):
     # VALIDATE FILE NAME
     def _validateFilename(self, filePath):
 
-        if isinstance(filePath, collections.Sequence):
+        if isinstance(filePath, Sequence):
             filePath = filePath[0]
         
         if os.path.basename(filePath) == "clinical_individual.csv":        
@@ -458,7 +458,7 @@ class clinical_individual(FileTypeFormat):
         return(total_error, warning)
 
     def _get_dataframe(self, filePathList):
-        if isinstance(filePathList, collections.abc.Sequence):
+        if isinstance(filePathList, Sequence):
             filePathList = filePathList[0]
 
         df = pd.read_csv(filePathList, comment="#")
