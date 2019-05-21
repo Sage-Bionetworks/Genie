@@ -27,6 +27,7 @@ def get_config(config_obj):
     return config
 
 def main(process,
+         config=None,
          center=None,
          pemfile=None,
          delete_old=False,
@@ -56,6 +57,7 @@ def main(process,
             "if `--process {vcf,maf,mafSP}` is used")
 
     databaseToSynIdMapping = syn.tableQuery('SELECT * FROM {}'.format(config.get('database_to_synid_mapping')))
+    databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
 
     center_mapping_id = process_functions.getDatabaseSynId(
         syn, "centerMapping",
