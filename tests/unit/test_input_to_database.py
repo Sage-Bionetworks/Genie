@@ -540,7 +540,114 @@ def test_already_validated_validatefile():
             syn, fileinfo['filePaths'], center)
 
 
-# def test_filetypenone__check_valid():
-#     input_to_database._check_valid(
-#         syn, filepaths, center, filetype, filenames,
-#          oncotree_link, threads, testing)
+def test_filetypenone__check_valid():
+    '''
+    Tests that if None fileType is passed in, it means that
+    the file is named incorrectly, or cannot validate that particular
+    filetype
+    '''
+    center = 'SAGE'
+    threads = 0
+    testing = False
+    filenames = ["data_clinical_supp_SAGE.txt"]
+    filepaths = ['/path/to/data_clinical_supp_SAGE.txt']
+    oncotree_link = "www.google.com"
+    filetype = None
+    expected_message = (
+        "data_clinical_supp_SAGE.txt: "
+        "Incorrect filenaming convention or can't be processed")
+    valid, message = input_to_database._check_valid(
+        syn, filepaths, center, filetype, filenames,
+        oncotree_link, threads, testing)
+    assert not valid
+    assert message == expected_message
+
+
+def test_valid__check_valid():
+    '''
+    Tests when file is valid that True is returned
+    '''
+    center = 'SAGE'
+    threads = 0
+    testing = False
+    filenames = ["data_clinical_supp_SAGE.txt"]
+    filepaths = ['/path/to/data_clinical_supp_SAGE.txt']
+    oncotree_link = "www.google.com"
+    filetype = "clinical"
+    message = (
+        "data_clinical_supp_SAGE.txt: "
+        "Incorrect filenaming convention or can't be processed")
+    with mock.patch(
+            "genie.validate.validate",
+            return_value=('valid', True)) as patch_validate:
+        valid, message = input_to_database._check_valid(
+            syn, filepaths, center, filetype, filenames,
+            oncotree_link, threads, testing)
+        assert valid
+        assert message == 'valid'
+        patch_validate.assert_called_once_with(
+            syn,
+            filetype,
+            filepaths,
+            center,
+            threads,
+            oncotree_url=oncotree_link,
+            testing=testing)
+
+
+def test_invalid__check_valid():
+    '''
+    Tests when file is invalid that False is returned
+    '''
+    center = 'SAGE'
+    threads = 0
+    testing = False
+    filenames = ["data_clinical_supp_SAGE.txt"]
+    filepaths = ['/path/to/data_clinical_supp_SAGE.txt']
+    oncotree_link = "www.google.com"
+    filetype = "clinical"
+    with mock.patch(
+            "genie.validate.validate",
+            return_value=('invalid', False)) as patch_validate:
+        valid, message = input_to_database._check_valid(
+            syn, filepaths, center, filetype, filenames,
+            oncotree_link, threads, testing)
+        assert not valid
+        assert message == 'invalid'
+        patch_validate.assert_called_once_with(
+            syn,
+            filetype,
+            filepaths,
+            center,
+            threads,
+            oncotree_url=oncotree_link,
+            testing=testing)
+
+
+def test_raiseerror__check_valid():
+    '''
+    Tests when file is invalid that False is returned
+    '''
+    center = 'SAGE'
+    threads = 0
+    testing = False
+    filenames = ["data_clinical_supp_SAGE.txt"]
+    filepaths = ['/path/to/data_clinical_supp_SAGE.txt']
+    oncotree_link = "www.google.com"
+    filetype = "clinical"
+    with mock.patch(
+            "genie.validate.validate",
+            side_effect=ValueError('mocked')) as patch_validate:
+        valid, message = input_to_database._check_valid(
+            syn, filepaths, center, filetype, filenames,
+            oncotree_link, threads, testing)
+        assert not valid
+        # assert message == ValueError('mocked')
+        patch_validate.assert_called_once_with(
+            syn,
+            filetype,
+            filepaths,
+            center,
+            threads,
+            oncotree_url=oncotree_link,
+            testing=testing)

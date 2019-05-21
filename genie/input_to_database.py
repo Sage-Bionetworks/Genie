@@ -182,6 +182,8 @@ def _check_valid(syn, filepaths, center, filetype, filenames,
     Function to validate a file
     '''
     # If no filetype set, means the file was named incorrectly
+    # The filetype is retrieved by looping through the filetypes
+    # and checking the filename by get_filetype.
     if filetype is None:
         message = (
             "{filenames}: Incorrect filenaming convention or can't be "
