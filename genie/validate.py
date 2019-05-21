@@ -21,7 +21,9 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 import logging
-logger = logging.getLogger('genie')
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # Validates annotations on Synapse
 # def validateAnnotations(fileList):

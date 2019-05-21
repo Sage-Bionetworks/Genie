@@ -1,6 +1,10 @@
 #! /usr/bin/env python
 import logging
-logger = logging.getLogger("genie")
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 import synapseclient
 from synapseclient import File, Table
 import synapseutils
