@@ -1,4 +1,19 @@
+get_working_dir <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return("./")
+  }
+}
+working_dir = get_working_dir()
+source(file.path(working_dir, "mergecheck_functions.R"))
 library(testthat)
+library(VariantAnnotation)
 genieMutData = matrix(nrow = 2, ncol = 13)
 colnames(genieMutData) = c("Chromosome", "Hugo_Symbol", "Start_Position", "End_Position", "Reference_Allele",
                            "Tumor_Seq_Allele2", "t_depth", 't_alt_count', "Tumor_Sample_Barcode", 
@@ -35,8 +50,8 @@ test_that("Mutations are flagged, same starts and ends", {
   expect_equal(tbl, expected[,colnames(tbl)])
 })
 
-genieMutData$Start_Position = "15"
-genieMutData$End_Position = "15"
+genieMutData$Start_Position[2] = "15"
+genieMutData$End_Position[2] = "15"
 test_that("Mutations are not flagged", {
   tbl = flag_variants_to_merge(genieMutData, genieClinData, c("SAGE1"), upload=F)
   expect_equal(nrow(tbl), 0)

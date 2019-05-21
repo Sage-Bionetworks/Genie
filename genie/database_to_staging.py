@@ -378,14 +378,14 @@ def mutation_in_cis_filter(
         "Tumor_Sample_Barcode is not null".format(variant_filtering_synId))
     flag_variantsdf = variant_flagging.asDataFrame()
 
-    flag_variantsdf['removeVariants'] = \
+    flag_variantsdf['flaggedVariants'] = \
         flag_variantsdf['Chromosome'].astype(str) + ' ' + \
         flag_variantsdf['Start_Position'].astype(str) + ' ' + \
         flag_variantsdf['End_Position'].astype(str) + ' ' + \
         flag_variantsdf['Reference_Allele'].astype(str) + ' ' + \
         flag_variantsdf['Tumor_Seq_Allele2'].astype(str) + ' ' + \
         flag_variantsdf['Tumor_Sample_Barcode'].astype(str)
-    return(remove_samples, flag_variantsdf['removeVariants'])
+    return(remove_samples, flag_variantsdf['flaggedVariants'])
 
 
 def seq_assay_id_filter(clinicaldf):
