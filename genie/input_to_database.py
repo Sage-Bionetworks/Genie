@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 import logging
-logger = logging.getLogger("genie")
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 import synapseclient
 import synapseutils
 import argparse
