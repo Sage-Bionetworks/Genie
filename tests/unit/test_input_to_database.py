@@ -626,7 +626,7 @@ def test_invalid__check_valid():
 
 def test_raiseerror__check_valid():
     '''
-    Tests when file is invalid that False is returned
+    Tests when file is invalid when ValueError is raised
     '''
     center = 'SAGE'
     threads = 0
