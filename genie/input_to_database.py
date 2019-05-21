@@ -3,7 +3,7 @@ import logging
 logger = logging.getLogger("genie")
 import synapseclient
 from synapseclient import File, Table
-import synapseutils as synu
+import synapseutils
 import argparse
 import os
 from multiprocessing import Pool
@@ -36,7 +36,7 @@ def getCenterInputFiles(syn, synId, center, process="main"):
     ################################################################
     logger.info("GETTING %s INPUT FILES" % center)
     CLINICAL_PAIR_NAME = ["data_clinical_supp_sample_%s.txt" % center, "data_clinical_supp_patient_%s.txt" % center]
-    walked = synu.walk(syn, synId)
+    walked = synapseutils.walk(syn, synId)
     clinicalpair = []
     allFiles = []
     for dirpath, dirname, filenames in walked:
