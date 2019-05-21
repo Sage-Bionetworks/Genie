@@ -120,6 +120,33 @@ class clinical_individual(FileTypeFormat):
 
         return(total_error, warning)
 
+    def process_steps(self, filePath, databaseToSynIdMappingDf, newPath,
+                      parentId, oncotreeLink):
+        patientSynId = databaseToSynIdMappingDf.Id[
+            databaseToSynIdMappingDf['Database'] == "individual"][0]
+
+        df = self.read_file(filePath)
+
+        # These synapse ids for the clinical tier release scope is
+        # hardcoded because it never changes
+        patientColsTable = self.syn.tableQuery(
+            'select fieldName from syn8545211 where patient is '
+            'True and inClinicalDb is True')
+        patientCols = patientColsTable.asDataFrame()['fieldName'].tolist()
+
+        patientClinical = newClinicalDf[
+            patientCols].drop_duplicates("PATIENT_ID")
+        self.uploadMissingData(
+            patientClinical, "PATIENT_ID",
+            patientSynId, parentId)
+        # retractedPatientSynId)
+        process_functions.updateData(
+            self.syn, patientSynId, patientClinical,
+            self.center, col=patientCols, toDelete=True)
+
+        df.to_csv(newPath, sep="\t", index=False)
+        return(newPath)
+
     def _get_dataframe(self, filePathList):
         if isinstance(filePathList, Sequence):
             filePathList = filePathList[0]
