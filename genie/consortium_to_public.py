@@ -15,7 +15,6 @@ import logging
 import create_case_lists
 import dashboard_table_updater
 
-import logging
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
