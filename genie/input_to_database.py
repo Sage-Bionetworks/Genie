@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 import logging
-logger = logging.getLogger("genie")
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 import synapseclient
 import synapseutils
 import argparse
@@ -460,7 +464,7 @@ def validation(syn, center, process,
     '''
     centerInputSynId = center_mapping_df['inputSynId'][
         center_mapping_df['center'] == center][0]
-    logger.info("Center: " + center)
+    logger.info("Getting Center input files for: " + center)
     allFiles = get_center_input_files(syn, centerInputSynId, center, process)
 
     allFiles = pd.DataFrame(allFiles, columns=['synId', 'filePaths'])
