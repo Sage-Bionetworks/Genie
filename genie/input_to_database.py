@@ -151,10 +151,8 @@ def check_existing_file_status(validation_statusdf, error_trackerdf,
         if input_validation_status.empty:
             to_validate = True
         else:
-            '''
-            This to_validate is here, because the following is a
-            sequential check of whether files need to be validated
-            '''
+            # This to_validate is here, because the following is a
+            # sequential check of whether files need to be validated
             to_validate = False
             statuses.append(input_validation_status['status'].values[0])
             if input_error.empty:
