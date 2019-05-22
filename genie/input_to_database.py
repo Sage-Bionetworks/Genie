@@ -207,8 +207,31 @@ def _check_valid(syn, filepaths, center, filetype, filenames,
 
 
 def _get_status_and_error_list(syn, fileinfo, valid, message, filetype,
-                               entities, filepaths, filenames, modified_ons):
+                               entities, filepaths, filenames, modified_ons,
+                               find_file_users):
     '''
+    Helper function to return the status and error list of the
+    files based on validation result. Emails uploader
+    if invalid for the first time.
+
+    Args:
+        syn: Synapse object
+        fileinfo: A row passed in as a Series through the apply function
+                  in pandas
+        valid: Boolean value of results of validation
+        message: Validation message
+        filetype: File type
+        entities: List of Synapse Entities
+        filepaths: List of filepaths
+        filenames: List of filenames
+        modified_ons: List of modified on dates
+        find_file_users: List of unique synapse user profiles of
+                         users that created and most recently
+                         modified the file
+
+    Returns:
+        tuple: input_status_list - status of input files list,
+               invalid_errors_list - error list
     '''
     if valid:
         input_status_list = [
@@ -221,9 +244,6 @@ def _get_status_and_error_list(syn, fileinfo, valid, message, filetype,
     else:
         # Send email the first time the file is invalid
         incorrect_files = ", ".join(filenames)
-        incorrect_ent = syn.get(fileinfo['synId'][0])
-        find_file_users = \
-            list(set([incorrect_ent.modifiedBy, incorrect_ent.createdBy]))
         usernames = ", ".join([
             syn.getUserProfile(user)['userName']
             for user in find_file_users])
@@ -287,6 +307,8 @@ def validatefile(fileinfo,
             datetime.datetime.strptime(
                 entity.modifiedOn.split(".")[0], "%Y-%m-%dT%H:%M:%S"))
         for entity in entities]
+    find_file_users = \
+        list(set([entities[0].modifiedBy, entities[0].createdBy]))
 
     check_file_status = check_existing_file_status(
         validation_statusdf, error_trackerdf, entities, filenames)
@@ -302,7 +324,7 @@ def validatefile(fileinfo,
 
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             syn, fileinfo, valid, message, filetype,
-            entities, filepaths, filenames, modified_ons)
+            entities, filepaths, filenames, modified_ons, find_file_users)
 
     else:
         input_status_list = [
