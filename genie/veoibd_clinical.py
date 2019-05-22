@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class clinical_individual(FileTypeFormat):
+class ClinicalIndividual(FileTypeFormat):
 
     _fileType = "veoibd_clinical"
 

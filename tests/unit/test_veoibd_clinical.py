@@ -39,11 +39,11 @@ table_query_results_map = {
 
 syn = mock.create_autospec(synapseclient.Synapse)
 syn.tableQuery.side_effect = table_query_results
-clin_class = veoibd_clinical.clinical_individual(syn, "SAGE")
+clin_class = veoibd_clinical.ClinicalIndividual(syn, "SAGE")
 
 
 def test_filetype():
-    assert clin_class._fileType == "clinical"
+    assert clin_class._fileType == "veoibd_clinical"
 
 
 @pytest.fixture(params=[
@@ -64,7 +64,7 @@ def test_incorrect_validatefilename(filename_fileformat_map):
 
 def test_correct_validatefilename():
     assert clin_class.validateFilename(
-        ["clinical_individual.csv"]) == "clinical"
+        ["clinical_individual.csv"]) == "veoibd_clinical"
     
 
 # def test_patient_fillvs__process():

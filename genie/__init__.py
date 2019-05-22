@@ -4,7 +4,7 @@ from .bed import bed
 from .bedSP import bedSP
 from .workflow import workflow
 from .clinical import clinical
-from .veoibd_clinical import clinical_individual
+from .veoibd_clinical import ClinicalIndividual
 from .seg import seg
 from .cbs import cbs
 from .maf import maf
@@ -27,7 +27,7 @@ PROCESS_FILES = {# 'bed': bed,
                  # 'maf': maf,
                  # 'mafSP': mafSP,
                  'clinical': clinical,
-                 'veoibd_clinical': clinical_individual,
+                 'veoibd_clinical': ClinicalIndividual,
                  'clinicalSP': clinicalSP,
                  'vcf': vcf,
                  # 'cbs': cbs,
