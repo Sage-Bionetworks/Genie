@@ -58,7 +58,7 @@ class clinical_individual(FileTypeFormat):
     def process_steps(self, data, databaseToSynIdMappingDf, 
                       newPath, parentId):
         patientSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == "patient"][0]
+            databaseToSynIdMappingDf['Database'] == "individual"][0]
         
         patient = True
 
@@ -68,7 +68,7 @@ class clinical_individual(FileTypeFormat):
         
         process_functions.updateData(syn=self.syn, databaseSynId=patientSynId, 
                                      newData=data, filterBy=self.center,
-                                     filterByColumn="CENTER", col=patientCols,
+                                     filterByColumn="CENTER", col=self._required_columns,
                                      toDelete=True)
         
         data.to_csv(newPath, sep="\t", index=False)
@@ -119,33 +119,6 @@ class clinical_individual(FileTypeFormat):
             total_error += "Found duplicated {primaryKey}'s in the file.".format(primaryKey=self._primary_key_columns)
 
         return(total_error, warning)
-
-    def process_steps(self, filePath, databaseToSynIdMappingDf, newPath,
-                      parentId, oncotreeLink):
-        patientSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == "individual"][0]
-
-        df = self.read_file(filePath)
-
-        # These synapse ids for the clinical tier release scope is
-        # hardcoded because it never changes
-        patientColsTable = self.syn.tableQuery(
-            'select fieldName from syn8545211 where patient is '
-            'True and inClinicalDb is True')
-        patientCols = patientColsTable.asDataFrame()['fieldName'].tolist()
-
-        patientClinical = newClinicalDf[
-            patientCols].drop_duplicates("PATIENT_ID")
-        self.uploadMissingData(
-            patientClinical, "PATIENT_ID",
-            patientSynId, parentId)
-        # retractedPatientSynId)
-        process_functions.updateData(
-            self.syn, patientSynId, patientClinical,
-            self.center, col=patientCols, toDelete=True)
-
-        df.to_csv(newPath, sep="\t", index=False)
-        return(newPath)
 
     def _get_dataframe(self, filePathList):
         if isinstance(filePathList, Sequence):
