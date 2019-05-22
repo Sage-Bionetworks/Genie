@@ -177,7 +177,9 @@ def reAnnotatePHI(mergedClinical):
 
 
 # Configure each maf row
-def configureMafRow(rowArray, headers, keepSamples, remove_variants):
+def configureMafRow(
+        rowArray, headers, keepSamples, remove_variants,
+        flagged_variants):
     chrom = str(rowArray[headers.index('Chromosome')])
     start = str(rowArray[headers.index('Start_Position')])
     end = str(rowArray[headers.index('End_Position')])
@@ -204,6 +206,10 @@ def configureMafRow(rowArray, headers, keepSamples, remove_variants):
         rowArray[headers.index("Match_Norm_Seq_Allele1")] = \
             '' if str(nDepth) in ["NA", "0.0"] else nDepth
         # rowArray.pop(headers.index('inBED'))
+        if variant in flagged_variants:
+            rowArray.append(True)
+        else:
+            rowArray.append('')
         newRow = "\t".join(rowArray)
         newRow += "\n"
         newRow = process.removeStringFloat(newRow)
@@ -357,14 +363,29 @@ def mutation_in_cis_filter(
                     centerStaging=True,
                     genieVersion=genieVersion)
                 os.unlink("mutationsInCis_filtered_samples.csv")
-    variant_filtering = syn.tableQuery(
+    sample_filtering = syn.tableQuery(
         "SELECT Tumor_Sample_Barcode FROM {} where Flag = 'TOSS' and "
         "Tumor_Sample_Barcode is not null".format(variant_filtering_synId))
 
-    filtered_samples = variant_filtering.asDataFrame()
+    filtered_samplesdf = sample_filtering.asDataFrame()
     # #Alex script #1 removed patients
-    remove_samples = filtered_samples['Tumor_Sample_Barcode'].drop_duplicates()
-    return(remove_samples)
+    remove_samples = \
+        filtered_samplesdf['Tumor_Sample_Barcode'].drop_duplicates()
+
+    # Find variants to flag
+    variant_flagging = syn.tableQuery(
+        "SELECT Tumor_Sample_Barcode FROM {} where Flag = 'FLAG' and "
+        "Tumor_Sample_Barcode is not null".format(variant_filtering_synId))
+    flag_variantsdf = variant_flagging.asDataFrame()
+
+    flag_variantsdf['flaggedVariants'] = \
+        flag_variantsdf['Chromosome'].astype(str) + ' ' + \
+        flag_variantsdf['Start_Position'].astype(str) + ' ' + \
+        flag_variantsdf['End_Position'].astype(str) + ' ' + \
+        flag_variantsdf['Reference_Allele'].astype(str) + ' ' + \
+        flag_variantsdf['Tumor_Seq_Allele2'].astype(str) + ' ' + \
+        flag_variantsdf['Tumor_Sample_Barcode'].astype(str)
+    return(remove_samples, flag_variantsdf['flaggedVariants'])
 
 
 def seq_assay_id_filter(clinicaldf):
@@ -533,10 +554,11 @@ def stagingToCbio(
         genie_user=genie_user, genie_pass=genie_pass)
 
     logger.info("MUTATION IN CIS FILTER")
-    remove_mutationInCis_samples = mutation_in_cis_filter(
-        syn, skipMutationsInCis, variant_filtering_synId, CENTER_MAPPING_DF,
-        genieVersion=genieVersion, test=test,
-        genie_user=genie_user, genie_pass=genie_pass)
+    remove_mutationInCis_samples, flagged_mutationInCis_variants = \
+        mutation_in_cis_filter(
+            syn, skipMutationsInCis, variant_filtering_synId,
+            CENTER_MAPPING_DF, genieVersion=genieVersion, test=test,
+            genie_user=genie_user, genie_pass=genie_pass)
 
     remove_no_genepanel_samples = no_genepanel_filter(clinicalDf, bedDf)
 
@@ -720,6 +742,7 @@ def stagingToCbio(
         with open(mafEnt.path, "r") as mafFile:
             header = mafFile.readline()
             headers = header.replace("\n", "").split("\t")
+            headers.append("mutationInCis_Flag")
             if index == 0:
                 with open(MUTATIONS_PATH, 'a') as f:
                     f.write(header)
@@ -738,14 +761,16 @@ def stagingToCbio(
                     newMergedRow = configureMafRow(
                         rowArray, headers,
                         keepForMergedConsortiumSamples,
-                        remove_mafInBed_variants)
+                        remove_mafInBed_variants,
+                        flagged_mutationInCis_variants)
                     if newMergedRow is not None:
                         with open(MUTATIONS_PATH, 'a') as f:
                             f.write(newMergedRow)
                     newCenterRow = configureMafRow(
                         rowArray, headers,
                         keepForCenterConsortiumSamples,
-                        remove_mafInBed_variants)
+                        remove_mafInBed_variants,
+                        flagged_mutationInCis_variants)
                     if newCenterRow is not None:
                         with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
                             f.write(newCenterRow)
