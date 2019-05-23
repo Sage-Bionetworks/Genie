@@ -1,20 +1,52 @@
 #!/usr/bin/env python
-import argparse
 import genie
+import synapseclient
 
 
 def perform_validate(syn, args):
-    
+    if args.testing:
+        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
+    else:
+        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
 
-def perform_main(syn, args):
-    if 'func' in args:
+    databasetosynid_mappingdf = databaseToSynIdMapping.asDataFrame()
+    synid = databasetosynid_mappingdf.Id[
+        databasetosynid_mappingdf['Database'] == "centerMapping"]
+    center_mapping = syn.tableQuery('SELECT * FROM {}'.format(synid[0]))
+    center_mapping_df = center_mapping.asDataFrame()
+    assert args.center in center_mapping_df.center.tolist(), \
+        "Must specify one of these centers: {}".format(
+            ", ".join(center_mapping_df.center))
+
+    if args.oncotreelink is None:
+        oncolink = databasetosynid_mappingdf['Id'][
+            databasetosynid_mappingdf['Database'] == 'oncotreeLink'].values[0]
+        oncolink_ent = syn.get(oncolink)
+        args.oncotreelink = oncolink_ent.externalURL
+
+    message, valid = genie.validate.validate(
+        syn, args.filepath, args.center, args.filetype, args.thread,
+        args.oncotreelink, args.testing, args.nosymbol_check)
+
+    if args.parentid is not None and args.filetype is not None:
+        # if args.filetype is not None:
+        raise ValueError(
+            "If you used --parentid, you must not use "
+            "--filetype")
+    elif valid:
         try:
-            args.func(syn, args)
-        except Exception:
-            raise
+            syn.get(args.parentid)
+        except synapseclient.exceptions.SynapseHTTPError:
+            raise ValueError(
+                "Provided Synapse id must be your input folder Synapse id "
+                "or a Synapse Id of a folder inside your input directory")
+        print("Uploading file to {}".format(args.parentid))
+        for path in args.filepath:
+            syn.store(synapseclient.File(path, parent=args.parentid))
 
 
 def build_parser():
+    import argparse
     parser = argparse.ArgumentParser(description='GENIE processing')
 
     subparsers = parser.add_subparsers(
@@ -24,17 +56,10 @@ def build_parser():
 
     parser_validate = subparsers.add_parser(
         'validate',
-        help='Validates a GENIE file')
+        help='Validates GENIE file formats')
 
     parser_validate.add_argument(
-        "fileType",
-        type=str,
-        choices=genie.PROCESS_FILES.keys(),
-        help='Filetypes that you are validating. Note, the filetypes with SP at \
-            the end are for special sponsored projects')
-
-    parser_validate.add_argument(
-        "file",
+        "filepath",
         type=str,
         nargs="+",
         help='File(s) that you are validating.  \
@@ -47,6 +72,18 @@ def build_parser():
         help='Contributing Centers')
 
     parser_validate.add_argument(
+        "--filetype",
+        type=str,
+        choices=genie.PROCESS_FILES.keys(),
+        help='By default, the validator uses the filename to match '
+             'the file format.  If your filename is incorrectly named, '
+             'it will be invalid.  If you know the file format you are '
+             'validating, you can ignore the filename validation and skip '
+             'to file content validation. '
+             'Note, the filetypes with SP at '
+             'the end are for special sponsored projects')
+
+    parser_validate.add_argument(
         "--thread",
         type=int,
         required=False,
@@ -54,30 +91,27 @@ def build_parser():
         help='Number of threads used in validation symbols')
 
     parser_validate.add_argument(
-        "--offline",
-        action='store_true',
-        help='No validation of filenames')
-
-    parser_validate.add_argument(
-        "--uploadToSynapse",
-        type=str,
-        default=None,
-        help='Will upload the file to the synapse directory of users choice')
-
-    parser_validate.add_argument(
         "--oncotreeLink",
         type=str,
         help="Link to oncotree code")
 
     parser_validate.add_argument(
-        "--noSymbolCheck",
-        action='store_true',
-        help='Do not check hugo symbols of fusion and cna file')
+        "--parentid",
+        type=str,
+        default=None,
+        help='Synapse id of center input folder. '
+             'If specified, your valid files will be uploaded '
+             'to this directory.')
 
     parser_validate.add_argument(
         "--testing",
         action='store_true',
         help='Put in testing mode')
+
+    parser_validate.add_argument(
+        "--nosymbol-check",
+        action='store_true',
+        help='Do not check hugo symbols of fusion and cna file')
 
     parser_validate.set_defaults(func=genie.validate.perform_validate)
     return(parser)
@@ -86,7 +120,11 @@ def build_parser():
 def main():
     args = build_parser().parse_args()
     syn = genie.validate.synapse_login()
-    perform_main(syn, args)
+    if 'func' in args:
+        try:
+            args.func(syn, args)
+        except Exception:
+            raise
 
 
 if __name__ == "__main__":

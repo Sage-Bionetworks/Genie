@@ -31,52 +31,51 @@ def synapse_login():
     return(syn)
 
 
-def get_filetype(syn, path_list, center):
+def determine_filetype(syn, filepathlist, center):
     '''
     Get the file type of the file by validating its filename
 
     Args:
         syn: Synapse object
-        path_list: list of filepaths to center files
+        filepathlist: list of filepaths to center files
         center: Participating Center
 
     Returns:
         str: File type of input files
     '''
     filetype = None
+    # Loop through file formats
     for file_format in PROCESS_FILES:
         try:
-            filetype = PROCESS_FILES[file_format](
-                syn, center).validateFilename(path_list)
+            validator = PROCESS_FILES[file_format](syn, center)
+            filetype = validator.validateFilename(filepathlist)
         except AssertionError:
             continue
         # If valid filename, return file type.
         if filetype is not None:
             break
+    if filetype is None:
+        raise ValueError(
+                "Your filename is incorrect! "
+                "Please change your filename before you run "
+                "the validator or specify the --filetype.")
     return(filetype)
 
 
-def validate(syn, filePath, center, threads, fileType=None,
-             oncotree_url=None, uploadToSynapse=None,
-             testing=False, noSymbolCheck=False):
+def validate(syn, filepathlist, center, filetype=None, threads=1,
+             oncotreelink=None, testing=False, nosymbol_check=False):
     """
     This performs the validation of files
 
     :returns:   Text with the errors of the chosen file
     """
-    # CHECK: Fail if filename is incorrect
-    validator = PROCESS_FILES[fileType](syn, center, threads)
-    if not offline:
-        try:
-            validator.validateFilename(filePath)
-        except AssertionError as e:
-            raise ValueError(
-                "Your filename is incorrect!\n{}\n"
-                "Please change your filename before you run "
-                "the validator again.".format(e))
+    if filetype is None:
+        filetype = determine_filetype(syn, filepathlist, center)
+
+    validator = PROCESS_FILES[filetype](syn, center, threads)
     total_error, warning = validator.validate(
-        filePathList=filePath, oncotreeLink=oncotree_url,
-        testing=testing, noSymbolCheck=noSymbolCheck)
+        filePathList=filepathlist, oncotreeLink=oncotreelink,
+        testing=testing, noSymbolCheck=nosymbol_check)
 
     # Complete error message
     message = "----------------ERRORS----------------\n"
@@ -95,54 +94,56 @@ def validate(syn, filePath, center, threads, fileType=None,
             if warn != '':
                 logger.warning(warn)
         message += "-------------WARNINGS-------------\n" + warning
-    if valid and uploadToSynapse is not None:
-        logger.info("Uploading file to %s" % uploadToSynapse)
-        for path in filePath:
-            syn.store(synapseclient.File(path, parent=uploadToSynapse))
+
     return(message, valid)
 
 
-def main(syn, filepath, center, thread, oncotreelink, filetype,
-         upload_to_synapse, testing, nosymbol_check):
-    if testing:
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
-    else:
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
+# def main(syn, filepathlist, center, filetype, thread, oncotreelink,
+#          parentid, testing, nosymbol_check):
+#     if testing:
+#         databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
+#     else:
+#         databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
 
-    databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
-    synId = databaseToSynIdMappingDf.Id[
-        databaseToSynIdMappingDf['Database'] == "centerMapping"]
-    center_mapping = syn.tableQuery('SELECT * FROM %s' % synId[0])
-    center_mapping_df = center_mapping.asDataFrame()
-    assert center in center_mapping_df.center.tolist(), \
-        "Must specify one of these centers: {}".format(
-            ", ".join(center_mapping_df.center))
+#     databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
+#     synId = databaseToSynIdMappingDf.Id[
+#         databaseToSynIdMappingDf['Database'] == "centerMapping"]
+#     center_mapping = syn.tableQuery('SELECT * FROM %s' % synId[0])
+#     center_mapping_df = center_mapping.asDataFrame()
+#     assert center in center_mapping_df.center.tolist(), \
+#         "Must specify one of these centers: {}".format(
+#             ", ".join(center_mapping_df.center))
 
-    if oncotreelink is None:
-        oncoLink = databaseToSynIdMappingDf['Id'][
-            databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
-        oncoLinkEnt = syn.get(oncoLink)
-        oncotreelink = oncoLinkEnt.externalURL
+#     if oncotreelink is None:
+#         oncoLink = databaseToSynIdMappingDf['Id'][
+#             databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
+#         oncoLinkEnt = syn.get(oncoLink)
+#         oncotreelink = oncoLinkEnt.externalURL
 
-    if upload_to_synapse is not None:
-        if filetype is None:
-            raise ValueError(
-                "If you specify the uploadToSynapse option, your filename "
-                "must be named correctly")
-        else:
-            try:
-                syn.get(upload_to_synapse)
-            except synapseclient.exceptions.SynapseHTTPError:
-                raise ValueError(
-                    "Provided Synapse id must be your input folder Synapse id "
-                    "or a Synapse Id of a folder inside your input directory")
+#     message, valid = validate(
+#         syn,
+#         filepathlist,
+#         center,
+#         filetype,
+#         thread,
+#         oncotreelink,
+#         testing,
+#         nosymbol_check)
 
-    validate(syn,
-             filepath,
-             center,
-             thread,
-             oncotreelink,
-             filetype,
-             upload_to_synapse,
-             testing,
-             nosymbol_check)
+#     if parentid is not None:
+#         if filetype is None:
+#             raise ValueError(
+#                 "If you specify the uploadToSynapse option, your filename "
+#                 "must be named correctly")
+#         else:
+#             try:
+#                 syn.get(parentid)
+#             except synapseclient.exceptions.SynapseHTTPError:
+#                 raise ValueError(
+#                     "Provided Synapse id must be your input folder Synapse id "
+#                     "or a Synapse Id of a folder inside your input directory")
+
+#     if valid and parentid is not None:
+#         logger.info("Uploading file to {}".format(parentid))
+#         for path in filepathlist:
+#             syn.store(synapseclient.File(path, parent=parentid))
