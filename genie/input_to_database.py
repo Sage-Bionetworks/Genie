@@ -204,7 +204,6 @@ def _check_valid(syn, filepaths, center, filetype, filenames,
                 threads,
                 oncotree_url=oncotree_link,
                 testing=testing)
-            logger.info("VALIDATION COMPLETE")
         except ValueError as e:
             logger.error(e)
             message = e
@@ -284,7 +283,7 @@ def validatefile(fileinfo,
 
     filenames = [os.path.basename(i) for i in fileinfo['filePaths']]
     logger.info(
-        "VALIDATING {filenames}".format(filenames=", ".join(filenames)))
+        "Validating {filenames}".format(filenames=", ".join(filenames)))
     filepaths = fileinfo['filePaths']
     entities = [
         syn.get(synid, downloadFile=False) for synid in fileinfo['synId']]
@@ -319,6 +318,10 @@ def validatefile(fileinfo,
             [synid, error, filename]
             for synid, error, filename in
             zip(fileinfo['synId'], error_list, filenames)]
+
+    logger.info(
+        "Validation of {filenames} complete.".format(filenames=", ".join(filenames)))
+
     return(input_status_list, invalid_errors_list)
 
 
@@ -473,7 +476,7 @@ def validation(syn, center, process,
     # If a center has no files, then return empty list
     if allFiles.empty:
         logger.info("%s has not uploaded any files" % center)
-        return([])
+        validFiles = []
     else:
         # Make sure the vcf validation statuses don't get wiped away
         if process != "vcf":
@@ -606,7 +609,9 @@ def validation(syn, center, process,
         inputValidStatus['path'] = paths
         validFiles = inputValidStatus[['id', 'path', 'fileType']][
             inputValidStatus['status'] == "VALIDATED"]
-        return(validFiles)
+
+    logger.info("Validation completed.")    
+    return(validFiles)
 
 
 def center_input_to_database(
