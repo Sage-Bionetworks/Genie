@@ -78,3 +78,33 @@ def test_warning_determine_validity_and_log():
         "YOUR FILE IS VALIDATED!\n"
         "-------------WARNINGS-------------\n"
         'warning\nnow')
+
+
+def test_valid_validate_single_file_workflow():
+    filepathlist = ['clinical.txt']
+    error_string = ''
+    warning_string = ''
+    center = 'SAGE'
+    with mock.patch(
+            "genie.validate.determine_filetype",
+            return_value="clinical") as mock_determine_filetype,\
+        mock.patch(
+            "genie.clinical.validate",
+            return_value=(error_string, warning_string)) as mock_genie_class,\
+        mock.patch(
+            "genie.validate.determine_validity_and_log",
+            return_value=(True, "valid")) as mock_determine:
+        validate.validate_single_file_workflow(
+            syn,
+            filepathlist,
+            center)
+        mock_determine_filetype.assert_called_once_with(
+            syn, filepathlist, center)
+
+        mock_genie_class.assert_called_once_with(
+            filePathList=filepathlist,
+            oncotreeLink=None,
+            testing=False,
+            noSymbolCheck=False)
+
+        mock_determine.assert_called_once_with(error_string, warning_string)
