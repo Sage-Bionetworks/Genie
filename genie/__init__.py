@@ -4,6 +4,8 @@ from .bed import bed
 from .bedSP import bedSP
 from .workflow import workflow
 from .clinical import clinical
+from .veoibd_clinical import ClinicalIndividual
+from .veoibd_clinical import ClinicalSample
 from .seg import seg
 from .cbs import cbs
 from .maf import maf
@@ -26,6 +28,8 @@ PROCESS_FILES = {# 'bed': bed,
                  # 'maf': maf,
                  # 'mafSP': mafSP,
                  'clinical': clinical,
+                 'veoibd_clinical_individual': ClinicalIndividual,
+                 'veoibd_clinical_sample': ClinicalSample,
                  'clinicalSP': clinicalSP,
                  'vcf': vcf,
                  # 'cbs': cbs,
@@ -41,7 +45,10 @@ PROCESS_FILES = {# 'bed': bed,
                  'assayinfo': Assayinfo}
 
 # Must import validate after the fact
+from . import input_to_database
 from . import validate
+from . import toRetract
+from . import write_invalid_reasons
 # Import logging last to not take in synapseclient logging
 import logging
 logging.basicConfig(level=logging.INFO)
