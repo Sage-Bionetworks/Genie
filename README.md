@@ -10,21 +10,19 @@ This repository documents code used to gather, QC, standardize, and analyze data
 ## Dependencies
 
 These are tools or packages you will need, to be able to reproduce these results:
-- A Linux machine or a cluster of compute nodes with a job scheduler like LSF (`bsub`) or SGE (`qsub`)
-- Python 2.7.10 or higher
-- Sage Synapse's [command-line client](http://python-docs.synapse.org/CommandLineClient.html) (`pip install synapseclient`)
+- Python 3.5 or higher
+- Synapse [command-line client](http://python-docs.synapse.org/CommandLineClient.html) (`pip install synapseclient`)
 - Python [pandas](http://pandas.pydata.org/) (`pip install pandas`)
-- [bedtools](https://bedtools.readthedocs.io/en/latest/content/installation.html)
 
 ## File Validator
 ```
-pip install git+https://github.com/veo-ibd/data-pipeline.git
+pip install git+https://github.com/veo-ibd/veoibd-data-pipeline.git
 ```
 
 This will install all the necessary components for you to run the validator locally on all of your files, including the Synapse client.  Please view the help to see how to run to validator.  
 ```
-genie validate -h
-genie validate clinical data_clincal_supp_SAGE.txt SAGE
+veoibd validate -h
+veoibd validate clinical clinical_individual.csv SAGE
 ```
 
 # SAGE BIONETWORKS USE ONLY
@@ -38,7 +36,7 @@ genie validate clinical data_clincal_supp_SAGE.txt SAGE
 
 ## Processing on EC2
 
-1. Input to database: `python input_to_database.py -h`
+1. Input to database: `input_to_database.py -h`
 2. Create Files
 **Example Releases**
 a. release 4.1-consortium and 4.0-public
