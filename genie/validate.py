@@ -64,6 +64,8 @@ def validate(syn, fileType, filePath, center, threads, oncotree_url=None, offlin
         logger.info(message)
         valid = True
     else:
+        message = "The {} file is invalid.\n".format(fileType)
+        logger.info(message)
         for errors in total_error.split("\n"):
             if errors!='':
                 logger.error(errors)
