@@ -121,3 +121,18 @@ def test_valid_validate_single_file_workflow():
             noSymbolCheck=False)
 
         mock_determine.assert_called_once_with(error_string, warning_string)
+
+
+def test_filetype_validate_single_file_workflow():
+    '''
+    Tests that if filetype is passed in that an error is thrown
+    if it is an incorrect filetype
+    '''
+    filepathlist = ['clinical.txt']
+    center = "SAGE"
+    with pytest.raises(ValueError, match="Must specify correct filetype"):
+        validate.validate_single_file_workflow(
+            syn,
+            filepathlist,
+            center,
+            filetype="foobar")

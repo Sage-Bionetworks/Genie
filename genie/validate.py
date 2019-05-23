@@ -100,7 +100,8 @@ def validate_single_file_workflow(syn,
     if filetype is None:
         filetype = determine_filetype(syn, filepathlist, center)
     else:
-        assert filetype in PROCESS_FILES
+        if filetype not in PROCESS_FILES:
+            raise ValueError("Must specify correct filetype")
 
     validator = PROCESS_FILES[filetype](syn, center)
     total_error, warning = validator.validate(
