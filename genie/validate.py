@@ -60,11 +60,11 @@ def validate(syn, fileType, filePath, center, threads, oncotree_url=None, offlin
     #Complete error message
     message = "----------------ERRORS----------------\n"
     if total_error == "":
-        message = "The {} file is valid.\n".format(fileType)
+        message = "The {} file is valid.".format(fileType)
         logger.info(message)
         valid = True
     else:
-        message = "The {} file is invalid.\n".format(fileType)
+        message = "The {} file is invalid.".format(fileType)
         logger.info(message)
         for errors in total_error.split("\n"):
             if errors!='':
@@ -75,7 +75,7 @@ def validate(syn, fileType, filePath, center, threads, oncotree_url=None, offlin
         for warn in warning.split("\n"):  
             if warn!='':      
                 logger.warning(warn)
-        message += "-------------WARNINGS-------------\n" + warning
+
     if valid and uploadToSynapse is not None:
         logger.info("Uploading file to %s" % uploadToSynapse)
         [syn.store(synapseclient.File(path, parent=uploadToSynapse)) for path in filePath]
