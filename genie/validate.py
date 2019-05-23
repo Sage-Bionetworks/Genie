@@ -42,24 +42,6 @@ logger.setLevel(logging.INFO)
 #     else:
 #         return(True)
 
-def synapse_login():
-    """
-    This function logs into synapse for you if credentials are saved.  
-    If not saved, then user is prompted username and password.
-
-    :returns:     Synapseclient object
-    """
-    try:
-        syn = synapseclient.login(silent=True)
-    except Exception as e:
-        logger.info("Please provide your synapse username/email and password (You will only be prompted once), or write your username and password to your bash profile under GENIE_USER and GENIE_PASS")
-        Username = os.getenv("GENIE_USER")
-        Password = os.getenv("GENIE_PASS")
-        if Username is None or Password is None:
-            Username = raw_input("Username: ")
-            Password = getpass.getpass()
-        syn = synapseclient.login(email=Username, password=Password,rememberMe=True,silent=True)
-    return(syn)
 
 def validate(syn, fileType, filePath, center, threads, oncotree_url=None, offline=False, uploadToSynapse=None, testing=False, noSymbolCheck=False):
     """
