@@ -6,6 +6,7 @@ from .workflow import workflow
 from .clinical import clinical
 from .veoibd_clinical import ClinicalIndividual
 from .veoibd_clinical import ClinicalSample
+from .veoibd_workflow import Workflow
 from .seg import seg
 from .cbs import cbs
 from .maf import maf
@@ -35,7 +36,7 @@ PROCESS_FILES = {# 'bed': bed,
                  # 'cbs': cbs,
                  # 'cna': cna,
                  # 'fusions': fusions,
-                 'md': workflow,
+                 'veoibd_workflow': Workflow,
                  # 'seg': seg,
                  # 'patientRetraction': patientRetraction,
                  # 'sampleRetraction': sampleRetraction,

@@ -292,7 +292,7 @@ def validatefile(fileinfo,
             datetime.datetime.strptime(
                 entity.modifiedOn.split(".")[0], "%Y-%m-%dT%H:%M:%S"))
         for entity in entities]
-
+    
     check_file_status = check_existing_file_status(
         validation_statusdf, error_trackerdf, entities, filenames)
 
@@ -367,6 +367,8 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
                     processing=processing,
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf,
                     reference=reference, test=test)
+            else:
+                logger.debug("Missing a file type, skipping {}".format(filePath))
 
     elif processing in ["vcf", "maf", "mafSP"]:
         filePath = None

@@ -102,19 +102,23 @@ class FileTypeFormat(object):
         Returns:
             str: file path of processed file
         '''
+        logger.info('PROCESSING %s' % filePath)
+
         preprocess_args = self.preprocess(filePath)
         kwargs.update(preprocess_args)
+
         mykwargs = {}
         for required_parameter in self._process_kwargs:
             assert required_parameter in kwargs.keys(), \
                 "%s not in parameter list" % required_parameter
             mykwargs[required_parameter] = kwargs[required_parameter]
-        logger.info('PROCESSING %s' % filePath)
+        
         # If file type is vcf or maf file, processing requires a filepath
-        if self._fileType not in ['vcf', 'maf', 'mafSP', 'md', 'clinical']:
+        if self._fileType not in ['vcf', 'maf', 'mafSP', 'md', 'clinical', 'veoibd_workflow']:
             path_or_df = self.read_file([filePath])
         else:
             path_or_df = filePath
+        
         path = self.process_steps(path_or_df, **mykwargs)
         return(path)
 
