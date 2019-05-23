@@ -3,7 +3,7 @@ import logging
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 import synapseclient
 import synapseutils
@@ -116,9 +116,11 @@ def get_filetype(syn, path_list, center):
             filetype = PROCESS_FILES[file_format](
                 syn, center).validateFilename(path_list)
         except AssertionError:
+            logger.debug("{} is not is not a {}".format(path_list, file_format))
             continue
         # If valid filename, return file type.
         if filetype is not None:
+            logger.debug("{} is a {}".format(path_list, file_format))
             break
     return(filetype)
 
@@ -170,7 +172,7 @@ def check_existing_file_status(validation_statusdf, error_trackerdf,
                 to_validate = True
             else:
                 logger.info(
-                    "{filename} FILE STATUS IS: {filestatus}".format(
+                    "{filename} EXISTING FILE STATUS IS: {filestatus}".format(
                       filename=input_filename,
                       filestatus=input_validation_status['status'].values[0]))
 
