@@ -1,6 +1,31 @@
 #!/usr/bin/env python
 import genie
 import synapseclient
+import logging
+logger = logging.getLogger('genie')
+
+
+def synapse_login(username=None, password=None):
+    """
+    This function logs into synapse for you if credentials are saved.
+    If not saved, then user is prompted username and password.
+
+    :returns:     Synapseclient object
+    """
+    try:
+        syn = synapseclient.login(silent=True)
+    except Exception:
+        if username is None and password is None:
+            logger.info(
+                "Please specify --syn_user, --syn_pass the first time "
+                "you run this script.")
+        else:
+            syn = synapseclient.login(
+                email=username,
+                password=password,
+                rememberMe=True,
+                silent=True)
+    return(syn)
 
 
 def perform_validate(syn, args):
@@ -40,7 +65,7 @@ def perform_validate(syn, args):
             raise ValueError(
                 "Provided Synapse id must be your input folder Synapse id "
                 "or a Synapse Id of a folder inside your input directory")
-        print("Uploading file to {}".format(args.parentid))
+        logger.info("Uploading file to {}".format(args.parentid))
         for path in args.filepath:
             syn.store(synapseclient.File(path, parent=args.parentid))
 
@@ -48,6 +73,16 @@ def perform_validate(syn, args):
 def build_parser():
     import argparse
     parser = argparse.ArgumentParser(description='GENIE processing')
+
+    parser.add_argument(
+        "--syn_user",
+        type=str,
+        help='Synapse username')
+
+    parser.add_argument(
+        "--syn_pass",
+        type=str,
+        help='Synapse password')
 
     subparsers = parser.add_subparsers(
         title='commands',
@@ -119,7 +154,7 @@ def build_parser():
 
 def main():
     args = build_parser().parse_args()
-    syn = genie.validate.synapse_login()
+    syn = synapse_login(args.syn_user, args.syn_pass)
     if 'func' in args:
         try:
             args.func(syn, args)

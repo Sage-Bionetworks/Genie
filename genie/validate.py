@@ -2,33 +2,8 @@
 
 from genie import PROCESS_FILES
 import synapseclient
-import os
-import getpass
 import logging
 logger = logging.getLogger('genie')
-
-
-def synapse_login():
-    """
-    This function logs into synapse for you if credentials are saved.
-    If not saved, then user is prompted username and password.
-
-    :returns:     Synapseclient object
-    """
-    try:
-        syn = synapseclient.login(silent=True)
-    except Exception:
-        logger.info(
-            "Please provide your synapse username/email and password "
-            "(You will only be prompted once)")
-        Username = os.getenv("GENIE_USER")
-        Password = os.getenv("GENIE_PASS")
-        if Username is None or Password is None:
-            Username = raw_input("Username: ")
-            Password = getpass.getpass()
-        syn = synapseclient.login(
-            email=Username, password=Password, rememberMe=True, silent=True)
-    return(syn)
 
 
 def determine_filetype(syn, filepathlist, center):
