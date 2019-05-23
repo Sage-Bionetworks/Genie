@@ -101,6 +101,9 @@ def perform_validate(syn, config, args):
             try:
                 syn.get(args.uploadToSynapse)
             except synapseclient.exceptions.SynapseHTTPError as e:
-                raise ValueError("Provided Synapse id must be your input folder Synapse id or a Synapse Id of a folder inside your input directory")
+                logger.error("Provided Synapse id must be your input folder Synapse id or a Synapse Id of a folder inside your input directory")
+                raise e
 
     message = validate(syn, args.fileType, args.file, args.center, args.thread, args.oncotreeLink, args.offline, args.uploadToSynapse, args.testing, args.noSymbolCheck)
+
+    return message
