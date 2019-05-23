@@ -94,29 +94,29 @@ def get_center_input_files(syn, synid, center, process="main"):
     return(prepared_center_file_list)
 
 
-def get_filetype(syn, path_list, center):
-    '''
-    Get the file type of the file by validating its filename
+# def get_filetype(syn, path_list, center):
+#     '''
+#     Get the file type of the file by validating its filename
 
-    Args:
-        syn: Synapse object
-        path_list: list of filepaths to center files
-        center: Participating Center
+#     Args:
+#         syn: Synapse object
+#         path_list: list of filepaths to center files
+#         center: Participating Center
 
-    Returns:
-        str: File type of input files
-    '''
-    filetype = None
-    for file_format in PROCESS_FILES:
-        try:
-            filetype = PROCESS_FILES[file_format](
-                syn, center).validateFilename(path_list)
-        except AssertionError:
-            continue
-        # If valid filename, return file type.
-        if filetype is not None:
-            break
-    return(filetype)
+#     Returns:
+#         str: File type of input files
+#     '''
+#     filetype = None
+#     for file_format in PROCESS_FILES:
+#         try:
+#             filetype = PROCESS_FILES[file_format](
+#                 syn, center).validateFilename(path_list)
+#         except AssertionError:
+#             continue
+#         # If valid filename, return file type.
+#         if filetype is not None:
+#             break
+#     return(filetype)
 
 
 def check_existing_file_status(validation_statusdf, error_trackerdf,
