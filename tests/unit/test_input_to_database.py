@@ -381,10 +381,6 @@ def test_valid_validatefile():
     filetype = "clinical"
     fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
                 'synId': ['syn1234']}
-    # status_list = check_file_status['status_list']
-    # error_list = check_file_status['error_list']
-    # filetype = get_filetype(syn, filepaths, center)
-    # if check_file_status['to_validate']:
     with mock.patch.object(
             syn, "get", return_value=entity) as patch_syn_get,\
         mock.patch(
@@ -502,10 +498,7 @@ def test_already_validated_validatefile():
     fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
                 'synId': ['syn1234']}
     filetype = "markdown"
-    # status_list = check_file_status['status_list']
-    # error_list = check_file_status['error_list']
-    # filetype = get_filetype(syn, filepaths, center)
-    # if check_file_status['to_validate']:
+
     check_file_status_dict = {
         'status_list': ["INVALID"],
         'error_list': ["invalid file"],

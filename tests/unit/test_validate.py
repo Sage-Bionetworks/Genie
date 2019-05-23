@@ -40,6 +40,16 @@ def test_wrongfilename_determine_filetype():
         validate.determine_filetype(syn, ['wrong.txt'], center)
 
 
+def test_wrongfilename_noerror_determine_filetype():
+    '''
+    Tests None is passed back when wrong filename is passed
+    when raise_error flag is False
+    '''
+    filetype = validate.determine_filetype(
+        syn, ['wrong.txt'], center, raise_error=False)
+    assert filetype is None
+
+
 def test_valid_determine_validity_and_log():
     '''
     Tests if no error and warning strings are passed that
