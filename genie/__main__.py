@@ -10,9 +10,11 @@ def perform_main(syn, args):
 
     if 'func' in args:
         try:
-            args.func(syn, config, args)
+            result = args.func(syn, config, args)
         except Exception:
             raise
+
+    return result
 
 
 def build_parser():
@@ -90,7 +92,7 @@ def main():
     args = build_parser().parse_args()
 
     syn = synapseclient.login()
-    perform_main(syn, args)
+    message = perform_main(syn, args)
 
 
 if __name__ == "__main__":
