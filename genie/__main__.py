@@ -49,11 +49,11 @@ def perform_validate(syn, args):
         oncolink_ent = syn.get(oncolink)
         args.oncotreelink = oncolink_ent.externalURL
 
-    message, valid = genie.validate.validate(
-        syn, args.filepath, args.center, args.filetype, args.thread,
+    valid, message, filetype = genie.validate.validate_single_file_workflow(
+        syn, args.filepath, args.center, args.filetype,
         args.oncotreelink, args.testing, args.nosymbol_check)
 
-    if args.parentid is not None and args.filetype is not None:
+    if args.parentid is not None and filetype is not None:
         # if args.filetype is not None:
         raise ValueError(
             "If you used --parentid, you must not use "
@@ -117,13 +117,6 @@ def build_parser():
              'to file content validation. '
              'Note, the filetypes with SP at '
              'the end are for special sponsored projects')
-
-    parser_validate.add_argument(
-        "--thread",
-        type=int,
-        required=False,
-        default=1,
-        help='Number of threads used in validation symbols')
 
     parser_validate.add_argument(
         "--oncotreeLink",

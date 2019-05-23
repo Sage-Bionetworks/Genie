@@ -1,7 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from genie import PROCESS_FILES
-import synapseclient
 import logging
 logger = logging.getLogger('genie')
 
@@ -31,27 +30,26 @@ def determine_filetype(syn, filepathlist, center):
             break
     if filetype is None:
         raise ValueError(
-                "Your filename is incorrect! "
-                "Please change your filename before you run "
-                "the validator or specify the --filetype.")
+            "Your filename is incorrect! "
+            "Please change your filename before you run "
+            "the validator or specify --filetype if you are "
+            "running the validator locally")
     return(filetype)
 
 
-def validate(syn, filepathlist, center, filetype=None, threads=1,
-             oncotreelink=None, testing=False, nosymbol_check=False):
-    """
-    This performs the validation of files
+def determine_validity_and_log(total_error, warning):
+    '''
+    Determines the validity of the file based on the
+    the error message
 
-    :returns:   Text with the errors of the chosen file
-    """
-    if filetype is None:
-        filetype = determine_filetype(syn, filepathlist, center)
+    Args:
+        total_error: string of file errors
+        warning: string of file warnings
 
-    validator = PROCESS_FILES[filetype](syn, center, threads)
-    total_error, warning = validator.validate(
-        filePathList=filepathlist, oncotreeLink=oncotreelink,
-        testing=testing, noSymbolCheck=nosymbol_check)
-
+    Returns:
+        valid - Boolean value of validation status
+        message - error + warning
+    '''
     # Complete error message
     message = "----------------ERRORS----------------\n"
     if total_error == "":
@@ -69,56 +67,47 @@ def validate(syn, filepathlist, center, filetype=None, threads=1,
             if warn != '':
                 logger.warning(warn)
         message += "-------------WARNINGS-------------\n" + warning
+    return(valid, message)
 
-    return(message, valid)
 
+def validate_single_file_workflow(syn,
+                                  filepathlist,
+                                  center,
+                                  filetype=None,
+                                  oncotreelink=None,
+                                  testing=False,
+                                  nosymbol_check=False):
+    """
+    This function determines the filetype of a file
+    if filetype is not specified and logs the validation errors and
+    warnings of a file.
 
-# def main(syn, filepathlist, center, filetype, thread, oncotreelink,
-#          parentid, testing, nosymbol_check):
-#     if testing:
-#         databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
-#     else:
-#         databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
+    Args:
+        syn: Synapse object
+        filepathlist: List of files (only a list because of clinical file)
+        center: Center name
+        filetype: By default, filetype is determined from the filename.
+                  filetype can be specified to avoid filename validation
+        oncotreelink: Oncotree URL.
+        testing:  Specify to invoke testing environment
+        nosymbol_check: Do not check hugo symbols of fusion and cna file.
+                        Default is False.
 
-#     databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
-#     synId = databaseToSynIdMappingDf.Id[
-#         databaseToSynIdMappingDf['Database'] == "centerMapping"]
-#     center_mapping = syn.tableQuery('SELECT * FROM %s' % synId[0])
-#     center_mapping_df = center_mapping.asDataFrame()
-#     assert center in center_mapping_df.center.tolist(), \
-#         "Must specify one of these centers: {}".format(
-#             ", ".join(center_mapping_df.center))
+    Returns:
+        message - errors and warnings
+        valid - Boolean value of validation status
+    """
+    if filetype is None:
+        filetype = determine_filetype(syn, filepathlist, center)
+    else:
+        assert filetype in PROCESS_FILES
 
-#     if oncotreelink is None:
-#         oncoLink = databaseToSynIdMappingDf['Id'][
-#             databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
-#         oncoLinkEnt = syn.get(oncoLink)
-#         oncotreelink = oncoLinkEnt.externalURL
+    validator = PROCESS_FILES[filetype](syn, center)
+    total_error, warning = validator.validate(
+        filePathList=filepathlist, oncotreeLink=oncotreelink,
+        testing=testing, noSymbolCheck=nosymbol_check)
 
-#     message, valid = validate(
-#         syn,
-#         filepathlist,
-#         center,
-#         filetype,
-#         thread,
-#         oncotreelink,
-#         testing,
-#         nosymbol_check)
+    # Complete error message
+    valid, message = determine_validity_and_log(total_error, warning)
 
-#     if parentid is not None:
-#         if filetype is None:
-#             raise ValueError(
-#                 "If you specify the uploadToSynapse option, your filename "
-#                 "must be named correctly")
-#         else:
-#             try:
-#                 syn.get(parentid)
-#             except synapseclient.exceptions.SynapseHTTPError:
-#                 raise ValueError(
-#                     "Provided Synapse id must be your input folder Synapse id "
-#                     "or a Synapse Id of a folder inside your input directory")
-
-#     if valid and parentid is not None:
-#         logger.info("Uploading file to {}".format(parentid))
-#         for path in filepathlist:
-#             syn.store(synapseclient.File(path, parent=parentid))
+    return(valid, message, filetype)

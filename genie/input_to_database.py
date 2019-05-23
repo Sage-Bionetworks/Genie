@@ -176,36 +176,6 @@ def check_existing_file_status(validation_statusdf, error_trackerdf,
         'to_validate': to_validate})
 
 
-def _check_valid(syn, filepaths, center, filetype, filenames,
-                 oncotree_link, threads, testing):
-    '''
-    Function to validate a file
-    '''
-    # If no filetype set, means the file was named incorrectly
-    if filetype is None:
-        message = (
-            "{filenames}: Incorrect filenaming convention or can't be "
-            "processed".format(filenames=", ".join(filenames)))
-        logger.error(message)
-        valid = False
-    else:
-        try:
-            message, valid = validate.validate(
-                syn,
-                filetype,
-                filepaths,
-                center,
-                threads,
-                oncotree_url=oncotree_link,
-                testing=testing)
-            logger.info("VALIDATION COMPLETE")
-        except ValueError as e:
-            logger.error(e)
-            message = e
-            valid = False
-    return(valid, message)
-
-
 def _get_status_and_error_list(syn, fileinfo, valid, message, filetype,
                                entities, filepaths, filenames, modified_ons):
     '''
@@ -293,12 +263,24 @@ def validatefile(fileinfo,
 
     status_list = check_file_status['status_list']
     error_list = check_file_status['error_list']
-    filetype = get_filetype(syn, filepaths, center)
+
     if check_file_status['to_validate']:
 
-        valid, message = _check_valid(
-            syn, filepaths, center, filetype, filenames,
-            oncotree_link, threads, testing)
+        try:
+            valid, message, filetype = validate.validate_single_file_workflow(
+                syn,
+                filepaths,
+                center,
+                oncotreelink=oncotree_link,
+                testing=testing)
+            logger.info("VALIDATION COMPLETE")
+        except ValueError as e:
+            logger.error(e)
+            # Specify this as None for the single case where filename
+            # validation fails
+            filetype = None
+            message = e
+            valid = False
 
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             syn, fileinfo, valid, message, filetype,
