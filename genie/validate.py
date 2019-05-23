@@ -43,22 +43,27 @@ logger.setLevel(logging.INFO)
 #         return(True)
 
 
-def validate(syn, fileType, filePath, center, threads, oncotree_url=None, offline=False, uploadToSynapse=None, testing=False, noSymbolCheck=False):
+def validate(syn, fileType, filePath, center, threads, oncotree_url=None, 
+             offline=False, uploadToSynapse=None, testing=False, noSymbolCheck=False):
     """
     This performs the validation of files
 
     :returns:   Text with the errors of the chosen file
     """
     #CHECK: Fail if filename is incorrect
+
+    validator = PROCESS_FILES[fileType](syn, center, threads)
+
     if not offline:
         try:
-            PROCESS_FILES[fileType](syn, center, threads).validateFilename(filePath)
+            validator.validateFilename(filePath)
         except AssertionError as e:
             raise ValueError("Your filename is incorrect!\n%s\nPlease change your filename before you run the validator again."  % e)
-    total_error, warning = PROCESS_FILES[fileType](syn, center, threads).validate(filePathList=filePath, oncotreeLink=oncotree_url, testing=testing, noSymbolCheck=noSymbolCheck)
+
+    total_error, warning = validator.validate(filePathList=filePath, oncotreeLink=oncotree_url, 
+                                              testing=testing, noSymbolCheck=noSymbolCheck)
 
     #Complete error message
-    message = "----------------ERRORS----------------\n"
     if total_error == "":
         message = "The {} file is valid.".format(fileType)
         logger.info(message)
