@@ -81,23 +81,36 @@ def test_warning_determine_validity_and_log():
 
 
 def test_valid_validate_single_file_workflow():
+    '''
+    Tests that all the functions are run in validate single
+    file workflow and all the right things are returned
+    '''
     filepathlist = ['clinical.txt']
     error_string = ''
     warning_string = ''
     center = 'SAGE'
+    expected_valid = True
+    expected_message = "valid message here!"
+    expected_filetype = "clinical"
     with mock.patch(
             "genie.validate.determine_filetype",
-            return_value="clinical") as mock_determine_filetype,\
+            return_value=expected_filetype) as mock_determine_filetype,\
         mock.patch(
             "genie.clinical.validate",
             return_value=(error_string, warning_string)) as mock_genie_class,\
         mock.patch(
             "genie.validate.determine_validity_and_log",
-            return_value=(True, "valid")) as mock_determine:
-        validate.validate_single_file_workflow(
+            return_value=(expected_valid, expected_message)) as mock_determine:
+
+        valid, message, filetype = validate.validate_single_file_workflow(
             syn,
             filepathlist,
             center)
+
+        assert valid == expected_valid
+        assert message == expected_message
+        assert filetype == expected_filetype
+
         mock_determine_filetype.assert_called_once_with(
             syn, filepathlist, center)
 
