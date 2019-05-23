@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger('genie')
 
 
-def determine_filetype(syn, filepathlist, center):
+def determine_filetype(syn, filepathlist, center, raise_error=True):
     '''
     Get the file type of the file by validating its filename
 
@@ -28,7 +28,7 @@ def determine_filetype(syn, filepathlist, center):
         # If valid filename, return file type.
         if filetype is not None:
             break
-    if filetype is None:
+    if filetype is None and raise_error:
         raise ValueError(
             "Your filename is incorrect! "
             "Please change your filename before you run "
@@ -98,7 +98,8 @@ def validate_single_file_workflow(syn,
         valid - Boolean value of validation status
     """
     if filetype is None:
-        filetype = determine_filetype(syn, filepathlist, center)
+        filetype = \
+            determine_filetype(syn, filepathlist, center, raise_error=True)
     else:
         if filetype not in PROCESS_FILES:
             raise ValueError("Must specify correct filetype")

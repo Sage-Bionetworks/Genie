@@ -112,7 +112,7 @@ def test_valid_validate_single_file_workflow():
         assert filetype == expected_filetype
 
         mock_determine_filetype.assert_called_once_with(
-            syn, filepathlist, center)
+            syn, filepathlist, center, raise_error=True)
 
         mock_genie_class.assert_called_once_with(
             filePathList=filepathlist,

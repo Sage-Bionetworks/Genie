@@ -388,8 +388,8 @@ def test_valid_validatefile():
     with mock.patch.object(
             syn, "get", return_value=entity) as patch_syn_get,\
         mock.patch(
-            "genie.input_to_database.get_filetype",
-            return_value=filetype) as patch_get_filetype,\
+            "genie.validate.determine_filetype",
+            return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
             return_value={
@@ -414,8 +414,8 @@ def test_valid_validatefile():
         patch_validate.assert_called_once()
         patch_syn_get.assert_called_once()
         patch_check.assert_called_once()
-        patch_get_filetype.assert_called_once_with(
-            syn, fileinfo['filePaths'], center)
+        patch_determine_filetype.assert_called_once_with(
+            syn, fileinfo['filePaths'], center, raise_error=False)
 
 
 def test_invalid_validatefile():
@@ -443,8 +443,8 @@ def test_invalid_validatefile():
     with mock.patch.object(
             syn, "get", return_value=entity) as patch_syn_get,\
         mock.patch(
-            "genie.input_to_database.get_filetype",
-            return_value=filetype) as patch_get_filetype,\
+            "genie.validate.determine_filetype",
+            return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
             return_value=check_file_status_dict) as patch_check,\
@@ -461,8 +461,8 @@ def test_invalid_validatefile():
             error_trackerdf, center, threads, testing, oncotreeurl)
         patch_validate.assert_called_once()
         patch_check.assert_called_once()
-        patch_get_filetype.assert_called_once_with(
-            syn, fileinfo['filePaths'], center)
+        patch_determine_filetype.assert_called_once_with(
+            syn, fileinfo['filePaths'], center, raise_error=False)
         error_message = (
             "Dear trial,\n\n"
             "Your files (data_clinical_supp_SAGE.txt) are invalid! "
@@ -513,8 +513,8 @@ def test_already_validated_validatefile():
     with mock.patch.object(
             syn, "get", return_value=entity) as patch_syn_get,\
         mock.patch(
-            "genie.input_to_database.get_filetype",
-            return_value=filetype) as patch_get_filetype,\
+            "genie.validate.determine_filetype",
+            return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
             return_value=check_file_status_dict) as patch_check:
@@ -536,8 +536,8 @@ def test_already_validated_validatefile():
         assert expected_validate_results == validate_results
         patch_syn_get.assert_called_once()
         patch_check.assert_called_once()
-        patch_get_filetype.assert_called_once_with(
-            syn, fileinfo['filePaths'], center)
+        patch_determine_filetype.assert_called_once_with(
+            syn, fileinfo['filePaths'], center, raise_error=False)
 
 
 # def test_filetypenone__check_valid():

@@ -94,31 +94,6 @@ def get_center_input_files(syn, synid, center, process="main"):
     return(prepared_center_file_list)
 
 
-def get_filetype(syn, path_list, center):
-    '''
-    Get the file type of the file by validating its filename
-
-    Args:
-        syn: Synapse object
-        path_list: list of filepaths to center files
-        center: Participating Center
-
-    Returns:
-        str: File type of input files
-    '''
-    filetype = None
-    for file_format in PROCESS_FILES:
-        try:
-            filetype = PROCESS_FILES[file_format](
-                syn, center).validateFilename(path_list)
-        except AssertionError:
-            continue
-        # If valid filename, return file type.
-        if filetype is not None:
-            break
-    return(filetype)
-
-
 def check_existing_file_status(validation_statusdf, error_trackerdf,
                                entities, input_filenames):
     '''
@@ -264,7 +239,9 @@ def validatefile(fileinfo,
     status_list = check_file_status['status_list']
     error_list = check_file_status['error_list']
     # Need to figure out to how to remove this
-    filetype = get_filetype(syn, filepaths, center)
+
+    filetype = validate.determine_filetype(
+        syn, filepaths, center, raise_error=False)
     if check_file_status['to_validate']:
         try:
             valid, message, filetype = validate.validate_single_file_workflow(
