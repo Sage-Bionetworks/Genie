@@ -8,73 +8,68 @@ import pandas as pd
 import synapseclient
 # import re
 import datetime
+import tempfile
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+class Clinical(FileTypeFormat):
 
-class ClinicalIndividual(FileTypeFormat):
+    # This should match what is in the database mapping table
+    _fileType = "clinical_filetype"
 
-    _fileType = "veoibd_clinical"
+    _required_filename = "clinical_filetype.csv"
 
     _process_kwargs = [
         "newPath", "parentId", "databaseToSynIdMappingDf"]
     
-    _required_columns = ["individual_id", "age", "sex", "birth_country",
-                         "ethnicity","family_hx_ibd","degree_one_with_ibd",
-                         "degree_two_with_ibd","initial_dx","gi_site","eim",
-                         "dx_perianal","dx_medication","comments"]
+    # This should match what is in the table that the data goes into
+    _required_columns = ["col1", "col2", "center"]
 
-    _primary_key_columns = ["individual_id"]
+    # This should match what the the primary key is set as an annotation
+    # on the table the data goes into.
+    _primary_key_columns = ["primary_key_col"]
 
-    # VALIDATE FILE NAME
+
     def _validateFilename(self, filePath):
 
         if isinstance(filePath, Sequence):
             filePath = filePath[0]
         
-        if os.path.basename(filePath) == "clinical_individual.csv":        
-            logger.info("{} filename is validated.".format(self._fileType))
+        if os.path.basename(filePath) == self._required_filename:
+            logger.debug("{} filename is validated.".format(self._fileType))
         else:
-            logger.error("{} filename is not valid: {}.".format(self._fileType, filePath))
-            raise ValueError("Individual clinical filename is not correct.")
+            logger.debug("{} filename is not valid: {}.".format(self._fileType, filePath))
+            raise AssertionError("{} filename ({}) is not correct. It should be {}".format(self._fileType,
+                                                                                           os.path.basename(filePath),
+                                                                                           self._required_filename))
 
-    # PROCESSING
-    def uploadMissingData(self, df, col, dbSynId, 
-                          stagingSynId, retractionSynId=None):
-        samples = "','".join(df[col])
-        path = os.path.join(
-            process_functions.SCRIPT_DIR,
-            "{}_missing_{}.csv".format(self._fileType, col))
-        missing = self.syn.tableQuery(
-            "select {} from {} where CENTER='{}' and {} not in ('{}')".format(
-                col, dbSynId, self.center, col, samples))
-        missing.asDataFrame().to_csv(path, index=False)
-        self.syn.store(synapseclient.File(path, parent=stagingSynId))
-        os.remove(path)
+
+    def _get_dataframe(self, filePathList):
+        if isinstance(filePathList, Sequence):
+            filePathList = filePathList[0]
+
+        df = pd.read_csv(filePathList, comment="#")
+        return(df)
 
 
     def process_steps(self, data, databaseToSynIdMappingDf, 
                       newPath, parentId):
         patientSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == "individual"][0]
+            databaseToSynIdMappingDf['Database'] == self._fileType][0]
         
-        patient = True
-
         data['center'] = self.center
-
-        self.uploadMissingData(data, "individual_id", patientSynId, parentId)
         
         process_functions.updateData(syn=self.syn, databaseSynId=patientSynId, 
                                      newData=data, filterBy=self.center,
-                                     filterByColumn="CENTER", col=self._required_columns,
+                                     filterByColumn="center", col=self._required_columns,
                                      toDelete=True)
         
         data.to_csv(newPath, sep="\t", index=False)
         return(newPath)
 
-    # VALIDATION
+
     def _validate(self, data):
         """
         This function validates the clinical file to make sure it adheres
@@ -90,18 +85,6 @@ class ClinicalIndividual(FileTypeFormat):
         warning = ""
 
         data = data.fillna("")
-
-        # sampleType_mapping = \
-        #     process_functions.getGenieMapping(self.syn, "syn7434273")
-
-        # ethnicity_mapping = \
-        #     process_functions.getGenieMapping(self.syn, "syn7434242")
-
-        # race_mapping = \
-        #     process_functions.getGenieMapping(self.syn, "syn7434236")
-
-        # sex_mapping = \
-        #     process_functions.getGenieMapping(self.syn, "syn7434222")
 
         # CHECK: SAMPLE_ID
         _hasColumnDict = dict()
@@ -120,9 +103,26 @@ class ClinicalIndividual(FileTypeFormat):
 
         return(total_error, warning)
 
-    def _get_dataframe(self, filePathList):
-        if isinstance(filePathList, Sequence):
-            filePathList = filePathList[0]
+class ClinicalIndividual(Clinical):
 
-        df = pd.read_csv(filePathList, comment="#")
-        return(df)
+    _fileType = "veoibd_clinical_individual"
+
+    _required_filename = "clinical_individual.csv"
+    
+    _required_columns = ["individual_id", "age", "sex", "birth_country",
+                         "ethnicity","family_hx_ibd","degree_one_with_ibd",
+                         "degree_two_with_ibd","initial_dx","gi_site","eim",
+                         "dx_perianal","dx_medication","comments", "center"]
+
+    _primary_key_columns = ["individual_id"]
+
+
+class ClinicalSample(FileTypeFormat):
+
+    _fileType = "veoibd_clinical_sample"
+
+    _required_filename = "clinical_sample.csv"
+        
+    _required_columns = ["sample_id", "individual_id", "center"]
+
+    _primary_key_columns = ["sample_id"]
