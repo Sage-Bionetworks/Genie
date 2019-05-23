@@ -1,6 +1,7 @@
 import pytest
 import mock
 import synapseclient
+import pytest
 from genie import validate
 center = "SAGE"
 syn = mock.create_autospec(synapseclient.Synapse)
@@ -22,5 +23,11 @@ def test_perfect_get_filetype(filename_fileformat_map):
         syn, filepath_list, center) == fileformat
 
 
-# def test_wrongfilename_get_filetype():
-#     assert input_to_database.get_filetype(syn, ['wrong.txt'], center) is None
+def test_wrongfilename_get_filetype():
+    with pytest.raises(
+        ValueError,
+        match="Your filename is incorrect! "
+              "Please change your filename before you run "
+              "the validator or specify --filetype if you are "
+              "running the validator locally"):
+        validate.determine_filetype(syn, ['wrong.txt'], center)
