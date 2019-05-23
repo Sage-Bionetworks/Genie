@@ -51,6 +51,8 @@ class Clinical(FileTypeFormat):
             filePathList = filePathList[0]
 
         df = pd.read_csv(filePathList, comment="#")
+        df['center'] = self.center
+
         return(df)
 
 
@@ -58,8 +60,6 @@ class Clinical(FileTypeFormat):
                       newPath, parentId):
         patientSynId = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == self._fileType][0]
-        
-        data['center'] = self.center
         
         process_functions.updateData(syn=self.syn, databaseSynId=patientSynId, 
                                      newData=data, filterBy=self.center,
@@ -88,6 +88,7 @@ class Clinical(FileTypeFormat):
 
         # CHECK: SAMPLE_ID
         _hasColumnDict = dict()
+        logger.debug("My required columns are: {}".format(self._required_columns))
         for column in self._required_columns:
             _hasColumnDict[column] = process_functions.checkColExist(data, 
                                                                      column)
@@ -117,12 +118,12 @@ class ClinicalIndividual(Clinical):
     _primary_key_columns = ["individual_id"]
 
 
-class ClinicalSample(FileTypeFormat):
+class ClinicalSample(Clinical):
 
     _fileType = "veoibd_clinical_sample"
 
     _required_filename = "clinical_sample.csv"
         
-    _required_columns = ["sample_id", "individual_id", "center"]
+    _required_columns = ["sample_id", "individual_id", "assay_id", "center"]
 
     _primary_key_columns = ["sample_id"]
