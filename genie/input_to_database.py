@@ -549,8 +549,8 @@ def validation(syn, center, process,
             userNames = ", ".join(
                 [syn.getUserProfile(user).userName for user in sendEmail])
             errorEmail = (
-                "Dear %s,\n\n"
-                "Your files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS "
+                "Dear {},\n\n"
+                "Your files ({}) are duplicated!  FILES SHOULD BE UPLOADED AS "
                 "NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE "
                 "UPLOADED EVERYTIME".format(userNames, incorrectFiles))
             syn.sendMessage(
