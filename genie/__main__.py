@@ -3,6 +3,9 @@ import argparse
 import genie
 
 
+def perform_validate(syn, args):
+    
+
 def perform_main(syn, args):
     if 'func' in args:
         try:
