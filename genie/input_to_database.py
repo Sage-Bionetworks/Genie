@@ -3,7 +3,7 @@ import logging
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 import synapseclient
 import synapseutils
@@ -337,7 +337,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
     centerStagingFolder = os.path.join(path_to_GENIE, center)
     centerStagingSynId = center_mapping_df['stagingSynId'][
         center_mapping_df['center'] == center][0]
-    # PROCESS_FILES is in config_process_scripts.py
+
     if not os.path.exists(centerStagingFolder):
         os.makedirs(centerStagingFolder)
     if processing == "main":

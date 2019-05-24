@@ -14,8 +14,10 @@ import shutil
 import logging
 import create_case_lists
 import dashboard_table_updater
-logging.basicConfig(level=logging.INFO)
+
+logging.basicConfig()
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def storeFile(syn, filePath, parentId, anonymizeCenterDf, genie_version, name=None):
     #process.center_anon(filePath, anonymizeCenterDf)
