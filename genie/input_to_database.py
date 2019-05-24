@@ -116,9 +116,11 @@ def get_filetype(syn, path_list, center):
             filetype = PROCESS_FILES[file_format](
                 syn, center).validateFilename(path_list)
         except AssertionError:
+            logger.debug("{} is not is not a {}".format(path_list, file_format))
             continue
         # If valid filename, return file type.
         if filetype is not None:
+            logger.debug("{} is a {}".format(path_list, file_format))
             break
     return(filetype)
 
@@ -170,7 +172,7 @@ def check_existing_file_status(validation_statusdf, error_trackerdf,
                 to_validate = True
             else:
                 logger.info(
-                    "{filename} FILE STATUS IS: {filestatus}".format(
+                    "{filename} EXISTING FILE STATUS IS: {filestatus}".format(
                       filename=input_filename,
                       filestatus=input_validation_status['status'].values[0]))
 
@@ -202,7 +204,6 @@ def _check_valid(syn, filepaths, center, filetype, filenames,
                 threads,
                 oncotree_url=oncotree_link,
                 testing=testing)
-            logger.info("VALIDATION COMPLETE")
         except ValueError as e:
             logger.error(e)
             message = e
@@ -282,7 +283,7 @@ def validatefile(fileinfo,
 
     filenames = [os.path.basename(i) for i in fileinfo['filePaths']]
     logger.info(
-        "VALIDATING {filenames}".format(filenames=", ".join(filenames)))
+        "Validating {filenames}".format(filenames=", ".join(filenames)))
     filepaths = fileinfo['filePaths']
     entities = [
         syn.get(synid, downloadFile=False) for synid in fileinfo['synId']]
@@ -291,7 +292,7 @@ def validatefile(fileinfo,
             datetime.datetime.strptime(
                 entity.modifiedOn.split(".")[0], "%Y-%m-%dT%H:%M:%S"))
         for entity in entities]
-
+    
     check_file_status = check_existing_file_status(
         validation_statusdf, error_trackerdf, entities, filenames)
 
@@ -317,6 +318,10 @@ def validatefile(fileinfo,
             [synid, error, filename]
             for synid, error, filename in
             zip(fileinfo['synId'], error_list, filenames)]
+
+    logger.info(
+        "Validation of {filenames} complete.".format(filenames=", ".join(filenames)))
+
     return(input_status_list, invalid_errors_list)
 
 
@@ -362,6 +367,8 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
                     processing=processing,
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf,
                     reference=reference, test=test)
+            else:
+                logger.debug("Missing a file type, skipping {}".format(filePath))
 
     elif processing in ["vcf", "maf", "mafSP"]:
         filePath = None
@@ -464,14 +471,14 @@ def validation(syn, center, process,
     '''
     centerInputSynId = center_mapping_df['inputSynId'][
         center_mapping_df['center'] == center][0]
-    logger.info("Center: " + center)
+    logger.info("Getting Center input files for: " + center)
     allFiles = get_center_input_files(syn, centerInputSynId, center, process)
 
     allFiles = pd.DataFrame(allFiles, columns=['synId', 'filePaths'])
     # If a center has no files, then return empty list
     if allFiles.empty:
         logger.info("%s has not uploaded any files" % center)
-        return([])
+        validFiles = []
     else:
         # Make sure the vcf validation statuses don't get wiped away
         if process != "vcf":
@@ -549,8 +556,8 @@ def validation(syn, center, process,
             userNames = ", ".join(
                 [syn.getUserProfile(user).userName for user in sendEmail])
             errorEmail = (
-                "Dear %s,\n\n"
-                "Your files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS "
+                "Dear {},\n\n"
+                "Your files ({}) are duplicated!  FILES SHOULD BE UPLOADED AS "
                 "NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE "
                 "UPLOADED EVERYTIME".format(userNames, incorrectFiles))
             syn.sendMessage(
@@ -604,7 +611,9 @@ def validation(syn, center, process,
         inputValidStatus['path'] = paths
         validFiles = inputValidStatus[['id', 'path', 'fileType']][
             inputValidStatus['status'] == "VALIDATED"]
-        return(validFiles)
+
+    logger.info("Validation completed.")    
+    return(validFiles)
 
 
 def center_input_to_database(
@@ -715,8 +724,9 @@ def center_input_to_database(
         processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
-        logger.info("SAMPLE/PATIENT RETRACTION")
-        toRetract.retract(syn, testing)
+        # Resolve with https://github.com/Sage-Bionetworks/Genie/issues/94
+        # logger.info("SAMPLE/PATIENT RETRACTION")
+        # toRetract.retract(syn, testing)
 
     else:
         messageOut = \

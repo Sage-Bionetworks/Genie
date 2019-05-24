@@ -21,6 +21,7 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 import logging
+
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -41,46 +42,35 @@ logger.setLevel(logging.INFO)
 #     else:
 #         return(True)
 
-def synapse_login():
-    """
-    This function logs into synapse for you if credentials are saved.  
-    If not saved, then user is prompted username and password.
 
-    :returns:     Synapseclient object
-    """
-    try:
-        syn = synapseclient.login(silent=True)
-    except Exception as e:
-        logger.info("Please provide your synapse username/email and password (You will only be prompted once), or write your username and password to your bash profile under GENIE_USER and GENIE_PASS")
-        Username = os.getenv("GENIE_USER")
-        Password = os.getenv("GENIE_PASS")
-        if Username is None or Password is None:
-            Username = raw_input("Username: ")
-            Password = getpass.getpass()
-        syn = synapseclient.login(email=Username, password=Password,rememberMe=True,silent=True)
-    return(syn)
-
-def validate(syn, fileType, filePath, center, threads, oncotree_url=None, offline=False, uploadToSynapse=None, testing=False, noSymbolCheck=False):
+def validate(syn, fileType, filePath, center, threads, oncotree_url=None, 
+             offline=False, uploadToSynapse=None, testing=False, noSymbolCheck=False):
     """
     This performs the validation of files
 
     :returns:   Text with the errors of the chosen file
     """
     #CHECK: Fail if filename is incorrect
+
+    validator = PROCESS_FILES[fileType](syn, center, threads)
+
     if not offline:
         try:
-            PROCESS_FILES[fileType](syn, center, threads).validateFilename(filePath)
+            validator.validateFilename(filePath)
         except AssertionError as e:
             raise ValueError("Your filename is incorrect!\n%s\nPlease change your filename before you run the validator again."  % e)
-    total_error, warning = PROCESS_FILES[fileType](syn, center, threads).validate(filePathList=filePath, oncotreeLink=oncotree_url, testing=testing, noSymbolCheck=noSymbolCheck)
+
+    total_error, warning = validator.validate(filePathList=filePath, oncotreeLink=oncotree_url, 
+                                              testing=testing, noSymbolCheck=noSymbolCheck)
 
     #Complete error message
-    message = "----------------ERRORS----------------\n"
     if total_error == "":
-        message = "YOUR FILE IS VALIDATED!\n"
+        message = "The {} file is valid.".format(fileType)
         logger.info(message)
         valid = True
     else:
+        message = "The {} file is invalid.".format(fileType)
+        logger.info(message)
         for errors in total_error.split("\n"):
             if errors!='':
                 logger.error(errors)
@@ -90,17 +80,15 @@ def validate(syn, fileType, filePath, center, threads, oncotree_url=None, offlin
         for warn in warning.split("\n"):  
             if warn!='':      
                 logger.warning(warn)
-        message += "-------------WARNINGS-------------\n" + warning
+
     if valid and uploadToSynapse is not None:
         logger.info("Uploading file to %s" % uploadToSynapse)
         [syn.store(synapseclient.File(path, parent=uploadToSynapse)) for path in filePath]
     return(message, valid)
 
-def perform_validate(syn, args):    
-    if args.testing:
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
-    else:
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
+def perform_validate(syn, config, args):
+
+    databaseToSynIdMapping = syn.tableQuery('SELECT * FROM {}'.format(config.get('database_to_synid_mapping')))
 
     databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
     synId = databaseToSynIdMappingDf.Id[databaseToSynIdMappingDf['Database'] == "centerMapping"]
@@ -108,10 +96,10 @@ def perform_validate(syn, args):
     center_mapping_df = center_mapping.asDataFrame()
     assert args.center in center_mapping_df.center.tolist(), "Must specify one of these centers: %s" % ", ".join(center_mapping_df.center)
 
-    if args.oncotreeLink is None:
-        oncoLink = databaseToSynIdMappingDf['Id'][databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
-        oncoLinkEnt = syn.get(oncoLink)
-        args.oncotreeLink = oncoLinkEnt.externalURL
+    # if args.oncotreeLink is None:
+    #     oncoLink = databaseToSynIdMappingDf['Id'][databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
+    #     oncoLinkEnt = syn.get(oncoLink)
+    #     args.oncotreeLink = oncoLinkEnt.externalURL
 
     if args.uploadToSynapse is not None:
         if args.offline:
@@ -120,6 +108,9 @@ def perform_validate(syn, args):
             try:
                 syn.get(args.uploadToSynapse)
             except synapseclient.exceptions.SynapseHTTPError as e:
-                raise ValueError("Provided Synapse id must be your input folder Synapse id or a Synapse Id of a folder inside your input directory")
+                logger.error("Provided Synapse id must be your input folder Synapse id or a Synapse Id of a folder inside your input directory")
+                raise e
 
     message = validate(syn, args.fileType, args.file, args.center, args.thread, args.oncotreeLink, args.offline, args.uploadToSynapse, args.testing, args.noSymbolCheck)
+
+    return message

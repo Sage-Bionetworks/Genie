@@ -1,18 +1,26 @@
 #!/usr/bin/env python
 import argparse
-import genie
+import json
 
+import genie
+import synapseclient
 
 def perform_main(syn, args):
+    config = json.load(open(args.config))
+
     if 'func' in args:
         try:
-            args.func(syn, args)
+            result = args.func(syn, config, args)
         except Exception:
             raise
+
+    return result
 
 
 def build_parser():
     parser = argparse.ArgumentParser(description='GENIE processing')
+
+    parser.add_argument('--config', help='JSON config file.')
 
     subparsers = parser.add_subparsers(
         title='commands',
@@ -82,8 +90,9 @@ def build_parser():
 
 def main():
     args = build_parser().parse_args()
-    syn = genie.validate.synapse_login()
-    perform_main(syn, args)
+
+    syn = synapseclient.login()
+    message = perform_main(syn, args)
 
 
 if __name__ == "__main__":
