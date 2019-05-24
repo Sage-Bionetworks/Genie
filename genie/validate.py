@@ -2,7 +2,9 @@
 
 from genie import PROCESS_FILES
 import logging
-logger = logging.getLogger('genie')
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def determine_filetype(syn, filepathlist, center, raise_error=True):
