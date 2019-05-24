@@ -10,7 +10,7 @@ import datetime
 import time
 import re
 import subprocess
-import synapseutils as synu
+import synapseutils
 import create_case_lists
 import dashboard_table_updater
 
@@ -48,7 +48,7 @@ def findCaseListId(syn, parentId):
         syn: Synapse object
         parentId: Synapse Id of Folder or Project
     '''
-    releaseEnts = synu.walk(syn, parentId)
+    releaseEnts = synapseutils.walk(syn, parentId)
     releaseFolders = next(releaseEnts)
     if len(releaseFolders[1]) == 0:
         caselistId = syn.store(
@@ -177,7 +177,9 @@ def reAnnotatePHI(mergedClinical):
 
 
 # Configure each maf row
-def configureMafRow(rowArray, headers, keepSamples, remove_variants):
+def configureMafRow(
+        rowArray, headers, keepSamples, remove_variants,
+        flagged_variants):
     chrom = str(rowArray[headers.index('Chromosome')])
     start = str(rowArray[headers.index('Start_Position')])
     end = str(rowArray[headers.index('End_Position')])
@@ -204,6 +206,10 @@ def configureMafRow(rowArray, headers, keepSamples, remove_variants):
         rowArray[headers.index("Match_Norm_Seq_Allele1")] = \
             '' if str(nDepth) in ["NA", "0.0"] else nDepth
         # rowArray.pop(headers.index('inBED'))
+        if variant in flagged_variants:
+            rowArray.append(True)
+        else:
+            rowArray.append('')
         newRow = "\t".join(rowArray)
         newRow += "\n"
         newRow = process.removeStringFloat(newRow)
@@ -357,14 +363,29 @@ def mutation_in_cis_filter(
                     centerStaging=True,
                     genieVersion=genieVersion)
                 os.unlink("mutationsInCis_filtered_samples.csv")
-    variant_filtering = syn.tableQuery(
+    sample_filtering = syn.tableQuery(
         "SELECT Tumor_Sample_Barcode FROM {} where Flag = 'TOSS' and "
         "Tumor_Sample_Barcode is not null".format(variant_filtering_synId))
 
-    filtered_samples = variant_filtering.asDataFrame()
+    filtered_samplesdf = sample_filtering.asDataFrame()
     # #Alex script #1 removed patients
-    remove_samples = filtered_samples['Tumor_Sample_Barcode'].drop_duplicates()
-    return(remove_samples)
+    remove_samples = \
+        filtered_samplesdf['Tumor_Sample_Barcode'].drop_duplicates()
+
+    # Find variants to flag
+    variant_flagging = syn.tableQuery(
+        "SELECT Tumor_Sample_Barcode FROM {} where Flag = 'FLAG' and "
+        "Tumor_Sample_Barcode is not null".format(variant_filtering_synId))
+    flag_variantsdf = variant_flagging.asDataFrame()
+
+    flag_variantsdf['flaggedVariants'] = \
+        flag_variantsdf['Chromosome'].astype(str) + ' ' + \
+        flag_variantsdf['Start_Position'].astype(str) + ' ' + \
+        flag_variantsdf['End_Position'].astype(str) + ' ' + \
+        flag_variantsdf['Reference_Allele'].astype(str) + ' ' + \
+        flag_variantsdf['Tumor_Seq_Allele2'].astype(str) + ' ' + \
+        flag_variantsdf['Tumor_Sample_Barcode'].astype(str)
+    return(remove_samples, flag_variantsdf['flaggedVariants'])
 
 
 def seq_assay_id_filter(clinicaldf):
@@ -475,16 +496,20 @@ def stagingToCbio(
         "SELECT * FROM {} where CENTER in ('{}')".format(
             sampleSynId, "','".join(CENTER_MAPPING_DF.center)))
     bed = syn.tableQuery(
-        "SELECT Chromosome,Start_Position,End_Position,Hugo_Symbol,ID,"
-        "SEQ_ASSAY_ID,Feature_Type,includeInPanel FROM"
-        " {} where CENTER in ('{}')".format(
+        "SELECT * FROM {} where CENTER in ('{}')".format(
             bedSynId, "','".join(CENTER_MAPPING_DF.center)))
     patientDf = patient.asDataFrame()
     sampleDf = sample.asDataFrame()
+    # Remove this when these columns are removed from both databases
+    if sampleDf.get("AGE_AT_SEQ_REPORT_NUMERICAL") is not None:
+        del sampleDf['AGE_AT_SEQ_REPORT_NUMERICAL']
     bedDf = bed.asDataFrame()
-    del sampleDf['AGE_AT_SEQ_REPORT_NUMERICAL']
+    del bedDf['CENTER']
     del sampleDf['CENTER']
-    del patientDf['BIRTH_YEAR_NUMERICAL']
+    # Remove this when these columns are removed from both databases
+    if patientDf.get("BIRTH_YEAR_NUMERICAL") is not None:
+        del patientDf['BIRTH_YEAR_NUMERICAL']
+    # del patientDf['BIRTH_YEAR_NUMERICAL']
     # Clinical release scope filter
     # If private -> Don't release to public
     clinicalReleaseScope = syn.tableQuery(
@@ -529,10 +554,11 @@ def stagingToCbio(
         genie_user=genie_user, genie_pass=genie_pass)
 
     logger.info("MUTATION IN CIS FILTER")
-    remove_mutationInCis_samples = mutation_in_cis_filter(
-        syn, skipMutationsInCis, variant_filtering_synId, CENTER_MAPPING_DF,
-        genieVersion=genieVersion, test=test,
-        genie_user=genie_user, genie_pass=genie_pass)
+    remove_mutationInCis_samples, flagged_mutationInCis_variants = \
+        mutation_in_cis_filter(
+            syn, skipMutationsInCis, variant_filtering_synId,
+            CENTER_MAPPING_DF, genieVersion=genieVersion, test=test,
+            genie_user=genie_user, genie_pass=genie_pass)
 
     remove_no_genepanel_samples = no_genepanel_filter(clinicalDf, bedDf)
 
@@ -716,6 +742,7 @@ def stagingToCbio(
         with open(mafEnt.path, "r") as mafFile:
             header = mafFile.readline()
             headers = header.replace("\n", "").split("\t")
+            headers.append("mutationInCis_Flag")
             if index == 0:
                 with open(MUTATIONS_PATH, 'a') as f:
                     f.write(header)
@@ -734,14 +761,16 @@ def stagingToCbio(
                     newMergedRow = configureMafRow(
                         rowArray, headers,
                         keepForMergedConsortiumSamples,
-                        remove_mafInBed_variants)
+                        remove_mafInBed_variants,
+                        flagged_mutationInCis_variants)
                     if newMergedRow is not None:
                         with open(MUTATIONS_PATH, 'a') as f:
                             f.write(newMergedRow)
                     newCenterRow = configureMafRow(
                         rowArray, headers,
                         keepForCenterConsortiumSamples,
-                        remove_mafInBed_variants)
+                        remove_mafInBed_variants,
+                        flagged_mutationInCis_variants)
                     if newCenterRow is not None:
                         with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
                             f.write(newCenterRow)
@@ -1145,14 +1174,14 @@ def createLinkVersion(
     # second = ".".join(versioning[1:])
     releaseSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == 'release'].values[0]
-    releases = synu.walk(syn, releaseSynId)
+    releases = synapseutils.walk(syn, releaseSynId)
     mainReleaseFolders = next(releases)[1]
     releaseFolderSynId = [
         synId for folderName, synId in mainReleaseFolders
         if folderName == "Release {}".format(main)]
 
     if len(releaseFolderSynId) > 0:
-        secondRelease = synu.walk(syn, releaseFolderSynId[0])
+        secondRelease = synapseutils.walk(syn, releaseFolderSynId[0])
         secondReleaseFolders = next(secondRelease)[1]
         secondReleaseFolderSynIdList = [
             synId for folderName, synId in secondReleaseFolders
@@ -1371,7 +1400,7 @@ def main():
     GENE_MATRIX_PATH = os.path.join(
         GENIE_RELEASE_DIR,
         "data_gene_matrix_{}.txt".format(args.genieVersion))
-    create_case_lists.create_case_lists(
+    create_case_lists.main(
         CLINICAL_PATH,
         GENE_MATRIX_PATH,
         CASE_LIST_PATH,
@@ -1419,10 +1448,12 @@ def main():
     cbio_validator_log = "cbioValidatorLogsConsortium_{}.txt".format(
         args.genieVersion)
     if not args.test and not args.staging:
+        log_folder_synid = databaseSynIdMappingDf['Id'][
+            databaseSynIdMappingDf['Database'] == 'logs'].values[0]
         with open(cbio_validator_log, "w") as cbioLog:
             cbioLog.write(cbioOutput.decode("utf-8"))
         syn.store(synapseclient.File(
-            cbio_validator_log, parentId="syn10155804"))
+            cbio_validator_log, parentId=log_folder_synid))
         os.remove(cbio_validator_log)
     logger.info("REMOVING OLD FILES")
 

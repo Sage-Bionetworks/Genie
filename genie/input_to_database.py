@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 import logging
-logger = logging.getLogger("genie")
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 import synapseclient
-import synapseutils as synu
+import synapseutils
 import argparse
 import os
 import pandas as pd
@@ -59,7 +63,7 @@ def get_center_input_files(syn, synid, center, process="main"):
         "data_clinical_supp_sample_{center}.txt".format(center=center),
         "data_clinical_supp_patient_{center}.txt".format(center=center)]
 
-    center_files = synu.walk(syn, synid)
+    center_files = synapseutils.walk(syn, synid)
     clinicalpair = []
     prepared_center_file_list = []
     for dirpath, dirname, filenames in center_files:
@@ -119,8 +123,8 @@ def get_filetype(syn, path_list, center):
     return(filetype)
 
 
-def check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities, input_filenames):
+def check_existing_file_status(validation_statusdf, error_trackerdf,
+                               entities, input_filenames):
     '''
     This function checks input files against the existing validation and error
     tracking dataframe
@@ -151,10 +155,8 @@ def check_existing_file_status(
         if input_validation_status.empty:
             to_validate = True
         else:
-            '''
-            This to_validate is here, because the following is a
-            sequential check of whether files need to be validated
-            '''
+            # This to_validate is here, because the following is a
+            # sequential check of whether files need to be validated
             to_validate = False
             statuses.append(input_validation_status['status'].values[0])
             if input_error.empty:
@@ -178,15 +180,85 @@ def check_existing_file_status(
         'to_validate': to_validate})
 
 
-def validatefile(
-        fileinfo,
-        syn,
-        validation_statusdf,
-        error_trackerdf,
-        center,
-        threads,
-        testing,
-        oncotree_link):
+def _check_valid(syn, filepaths, center, filetype, filenames,
+                 oncotree_link, threads, testing):
+    '''
+    Function to validate a file
+    '''
+    # If no filetype set, means the file was named incorrectly
+    if filetype is None:
+        message = (
+            "{filenames}: Incorrect filenaming convention or can't be "
+            "processed".format(filenames=", ".join(filenames)))
+        logger.error(message)
+        valid = False
+    else:
+        try:
+            message, valid = validate.validate(
+                syn,
+                filetype,
+                filepaths,
+                center,
+                threads,
+                oncotree_url=oncotree_link,
+                testing=testing)
+            logger.info("VALIDATION COMPLETE")
+        except ValueError as e:
+            logger.error(e)
+            message = e
+            valid = False
+    return(valid, message)
+
+
+def _get_status_and_error_list(syn, fileinfo, valid, message, filetype,
+                               entities, filepaths, filenames, modified_ons):
+    '''
+    '''
+    if valid:
+        input_status_list = [
+            [ent.id, filepath, ent.md5, "VALIDATED",
+             filename, modifiedon, filetype]
+            for ent, filepath, filename, modifiedon in
+            zip(entities, filepaths, filenames, modified_ons)]
+
+        invalid_errors_list = None
+    else:
+        # Send email the first time the file is invalid
+        incorrect_files = ", ".join(filenames)
+        incorrect_ent = syn.get(fileinfo['synId'][0])
+        find_file_users = \
+            list(set([incorrect_ent.modifiedBy, incorrect_ent.createdBy]))
+        usernames = ", ".join([
+            syn.getUserProfile(user)['userName']
+            for user in find_file_users])
+        email_message = (
+            "Dear {username},\n\n"
+            "Your files ({filenames}) are invalid! "
+            "Here are the reasons why:\n\n{error_message}".format(
+                username=usernames,
+                filenames=incorrect_files,
+                error_message=message))
+        syn.sendMessage(
+            find_file_users, "GENIE Validation Error", email_message)
+        input_status_list = [
+            [ent.id, path, ent.md5, "INVALID", name, modifiedon, filetype]
+            for ent, path, name, modifiedon in
+            zip(entities, filepaths, filenames, modified_ons)]
+
+        invalid_errors_list = [
+            [synid, message, filename]
+            for synid, filename in zip(fileinfo['synId'], filenames)]
+    return(input_status_list, invalid_errors_list)
+
+
+def validatefile(fileinfo,
+                 syn,
+                 validation_statusdf,
+                 error_trackerdf,
+                 center,
+                 threads,
+                 testing,
+                 oncotree_link):
     '''
     Function that is applied to a pandas dataframe to
     validates each row. If a file has not changed, then it
@@ -227,62 +299,15 @@ def validatefile(
     error_list = check_file_status['error_list']
     filetype = get_filetype(syn, filepaths, center)
     if check_file_status['to_validate']:
-        # If no filetype set, means the file was named incorrectly
-        if filetype is None:
-            message = (
-                "{filenames}: Incorrect filenaming convention or can't be "
-                "processed".format(filenames=", ".join(filenames)))
-            logger.error(message)
-            valid = False
-        else:
-            try:
-                message, valid = validate.validate(
-                    syn,
-                    filetype,
-                    filepaths,
-                    center,
-                    threads,
-                    oncotree_url=oncotree_link,
-                    testing=testing)
-                logger.info("VALIDATION COMPLETE")
-            except ValueError as e:
-                logger.error(e)
-                message = e
-                valid = False
-        if valid:
-            input_status_list = [
-                [ent.id, filepath, ent.md5, "VALIDATED",
-                 filename, modifiedon, filetype]
-                for ent, filepath, filename, modifiedon in
-                zip(entities, filepaths, filenames, modified_ons)]
 
-            invalid_errors_list = None
-        else:
-            # Send email the first time the file is invalid
-            incorrect_files = ", ".join(filenames)
-            incorrect_ent = syn.get(fileinfo['synId'][0])
-            find_file_users = \
-                list(set([incorrect_ent.modifiedBy, incorrect_ent.createdBy]))
-            usernames = ", ".join([
-                syn.getUserProfile(user)['userName']
-                for user in find_file_users])
-            email_message = (
-                "Dear {username},\n\n"
-                "Your files ({filenames}) are invalid! "
-                "Here are the reasons why:\n\n{error_message}".format(
-                    username=usernames,
-                    filenames=incorrect_files,
-                    error_message=message))
-            syn.sendMessage(
-                find_file_users, "GENIE Validation Error", email_message)
-            input_status_list = [
-                [ent.id, path, ent.md5, "INVALID", name, modifiedon, filetype]
-                for ent, path, name, modifiedon in
-                zip(entities, filepaths, filenames, modified_ons)]
+        valid, message = _check_valid(
+            syn, filepaths, center, filetype, filenames,
+            oncotree_link, threads, testing)
 
-            invalid_errors_list = [
-                [synid, message, filename]
-                for synid, filename in zip(fileinfo['synId'], filenames)]
+        input_status_list, invalid_errors_list = _get_status_and_error_list(
+            syn, fileinfo, valid, message, filetype,
+            entities, filepaths, filenames, modified_ons)
+
     else:
         input_status_list = [
             [ent.id, path, ent.md5, status, filename, modifiedon, filetype]
@@ -307,7 +332,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
     centerStagingFolder = os.path.join(path_to_GENIE, center)
     centerStagingSynId = center_mapping_df['stagingSynId'][
         center_mapping_df['center'] == center][0]
-    # PROCESS_FILES is in config_process_scripts.py
+
     if not os.path.exists(centerStagingFolder):
         os.makedirs(centerStagingFolder)
     if processing == "main":
@@ -419,10 +444,9 @@ def create_and_archive_maf_database(syn, database_synid_mappingdf):
     return(database_synid_mappingdf)
 
 
-def validation(
-        syn, center, process,
-        center_mapping_df, databaseToSynIdMappingDf,
-        thread, testing, oncotreeLink):
+def validation(syn, center, process,
+               center_mapping_df, databaseToSynIdMappingDf,
+               thread, testing, oncotreeLink):
     '''
     Validation of all center files
 
@@ -555,7 +579,7 @@ def validation(
             process_functions.getDatabaseSynId(
                 syn, "errorTracker",
                 databaseToSynIdMappingDf=databaseToSynIdMappingDf),
-            ["id"], toDelete=True)
+            ["id"], to_delete=True)
 
         paths = inputValidStatus['path']
         # filenames = [os.path.basename(name) for name in paths]
@@ -575,7 +599,8 @@ def validation(
                 syn, "validationStatus",
                 databaseToSynIdMappingDf=databaseToSynIdMappingDf),
             ["id"],
-            toDelete=True)
+            to_delete=True)
+
         inputValidStatus['path'] = paths
         validFiles = inputValidStatus[['id', 'path', 'fileType']][
             inputValidStatus['status'] == "VALIDATED"]
@@ -700,205 +725,8 @@ def center_input_to_database(
         logger.info(messageOut.format(center))
 
     # Store log file
-    syn.store(synapseclient.File(log_path, parentId="syn10155804"))
+    log_folder_synid = process_functions.getDatabaseSynId(
+        syn, "logs", databaseToSynIdMappingDf=database_to_synid_mappingdf)
+    syn.store(synapseclient.File(log_path, parentId=log_folder_synid))
     os.remove(log_path)
     logger.info("ALL PROCESSES COMPLETE")
-
-
-def main(process,
-         center=None,
-         pemfile=None,
-         delete_old=False,
-         only_validate=False,
-         oncotreelink=None,
-         create_new_maf_database=False,
-         testing=False,
-         debug=False,
-         reference=None,
-         vcf2maf_path=None,
-         vep_path=None,
-         vep_data=None,
-         thread=1):
-
-    syn = process_functions.synLogin(pemfile, debug=debug)
-    # Must specify correct paths to vcf2maf, VEP and VEP data
-    # if trying to process vcf, maf and mafSP
-    if process in ['vcf', 'maf', 'mafSP'] and not only_validate:
-        assert os.path.exists(vcf2maf_path), (
-            "Path to vcf2maf (--vcf2mafPath) must be specified "
-            "if `--process {vcf,maf,mafSP}` is used")
-        assert os.path.exists(vep_path), (
-            "Path to VEP (--vepPath) must be specified "
-            "if `--process {vcf,maf,mafSP}` is used")
-        assert os.path.exists(vep_data), (
-            "Path to VEP data (--vepData) must be specified "
-            "if `--process {vcf,maf,mafSP}` is used")
-
-    if testing:
-        database_to_synid_mapping_synid = "syn11600968"
-    else:
-        database_to_synid_mapping_synid = "syn10967259"
-
-    databaseToSynIdMapping = syn.tableQuery(
-        'SELECT * FROM {}'.format(database_to_synid_mapping_synid))
-    databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
-
-    center_mapping_id = process_functions.getDatabaseSynId(
-        syn, "centerMapping",
-        databaseToSynIdMappingDf=databaseToSynIdMappingDf)
-
-    center_mapping = syn.tableQuery('SELECT * FROM %s' % center_mapping_id)
-    center_mapping_df = center_mapping.asDataFrame()
-
-    if center is not None:
-        assert center in center_mapping_df.center.tolist(), (
-            "Must specify one of these centers: {}".format(
-                ", ".join(center_mapping_df.center)))
-        centers = [center]
-    else:
-        center_mapping_df = \
-            center_mapping_df[~center_mapping_df['inputSynId'].isnull()]
-        # release is a bool column
-        center_mapping_df = center_mapping_df[center_mapping_df['release']]
-        centers = center_mapping_df.center
-
-    if oncotreelink is None:
-        onco_link = databaseToSynIdMappingDf['Id'][
-            databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
-        onco_link_ent = syn.get(onco_link)
-        oncotreelink = onco_link_ent.externalURL
-    # Check if you can connect to oncotree link,
-    # if not then don't run validation / processing
-    process_functions.checkUrl(oncotreelink)
-
-    center_mapping_ent = syn.get(center_mapping_id)
-    if center_mapping_ent.get('isProcessing', ['True'])[0] == 'True':
-        raise Exception(
-            "Processing/validation is currently happening.  "
-            "Please change/add the 'isProcessing' annotation on {} "
-            "to False to enable processing".format(center_mapping_id))
-    else:
-        center_mapping_ent.isProcessing = "True"
-        center_mapping_ent = syn.store(center_mapping_ent)
-    # remove this query timeout and see what happens
-    # syn.table_query_timeout = 50000
-
-    # Create new maf database, should only happen once if its specified
-    if create_new_maf_database:
-        databaseToSynIdMappingDf = \
-            create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
-
-    for center in centers:
-        center_input_to_database(
-            syn, center, process,
-            testing, only_validate,
-            vcf2maf_path, vep_path,
-            vep_data, databaseToSynIdMappingDf,
-            center_mapping_df, reference=reference,
-            delete_old=delete_old,
-            oncotree_link=oncotreelink,
-            thread=thread)
-
-    # To ensure that this is the new entity
-    center_mapping_ent = syn.get(center_mapping_id)
-    center_mapping_ent.isProcessing = "False"
-    center_mapping_ent = syn.store(center_mapping_ent)
-
-    error_tracker_synid = process_functions.getDatabaseSynId(
-        syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
-    # Only write out invalid reasons if the center
-    # isnt specified and if only validate
-    if center is None and only_validate:
-        logging.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
-        write_invalid_reasons.write_invalid_reasons(
-            syn, center_mapping_df, error_tracker_synid)
-
-
-if __name__ == "__main__":
-    '''
-    Argument parsers
-    TODO: Fix case of arguments
-    '''
-    parser = argparse.ArgumentParser(
-        description='GENIE center ')
-    parser.add_argument(
-        "process",
-        choices=['vcf', 'maf', 'main', 'mafSP'],
-        help='Process vcf, maf or the rest of the files')
-    parser.add_argument(
-        '--center',
-        help='The centers')
-    parser.add_argument(
-        "--pemFile",
-        type=str,
-        help="Path to PEM file (genie.pem)")
-    parser.add_argument(
-        "--deleteOld",
-        action='store_true',
-        help="Delete all old processed and temp files")
-    parser.add_argument(
-        "--onlyValidate",
-        action='store_true',
-        help="Only validate the files, don't process")
-    parser.add_argument(
-        "--oncotreeLink",
-        type=str,
-        help="Link to oncotree code")
-    parser.add_argument(
-        "--createNewMafDatabase",
-        action='store_true',
-        help="Creates a new maf database")
-    parser.add_argument(
-        "--testing",
-        action='store_true',
-        help="Testing the infrastructure!")
-    parser.add_argument(
-        "--debug",
-        action='store_true',
-        help="Add debug mode to synapse")
-    parser.add_argument(
-        "--reference",
-        type=str,
-        help="Path to VCF reference file")
-
-    # DEFAULT PARAMS
-    parser.add_argument(
-        "--vcf2mafPath",
-        type=str,
-        help="Path to vcf2maf",
-        default=os.path.expanduser("~/vcf2maf-1.6.14"))
-    parser.add_argument(
-        "--vepPath",
-        type=str,
-        help="Path to VEP",
-        default=os.path.expanduser("~/vep"))
-    parser.add_argument(
-        "--vepData",
-        type=str,
-        help="Path to VEP data",
-        default=os.path.expanduser("~/.vep"))
-    '''
-    TODO: Remove thread
-    '''
-    parser.add_argument(
-        '--thread',
-        type=int,
-        help="Number of threads to use for validation",
-        default=1)
-
-    args = parser.parse_args()
-
-    main(args.process,
-         center=args.center,
-         pemfile=args.pemFile,
-         delete_old=args.deleteOld,
-         only_validate=args.onlyValidate,
-         oncotreelink=args.oncotreeLink,
-         create_new_maf_database=args.createNewMafDatabase,
-         testing=args.testing,
-         debug=args.debug,
-         reference=args.reference,
-         vcf2maf_path=args.vcf2mafPath,
-         vep_path=args.vepPath,
-         vep_data=args.vepData,
-         thread=args.thread)
