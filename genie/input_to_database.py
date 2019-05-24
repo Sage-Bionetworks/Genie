@@ -151,9 +151,10 @@ def check_existing_file_status(validation_statusdf, error_trackerdf,
     statuses = []
     errors = []
     for ent, input_filename in zip(entities, input_filenames):
+        versionNumber = str(ent.properties.versionNumber)
         input_validation_status = \
-            validation_statusdf[validation_statusdf['id'] == ent.id]
-        input_error = error_trackerdf[error_trackerdf['id'] == ent.id]
+            validation_statusdf[(validation_statusdf['id'] == ent.id) & (validation_statusdf['versionNumber'] == versionNumber)]
+        input_error = error_trackerdf[(error_trackerdf['id'] == ent.id) & (error_trackerdf['versionNumber'] == versionNumber)]
         if input_validation_status.empty:
             to_validate = True
         else:
@@ -216,39 +217,43 @@ def _get_status_and_error_list(syn, fileinfo, valid, message, filetype,
     '''
     '''
     if valid:
-        input_status_list = [
-            [ent.id, filepath, ent.md5, "VALIDATED",
-             filename, modifiedon, filetype]
-            for ent, filepath, filename, modifiedon in
-            zip(entities, filepaths, filenames, modified_ons)]
-
+        status = "VALIDATED"
         invalid_errors_list = None
     else:
-        # Send email the first time the file is invalid
-        incorrect_files = ", ".join(filenames)
-        incorrect_ent = syn.get(fileinfo['synId'][0])
-        find_file_users = \
-            list(set([incorrect_ent.modifiedBy, incorrect_ent.createdBy]))
-        usernames = ", ".join([
-            syn.getUserProfile(user)['userName']
-            for user in find_file_users])
-        email_message = (
-            "Dear {username},\n\n"
-            "Your files ({filenames}) are invalid! "
-            "Here are the reasons why:\n\n{error_message}".format(
-                username=usernames,
-                filenames=incorrect_files,
-                error_message=message))
-        syn.sendMessage(
-            find_file_users, "GENIE Validation Error", email_message)
-        input_status_list = [
-            [ent.id, path, ent.md5, "INVALID", name, modifiedon, filetype]
-            for ent, path, name, modifiedon in
-            zip(entities, filepaths, filenames, modified_ons)]
-
         invalid_errors_list = [
-            [synid, message, filename]
-            for synid, filename in zip(fileinfo['synId'], filenames)]
+            [synid, message, filename, str(ent.properties.versionNumber)]
+            for synid, ent, filename in zip(fileinfo['synId'], entities, filenames)]
+        status = "INVALID"
+
+    input_status_list = []
+    for ent, path, name, modifiedon in zip(entities, 
+                                           filepaths, 
+                                           filenames, 
+                                           modified_ons):
+
+        record = [ent.id, path, ent.md5, status, name, modifiedon, filetype,
+                  str(ent.properties.versionNumber)]
+        input_status_list.append(record)
+
+    # else:
+        # # Send email the first time the file is invalid
+        # incorrect_files = ", ".join(filenames)
+        # incorrect_ent = syn.get(fileinfo['synId'][0])
+        # find_file_users = \
+        #     list(set([incorrect_ent.modifiedBy, incorrect_ent.createdBy]))
+        # usernames = ", ".join([
+        #     syn.getUserProfile(user)['userName']
+        #     for user in find_file_users])
+        # email_message = (
+        #     "Dear {username},\n\n"
+        #     "Your files ({filenames}) are invalid! "
+        #     "Here are the reasons why:\n\n{error_message}".format(
+        #         username=usernames,
+        #         filenames=incorrect_files,
+        #         error_message=message))
+        # syn.sendMessage(
+        #     find_file_users, "GENIE Validation Error", email_message)
+
     return(input_status_list, invalid_errors_list)
 
 
@@ -292,10 +297,9 @@ def validatefile(fileinfo,
             datetime.datetime.strptime(
                 entity.modifiedOn.split(".")[0], "%Y-%m-%dT%H:%M:%S"))
         for entity in entities]
-    
+
     check_file_status = check_existing_file_status(
         validation_statusdf, error_trackerdf, entities, filenames)
-
     status_list = check_file_status['status_list']
     error_list = check_file_status['error_list']
     filetype = get_filetype(syn, filepaths, center)
@@ -311,13 +315,13 @@ def validatefile(fileinfo,
 
     else:
         input_status_list = [
-            [ent.id, path, ent.md5, status, filename, modifiedon, filetype]
+            [ent.id, path, ent.md5, status, filename, modifiedon, filetype, str(ent.properties.versionNumber)]
             for ent, path, status, filename, modifiedon in
             zip(entities, filepaths, status_list, filenames, modified_ons)]
         invalid_errors_list = [
-            [synid, error, filename]
-            for synid, error, filename in
-            zip(fileinfo['synId'], error_list, filenames)]
+            [synid, error, filename, str(ent.properties.versionNumber)]
+            for synid, ent, error, filename in
+            zip(fileinfo['synId'], entities, error_list, filenames)]
 
     logger.info(
         "Validation of {filenames} complete.".format(filenames=", ".join(filenames)))
@@ -485,13 +489,18 @@ def validation(syn, center, process,
             addToQuery = "and name not like '%.vcf'"
         else:
             addToQuery = ''
+
+        validationStatusTableId = process_functions.getDatabaseSynId(
+            syn, "validationStatus",
+            databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+        
         validationStatus = syn.tableQuery(
             "SELECT * FROM {} where center = '{}' {}".format(
-                process_functions.getDatabaseSynId(
-                    syn, "validationStatus",
-                    databaseToSynIdMappingDf=databaseToSynIdMappingDf),
+                validationStatusTableId,
                 center,
                 addToQuery))
+        validationStatusDf = validationStatus.asDataFrame()
+        validationStatusDf['versionNumber'] = validationStatusDf.versionNumber.astype(str)
 
         errorTracker = syn.tableQuery(
             "SELECT * FROM {} where center = '{}' {}".format(
@@ -500,16 +509,16 @@ def validation(syn, center, process,
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf),
                 center,
                 addToQuery))
+        errorTrackerDf = errorTracker.asDataFrame()
 
         # VALIDATE FILES
-        validationStatusDf = validationStatus.asDataFrame()
-        errorTrackerDf = errorTracker.asDataFrame()
+        
         validated = allFiles.apply(
             lambda fileinfo: validatefile(
                 fileinfo, syn, validationStatusDf,
                 errorTrackerDf, center, thread,
                 testing, oncotreeLink), axis=1)
-
+        
         inputValidStatus = []
         invalidErrors = []
         for inputStat, invalErrors in validated:
@@ -520,7 +529,7 @@ def validation(syn, center, process,
             inputValidStatus,
             columns=[
                 "id", 'path', 'md5', 'status',
-                'name', 'modifiedOn', 'fileType'])
+                'name', 'modifiedOn', 'fileType', 'versionNumber'])
 
         logger.info("CHECK FOR DUPLICATED FILES")
         '''
@@ -568,7 +577,7 @@ def validation(syn, center, process,
         # Create invalid error synapse table
         logger.info("UPDATE INVALID FILE REASON DATABASE")
         invalidErrors = pd.DataFrame(
-            invalidErrors, columns=["id", 'errors', 'name'])
+            invalidErrors, columns=["id", 'errors', 'name', 'versionNumber'])
         # Remove fixed duplicated files
         dupIds = invalidErrors['id'][
             invalidErrors['errors'] == duplicatedFileError]
@@ -576,7 +585,7 @@ def validation(syn, center, process,
         invalidErrors = invalidErrors[~invalidErrors['id'].isin(removeIds)]
         # Append duplicated file errors
         invalidErrors = invalidErrors.append(
-            duplicatedFiles[['id', 'errors', 'name']])
+            duplicatedFiles[['id', 'errors', 'name', 'versionNumber']])
         invalidErrors['center'] = center
         invalidIds = inputValidStatus['id'][
             inputValidStatus['status'] == "INVALID"]
@@ -597,19 +606,18 @@ def validation(syn, center, process,
         inputValidStatus = inputValidStatus[
             ~inputValidStatus['id'].isin(removeIds)]
 
-        process_functions.updateDatabase(
-            syn,
-            validationStatus.asDataFrame(),
-            inputValidStatus[
-                ["id", 'md5', 'status', 'name', 'center', 'modifiedOn']],
-            process_functions.getDatabaseSynId(
-                syn, "validationStatus",
-                databaseToSynIdMappingDf=databaseToSynIdMappingDf),
-            ["id"],
-            to_delete=True)
+        inputValidStatusToUpdate = inputValidStatus[["id", 'md5', 'status', 'name',
+                                                     'center', 'modifiedOn', 
+                                                     'versionNumber']]
+
+        process_functions.updateDatabase(syn, validationStatusDf,
+                                         inputValidStatusToUpdate,
+                                         validationStatusTableId,
+                                         ["id", "versionNumber"],
+                                         to_delete=False)
 
         inputValidStatus['path'] = paths
-        validFiles = inputValidStatus[['id', 'path', 'fileType']][
+        validFiles = inputValidStatus[['id', 'versionNumber', 'path', 'fileType']][
             inputValidStatus['status'] == "VALIDATED"]
 
     logger.info("Validation completed.")    
