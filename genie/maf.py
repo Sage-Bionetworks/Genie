@@ -50,7 +50,6 @@ class maf(example_filetype_format.FileTypeFormat):
             self.syn.store(synapseclient.File(filePath, parentId=centerMafSynId))
         return(filePath)
 
-
     def process_helper(self, filePath, path_to_GENIE, mafSynId, centerMafSynId,
                        vcf2mafPath, veppath, vepdata, reference=None):
         logger.info('MAF2MAF %s' % filePath)
