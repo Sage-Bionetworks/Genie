@@ -22,8 +22,8 @@ def determine_filetype(syn, filepathlist, center, raise_error=True):
     filetype = None
     # Loop through file formats
     for file_format in PROCESS_FILES:
+        validator = PROCESS_FILES[file_format](syn, center)
         try:
-            validator = PROCESS_FILES[file_format](syn, center)
             filetype = validator.validateFilename(filepathlist)
         except AssertionError:
             continue
