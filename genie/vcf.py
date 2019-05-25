@@ -140,11 +140,18 @@ class vcf(maf.maf):
             col['name'] for col in self.syn.getTableColumns(mafSynId)
             if col['name'] != 'inBED']
 
+        narrowMafPaths = [narrowMafPath]
         for mafFile in mafFiles:
             mafDf = pd.read_csv(mafFile, sep="\t", comment="#")
             mafDf = self.formatMAF(mafDf)
             self.createFinalMaf(mafDf, newMafPath)
             narrowMafDf = mafDf[narrowMafColumns]
+            maf_statinfo = os.stat(narrowMafPath)
+            # This is done because of the table update size limit.
+            # Can only update 1 GB at a time
+            if maf_statinfo.st_size / 1000000 > 900:
+                narrowMafPath = str(len(narrowMafPaths)) + narrowMafPath
+                narrowMafPaths.append(narrowMafPath)
             self.createFinalMaf(narrowMafDf, narrowMafPath)
 
         if len(mafFiles) > 0:
@@ -155,8 +162,9 @@ class vcf(maf.maf):
             self.storeProcessedMaf(newMafPath, mafSynId, centerMafSynId)
             # Store Narrow MAF into db
             # Need to figure out how to fix this 1 GB limit
-            self.storeProcessedMaf(
-                narrowMafPath, mafSynId, centerMafSynId, isNarrow=True)
+            for narrow_path in narrowMafPaths:
+                self.storeProcessedMaf(
+                    narrow_path, mafSynId, centerMafSynId, isNarrow=True)
 
         return(newMafPath)
 

@@ -39,15 +39,30 @@ class maf(example_filetype_format.FileTypeFormat):
                 mafSet = process_functions.removeStringFloat(mafSet)
                 maf.write(mafSet)
 
-    #There is a isNarrow option, but note that the number of rows of the maf file 
-    #DOES NOT change in this function
-    def storeProcessedMaf(self, filePath, mafSynId, centerMafSynId, isNarrow=False):
+    def storeProcessedMaf(self, filePath, mafSynId, centerMafSynId,
+                          isNarrow=False):
+        '''
+        This function stores the processed MAF files
+        There is a isNarrow option, but note that the
+        number of rows of the maf file
+        DOES NOT change in this function
+
+        Args:
+            filePath: Path to maf
+            mafSynId: Synapse id of maf database
+            centerMafSynId: Synapse id of folder with maf files
+            isNarrow: Boolean value for whether to store to database
+                      or folder. Defaults to False.
+
+        '''
         logger.info('STORING %s' % filePath)
         database = self.syn.get(mafSynId)
         if isNarrow:
-            self.syn.store(synapseclient.Table(database.id, filePath, separator="\t"))
+            self.syn.store(synapseclient.Table(database.id, filePath,
+                                               separator="\t"))
         else:
-            self.syn.store(synapseclient.File(filePath, parentId=centerMafSynId))
+            self.syn.store(synapseclient.File(filePath,
+                                              parentId=centerMafSynId))
         return(filePath)
 
     def process_helper(self, filePath, path_to_GENIE, mafSynId, centerMafSynId,
