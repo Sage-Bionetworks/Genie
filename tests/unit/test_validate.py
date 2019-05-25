@@ -90,7 +90,7 @@ def test_warning_determine_validity_and_log():
         'warning\nnow')
 
 
-def test_valid_validate_single_file_workflow():
+def test_valid_validate_single_file():
     '''
     Tests that all the functions are run in validate single
     file workflow and all the right things are returned
@@ -112,7 +112,7 @@ def test_valid_validate_single_file_workflow():
             "genie.validate.determine_validity_and_log",
             return_value=(expected_valid, expected_message)) as mock_determine:
 
-        valid, message, filetype = validate.validate_single_file_workflow(
+        valid, message, filetype = validate.validate_single_file(
             syn,
             filepathlist,
             center)
@@ -133,7 +133,7 @@ def test_valid_validate_single_file_workflow():
         mock_determine.assert_called_once_with(error_string, warning_string)
 
 
-def test_filetype_validate_single_file_workflow():
+def test_filetype_validate_single_file():
     '''
     Tests that if filetype is passed in that an error is thrown
     if it is an incorrect filetype
@@ -141,7 +141,7 @@ def test_filetype_validate_single_file_workflow():
     filepathlist = ['clinical.txt']
     center = "SAGE"
     with pytest.raises(ValueError, match="Must specify correct filetype"):
-        validate.validate_single_file_workflow(
+        validate.validate_single_file(
             syn,
             filepathlist,
             center,

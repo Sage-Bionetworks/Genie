@@ -393,7 +393,7 @@ def test_valid_validatefile():
                 'error_list': [],
                 'to_validate': True}) as patch_check, \
         mock.patch(
-            "genie.validate.validate_single_file_workflow",
+            "genie.validate.validate_single_file",
             return_value=(True, 'valid', "clinical")) as patch_validate:
         validate_results = input_to_database.validatefile(
             fileinfo, syn, validation_statusdf,
@@ -450,7 +450,7 @@ def test_invalid_validatefile():
         mock.patch.object(
             syn, "sendMessage") as patch_syn_sendmessage,\
         mock.patch(
-            "genie.validate.validate_single_file_workflow",
+            "genie.validate.validate_single_file",
             return_value=(False, 'invalid', "clinical")) as patch_validate:
         foo = input_to_database.validatefile(
             fileinfo, syn, validation_statusdf,

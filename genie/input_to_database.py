@@ -248,7 +248,7 @@ def validatefile(fileinfo,
         syn, filepaths, center, raise_error=False)
     if check_file_status['to_validate']:
         try:
-            valid, message, filetype = validate.validate_single_file_workflow(
+            valid, message, filetype = validate.validate_single_file(
                 syn,
                 filepaths,
                 center,

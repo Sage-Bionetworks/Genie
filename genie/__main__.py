@@ -49,7 +49,7 @@ def perform_validate(syn, args):
         oncolink_ent = syn.get(oncolink)
         args.oncotreelink = oncolink_ent.externalURL
 
-    valid, message, filetype = genie.validate.validate_single_file_workflow(
+    valid, message, filetype = genie.validate.validate_single_file(
         syn, args.filepath, args.center, args.filetype,
         args.oncotreelink, args.testing, args.nosymbol_check)
 
