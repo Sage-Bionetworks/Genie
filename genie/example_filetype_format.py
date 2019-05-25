@@ -51,11 +51,12 @@ class FileTypeFormat(object):
     def _validateFilename(self, filePath):
         '''
         Function that changes per file type for validating its filename
+        Expects an assertion error.
 
         Args:
             filePath: Path to file
         '''
-        pass
+        assert True
 
     def validateFilename(self, filePath):
         '''
