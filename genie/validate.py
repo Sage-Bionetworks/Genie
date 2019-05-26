@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from genie import PROCESS_FILES
+import synapseclient
 import logging
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -115,3 +116,45 @@ def validate_single_file(syn,
     valid, message = determine_validity_and_log(total_error, warning)
 
     return(valid, message, filetype)
+
+
+def perform_validate(syn, args):
+    if args.testing:
+        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
+    else:
+        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
+
+    databasetosynid_mappingdf = databaseToSynIdMapping.asDataFrame()
+    synid = databasetosynid_mappingdf.Id[
+        databasetosynid_mappingdf['Database'] == "centerMapping"]
+    center_mapping = syn.tableQuery('SELECT * FROM {}'.format(synid[0]))
+    center_mapping_df = center_mapping.asDataFrame()
+    assert args.center in center_mapping_df.center.tolist(), \
+        "Must specify one of these centers: {}".format(
+            ", ".join(center_mapping_df.center))
+
+    if args.oncotreelink is None:
+        oncolink = databasetosynid_mappingdf['Id'][
+            databasetosynid_mappingdf['Database'] == 'oncotreeLink'].values[0]
+        oncolink_ent = syn.get(oncolink)
+        args.oncotreelink = oncolink_ent.externalURL
+
+    valid, message, filetype = validate_single_file(
+        syn, args.filepath, args.center, args.filetype,
+        args.oncotreelink, args.testing, args.nosymbol_check)
+
+    if args.parentid is not None:
+        if args.filetype is not None:
+            raise ValueError(
+                "If you used --parentid, you must not use "
+                "--filetype")
+        if valid:
+            try:
+                syn.get(args.parentid)
+            except synapseclient.exceptions.SynapseHTTPError:
+                raise ValueError(
+                    "Provided Synapse id must be your input folder Synapse id "
+                    "or a Synapse Id of a folder inside your input directory")
+            logger.info("Uploading file to {}".format(args.parentid))
+            for path in args.filepath:
+                syn.store(synapseclient.File(path, parent=args.parentid))

@@ -16,7 +16,7 @@ def synapse_login(username=None, password=None):
         syn = synapseclient.login(silent=True)
     except Exception:
         if username is None and password is None:
-            logger.info(
+            raise ValueError(
                 "Please specify --syn_user, --syn_pass the first time "
                 "you run this script.")
         else:
@@ -26,48 +26,6 @@ def synapse_login(username=None, password=None):
                 rememberMe=True,
                 silent=True)
     return(syn)
-
-
-def perform_validate(syn, args):
-    if args.testing:
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
-    else:
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
-
-    databasetosynid_mappingdf = databaseToSynIdMapping.asDataFrame()
-    synid = databasetosynid_mappingdf.Id[
-        databasetosynid_mappingdf['Database'] == "centerMapping"]
-    center_mapping = syn.tableQuery('SELECT * FROM {}'.format(synid[0]))
-    center_mapping_df = center_mapping.asDataFrame()
-    assert args.center in center_mapping_df.center.tolist(), \
-        "Must specify one of these centers: {}".format(
-            ", ".join(center_mapping_df.center))
-
-    if args.oncotreelink is None:
-        oncolink = databasetosynid_mappingdf['Id'][
-            databasetosynid_mappingdf['Database'] == 'oncotreeLink'].values[0]
-        oncolink_ent = syn.get(oncolink)
-        args.oncotreelink = oncolink_ent.externalURL
-
-    valid, message, filetype = genie.validate.validate_single_file(
-        syn, args.filepath, args.center, args.filetype,
-        args.oncotreelink, args.testing, args.nosymbol_check)
-
-    if args.parentid is not None and filetype is not None:
-        # if args.filetype is not None:
-        raise ValueError(
-            "If you used --parentid, you must not use "
-            "--filetype")
-    elif valid:
-        try:
-            syn.get(args.parentid)
-        except synapseclient.exceptions.SynapseHTTPError:
-            raise ValueError(
-                "Provided Synapse id must be your input folder Synapse id "
-                "or a Synapse Id of a folder inside your input directory")
-        logger.info("Uploading file to {}".format(args.parentid))
-        for path in args.filepath:
-            syn.store(synapseclient.File(path, parent=args.parentid))
 
 
 def build_parser():
@@ -119,7 +77,7 @@ def build_parser():
              'the end are for special sponsored projects')
 
     parser_validate.add_argument(
-        "--oncotreeLink",
+        "--oncotreelink",
         type=str,
         help="Link to oncotree code")
 
