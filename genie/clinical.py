@@ -9,38 +9,38 @@ import datetime
 logger = logging.getLogger(__name__)
 
 
-def checkMapping(
-        clinicalDF, colName, mapping, required=False, fileType="Patient"):
-    """
-    This function checks if the column exists then checks if the
-    values in the column have the correct integer values
+# def checkMapping(clinicalDF, colName, mapping, required=False,
+#                  fileType="Patient"):
+#     """
+#     This function checks if the column exists then checks if the
+#     values in the column have the correct integer values
 
-    :params clinicalDF          Patient/sample/flattened clinical file
-    :params colName:            Expected column name
-    :params mapping:            List of possible values
+#     :params clinicalDF          Patient/sample/flattened clinical file
+#     :params colName:            Expected column name
+#     :params mapping:            List of possible values
 
-    :returns:                   A tuple warning, error
-    """
-    warning = ""
-    error = ""
-    haveColumn = process_functions.checkColExist(clinicalDF, colName)
-    if not haveColumn:
-        if required:
-            error = "{}: clinical file must have {} column.\n".format(
-                fileType, colName)
-        else:
-            warning = (
-                "{}: clinical file doesn't have {} column. "
-                "A blank column will be added\n".format(fileType, colName))
-    else:
-        if not all([i in mapping.tolist() for i in clinicalDF[colName]]):
-            error = (
-                "{}: Please double check your {} column.  "
-                "This column must be these values {}or blank.\n".format(
-                    fileType,
-                    colName,
-                    ", ".join(map(str, mapping)).replace(".0", "")))
-    return(warning, error)
+#     :returns:                   A tuple warning, error
+#     """
+#     warning = ""
+#     error = ""
+#     haveColumn = process_functions.checkColExist(clinicalDF, colName)
+#     if not haveColumn:
+#         if required:
+#             error = "{}: clinical file must have {} column.\n".format(
+#                 fileType, colName)
+#         else:
+#             warning = (
+#                 "{}: clinical file doesn't have {} column. "
+#                 "A blank column will be added\n".format(fileType, colName))
+#     else:
+#         if not all([i in mapping.tolist() for i in clinicalDF[colName]]):
+#             error = (
+#                 "{}: Please double check your {} column.  "
+#                 "This column must be these values {}or blank.\n".format(
+#                     fileType,
+#                     colName,
+#                     ", ".join(map(str, mapping)).replace(".0", "")))
+#     return(warning, error)
 
 
 def remove_greaterthan_lessthan_str(col):
@@ -87,9 +87,8 @@ class clinical(FileTypeFormat):
 
     # PROCESSING
     # Update clinical file with the correct mappings
-    def update_clinical(
-            self, x, sex_mapping,
-            race_mapping, ethnicity_mapping, sample_type):
+    def update_clinical(self, x, sex_mapping,
+                        race_mapping, ethnicity_mapping, sample_type):
         # PATIENT ID
         if x.get("PATIENT_ID") is not None:
             x['PATIENT_ID'] = process_functions.checkGenieId(
@@ -184,8 +183,8 @@ class clinical(FileTypeFormat):
                 x[i] = x[i].strip(" ")
         return(x)
 
-    def uploadMissingData(
-            self, df, col, dbSynId, stagingSynId, retractionSynId=None):
+    def uploadMissingData(self, df, col, dbSynId, stagingSynId,
+                          retractionSynId=None):
         samples = "','".join(df[col])
         path = os.path.join(
             process_functions.SCRIPT_DIR,
@@ -228,10 +227,9 @@ class clinical(FileTypeFormat):
 
         return(clinicalRemapped)
 
-    def process_steps(
-            self, filePath,
-            databaseToSynIdMappingDf, newPath,
-            parentId, oncotreeLink):
+    def process_steps(self, filePath,
+                      databaseToSynIdMappingDf, newPath,
+                      parentId, oncotreeLink):
         patientSynId = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == "patient"][0]
         sampleSynId = databaseToSynIdMappingDf.Id[
@@ -351,15 +349,15 @@ class clinical(FileTypeFormat):
 
         if not haveSampleColumn:
             total_error += \
-                "Sample: clinical file must have SAMPLE_ID column.\n"
+                "Sample Clinical File: Must have SAMPLE_ID column.\n"
         else:
             if sum(clinicalDF[sampleId].duplicated()) > 0:
                 total_error += (
-                    "Sample: No duplicated SAMPLE_ID in the sample file "
-                    "allowed.\nIf there are no duplicated SAMPLE_IDs, and "
-                    "both sample and patient files are uploaded, then please "
-                    "check to make sure no duplicated PATIENT_IDs exist in "
-                    "the patient file.\n")
+                    "Sample Clinical File: No duplicated SAMPLE_ID "
+                    "allowed.\nIf there are no duplicated "
+                    "SAMPLE_IDs, and both sample and patient files are "
+                    "uploaded, then please check to make sure no duplicated "
+                    "PATIENT_IDs exist in the patient clinical file.\n")
 
         # CHECK: PATIENT_ID
         patientId = "PATIENT_ID"
@@ -369,7 +367,7 @@ class clinical(FileTypeFormat):
 
         if not havePatientColumn:
             total_error += \
-                "Patient: clinical file must have PATIENT_ID column.\n"
+                "Patient Clinical File: Must have PATIENT_ID column.\n"
 
         # CHECK: within the sample file that the sample ids match
         # the patient ids
@@ -379,23 +377,23 @@ class clinical(FileTypeFormat):
                         zip(clinicalDF[sampleId], clinicalDF[patientId])]):
 
                 total_error += (
-                    "Sample: PATIENT_ID's much be contained in the "
-                    "SAMPLE_ID's (ex. SAGE-1 <-> SAGE-1-2)\n")
+                    "Sample Clinical File: PATIENT_ID's much be contained in "
+                    "the SAMPLE_ID's (ex. SAGE-1 <-> SAGE-1-2)\n")
             # #CHECK: All samples must have associated patient data
             # (GENIE requires patient data)
             if not all(clinicalDF[patientId] != ""):
                 total_error += (
-                    "Patient: All samples must have associated patient "
-                    "information and no null patient ids allowed. These "
-                    "samples are missing patient data: {}\n".format(
+                    "Patient Clinical File: All samples must have associated "
+                    "patient information and no null patient ids allowed. "
+                    "These samples are missing patient data: {}\n".format(
                         ", ".join(clinicalDF[sampleId][
                                   clinicalDF[patientId] == ""])))
             # CHECK: All patients should have associated sample data
             if not all(clinicalDF[sampleId] != ""):
                 # ## MAKE WARNING FOR NOW###
                 warning += (
-                    "Sample: All patients must have associated sample "
-                    "information. These patients are missing sample "
+                    "Sample Clinical File: All patients must have associated "
+                    "sample information. These patients are missing sample "
                     "data: {}\n".format(
                         ", ".join(clinicalDF[patientId][
                                   clinicalDF[sampleId] == ""])))
@@ -416,19 +414,19 @@ class clinical(FileTypeFormat):
             if not all([process_functions.checkInt(i)
                         for i in age_seq_report_df[age]]):
                 total_error += (
-                    "Sample: Please double check your AGE_AT_SEQ_REPORT.  "
-                    "It must be an integer or 'Unknown'.\n")
+                    "Sample Clinical File: Please double check your "
+                    "AGE_AT_SEQ_REPORT. It must be an integer or 'Unknown'.\n")
             else:
                 age_seq_report_df[age] = age_seq_report_df[age].astype(int)
                 median_age = pd.np.median(age_seq_report_df[age])
                 if median_age < 100:
                     total_error += (
-                        "Sample: Please double check your AGE_AT_SEQ_REPORT.  "
-                        "You may be reporting this value in YEARS, "
-                        "please report in DAYS.\n")
+                        "Sample Clinical File: Please double check your "
+                        "AGE_AT_SEQ_REPORT. You may be reporting this value "
+                        "in YEARS, please report in DAYS.\n")
         else:
             total_error += \
-                "Sample: clinical file must have AGE_AT_SEQ_REPORT column.\n"
+                "Sample Clinical File: Must have AGE_AT_SEQ_REPORT column.\n"
 
         # CHECK: ONCOTREE_CODE
         haveColumn = \
@@ -447,9 +445,10 @@ class clinical(FileTypeFormat):
                 unmapped_oncotrees = oncotree_codes[
                     ~oncotree_codes.isin(oncotree_mapping['ONCOTREE_CODE'])]
                 total_error += (
-                    "Sample: Please double check that all your ONCOTREE CODES "
-                    "exist in the mapping. You have {} samples that don't "
-                    "map. These are the codes that don't map: {}\n".format(
+                    "Sample Clinical File: Please double check that all your "
+                    "ONCOTREE CODES exist in the mapping. You have {} samples "
+                    "that don't map. These are the codes that "
+                    "don't map: {}\n".format(
                         len(unmapped_oncotrees),
                         ",".join(set(unmapped_oncotrees))))
 
@@ -487,31 +486,35 @@ class clinical(FileTypeFormat):
                             wrongCodeSamples.append(sample)
                 if len(wrongCodeSamples) > 0:
                     warning += (
-                        "Sample: Some SAMPLE_IDs have conflicting SEX and "
-                        "ONCOTREE_CODES: {}\n".format(
+                        "Sample Clinical File: Some SAMPLE_IDs have "
+                        "conflicting SEX and ONCOTREE_CODES: {}\n".format(
                             ",".join(wrongCodeSamples)))
         else:
             total_error += \
-                "Sample: clinical file must have ONCOTREE_CODE column.\n"
+                "Sample Clinical File: Must have ONCOTREE_CODE column.\n"
 
+        warn, error = process_functions.check_col_and_values(
+            clinicalDF, "SAMPLE_TYPE", sampleType_mapping['CODE'].tolist(),
+            "Sample Clinical File", required=True)
+        total_error += error
         # CHECK: SAMPLE_TYPE
-        haveColumn = process_functions.checkColExist(clinicalDF, "SAMPLE_TYPE")
-        if haveColumn:
-            if clinicalDF.SAMPLE_TYPE.dtype == int:
-                if not all(clinicalDF['SAMPLE_TYPE'].isin(
-                        sampleType_mapping['CODE'])):
-                    total_error += (
-                        "Sample: Please double check your SAMPLE_TYPE column. "
-                        "This column must be {}.\n".format(
-                            ", ".join(map(str, sampleType_mapping['CODE']))))
-            else:
-                total_error += (
-                    "Sample: Please double check your SAMPLE_TYPE column. "
-                    "No null values allowed.\n")
+        # haveColumn = process_functions.checkColExist(clinicalDF, "SAMPLE_TYPE")
+        # if haveColumn:
+        #     if clinicalDF.SAMPLE_TYPE.dtype == int:
+        #         if not all(clinicalDF['SAMPLE_TYPE'].isin(
+        #                 sampleType_mapping['CODE'])):
+        #             total_error += (
+        #                 "Sample Clinical File: Please double check your SAMPLE_TYPE column. "
+        #                 "This column must be {}.\n".format(
+        #                     ", ".join(map(str, sampleType_mapping['CODE']))))
+        #     else:
+        #         total_error += (
+        #             "Sample Clinical File: Please double check your SAMPLE_TYPE column. "
+        #             "No null values allowed.\n")
 
-        else:
-            total_error += \
-                "Sample: clinical file must have SAMPLE_TYPE column.\n"
+        # else:
+        #     total_error += \
+        #         "Sample Clinical File: clinical file must have SAMPLE_TYPE column.\n"
 
         # CHECK: SEQ_ASSAY_ID
         haveColumn = \
@@ -519,8 +522,8 @@ class clinical(FileTypeFormat):
         if haveColumn:
             if not all([i != "" for i in clinicalDF['SEQ_ASSAY_ID']]):
                 total_error += (
-                    "Sample: Please double check your SEQ_ASSAY_ID columns, "
-                    "there are empty rows.\n")
+                    "Sample Clinical File: Please double check your "
+                    "SEQ_ASSAY_ID columns, there are empty rows.\n")
             # must remove empty seq assay ids first
             # Checking if seq assay ids start with the center name
             seqAssayIds = \
@@ -535,16 +538,17 @@ class clinical(FileTypeFormat):
                     not_caps.append(seqassay)
             if len(not_caps) > 0:
                 total_error += (
-                    "Sample: Please make sure your SEQ_ASSAY_IDs start with "
-                    "your center abbreviation: {}.\n".format(
+                    "Sample Clinical File: Please make sure your "
+                    "SEQ_ASSAY_IDs start with your center "
+                    "abbreviation: {}.\n".format(
                         ", ".join(not_caps)))
         else:
             total_error += \
-                "Sample: clinical file must have SEQ_ASSAY_ID column.\n"
+                "Sample Clinical File: Must have SEQ_ASSAY_ID column.\n"
 
         haveColumn = process_functions.checkColExist(clinicalDF, "SEQ_DATE")
         seq_date_error = (
-            "Sample: SEQ_DATE must be one of five values- "
+            "Sample Clinical File: SEQ_DATE must be one of five values- "
             "For Jan-March: use Jan-YEAR. "
             "For Apr-June: use Apr-YEAR. "
             "For July-Sep: use Jul-YEAR. "
@@ -559,8 +563,9 @@ class clinical(FileTypeFormat):
             seqDate = clinicalDF['SEQ_DATE'][
                 clinicalDF['SEQ_DATE'] != 'Release']
             if sum(clinicalDF['SEQ_DATE'] == '') > 0:
-                total_error += \
-                    "Sample: Samples without SEQ_DATEs will NOT be released.\n"
+                total_error += (
+                    "Sample Clinical File: Samples without SEQ_DATEs will "
+                    "NOT be released.\n")
             try:
                 if not seqDate.empty:
                     dates = seqDate.apply(
@@ -572,7 +577,7 @@ class clinical(FileTypeFormat):
             except ValueError:
                 total_error += seq_date_error
         else:
-            total_error += "Sample: clinical file must SEQ_DATE column\n"
+            total_error += "Sample Clinical File: Must have SEQ_DATE column.\n"
 
         # CHECK: BIRTH_YEAR
         birth_year = "BIRTH_YEAR"
@@ -596,14 +601,13 @@ class clinical(FileTypeFormat):
                 assert not years.any()
             except Exception:
                 total_error += (
-                    "Patient: Please double check your BIRTH_YEAR column, "
-                    "it must be an integer in YYYY format > {year} or "
-                    "'Unknown'.  Support for blank values will be deprecated "
-                    "in 7...releases.\n".format(
+                    "Patient Clinical File: Please double check your "
+                    "BIRTH_YEAR column, it must be an integer in YYYY format "
+                    "> {year} or 'Unknown'.\n".format(
                         year=datetime.datetime.utcnow().year))
         else:
             total_error += \
-                "Patient: clinical file must have BIRTH_YEAR column.\n"
+                "Patient Clinical File: Must have BIRTH_YEAR column.\n"
 
         # CHECK: VITAL_STATUS
         # YEAR DEATH
@@ -616,13 +620,12 @@ class clinical(FileTypeFormat):
                     lambda x: datetime.datetime.strptime(str(int(x)), '%Y'))
             except Exception:
                 total_error += (
-                    "Patient: Please double check your YEAR_DEATH column, "
-                    "it must be an integer in YYYY format, "
+                    "Patient Clinical File: Please double check your "
+                    "YEAR_DEATH column, it must be an integer in YYYY format, "
                     "'Unknown', 'Not Applicable' or 'Not Collected'.\n")
         else:
-            warning += (
-                "Patient: Must have YEAR_DEATH column for "
-                "7...release uploads.\n")
+            total_error += \
+                "Patient Clinical File: Must have YEAR_DEATH column.\n"
 
         # YEAR CONTACT
         haveColumn = process_functions.checkColExist(
@@ -635,13 +638,12 @@ class clinical(FileTypeFormat):
                     lambda x: datetime.datetime.strptime(str(int(x)), '%Y'))
             except Exception:
                 total_error += (
-                    "Patient: Please double check your YEAR_CONTACT column, "
-                    "it must be an integer in YYYY format, "
-                    "'Unknown' or 'Not Collected'.\n")
+                    "Patient Clinical File: Please double check your "
+                    "YEAR_CONTACT column, it must be an integer in YYYY "
+                    "format, 'Unknown' or 'Not Collected'.\n")
         else:
-            warning += (
-                "Patient: Must have YEAR_CONTACT column for "
-                "7...release uploads.\n")
+            total_error += \
+                "Patient Clinical File: Must have YEAR_CONTACT column.\n"
 
         # INT CONTACT
         haveColumn = process_functions.checkColExist(clinicalDF, "INT_CONTACT")
@@ -652,13 +654,12 @@ class clinical(FileTypeFormat):
                     ['>32485', '<6570', 'Unknown', 'Not Collected']]):
 
                 total_error += (
-                    "Patient: Please double check your INT_CONTACT column, "
-                    "it must be an integer, '>32485', '<6570', 'Unknown' "
-                    "or 'Not Collected'.\n")
+                    "Patient Clinical File: Please double check your "
+                    "INT_CONTACT column, it must be an integer, '>32485', "
+                    "'<6570', 'Unknown' or 'Not Collected'.\n")
         else:
-            warning += (
-                "Patient: Must have INT_CONTACT column for "
-                "7...release uploads.\n")
+            total_error += \
+                "Patient Clinical File: Must have INT_CONTACT column.\n"
 
         # INT DOD
         haveColumn = process_functions.checkColExist(clinicalDF, "INT_DOD")
@@ -670,12 +671,12 @@ class clinical(FileTypeFormat):
                      'Not Collected', 'Not Applicable']]):
 
                 total_error += (
-                    "Patient: Please double check your INT_DOD column, "
-                    "it must be an integer, '>32485', '<6570', 'Unknown', "
-                    "'Not Collected' or 'Not Applicable'.\n")
+                    "Patient Clinical File: Please double check your INT_DOD "
+                    "column, it must be an integer, '>32485', '<6570', "
+                    "'Unknown', 'Not Collected' or 'Not Applicable'.\n")
         else:
-            warning += \
-                "Patient: Must have INT_DOD column for 7...release uploads.\n"
+            total_error += \
+                "Patient Clinical File: Must have INT_DOD column.\n"
 
         haveColumn = process_functions.checkColExist(clinicalDF, "DEAD")
         if haveColumn:
@@ -685,39 +686,44 @@ class clinical(FileTypeFormat):
                     for i in clinicalDF.DEAD if i not in
                     ['Unknown', 'Not Collected']]):
                 total_error += (
-                    "Patient: Please double check your DEAD column, "
+                    "Patient Clinical File: Please double check your DEAD column, "
                     "it must be True, False, 'Unknown' or 'Not Collected'.\n")
         else:
-            warning += \
-                "Patient: Must have DEAD column for 7...release uploads.\n"
+            total_error += \
+                "Patient Clinical File: Must have DEAD column.\n"
 
         # CHECK: PRIMARY_RACE
-        warn, error = checkMapping(
-            clinicalDF, "PRIMARY_RACE", race_mapping['CODE'])
+        warn, error = process_functions.check_col_and_values(
+            clinicalDF, "PRIMARY_RACE", race_mapping['CODE'].tolist(),
+            "Patient Clinical File")
         warning += warn
         total_error += error
 
         # CHECK: SECONDARY_RACE
-        warn, error = checkMapping(
-            clinicalDF, "SECONDARY_RACE", race_mapping['CODE'])
+        warn, error = process_functions.check_col_and_values(
+            clinicalDF, "SECONDARY_RACE", race_mapping['CODE'].tolist(),
+            "Patient Clinical File")
         warning += warn
         total_error += error
 
         # CHECK: TERTIARY_RACE
-        warn, error = checkMapping(
-            clinicalDF, "TERTIARY_RACE", race_mapping['CODE'])
+        warn, error = process_functions.check_col_and_values(
+            clinicalDF, "TERTIARY_RACE", race_mapping['CODE'].tolist(),
+            "Patient Clinical File")
         warning += warn
         total_error += error
 
         # CHECK: SEX
-        warn, error = checkMapping(
-            clinicalDF, "SEX", sex_mapping['CODE'], required=True)
+        warn, error = process_functions.check_col_and_values(
+            clinicalDF, "SEX", sex_mapping['CODE'].tolist(),
+            "Patient Clinical File", required=True)
         warning += warn
         total_error += error
 
         # CHECK: ETHNICITY
-        warn, error = checkMapping(
-            clinicalDF, "ETHNICITY", ethnicity_mapping['CODE'])
+        warn, error = process_functions.check_col_and_values(
+            clinicalDF, "ETHNICITY", ethnicity_mapping['CODE'].tolist(),
+            "Patient Clinical File")
         warning += warn
         total_error += error
 
@@ -744,7 +750,7 @@ class clinical(FileTypeFormat):
 
             if not all(sample['PATIENT_ID'].isin(patient['PATIENT_ID'])):
                 raise ValueError((
-                    "Patient: All samples must have associated "
+                    "Patient Clinical File: All samples must have associated "
                     "patient information"))
 
         return(clinicalDf)

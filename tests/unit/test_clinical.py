@@ -373,30 +373,31 @@ def test_missingcols__validate():
         error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         expected_errors = (
-            "Sample: clinical file must have SAMPLE_ID column.\n"
-            "Patient: clinical file must have PATIENT_ID column.\n"
-            "Sample: clinical file must have AGE_AT_SEQ_REPORT column.\n"
-            "Sample: clinical file must have ONCOTREE_CODE column.\n"
-            "Sample: clinical file must have SAMPLE_TYPE column.\n"
-            "Sample: clinical file must have SEQ_ASSAY_ID column.\n"
-            "Sample: clinical file must SEQ_DATE column\n"
-            "Patient: clinical file must have BIRTH_YEAR column.\n"
-            "Patient: clinical file must have SEX column.\n")
+            "Sample Clinical File: Must have SAMPLE_ID column.\n"
+            "Patient Clinical File: Must have PATIENT_ID column.\n"
+            "Sample Clinical File: Must have AGE_AT_SEQ_REPORT column.\n"
+            "Sample Clinical File: Must have ONCOTREE_CODE column.\n"
+            "Sample Clinical File: Must have SAMPLE_TYPE column.\n"
+            "Sample Clinical File: Must have SEQ_ASSAY_ID column.\n"
+            "Sample Clinical File: Must have SEQ_DATE column.\n"
+            "Patient Clinical File: Must have BIRTH_YEAR column.\n"
+            "Patient Clinical File: Must have YEAR_DEATH column.\n"
+            "Patient Clinical File: Must have YEAR_CONTACT column.\n"
+            "Patient Clinical File: Must have INT_CONTACT column.\n"
+            "Patient Clinical File: Must have INT_DOD column.\n"
+            "Patient Clinical File: Must have DEAD column.\n"
+            "Patient Clinical File: Must have SEX column.\n")
 
         expected_warnings = (
-            "Patient: Must have YEAR_DEATH column for 7...release uploads.\n"
-            "Patient: Must have YEAR_CONTACT column for 7...release uploads.\n"
-            "Patient: Must have INT_CONTACT column for 7...release uploads.\n"
-            "Patient: Must have INT_DOD column for 7...release uploads.\n"
-            "Patient: Must have DEAD column for 7...release uploads.\n"
-            "Patient: clinical file doesn't have PRIMARY_RACE column. "
-            "A blank column will be added\n"
-            "Patient: clinical file doesn't have SECONDARY_RACE column. "
-            "A blank column will be added\n"
-            "Patient: clinical file doesn't have TERTIARY_RACE column. "
-            "A blank column will be added\n"
-            "Patient: clinical file doesn't have ETHNICITY column. "
-            "A blank column will be added\n")
+            "Patient Clinical File: Doesn't have PRIMARY_RACE column. "
+            "This column will be added\n"
+            "Patient Clinical File: Doesn't have SECONDARY_RACE column. "
+            "This column will be added\n"
+            "Patient Clinical File: Doesn't have TERTIARY_RACE column. "
+            "This column will be added\n"
+            "Patient Clinical File: Doesn't have ETHNICITY column. "
+            "This column will be added\n")
+        print(error)
         assert error == expected_errors
         assert warning == expected_warnings
 
@@ -437,59 +438,58 @@ def test_errors__validate():
         mock_get_onco_map.called_once_with(json_oncotreeurl)
 
         expectedErrors = (
-            "Sample: PATIENT_ID's much be contained in the SAMPLE_ID's "
+            "Sample Clinical File: PATIENT_ID's much be contained in the SAMPLE_ID's "
             "(ex. SAGE-1 <-> SAGE-1-2)\n"
-            "Patient: All samples must have associated patient information "
+            "Patient Clinical File: All samples must have associated patient information "
             "and no null patient ids allowed. "
             "These samples are missing patient data: ID4-1\n"
-            "Sample: Please double check your AGE_AT_SEQ_REPORT.  "
+            "Sample Clinical File: Please double check your AGE_AT_SEQ_REPORT. "
             "It must be an integer or 'Unknown'.\n"
-            "Sample: Please double check that all your ONCOTREE CODES exist "
+            "Sample Clinical File: Please double check that all your ONCOTREE CODES exist "
             "in the mapping. You have 1 samples that don't map. "
             "These are the codes that don't map: AMPCAD\n"
-            "Sample: Please double check your SAMPLE_TYPE column. "
-            "No null values allowed.\n"
-            "Sample: Please double check your SEQ_ASSAY_ID columns, "
+            "Sample Clinical File: Please double check your SAMPLE_TYPE column.  "
+            "This column must only be these values: 1, 2, 3, 4\n"
+            "Sample Clinical File: Please double check your SEQ_ASSAY_ID columns, "
             "there are empty rows.\n"
-            "Sample: Please make sure your SEQ_ASSAY_IDs start with your "
+            "Sample Clinical File: Please make sure your SEQ_ASSAY_IDs start with your "
             "center abbreviation: S-SAGE-1.\n"
-            "Sample: SEQ_DATE must be one of five values- "
+            "Sample Clinical File: SEQ_DATE must be one of five values- "
             "For Jan-March: use Jan-YEAR. "
             "For Apr-June: use Apr-YEAR. "
             "For July-Sep: use Jul-YEAR. "
             "For Oct-Dec: use Oct-YEAR. (ie. Apr-2017) "
             "For values that don't have SEQ_DATES that you want "
             "released use 'release'.\n"
-            "Patient: Please double check your BIRTH_YEAR column, "
-            "it must be an integer in YYYY format > {year} or 'Unknown'.  "
-            "Support for blank values will be deprecated in 7...releases.\n"
-            "Patient: Please double check your YEAR_DEATH column, it must be "
+            "Patient Clinical File: Please double check your BIRTH_YEAR column, "
+            "it must be an integer in YYYY format > {year} or 'Unknown'.\n"
+            "Patient Clinical File: Please double check your YEAR_DEATH column, it must be "
             "an integer in YYYY format, 'Unknown', 'Not Applicable' "
             "or 'Not Collected'.\n"
-            "Patient: Please double check your YEAR_CONTACT column, it must "
+            "Patient Clinical File: Please double check your YEAR_CONTACT column, it must "
             "be an integer in YYYY format, 'Unknown' or 'Not Collected'.\n"
-            "Patient: Please double check your INT_CONTACT column, "
+            "Patient Clinical File: Please double check your INT_CONTACT column, "
             "it must be an integer, '>32485', '<6570', 'Unknown' or "
             "'Not Collected'.\n"
-            "Patient: Please double check your INT_DOD column, it must be "
+            "Patient Clinical File: Please double check your INT_DOD column, it must be "
             "an integer, '>32485', '<6570', 'Unknown', 'Not Collected' or "
             "'Not Applicable'.\n"
-            "Patient: Please double check your DEAD column, it must be "
+            "Patient Clinical File: Please double check your DEAD column, it must be "
             "True, False, 'Unknown' or 'Not Collected'.\n"
-            "Patient: Please double check your PRIMARY_RACE column.  "
-            "This column must be these values 1, 2, 3, 4, or blank.\n"
-            "Patient: Please double check your SECONDARY_RACE column.  "
-            "This column must be these values 1, 2, 3, 4, or blank.\n"
-            "Patient: Please double check your TERTIARY_RACE column.  "
-            "This column must be these values 1, 2, 3, 4, or blank.\n"
-            "Patient: Please double check your SEX column.  "
-            "This column must be these values 1, 2, or blank.\n"
-            "Patient: Please double check your ETHNICITY column.  "
-            "This column must be these values 1, 2, 3, 4, or blank.\n")
+            "Patient Clinical File: Please double check your PRIMARY_RACE column.  "
+            "This column must only be these values: 1, 2, 3, 4, \n"
+            "Patient Clinical File: Please double check your SECONDARY_RACE column.  "
+            "This column must only be these values: 1, 2, 3, 4, \n"
+            "Patient Clinical File: Please double check your TERTIARY_RACE column.  "
+            "This column must only be these values: 1, 2, 3, 4, \n"
+            "Patient Clinical File: Please double check your SEX column.  "
+            "This column must only be these values: 1, 2, \n"
+            "Patient Clinical File: Please double check your ETHNICITY column.  "
+            "This column must only be these values: 1, 2, 3, 4, \n")
         expectedWarnings = (
-            "Sample: All patients must have associated sample information. "
+            "Sample Clinical File: All patients must have associated sample information. "
             "These patients are missing sample data: ID6\n"
-            "Sample: Some SAMPLE_IDs have conflicting SEX and "
+            "Sample Clinical File: Some SAMPLE_IDs have conflicting SEX and "
             "ONCOTREE_CODES: ID2-1,ID5-1\n")
         assert error == expectedErrors.format(
             year=datetime.datetime.utcnow().year)
@@ -536,11 +536,10 @@ def test_duplicated__validate():
         error, warning = clin_class._validate(clinicalDf, json_oncotreeurl)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         expectedErrors = (
-            "Sample: No duplicated SAMPLE_ID in the "
-            "sample file allowed.\n"
+            "Sample Clinical File: No duplicated SAMPLE_ID allowed.\n"
             "If there are no duplicated SAMPLE_IDs, and both sample and "
             "patient files are uploaded, then please check to make sure no "
-            "duplicated PATIENT_IDs exist in the patient file.\n")
+            "duplicated PATIENT_IDs exist in the patient clinical file.\n")
 
         assert error == expectedErrors
         assert warning == ""
