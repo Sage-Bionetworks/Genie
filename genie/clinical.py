@@ -4,43 +4,8 @@ import os
 import logging
 import pandas as pd
 import synapseclient
-# import re
 import datetime
 logger = logging.getLogger(__name__)
-
-
-# def checkMapping(clinicalDF, colName, mapping, required=False,
-#                  fileType="Patient"):
-#     """
-#     This function checks if the column exists then checks if the
-#     values in the column have the correct integer values
-
-#     :params clinicalDF          Patient/sample/flattened clinical file
-#     :params colName:            Expected column name
-#     :params mapping:            List of possible values
-
-#     :returns:                   A tuple warning, error
-#     """
-#     warning = ""
-#     error = ""
-#     haveColumn = process_functions.checkColExist(clinicalDF, colName)
-#     if not haveColumn:
-#         if required:
-#             error = "{}: clinical file must have {} column.\n".format(
-#                 fileType, colName)
-#         else:
-#             warning = (
-#                 "{}: clinical file doesn't have {} column. "
-#                 "A blank column will be added\n".format(fileType, colName))
-#     else:
-#         if not all([i in mapping.tolist() for i in clinicalDF[colName]]):
-#             error = (
-#                 "{}: Please double check your {} column.  "
-#                 "This column must be these values {}or blank.\n".format(
-#                     fileType,
-#                     colName,
-#                     ", ".join(map(str, mapping)).replace(".0", "")))
-#     return(warning, error)
 
 
 def remove_greaterthan_lessthan_str(col):
@@ -497,24 +462,6 @@ class clinical(FileTypeFormat):
             clinicalDF, "SAMPLE_TYPE", sampleType_mapping['CODE'].tolist(),
             "Sample Clinical File", required=True)
         total_error += error
-        # CHECK: SAMPLE_TYPE
-        # haveColumn = process_functions.checkColExist(clinicalDF, "SAMPLE_TYPE")
-        # if haveColumn:
-        #     if clinicalDF.SAMPLE_TYPE.dtype == int:
-        #         if not all(clinicalDF['SAMPLE_TYPE'].isin(
-        #                 sampleType_mapping['CODE'])):
-        #             total_error += (
-        #                 "Sample Clinical File: Please double check your SAMPLE_TYPE column. "
-        #                 "This column must be {}.\n".format(
-        #                     ", ".join(map(str, sampleType_mapping['CODE']))))
-        #     else:
-        #         total_error += (
-        #             "Sample Clinical File: Please double check your SAMPLE_TYPE column. "
-        #             "No null values allowed.\n")
-
-        # else:
-        #     total_error += \
-        #         "Sample Clinical File: clinical file must have SAMPLE_TYPE column.\n"
 
         # CHECK: SEQ_ASSAY_ID
         haveColumn = \
@@ -686,8 +633,9 @@ class clinical(FileTypeFormat):
                     for i in clinicalDF.DEAD if i not in
                     ['Unknown', 'Not Collected']]):
                 total_error += (
-                    "Patient Clinical File: Please double check your DEAD column, "
-                    "it must be True, False, 'Unknown' or 'Not Collected'.\n")
+                    "Patient Clinical File: Please double check your "
+                    "DEAD column, it must be True, False, 'Unknown' or "
+                    "'Not Collected'.\n")
         else:
             total_error += \
                 "Patient Clinical File: Must have DEAD column.\n"
