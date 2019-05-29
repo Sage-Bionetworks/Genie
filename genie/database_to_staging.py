@@ -1142,8 +1142,8 @@ def reviseMetadataFiles(
 
             if version != genieVersion:
                 metaText = metaText.replace(
-                    "AACR Project GENIE Cohort v{}".format(version),
-                    "AACR Project GENIE Cohort v{}".format(genieVersion))
+                    "GENIE Cohort v{}".format(version),
+                    "GENIE Cohort v{}".format(genieVersion))
 
                 metaText = metaText.replace(
                     "GENIE v{}".format(version),
