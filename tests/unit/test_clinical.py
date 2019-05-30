@@ -16,25 +16,20 @@ def table_query_results(*args):
     return(table_query_results_map[args])
 
 
-with_nan = pd.DataFrame(dict(
-    CODE=[1, 2, 3, 4, float('nan')],
+no_nan = pd.DataFrame(dict(
+    CODE=[1, 2, 3, 4, 99],
     CBIO_LABEL=['Test', 'Why', 'foo', 'Me', 'Unknown'],
     DESCRIPTION=['non', 'asdf', 'asdf', 'asdff', 'asdfasdf']))
 
-no_nan = pd.DataFrame(dict(
-    CODE=[1, 2, 3, 4],
-    CBIO_LABEL=['Test', 'Why', 'foo', 'Me'],
-    DESCRIPTION=['non', 'asdf', 'asdf', 'asdff']))
-
 sexdf = pd.DataFrame(dict(
-    CODE=[1, 2, float('nan')],
+    CODE=[1, 2, 99],
     CBIO_LABEL=['Male', 'Female', 'Unknown'],
     DESCRIPTION=['Male', 'Female', 'Not coded']))
 
 table_query_results_map = {
     ("SELECT * FROM syn7434222",): createMockTable(sexdf),
-    ("SELECT * FROM syn7434236",): createMockTable(with_nan),
-    ("SELECT * FROM syn7434242",): createMockTable(with_nan),
+    ("SELECT * FROM syn7434236",): createMockTable(no_nan),
+    ("SELECT * FROM syn7434242",): createMockTable(no_nan),
     ("SELECT * FROM syn7434273",): createMockTable(no_nan)}
 
 syn = mock.create_autospec(synapseclient.Synapse)
@@ -122,11 +117,11 @@ def test_patient_fillvs__process():
 
     patientdf = pd.DataFrame(dict(
         PATIENT_Id=["ID1", "ID2", "ID3", "ID4", "ID5"],
-        sex=[1, 2, 1, 2, float('nan')],
-        PRIMARY_RACE=[1, 2, 3, 4, float('nan')],
-        Secondary_RACE=[1, 2, 3, 4, float('nan')],
-        TERTIARY_RACE=[1, 2, 3, 4, float('nan')],
-        ETHNICITY=[1, 2, 3, 4, float('nan')],
+        sex=[1, 2, 1, 2, 99],
+        PRIMARY_RACE=[1, 2, 3, 4, 99],
+        Secondary_RACE=[1, 2, 3, 4, 99],
+        TERTIARY_RACE=[1, 2, 3, 4, 99],
+        ETHNICITY=[1, 2, 3, 4, 99],
         BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"]))
     patient_cols = [
@@ -168,11 +163,11 @@ def test_patient_lesscoltemplate__process():
     # TEST patient processing
     patientdf = pd.DataFrame(dict(
         PATIENT_Id=["ID1", "ID2", "ID3", "ID4", "ID5"],
-        sex=[1, 2, 1, 2, float('nan')],
-        PRIMARY_RACE=[1, 2, 3, 4, float('nan')],
-        Secondary_RACE=[1, 2, 3, 4, float('nan')],
-        TERTIARY_RACE=[1, 2, 3, 4, float('nan')],
-        ETHNICITY=[1, 2, 3, 4, float('nan')],
+        sex=[1, 2, 1, 2, 99],
+        PRIMARY_RACE=[1, 2, 3, 4, 99],
+        Secondary_RACE=[1, 2, 3, 4, 99],
+        TERTIARY_RACE=[1, 2, 3, 4, 99],
+        ETHNICITY=[1, 2, 3, 4, 99],
         BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"]))
     patient_cols = [
@@ -218,7 +213,7 @@ def test_patient_fillcols__process():
     # Clinical file headers are capitalized prior to processing
     patientdf = pd.DataFrame(dict(
         PATIENT_Id=["ID1", "ID2", "ID3", "ID4", "ID5"],
-        sex=[1, 2, 1, 2, float('nan')],
+        sex=[1, 2, 1, 2, 99],
         BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"]))
     patient_cols = [
@@ -255,11 +250,11 @@ def test_patient_vs__process():
     # Clinical file headers are capitalized prior to processing
     patientdf = pd.DataFrame(dict(
         PATIENT_Id=["ID1", "ID2", "ID3", "ID4", "ID5"],
-        sex=[1, 2, 1, 2, float('nan')],
-        PRIMARY_RACE=[1, 2, 3, 4, float('nan')],
-        Secondary_RACE=[1, 2, 3, 4, float('nan')],
-        TERTIARY_RACE=[1, 2, 3, 4, float('nan')],
-        ETHNICITY=[1, 2, 3, 4, float('nan')],
+        sex=[1, 2, 1, 2, 99],
+        PRIMARY_RACE=[1, 2, 3, 4, 99],
+        Secondary_RACE=[1, 2, 3, 4, 99],
+        TERTIARY_RACE=[1, 2, 3, 4, 99],
+        ETHNICITY=[1, 2, 3, 4, 99],
         BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
         YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable",
@@ -301,7 +296,7 @@ def test_sample__process():
         SAMPLE_TYPE_DETAILED=['non', 'asdf', 'asdf', 'asdff', 'asdff'],
         SEQ_ASSAY_ID=['SAGE-1', 'SAGE-1', 'SAGE-1', 'SAGE-1', 'SAGE-1'],
         SEQ_DATE=['Jan-2012', 'Apr-2013', 'Jul-2014', 'Oct-2015', 'Release'],
-        SEQ_YEAR=[2012, 2013, 2014, 2015, pd.np.nan]))
+        SEQ_YEAR=[2012, 2013, 2014, 2015, float('nan')]))
     sample_cols = [
         "SAMPLE_ID", "PATIENT_ID", "AGE_AT_SEQ_REPORT", "ONCOTREE_CODE",
         "SAMPLE_TYPE", "SEQ_ASSAY_ID", 'SEQ_DATE', 'SAMPLE_TYPE_DETAILED',
@@ -329,12 +324,12 @@ def test_perfect__validate():
     '''
     patientdf = pd.DataFrame(dict(
         PATIENT_ID=["ID1", "ID2", "ID3", "ID4", "ID5"],
-        SEX=[1, 2, 1, 2, float('nan')],
-        PRIMARY_RACE=[1, 2, 3, 4, float('nan')],
-        SECONDARY_RACE=[1, 2, 3, 4, float('nan')],
-        TERTIARY_RACE=[1, 2, 3, 4, float('nan')],
-        ETHNICITY=[1, 2, 3, 4, float('nan')],
-        BIRTH_YEAR=[float('nan'), "Unknown", 1920, 1990, 1990],
+        SEX=[1, 2, 1, 2, 99],
+        PRIMARY_RACE=[1, 2, 3, 4, 99],
+        SECONDARY_RACE=[1, 2, 3, 4, 99],
+        TERTIARY_RACE=[1, 2, 3, 4, 99],
+        ETHNICITY=[1, 2, 3, 4, 99],
+        BIRTH_YEAR=[1222, "Unknown", 1920, 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
         YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 1990, 1990],
         YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 1990],
@@ -346,7 +341,7 @@ def test_perfect__validate():
     sampledf = pd.DataFrame(dict(
         SAMPLE_ID=["ID1-1", "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
         PATIENT_ID=["ID1", "ID2", "ID3", "ID4", "ID5"],
-        AGE_AT_SEQ_REPORT=[100000, "Unknown", 20000, float('nan'), 100000],
+        AGE_AT_SEQ_REPORT=[100000, "Unknown", 20000, 20000, 100000],
         ONCOTREE_CODE=['AMPCA', 'AMPCA', 'Unknown', 'AMPCA', 'AMPCA'],
         SAMPLE_TYPE=[1, 2, 3, 4, 4],
         SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-SAGE-1', 'SAGE-1', 'SAGE-1', 'SAGE-1'],
@@ -359,6 +354,77 @@ def test_perfect__validate():
         error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         assert error == ""
+        assert warning == ""
+
+
+def test_nonull__validate():
+    '''
+    Test that no null values are allowed in the clinical dataframe
+    '''
+    patientdf = pd.DataFrame(dict(
+        PATIENT_ID=["ID1", "ID2", "ID3", "ID4", "ID5"],
+        SEX=[1, 2, 1, 2, float('nan')],
+        PRIMARY_RACE=[1, 2, 3, 4, float('nan')],
+        SECONDARY_RACE=[1, 2, 3, 4, float('nan')],
+        TERTIARY_RACE=[1, 2, 3, 4, float('nan')],
+        ETHNICITY=[1, 2, 3, 4, float('nan')],
+        BIRTH_YEAR=[float('nan'), "Unknown", 1920, 1990, 1990],
+        CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
+        YEAR_DEATH=["Unknown", "Not Collected", float('nan'), 1990, 1990],
+        YEAR_CONTACT=["Unknown", "Not Collected", float('nan'), 1990, 1990],
+        INT_CONTACT=['>32485', '<6570', 'Unknown', float('nan'), 2000],
+        INT_DOD=['>32485', '<6570', 'Unknown',
+                 'Not Collected', float('nan')],
+        DEAD=[True, False, float('nan'), 'Not Collected', True]))
+
+    sampledf = pd.DataFrame(dict(
+        SAMPLE_ID=["ID1-1", "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
+        PATIENT_ID=["ID1", "ID2", "ID3", "ID4", "ID5"],
+        AGE_AT_SEQ_REPORT=[100000, "Unknown", 20000, float('nan'), 100000],
+        ONCOTREE_CODE=['AMPCA', 'AMPCA', 'Unknown', 'AMPCA', 'AMPCA'],
+        SAMPLE_TYPE=[1, 2, 3, 4, float('nan')],
+        SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-SAGE-1', 'SAGE-1', 'SAGE-1', 'SAGE-1'],
+        SEQ_DATE=['Jan-2013', 'ApR-2013', 'Jul-2013', 'Oct-2013', 'release']))
+
+    clinicaldf = patientdf.merge(sampledf, on="PATIENT_ID")
+    with mock.patch(
+            "genie.process_functions.get_oncotree_code_mappings",
+            return_value=onco_map_dict) as mock_get_onco_map:
+        error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
+        mock_get_onco_map.called_once_with(json_oncotreeurl)
+        expected_errors = (
+            "Sample Clinical File: Please double check your "
+            "AGE_AT_SEQ_REPORT. It must be an integer or 'Unknown'.\n"
+            "Sample Clinical File: Please double check your SAMPLE_TYPE "
+            "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
+            "Patient Clinical File: Please double check your BIRTH_YEAR "
+            "column, it must be an integer in YYYY format > 2019 or "
+            "'Unknown'.\n"
+            "Patient Clinical File: Please double check your YEAR_DEATH "
+            "column, it must be an integer in YYYY format, 'Unknown', "
+            "'Not Applicable' or 'Not Collected'.\n"
+            "Patient Clinical File: Please double check your YEAR_CONTACT "
+            "column, it must be an integer in YYYY format, 'Unknown' or "
+            "'Not Collected'.\n"
+            "Patient Clinical File: Please double check your INT_CONTACT "
+            "column, it must be an integer, '>32485', '<6570', 'Unknown' "
+            "or 'Not Collected'.\n"
+            "Patient Clinical File: Please double check your INT_DOD "
+            "column, it must be an integer, '>32485', '<6570', 'Unknown', "
+            "'Not Collected' or 'Not Applicable'.\n"
+            "Patient Clinical File: Please double check your DEAD column, "
+            "it must be True, False, 'Unknown' or 'Not Collected'.\n"
+            "Patient Clinical File: Please double check your PRIMARY_RACE "
+            "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
+            "Patient Clinical File: Please double check your SECONDARY_RACE "
+            "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
+            "Patient Clinical File: Please double check your TERTIARY_RACE "
+            "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
+            "Patient Clinical File: Please double check your SEX column.  "
+            "This column must only be these values: 1, 2, 99\n"
+            "Patient Clinical File: Please double check your ETHNICITY "
+            "column.  This column must only be these values: 1, 2, 3, 4, 99\n")
+        assert error == expected_errors
         assert warning == ""
 
 
@@ -411,7 +477,7 @@ def test_errors__validate():
         PATIENT_ID=["ID6", "ID2", "ID3", float('nan'), "ID5"],
         AGE_AT_SEQ_REPORT=[10, 100000, "doo", 100000, 100000],
         ONCOTREE_CODE=['AMPCAD', 'TESTIS', 'AMPCA', 'AMPCA', 'UCEC'],
-        SAMPLE_TYPE=[1, 2, 3, 4, float('nan')],
+        SAMPLE_TYPE=[1, 2, 3, 4, 6],
         SEQ_ASSAY_ID=[float('nan'), 'Sage-1', 'SAGE-1', 'S-SAGE-1', 'SAGE-1'],
         SEQ_DATE=['Jane-2013', 'Jan-2013', 'Jan-2013', 'Jan-2013', 'Jan-2013'],
         YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 19930, 1990],
@@ -449,7 +515,7 @@ def test_errors__validate():
             "ONCOTREE CODES exist in the mapping. You have 1 samples that "
             "don't map. These are the codes that don't map: AMPCAD\n"
             "Sample Clinical File: Please double check your SAMPLE_TYPE "
-            "column.  This column must only be these values: 1, 2, 3, 4\n"
+            "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Sample Clinical File: Please double check your SEQ_ASSAY_ID "
             "columns, there are empty rows.\n"
             "Sample Clinical File: Please make sure your SEQ_ASSAY_IDs start "
@@ -479,15 +545,15 @@ def test_errors__validate():
             "Patient Clinical File: Please double check your DEAD column, "
             "it must be True, False, 'Unknown' or 'Not Collected'.\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
-            "column.  This column must only be these values: 1, 2, 3, 4, \n"
+            "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your SECONDARY_RACE "
-            "column.  This column must only be these values: 1, 2, 3, 4, \n"
+            "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your TERTIARY_RACE "
-            "column.  This column must only be these values: 1, 2, 3, 4, \n"
+            "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your SEX column.  "
-            "This column must only be these values: 1, 2, \n"
+            "This column must only be these values: 1, 2, 99\n"
             "Patient Clinical File: Please double check your ETHNICITY "
-            "column.  This column must only be these values: 1, 2, 3, 4, \n")
+            "column.  This column must only be these values: 1, 2, 3, 4, 99\n")
         expectedWarnings = (
             "Sample Clinical File: All patients must have associated sample "
             "information. These patients are missing sample data: ID6\n"
@@ -507,12 +573,12 @@ def test_duplicated__validate():
     '''
     patientDf = pd.DataFrame(dict(
         PATIENT_ID=["ID1", "ID1", "ID3", "ID4", "ID5"],
-        SEX=[1, 2, 1, 2, float('nan')],
-        PRIMARY_RACE=[1, 2, 3, 4, float('nan')],
-        SECONDARY_RACE=[1, 2, 3, 4, float('nan')],
-        TERTIARY_RACE=[1, 2, 3, 4, float('nan')],
-        ETHNICITY=[1, 2, 3, 4, float('nan')],
-        BIRTH_YEAR=[float('nan'), 1990, 1990, 1990, 1990],
+        SEX=[1, 2, 1, 2, 99],
+        PRIMARY_RACE=[1, 2, 3, 4, 99],
+        SECONDARY_RACE=[1, 2, 3, 4, 99],
+        TERTIARY_RACE=[1, 2, 3, 4, 99],
+        ETHNICITY=[1, 2, 3, 4, 99],
+        BIRTH_YEAR=["Unknown", 1990, 1990, 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
         YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable",
                     1990, 1990],

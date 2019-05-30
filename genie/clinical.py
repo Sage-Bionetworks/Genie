@@ -371,7 +371,7 @@ class clinical(FileTypeFormat):
             # First for loop can't int(text) because there
             # are instances that have <3435
             age_seq_report_df = \
-                clinicalDF[~clinicalDF[age].isin(['Unknown', ''])]
+                clinicalDF[~clinicalDF[age].isin(['Unknown'])]
 
             age_seq_report_df[age] = \
                 remove_greaterthan_lessthan_str(age_seq_report_df[age])
@@ -530,12 +530,11 @@ class clinical(FileTypeFormat):
         birth_year = "BIRTH_YEAR"
         haveColumn = process_functions.checkColExist(clinicalDF, birth_year)
         if haveColumn:
+            birth_year_df = \
+                clinicalDF[~clinicalDF[birth_year].isin(['Unknown'])]
             # Deal with HIPAA converted rows from DFCI
             # First for loop can't int(text) because there are
             # instances that have <YYYY
-            # Remove '' for blank value support
-            birth_year_df = \
-                clinicalDF[~clinicalDF[birth_year].isin(['Unknown', ''])]
             birth_year_df[birth_year] = \
                 remove_greaterthan_lessthan_str(birth_year_df[birth_year])
 
