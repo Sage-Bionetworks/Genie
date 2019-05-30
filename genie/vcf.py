@@ -151,7 +151,7 @@ class vcf(maf.maf):
             # Can only update 1 GB at a time
             if maf_statinfo.st_size / 1000000 > 900:
                 narrowMafPath = narrowMafPath.replace(
-                    ".txt.", str(len(narrowMafPaths)) + ".txt")
+                    ".txt", str(len(narrowMafPaths)) + ".txt")
                 narrowMafPaths.append(narrowMafPath)
             self.createFinalMaf(narrowMafDf, narrowMafPath)
 
