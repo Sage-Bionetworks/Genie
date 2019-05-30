@@ -176,8 +176,7 @@ class clinical(FileTypeFormat):
         sex_mapping = process_functions.getGenieMapping(self.syn, "syn7434222")
         sampleType_mapping = process_functions.getGenieMapping(
             self.syn, "syn7434273")
-        sampleType_mapping = sampleType_mapping.append(pd.DataFrame([
-            ("", "", "")], columns=["CODE", "CBIO_LABEL", "DESCRIPTION"]))
+
         # Attach MSK to centers
         # clinicalMerged = clinicalMerged.fillna("")
         clinicalRemapped = clinical.apply(lambda x: self.update_clinical(
