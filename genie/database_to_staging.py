@@ -374,7 +374,7 @@ def mutation_in_cis_filter(
 
     # Find variants to flag
     variant_flagging = syn.tableQuery(
-        "SELECT Tumor_Sample_Barcode FROM {} where Flag = 'FLAG' and "
+        "SELECT * FROM {} where Flag = 'FLAG' and "
         "Tumor_Sample_Barcode is not null".format(variant_filtering_synId))
     flag_variantsdf = variant_flagging.asDataFrame()
 
