@@ -186,7 +186,10 @@ def configureMafRow(
     ref = str(rowArray[headers.index('Reference_Allele')])
     seq = str(rowArray[headers.index('Tumor_Seq_Allele2')])
     sampleId = str(rowArray[headers.index('Tumor_Sample_Barcode')])
+    hgvsp = str(rowArray[headers.index('HGVSp_Short')])
     variant = chrom+' '+start+' '+end+' '+ref+' '+seq+' '+sampleId
+    mergecheck_variant = \
+        chrom+' '+start+' '+hgvsp+' '+ref+' '+seq+' '+sampleId
     # if pd.Series(sampleId).isin(keepSamples).any() and \
     # not pd.Series(variant).isin(remove_variants).any():
     if sampleId in keepSamples.tolist() \
@@ -206,7 +209,7 @@ def configureMafRow(
         rowArray[headers.index("Match_Norm_Seq_Allele1")] = \
             '' if str(nDepth) in ["NA", "0.0"] else nDepth
         # rowArray.pop(headers.index('inBED'))
-        if variant in flagged_variants:
+        if mergecheck_variant in flagged_variants:
             rowArray.append(True)
         else:
             rowArray.append('')
@@ -381,7 +384,7 @@ def mutation_in_cis_filter(
     flag_variantsdf['flaggedVariants'] = \
         flag_variantsdf['Chromosome'].astype(str) + ' ' + \
         flag_variantsdf['Start_Position'].astype(str) + ' ' + \
-        flag_variantsdf['End_Position'].astype(str) + ' ' + \
+        flag_variantsdf['HGVSp_Short'].astype(str) + ' ' + \
         flag_variantsdf['Reference_Allele'].astype(str) + ' ' + \
         flag_variantsdf['Tumor_Seq_Allele2'].astype(str) + ' ' + \
         flag_variantsdf['Tumor_Sample_Barcode'].astype(str)
