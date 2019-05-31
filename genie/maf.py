@@ -5,6 +5,7 @@ import logging
 import subprocess
 import pandas as pd
 import synapseclient
+from synapseclient.exceptions import SynapseTimeoutError
 logger = logging.getLogger(__name__)
 
 class maf(example_filetype_format.FileTypeFormat):
@@ -45,7 +46,14 @@ class maf(example_filetype_format.FileTypeFormat):
         logger.info('STORING %s' % filePath)
         database = self.syn.get(mafSynId)
         if isNarrow:
-            self.syn.store(synapseclient.Table(database.id, filePath, separator="\t"))
+            try:
+                update_table = synapseclient.Table(
+                    database.id, filePath, separator="\t")
+                self.syn.store(update_table)
+            except SynapseTimeoutError:
+                # This error occurs because of waiting for table to index.
+                # Don't worry about this.
+                pass
         else:
             self.syn.store(synapseclient.File(filePath, parentId=centerMafSynId))
         return(filePath)
