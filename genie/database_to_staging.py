@@ -188,6 +188,8 @@ def configureMafRow(
     sampleId = str(rowArray[headers.index('Tumor_Sample_Barcode')])
     hgvsp = str(rowArray[headers.index('HGVSp_Short')])
     variant = chrom+' '+start+' '+end+' '+ref+' '+seq+' '+sampleId
+    # Add this line for now because merge check uses
+    # different primary key from maf
     mergecheck_variant = \
         chrom+' '+start+' '+hgvsp+' '+ref+' '+seq+' '+sampleId
     # if pd.Series(sampleId).isin(keepSamples).any() and \
@@ -209,7 +211,7 @@ def configureMafRow(
         rowArray[headers.index("Match_Norm_Seq_Allele1")] = \
             '' if str(nDepth) in ["NA", "0.0"] else nDepth
         # rowArray.pop(headers.index('inBED'))
-        if mergecheck_variant in flagged_variants:
+        if mergecheck_variant in flagged_variants.tolist():
             rowArray.append(True)
         else:
             rowArray.append('')
