@@ -186,7 +186,7 @@ def configureMafRow(
     ref = str(rowArray[headers.index('Reference_Allele')])
     seq = str(rowArray[headers.index('Tumor_Seq_Allele2')])
     sampleId = str(rowArray[headers.index('Tumor_Sample_Barcode')])
-    hgvsp = str(rowArray[headers.index('HGVSp_Short')])
+    # hgvsp = str(rowArray[headers.index('HGVSp_Short')])
     variant = chrom+' '+start+' '+end+' '+ref+' '+seq+' '+sampleId
     # Add this line for now because merge check uses
     # different primary key from maf
@@ -763,16 +763,16 @@ def stagingToCbio(
                     newMergedRow = configureMafRow(
                         rowArray, headers,
                         keepForMergedConsortiumSamples,
-                        remove_mafInBed_variants,
-                        flagged_mutationInCis_variants)
+                        remove_mafInBed_variants, [])
+                    # flagged_mutationInCis_variants)
                     if newMergedRow is not None:
                         with open(MUTATIONS_PATH, 'a') as f:
                             f.write(newMergedRow)
                     newCenterRow = configureMafRow(
                         rowArray, headers,
                         keepForCenterConsortiumSamples,
-                        remove_mafInBed_variants,
-                        flagged_mutationInCis_variants)
+                        remove_mafInBed_variants, [])
+                    # flagged_mutationInCis_variants)
                     if newCenterRow is not None:
                         with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
                             f.write(newCenterRow)
