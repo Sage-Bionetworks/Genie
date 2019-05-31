@@ -186,12 +186,12 @@ def configureMafRow(
     ref = str(rowArray[headers.index('Reference_Allele')])
     seq = str(rowArray[headers.index('Tumor_Seq_Allele2')])
     sampleId = str(rowArray[headers.index('Tumor_Sample_Barcode')])
-    # hgvsp = str(rowArray[headers.index('HGVSp_Short')])
+    hgvsp = str(rowArray[headers.index('HGVSp_Short')])
     variant = chrom+' '+start+' '+end+' '+ref+' '+seq+' '+sampleId
     # Add this line for now because merge check uses
     # different primary key from maf
-    # mergecheck_variant = \
-    #     chrom+' '+start+' '+hgvsp+' '+ref+' '+seq+' '+sampleId
+    mergecheck_variant = \
+        chrom+' '+start+' '+hgvsp+' '+ref+' '+seq+' '+sampleId
     # if pd.Series(sampleId).isin(keepSamples).any() and \
     # not pd.Series(variant).isin(remove_variants).any():
     if sampleId in keepSamples.tolist() \
@@ -211,11 +211,10 @@ def configureMafRow(
         rowArray[headers.index("Match_Norm_Seq_Allele1")] = \
             '' if str(nDepth) in ["NA", "0.0"] else nDepth
         # rowArray.pop(headers.index('inBED'))
-        # comment out for now because it is taking too long
-        # if mergecheck_variant in flagged_variants.tolist():
-        #     rowArray.append(True)
-        # else:
-        #     rowArray.append('')
+        if mergecheck_variant in flagged_variants.tolist():
+            rowArray.append(True)
+        else:
+            rowArray.append('')
         newRow = "\t".join(rowArray)
         newRow += "\n"
         newRow = process.removeStringFloat(newRow)
@@ -763,16 +762,16 @@ def stagingToCbio(
                     newMergedRow = configureMafRow(
                         rowArray, headers,
                         keepForMergedConsortiumSamples,
-                        remove_mafInBed_variants, [])
-                    # flagged_mutationInCis_variants)
+                        remove_mafInBed_variants,
+                        flagged_mutationInCis_variants)
                     if newMergedRow is not None:
                         with open(MUTATIONS_PATH, 'a') as f:
                             f.write(newMergedRow)
                     newCenterRow = configureMafRow(
                         rowArray, headers,
                         keepForCenterConsortiumSamples,
-                        remove_mafInBed_variants, [])
-                    # flagged_mutationInCis_variants)
+                        remove_mafInBed_variants,
+                        flagged_mutationInCis_variants)
                     if newCenterRow is not None:
                         with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
                             f.write(newCenterRow)
