@@ -564,7 +564,6 @@ def stagingToCbio(
             syn, skipMutationsInCis, variant_filtering_synId,
             CENTER_MAPPING_DF, genieVersion=genieVersion, test=test,
             genie_user=genie_user, genie_pass=genie_pass)
-
     remove_no_genepanel_samples = no_genepanel_filter(clinicalDf, bedDf)
 
     logger.info("SEQ DATE FILTER")
@@ -638,7 +637,7 @@ def stagingToCbio(
     # CENTER SPECIFIC CODE FOR RIGHT NOW (REMOVE UHN-555-V1)
     ############################################################
     clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "UHN-555-V1"]
-    # clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "PHS-TRISEQ-V1"]
+    clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "PHS-TRISEQ-V1"]
 
     # clinicalDf = clinicalDf[clinicalDf['CENTER'] != "WAKE"]
     # clinicalDf = clinicalDf[clinicalDf['CENTER'] != "CRUK"]
