@@ -411,12 +411,13 @@ if (!is.null(this_bed)) {
                 paste(noneExistentAssays, collapse = ", ")))
   }
   this_assays = this_assays[this_assays %in% this_bed$SEQ_ASSAY_ID]
-  myeloid = this_assays[this_assays %in% c("VICC-01-MYELOID","UHN-54-V1","UCHI-ONCOHEME55-V1")]
+  myeloid_panels = c("VICC-01-MYELOID","UHN-54-V1","UCHI-ONCOHEME55-V1","CHOP-HEMEP","MSK-IMPACT-HEME-400")
+  myeloid = this_assays[this_assays %in% myeloid_panels]
   if (length(myeloid) > 1) {
     print("Overlap of myeloid gene panels")
     plotPanelOverlap(this_samples, this_bed, myeloid)
   }
-  normal = this_assays[!this_assays %in% c("VICC-01-MYELOID","UHN-54-V1","UCHI-ONCOHEME55-V1")]
+  normal = this_assays[!this_assays %in% myeloid_panels]
   smallPanels = c()
   largePanels = c()
   for (panel in normal) {
