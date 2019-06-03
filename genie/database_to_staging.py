@@ -186,7 +186,12 @@ def configureMafRow(
     ref = str(rowArray[headers.index('Reference_Allele')])
     seq = str(rowArray[headers.index('Tumor_Seq_Allele2')])
     sampleId = str(rowArray[headers.index('Tumor_Sample_Barcode')])
+    hgvsp = str(rowArray[headers.index('HGVSp_Short')])
     variant = chrom+' '+start+' '+end+' '+ref+' '+seq+' '+sampleId
+    # Add this line for now because merge check uses
+    # different primary key from maf
+    mergecheck_variant = \
+        chrom+' '+start+' '+hgvsp+' '+ref+' '+seq+' '+sampleId
     # if pd.Series(sampleId).isin(keepSamples).any() and \
     # not pd.Series(variant).isin(remove_variants).any():
     if sampleId in keepSamples.tolist() \
@@ -206,7 +211,7 @@ def configureMafRow(
         rowArray[headers.index("Match_Norm_Seq_Allele1")] = \
             '' if str(nDepth) in ["NA", "0.0"] else nDepth
         # rowArray.pop(headers.index('inBED'))
-        if variant in flagged_variants:
+        if mergecheck_variant in flagged_variants.tolist():
             rowArray.append(True)
         else:
             rowArray.append('')
@@ -374,14 +379,14 @@ def mutation_in_cis_filter(
 
     # Find variants to flag
     variant_flagging = syn.tableQuery(
-        "SELECT Tumor_Sample_Barcode FROM {} where Flag = 'FLAG' and "
+        "SELECT * FROM {} where Flag = 'FLAG' and "
         "Tumor_Sample_Barcode is not null".format(variant_filtering_synId))
     flag_variantsdf = variant_flagging.asDataFrame()
 
     flag_variantsdf['flaggedVariants'] = \
         flag_variantsdf['Chromosome'].astype(str) + ' ' + \
         flag_variantsdf['Start_Position'].astype(str) + ' ' + \
-        flag_variantsdf['End_Position'].astype(str) + ' ' + \
+        flag_variantsdf['HGVSp_Short'].astype(str) + ' ' + \
         flag_variantsdf['Reference_Allele'].astype(str) + ' ' + \
         flag_variantsdf['Tumor_Seq_Allele2'].astype(str) + ' ' + \
         flag_variantsdf['Tumor_Sample_Barcode'].astype(str)
@@ -559,7 +564,6 @@ def stagingToCbio(
             syn, skipMutationsInCis, variant_filtering_synId,
             CENTER_MAPPING_DF, genieVersion=genieVersion, test=test,
             genie_user=genie_user, genie_pass=genie_pass)
-
     remove_no_genepanel_samples = no_genepanel_filter(clinicalDf, bedDf)
 
     logger.info("SEQ DATE FILTER")
@@ -633,7 +637,7 @@ def stagingToCbio(
     # CENTER SPECIFIC CODE FOR RIGHT NOW (REMOVE UHN-555-V1)
     ############################################################
     clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "UHN-555-V1"]
-    # clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "PHS-TRISEQ-V1"]
+    clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "PHS-TRISEQ-V1"]
 
     # clinicalDf = clinicalDf[clinicalDf['CENTER'] != "WAKE"]
     # clinicalDf = clinicalDf[clinicalDf['CENTER'] != "CRUK"]
