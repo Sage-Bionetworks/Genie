@@ -743,6 +743,8 @@ def stagingToCbio(
             header = mafFile.readline()
             headers = header.replace("\n", "").split("\t")
             headers.append("mutationInCis_Flag")
+            # New header
+            header = "\t".join(headers) + "\n"
             if index == 0:
                 with open(MUTATIONS_PATH, 'a') as f:
                     f.write(header)
