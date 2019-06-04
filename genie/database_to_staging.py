@@ -10,7 +10,7 @@ import datetime
 import time
 import re
 import subprocess
-import synapseutils as synu
+import synapseutils
 import create_case_lists
 import dashboard_table_updater
 
@@ -51,7 +51,7 @@ def findCaseListId(syn, parentId):
     Returns:
         string: Synapse id of case list
     '''
-    releaseEnts = synu.walk(syn, parentId)
+    releaseEnts = synapseutils.walk(syn, parentId)
     releaseFolders = next(releaseEnts)
     if len(releaseFolders[1]) == 0:
         caselistId = syn.store(
@@ -61,17 +61,16 @@ def findCaseListId(syn, parentId):
     return(caselistId)
 
 
-def storeFile(
-        syn,
-        filePath,
-        genieVersion="database",
-        name=None,
-        parent=None,
-        fileFormat=None,
-        cBioFileFormat=None,
-        staging=False,
-        caseLists=False,
-        centerStaging=False):
+def storeFile(syn,
+              filePath,
+              genieVersion="database",
+              name=None,
+              parent=None,
+              fileFormat=None,
+              cBioFileFormat=None,
+              staging=False,
+              caseLists=False,
+              centerStaging=False):
     '''
     Convenience function to store Files
     Take care of clinical case (Clinical files go elsewhere)
@@ -190,14 +189,20 @@ def reAnnotatePHI(mergedClinical):
 
 
 # Configure each maf row
-def configureMafRow(rowArray, headers, keepSamples, remove_variants):
+def configureMafRow(rowArray, headers, keepSamples, remove_variants,
+                    flagged_variants):
     chrom = str(rowArray[headers.index('Chromosome')])
     start = str(rowArray[headers.index('Start_Position')])
     end = str(rowArray[headers.index('End_Position')])
     ref = str(rowArray[headers.index('Reference_Allele')])
     seq = str(rowArray[headers.index('Tumor_Seq_Allele2')])
     sampleId = str(rowArray[headers.index('Tumor_Sample_Barcode')])
+    hgvsp = str(rowArray[headers.index('HGVSp_Short')])
     variant = chrom+' '+start+' '+end+' '+ref+' '+seq+' '+sampleId
+    # Add this line for now because merge check uses
+    # different primary key from maf
+    mergecheck_variant = \
+        chrom+' '+start+' '+hgvsp+' '+ref+' '+seq+' '+sampleId
     # if pd.Series(sampleId).isin(keepSamples).any() and \
     # not pd.Series(variant).isin(remove_variants).any():
     if sampleId in keepSamples.tolist() \
@@ -217,6 +222,10 @@ def configureMafRow(rowArray, headers, keepSamples, remove_variants):
         rowArray[headers.index("Match_Norm_Seq_Allele1")] = \
             '' if str(nDepth) in ["NA", "0.0"] else nDepth
         # rowArray.pop(headers.index('inBED'))
+        if mergecheck_variant in flagged_variants.tolist():
+            rowArray.append(True)
+        else:
+            rowArray.append('')
         newRow = "\t".join(rowArray)
         newRow += "\n"
         newRow = process.removeStringFloat(newRow)
@@ -225,13 +234,12 @@ def configureMafRow(rowArray, headers, keepSamples, remove_variants):
         return(None)
 
 
-def runMAFinBED(
-        syn,
-        center_mappingdf,
-        test=False,
-        genieVersion="test",
-        genie_user=None,
-        genie_pass=None):
+def runMAFinBED(syn,
+                center_mappingdf,
+                test=False,
+                genieVersion="test",
+                genie_user=None,
+                genie_pass=None):
     '''
     Run MAF in BED script, filter data and update MAFinBED database
 
@@ -312,15 +320,14 @@ def seq_date_filter(clinicalDf, processingDate, consortiumReleaseCutOff):
     return(removeSeqDateSamples)
 
 
-def mutation_in_cis_filter(
-        syn,
-        skipMutationsInCis,
-        variant_filtering_synId,
-        center_mappingdf,
-        genieVersion,
-        test=False,
-        genie_user=None,
-        genie_pass=None):
+def mutation_in_cis_filter(syn,
+                           skipMutationsInCis,
+                           variant_filtering_synId,
+                           center_mappingdf,
+                           genieVersion,
+                           test=False,
+                           genie_user=None,
+                           genie_pass=None):
     '''
     Run mutation in cis filter, look up samples to remove
 
@@ -367,14 +374,29 @@ def mutation_in_cis_filter(
                     centerStaging=True,
                     genieVersion=genieVersion)
                 os.unlink("mutationsInCis_filtered_samples.csv")
-    variant_filtering = syn.tableQuery(
+    sample_filtering = syn.tableQuery(
         "SELECT Tumor_Sample_Barcode FROM {} where Flag = 'TOSS' and "
         "Tumor_Sample_Barcode is not null".format(variant_filtering_synId))
 
-    filtered_samples = variant_filtering.asDataFrame()
+    filtered_samplesdf = sample_filtering.asDataFrame()
     # #Alex script #1 removed patients
-    remove_samples = filtered_samples['Tumor_Sample_Barcode'].drop_duplicates()
-    return(remove_samples)
+    remove_samples = \
+        filtered_samplesdf['Tumor_Sample_Barcode'].drop_duplicates()
+
+    # Find variants to flag
+    variant_flagging = syn.tableQuery(
+        "SELECT * FROM {} where Flag = 'FLAG' and "
+        "Tumor_Sample_Barcode is not null".format(variant_filtering_synId))
+    flag_variantsdf = variant_flagging.asDataFrame()
+
+    flag_variantsdf['flaggedVariants'] = \
+        flag_variantsdf['Chromosome'].astype(str) + ' ' + \
+        flag_variantsdf['Start_Position'].astype(str) + ' ' + \
+        flag_variantsdf['HGVSp_Short'].astype(str) + ' ' + \
+        flag_variantsdf['Reference_Allele'].astype(str) + ' ' + \
+        flag_variantsdf['Tumor_Seq_Allele2'].astype(str) + ' ' + \
+        flag_variantsdf['Tumor_Sample_Barcode'].astype(str)
+    return(remove_samples, flag_variantsdf['flaggedVariants'])
 
 
 def seq_assay_id_filter(clinicaldf):
@@ -417,13 +439,12 @@ def no_genepanel_filter(clinicaldf, beddf):
     return(remove_samples)
 
 
-def store_gene_panel_files(
-        syn,
-        fileviewSynId,
-        genieVersion,
-        data_gene_panel,
-        consortiumReleaseSynId,
-        current_release_staging):
+def store_gene_panel_files(syn,
+                           fileviewSynId,
+                           genieVersion,
+                           data_gene_panel,
+                           consortiumReleaseSynId,
+                           current_release_staging):
     # Only need to upload these files once
     logger.info("STORING GENE PANELS FILES")
     genePanels = syn.tableQuery(
@@ -456,15 +477,14 @@ def return_syn_tablequerydf(syn, query):
     return(table.asDataFrame())
 
 
-def store_fusion_files(
-        syn,
-        release_synid,
-        genie_version,
-        fusion_synid,
-        keep_for_center_consortium_samples,
-        keep_for_merged_consortium_samples,
-        current_release_staging,
-        center_mappingdf):
+def store_fusion_files(syn,
+                       release_synid,
+                       genie_version,
+                       fusion_synid,
+                       keep_for_center_consortium_samples,
+                       keep_for_merged_consortium_samples,
+                       current_release_staging,
+                       center_mappingdf):
     '''
     Create, filter, configure, and store fusion file
 
@@ -533,17 +553,17 @@ def store_fusion_files(
         staging=current_release_staging)
 
 
-def store_maf_files(
-        syn,
-        genie_version,
-        flatfiles_view_synid,
-        release_synid,
-        clinicaldf,
-        center_mappingdf,
-        keep_for_merged_consortium_samples,
-        keep_for_center_consortium_samples,
-        remove_mafinbed_variants,
-        current_release_staging):
+def store_maf_files(syn,
+                    genie_version,
+                    flatfiles_view_synid,
+                    release_synid,
+                    clinicaldf,
+                    center_mappingdf,
+                    keep_for_merged_consortium_samples,
+                    keep_for_center_consortium_samples,
+                    remove_mafinbed_variants,
+                    flagged_mutationInCis_variants,
+                    current_release_staging):
     '''
     Create, filter, configure, and store maf file
 
@@ -557,6 +577,7 @@ def store_maf_files(
         keep_for_merged_consortium_samples: Samples to keep for merged file
         keep_for_center_consortium_samples: Samples to keep for center files
         remove_mafinbed_variants: Variants to remove
+        flagged_mutationInCis_variants: Variants to flag
         current_release_staging: Staging flag
     '''
 
@@ -595,14 +616,16 @@ def store_maf_files(
                     newMergedRow = configureMafRow(
                         rowArray, headers,
                         keep_for_merged_consortium_samples,
-                        remove_mafinbed_variants)
+                        remove_mafinbed_variants,
+                        flagged_mutationInCis_variants)
                     if newMergedRow is not None:
                         with open(mutations_path, 'a') as f:
                             f.write(newMergedRow)
                     newCenterRow = configureMafRow(
                         rowArray, headers,
                         keep_for_center_consortium_samples,
-                        remove_mafinbed_variants)
+                        remove_mafinbed_variants,
+                        flagged_mutationInCis_variants)
                     if newCenterRow is not None:
                         with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
                             f.write(newCenterRow)
@@ -623,20 +646,19 @@ def store_maf_files(
                 centerStaging=True)
 
 
-def run_genie_filters(
-        syn,
-        genie_user,
-        genie_pass,
-        genie_version,
-        variant_filtering_synId,
-        clinicaldf,
-        beddf,
-        sample_cols,
-        center_mappingdf,
-        processing_date,
-        skip_mutationsincis,
-        consortium_release_cutoff,
-        test):
+def run_genie_filters(syn,
+                      genie_user,
+                      genie_pass,
+                      genie_version,
+                      variant_filtering_synId,
+                      clinicaldf,
+                      beddf,
+                      sample_cols,
+                      center_mappingdf,
+                      processing_date,
+                      skip_mutationsincis,
+                      consortium_release_cutoff,
+                      test):
     '''
     Run GENIE filters and returns variants and samples to remove
 
@@ -659,6 +681,7 @@ def run_genie_filters(
         pandas.Series: Variants to remove
         set: samples to remove for release files
         set: samples to remove for center files
+        pandas.Series: Variants to flag
     '''
 
     # ADD CHECKS TO CODE BEFORE UPLOAD.
@@ -674,11 +697,11 @@ def run_genie_filters(
         genie_user=genie_user, genie_pass=genie_pass)
 
     logger.info("MUTATION IN CIS FILTER")
-    remove_mutationincis_samples = mutation_in_cis_filter(
-        syn, skip_mutationsincis, variant_filtering_synId, center_mappingdf,
-        genieVersion=genie_version, test=test,
-        genie_user=genie_user, genie_pass=genie_pass)
-
+    remove_mutationincis_samples, flagged_mutationincis_variants = \
+        mutation_in_cis_filter(
+            syn, skip_mutationsincis, variant_filtering_synId,
+            center_mappingdf, genieVersion=genie_version, test=test,
+            genie_user=genie_user, genie_pass=genie_pass)
     remove_no_genepanel_samples = no_genepanel_filter(clinicaldf, beddf)
 
     logger.info("SEQ DATE FILTER")
@@ -698,21 +721,21 @@ def run_genie_filters(
 
     return(remove_mafinbed_variants,
            remove_merged_consortium_samples,
-           remove_center_consortium_samples)
+           remove_center_consortium_samples,
+           flagged_mutationincis_variants)
 
 
-def store_clinical_files(
-        syn,
-        genie_version,
-        clinicaldf,
-        oncotree_url,
-        sample_cols,
-        patient_cols,
-        remove_center_consortium_samples,
-        remove_merged_consortium_samples,
-        release_synid,
-        current_release_staging,
-        center_mappingdf):
+def store_clinical_files(syn,
+                         genie_version,
+                         clinicaldf,
+                         oncotree_url,
+                         sample_cols,
+                         patient_cols,
+                         remove_center_consortium_samples,
+                         remove_merged_consortium_samples,
+                         release_synid,
+                         current_release_staging,
+                         center_mappingdf):
     '''
     Create, filter, configure, and store clinical file
 
@@ -787,7 +810,8 @@ def store_clinical_files(
     # CENTER SPECIFIC CODE FOR RIGHT NOW (REMOVE UHN-555-V1)
     ############################################################
     clinicaldf = clinicaldf[clinicaldf['SEQ_ASSAY_ID'] != "UHN-555-V1"]
-    # clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "PHS-TRISEQ-V1"]
+    clinicaldf = clinicaldf[clinicaldf['SEQ_ASSAY_ID'] != "PHS-TRISEQ-V1"]
+
     # clinicalDf = clinicalDf[clinicalDf['CENTER'] != "WAKE"]
     # clinicalDf = clinicalDf[clinicalDf['CENTER'] != "CRUK"]
     ############################################################
@@ -876,15 +900,14 @@ def store_clinical_files(
            keep_merged_consortium_samples)
 
 
-def store_cna_files(
-        syn,
-        flatfiles_view_synid,
-        keep_for_center_consortium_samples,
-        keep_for_merged_consortium_samples,
-        center_mappingdf,
-        genie_version,
-        release_synid,
-        current_release_staging):
+def store_cna_files(syn,
+                    flatfiles_view_synid,
+                    keep_for_center_consortium_samples,
+                    keep_for_merged_consortium_samples,
+                    center_mappingdf,
+                    genie_version,
+                    release_synid,
+                    current_release_staging):
     '''
     Create, filter and store cna file
 
@@ -991,15 +1014,14 @@ def store_cna_files(
 
 
 # SEG
-def store_seg_files(
-        syn,
-        genie_version,
-        seg_synid,
-        release_synid,
-        keep_for_center_consortium_samples,
-        keep_for_merged_consortium_samples,
-        center_mappingdf,
-        current_release_staging):
+def store_seg_files(syn,
+                    genie_version,
+                    seg_synid,
+                    release_synid,
+                    keep_for_center_consortium_samples,
+                    keep_for_merged_consortium_samples,
+                    center_mappingdf,
+                    current_release_staging):
     '''
     Create, filter and store seg file
 
@@ -1056,13 +1078,12 @@ def store_seg_files(
         staging=current_release_staging)
 
 
-def store_data_gene_matrix(
-        syn,
-        genie_version,
-        clinicaldf,
-        cna_samples,
-        release_synid,
-        current_release_staging):
+def store_data_gene_matrix(syn,
+                           genie_version,
+                           clinicaldf,
+                           cna_samples,
+                           release_synid,
+                           current_release_staging):
     '''
     Create and store data gene matrix file
 
@@ -1105,14 +1126,13 @@ def store_data_gene_matrix(
     return(data_gene_matrix)
 
 
-def store_bed_files(
-        syn,
-        genie_version,
-        beddf,
-        seq_assay_ids,
-        center_mappingdf,
-        current_release_staging,
-        release_synid):
+def store_bed_files(syn,
+                    genie_version,
+                    beddf,
+                    seq_assay_ids,
+                    center_mappingdf,
+                    current_release_staging,
+                    release_synid):
     '''
     Store bed files, store the bed regions that had symbols remapped
     Filters bed file by clinical dataframe seq assays
@@ -1156,13 +1176,12 @@ def store_bed_files(
         staging=current_release_staging)
 
 
-def stagingToCbio(
-        syn, processingDate, genieVersion,
-        CENTER_MAPPING_DF, databaseSynIdMappingDf,
-        oncotree_url=None, consortiumReleaseCutOff=183,
-        current_release_staging=False,
-        skipMutationsInCis=False, test=False,
-        genie_user=None, genie_pass=None):
+def stagingToCbio(syn, processingDate, genieVersion,
+                  CENTER_MAPPING_DF, databaseSynIdMappingDf,
+                  oncotree_url=None, consortiumReleaseCutOff=183,
+                  current_release_staging=False,
+                  skipMutationsInCis=False, test=False,
+                  genie_user=None, genie_pass=None):
     '''
     Main function that takes the GENIE database and creates release files
 
@@ -1251,7 +1270,8 @@ def stagingToCbio(
 
     remove_mafInBed_variants, \
         removeForMergedConsortiumSamples, \
-        removeForCenterConsortiumSamples = \
+        removeForCenterConsortiumSamples, \
+        flagged_mutationInCis_variants = \
         run_genie_filters(
             syn,
             genie_user,
@@ -1293,6 +1313,7 @@ def stagingToCbio(
         keepForMergedConsortiumSamples,
         keepForCenterConsortiumSamples,
         remove_mafInBed_variants,
+        flagged_mutationInCis_variants,
         current_release_staging)
 
     cnaSamples = store_cna_files(
@@ -1353,8 +1374,8 @@ def stagingToCbio(
     return(genePanelEntities)
 
 
-def update_process_trackingdf(
-        syn, process_trackerdb_synid, center, process_type, start=True):
+def update_process_trackingdf(syn, process_trackerdb_synid, center,
+                              process_type, start=True):
     '''
     Updates the processing tracking database
 
@@ -1379,8 +1400,7 @@ def update_process_trackingdf(
     syn.store(synapseclient.Table(process_trackerdb_synid, process_trackerdf))
 
 
-def revise_metadata_files(
-        syn, staging, consortiumid, genie_version=None):
+def revise_metadata_files(syn, staging, consortiumid, genie_version=None):
     '''
     Rewrite metadata files with the correct GENIE version
 
@@ -1467,12 +1487,11 @@ def search_and_create_folder(syn, parentid, folder_name):
     return(folder_synid, already_exists)
 
 
-def create_link_version(
-        syn,
-        genie_version,
-        case_list_entities,
-        gene_panel_entities,
-        database_synid_mappingdf):
+def create_link_version(syn,
+                        genie_version,
+                        case_list_entities,
+                        gene_panel_entities,
+                        database_synid_mappingdf):
     '''
     Create release links from the actual entity and version
 

@@ -1,9 +1,13 @@
 #! /usr/bin/env python
 import logging
-logger = logging.getLogger("genie")
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 import synapseclient
 from synapseclient import File, Table
-import synapseutils as synu
+import synapseutils
 import argparse
 import os
 from multiprocessing import Pool
@@ -36,7 +40,7 @@ def getCenterInputFiles(syn, synId, center, process="main"):
     ################################################################
     logger.info("GETTING %s INPUT FILES" % center)
     CLINICAL_PAIR_NAME = ["data_clinical_supp_sample_%s.txt" % center, "data_clinical_supp_patient_%s.txt" % center]
-    walked = synu.walk(syn, synId)
+    walked = synapseutils.walk(syn, synId)
     clinicalpair = []
     allFiles = []
     for dirpath, dirname, filenames in walked:
@@ -242,6 +246,11 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
         cbsSegFiles = inputValidStatus[cbsSegBool]
         if len(cbsSegFiles) >1:
             duplicatedFiles = duplicatedFiles.append(cbsSegFiles)
+        clinical_bool = ["clinical" in i for i in inputValidStatus['name']]
+        clinical_files = inputValidStatus[clinical_bool]
+        if len(clinical_files) > 2:
+            duplicatedFiles = duplicatedFiles.append(clinical_files)
+
         # nodups = ["data_mutations_extended"]
         # allDuplicatedFiles = []
         # for nodup in nodups:
