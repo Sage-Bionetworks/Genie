@@ -247,7 +247,7 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
             duplicatedFiles = duplicatedFiles.append(cbsSegFiles)
         clinical_bool = ["clinical" in i for i in inputValidStatus['name']]
         clinical_files = inputValidStatus[clinical_bool]
-        if len(clinical_bool) > 2:
+        if len(clinical_files) > 2:
             duplicatedFiles = duplicatedFiles.append(clinical_files)
 
         # nodups = ["data_mutations_extended"]
