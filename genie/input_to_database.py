@@ -464,6 +464,69 @@ def create_and_archive_maf_database(syn, database_synid_mappingdf):
     return(database_synid_mappingdf)
 
 
+def email_duplication_error(syn, duplicated_filesdf):
+    '''
+    Sends an email if there is a duplication error
+
+    Args:
+        syn: Synapse object
+        duplicated_filesdf: dataframe with 'id', 'name' column
+    '''
+    if not duplicated_filesdf.empty:
+        incorrect_files = [
+            name for synId, name in zip(duplicated_filesdf['id'],
+                                        duplicated_filesdf['name'])]
+        incorrect_filenames = ", ".join(incorrect_files)
+        incorrect_ent = syn.get(duplicated_filesdf['id'].iloc[0])
+        send_to_users = set([incorrect_ent.modifiedBy,
+                             incorrect_ent.createdBy])
+        usernames = ", ".join(
+            [syn.getUserProfile(user).userName for user in send_to_users])
+        error_email = (
+            "Dear %s,\n\n"
+            "Your files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS "
+            "NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE "
+            "UPLOADED EVERYTIME".format(usernames, incorrect_filenames))
+        syn.sendMessage(
+            list(send_to_users), "GENIE Validation Error", error_email)
+
+
+def get_duplicated_files(syn, validation_statusdf, duplicated_error_message):
+    '''
+    Check for duplicated files.  There should be no duplication,
+    files should be uploaded as new versions and the entire dataset
+    should be uploaded everytime
+
+    Args:
+        syn: Synapse object
+        validation_statusdf: dataframe with 'name' and 'id' column
+        duplicated_error_message: Error message for duplicated files
+
+    Returns:
+        dataframe with 'id', 'name' and 'errors' of duplicated files
+    '''
+    logger.info("CHECK FOR DUPLICATED FILES")
+    duplicated_filesdf = validation_statusdf[
+        validation_statusdf['name'].duplicated(keep=False)]
+    # cbs/seg files should not be duplicated.
+    cbs_seg_files = validation_statusdf.query(
+        'name.str.endswith("cbs") or name.str.endswith("seg")')
+    if len(cbs_seg_files) > 1:
+        duplicated_filesdf = duplicated_filesdf.append(cbs_seg_files)
+    # clinical files should not be duplicated.
+    clinical_files = validation_statusdf.query(
+        'name.str.startswith("data_clinical_supp")')
+    if len(clinical_files) > 2:
+        duplicated_filesdf = duplicated_filesdf.append(clinical_files)
+    duplicated_filesdf.drop_duplicates("id", inplace=True)
+    logger.info("THERE ARE {} DUPLICATED FILES".format(
+        len(duplicated_filesdf)))
+    duplicated_filesdf['errors'] = duplicated_error_message
+    # Send an email if there are any duplicated files
+    email_duplication_error(syn, duplicated_filesdf)
+    return(duplicated_filesdf)
+
+
 def validation(syn, center, process,
                center_mapping_df, databaseToSynIdMappingDf,
                thread, testing, oncotreeLink):
@@ -535,57 +598,21 @@ def validation(syn, center, process,
                 "id", 'path', 'md5', 'status',
                 'name', 'modifiedOn', 'fileType'])
 
-        logger.info("CHECK FOR DUPLICATED FILES")
-        '''
-        Check for duplicated filenames.
-        There should be no duplication, files should be uploaded as
-        new versions and the entire dataset should be uploaded everytime
-        cbs and seg files should not be duplicated.  There can only be one
-        '''
-        duplicatedFiles = inputValidStatus[
-            inputValidStatus['name'].duplicated(keep=False)]
-        cbsSegBool = [
-            os.path.basename(i).endswith('.cbs') or
-            os.path.basename(i).endswith('.seg')
-            for i in inputValidStatus['name']]
-        cbsSegFiles = inputValidStatus[cbsSegBool]
-        if len(cbsSegFiles) > 1:
-            duplicatedFiles = duplicatedFiles.append(cbsSegFiles)
-        clinical_bool = ["data_clinical_supp" in i for i in inputValidStatus['name']]
-        clinical_files = inputValidStatus[clinical_bool]
-        if len(clinical_files) > 2:
-            duplicatedFiles = duplicatedFiles.append(clinical_files)
-        duplicatedFiles.drop_duplicates("id", inplace=True)
-        inputValidStatus['status'][
-            inputValidStatus['id'].isin(duplicatedFiles['id'])] = "INVALID"
         duplicatedFileError = (
             "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS "
             "AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME")
-        duplicatedFiles['errors'] = duplicatedFileError
-        # Send an email if there are any duplicated files
-        if not duplicatedFiles.empty:
-            incorrectFiles = ", ".join(
-                [name for synId, name in
-                 zip(duplicatedFiles['id'], duplicatedFiles['name'])])
-            incorrectEnt = syn.get(duplicatedFiles['id'].iloc[0])
-            sendEmail = set([incorrectEnt.modifiedBy, incorrectEnt.createdBy])
-            userNames = ", ".join(
-                [syn.getUserProfile(user).userName for user in sendEmail])
-            errorEmail = (
-                "Dear %s,\n\n"
-                "Your files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS "
-                "NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE "
-                "UPLOADED EVERYTIME".format(userNames, incorrectFiles))
-            syn.sendMessage(
-                list(sendEmail), "GENIE Validation Error", errorEmail)
+        duplicatedFiles = get_duplicated_files(
+            syn, inputValidStatus, duplicatedFileError)
 
-        logger.info("THERE ARE %d DUPLICATED FILES" % len(duplicatedFiles))
-
+        inputValidStatus['status'][
+            inputValidStatus['id'].isin(duplicatedFiles['id'])] = "INVALID"
         # Create invalid error synapse table
         logger.info("UPDATE INVALID FILE REASON DATABASE")
         invalidErrors = pd.DataFrame(
             invalidErrors, columns=["id", 'errors', 'name'])
         # Remove fixed duplicated files
+        # This makes sure that the files removed actually had duplicated file
+        # errors and not some other error
         dupIds = invalidErrors['id'][
             invalidErrors['errors'] == duplicatedFileError]
         removeIds = dupIds[~dupIds.isin(duplicatedFiles['id'])]
