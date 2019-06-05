@@ -802,7 +802,11 @@ def check_col_and_values(
                 .format(filename=filename,
                         col=col,
                         possible_vals=', '.join([
-                            str(value) for value in possible_values])))
+                            # This is done because of pandas typing.
+                            # An integer column with one NA/blank value
+                            # will be cast as a double.
+                            str(value).replace(".0", "")
+                            for value in possible_values])))
     return(warning, error)
 
 

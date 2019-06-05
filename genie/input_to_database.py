@@ -284,9 +284,27 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
                  veppath=None, vepdata=None,
                  processing="main", test=False, reference=None):
     '''
-    Processing a single file
+    Processing validated files
+
+    Args:
+        syn: Synapse object
+        validFiles: pandas dataframe containing validated files
+                    has 'id', 'path', and 'fileType' column
+        center: GENIE center name
+        path_to_GENIE: Path to GENIE workdir
+        threads: Threads used
+        center_mapping_df: Center mapping dataframe
+        oncotreeLink: Link to oncotree
+        databaseToSynIdMappingDf: Database to synapse id mapping dataframe
+        validVCF: Valid vcf files
+        vcf2mafPath: Path to vcf2maf
+        veppath: Path to vep
+        vepdata: Path to vep index files
+        processing: Processing type. Defaults to main
+        test: Test flag
+        reference: Reference file for vcf2maf
     '''
-    logger.info("PROCESSING %s FILES: %d" % (center, len(validFiles)))
+    logger.info("PROCESSING {} FILES: {}".format(center, len(validFiles)))
     centerStagingFolder = os.path.join(path_to_GENIE, center)
     centerStagingSynId = center_mapping_df['stagingSynId'][
         center_mapping_df['center'] == center][0]
@@ -310,7 +328,8 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
                 synId = synId[0]
             # if fileType not in [None,"cna"]:
             if fileType is not None:
-                PROCESS_FILES[fileType](syn, center, threads).process(
+                processor = PROCESS_FILES[fileType](syn, center, threads)
+                processor.process(
                     filePath=filePath, newPath=newPath,
                     parentId=centerStagingSynId, databaseSynId=synId,
                     oncotreeLink=oncotreeLink,
@@ -328,7 +347,8 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
         synId = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == processing][0]
         fileSynId = None
-        PROCESS_FILES[processing](syn, center, threads).process(
+        processor = PROCESS_FILES[processing](syn, center, threads)
+        processor.process(
             filePath=filePath, newPath=newPath,
             parentId=centerStagingSynId, databaseSynId=synId,
             oncotreeLink=oncotreeLink,
@@ -489,7 +509,10 @@ def validation(syn, center, process,
         cbsSegFiles = inputValidStatus[cbsSegBool]
         if len(cbsSegFiles) > 1:
             duplicatedFiles = duplicatedFiles.append(cbsSegFiles)
-
+        clinical_bool = ["data_clinical_supp" in i for i in inputValidStatus['name']]
+        clinical_files = inputValidStatus[clinical_bool]
+        if len(clinical_files) > 2:
+            duplicatedFiles = duplicatedFiles.append(clinical_files)
         duplicatedFiles.drop_duplicates("id", inplace=True)
         inputValidStatus['status'][
             inputValidStatus['id'].isin(duplicatedFiles['id'])] = "INVALID"
