@@ -7,15 +7,16 @@ logger.setLevel(logging.INFO)
 
 import synapseclient
 import synapseutils
-import argparse
 import os
 import pandas as pd
 import datetime
 import shutil
 import time
 # Configuration file
-from genie import PROCESS_FILES, process_functions, validate, \
-                  toRetract, write_invalid_reasons
+from genie import PROCESS_FILES
+from genie import process_functions
+from genie import validate
+from genie import toRetract
 
 '''
 TODO:
