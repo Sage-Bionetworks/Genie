@@ -482,7 +482,7 @@ def email_duplication_error(syn, duplicated_filesdf):
         send_to_users = set([incorrect_ent.modifiedBy,
                              incorrect_ent.createdBy])
         usernames = ", ".join(
-            [syn.getUserProfile(user).userName for user in send_to_users])
+            [syn.getUserProfile(user)['userName'] for user in send_to_users])
         error_email = (
             "Dear %s,\n\n"
             "Your files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS "

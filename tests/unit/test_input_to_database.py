@@ -580,3 +580,46 @@ def test_nodups_get_duplicated_files():
             syn, validation_statusdf, "")
         assert dupsdf.empty
         patch_email.assert_called_once_with(syn, dupsdf)
+
+
+def test_dups_email_duplication_error():
+    '''
+    Test duplicated email sent
+    '''
+    duplicated_filesdf = pd.DataFrame({
+        'id': ['syn1234'],
+        'name': ['first.cbs']})
+    entity = synapseclient.Entity(id='syn1234')
+    entity.modifiedBy = '333'
+    entity.createdBy = '333'
+    error_email = (
+        "Dear %s,\n\n"
+        "Your files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS "
+        "NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE "
+        "UPLOADED EVERYTIME".format("trial", "first.cbs"))
+    with mock.patch.object(
+            syn, "get", return_value=entity) as patch_syn_get,\
+        mock.patch.object(
+            syn, "getUserProfile",
+            return_value={'userName': 'trial'}) as patch_syn_profile,\
+        mock.patch.object(
+            syn, "sendMessage") as patch_send:
+        input_to_database.email_duplication_error(syn, duplicated_filesdf)
+        patch_syn_get.assert_called_once_with('syn1234')
+        patch_syn_profile.assert_called_once_with('333')
+        patch_send.assert_called_once_with(
+            ['333'], "GENIE Validation Error", error_email)
+
+
+def test_nodups_email_duplication_error():
+    '''
+    Test no email sent
+    '''
+    duplicated_filesdf = pd.DataFrame()
+    with mock.patch.object(syn, "get") as patch_syn_get,\
+            mock.patch.object(syn, "getUserProfile") as patch_syn_profile,\
+            mock.patch.object(syn, "sendMessage") as patch_send:
+        input_to_database.email_duplication_error(syn, duplicated_filesdf)
+        patch_syn_get.assert_not_called()
+        patch_syn_profile.assert_not_called()
+        patch_send.assert_not_called()
