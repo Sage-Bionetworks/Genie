@@ -19,14 +19,14 @@ def test_store_gene_panel_files():
 
     data_gene_panel = pd.DataFrame({'mutations': ['PANEL1']})
 
-    class gene_panel:
-        def asDataFrame():
+    class gene_panel():
+        def asDataFrame(self):
             gene_paneldf = pd.DataFrame({'id': ['syn3333']})
             return gene_paneldf
 
     with mock.patch.object(
             syn, "tableQuery",
-            return_value=gene_panel) as patch_syn_table_query,\
+            return_value=gene_panel()) as patch_syn_table_query,\
         mock.patch(
             "database_to_staging.storeFile",
             return_value=synapseclient.Entity()) as patch_storefile,\
