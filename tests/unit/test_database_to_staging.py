@@ -19,7 +19,7 @@ def test_store_gene_panel_files():
 
     data_gene_panel = pd.DataFrame({'mutations': ['PANEL1']})
 
-    class gene_panel():
+    class gene_panel:
         def asDataFrame():
             gene_paneldf = pd.DataFrame({'id': ['syn3333']})
             return gene_paneldf
