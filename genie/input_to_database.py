@@ -551,8 +551,7 @@ def validation(syn, center, process,
         cbsSegFiles = inputValidStatus[cbsSegBool]
         if len(cbsSegFiles) > 1:
             duplicatedFiles = duplicatedFiles.append(cbsSegFiles)
-        # Also flag for duplicated clinical files
-        clinical_bool = ["clinical" in i for i in inputValidStatus['name']]
+        clinical_bool = ["data_clinical_supp" in i for i in inputValidStatus['name']]
         clinical_files = inputValidStatus[clinical_bool]
         if len(clinical_files) > 2:
             duplicatedFiles = duplicatedFiles.append(clinical_files)
