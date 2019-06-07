@@ -210,13 +210,39 @@ def _check_valid(syn, filepaths, center, filetype, filenames,
     return(valid, message)
 
 
+def _send_validation_error_email(syn, filenames, message, file_users):
+    '''
+    Sends validation error email
+
+    Args:
+        syn: Synapse object
+        filenames: invalid filenames
+        message: error message
+        file_users: List of unique synapse user profiles of
+                    users that created and most recently
+                    modified the file
+    '''
+    # Send email the first time the file is invalid
+    incorrect_files = ", ".join(filenames)
+    usernames = ", ".join([
+        syn.getUserProfile(user)['userName']
+        for user in file_users])
+    email_message = (
+        "Dear {username},\n\n"
+        "Your files ({filenames}) are invalid! "
+        "Here are the reasons why:\n\n{error_message}".format(
+            username=usernames,
+            filenames=incorrect_files,
+            error_message=message))
+    syn.sendMessage(
+        file_users, "GENIE Validation Error", email_message)
+
+
 def _get_status_and_error_list(syn, fileinfo, valid, message, filetype,
-                               entities, filepaths, filenames, modified_ons,
-                               find_file_users):
+                               entities, filepaths, filenames, modified_ons):
     '''
     Helper function to return the status and error list of the
-    files based on validation result. Emails uploader
-    if invalid for the first time.
+    files based on validation result.
 
     Args:
         syn: Synapse object
@@ -229,9 +255,6 @@ def _get_status_and_error_list(syn, fileinfo, valid, message, filetype,
         filepaths: List of filepaths
         filenames: List of filenames
         modified_ons: List of modified on dates
-        find_file_users: List of unique synapse user profiles of
-                         users that created and most recently
-                         modified the file
 
     Returns:
         tuple: input_status_list - status of input files list,
@@ -243,28 +266,12 @@ def _get_status_and_error_list(syn, fileinfo, valid, message, filetype,
              filename, modifiedon, filetype]
             for ent, filepath, filename, modifiedon in
             zip(entities, filepaths, filenames, modified_ons)]
-
         invalid_errors_list = None
     else:
-        # Send email the first time the file is invalid
-        incorrect_files = ", ".join(filenames)
-        usernames = ", ".join([
-            syn.getUserProfile(user)['userName']
-            for user in find_file_users])
-        email_message = (
-            "Dear {username},\n\n"
-            "Your files ({filenames}) are invalid! "
-            "Here are the reasons why:\n\n{error_message}".format(
-                username=usernames,
-                filenames=incorrect_files,
-                error_message=message))
-        syn.sendMessage(
-            find_file_users, "GENIE Validation Error", email_message)
         input_status_list = [
             [ent.id, path, ent.md5, "INVALID", name, modifiedon, filetype]
             for ent, path, name, modifiedon in
             zip(entities, filepaths, filenames, modified_ons)]
-
         invalid_errors_list = [
             [synid, message, filename]
             for synid, filename in zip(fileinfo['synId'], filenames)]
@@ -311,8 +318,7 @@ def validatefile(fileinfo,
             datetime.datetime.strptime(
                 entity.modifiedOn.split(".")[0], "%Y-%m-%dT%H:%M:%S"))
         for entity in entities]
-    find_file_users = \
-        list(set([entities[0].modifiedBy, entities[0].createdBy]))
+    file_users = list(set([entities[0].modifiedBy, entities[0].createdBy]))
 
     check_file_status = check_existing_file_status(
         validation_statusdf, error_trackerdf, entities, filenames)
@@ -328,8 +334,10 @@ def validatefile(fileinfo,
 
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             syn, fileinfo, valid, message, filetype,
-            entities, filepaths, filenames, modified_ons, find_file_users)
-
+            entities, filepaths, filenames, modified_ons)
+        # Send email the first time the file is invalid
+        if invalid_errors_list is not None:
+            _send_validation_error_email(syn, filenames, message, file_users)
     else:
         input_status_list = [
             [ent.id, path, ent.md5, status, filename, modifiedon, filetype]

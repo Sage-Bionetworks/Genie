@@ -564,8 +564,7 @@ def test_valid__get_status_and_error_list():
     input_status_list, invalid_errors_list = \
         input_to_database._get_status_and_error_list(
            syn, fileinfo, valid, message, filetype,
-           entities, fileinfo['filePaths'], filenames, modified_ons,
-           ['333', '444'])
+           entities, fileinfo['filePaths'], filenames, modified_ons)
     assert input_status_list == [
         [entity.id, fileinfo['filePaths'][0], entity.md5,
          'VALIDATED', filenames[0], modified_ons[0],
@@ -579,35 +578,40 @@ def test_invalid__get_status_and_error_list():
     when file is invalid.
     '''
     entity = synapseclient.Entity(id='syn1234', md5='44444')
-    entity.modifiedBy = '333'
-    entity.createdBy = '444'
     entities = [entity]
     filetype = "clinical"
     fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
                 'synId': ['syn1234']}
     modified_ons = [1553428800000]
     filenames = ['data_clinical_supp_SAGE.txt']
-
+    # This valid variable control the validation status
     valid = False
-    message = 'invalid file name'
+    message = 'invalid file content'
     filetype = 'clinical'
+
+    input_status_list, invalid_errors_list = \
+        input_to_database._get_status_and_error_list(
+            syn, fileinfo, valid, message, filetype,
+            entities, fileinfo['filePaths'], filenames, modified_ons)
+    assert input_status_list == [
+        [entity.id, fileinfo['filePaths'][0], entity.md5,
+            'INVALID', filenames[0], modified_ons[0],
+            filetype]]
+    assert invalid_errors_list == [
+        ['syn1234', message, 'data_clinical_supp_SAGE.txt']]
+
+
+def test__send_validation_email():
+    message = 'invalid error message here'
+    filenames = ['data_clinical_supp_SAGE.txt']
+    file_users = ['333', '444']
     with mock.patch.object(
-            syn, "getUserProfile",
-            return_value={'userName': 'trial'}) as patch_syn_getuserprofile,\
+        syn, "getUserProfile",
+        return_value={'userName': 'trial'}) as patch_syn_getuserprofile,\
         mock.patch.object(
             syn, "sendMessage") as patch_syn_sendmessage:
-        input_status_list, invalid_errors_list = \
-            input_to_database._get_status_and_error_list(
-               syn, fileinfo, valid, message, filetype,
-               entities, fileinfo['filePaths'], filenames, modified_ons,
-               [entity.modifiedBy, entity.createdBy])
-        assert input_status_list == [
-            [entity.id, fileinfo['filePaths'][0], entity.md5,
-             'INVALID', filenames[0], modified_ons[0],
-             filetype]]
-        assert invalid_errors_list == [
-            ['syn1234', message, 'data_clinical_supp_SAGE.txt']]
-
+        input_to_database._send_validation_error_email(
+            syn, filenames, message, file_users)
         error_message = (
             "Dear trial, trial,\n\n"
             "Your files (data_clinical_supp_SAGE.txt) are invalid! "
