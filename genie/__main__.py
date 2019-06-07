@@ -17,13 +17,13 @@ def synapse_login(username=None, password=None):
     except Exception:
         if username is None and password is None:
             raise ValueError(
-                "Please specify --syn_user, --syn_pass the first time "
-                "you run this script.")
+                "Please specify --syn_user, --syn_pass to specify your Synapse "
+                "login. Please view https://docs.synapse.org/articles/client_configuration.html"
+                "to learn about logging into Synapse via the Python client.")
         else:
             syn = synapseclient.login(
                 email=username,
                 password=password,
-                rememberMe=True,
                 silent=True)
     return(syn)
 
