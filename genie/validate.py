@@ -115,6 +115,18 @@ def validate_single_file(syn,
 
 
 def perform_validate(syn, args):
+    # Check parentid argparse
+    if args.parentid is not None:
+        if args.filetype is not None:
+            raise ValueError(
+                "If you used --parentid, you must not use "
+                "--filetype")
+        try:
+            syn.get(args.parentid)
+        except synapseclient.exceptions.SynapseHTTPError:
+            raise ValueError(
+                "Provided Synapse id must be your input folder Synapse id "
+                "or a Synapse Id of a folder inside your input directory")
     if args.testing:
         databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
     else:
@@ -125,6 +137,7 @@ def perform_validate(syn, args):
         databasetosynid_mappingdf['Database'] == "centerMapping"]
     center_mapping = syn.tableQuery('SELECT * FROM {}'.format(synid[0]))
     center_mapping_df = center_mapping.asDataFrame()
+    # Check center argparse
     assert args.center in center_mapping_df.center.tolist(), \
         "Must specify one of these centers: {}".format(
             ", ".join(center_mapping_df.center))
@@ -139,18 +152,8 @@ def perform_validate(syn, args):
         syn, args.filepath, args.center, args.filetype,
         args.oncotreelink, args.testing, args.nosymbol_check)
 
-    if args.parentid is not None:
-        if args.filetype is not None:
-            raise ValueError(
-                "If you used --parentid, you must not use "
-                "--filetype")
-        if valid:
-            try:
-                syn.get(args.parentid)
-            except synapseclient.exceptions.SynapseHTTPError:
-                raise ValueError(
-                    "Provided Synapse id must be your input folder Synapse id "
-                    "or a Synapse Id of a folder inside your input directory")
-            logger.info("Uploading file to {}".format(args.parentid))
-            for path in args.filepath:
-                syn.store(synapseclient.File(path, parent=args.parentid))
+    # Upload to synapse if parentid is specified and valid
+    if args.parentid is not None and valid:
+        logger.info("Uploading file to {}".format(args.parentid))
+        for path in args.filepath:
+            syn.store(synapseclient.File(path, parent=args.parentid))
