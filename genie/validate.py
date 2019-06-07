@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def determine_filetype(syn, filepathlist, center, raise_error=True):
+def determine_filetype(syn, filepathlist, center):
     '''
     Get the file type of the file by validating its filename
 
@@ -18,7 +18,7 @@ def determine_filetype(syn, filepathlist, center, raise_error=True):
         center: Participating Center
 
     Returns:
-        str: File type of input files
+        str: File type of input files.  None if no filetype found
     '''
     filetype = None
     # Loop through file formats
@@ -31,12 +31,6 @@ def determine_filetype(syn, filepathlist, center, raise_error=True):
         # If valid filename, return file type.
         if filetype is not None:
             break
-    if filetype is None and raise_error:
-        raise ValueError(
-            "Your filename is incorrect! "
-            "Please change your filename before you run "
-            "the validator or specify --filetype if you are "
-            "running the validator locally")
     return(filetype)
 
 
@@ -101,11 +95,13 @@ def validate_single_file(syn,
         valid - Boolean value of validation status
     """
     if filetype is None:
-        filetype = \
-            determine_filetype(syn, filepathlist, center, raise_error=True)
-    else:
-        if filetype not in PROCESS_FILES:
-            raise ValueError("Must specify correct filetype")
+        filetype = determine_filetype(syn, filepathlist, center)
+    if filetype not in PROCESS_FILES:
+        raise ValueError(
+            "Your filename is incorrect! "
+            "Please change your filename before you run "
+            "the validator or specify --filetype if you are "
+            "running the validator locally")
 
     validator = PROCESS_FILES[filetype](syn, center)
     total_error, warning = validator.validate(

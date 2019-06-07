@@ -1,7 +1,6 @@
 import pytest
 import mock
 import synapseclient
-import pytest
 from genie import validate
 center = "SAGE"
 syn = mock.create_autospec(synapseclient.Synapse)
@@ -27,26 +26,13 @@ def test_perfect_determine_filetype(filename_fileformat_map):
         syn, filepath_list, center) == fileformat
 
 
-def test_wrongfilename_determine_filetype():
-    '''
-    Tests ValueError is raised when wrong filename is passed
-    '''
-    with pytest.raises(
-        ValueError,
-        match="Your filename is incorrect! "
-              "Please change your filename before you run "
-              "the validator or specify --filetype if you are "
-              "running the validator locally"):
-        validate.determine_filetype(syn, ['wrong.txt'], center)
-
-
 def test_wrongfilename_noerror_determine_filetype():
     '''
     Tests None is passed back when wrong filename is passed
     when raise_error flag is False
     '''
     filetype = validate.determine_filetype(
-        syn, ['wrong.txt'], center, raise_error=False)
+        syn, ['wrong.txt'], center)
     assert filetype is None
 
 
@@ -122,7 +108,7 @@ def test_valid_validate_single_file():
         assert filetype == expected_filetype
 
         mock_determine_filetype.assert_called_once_with(
-            syn, filepathlist, center, raise_error=True)
+            syn, filepathlist, center)
 
         mock_genie_class.assert_called_once_with(
             filePathList=filepathlist,
@@ -140,9 +126,38 @@ def test_filetype_validate_single_file():
     '''
     filepathlist = ['clinical.txt']
     center = "SAGE"
-    with pytest.raises(ValueError, match="Must specify correct filetype"):
+    with pytest.raises(
+            ValueError,
+            match="Your filename is incorrect! "
+                  "Please change your filename before you run "
+                  "the validator or specify --filetype if you are "
+                  "running the validator locally"):
         validate.validate_single_file(
             syn,
             filepathlist,
             center,
             filetype="foobar")
+
+
+def test_wrongfiletype_validate_single_file():
+    '''
+    Tests that if there is no filetype for the filename passed
+    in, an error is thrown
+    '''
+    filepathlist = ['clinical.txt']
+    center = "SAGE"
+    with mock.patch(
+            "genie.validate.determine_filetype",
+            return_value=None) as mock_determine_filetype,\
+        pytest.raises(
+            ValueError,
+            match="Your filename is incorrect! "
+                  "Please change your filename before you run "
+                  "the validator or specify --filetype if you are "
+                  "running the validator locally"):
+        validate.validate_single_file(
+            syn,
+            filepathlist,
+            center)
+        mock_determine_filetype.assert_called_once_with(
+            syn, filepathlist, center)
