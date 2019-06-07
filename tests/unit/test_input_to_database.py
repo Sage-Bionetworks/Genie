@@ -558,12 +558,9 @@ def test_dups_get_duplicated_files():
                  'data_clinical_supp_2', 'data_clinical_supp_3']})
     expected_dup = validation_statusdf.copy()
     expected_dup['errors'] = ''
-    with mock.patch(
-            "genie.input_to_database.email_duplication_error") as patch_email:
-        dupsdf = input_to_database.get_duplicated_files(
-            syn, validation_statusdf, "")
-        assert dupsdf.equals(expected_dup)
-        patch_email.assert_called_once_with(syn, dupsdf)
+    dupsdf = input_to_database.get_duplicated_files(
+        syn, validation_statusdf, "")
+    assert dupsdf.equals(expected_dup)
 
 
 def test_nodups_get_duplicated_files():
@@ -574,12 +571,9 @@ def test_nodups_get_duplicated_files():
         'id': ['syn1234', 'syn2345', 'syn5555', 'syn1224', 'syn34444'],
         'name': ['cbs.txt', 'second.seg', 'no_clinical.txt',
                  'data_clinical_supp_2', 'data_clinical_supp_3']})
-    with mock.patch(
-            "genie.input_to_database.email_duplication_error") as patch_email:
-        dupsdf = input_to_database.get_duplicated_files(
-            syn, validation_statusdf, "")
-        assert dupsdf.empty
-        patch_email.assert_called_once_with(syn, dupsdf)
+    dupsdf = input_to_database.get_duplicated_files(
+        syn, validation_statusdf, "")
+    assert dupsdf.empty
 
 
 def test_dups_email_duplication_error():

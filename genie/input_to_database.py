@@ -553,8 +553,6 @@ def get_duplicated_files(syn, validation_statusdf, duplicated_error_message):
     logger.info("THERE ARE {} DUPLICATED FILES".format(
         len(duplicated_filesdf)))
     duplicated_filesdf['errors'] = duplicated_error_message
-    # Send an email if there are any duplicated files
-    email_duplication_error(syn, duplicated_filesdf)
     return(duplicated_filesdf)
 
 
@@ -634,6 +632,9 @@ def validation(syn, center, process,
             "AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME")
         duplicatedFiles = get_duplicated_files(
             syn, inputValidStatus, duplicatedFileError)
+        # Send an email if there are any duplicated files
+        if not duplicatedFiles.empty:
+            email_duplication_error(syn, duplicatedFiles)
 
         inputValidStatus['status'][
             inputValidStatus['id'].isin(duplicatedFiles['id'])] = "INVALID"
