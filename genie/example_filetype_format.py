@@ -56,7 +56,8 @@ class FileTypeFormat(object):
         Args:
             filePath: Path to file
         '''
-        assert True
+        # assert True
+        raise NotImplementedError
 
     def validateFilename(self, filePath):
         '''
