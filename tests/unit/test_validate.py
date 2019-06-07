@@ -161,3 +161,7 @@ def test_wrongfiletype_validate_single_file():
             center)
         mock_determine_filetype.assert_called_once_with(
             syn, filepathlist, center)
+
+
+def test_perform_validate():
+    pass

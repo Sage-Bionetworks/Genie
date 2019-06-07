@@ -2,6 +2,7 @@
 
 from genie import PROCESS_FILES
 import synapseclient
+from synapseclient.exceptions import SynapseHTTPError
 import logging
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -114,19 +115,43 @@ def validate_single_file(syn,
     return(valid, message, filetype)
 
 
-def perform_validate(syn, args):
-    # Check parentid argparse
-    if args.parentid is not None:
-        if args.filetype is not None:
+def get_config(syn, synid):
+    '''
+    Get Synapse database to Table mapping in dict
+    '''
+    config = syn.tableQuery('SELECT * FROM {}'.format(synid))
+    configdf = config.asDataFrame()
+    configdf.index = configdf['Database']
+    config_dict = configdf.to_dict()
+    return(config_dict['Id'])
+
+
+def _check_synapseid(syn, parentid):
+    try:
+        syn_ent = syn.get(parentid)
+        # If not container, throw an assertion
+        assert synapseclient.entity.is_container(syn_ent)
+    except (SynapseHTTPError, AssertionError):
+        raise ValueError(
+            "Provided Synapse id must be your input folder Synapse id "
+            "or a Synapse Id of a folder inside your input directory")
+
+
+def _check_parentid_argparse(syn, parentid, filetype):
+    '''
+    Check parentid argparse
+    '''
+    if parentid is not None:
+        if filetype is not None:
             raise ValueError(
                 "If you used --parentid, you must not use "
                 "--filetype")
-        try:
-            syn.get(args.parentid)
-        except synapseclient.exceptions.SynapseHTTPError:
-            raise ValueError(
-                "Provided Synapse id must be your input folder Synapse id "
-                "or a Synapse Id of a folder inside your input directory")
+        _check_synapseid(syn, parentid)
+
+
+def perform_validate(syn, args):
+    # Check parentid argparse
+    _check_parentid_argparse(syn, args.parentid, args.filetype)
     if args.testing:
         databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
     else:
