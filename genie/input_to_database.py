@@ -161,28 +161,22 @@ def _check_valid(syn, filepaths, center, filetype, filenames,
     Function to validate a file
     '''
     # If no filetype set, means the file was named incorrectly
-    if filetype is None:
-        message = (
-            "{filenames}: Incorrect filenaming convention or can't be "
-            "processed".format(filenames=", ".join(filenames)))
+    try:
+        valid, message, filetype = validate.validate_single_file(
+            syn,
+            filepaths,
+            center,
+            oncotreelink=oncotree_link,
+            testing=testing)
+        logger.info("VALIDATION COMPLETE")
+    except ValueError as e:
+        # Specify this as None for the single case where filename
+        # validation fails
+        filetype = None
+        message = str(e)
         logger.error(message)
         valid = False
-    else:
-        try:
-            message, valid = validate.validate(
-                syn,
-                filetype,
-                filepaths,
-                center,
-                threads,
-                oncotree_url=oncotree_link,
-                testing=testing)
-            logger.info("VALIDATION COMPLETE")
-        except ValueError as e:
-            logger.error(e)
-            message = e
-            valid = False
-    return(valid, message)
+    return(valid, filetype, message)
 
 
 def _send_validation_error_email(syn, filenames, message, file_users):
