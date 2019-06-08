@@ -127,8 +127,11 @@ def get_config(syn, synid):
 
 
 def _check_synapseid(syn, parentid):
+    '''
+    Check permission / container
+    '''
     try:
-        syn_ent = syn.get(parentid)
+        syn_ent = syn.get(parentid, downloadFile=False)
         # If not container, throw an assertion
         assert synapseclient.entity.is_container(syn_ent)
     except (SynapseHTTPError, AssertionError):
@@ -137,9 +140,9 @@ def _check_synapseid(syn, parentid):
             "or a Synapse Id of a folder inside your input directory")
 
 
-def _check_parentid_argparse(syn, parentid, filetype):
+def _check_parentid_input(syn, parentid, filetype):
     '''
-    Check parentid argparse
+    Check parentid input
     '''
     if parentid is not None:
         if filetype is not None:
@@ -149,28 +152,41 @@ def _check_parentid_argparse(syn, parentid, filetype):
         _check_synapseid(syn, parentid)
 
 
+def _check_center_input(center, center_list):
+    '''
+    Check center input
+    '''
+    if center not in center_list:
+        raise ValueError(
+            "Must specify one of these centers: {}".format(
+                ", ".join(center_list)))
+
+
 def perform_validate(syn, args):
     # Check parentid argparse
-    _check_parentid_argparse(syn, args.parentid, args.filetype)
+    _check_parentid_input(syn, args.parentid, args.filetype)
+
     if args.testing:
         databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
     else:
         databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn10967259')
 
     databasetosynid_mappingdf = databaseToSynIdMapping.asDataFrame()
-    synid = databasetosynid_mappingdf.Id[
-        databasetosynid_mappingdf['Database'] == "centerMapping"]
+    synid = databasetosynid_mappingdf.query('Database == "centerMapping"').Id
     center_mapping = syn.tableQuery('SELECT * FROM {}'.format(synid[0]))
     center_mapping_df = center_mapping.asDataFrame()
+
     # Check center argparse
-    assert args.center in center_mapping_df.center.tolist(), \
-        "Must specify one of these centers: {}".format(
-            ", ".join(center_mapping_df.center))
+    _check_center_input(args.center, center_mapping_df.center.tolist())
+    # if args.center not in center_mapping_df.center.tolist():
+    #     raise ValueError(
+    #         "Must specify one of these centers: {}".format(
+    #             ", ".join(center_mapping_df.center)))
 
     if args.oncotreelink is None:
-        oncolink = databasetosynid_mappingdf['Id'][
-            databasetosynid_mappingdf['Database'] == 'oncotreeLink'].values[0]
-        oncolink_ent = syn.get(oncolink)
+        oncolink = databasetosynid_mappingdf.query(
+            'Database == "oncotreeLink"').Id
+        oncolink_ent = syn.get(oncolink[0])
         args.oncotreelink = oncolink_ent.externalURL
 
     valid, message, filetype = validate_single_file(
