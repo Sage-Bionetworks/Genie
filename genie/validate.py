@@ -126,30 +126,31 @@ def get_config(syn, synid):
     return(config_dict['Id'])
 
 
-def _check_synapseid(syn, parentid):
+def _check_parentid_permission_container(syn, parentid):
     '''
     Check permission / container
+    Currently only checks if a user has READ permissions...
     '''
-    try:
-        syn_ent = syn.get(parentid, downloadFile=False)
-        # If not container, throw an assertion
-        assert synapseclient.entity.is_container(syn_ent)
-    except (SynapseHTTPError, AssertionError):
-        raise ValueError(
-            "Provided Synapse id must be your input folder Synapse id "
-            "or a Synapse Id of a folder inside your input directory")
+    if parentid is not None:
+        try:
+            syn_ent = syn.get(parentid, downloadFile=False)
+            # If not container, throw an assertion
+            assert synapseclient.entity.is_container(syn_ent)
+        except (SynapseHTTPError, AssertionError):
+            raise ValueError(
+                "Provided Synapse id must be your input folder Synapse id "
+                "or a Synapse Id of a folder inside your input directory")
 
 
-def _check_parentid_input(syn, parentid, filetype):
+def _check_parentid_input(parentid, filetype):
     '''
-    Check parentid input
+    If parentid is specified, filetype can't be
     '''
     if parentid is not None:
         if filetype is not None:
             raise ValueError(
                 "If you used --parentid, you must not use "
                 "--filetype")
-        _check_synapseid(syn, parentid)
 
 
 def _check_center_input(center, center_list):
@@ -164,7 +165,8 @@ def _check_center_input(center, center_list):
 
 def perform_validate(syn, args):
     # Check parentid argparse
-    _check_parentid_input(syn, args.parentid, args.filetype)
+    _check_parentid_input(args.parentid, args.filetype)
+    _check_parentid_permission_container(syn, args.parentid)
 
     if args.testing:
         databaseToSynIdMapping = syn.tableQuery('SELECT * FROM syn11600968')
@@ -178,10 +180,6 @@ def perform_validate(syn, args):
 
     # Check center argparse
     _check_center_input(args.center, center_mapping_df.center.tolist())
-    # if args.center not in center_mapping_df.center.tolist():
-    #     raise ValueError(
-    #         "Must specify one of these centers: {}".format(
-    #             ", ".join(center_mapping_df.center)))
 
     if args.oncotreelink is None:
         oncolink = databasetosynid_mappingdf.query(

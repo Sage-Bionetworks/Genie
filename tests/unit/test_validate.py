@@ -1,7 +1,9 @@
 import pytest
 import mock
 import synapseclient
+from synapseclient.exceptions import SynapseHTTPError
 from genie import validate
+import pandas as pd
 center = "SAGE"
 syn = mock.create_autospec(synapseclient.Synapse)
 
@@ -163,5 +165,108 @@ def test_wrongfiletype_validate_single_file():
             syn, filepathlist, center)
 
 
+def test_invalid__check_parentid_input():
+    '''
+    Test that parentid or filetype cant be specified together
+    '''
+    with pytest.raises(
+            ValueError,
+            match="If you used --parentid, you must not use --filetype"):
+        validate._check_parentid_input("foo", "foo")
+
+
+def test_valid__check_parentid_input():
+    '''
+    Test that parentid or filetype can be specified without error
+    '''
+    validate._check_parentid_input(None, "foo")
+    validate._check_parentid_input(None, None)
+    validate._check_parentid_input("foo", None)
+
+
+def test_nopermission__check_parentid_permission_container():
+    '''
+    Error thrown if no permissions to access
+    '''
+    parentid = "syn123"
+    with mock.patch.object(syn, "get", side_effect=SynapseHTTPError),\
+        pytest.raises(
+            ValueError,
+            match="Provided Synapse id must be your input folder Synapse id "
+                  "or a Synapse Id of a folder inside your input directory"):
+        validate._check_parentid_permission_container(syn, parentid)
+
+
+def test_notcontainer__check_parentid_permission_container():
+    '''
+    If input if synid of file, throw error
+    '''
+    parentid = "syn123"
+    file_ent = synapseclient.File("foo", parentId=parentid)
+    with mock.patch.object(syn, "get", return_value=file_ent),\
+        pytest.raises(
+            ValueError,
+            match="Provided Synapse id must be your input folder Synapse id "
+                  "or a Synapse Id of a folder inside your input directory"):
+        validate._check_parentid_permission_container(syn, parentid)
+
+
+def test_valid__check_parentid_permission_container():
+    '''
+    Test that parentid specified is a container and have permissions to access
+    '''
+    parentid = "syn123"
+    folder_ent = synapseclient.Folder("foo", parentId=parentid)
+    with mock.patch.object(syn, "get", return_value=folder_ent):
+        validate._check_parentid_permission_container(syn, parentid)
+
+
+def test_valid__check_center_input():
+    center = "FOO"
+    center_list = ["FOO", "WOW"]
+    validate._check_center_input(center, center_list)
+
+
+def test_invalid__check_center_input():
+    center = "BARFOO"
+    center_list = ["FOO", "WOW"]
+    with pytest.raises(
+            ValueError,
+            match="Must specify one of these centers: {}".format(
+                  ", ".join(center_list))):
+        validate._check_center_input(center, center_list)
+
+
+class argparser:
+    oncotreelink = "link"
+    parentid = None
+    filetype = None
+    testing = False
+    center = "try"
+    filepath = "path.csv"
+    nosymbol_check = False
+
+    def asDataFrame(self):
+        database_dict = {"Database": ["centerMapping"],
+                         "Id": ["syn123"],
+                         "center": ["try"]}
+        databasetosynid_mappingdf = pd.DataFrame(database_dict)
+        return(databasetosynid_mappingdf)
+
+
 def test_perform_validate():
-    pass
+    arg = argparser()
+    with mock.patch(
+            "genie.validate._check_parentid_input") as patch_check_input,\
+        mock.patch(
+            "genie.validate._check_parentid_permission_container") as patch_check_parentid,\
+        mock.patch.object(
+            syn,
+            "tableQuery",
+            return_value=arg) as patch_syn_tablequery,\
+        mock.patch(
+            "genie.validate._check_center_input") as patch_check_center,\
+        mock.patch(
+            "genie.validate.validate_single_file", return_value=('foo', 'foo', 'foo')) as patch_validate:
+        validate.perform_validate(syn, arg)
+        # Check values function call and values here
