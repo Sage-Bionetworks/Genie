@@ -256,17 +256,19 @@ class argparser:
 
 def test_perform_validate():
     arg = argparser()
-    with mock.patch(
-            "genie.validate._check_parentid_input") as patch_check_input,\
-        mock.patch(
-            "genie.validate._check_parentid_permission_container") as patch_check_parentid,\
+    check_input_call = "genie.validate._check_parentid_input"
+    check_perm_call = "genie.validate._check_parentid_permission_container"
+    check_center_call = "genie.validate._check_center_input"
+    validate_file_call = "genie.validate.validate_single_file"
+    with mock.patch(check_input_call) as patch_check_input,\
+        mock.patch(check_perm_call) as patch_check_parentid,\
         mock.patch.object(
             syn,
             "tableQuery",
             return_value=arg) as patch_syn_tablequery,\
+        mock.patch(check_center_call) as patch_check_center,\
         mock.patch(
-            "genie.validate._check_center_input") as patch_check_center,\
-        mock.patch(
-            "genie.validate.validate_single_file", return_value=('foo', 'foo', 'foo')) as patch_validate:
+            validate_file_call,
+            return_value=('foo', 'foo', 'foo')) as patch_validate:
         validate.perform_validate(syn, arg)
         # Check values function call and values here
