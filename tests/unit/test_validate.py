@@ -271,4 +271,14 @@ def test_perform_validate():
             validate_file_call,
             return_value=('foo', 'foo', 'foo')) as patch_validate:
         validate.perform_validate(syn, arg)
-        # Check values function call and values here
+        patch_check_input.assert_called_once_with(arg.parentid,
+                                                  arg.filetype)
+        patch_check_parentid.assert_called_once_with(syn, arg.parentid)
+        patch_syn_tablequery.assert_has_calls([
+            mock.call("select * from syn10967259"),
+            mock.call('select * from syn123')])
+        patch_check_center.assert_called_once_with(arg.center, ["try"])
+        patch_validate.assert_called_once_with(syn, arg.filepath,
+                                               arg.center, arg.filetype,
+                                               arg.oncotreelink, arg.testing,
+                                               arg.nosymbol_check)
