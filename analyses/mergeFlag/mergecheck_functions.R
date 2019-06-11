@@ -28,6 +28,10 @@ uploadToTable <- function(tbl, databaseSynId, subSetSamples, centerMappingDf) {
                       "tumor:", nodup_tbl$Tumor_Seq_Allele2)
   #Any data that is not the current output but in the database will be changed to FIXED
   if (nrow(annotated_df) > 0 ) {
+    # FLAG variants first
+    if (any(annotated_df$Center %in% flagCenters)) {
+      annotated_df$Flag[annotated_df$Center %in% flagCenters] = "FLAG"
+    }
     if (any(annotated_df$Flag[!samples %in% new_samples] == "TOSS")) {
       annotated_df$Flag[!samples %in% new_samples][
         annotated_df$Flag[!samples %in% new_samples] == "TOSS"] = "FIXED"
