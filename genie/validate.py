@@ -146,6 +146,10 @@ def _check_parentid_permission_container(syn, parentid):
 def _check_parentid_input(parentid, filetype):
     '''
     If parentid is specified, filetype can't be
+
+    Args:
+        parentid: synapse id
+        filetype: File type
     '''
     if parentid is not None:
         if filetype is not None:
@@ -157,11 +161,50 @@ def _check_parentid_input(parentid, filetype):
 def _check_center_input(center, center_list):
     '''
     Check center input
+
+    Args:
+        center: Center name
+        center_list: List of allowed centers
     '''
     if center not in center_list:
         raise ValueError(
             "Must specify one of these centers: {}".format(
                 ", ".join(center_list)))
+
+
+def _get_oncotreelink(syn, databasetosynid_mappingdf, oncotreelink=None):
+    '''
+    Get oncotree link unless a link is specified by the user
+
+    Args:
+        syn: Synapse object
+        databasetosynid_mappingdf: database to synid mapping
+        oncotreelink: link to oncotree. Default is None
+    '''
+    if oncotreelink is None:
+        oncolink = databasetosynid_mappingdf.query(
+            'Database == "oncotreeLink"').Id
+        oncolink_ent = syn.get(oncolink.iloc[0])
+        oncotreelink = oncolink_ent.externalURL
+    return(oncotreelink)
+
+
+def _upload_to_synapse(syn, filepaths, valid, parentid=None):
+    '''
+    Upload to synapse if parentid is specified and valid
+
+    Args:
+        syn: Synapse object
+        filepaths: List of file paths
+        valid: Boolean value for validity of file
+        parentid: Synapse id of container. Default is None
+    '''
+    if parentid is not None and valid:
+        logger.info("Uploading file to {}".format(parentid))
+        for path in filepaths:
+            file_ent = synapseclient.File(path, parent=parentid)
+            ent = syn.store(file_ent)
+            logger.info("Stored to {}".format(ent.id))
 
 
 def perform_validate(syn, args):
@@ -174,24 +217,18 @@ def perform_validate(syn, args):
 
     synid = databasetosynid_mappingdf.query('Database == "centerMapping"').Id
 
-    center_mapping = syn.tableQuery('select * from {}'.format(synid[0]))
+    center_mapping = syn.tableQuery('select * from {}'.format(synid.iloc[0]))
     center_mapping_df = center_mapping.asDataFrame()
 
     # Check center argparse
     _check_center_input(args.center, center_mapping_df.center.tolist())
 
-    if args.oncotreelink is None:
-        oncolink = databasetosynid_mappingdf.query(
-            'Database == "oncotreeLink"').Id
-        oncolink_ent = syn.get(oncolink[0])
-        args.oncotreelink = oncolink_ent.externalURL
+    args.oncotreelink = _get_oncotreelink(syn, databasetosynid_mappingdf,
+                                          oncotreelink=args.oncotreelink)
 
     valid, message, filetype = validate_single_file(
         syn, args.filepath, args.center, args.filetype,
         args.oncotreelink, args.testing, args.nosymbol_check)
 
     # Upload to synapse if parentid is specified and valid
-    if args.parentid is not None and valid:
-        logger.info("Uploading file to {}".format(args.parentid))
-        for path in args.filepath:
-            syn.store(synapseclient.File(path, parent=args.parentid))
+    _upload_to_synapse(syn, args.filepath, valid, parentid=args.parentid)
