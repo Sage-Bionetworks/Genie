@@ -35,6 +35,9 @@ uploadToTable <- function(tbl, databaseSynId, subSetSamples, centerMappingDf) {
     if (any(annotated_df$Center %in% keepCenters)) {
       annotated_df$Flag[annotated_df$Center %in% keepCenters] = "KEEP"
     }
+    if (any(annotated_df$Center %in% flagCenters)) {
+      annotated_df$Flag[annotated_df$Center %in% flagCenters] = "FLAG"
+    }
     synapser::synStore(Table(databaseSynId, annotated_df))
   }
   
