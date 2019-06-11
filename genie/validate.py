@@ -4,7 +4,7 @@ import logging
 import synapseclient
 from synapseclient.exceptions import SynapseHTTPError
 from genie import PROCESS_FILES
-from genie.process_functions import get_synid_database_mappingdf
+from genie import process_functions
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -168,16 +168,12 @@ def perform_validate(syn, args):
     # Check parentid argparse
     _check_parentid_input(args.parentid, args.filetype)
     _check_parentid_permission_container(syn, args.parentid)
-    # if args.testing:
-    #     databaseToSynIdMapping = syn.tableQuery('select * from syn11600968')
-    # else:
-    #     databaseToSynIdMapping = syn.tableQuery('select * from syn10967259')
 
-    # databasetosynid_mappingdf = databaseToSynIdMapping.asDataFrame()
-    databasetosynid_mappingdf = get_synid_database_mappingdf(
+    databasetosynid_mappingdf = process_functions.get_synid_database_mappingdf(
         syn, test=args.testing)
 
     synid = databasetosynid_mappingdf.query('Database == "centerMapping"').Id
+
     center_mapping = syn.tableQuery('select * from {}'.format(synid[0]))
     center_mapping_df = center_mapping.asDataFrame()
 
