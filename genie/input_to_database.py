@@ -544,9 +544,8 @@ def validation(syn, center, process,
     logger.info("Center: " + center)
     allFiles = get_center_input_files(syn, centerInputSynId, center, process)
 
-    allFiles = pd.DataFrame(allFiles, columns=['synId', 'filePaths'])
     # If a center has no files, then return empty list
-    if allFiles.empty:
+    if not allFiles:
         logger.info("%s has not uploaded any files" % center)
         return([])
     else:
