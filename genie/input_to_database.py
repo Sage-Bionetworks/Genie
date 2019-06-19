@@ -96,8 +96,7 @@ def get_center_input_files(syn, synid, center, process="main"):
     return prepared_center_file_list
 
 
-def check_existing_file_status(validation_statusdf, error_trackerdf,
-                               entities, input_filenames):
+def check_existing_file_status(validation_statusdf, error_trackerdf, entities):
     '''
     This function checks input files against the existing validation and error
     tracking dataframe
@@ -106,7 +105,6 @@ def check_existing_file_status(validation_statusdf, error_trackerdf,
         validation_statusdf: Validation status dataframe
         error_trackerdf: Error tracking dataframe
         entities: list of center input entites
-        input_filenames: List of center input filenames
 
     Returns:
         dict: Input file status
@@ -121,31 +119,32 @@ def check_existing_file_status(validation_statusdf, error_trackerdf,
 
     statuses = []
     errors = []
-    for ent, input_filename in zip(entities, input_filenames):
-        input_validation_status = \
-            validation_statusdf[validation_statusdf['id'] == ent.id]
-        input_error = error_trackerdf[error_trackerdf['id'] == ent.id]
-        if input_validation_status.empty:
+
+    for ent in entities:
+        to_validate = False
+        # Get the current status and errors from the tables.
+        current_status = validation_statusdf[validation_statusdf['id'] == ent.id]
+        current_error = error_trackerdf[error_trackerdf['id'] == ent.id]
+
+        if current_status.empty:
             to_validate = True
         else:
             # This to_validate is here, because the following is a
             # sequential check of whether files need to be validated
-            to_validate = False
-            statuses.append(input_validation_status['status'].values[0])
-            if input_error.empty:
+            statuses.append(current_status['status'].values[0])
+            if current_error.empty:
                 to_validate = \
-                    input_validation_status['status'].values[0] == "INVALID"
+                    current_status['status'].values[0] == "INVALID"
             else:
-                errors.append(input_error['errors'].values[0])
+                errors.append(current_error['errors'].values[0])
             # Add Name check here (must add name of the entity as a column)
-            if input_validation_status['md5'].values[0] != ent.md5 or \
-               input_validation_status['name'].values[0] != input_filename:
+            if current_status['md5'].values[0] != ent.md5 or \
+               current_status['name'].values[0] != ent.name:
                 to_validate = True
             else:
-                logger.info(
-                    "{filename} FILE STATUS IS: {filestatus}".format(
-                      filename=input_filename,
-                      filestatus=input_validation_status['status'].values[0]))
+                status_str = "{filename} ({id}) FILE STATUS IS: {filestatus}"
+                logger.info(status_str.format(filename=ent.name, id=ent.id,
+                                              filestatus=current_status['status'].values[0]))
 
     return({
         'status_list': statuses,
