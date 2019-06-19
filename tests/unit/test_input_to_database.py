@@ -9,7 +9,18 @@ from genie import input_to_database
 
 syn = mock.create_autospec(synapseclient.Synapse)
 sample_clinical_synid = 'syn2222'
+
+sample_clinical_entity = synapseclient.File(path='data_clinical_supp_sample_SAGE.txt',
+                                            id=sample_clinical_synid,
+                                            parentId='syn45678',
+                                            name='data_clinical_supp_sample_SAGE.txt')
+
 patient_clinical_synid = 'syn11111'
+patient_clinical_entity = synapseclient.File(path='data_clinical_supp_patient_SAGE.txt',
+                                             id=patient_clinical_synid,
+                                             parentId='syn45678',
+                                             name='data_clinical_supp_patient_SAGE.txt')
+
 vcf1synid = 'syn6666'
 vcf2synid = 'syn8888'
 first = (
@@ -75,22 +86,24 @@ def test_main_get_center_input_files():
     excluding the vcf files since process main is specified
     '''
     filename = synapseclient.utils.make_bogus_data_file()
-    expected_center_file_list = [(
-        [sample_clinical_synid, patient_clinical_synid],
-        [filename, filename])]
-    calls = [
-        mock.call(syn, sample_clinical_synid),
+
+    syn_get_effects = [sample_clinical_entity, patient_clinical_entity]
+
+    expected_center_file_list = [[sample_clinical_entity, patient_clinical_entity]]
+    calls = [mock.call(syn, sample_clinical_synid),
         mock.call(syn, patient_clinical_synid)]
-    with mock.patch(
-            "genie.input_to_database.rename_file",
-            return_value=filename) as patch_rename,\
-        mock.patch.object(
-            synu, "walk", return_value=walk_return()) as patch_synu_walk:
-        center_file_list = input_to_database.get_center_input_files(
-            syn, "syn12345", center, process="main")
+
+    with mock.patch.object(synu, "walk", 
+                          return_value=walk_return()) as patch_synu_walk,\
+        mock.patch.object(syn, "get", side_effect=syn_get_effects) as patch_syn_get:
+        center_file_list = input_to_database.get_center_input_files(syn, "syn12345", 
+                                                                    center, process="main")
+        print(center_file_list)
+
+        assert len(center_file_list) == len(expected_center_file_list)
+        assert len(center_file_list[0]) == 2
         assert center_file_list == expected_center_file_list
         patch_synu_walk.assert_called_once_with(syn, 'syn12345')
-        patch_rename.assert_has_calls(calls)
     os.remove(filename)
 
 

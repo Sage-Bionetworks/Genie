@@ -66,36 +66,33 @@ def get_center_input_files(syn, synid, center, process="main"):
     center_files = synapseutils.walk(syn, synid)
     clinicalpair = []
     prepared_center_file_list = []
-    for dirpath, dirname, filenames in center_files:
-        for name, ent_synid in filenames:
-            logger.info(name)
-            paired = False
-            '''
-            Clinical file can come as two files.
-            The two files need to be merged together which is
-            why there is this format
-            '''
+    
+    for _, _, entities in center_files:
+        for name, ent_synid in entities:
+            # This is to remove vcfs from being validated during main 
+            # processing. Often there are too many vcf files, and it is 
+            # not necessary for them to be run everytime.
+            if name.endswith(".vcf") and process != "vcf":
+                continue
+
+            ent = syn.get(ent_synid)
+            logger.debug(ent)
+
+            # Clinical file can come as two files.
+            # The two files need to be merged together which is
+            # why there is this format
+
             if name in clinical_pair_name:
-                paired = True
-                clinicalpair.append(ent_synid)
-            if len(clinicalpair) == 2:
-                syns = [i for i in clinicalpair]
-                paths = [rename_file(syn, i) for i in clinicalpair]
-                clinicalpair = []
-                prepared_center_file_list.append((syns, paths))
-            elif not paired:
-                '''
-                This is to remove vcfs from being validated
-                during main processing.  Often there are too many vcf files.
-                Not necessary for them to be run everytime.
-                '''
-                if process == "vcf":
-                    prepared_center_file_list.append(
-                        ([ent_synid], [rename_file(syn, ent_synid)]))
-                elif not name.endswith(".vcf"):
-                    prepared_center_file_list.append(
-                        ([ent_synid], [rename_file(syn, ent_synid)]))
-    return(prepared_center_file_list)
+                clinicalpair.append(ent)
+                continue
+
+            prepared_center_file_list.append([rename_file(syn, ent)])
+    
+    if clinicalpair:
+        clinicalpair_entities = [rename_file(syn, x) for x in clinicalpair] 
+        prepared_center_file_list.append(clinicalpair_entities)
+
+    return prepared_center_file_list
 
 
 def check_existing_file_status(validation_statusdf, error_trackerdf,
