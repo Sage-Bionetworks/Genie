@@ -204,22 +204,17 @@ def _send_validation_error_email(syn, filenames, message, file_users):
         file_users, "GENIE Validation Error", email_message)
 
 
-def _get_status_and_error_list(syn, fileinfo, valid, message, filetype,
-                               entities, filepaths, filenames, modified_ons):
+def _get_status_and_error_list(syn, valid, message, filetype, entities, modified_ons):
     '''
     Helper function to return the status and error list of the
     files based on validation result.
 
     Args:
         syn: Synapse object
-        fileinfo: A row passed in as a Series through the apply function
-                  in pandas
         valid: Boolean value of results of validation
         message: Validation message
         filetype: File type
         entities: List of Synapse Entities
-        filepaths: List of filepaths
-        filenames: List of filenames
         modified_ons: List of modified on dates
 
     Returns:
@@ -228,23 +223,24 @@ def _get_status_and_error_list(syn, fileinfo, valid, message, filetype,
     '''
     if valid:
         input_status_list = [
-            [ent.id, filepath, ent.md5, "VALIDATED",
-             filename, modifiedon, filetype]
-            for ent, filepath, filename, modifiedon in
-            zip(entities, filepaths, filenames, modified_ons)]
+            [ent.id, ent.expectedPath, ent.md5, "VALIDATED",
+             os.path.basename(ent.expectedPath), modifiedon, filetype]
+            for ent, modifiedon in
+            zip(entities, modified_ons)]
         invalid_errors_list = None
     else:
         input_status_list = [
-            [ent.id, path, ent.md5, "INVALID", name, modifiedon, filetype]
-            for ent, path, name, modifiedon in
-            zip(entities, filepaths, filenames, modified_ons)]
+            [ent.id, ent.expectedPath, ent.md5, "INVALID",
+            os.path.basename(ent.expectedPath), modifiedon, filetype]
+            for ent, modifiedon in
+            zip(entities, modified_ons)]
         invalid_errors_list = [
-            [synid, message, filename]
-            for synid, filename in zip(fileinfo['synId'], filenames)]
+            [ent.id, message, os.path.basename(ent.expectedPath)]
+            for ent in entities]
     return(input_status_list, invalid_errors_list)
 
 
-def validatefile(fileinfo,
+def validatefile(entities,
                  syn,
                  validation_statusdf,
                  error_trackerdf,
@@ -252,14 +248,12 @@ def validatefile(fileinfo,
                  threads,
                  testing,
                  oncotree_link):
-    '''
-    Function that is applied to a pandas dataframe to
-    validates each row. If a file has not changed, then it
-    doesn't need to be validated
+    '''Validate a list of entities.
+
+    If a file has not changed, then it doesn't need to be validated.
 
     Args:
-        fileinfo: A row passed in as a Series through the apply function
-                  in pandas
+        entitylist: A list of entities for a single file 'type' (usually a single file, but clinical can have two)
         syn: Synapse object
         validation_statusdf: Validation status dataframe
         error_trackerdf: Invalid files error tracking dataframe
@@ -273,12 +267,12 @@ def validatefile(fileinfo,
 
     '''
 
-    filenames = [os.path.basename(i) for i in fileinfo['filePaths']]
+    filepaths = [entity.path for entity in entities]
+    filenames = [os.path.basename(path) for path in filepaths]
+
     logger.info(
         "VALIDATING {filenames}".format(filenames=", ".join(filenames)))
-    filepaths = fileinfo['filePaths']
-    entities = [
-        syn.get(synid, downloadFile=False) for synid in fileinfo['synId']]
+
     modified_ons = [
         synapseclient.utils.to_unix_epoch_time(
             datetime.datetime.strptime(
@@ -287,7 +281,7 @@ def validatefile(fileinfo,
     file_users = list(set([entities[0].modifiedBy, entities[0].createdBy]))
 
     check_file_status = check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities, filenames)
+        validation_statusdf, error_trackerdf, entities)
 
     status_list = check_file_status['status_list']
     error_list = check_file_status['error_list']
@@ -311,8 +305,8 @@ def validatefile(fileinfo,
             logger.error(message)
             valid = False
         input_status_list, invalid_errors_list = _get_status_and_error_list(
-            syn, fileinfo, valid, message, filetype,
-            entities, filepaths, filenames, modified_ons)
+            syn, valid, message, filetype,
+            entities, modified_ons)
         # Send email the first time the file is invalid
         if invalid_errors_list is not None:
             _send_validation_error_email(syn, filenames, message, file_users)
