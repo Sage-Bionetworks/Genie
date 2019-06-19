@@ -296,8 +296,7 @@ def validatefile(fileinfo,
     error_list = check_file_status['error_list']
     # Need to figure out to how to remove this
 
-    filetype = validate.determine_filetype(
-        syn, filepaths, center, raise_error=False)
+    filetype = validate.determine_filetype(syn, filepaths, center)
     if check_file_status['to_validate']:
         try:
             valid, message, filetype = validate.validate_single_file(
