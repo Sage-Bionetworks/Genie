@@ -580,18 +580,21 @@ def validation(syn, center, process,
         # VALIDATE FILES
         validationStatusDf = validationStatus.asDataFrame()
         errorTrackerDf = errorTracker.asDataFrame()
-        validated = allFiles.apply(
-            lambda fileinfo: validatefile(
-                fileinfo, syn, validationStatusDf,
-                errorTrackerDf, center, thread,
-                testing, oncotreeLink), axis=1)
 
         inputValidStatus = []
         invalidErrors = []
-        for inputStat, invalErrors in validated:
-            inputValidStatus.extend(inputStat)
-            if invalErrors is not None:
-                invalidErrors.extend(invalErrors)
+        
+        for ents in allFiles:
+            status, errors = input_to_database.validatefile(syn, ents,
+                                                            validation_statusdf, 
+                                                            error_trackerdf, 
+                                                            center='SAGE', threads=1, 
+                                                            testing=False, 
+                                                            oncotree_link=None)
+            inputValidStatus.extend(status)
+            if errors is not None:
+                invalidErrors.extend(errors)
+
         inputValidStatus = pd.DataFrame(
             inputValidStatus,
             columns=[
