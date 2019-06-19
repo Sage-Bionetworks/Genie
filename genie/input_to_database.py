@@ -240,14 +240,8 @@ def _get_status_and_error_list(syn, valid, message, filetype, entities, modified
     return(input_status_list, invalid_errors_list)
 
 
-def validatefile(entities,
-                 syn,
-                 validation_statusdf,
-                 error_trackerdf,
-                 center,
-                 threads,
-                 testing,
-                 oncotree_link):
+def validatefile(syn, entities, validation_statusdf, error_trackerdf,
+                 center, threads, testing, oncotree_link):
     '''Validate a list of entities.
 
     If a file has not changed, then it doesn't need to be validated.
