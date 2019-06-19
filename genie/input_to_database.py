@@ -25,7 +25,7 @@ To avoid the syn.get rest call later which doesn't actually download the file
 '''
 
 
-def rename_file(syn, synid):
+def rename_file(syn, ent):
     '''
     Gets file from synapse and renames the file if necessary.
 
@@ -34,14 +34,13 @@ def rename_file(syn, synid):
         synid : Synapse id or entity
 
     Returns:
-        Path of corrected file
+        entity with annotation set for path of corrected file
     '''
-    ent = syn.get(synid)
     dirpath = os.path.dirname(ent.path)
     expectedpath = os.path.join(dirpath, ent.name)
-    if expectedpath != ent.path:
-        shutil.copyfile(ent.path, expectedpath)
-    return(expectedpath)
+
+    ent.annotations.expectedPath = expectedpath
+    return ent
 
 
 def get_center_input_files(syn, synid, center, process="main"):

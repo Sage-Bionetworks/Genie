@@ -27,37 +27,32 @@ oncotreeurl = "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_20
 
 
 def test_samename_rename_file():
-    '''
-    Test file isn't renamed
+    '''Test that the file path is not renamed.
     '''
     filename = synapseclient.utils.make_bogus_data_file()
-    entity = synapseclient.Entity(
-        path=filename, name=os.path.basename(filename))
+    entity = synapseclient.File(path=filename,
+                                id='syn012345',
+                                parentId='syn45678',
+                                name=os.path.basename(filename))
     expectedpath = filename
-    with mock.patch.object(syn, "get", return_value=entity) as patch_syn_get:
-        path = input_to_database.rename_file(syn, "syn12345")
-        assert path == expectedpath
-        assert os.stat(path) == os.stat(expectedpath)
-        patch_syn_get.assert_called_once_with("syn12345")
-
+    new_entity = input_to_database.rename_file(syn, entity)
+    assert new_entity.annotations.expectedPath == expectedpath
     os.remove(filename)
 
 
 def test_diffname_rename_file():
-    '''
-    Test renaming of the file
+    '''Test that the file path is renamed.
     '''
     filename = synapseclient.utils.make_bogus_data_file()
-    entity = synapseclient.Entity(path=filename, name="testname")
-    expectedpath = os.path.join(os.path.dirname(filename), "testname")
-    with mock.patch.object(syn, "get", return_value=entity) as patch_syn_get:
-        path = input_to_database.rename_file(syn, "syn12345")
-        assert path == expectedpath
-        assert os.stat(path) == os.stat(expectedpath)
-        patch_syn_get.assert_called_once_with("syn12345")
-    os.remove(filename)
-    os.remove(path)
+    entity = synapseclient.File(path=filename,
+                                id='syn012345',
+                                parentId='syn45678',
+                                name='testname')
 
+    expectedpath = os.path.join(os.path.dirname(filename), "testname")
+    new_entity = input_to_database.rename_file(syn, entity)
+    assert new_entity.annotations.expectedPath == expectedpath
+    os.remove(filename)
 
 def walk_return():
     '''
