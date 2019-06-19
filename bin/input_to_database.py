@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 import os
-import json
 import argparse
 import logging
 
@@ -11,6 +10,7 @@ logger.setLevel(logging.INFO)
 from genie import input_to_database
 from genie import write_invalid_reasons
 from genie import process_functions
+
 
 def main(process,
          center=None,
