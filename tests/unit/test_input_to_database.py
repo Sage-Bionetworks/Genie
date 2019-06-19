@@ -147,24 +147,24 @@ def test_empty_get_center_input_files():
     os.remove(filename)
 
 
-@pytest.fixture(params=[
-    # tuple with (input, expectedOutput)
-    (["data_CNA_SAGE.txt"], "cna"),
-    (["data_clinical_supp_SAGE.txt"], "clinical"),
-    (["data_clinical_supp_sample_SAGE.txt",
-      "data_clinical_supp_patient_SAGE.txt"], "clinical")])
-def filename_fileformat_map(request):
-    return request.param
+# @pytest.fixture(params=[
+#     # tuple with (input, expectedOutput)
+#     (["data_CNA_SAGE.txt"], "cna"),
+#     (["data_clinical_supp_SAGE.txt"], "clinical"),
+#     (["data_clinical_supp_sample_SAGE.txt",
+#       "data_clinical_supp_patient_SAGE.txt"], "clinical")])
+# def filename_fileformat_map(request):
+#     return request.param
 
 
-def test_perfect_get_filetype(filename_fileformat_map):
-    (filepath_list, fileformat) = filename_fileformat_map
-    assert input_to_database.get_filetype(
-        syn, filepath_list, center) == fileformat
+# def test_perfect_get_filetype(filename_fileformat_map):
+#     (filepath_list, fileformat) = filename_fileformat_map
+#     assert input_to_database.get_filetype(
+#         syn, filepath_list, center) == fileformat
 
 
-def test_wrongfilename_get_filetype():
-    assert input_to_database.get_filetype(syn, ['wrong.txt'], center) is None
+# def test_wrongfilename_get_filetype():
+#     assert input_to_database.get_filetype(syn, ['wrong.txt'], center) is None
 
 
 def test_unvalidatedinput_check_existing_file_status():
@@ -381,15 +381,11 @@ def test_valid_validatefile():
     filetype = "clinical"
     fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
                 'synId': ['syn1234']}
-    # status_list = check_file_status['status_list']
-    # error_list = check_file_status['error_list']
-    # filetype = get_filetype(syn, filepaths, center)
-    # if check_file_status['to_validate']:
     with mock.patch.object(
             syn, "get", return_value=entity) as patch_syn_get,\
         mock.patch(
-            "genie.input_to_database.get_filetype",
-            return_value=filetype) as patch_get_filetype,\
+            "genie.validate.determine_filetype",
+            return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
             return_value={
@@ -397,8 +393,8 @@ def test_valid_validatefile():
                 'error_list': [],
                 'to_validate': True}) as patch_check, \
         mock.patch(
-            "genie.validate.validate",
-            return_value=('valid', True)) as patch_validate:
+            "genie.validate.validate_single_file",
+            return_value=(True, 'valid', "clinical")) as patch_validate:
         validate_results = input_to_database.validatefile(
             fileinfo, syn, validation_statusdf,
             error_trackerdf, center, threads, testing, oncotreeurl)
@@ -414,7 +410,7 @@ def test_valid_validatefile():
         patch_validate.assert_called_once()
         patch_syn_get.assert_called_once()
         patch_check.assert_called_once()
-        patch_get_filetype.assert_called_once_with(
+        patch_determine_filetype.assert_called_once_with(
             syn, fileinfo['filePaths'], center)
 
 
@@ -443,8 +439,8 @@ def test_invalid_validatefile():
     with mock.patch.object(
             syn, "get", return_value=entity) as patch_syn_get,\
         mock.patch(
-            "genie.input_to_database.get_filetype",
-            return_value=filetype) as patch_get_filetype,\
+            "genie.validate.determine_filetype",
+            return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
             return_value=check_file_status_dict) as patch_check,\
@@ -454,14 +450,14 @@ def test_invalid_validatefile():
         mock.patch.object(
             syn, "sendMessage") as patch_syn_sendmessage,\
         mock.patch(
-            "genie.validate.validate",
-            return_value=('invalid', False)) as patch_validate:
+            "genie.validate.validate_single_file",
+            return_value=(False, 'invalid', "clinical")) as patch_validate:
         foo = input_to_database.validatefile(
             fileinfo, syn, validation_statusdf,
             error_trackerdf, center, threads, testing, oncotreeurl)
         patch_validate.assert_called_once()
         patch_check.assert_called_once()
-        patch_get_filetype.assert_called_once_with(
+        patch_determine_filetype.assert_called_once_with(
             syn, fileinfo['filePaths'], center)
         error_message = (
             "Dear trial,\n\n"
@@ -502,10 +498,7 @@ def test_already_validated_validatefile():
     fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
                 'synId': ['syn1234']}
     filetype = "markdown"
-    # status_list = check_file_status['status_list']
-    # error_list = check_file_status['error_list']
-    # filetype = get_filetype(syn, filepaths, center)
-    # if check_file_status['to_validate']:
+
     check_file_status_dict = {
         'status_list': ["INVALID"],
         'error_list': ["invalid file"],
@@ -513,8 +506,8 @@ def test_already_validated_validatefile():
     with mock.patch.object(
             syn, "get", return_value=entity) as patch_syn_get,\
         mock.patch(
-            "genie.input_to_database.get_filetype",
-            return_value=filetype) as patch_get_filetype,\
+            "genie.validate.determine_filetype",
+            return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
             return_value=check_file_status_dict) as patch_check:
@@ -536,7 +529,7 @@ def test_already_validated_validatefile():
         assert expected_validate_results == validate_results
         patch_syn_get.assert_called_once()
         patch_check.assert_called_once()
-        patch_get_filetype.assert_called_once_with(
+        patch_determine_filetype.assert_called_once_with(
             syn, fileinfo['filePaths'], center)
 
 

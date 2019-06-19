@@ -98,31 +98,6 @@ def get_center_input_files(syn, synid, center, process="main"):
     return(prepared_center_file_list)
 
 
-def get_filetype(syn, path_list, center):
-    '''
-    Get the file type of the file by validating its filename
-
-    Args:
-        syn: Synapse object
-        path_list: list of filepaths to center files
-        center: Participating Center
-
-    Returns:
-        str: File type of input files
-    '''
-    filetype = None
-    for file_format in PROCESS_FILES:
-        try:
-            filetype = PROCESS_FILES[file_format](
-                syn, center).validateFilename(path_list)
-        except AssertionError:
-            continue
-        # If valid filename, return file type.
-        if filetype is not None:
-            break
-    return(filetype)
-
-
 def check_existing_file_status(validation_statusdf, error_trackerdf,
                                entities, input_filenames):
     '''
@@ -186,28 +161,22 @@ def _check_valid(syn, filepaths, center, filetype, filenames,
     Function to validate a file
     '''
     # If no filetype set, means the file was named incorrectly
-    if filetype is None:
-        message = (
-            "{filenames}: Incorrect filenaming convention or can't be "
-            "processed".format(filenames=", ".join(filenames)))
+    try:
+        valid, message, filetype = validate.validate_single_file(
+            syn,
+            filepaths,
+            center,
+            oncotreelink=oncotree_link,
+            testing=testing)
+        logger.info("VALIDATION COMPLETE")
+    except ValueError as e:
+        # Specify this as None for the single case where filename
+        # validation fails
+        filetype = None
+        message = str(e)
         logger.error(message)
         valid = False
-    else:
-        try:
-            message, valid = validate.validate(
-                syn,
-                filetype,
-                filepaths,
-                center,
-                threads,
-                oncotree_url=oncotree_link,
-                testing=testing)
-            logger.info("VALIDATION COMPLETE")
-        except ValueError as e:
-            logger.error(e)
-            message = e
-            valid = False
-    return(valid, message)
+    return(valid, filetype, message)
 
 
 def _send_validation_error_email(syn, filenames, message, file_users):
@@ -325,13 +294,25 @@ def validatefile(fileinfo,
 
     status_list = check_file_status['status_list']
     error_list = check_file_status['error_list']
-    filetype = get_filetype(syn, filepaths, center)
+    # Need to figure out to how to remove this
+
+    filetype = validate.determine_filetype(syn, filepaths, center)
     if check_file_status['to_validate']:
-
-        valid, message = _check_valid(
-            syn, filepaths, center, filetype, filenames,
-            oncotree_link, threads, testing)
-
+        try:
+            valid, message, filetype = validate.validate_single_file(
+                syn,
+                filepaths,
+                center,
+                oncotreelink=oncotree_link,
+                testing=testing)
+            logger.info("VALIDATION COMPLETE")
+        except ValueError as e:
+            # Specify this as None for the single case where filename
+            # validation fails
+            filetype = None
+            message = str(e)
+            logger.error(message)
+            valid = False
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             syn, fileinfo, valid, message, filetype,
             entities, filepaths, filenames, modified_ons)

@@ -212,8 +212,65 @@ def checkColExist(DF, key):
 #     return(codes)
 
 
-def getDatabaseSynId(
-        syn, tableName, test=False, databaseToSynIdMappingDf=None):
+def lookup_dataframe_value(df, col, query):
+    '''
+    Look up dataframe value given query and column
+
+    Args:
+        df: dataframe
+        col: column with value to return
+        query: Query for specific column
+
+    Returns:
+        value
+    '''
+    query = df.query(query)
+    query_val = query[col].iloc[0]
+    return(query_val)
+
+
+def get_syntabledf(syn, query_string):
+    '''
+    Get dataframe from table query
+
+    Args:
+        syn: Synapse object
+        query_string: Table query
+
+    Returns:
+        pandas dataframe with query results
+    '''
+    table = syn.tableQuery(query_string)
+    tabledf = table.asDataFrame()
+    return(tabledf)
+
+
+def get_synid_database_mappingdf(syn, test=False, staging=False):
+    '''
+    Get database to synapse id mapping dataframe
+
+    Args:
+        syn: Synapse object
+        test: Use test table. Default is False
+        staging: Use stagin table. Default is False
+
+    Returns:
+        database to synapse id mapping dataframe
+    '''
+    if test:
+        database_mapping_synid = "syn11600968"
+    elif staging:
+        database_mapping_synid = "syn12094210"
+    else:
+        database_mapping_synid = "syn10967259"
+
+    database_map_query = "SELECT * FROM {}".format(database_mapping_synid)
+    mappingdf = get_syntabledf(syn, database_map_query)
+    return(mappingdf)
+
+
+def getDatabaseSynId(syn, tableName, test=False,
+                     databaseToSynIdMappingDf=None):
     '''
     Get database synapse id from database to synapse id mapping table
 
@@ -228,21 +285,11 @@ def getDatabaseSynId(
         str:  Synapse id of wanted database
     '''
     if databaseToSynIdMappingDf is None:
-        if test:
-            databaseToSynIdMapping = syn.tableQuery(
-                'SELECT * FROM syn11600968')
-        else:
-            databaseToSynIdMapping = syn.tableQuery(
-                'SELECT * FROM syn10967259')
+        databaseToSynIdMappingDf = get_synid_database_mappingdf(syn, test=test)
 
-        databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
-        # Clean up this code
-        synId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == tableName]
-    else:
-        synId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == tableName]
-    return(synId.values[0])
+    synId = lookup_dataframe_value(databaseToSynIdMappingDf, "Id",
+                                   'Database == "{}"'.format(tableName))
+    return(synId)
 
 
 def rmFiles(folderPath, recursive=True):
