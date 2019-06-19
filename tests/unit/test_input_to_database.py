@@ -411,7 +411,7 @@ def test_valid_validatefile():
         patch_syn_get.assert_called_once()
         patch_check.assert_called_once()
         patch_determine_filetype.assert_called_once_with(
-            syn, fileinfo['filePaths'], center, raise_error=False)
+            syn, fileinfo['filePaths'], center)
 
 
 def test_invalid_validatefile():
@@ -458,7 +458,7 @@ def test_invalid_validatefile():
         patch_validate.assert_called_once()
         patch_check.assert_called_once()
         patch_determine_filetype.assert_called_once_with(
-            syn, fileinfo['filePaths'], center, raise_error=False)
+            syn, fileinfo['filePaths'], center)
         error_message = (
             "Dear trial,\n\n"
             "Your files (data_clinical_supp_SAGE.txt) are invalid! "
@@ -530,7 +530,7 @@ def test_already_validated_validatefile():
         patch_syn_get.assert_called_once()
         patch_check.assert_called_once()
         patch_determine_filetype.assert_called_once_with(
-            syn, fileinfo['filePaths'], center, raise_error=False)
+            syn, fileinfo['filePaths'], center)
 
 
 # def test_filetypenone__check_valid():
