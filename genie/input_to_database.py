@@ -570,10 +570,6 @@ def validation(syn, center, process,
                 center,
                 addToQuery))
 
-        # VALIDATE FILES
-        validationStatusDf = validationStatus.asDataFrame()
-        errorTrackerDf = errorTracker.asDataFrame()
-
         inputValidStatus = []
         invalidErrors = []
         
