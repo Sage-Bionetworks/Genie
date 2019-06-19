@@ -17,6 +17,7 @@ from genie import PROCESS_FILES
 from genie import process_functions
 from genie import validate
 from genie import toRetract
+from genie import input_to_database
 
 '''
 TODO:
