@@ -503,14 +503,13 @@ def email_duplication_error(syn, duplicated_filesdf):
             list(send_to_users), "GENIE Validation Error", error_email)
 
 
-def get_duplicated_files(syn, validation_statusdf, duplicated_error_message):
+def get_duplicated_files(validation_statusdf, duplicated_error_message):
     '''
     Check for duplicated files.  There should be no duplication,
     files should be uploaded as new versions and the entire dataset
     should be uploaded everytime
 
     Args:
-        syn: Synapse object
         validation_statusdf: dataframe with 'name' and 'id' column
         duplicated_error_message: Error message for duplicated files
 
@@ -611,8 +610,8 @@ def validation(syn, center, process,
         duplicatedFileError = (
             "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS "
             "AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME")
-        duplicatedFiles = get_duplicated_files(
-            syn, inputValidStatus, duplicatedFileError)
+        duplicatedFiles = get_duplicated_files(inputValidStatus,
+                                               duplicatedFileError)
         # Send an email if there are any duplicated files
         if not duplicatedFiles.empty:
             email_duplication_error(syn, duplicatedFiles)
