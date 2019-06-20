@@ -9,7 +9,18 @@ from genie import input_to_database
 
 syn = mock.create_autospec(synapseclient.Synapse)
 sample_clinical_synid = 'syn2222'
+
+sample_clinical_entity = synapseclient.File(path='data_clinical_supp_sample_SAGE.txt',
+                                            id=sample_clinical_synid,
+                                            parentId='syn45678',
+                                            name='data_clinical_supp_sample_SAGE.txt')
+
 patient_clinical_synid = 'syn11111'
+patient_clinical_entity = synapseclient.File(path='data_clinical_supp_patient_SAGE.txt',
+                                             id=patient_clinical_synid,
+                                             parentId='syn45678',
+                                             name='data_clinical_supp_patient_SAGE.txt')
+
 vcf1synid = 'syn6666'
 vcf2synid = 'syn8888'
 first = (
@@ -27,37 +38,32 @@ oncotreeurl = "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_20
 
 
 def test_samename_rename_file():
-    '''
-    Test file isn't renamed
+    '''Test that the file path is not renamed.
     '''
     filename = synapseclient.utils.make_bogus_data_file()
-    entity = synapseclient.Entity(
-        path=filename, name=os.path.basename(filename))
+    entity = synapseclient.File(path=filename,
+                                id='syn012345',
+                                parentId='syn45678',
+                                name=os.path.basename(filename))
     expectedpath = filename
-    with mock.patch.object(syn, "get", return_value=entity) as patch_syn_get:
-        path = input_to_database.rename_file(syn, "syn12345")
-        assert path == expectedpath
-        assert os.stat(path) == os.stat(expectedpath)
-        patch_syn_get.assert_called_once_with("syn12345")
-
+    new_entity = input_to_database.rename_file(syn, entity)
+    assert new_entity.annotations.expectedPath == expectedpath
     os.remove(filename)
 
 
 def test_diffname_rename_file():
-    '''
-    Test renaming of the file
+    '''Test that the file path is renamed.
     '''
     filename = synapseclient.utils.make_bogus_data_file()
-    entity = synapseclient.Entity(path=filename, name="testname")
-    expectedpath = os.path.join(os.path.dirname(filename), "testname")
-    with mock.patch.object(syn, "get", return_value=entity) as patch_syn_get:
-        path = input_to_database.rename_file(syn, "syn12345")
-        assert path == expectedpath
-        assert os.stat(path) == os.stat(expectedpath)
-        patch_syn_get.assert_called_once_with("syn12345")
-    os.remove(filename)
-    os.remove(path)
+    entity = synapseclient.File(path=filename,
+                                id='syn012345',
+                                parentId='syn45678',
+                                name='testname')
 
+    expectedpath = os.path.join(os.path.dirname(filename), "testname")
+    new_entity = input_to_database.rename_file(syn, entity)
+    assert new_entity.annotations.expectedPath == expectedpath
+    os.remove(filename)
 
 def walk_return():
     '''
@@ -80,22 +86,24 @@ def test_main_get_center_input_files():
     excluding the vcf files since process main is specified
     '''
     filename = synapseclient.utils.make_bogus_data_file()
-    expected_center_file_list = [(
-        [sample_clinical_synid, patient_clinical_synid],
-        [filename, filename])]
-    calls = [
-        mock.call(syn, sample_clinical_synid),
+
+    syn_get_effects = [sample_clinical_entity, patient_clinical_entity]
+
+    expected_center_file_list = [[sample_clinical_entity, patient_clinical_entity]]
+    calls = [mock.call(syn, sample_clinical_synid),
         mock.call(syn, patient_clinical_synid)]
-    with mock.patch(
-            "genie.input_to_database.rename_file",
-            return_value=filename) as patch_rename,\
-        mock.patch.object(
-            synu, "walk", return_value=walk_return()) as patch_synu_walk:
-        center_file_list = input_to_database.get_center_input_files(
-            syn, "syn12345", center, process="main")
+
+    with mock.patch.object(synu, "walk", 
+                          return_value=walk_return()) as patch_synu_walk,\
+        mock.patch.object(syn, "get", side_effect=syn_get_effects) as patch_syn_get:
+        center_file_list = input_to_database.get_center_input_files(syn, "syn12345", 
+                                                                    center, process="main")
+        print(center_file_list)
+
+        assert len(center_file_list) == len(expected_center_file_list)
+        assert len(center_file_list[0]) == 2
         assert center_file_list == expected_center_file_list
         patch_synu_walk.assert_called_once_with(syn, 'syn12345')
-        patch_rename.assert_has_calls(calls)
     os.remove(filename)
 
 
@@ -147,24 +155,24 @@ def test_empty_get_center_input_files():
     os.remove(filename)
 
 
-@pytest.fixture(params=[
-    # tuple with (input, expectedOutput)
-    (["data_CNA_SAGE.txt"], "cna"),
-    (["data_clinical_supp_SAGE.txt"], "clinical"),
-    (["data_clinical_supp_sample_SAGE.txt",
-      "data_clinical_supp_patient_SAGE.txt"], "clinical")])
-def filename_fileformat_map(request):
-    return request.param
+# @pytest.fixture(params=[
+#     # tuple with (input, expectedOutput)
+#     (["data_CNA_SAGE.txt"], "cna"),
+#     (["data_clinical_supp_SAGE.txt"], "clinical"),
+#     (["data_clinical_supp_sample_SAGE.txt",
+#       "data_clinical_supp_patient_SAGE.txt"], "clinical")])
+# def filename_fileformat_map(request):
+#     return request.param
 
 
-def test_perfect_get_filetype(filename_fileformat_map):
-    (filepath_list, fileformat) = filename_fileformat_map
-    assert input_to_database.get_filetype(
-        syn, filepath_list, center) == fileformat
+# def test_perfect_get_filetype(filename_fileformat_map):
+#     (filepath_list, fileformat) = filename_fileformat_map
+#     assert input_to_database.get_filetype(
+#         syn, filepath_list, center) == fileformat
 
 
-def test_wrongfilename_get_filetype():
-    assert input_to_database.get_filetype(syn, ['wrong.txt'], center) is None
+# def test_wrongfilename_get_filetype():
+#     assert input_to_database.get_filetype(syn, ['wrong.txt'], center) is None
 
 
 def test_unvalidatedinput_check_existing_file_status():
@@ -381,15 +389,11 @@ def test_valid_validatefile():
     filetype = "clinical"
     fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
                 'synId': ['syn1234']}
-    # status_list = check_file_status['status_list']
-    # error_list = check_file_status['error_list']
-    # filetype = get_filetype(syn, filepaths, center)
-    # if check_file_status['to_validate']:
     with mock.patch.object(
             syn, "get", return_value=entity) as patch_syn_get,\
         mock.patch(
-            "genie.input_to_database.get_filetype",
-            return_value=filetype) as patch_get_filetype,\
+            "genie.validate.determine_filetype",
+            return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
             return_value={
@@ -397,8 +401,8 @@ def test_valid_validatefile():
                 'error_list': [],
                 'to_validate': True}) as patch_check, \
         mock.patch(
-            "genie.validate.validate",
-            return_value=('valid', True)) as patch_validate:
+            "genie.validate.validate_single_file",
+            return_value=(True, 'valid', "clinical")) as patch_validate:
         validate_results = input_to_database.validatefile(
             fileinfo, syn, validation_statusdf,
             error_trackerdf, center, threads, testing, oncotreeurl)
@@ -414,7 +418,7 @@ def test_valid_validatefile():
         patch_validate.assert_called_once()
         patch_syn_get.assert_called_once()
         patch_check.assert_called_once()
-        patch_get_filetype.assert_called_once_with(
+        patch_determine_filetype.assert_called_once_with(
             syn, fileinfo['filePaths'], center)
 
 
@@ -443,8 +447,8 @@ def test_invalid_validatefile():
     with mock.patch.object(
             syn, "get", return_value=entity) as patch_syn_get,\
         mock.patch(
-            "genie.input_to_database.get_filetype",
-            return_value=filetype) as patch_get_filetype,\
+            "genie.validate.determine_filetype",
+            return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
             return_value=check_file_status_dict) as patch_check,\
@@ -454,14 +458,14 @@ def test_invalid_validatefile():
         mock.patch.object(
             syn, "sendMessage") as patch_syn_sendmessage,\
         mock.patch(
-            "genie.validate.validate",
-            return_value=('invalid', False)) as patch_validate:
+            "genie.validate.validate_single_file",
+            return_value=(False, 'invalid', "clinical")) as patch_validate:
         foo = input_to_database.validatefile(
             fileinfo, syn, validation_statusdf,
             error_trackerdf, center, threads, testing, oncotreeurl)
         patch_validate.assert_called_once()
         patch_check.assert_called_once()
-        patch_get_filetype.assert_called_once_with(
+        patch_determine_filetype.assert_called_once_with(
             syn, fileinfo['filePaths'], center)
         error_message = (
             "Dear trial,\n\n"
@@ -502,10 +506,7 @@ def test_already_validated_validatefile():
     fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
                 'synId': ['syn1234']}
     filetype = "markdown"
-    # status_list = check_file_status['status_list']
-    # error_list = check_file_status['error_list']
-    # filetype = get_filetype(syn, filepaths, center)
-    # if check_file_status['to_validate']:
+
     check_file_status_dict = {
         'status_list': ["INVALID"],
         'error_list': ["invalid file"],
@@ -513,8 +514,8 @@ def test_already_validated_validatefile():
     with mock.patch.object(
             syn, "get", return_value=entity) as patch_syn_get,\
         mock.patch(
-            "genie.input_to_database.get_filetype",
-            return_value=filetype) as patch_get_filetype,\
+            "genie.validate.determine_filetype",
+            return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
             return_value=check_file_status_dict) as patch_check:
@@ -536,7 +537,7 @@ def test_already_validated_validatefile():
         assert expected_validate_results == validate_results
         patch_syn_get.assert_called_once()
         patch_check.assert_called_once()
-        patch_get_filetype.assert_called_once_with(
+        patch_determine_filetype.assert_called_once_with(
             syn, fileinfo['filePaths'], center)
 
 
@@ -544,3 +545,152 @@ def test_already_validated_validatefile():
 #     input_to_database._check_valid(
 #         syn, filepaths, center, filetype, filenames,
 #          oncotree_link, threads, testing)
+
+
+def test_dups_get_duplicated_files():
+    '''
+    Test get all duplicates
+    cbs/seg
+    clinical
+    '''
+    validation_statusdf = pd.DataFrame({
+        'id': ['syn1234', 'syn2345', 'syn5555', 'syn1224', 'syn34444'],
+        'name': ['first.cbs', 'second.seg', 'data_clinical_supp_1',
+                 'data_clinical_supp_2', 'data_clinical_supp_3']})
+    expected_dup = validation_statusdf.copy()
+    expected_dup['errors'] = ''
+    dupsdf = input_to_database.get_duplicated_files(
+        syn, validation_statusdf, "")
+    assert dupsdf.equals(expected_dup)
+
+
+def test_nodups_get_duplicated_files():
+    '''
+    Test no duplicated
+    '''
+    validation_statusdf = pd.DataFrame({
+        'id': ['syn1234', 'syn2345', 'syn5555', 'syn1224', 'syn34444'],
+        'name': ['cbs.txt', 'second.seg', 'no_clinical.txt',
+                 'data_clinical_supp_2', 'data_clinical_supp_3']})
+    dupsdf = input_to_database.get_duplicated_files(
+        syn, validation_statusdf, "")
+    assert dupsdf.empty
+
+
+def test_dups_email_duplication_error():
+    '''
+    Test duplicated email sent
+    '''
+    duplicated_filesdf = pd.DataFrame({
+        'id': ['syn1234'],
+        'name': ['first.cbs']})
+    entity = synapseclient.Entity(id='syn1234')
+    entity.modifiedBy = '333'
+    entity.createdBy = '333'
+    error_email = (
+        "Dear %s,\n\n"
+        "Your files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS "
+        "NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE "
+        "UPLOADED EVERYTIME".format("trial", "first.cbs"))
+    with mock.patch.object(
+            syn, "get", return_value=entity) as patch_syn_get,\
+        mock.patch.object(
+            syn, "getUserProfile",
+            return_value={'userName': 'trial'}) as patch_syn_profile,\
+        mock.patch.object(
+            syn, "sendMessage") as patch_send:
+        input_to_database.email_duplication_error(syn, duplicated_filesdf)
+        patch_syn_get.assert_called_once_with('syn1234')
+        patch_syn_profile.assert_called_once_with('333')
+        patch_send.assert_called_once_with(
+            ['333'], "GENIE Validation Error", error_email)
+
+
+def test_nodups_email_duplication_error():
+    '''
+    Test no email sent
+    '''
+    duplicated_filesdf = pd.DataFrame()
+    with mock.patch.object(syn, "get") as patch_syn_get,\
+            mock.patch.object(syn, "getUserProfile") as patch_syn_profile,\
+            mock.patch.object(syn, "sendMessage") as patch_send:
+        input_to_database.email_duplication_error(syn, duplicated_filesdf)
+        patch_syn_get.assert_not_called()
+        patch_syn_profile.assert_not_called()
+        patch_send.assert_not_called()
+
+
+def test_valid__get_status_and_error_list():
+    '''
+    Tests the correct status and error lists received
+    when file is valid.
+    '''
+    entity = synapseclient.Entity(id='syn1234', md5='44444')
+    entities = [entity]
+    filetype = "clinical"
+    fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
+                'synId': ['syn1234']}
+    modified_ons = [1553428800000]
+    filenames = ['data_clinical_supp_SAGE.txt']
+
+    valid = True
+    message = 'valid'
+    filetype = 'clinical'
+    input_status_list, invalid_errors_list = \
+        input_to_database._get_status_and_error_list(
+           syn, fileinfo, valid, message, filetype,
+           entities, fileinfo['filePaths'], filenames, modified_ons)
+    assert input_status_list == [
+        [entity.id, fileinfo['filePaths'][0], entity.md5,
+         'VALIDATED', filenames[0], modified_ons[0],
+         filetype]]
+    assert invalid_errors_list is None
+
+
+def test_invalid__get_status_and_error_list():
+    '''
+    Tests the correct status and error lists received
+    when file is invalid.
+    '''
+    entity = synapseclient.Entity(id='syn1234', md5='44444')
+    entities = [entity]
+    filetype = "clinical"
+    fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
+                'synId': ['syn1234']}
+    modified_ons = [1553428800000]
+    filenames = ['data_clinical_supp_SAGE.txt']
+    # This valid variable control the validation status
+    valid = False
+    message = 'invalid file content'
+    filetype = 'clinical'
+
+    input_status_list, invalid_errors_list = \
+        input_to_database._get_status_and_error_list(
+            syn, fileinfo, valid, message, filetype,
+            entities, fileinfo['filePaths'], filenames, modified_ons)
+    assert input_status_list == [
+        [entity.id, fileinfo['filePaths'][0], entity.md5,
+            'INVALID', filenames[0], modified_ons[0],
+            filetype]]
+    assert invalid_errors_list == [
+        ['syn1234', message, 'data_clinical_supp_SAGE.txt']]
+
+
+def test__send_validation_email():
+    message = 'invalid error message here'
+    filenames = ['data_clinical_supp_SAGE.txt']
+    file_users = ['333', '444']
+    with mock.patch.object(
+        syn, "getUserProfile",
+        return_value={'userName': 'trial'}) as patch_syn_getuserprofile,\
+        mock.patch.object(
+            syn, "sendMessage") as patch_syn_sendmessage:
+        input_to_database._send_validation_error_email(
+            syn, filenames, message, file_users)
+        error_message = (
+            "Dear trial, trial,\n\n"
+            "Your files (data_clinical_supp_SAGE.txt) are invalid! "
+            "Here are the reasons why:\n\n%s" % message)
+        patch_syn_sendmessage.assert_called_once_with(
+            ['333', '444'], "GENIE Validation Error", error_message)
+        patch_syn_getuserprofile.call_count == 2
