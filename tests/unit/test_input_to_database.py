@@ -551,8 +551,7 @@ def test_dups_get_duplicated_files():
                  'data_clinical_supp_2', 'data_clinical_supp_3']})
     expected_dup = validation_statusdf.copy()
     expected_dup['errors'] = ''
-    dupsdf = input_to_database.get_duplicated_files(
-        syn, validation_statusdf, "")
+    dupsdf = input_to_database.get_duplicated_files(validation_statusdf, "")
     assert dupsdf.equals(expected_dup)
 
 
@@ -564,8 +563,7 @@ def test_nodups_get_duplicated_files():
         'id': ['syn1234', 'syn2345', 'syn5555', 'syn1224', 'syn34444'],
         'name': ['cbs.txt', 'second.seg', 'no_clinical.txt',
                  'data_clinical_supp_2', 'data_clinical_supp_3']})
-    dupsdf = input_to_database.get_duplicated_files(
-        syn, validation_statusdf, "")
+    dupsdf = input_to_database.get_duplicated_files(validation_statusdf, "")
     assert dupsdf.empty
 
 
