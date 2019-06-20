@@ -9,6 +9,12 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+_DEFAULT_CONFIG = {
+    "database_to_synid_mapping": "syn18582675",
+    "center_mapping_id": "syn18582666"
+}
+
+
 # Validates annotations on Synapse
 # def validateAnnotations(fileList):
 #     logger.info("VALIDATING ANNOTATIONS")
@@ -67,11 +73,11 @@ def determine_validity_and_log(total_error, warning):
     # Complete error message
     message = "----------------ERRORS----------------\n"
     if total_error == "":
-        message = "The {} file is valid.".format(fileType)
+        message = "The file is valid."
         logger.info(message)
         valid = True
     else:
-        message = "The {} file is invalid.".format(fileType)
+        message = "The file is invalid."
         logger.info(message)
         for errors in total_error.split("\n"):
             if errors != '':
@@ -223,7 +229,7 @@ def _upload_to_synapse(syn, filepaths, valid, parentid=None):
             ent = syn.store(file_ent)
             logger.info("Stored to {}".format(ent.id))
 
-def perform_validate(syn, config, args):
+def perform_validate(syn, args, config=_DEFAULT_CONFIG):
 
     # Check parentid argparse
     _check_parentid_input(args.parentid, args.filetype)
