@@ -650,7 +650,7 @@ def validation(syn, center, process,
                                                      'center', 'modifiedOn', 
                                                      'versionNumber']]
 
-        process_functions.updateDatabase(syn, validationStatusDf,
+        process_functions.updateDatabase(syn, validation_statusdf,
                                          inputValidStatusToUpdate,
                                          validationStatusTableId,
                                          ["id", "versionNumber"],
