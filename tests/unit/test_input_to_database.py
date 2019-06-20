@@ -45,33 +45,33 @@ center = "SAGE"
 oncotreeurl = "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
 
 
-def test_samename_rename_file():
-    '''Test that the file path is not renamed.
-    '''
-    filename = synapseclient.utils.make_bogus_data_file()
-    entity = synapseclient.File(path=filename,
-                                id='syn012345',
-                                parentId='syn45678',
-                                name=os.path.basename(filename))
-    expectedpath = filename
-    new_entity = input_to_database.rename_file(entity)
-    assert new_entity.annotations.expectedPath == expectedpath
-    os.remove(filename)
+# def test_samename_rename_file():
+#     '''Test that the file path is not renamed.
+#     '''
+#     filename = synapseclient.utils.make_bogus_data_file()
+#     entity = synapseclient.File(path=filename,
+#                                 id='syn012345',
+#                                 parentId='syn45678',
+#                                 name=os.path.basename(filename))
+#     expectedpath = filename
+#     new_entity = input_to_database.rename_file(entity)
+#     assert new_entity.annotations.expectedPath == expectedpath
+#     os.remove(filename)
 
 
-def test_diffname_rename_file():
-    '''Test that the file path is renamed.
-    '''
-    filename = synapseclient.utils.make_bogus_data_file()
-    entity = synapseclient.File(path=filename,
-                                id='syn012345',
-                                parentId='syn45678',
-                                name='testname')
+# def test_diffname_rename_file():
+#     '''Test that the file path is renamed.
+#     '''
+#     filename = synapseclient.utils.make_bogus_data_file()
+#     entity = synapseclient.File(path=filename,
+#                                 id='syn012345',
+#                                 parentId='syn45678',
+#                                 name='testname')
 
-    expectedpath = os.path.join(os.path.dirname(filename), "testname")
-    new_entity = input_to_database.rename_file(entity)
-    assert new_entity.annotations.expectedPath == expectedpath
-    os.remove(filename)
+#     expectedpath = os.path.join(os.path.dirname(filename), "testname")
+#     new_entity = input_to_database.rename_file(entity)
+#     assert new_entity.annotations.expectedPath == expectedpath
+#     os.remove(filename)
 
 
 def walk_return():
@@ -94,21 +94,16 @@ def test_main_get_center_input_files():
     Test to make sure center input files are gotten
     excluding the vcf files since process main is specified
     '''
-    # filename = synapseclient.utils.make_bogus_data_file()
-
     syn_get_effects = [sample_clinical_entity, patient_clinical_entity]
     expected_center_file_list = [syn_get_effects]
 
     calls = [mock.call(sample_clinical_synid),
              mock.call(patient_clinical_synid)]
-    rename_calls = [mock.call(sample_clinical_entity),
-                    mock.call(patient_clinical_entity)]
+
     with mock.patch.object(synu, "walk",
                            return_value=walk_return()) as patch_synu_walk,\
         mock.patch.object(syn, "get",
-                          side_effect=syn_get_effects) as patch_syn_get,\
-        mock.patch("genie.input_to_database.rename_file",
-                   side_effect=syn_get_effects) as patch_rename:
+                          side_effect=syn_get_effects) as patch_syn_get:
         center_file_list = input_to_database.get_center_input_files(syn,
                                                                     "syn12345",
                                                                     center)
@@ -118,8 +113,6 @@ def test_main_get_center_input_files():
         assert center_file_list == expected_center_file_list
         patch_synu_walk.assert_called_once_with(syn, 'syn12345')
         patch_syn_get.assert_has_calls(calls)
-        patch_rename.assert_has_calls(rename_calls)
-    # os.remove(filename)
 
 
 def test_vcf_get_center_input_files():
@@ -127,11 +120,8 @@ def test_vcf_get_center_input_files():
     Test to make sure center input files are gotten
     including the vcf files since process vcf is specified
     '''
-    # filename = synapseclient.utils.make_bogus_data_file()
     syn_get_effects = [sample_clinical_entity, patient_clinical_entity,
                        vcf1_entity, vcf2_entity]
-    rename_get_effects = [vcf1_entity, vcf2_entity,
-                          sample_clinical_entity, patient_clinical_entity]
     expected_center_file_list = [
         [vcf1_entity], [vcf2_entity],
         [sample_clinical_entity, patient_clinical_entity]]
@@ -140,18 +130,11 @@ def test_vcf_get_center_input_files():
         mock.call(patient_clinical_synid),
         mock.call(vcf1synid),
         mock.call(vcf2synid)]
-    rename_calls = [
-        mock.call(vcf1_entity),
-        mock.call(vcf2_entity),
-        mock.call(sample_clinical_entity),
-        mock.call(patient_clinical_entity)]
 
     with mock.patch.object(synu, "walk",
                            return_value=walk_return()) as patch_synu_walk,\
         mock.patch.object(syn, "get",
-                          side_effect=syn_get_effects) as patch_syn_get,\
-        mock.patch("genie.input_to_database.rename_file",
-                   side_effect=rename_get_effects) as patch_rename:
+                          side_effect=syn_get_effects) as patch_syn_get:
         center_file_list = input_to_database.get_center_input_files(syn,
                                                                     "syn12345",
                                                                     center,
@@ -161,7 +144,6 @@ def test_vcf_get_center_input_files():
         assert center_file_list == expected_center_file_list
         patch_synu_walk.assert_called_once_with(syn, 'syn12345')
         patch_syn_get.assert_has_calls(calls)
-        patch_rename.assert_has_calls(rename_calls)
 
 
 def test_empty_get_center_input_files():
@@ -170,16 +152,12 @@ def test_empty_get_center_input_files():
     pass in is empty
     '''
     filename = synapseclient.utils.make_bogus_data_file()
-    with mock.patch(
-            "genie.input_to_database.rename_file",
-            return_value=filename) as patch_rename,\
-        mock.patch.object(
-            synu, "walk", return_value=walk_return_empty()) as patch_synu_walk:
+    with mock.patch.object(synu, "walk",
+                           return_value=walk_return_empty()) as patch_synu_walk:
         center_file_list = input_to_database.get_center_input_files(
             syn, "syn12345", center, process="vcf")
         assert center_file_list == []
         patch_synu_walk.assert_called_once_with(syn, 'syn12345')
-        assert not patch_rename.called
     os.remove(filename)
 
 
@@ -397,18 +375,20 @@ def test_valid_validatefile():
     '''
     validation_statusdf = pd.DataFrame()
     error_trackerdf = pd.DataFrame()
-    entity = synapseclient.Entity(id='syn1234', md5='44444')
+    entity = synapseclient.Entity(name="data_clinical_supp_SAGE.txt",
+                                  id='syn1234', md5='44444',
+                                  path='/path/to/data_clinical_supp_SAGE.txt')
     entity['modifiedOn'] = '2019-03-24T12:00:00.Z'
     # This modifiedOn translates to: 1553428800000
     entity.modifiedBy = '333'
     entity.createdBy = '444'
-    # entities = [entity]
+    entities = [entity]
     center = 'SAGE'
     threads = 0
     testing = False
     filetype = "clinical"
-    fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
-                'synId': ['syn1234']}
+    # fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
+    #             'synId': ['syn1234']}
     with mock.patch.object(
             syn, "get", return_value=entity) as patch_syn_get,\
         mock.patch(
@@ -424,11 +404,11 @@ def test_valid_validatefile():
             "genie.validate.validate_single_file",
             return_value=(True, 'valid', "clinical")) as patch_validate:
         validate_results = input_to_database.validatefile(
-            fileinfo, syn, validation_statusdf,
+            syn, entities, validation_statusdf,
             error_trackerdf, center, threads, testing, oncotreeurl)
         expected_validate_results = ([[
-            fileinfo['synId'][0],
-            fileinfo['filePaths'][0],
+            entity['synId'],
+            entity['path'],
             '44444',
             'VALIDATED',
             'data_clinical_supp_SAGE.txt',
@@ -439,7 +419,7 @@ def test_valid_validatefile():
         patch_syn_get.assert_called_once()
         patch_check.assert_called_once()
         patch_determine_filetype.assert_called_once_with(
-            syn, fileinfo['filePaths'], center)
+            syn, entity['path'], center)
 
 
 def test_invalid_validatefile():
@@ -645,24 +625,25 @@ def test_valid__get_status_and_error_list():
     Tests the correct status and error lists received
     when file is valid.
     '''
-    entity = synapseclient.Entity(id='syn1234', md5='44444')
+    entity = synapseclient.Entity(id='syn1234', md5='44444',
+                                  path='/path/to/foobar.txt',
+                                  name='data_clinical_supp_SAGE.txt')
     entities = [entity]
     filetype = "clinical"
-    fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
-                'synId': ['syn1234']}
+
     modified_ons = [1553428800000]
-    filenames = ['data_clinical_supp_SAGE.txt']
 
     valid = True
     message = 'valid'
     filetype = 'clinical'
+
     input_status_list, invalid_errors_list = \
         input_to_database._get_status_and_error_list(
-           syn, fileinfo, valid, message, filetype,
-           entities, fileinfo['filePaths'], filenames, modified_ons)
+           syn, valid, message, filetype,
+           entities, modified_ons)
     assert input_status_list == [
-        [entity.id, fileinfo['filePaths'][0], entity.md5,
-         'VALIDATED', filenames[0], modified_ons[0],
+        [entity.id, entity.path, entity.md5,
+         'VALIDATED', entity.name, modified_ons[0],
          filetype]]
     assert invalid_errors_list is None
 
@@ -672,13 +653,12 @@ def test_invalid__get_status_and_error_list():
     Tests the correct status and error lists received
     when file is invalid.
     '''
-    entity = synapseclient.Entity(id='syn1234', md5='44444')
+    entity = synapseclient.Entity(id='syn1234', md5='44444',
+                                  path='/path/to/foobar.txt',
+                                  name='data_clinical_supp_SAGE.txt')
     entities = [entity]
     filetype = "clinical"
-    fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
-                'synId': ['syn1234']}
     modified_ons = [1553428800000]
-    filenames = ['data_clinical_supp_SAGE.txt']
     # This valid variable control the validation status
     valid = False
     message = 'invalid file content'
@@ -686,11 +666,11 @@ def test_invalid__get_status_and_error_list():
 
     input_status_list, invalid_errors_list = \
         input_to_database._get_status_and_error_list(
-            syn, fileinfo, valid, message, filetype,
-            entities, fileinfo['filePaths'], filenames, modified_ons)
+            syn, valid, message, filetype,
+            entities, modified_ons)
     assert input_status_list == [
-        [entity.id, fileinfo['filePaths'][0], entity.md5,
-            'INVALID', filenames[0], modified_ons[0],
+        [entity.id, entity.path, entity.md5,
+            'INVALID', entity.name, modified_ons[0],
             filetype]]
     assert invalid_errors_list == [
         ['syn1234', message, 'data_clinical_supp_SAGE.txt']]
