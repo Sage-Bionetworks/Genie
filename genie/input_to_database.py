@@ -310,9 +310,9 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
             for ent, path, status, filename, modifiedon in
             zip(entities, filepaths, status_list, filenames, modified_ons)]
         invalid_errors_list = [
-            [synid, error, filename]
-            for synid, error, filename in
-            zip(fileinfo['synId'], error_list, filenames)]
+            [entity.id, error, filename]
+            for entity, error, filename in
+            zip(entities, error_list, filenames)]
     return(input_status_list, invalid_errors_list)
 
 
