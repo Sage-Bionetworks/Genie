@@ -1,16 +1,16 @@
 from setuptools import setup, find_packages
 
-setup(name='aacrgenie',
+setup(name='veoibd-data-pipeline',
       version='1.6.2-rc1',
-      description='Processing and validation for GENIE',
-      url='https://github.com/Sage-Bionetworks/Genie',
-      author='Thomas Yu',
-      author_email='thomasyu888@gmail.com',
+      description='Processing and validation for VEOIBD',
+      url='https://github.com/veo-ibd/veoibd-data-pipeline',
+      author='Kenneth Daily',
+      author_email='kenneth.daily@sagebionetworks.org',
       license='MIT',
       packages=find_packages(),
       zip_safe=False,
       entry_points={
-        'console_scripts': ['genie = genie.__main__:main']},
+        'console_scripts': ['veoibd = genie.__main__:main']},
       scripts=['bin/input_to_database.py'],
       install_requires=[
         'pandas>=0.20.0',
