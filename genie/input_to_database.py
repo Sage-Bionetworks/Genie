@@ -26,14 +26,13 @@ To avoid the syn.get rest call later which doesn't actually download the file
 '''
 
 
-def rename_file(syn, ent):
+def rename_file(ent):
     '''
     Gets file from synapse and renames the file if necessary.
 
     Adds the expected name as an annotation to a Synapse File object.
 
     Args:
-        syn: Synapse object
         synid : Synapse id or entity
 
     Returns:
@@ -69,11 +68,11 @@ def get_center_input_files(syn, synid, center, process="main"):
     center_files = synapseutils.walk(syn, synid)
     clinicalpair = []
     prepared_center_file_list = []
-    
+
     for _, _, entities in center_files:
         for name, ent_synid in entities:
-            # This is to remove vcfs from being validated during main 
-            # processing. Often there are too many vcf files, and it is 
+            # This is to remove vcfs from being validated during main
+            # processing. Often there are too many vcf files, and it is
             # not necessary for them to be run everytime.
             if name.endswith(".vcf") and process != "vcf":
                 continue
@@ -89,10 +88,10 @@ def get_center_input_files(syn, synid, center, process="main"):
                 clinicalpair.append(ent)
                 continue
 
-            prepared_center_file_list.append([rename_file(syn, ent)])
-    
+            prepared_center_file_list.append([rename_file(ent)])
+
     if clinicalpair:
-        clinicalpair_entities = [rename_file(syn, x) for x in clinicalpair] 
+        clinicalpair_entities = [rename_file(x) for x in clinicalpair]
         prepared_center_file_list.append(clinicalpair_entities)
 
     return prepared_center_file_list
@@ -575,7 +574,7 @@ def validation(syn, center, process,
 
         inputValidStatus = []
         invalidErrors = []
-        
+
         for ents in allFiles:
             status, errors = input_to_database.validatefile(syn, ents,
                                                             validation_statusdf, 

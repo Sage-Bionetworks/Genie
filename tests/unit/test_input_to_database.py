@@ -22,7 +22,15 @@ patient_clinical_entity = synapseclient.File(path='data_clinical_supp_patient_SA
                                              name='data_clinical_supp_patient_SAGE.txt')
 
 vcf1synid = 'syn6666'
+vcf1_entity = synapseclient.File(path='GENIE-SAGE-1-1.vcf',
+                                 id=vcf1synid,
+                                 parentId='syn45678',
+                                 name='GENIE-SAGE-1-1.vcf')
 vcf2synid = 'syn8888'
+vcf2_entity = synapseclient.File(path='GENIE-SAGE-2-1.vcf',
+                                 id=vcf2synid,
+                                 parentId='syn45678',
+                                 name='GENIE-SAGE-2-1.vcf')
 first = (
     [('inputs', "syn12345")],
     [('vcfs', 'syn33333')],
@@ -46,7 +54,7 @@ def test_samename_rename_file():
                                 parentId='syn45678',
                                 name=os.path.basename(filename))
     expectedpath = filename
-    new_entity = input_to_database.rename_file(syn, entity)
+    new_entity = input_to_database.rename_file(entity)
     assert new_entity.annotations.expectedPath == expectedpath
     os.remove(filename)
 
@@ -61,9 +69,10 @@ def test_diffname_rename_file():
                                 name='testname')
 
     expectedpath = os.path.join(os.path.dirname(filename), "testname")
-    new_entity = input_to_database.rename_file(syn, entity)
+    new_entity = input_to_database.rename_file(entity)
     assert new_entity.annotations.expectedPath == expectedpath
     os.remove(filename)
+
 
 def walk_return():
     '''
@@ -85,26 +94,32 @@ def test_main_get_center_input_files():
     Test to make sure center input files are gotten
     excluding the vcf files since process main is specified
     '''
-    filename = synapseclient.utils.make_bogus_data_file()
+    # filename = synapseclient.utils.make_bogus_data_file()
 
     syn_get_effects = [sample_clinical_entity, patient_clinical_entity]
+    expected_center_file_list = [syn_get_effects]
 
-    expected_center_file_list = [[sample_clinical_entity, patient_clinical_entity]]
-    calls = [mock.call(syn, sample_clinical_synid),
-        mock.call(syn, patient_clinical_synid)]
-
-    with mock.patch.object(synu, "walk", 
-                          return_value=walk_return()) as patch_synu_walk,\
-        mock.patch.object(syn, "get", side_effect=syn_get_effects) as patch_syn_get:
-        center_file_list = input_to_database.get_center_input_files(syn, "syn12345", 
-                                                                    center, process="main")
-        print(center_file_list)
+    calls = [mock.call(sample_clinical_synid),
+             mock.call(patient_clinical_synid)]
+    rename_calls = [mock.call(sample_clinical_entity),
+                    mock.call(patient_clinical_entity)]
+    with mock.patch.object(synu, "walk",
+                           return_value=walk_return()) as patch_synu_walk,\
+        mock.patch.object(syn, "get",
+                          side_effect=syn_get_effects) as patch_syn_get,\
+        mock.patch("genie.input_to_database.rename_file",
+                   side_effect=syn_get_effects) as patch_rename:
+        center_file_list = input_to_database.get_center_input_files(syn,
+                                                                    "syn12345",
+                                                                    center)
 
         assert len(center_file_list) == len(expected_center_file_list)
         assert len(center_file_list[0]) == 2
         assert center_file_list == expected_center_file_list
         patch_synu_walk.assert_called_once_with(syn, 'syn12345')
-    os.remove(filename)
+        patch_syn_get.assert_has_calls(calls)
+        patch_rename.assert_has_calls(rename_calls)
+    # os.remove(filename)
 
 
 def test_vcf_get_center_input_files():
@@ -112,28 +127,41 @@ def test_vcf_get_center_input_files():
     Test to make sure center input files are gotten
     including the vcf files since process vcf is specified
     '''
-    filename = synapseclient.utils.make_bogus_data_file()
+    # filename = synapseclient.utils.make_bogus_data_file()
+    syn_get_effects = [sample_clinical_entity, patient_clinical_entity,
+                       vcf1_entity, vcf2_entity]
+    rename_get_effects = [vcf1_entity, vcf2_entity,
+                          sample_clinical_entity, patient_clinical_entity]
     expected_center_file_list = [
-        ([sample_clinical_synid, patient_clinical_synid],
-         [filename, filename]),
-        ([vcf1synid], [filename]), ([vcf2synid], [filename])]
+        [vcf1_entity], [vcf2_entity],
+        [sample_clinical_entity, patient_clinical_entity]]
     calls = [
-        mock.call(syn, sample_clinical_synid),
-        mock.call(syn, patient_clinical_synid),
-        mock.call(syn, vcf1synid),
-        mock.call(syn, vcf2synid)]
+        mock.call(sample_clinical_synid),
+        mock.call(patient_clinical_synid),
+        mock.call(vcf1synid),
+        mock.call(vcf2synid)]
+    rename_calls = [
+        mock.call(vcf1_entity),
+        mock.call(vcf2_entity),
+        mock.call(sample_clinical_entity),
+        mock.call(patient_clinical_entity)]
 
-    with mock.patch(
-            "genie.input_to_database.rename_file",
-            return_value=filename) as patch_rename,\
-        mock.patch.object(
-            synu, "walk", return_value=walk_return()) as patch_synu_walk:
-        center_file_list = input_to_database.get_center_input_files(
-            syn, "syn12345", center, process="vcf")
+    with mock.patch.object(synu, "walk",
+                           return_value=walk_return()) as patch_synu_walk,\
+        mock.patch.object(syn, "get",
+                          side_effect=syn_get_effects) as patch_syn_get,\
+        mock.patch("genie.input_to_database.rename_file",
+                   side_effect=rename_get_effects) as patch_rename:
+        center_file_list = input_to_database.get_center_input_files(syn,
+                                                                    "syn12345",
+                                                                    center,
+                                                                    process="vcf")
+        assert len(center_file_list) == len(expected_center_file_list)
+        assert len(center_file_list[2]) == 2
         assert center_file_list == expected_center_file_list
         patch_synu_walk.assert_called_once_with(syn, 'syn12345')
-        patch_rename.assert_has_calls(calls)
-    os.remove(filename)
+        patch_syn_get.assert_has_calls(calls)
+        patch_rename.assert_has_calls(rename_calls)
 
 
 def test_empty_get_center_input_files():
@@ -180,9 +208,8 @@ def test_unvalidatedinput_check_existing_file_status():
     error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
     entity = synapseclient.Entity(id='syn1234')
     entities = [entity]
-    input_filenames = ['first.txt']
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities, input_filenames)
+        validation_statusdf, error_trackerdf, entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == []
     assert file_status['error_list'] == []
@@ -197,11 +224,10 @@ def test_valid_check_existing_file_status():
     error_trackerdf = pd.DataFrame({
         'id': ['syn2345'],
         'errors': ['Invalid file format']})
-    entity = synapseclient.Entity(id='syn1234', md5='3333')
+    entity = synapseclient.Entity(name='first.txt', id='syn1234', md5='3333')
     entities = [entity]
-    input_filenames = ['first.txt']
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities, input_filenames)
+        validation_statusdf, error_trackerdf, entities)
     assert not file_status['to_validate']
     assert file_status['status_list'] == ['VALID']
     assert file_status['error_list'] == []
@@ -216,11 +242,10 @@ def test_invalid_check_existing_file_status():
     error_trackerdf = pd.DataFrame({
         'id': ['syn2345'],
         'errors': ['Invalid file format']})
-    entity = synapseclient.Entity(id='syn2345', md5='44444')
+    entity = synapseclient.Entity(name='second.txt', id='syn2345', md5='44444')
     entities = [entity]
-    input_filenames = ['second.txt']
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities, input_filenames)
+        validation_statusdf, error_trackerdf, entities)
     assert not file_status['to_validate']
     assert file_status['status_list'] == ['INVALID']
     assert file_status['error_list'] == ['Invalid file format']
@@ -236,11 +261,10 @@ def test_nostorederrors_check_existing_file_status():
         'md5': ['3333', '44444'],
         'name': ['first.txt', 'second.txt']})
     error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
-    entity = synapseclient.Entity(id='syn2345', md5='44444')
+    entity = synapseclient.Entity(name='second.txt', id='syn2345', md5='44444')
     entities = [entity]
-    input_filenames = ['second.txt']
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities, input_filenames)
+        validation_statusdf, error_trackerdf, entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == ['INVALID']
     assert file_status['error_list'] == []
@@ -256,11 +280,10 @@ def test_diffmd5validate_check_existing_file_status():
         'md5': ['3333', '44444'],
         'name': ['first.txt', 'second.txt']})
     error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
-    entity = synapseclient.Entity(id='syn1234', md5='44444')
+    entity = synapseclient.Entity(name='first.txt', id='syn1234', md5='44444')
     entities = [entity]
-    input_filenames = ['first.txt']
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities, input_filenames)
+        validation_statusdf, error_trackerdf, entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == ['VALID']
     assert file_status['error_list'] == []
@@ -276,11 +299,10 @@ def test_diffnametovalidate_check_existing_file_status():
         'md5': ['3333', '44444'],
         'name': ['first.txt', 'second.txt']})
     error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
-    entity = synapseclient.Entity(id='syn1234', md5='3333')
+    entity = synapseclient.Entity(name='second.txt', id='syn1234', md5='3333')
     entities = [entity]
-    input_filenames = ['second.txt']
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities, input_filenames)
+        validation_statusdf, error_trackerdf, entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == ['VALID']
     assert file_status['error_list'] == []
@@ -298,12 +320,11 @@ def test_twoinvalid_check_existing_file_status():
     error_trackerdf = pd.DataFrame({
         'id': ['syn1234', 'syn2345'],
         'errors': ['Invalid file format', 'Invalid formatting issues']})
-    first_entity = synapseclient.Entity(id='syn1234', md5='3333')
-    second_entity = synapseclient.Entity(id='syn2345', md5='44444')
+    first_entity = synapseclient.Entity(name='first.txt', id='syn1234', md5='3333')
+    second_entity = synapseclient.Entity(name='second.txt', id='syn2345', md5='44444')
     entities = [first_entity, second_entity]
-    input_filenames = ['first.txt', 'second.txt']
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities, input_filenames)
+        validation_statusdf, error_trackerdf, entities)
     assert not file_status['to_validate']
     assert file_status['status_list'] == [
         'INVALID', 'INVALID']
@@ -322,9 +343,8 @@ def test_error_check_existing_file_status():
         validation_statusdf = pd.DataFrame(columns=['id'], dtype=str)
         error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
         entities = ['foo', 'doo', 'boo']
-        input_filenames = ['first.txt', 'doo', 'roo']
         input_to_database.check_existing_file_status(
-            validation_statusdf, error_trackerdf, entities, input_filenames)
+            validation_statusdf, error_trackerdf, entities)
 
 
 def test_create_and_archive_maf_database():
