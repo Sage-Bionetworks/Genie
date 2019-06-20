@@ -30,6 +30,8 @@ def rename_file(syn, ent):
     '''
     Gets file from synapse and renames the file if necessary.
 
+    Adds the expected name as an annotation to a Synapse File object.
+
     Args:
         syn: Synapse object
         synid : Synapse id or entity
@@ -57,7 +59,7 @@ def get_center_input_files(syn, synid, center, process="main"):
                  Defaults to main such that the vcf
 
     Returns:
-        List of Tuples with the correct format to pass into validation
+        List of entities with the correct format to pass into validation
     '''
     logger.info("GETTING {center} INPUT FILES".format(center=center))
     clinical_pair_name = [
