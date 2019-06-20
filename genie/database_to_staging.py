@@ -809,8 +809,8 @@ def store_clinical_files(syn,
     ############################################################
     # CENTER SPECIFIC CODE FOR RIGHT NOW (REMOVE UHN-555-V1)
     ############################################################
-    clinicaldf = clinicaldf[clinicaldf['SEQ_ASSAY_ID'] != "UHN-555-V1"]
-    clinicaldf = clinicaldf[clinicaldf['SEQ_ASSAY_ID'] != "PHS-TRISEQ-V1"]
+    # clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "UHN-555-V1"]
+    # clinicalDf = clinicalDf[clinicalDf['SEQ_ASSAY_ID'] != "PHS-TRISEQ-V1"]
 
     # clinicalDf = clinicalDf[clinicalDf['CENTER'] != "WAKE"]
     # clinicalDf = clinicalDf[clinicalDf['CENTER'] != "CRUK"]
