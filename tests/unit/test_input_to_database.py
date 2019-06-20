@@ -386,12 +386,19 @@ def test_valid_validatefile():
     center = 'SAGE'
     threads = 0
     testing = False
+    valid = True
+    message = "Is valid"
     filetype = "clinical"
-    # fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
-    #             'synId': ['syn1234']}
-    with mock.patch.object(
-            syn, "get", return_value=entity) as patch_syn_get,\
-        mock.patch(
+
+    expected_validate_results = ([[
+        entity.id,
+        entity.path,
+        '44444',
+        'VALIDATED',
+        'data_clinical_supp_SAGE.txt',
+        1553428800000,
+        'clinical']], None)
+    with mock.patch(
             "genie.validate.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
         mock.patch(
@@ -402,24 +409,33 @@ def test_valid_validatefile():
                 'to_validate': True}) as patch_check, \
         mock.patch(
             "genie.validate.validate_single_file",
-            return_value=(True, 'valid', "clinical")) as patch_validate:
+            return_value=(valid, message, filetype)) as patch_validate,\
+        mock.patch(
+            "genie.input_to_database._get_status_and_error_list",
+            return_value=expected_validate_results) as patch_get_staterror_list,\
+        mock.patch("genie.input_to_database._send_validation_error_email") as patch_send_email:
+
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
             error_trackerdf, center, threads, testing, oncotreeurl)
-        expected_validate_results = ([[
-            entity['synId'],
-            entity['path'],
-            '44444',
-            'VALIDATED',
-            'data_clinical_supp_SAGE.txt',
-            1553428800000,
-            'clinical']], None)
+
         assert expected_validate_results == validate_results
-        patch_validate.assert_called_once()
-        patch_syn_get.assert_called_once()
-        patch_check.assert_called_once()
+        patch_validate.assert_called_once_with(
+            syn,
+            [entity.path],
+            center,
+            filetype=filetype,
+            oncotreelink=oncotreeurl,
+            testing=testing
+        )
+        patch_check.assert_called_once_with(
+            validation_statusdf, error_trackerdf, entities)
         patch_determine_filetype.assert_called_once_with(
-            syn, entity['path'], center)
+            syn, [entity.name], center)
+        patch_get_staterror_list.assert_called_once_with(
+            syn, valid, message, filetype,
+            entities, [1553428800000])
+        patch_send_email.assert_not_called()
 
 
 def test_invalid_validatefile():
@@ -429,62 +445,66 @@ def test_invalid_validatefile():
     '''
     validation_statusdf = pd.DataFrame()
     error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
-    entity = synapseclient.Entity(id='syn2345', md5='44444')
+    entity = synapseclient.Entity(name="data_clinical_supp_SAGE.txt",
+                                  id='syn1234', md5='44444',
+                                  path='/path/to/data_clinical_supp_SAGE.txt')
     entity['modifiedOn'] = '2019-03-24T12:00:00.Z'
+    # This modifiedOn translates to: 1553428800000
     entity.modifiedBy = '333'
-    entity.createdBy = '333'
-    # entities = [entity]
+    entity.createdBy = '444'
+    entities = [entity]
     center = 'SAGE'
     threads = 0
     testing = False
-    check_file_status_dict = {
-        'status_list': [],
-        'error_list': [],
-        'to_validate': True}
+    valid = False
+    message = "Is invalid"
     filetype = "clinical"
-    fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
-                'synId': ['syn1234']}
-    with mock.patch.object(
-            syn, "get", return_value=entity) as patch_syn_get,\
-        mock.patch(
+    # fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
+    #             'synId': ['syn1234']}
+    expected_validate_results = ([[
+        entity.id, entity.path,
+        '44444', 'INVALID',
+        entity.name, 1553428800000, 'clinical']],
+        [entity.id, message, entity.name])
+    with mock.patch(
             "genie.validate.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
-            return_value=check_file_status_dict) as patch_check,\
-        mock.patch.object(
-            syn, "getUserProfile",
-            return_value={'userName': 'trial'}) as patch_syn_getuserprofile,\
-        mock.patch.object(
-            syn, "sendMessage") as patch_syn_sendmessage,\
+            return_value={
+                'status_list': [],
+                'error_list': [],
+                'to_validate': True}) as patch_check, \
         mock.patch(
             "genie.validate.validate_single_file",
-            return_value=(False, 'invalid', "clinical")) as patch_validate:
-        foo = input_to_database.validatefile(
-            fileinfo, syn, validation_statusdf,
+            return_value=(valid, message, filetype)) as patch_validate,\
+        mock.patch(
+            "genie.input_to_database._get_status_and_error_list",
+            return_value=expected_validate_results) as patch_get_staterror_list,\
+        mock.patch("genie.input_to_database._send_validation_error_email") as patch_send_email:
+
+        validate_results = input_to_database.validatefile(
+            syn, entities, validation_statusdf,
             error_trackerdf, center, threads, testing, oncotreeurl)
-        patch_validate.assert_called_once()
-        patch_check.assert_called_once()
+
+        assert expected_validate_results == validate_results
+        patch_validate.assert_called_once_with(
+            syn,
+            [entity.path],
+            center,
+            filetype=filetype,
+            oncotreelink=oncotreeurl,
+            testing=testing
+        )
+        patch_check.assert_called_once_with(
+            validation_statusdf, error_trackerdf, entities)
         patch_determine_filetype.assert_called_once_with(
-            syn, fileinfo['filePaths'], center)
-        error_message = (
-            "Dear trial,\n\n"
-            "Your files (data_clinical_supp_SAGE.txt) are invalid! "
-            "Here are the reasons why:\n\ninvalid")
-        patch_syn_sendmessage.assert_called_once_with(
-            ['333'], "GENIE Validation Error", error_message)
-        patch_syn_get.call_count == 3
-        patch_syn_getuserprofile.call_count == 2
-        expected_validate_results = (
-            [['syn2345',
-              '/path/to/data_clinical_supp_SAGE.txt',
-              '44444',
-              'INVALID',
-              'data_clinical_supp_SAGE.txt',
-              1553428800000,
-              'clinical']],
-            [['syn1234', 'invalid', 'data_clinical_supp_SAGE.txt']])
-        assert foo == expected_validate_results
+            syn, [entity.name], center)
+        patch_get_staterror_list.assert_called_once_with(
+            syn, valid, message, filetype,
+            entities, [1553428800000])
+        patch_send_email.assert_called_once_with(
+            syn, [entity.name], message, [entity.modifiedBy, entity.createdBy])
 
 
 def test_already_validated_validatefile():
@@ -493,58 +513,62 @@ def test_already_validated_validatefile():
     '''
     validation_statusdf = pd.DataFrame()
     error_trackerdf = pd.DataFrame()
-    entity = synapseclient.Entity(id='syn1234', md5='44444')
+    entity = synapseclient.Entity(name="data_clinical_supp_SAGE.txt",
+                                  id='syn1234', md5='44444',
+                                  path='/path/to/data_clinical_supp_SAGE.txt')
     entity['modifiedOn'] = '2019-03-24T12:00:00.Z'
     # This modifiedOn translates to: 1553428800000
     entity.modifiedBy = '333'
     entity.createdBy = '444'
-    # entities = [entity]
+    entities = [entity]
     center = 'SAGE'
     threads = 0
     testing = False
-
-    fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
-                'synId': ['syn1234']}
+    valid = True
+    message = "Is valid"
     filetype = "markdown"
 
     check_file_status_dict = {
         'status_list': ["INVALID"],
         'error_list': ["invalid file"],
         'to_validate': False}
-    with mock.patch.object(
-            syn, "get", return_value=entity) as patch_syn_get,\
-        mock.patch(
+    expected_validate_results = (
+        [[entity.id,
+            entity.path,
+            entity.md5,
+            check_file_status_dict['status_list'][0],
+            entity.name,
+            1553428800000,
+            filetype]],
+        [[entity.id,
+            check_file_status_dict['error_list'][0],
+            entity.name]])
+    with mock.patch(
             "genie.validate.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
-            return_value=check_file_status_dict) as patch_check:
+            return_value=check_file_status_dict) as patch_check, \
+        mock.patch(
+            "genie.validate.validate_single_file",
+            return_value=(valid, message, filetype)) as patch_validate,\
+        mock.patch(
+            "genie.input_to_database._get_status_and_error_list",
+            return_value=expected_validate_results) as patch_get_staterror_list,\
+        mock.patch("genie.input_to_database._send_validation_error_email") as patch_send_email:
+
         validate_results = input_to_database.validatefile(
-            fileinfo, syn, validation_statusdf,
+            syn, entities, validation_statusdf,
             error_trackerdf, center, threads, testing, oncotreeurl)
-        expected_validate_results = (
-            [[fileinfo['synId'][0],
-              fileinfo['filePaths'][0],
-              entity.md5,
-              check_file_status_dict['status_list'][0],
-              'data_clinical_supp_SAGE.txt',
-              1553428800000,
-              filetype]],
-            [[fileinfo['synId'][0],
-              check_file_status_dict['error_list'][0],
-              'data_clinical_supp_SAGE.txt']])
 
         assert expected_validate_results == validate_results
-        patch_syn_get.assert_called_once()
-        patch_check.assert_called_once()
+        patch_validate.assert_not_called()
+        patch_check.assert_called_once_with(
+            validation_statusdf, error_trackerdf, entities)
         patch_determine_filetype.assert_called_once_with(
-            syn, fileinfo['filePaths'], center)
-
-
-# def test_filetypenone__check_valid():
-#     input_to_database._check_valid(
-#         syn, filepaths, center, filetype, filenames,
-#          oncotree_link, threads, testing)
+            syn, [entity.name], center)
+        patch_get_staterror_list.assert_not_called()
+        patch_send_email.assert_not_called()
 
 
 def test_dups_get_duplicated_files():
@@ -676,7 +700,7 @@ def test_invalid__get_status_and_error_list():
         ['syn1234', message, 'data_clinical_supp_SAGE.txt']]
 
 
-def test__send_validation_email():
+def test__send_validation_error_email():
     message = 'invalid error message here'
     filenames = ['data_clinical_supp_SAGE.txt']
     file_users = ['333', '444']
