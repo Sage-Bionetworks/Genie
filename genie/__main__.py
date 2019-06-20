@@ -110,12 +110,16 @@ def build_parser():
 def main():
     args = build_parser().parse_args()
 
-    config = json.load(open(args.config))
+    if args.config:
+        config = json.load(open(args.config))
+    else:
+        config = genie.validate._DEFAULT_CONFIG
 
     syn = synapse_login(args.syn_user, args.syn_pass)
+
     if 'func' in args:
         try:
-            args.func(syn, config, args)
+            args.func(syn, args, config)
         except Exception:
             raise
 
