@@ -555,20 +555,21 @@ def validation(syn, center, process,
         else:
             addToQuery = ''
         validationStatus = syn.tableQuery(
-            "SELECT * FROM {} where center = '{}' {}".format(
+            "SELECT id,md5,status,name,center,modifiedOn FROM {} where center = '{}' {}".format(
                 process_functions.getDatabaseSynId(
                     syn, "validationStatus",
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf),
                 center,
                 addToQuery))
-
+        validation_statusdf = validationStatus.asDataFrame()
         errorTracker = syn.tableQuery(
-            "SELECT * FROM {} where center = '{}' {}".format(
+            "SELECT id,center,errors,name FROM {} where center = '{}' {}".format(
                 process_functions.getDatabaseSynId(
                     syn, "errorTracker",
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf),
                 center,
                 addToQuery))
+        error_trackerdf = errorTracker.asDataFrame()
 
         inputValidStatus = []
         invalidErrors = []
