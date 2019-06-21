@@ -26,22 +26,23 @@ To avoid the syn.get rest call later which doesn't actually download the file
 '''
 
 
-def rename_file(syn, ent):
-    '''
-    Gets file from synapse and renames the file if necessary.
+# def rename_file(ent):
+#     '''
+#     Gets file from synapse and renames the file if necessary.
 
-    Args:
-        syn: Synapse object
-        synid : Synapse id or entity
+#     Adds the expected name as an annotation to a Synapse File object.
 
-    Returns:
-        entity with annotation set for path of corrected file
-    '''
-    dirpath = os.path.dirname(ent.path)
-    expectedpath = os.path.join(dirpath, ent.name)
+#     Args:
+#         synid : Synapse id or entity
 
-    ent.annotations.expectedPath = expectedpath
-    return ent
+#     Returns:
+#         entity with annotation set for path of corrected file
+#     '''
+#     dirpath = os.path.dirname(ent.path)
+#     expectedpath = os.path.join(dirpath, ent.name)
+
+#     ent.annotations.expectedPath = expectedpath
+#     return ent
 
 
 def get_center_input_files(syn, synid, center, process="main"):
@@ -57,7 +58,7 @@ def get_center_input_files(syn, synid, center, process="main"):
                  Defaults to main such that the vcf
 
     Returns:
-        List of Tuples with the correct format to pass into validation
+        List of entities with the correct format to pass into validation
     '''
     logger.info("GETTING {center} INPUT FILES".format(center=center))
     clinical_pair_name = [
@@ -65,13 +66,13 @@ def get_center_input_files(syn, synid, center, process="main"):
         "data_clinical_supp_patient_{center}.txt".format(center=center)]
 
     center_files = synapseutils.walk(syn, synid)
-    clinicalpair = []
+    clinicalpair_entities = []
     prepared_center_file_list = []
-    
+
     for _, _, entities in center_files:
         for name, ent_synid in entities:
-            # This is to remove vcfs from being validated during main 
-            # processing. Often there are too many vcf files, and it is 
+            # This is to remove vcfs from being validated during main
+            # processing. Often there are too many vcf files, and it is
             # not necessary for them to be run everytime.
             if name.endswith(".vcf") and process != "vcf":
                 continue
@@ -84,13 +85,13 @@ def get_center_input_files(syn, synid, center, process="main"):
             # why there is this format
 
             if name in clinical_pair_name:
-                clinicalpair.append(ent)
+                clinicalpair_entities.append(ent)
                 continue
 
-            prepared_center_file_list.append([rename_file(syn, ent)])
-    
-    if clinicalpair:
-        clinicalpair_entities = [rename_file(syn, x) for x in clinicalpair] 
+            prepared_center_file_list.append([ent])
+
+    if clinicalpair_entities:
+        # clinicalpair_entities = [x for x in clinicalpair]
         prepared_center_file_list.append(clinicalpair_entities)
 
     return prepared_center_file_list
@@ -234,8 +235,8 @@ def _get_status_and_error_list(syn, valid, message, filetype, entities, modified
 
     input_status_list = []
     for ent, modifiedon in zip(entities, modified_ons):
-        record = [ent.id, ent.expectedPath, ent.md5, status, 
-                  os.path.basename(ent.expectedPath), modifiedon, filetype,
+        record = [ent.id, ent.path, ent.md5, status, 
+                  ent.name, modifiedon, filetype,
                   str(ent.properties.versionNumber)]
         input_status_list.append(record)
 
@@ -249,8 +250,8 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     If a file has not changed, then it doesn't need to be validated.
 
     Args:
-        entitylist: A list of entities for a single file 'type' (usually a single file, but clinical can have two)
         syn: Synapse object
+        entities: A list of entities for a single file 'type' (usually a single file, but clinical can have two)
         validation_statusdf: Validation status dataframe
         error_trackerdf: Invalid files error tracking dataframe
         center: Center of interest
@@ -264,7 +265,7 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     '''
 
     filepaths = [entity.path for entity in entities]
-    filenames = [os.path.basename(path) for path in filepaths]
+    filenames = [entity.name for entity in entities]
 
     logger.info("VALIDATING {filenames}".format(filenames=", ".join(filenames)))
 
@@ -281,14 +282,16 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     status_list = check_file_status['status_list']
     error_list = check_file_status['error_list']
     # Need to figure out to how to remove this
-
-    filetype = validate.determine_filetype(syn, filepaths, center)
+    # This must pass in filenames, because filetype is determined by entity name
+    # Not by actual path of file
+    filetype = validate.determine_filetype(syn, filenames, center)
     if check_file_status['to_validate']:
         try:
             valid, message, filetype = validate.validate_single_file(
                 syn,
                 filepaths,
                 center,
+                filetype=filetype,
                 oncotreelink=oncotree_link,
                 testing=testing)
             logger.info("VALIDATION COMPLETE")
@@ -583,7 +586,7 @@ def validation(syn, center, process,
 
         inputValidStatus = []
         invalidErrors = []
-        
+
         for ents in allFiles:
             status, errors = input_to_database.validatefile(syn, ents,
                                                             validation_statusdf, 
