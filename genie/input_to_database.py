@@ -298,7 +298,7 @@ def validatefile(fileinfo,
 
     filetype = validate.determine_filetype(syn, filepaths, center)
     if check_file_status['to_validate']:
-        valid, message, filetype = _check_valid(syn, filepaths, center, 
+        valid, filetype, message = _check_valid(syn, filepaths, center, 
                                                 oncotree_link, testing)
 
         input_status_list, invalid_errors_list = _get_status_and_error_list(
