@@ -434,7 +434,7 @@ def test_valid_validatefile():
             syn, [entity.name], center)
         patch_get_staterror_list.assert_called_once_with(
             syn, valid, message, filetype,
-            entities, [1553428800000])
+            entities)
         patch_send_email.assert_not_called()
 
 
@@ -502,7 +502,7 @@ def test_invalid_validatefile():
             syn, [entity.name], center)
         patch_get_staterror_list.assert_called_once_with(
             syn, valid, message, filetype,
-            entities, [1553428800000])
+            entities)
         patch_send_email.assert_called_once_with(
             syn, [entity.name], message, [entity.modifiedBy, entity.createdBy])
 
