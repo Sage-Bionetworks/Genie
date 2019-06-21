@@ -273,7 +273,7 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
             datetime.datetime.strptime(
                 entity.modifiedOn.split(".")[0], "%Y-%m-%dT%H:%M:%S"))
         for entity in entities]
-    file_users = list(set([entities[0].modifiedBy, entities[0].createdBy]))
+    file_users = [entities[0].modifiedBy, entities[0].createdBy]
 
     check_file_status = check_existing_file_status(
         validation_statusdf, error_trackerdf, entities)
