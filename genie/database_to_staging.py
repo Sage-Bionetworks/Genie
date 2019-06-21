@@ -223,7 +223,7 @@ def configureMafRow(rowArray, headers, keepSamples, remove_variants,
             '' if str(nDepth) in ["NA", "0.0"] else nDepth
         # rowArray.pop(headers.index('inBED'))
         if mergecheck_variant in flagged_variants.tolist():
-            rowArray.append(True)
+            rowArray.append('True')
         else:
             rowArray.append('')
         newRow = "\t".join(rowArray)
@@ -588,10 +588,8 @@ def store_maf_files(syn,
     centerMafSynIdsDf = centerMafSynIds.asDataFrame()
     mutations_path = os.path.join(
         GENIE_RELEASE_DIR, 'data_mutations_extended_%s.txt' % genie_version)
-    sequenced_samples = "#sequenced_samples: {}".format(
-        " ".join(clinicaldf['SAMPLE_ID']))
     with open(mutations_path, 'w') as f:
-        f.write(sequenced_samples + "\n")
+        pass
     for index, mafSynId in enumerate(centerMafSynIdsDf.id):
         mafEnt = syn.get(mafSynId)
         logger.info(mafEnt.path)
