@@ -70,10 +70,15 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
         Takes in yaml file, returns dataframe
         '''
         filepath = filepath_list[0]
-        with open(filepath, 'r') as yamlfile:
-            # https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation
-            # Must add this because yaml load deprecation
-            panel_info_dict = yaml.load(yamlfile, Loader=yaml.FullLoader)
+        try:
+            with open(filepath, 'r') as yamlfile:
+                # https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation
+                # Must add this because yaml load deprecation
+                panel_info_dict = yaml.load(yamlfile, Loader=yaml.FullLoader)
+        except Exception:
+            raise ValueError(
+                "assay_information.yaml: Can't read in your file. "
+                "Please make sure the file is a correctly formatted yaml")
         assay_info_df = pd.DataFrame(panel_info_dict)
         assay_info_df = assay_info_df.transpose()
         assay_info_df['SEQ_ASSAY_ID'] = assay_info_df.index
