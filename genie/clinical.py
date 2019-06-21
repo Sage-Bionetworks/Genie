@@ -199,10 +199,9 @@ class clinical(FileTypeFormat):
             filePath: Path to file
 
         Returns:
-            dict
+            dict with keys - 'clinicalTemplate', 'sample', 'patient',
+                             'patientCols', 'sampleCols'
         '''
-        patient = False
-        sample = False
         # These synapse ids for the clinical tier release scope is
         # hardcoded because it never changes
         patientColsTable = self.syn.tableQuery(
@@ -216,10 +215,12 @@ class clinical(FileTypeFormat):
 
         if "patient" in filepath.lower():
             clinicalTemplate = pd.DataFrame(columns=patientCols)
+            sample = False
             patient = True
         elif "sample" in filepath.lower():
             clinicalTemplate = pd.DataFrame(columns=sampleCols)
             sample = True
+            patient = False
         else:
             clinicalTemplate = pd.DataFrame(
                 columns=set(patientCols + sampleCols))
