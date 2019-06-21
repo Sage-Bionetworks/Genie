@@ -212,7 +212,7 @@ def configureMafRow(
             '' if str(nDepth) in ["NA", "0.0"] else nDepth
         # rowArray.pop(headers.index('inBED'))
         if mergecheck_variant in flagged_variants.tolist():
-            rowArray.append(True)
+            rowArray.append('True')
         else:
             rowArray.append('')
         newRow = "\t".join(rowArray)
