@@ -44,6 +44,13 @@ To avoid the syn.get rest call later which doesn't actually download the file
 #     ent.annotations.expectedPath = expectedpath
 #     return ent
 
+def entity_date_to_timestamp(entity_date_time):
+    """Convert Synapse object date/time string (from modifiedOn or createdOn properties) to a timestamp.
+    """
+
+    date_and_time = entity_date_time.split(".")[0]
+    date_time_obj = datetime.datetime.strptime(date_and_time, "%Y-%m-%dT%H:%M:%S")
+    return synapseclient.utils.to_unix_epoch_time(date_time_obj)
 
 def get_center_input_files(syn, synid, center, process="main"):
     '''
@@ -205,7 +212,7 @@ def _send_validation_error_email(syn, filenames, message, file_users):
         file_users, "GENIE Validation Error", email_message)
 
 
-def _get_status_and_error_list(syn, valid, message, filetype, entities, modified_ons):
+def _get_status_and_error_list(syn, valid, message, filetype, entities):
     '''
     Helper function to return the status and error list of the
     files based on validation result.
@@ -216,7 +223,6 @@ def _get_status_and_error_list(syn, valid, message, filetype, entities, modified
         message: Validation message
         filetype: File type
         entities: List of Synapse Entities
-        modified_ons: List of modified on dates
 
     Returns:
         tuple: input_status_list - status of input files list,
@@ -225,16 +231,15 @@ def _get_status_and_error_list(syn, valid, message, filetype, entities, modified
     if valid:
         input_status_list = [
             [ent.id, ent.path, ent.md5, "VALIDATED",
-             ent.name, modifiedon, filetype]
-            for ent, modifiedon in
-            zip(entities, modified_ons)]
+             ent.name, entity_date_to_timestamp(ent.properties.modifiedOn), filetype]
+            for ent in
+            entities]
         invalid_errors_list = None
     else:
         input_status_list = [
             [ent.id, ent.path, ent.md5, "INVALID",
-             ent.name, modifiedon, filetype]
-            for ent, modifiedon in
-            zip(entities, modified_ons)]
+             ent.name, entity_date_to_timestamp(ent.properties.modifiedOn), filetype]
+            for ent in entities]
         invalid_errors_list = [
             [ent.id, message, ent.name]
             for ent in entities]
@@ -268,11 +273,6 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     logger.info(
         "VALIDATING {filenames}".format(filenames=", ".join(filenames)))
 
-    modified_ons = [
-        synapseclient.utils.to_unix_epoch_time(
-            datetime.datetime.strptime(
-                entity.modifiedOn.split(".")[0], "%Y-%m-%dT%H:%M:%S"))
-        for entity in entities]
     file_users = [entities[0].modifiedBy, entities[0].createdBy]
 
     check_file_status = check_existing_file_status(
@@ -303,15 +303,15 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
             valid = False
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             syn, valid, message, filetype,
-            entities, modified_ons)
+            entities)
         # Send email the first time the file is invalid
         if invalid_errors_list is not None:
             _send_validation_error_email(syn, filenames, message, file_users)
     else:
         input_status_list = [
-            [ent.id, path, ent.md5, status, filename, modifiedon, filetype]
-            for ent, path, status, filename, modifiedon in
-            zip(entities, filepaths, status_list, filenames, modified_ons)]
+            [ent.id, path, ent.md5, status, filename, entity_date_to_timestamp(ent.properties.modifiedOn), filetype]
+            for ent, path, status, filename in
+            zip(entities, filepaths, status_list, filenames)]
         invalid_errors_list = [
             [entity.id, error, filename]
             for entity, error, filename in
