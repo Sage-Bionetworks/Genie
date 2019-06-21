@@ -319,7 +319,7 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     return(input_status_list, invalid_errors_list)
 
 
-def processFiles(syn, validFiles, center, path_to_GENIE, threads,
+def processfiles(syn, validFiles, center, path_to_GENIE, threads,
                  center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
                  validVCF=None, vcf2mafPath=None,
                  veppath=None, vepdata=None,
@@ -743,13 +743,13 @@ def center_input_to_database(
             syn.store(synapseclient.Table(
                 processTrackerSynId, processTrackerDf))
 
-        processFiles(
-            syn, validFiles, center, path_to_genie, thread,
-            center_mapping_df, oncotree_link, database_to_synid_mappingdf,
-            validVCF=validVCF,
-            vcf2mafPath=vcf2maf_path,
-            veppath=vep_path, vepdata=vep_data,
-            test=testing, processing=process, reference=reference)
+        processfiles(syn, validFiles, center, path_to_genie, thread,
+                     center_mapping_df, oncotree_link,
+                     database_to_synid_mappingdf,
+                     validVCF=validVCF,
+                     vcf2mafPath=vcf2maf_path,
+                     veppath=vep_path, vepdata=vep_data,
+                     test=testing, processing=process, reference=reference)
 
         # Should add in this process end tracking
         # before the deletion of samples
