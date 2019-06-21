@@ -33,9 +33,9 @@ class clinical(FileTypeFormat):
     # _process_kwargs = [
     #     "newPath", "patientSynId", "sampleSynId",
     #     "parentId", "retractedSampleSynId", "retractedPatientSynId"]
-
     _process_kwargs = [
-        "newPath", "parentId", "databaseToSynIdMappingDf", "oncotreeLink"]
+        "newPath", "parentId", "databaseToSynIdMappingDf", "oncotreeLink",
+        'clinicalTemplate', 'sample', 'patient', 'patientCols', 'sampleCols']
 
     _validation_kwargs = ["oncotreeLink"]
 
@@ -191,16 +191,16 @@ class clinical(FileTypeFormat):
 
         return(clinicalRemapped)
 
-    def process_steps(self, filePath,
-                      databaseToSynIdMappingDf, newPath,
-                      parentId, oncotreeLink):
-        patientSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == "patient"][0]
-        sampleSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == "sample"][0]
+    def preprocess(self, filepath):
+        '''
+        Gather preprocess parameters
 
-        clinicalDf = pd.read_csv(filePath, sep="\t", comment="#")
+        Args:
+            filePath: Path to file
 
+        Returns:
+            dict
+        '''
         patient = False
         sample = False
         # These synapse ids for the clinical tier release scope is
@@ -214,10 +214,10 @@ class clinical(FileTypeFormat):
             'and inClinicalDb is True')
         sampleCols = sampleColsTable.asDataFrame()['fieldName'].tolist()
 
-        if "patient" in filePath.lower():
+        if "patient" in filepath.lower():
             clinicalTemplate = pd.DataFrame(columns=patientCols)
             patient = True
-        elif "sample" in filePath.lower():
+        elif "sample" in filepath.lower():
             clinicalTemplate = pd.DataFrame(columns=sampleCols)
             sample = True
         else:
@@ -225,6 +225,20 @@ class clinical(FileTypeFormat):
                 columns=set(patientCols + sampleCols))
             sample = True
             patient = True
+        return({'clinicalTemplate': clinicalTemplate,
+                'sample': sample,
+                'patient': patient,
+                'patientCols': patientCols,
+                'sampleCols': sampleCols})
+
+    def process_steps(self, clinicalDf,
+                      databaseToSynIdMappingDf, newPath,
+                      parentId, oncotreeLink, clinicalTemplate,
+                      sample, patient, patientCols, sampleCols):
+        patientSynId = databaseToSynIdMappingDf.Id[
+            databaseToSynIdMappingDf['Database'] == "patient"][0]
+        sampleSynId = databaseToSynIdMappingDf.Id[
+            databaseToSynIdMappingDf['Database'] == "sample"][0]
 
         newClinicalDf = self._process(clinicalDf, clinicalTemplate)
 

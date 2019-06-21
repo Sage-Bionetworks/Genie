@@ -110,7 +110,7 @@ class FileTypeFormat(object):
             mykwargs[required_parameter] = kwargs[required_parameter]
         logger.info('PROCESSING %s' % filePath)
         # If file type is vcf or maf file, processing requires a filepath
-        if self._fileType not in ['vcf', 'maf', 'mafSP', 'md', 'clinical']:
+        if self._fileType not in ['vcf', 'maf', 'mafSP', 'md']:
             path_or_df = self.read_file([filePath])
         else:
             path_or_df = filePath
