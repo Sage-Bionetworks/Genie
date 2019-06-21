@@ -5,6 +5,7 @@ import synapseutils as synu
 import mock
 import pandas as pd
 from genie import input_to_database
+import genie
 # from genie import validate
 
 syn = mock.create_autospec(synapseclient.Synapse)
@@ -716,3 +717,29 @@ def test__send_validation_error_email():
         patch_syn_sendmessage.assert_called_once_with(
             ['333', '444'], "GENIE Validation Error", error_message)
         patch_syn_getuserprofile.call_count == 2
+
+
+def test_main_processfile():
+    validfiles = {'id': ['syn1'],
+                  'path': ['/path/to/data_clinical_supp_SAGE.txt'],
+                  'fileType': ['clinical']}
+    validfilesdf = pd.DataFrame(validfiles)
+    center = "SAGE"
+    path_to_genie = "./"
+    threads = 2
+    oncotreeLink = "www.google.com"
+    center_mapping = {'stagingSynId': ["syn123"],
+                      'center': [center]}
+    center_mapping_df = pd.DataFrame(center_mapping)
+    databaseToSynIdMapping = {'Database': ["clinical"],
+                              'Id': ['syn222']}
+    databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
+
+    with mock.patch.object(genie.clinical, "process") as patch_clin:
+        input_to_database.processfiles(
+            syn, validfilesdf, center, path_to_genie, threads,
+            center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+            validVCF=None, vcf2mafPath=None,
+            veppath=None, vepdata=None,
+            processing="main", test=False, reference=None)
+        patch_clin.assert_called_once()

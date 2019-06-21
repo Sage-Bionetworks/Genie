@@ -319,7 +319,7 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     return(input_status_list, invalid_errors_list)
 
 
-def processfiles(syn, validFiles, center, path_to_GENIE, threads,
+def processfiles(syn, validfiles, center, path_to_genie, threads,
                  center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
                  validVCF=None, vcf2mafPath=None,
                  veppath=None, vepdata=None,
@@ -329,10 +329,10 @@ def processfiles(syn, validFiles, center, path_to_GENIE, threads,
 
     Args:
         syn: Synapse object
-        validFiles: pandas dataframe containing validated files
+        validfiles: pandas dataframe containing validated files
                     has 'id', 'path', and 'fileType' column
         center: GENIE center name
-        path_to_GENIE: Path to GENIE workdir
+        path_to_genie: Path to GENIE workdir
         threads: Threads used
         center_mapping_df: Center mapping dataframe
         oncotreeLink: Link to oncotree
@@ -345,21 +345,20 @@ def processfiles(syn, validFiles, center, path_to_GENIE, threads,
         test: Test flag
         reference: Reference file for vcf2maf
     '''
-    logger.info("PROCESSING {} FILES: {}".format(center, len(validFiles)))
-    centerStagingFolder = os.path.join(path_to_GENIE, center)
-    centerStagingSynId = center_mapping_df['stagingSynId'][
-        center_mapping_df['center'] == center][0]
+    logger.info("PROCESSING {} FILES: {}".format(center, len(validfiles)))
+    center_staging_folder = os.path.join(path_to_genie, center)
+    center_staging_synid = center_mapping_df.query(
+        "center == 'SAGE'").stagingSynId.iloc[0]
 
-    if not os.path.exists(centerStagingFolder):
-        os.makedirs(centerStagingFolder)
+    if not os.path.exists(center_staging_folder):
+        os.makedirs(center_staging_folder)
+
     if processing == "main":
-        for fileSynId, filePath, fileType in \
-                zip(validFiles['id'],
-                    validFiles['path'],
-                    validFiles['fileType']):
-
+        for fileSynId, filePath, fileType in zip(validfiles['id'],
+                                                 validfiles['path'],
+                                                 validfiles['fileType']):
             filename = os.path.basename(filePath)
-            newPath = os.path.join(centerStagingFolder, filename)
+            newPath = os.path.join(center_staging_folder, filename)
             # store = True
             synId = databaseToSynIdMappingDf.Id[
                 databaseToSynIdMappingDf['Database'] == fileType]
@@ -372,10 +371,10 @@ def processfiles(syn, validFiles, center, path_to_GENIE, threads,
                 processor = PROCESS_FILES[fileType](syn, center, threads)
                 processor.process(
                     filePath=filePath, newPath=newPath,
-                    parentId=centerStagingSynId, databaseSynId=synId,
+                    parentId=center_staging_synid, databaseSynId=synId,
                     oncotreeLink=oncotreeLink,
                     fileSynId=fileSynId, validVCF=validVCF,
-                    path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
+                    path_to_GENIE=path_to_genie, vcf2mafPath=vcf2mafPath,
                     veppath=veppath, vepdata=vepdata,
                     processing=processing,
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf,
@@ -391,10 +390,10 @@ def processfiles(syn, validFiles, center, path_to_GENIE, threads,
         processor = PROCESS_FILES[processing](syn, center, threads)
         processor.process(
             filePath=filePath, newPath=newPath,
-            parentId=centerStagingSynId, databaseSynId=synId,
+            parentId=center_staging_synid, databaseSynId=synId,
             oncotreeLink=oncotreeLink,
             fileSynId=fileSynId, validVCF=validVCF,
-            path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
+            path_to_GENIE=path_to_genie, vcf2mafPath=vcf2mafPath,
             veppath=veppath, vepdata=vepdata,
             processing=processing,
             databaseToSynIdMappingDf=databaseToSynIdMappingDf,
