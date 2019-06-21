@@ -16,7 +16,7 @@ from .sampleRetraction import sampleRetraction
 from .patientRetraction import patientRetraction
 # from .patientCounts import patientCounts
 from .mutationsInCis import mutationsInCis
-from .vitalStatus import vitalStatus
+# from .vitalStatus import vitalStatus
 from .assay import Assayinfo
 from . import process_functions
 from . import create_case_lists
@@ -37,7 +37,7 @@ PROCESS_FILES = {'bed': bed,
                  'sampleRetraction': sampleRetraction,
                  # 'patientCounts': patientCounts,
                  'mutationsInCis': mutationsInCis,
-                 'vitalStatus': vitalStatus,
+                 # 'vitalStatus': vitalStatus,
                  'assayinfo': Assayinfo}
 
 # Must import validate after the fact
