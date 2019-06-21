@@ -647,14 +647,16 @@ def test_valid__get_status_and_error_list():
     Tests the correct status and error lists received
     when file is valid.
     '''
+    modified_on = 1561143558000
+    modified_on_string = "2019-06-21T18:59:18.456Z"
+
     entity = synapseclient.Entity(id='syn1234', md5='44444',
                                   path='/path/to/foobar.txt',
                                   name='data_clinical_supp_SAGE.txt')
+    entity.properties.modifiedOn = modified_on_string
+
     entities = [entity]
-    filetype = "clinical"
-
-    modified_ons = [1553428800000]
-
+    
     valid = True
     message = 'valid'
     filetype = 'clinical'
@@ -662,10 +664,10 @@ def test_valid__get_status_and_error_list():
     input_status_list, invalid_errors_list = \
         input_to_database._get_status_and_error_list(
            syn, valid, message, filetype,
-           entities, modified_ons)
+           entities)
     assert input_status_list == [
         [entity.id, entity.path, entity.md5,
-         'VALIDATED', entity.name, modified_ons[0],
+         'VALIDATED', entity.name, modified_on,
          filetype]]
     assert invalid_errors_list is None
 
@@ -675,24 +677,26 @@ def test_invalid__get_status_and_error_list():
     Tests the correct status and error lists received
     when file is invalid.
     '''
+    modified_on = 1561143558000
+    modified_on_string = "2019-06-21T18:59:18.456Z"
     entity = synapseclient.Entity(id='syn1234', md5='44444',
                                   path='/path/to/foobar.txt',
                                   name='data_clinical_supp_SAGE.txt')
+    entity.properties.modifiedOn = modified_on_string
+
     entities = [entity]
     filetype = "clinical"
-    modified_ons = [1553428800000]
     # This valid variable control the validation status
     valid = False
     message = 'invalid file content'
-    filetype = 'clinical'
 
     input_status_list, invalid_errors_list = \
         input_to_database._get_status_and_error_list(
             syn, valid, message, filetype,
-            entities, modified_ons)
+            entities)
     assert input_status_list == [
         [entity.id, entity.path, entity.md5,
-            'INVALID', entity.name, modified_ons[0],
+            'INVALID', entity.name, modified_on,
             filetype]]
     assert invalid_errors_list == [
         ['syn1234', message, 'data_clinical_supp_SAGE.txt']]
