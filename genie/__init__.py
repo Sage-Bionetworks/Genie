@@ -19,7 +19,7 @@ from .sampleRetraction import sampleRetraction
 from .patientRetraction import patientRetraction
 # from .patientCounts import patientCounts
 from .mutationsInCis import mutationsInCis
-from .vitalStatus import vitalStatus
+# from .vitalStatus import vitalStatus
 from .assay import Assayinfo
 from . import process_functions
 from . import create_case_lists
