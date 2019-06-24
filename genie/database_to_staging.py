@@ -728,9 +728,6 @@ def stagingToCbio(
     data_gene_panel.drop_duplicates("SAMPLE_ID", inplace=True)
     # Gene panel file is written below CNA, because of the "cna" column
 
-    samples = data_gene_panel['SAMPLE_ID']
-    sequenced_samples = "#sequenced_samples: " + " ".join(samples)
-
     logger.info("FILTERING, STORING MUTATION FILES")
     centerMafFileViewSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == "centerMafView"][0]
@@ -738,8 +735,9 @@ def stagingToCbio(
         "select id from %s " % centerMafFileViewSynId +
         "where name like '%mutation%'")
     centerMafSynIdsDf = centerMafSynIds.asDataFrame()
-    with open(MUTATIONS_PATH, 'w') as f:
-        f.write(sequenced_samples + "\n")
+    with open(MUTATIONS_PATH, 'w'):
+        pass
+
     for index, mafSynId in enumerate(centerMafSynIdsDf.id):
         mafEnt = syn.get(mafSynId)
         logger.info(mafEnt.path)

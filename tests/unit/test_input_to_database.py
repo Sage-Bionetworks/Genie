@@ -182,9 +182,11 @@ def test_empty_get_center_input_files():
 
 
 def test_unvalidatedinput_check_existing_file_status():
-    validation_statusdf = pd.DataFrame(columns=['id'], dtype=str)
-    error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
+    validation_statusdf = pd.DataFrame(columns=['id', 'versionNumber'], dtype=str)
+    error_trackerdf = pd.DataFrame(columns=['id', 'versionNumber'], dtype=str)
     entity = synapseclient.Entity(id='syn1234')
+    entity.properties.versionNumber = '1'
+
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
         validation_statusdf, error_trackerdf, entities)
@@ -196,13 +198,17 @@ def test_unvalidatedinput_check_existing_file_status():
 def test_valid_check_existing_file_status():
     validation_statusdf = pd.DataFrame({
         'id': ['syn1234', 'syn2345'],
+        'versionNumber': ['1', '1'],
         'status': ['VALID', 'INVALID'],
         'md5': ['3333', '44444'],
         'name': ['first.txt', 'second.txt']})
     error_trackerdf = pd.DataFrame({
         'id': ['syn2345'],
+        'versionNumber': ['1'],
         'errors': ['Invalid file format']})
     entity = synapseclient.Entity(name='first.txt', id='syn1234', md5='3333')
+    entity.properties.versionNumber = '1'
+
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
         validation_statusdf, error_trackerdf, entities)
@@ -214,14 +220,19 @@ def test_valid_check_existing_file_status():
 def test_invalid_check_existing_file_status():
     validation_statusdf = pd.DataFrame({
         'id': ['syn1234', 'syn2345'],
+        'versionNumber': ['1', '1'],
         'status': ['VALID', 'INVALID'],
         'md5': ['3333', '44444'],
         'name': ['first.txt', 'second.txt']})
     error_trackerdf = pd.DataFrame({
         'id': ['syn2345'],
+        'versionNumber': '1',
         'errors': ['Invalid file format']})
+
     entity = synapseclient.Entity(name='second.txt', id='syn2345', md5='44444')
+    entity.properties.versionNumber = '1'
     entities = [entity]
+
     file_status = input_to_database.check_existing_file_status(
         validation_statusdf, error_trackerdf, entities)
     assert not file_status['to_validate']
@@ -235,12 +246,16 @@ def test_nostorederrors_check_existing_file_status():
     '''
     validation_statusdf = pd.DataFrame({
         'id': ['syn1234', 'syn2345'],
+        'versionNumber': ['1', '1'],
         'status': ['VALID', 'INVALID'],
         'md5': ['3333', '44444'],
         'name': ['first.txt', 'second.txt']})
-    error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
+    error_trackerdf = pd.DataFrame(columns=['id', 'versionNumber'], dtype=str)
+
     entity = synapseclient.Entity(name='second.txt', id='syn2345', md5='44444')
+    entity.properties.versionNumber = '1'
     entities = [entity]
+
     file_status = input_to_database.check_existing_file_status(
         validation_statusdf, error_trackerdf, entities)
     assert file_status['to_validate']
@@ -254,11 +269,13 @@ def test_diffmd5validate_check_existing_file_status():
     '''
     validation_statusdf = pd.DataFrame({
         'id': ['syn1234', 'syn2345'],
+        'versionNumber': ['1', '1'],
         'status': ['VALID', 'INVALID'],
         'md5': ['3333', '44444'],
         'name': ['first.txt', 'second.txt']})
-    error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
+    error_trackerdf = pd.DataFrame(columns=['id', 'versionNumber'], dtype=str)
     entity = synapseclient.Entity(name='first.txt', id='syn1234', md5='44444')
+    entity.properties.versionNumber = '1'
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
         validation_statusdf, error_trackerdf, entities)
@@ -273,12 +290,16 @@ def test_diffnametovalidate_check_existing_file_status():
     '''
     validation_statusdf = pd.DataFrame({
         'id': ['syn1234', 'syn2345'],
+        'versionNumber': ['1', '1'],
         'status': ['VALID', 'INVALID'],
         'md5': ['3333', '44444'],
         'name': ['first.txt', 'second.txt']})
-    error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
+    error_trackerdf = pd.DataFrame(columns=['id', 'versionNumber'], dtype=str)
+
     entity = synapseclient.Entity(name='second.txt', id='syn1234', md5='3333')
+    entity.properties.versionNumber = '1'
     entities = [entity]
+
     file_status = input_to_database.check_existing_file_status(
         validation_statusdf, error_trackerdf, entities)
     assert file_status['to_validate']
@@ -292,14 +313,21 @@ def test_twoinvalid_check_existing_file_status():
     '''
     validation_statusdf = pd.DataFrame({
         'id': ['syn1234', 'syn2345'],
+        'versionNumber': ['1', '1'],
         'status': ['INVALID', 'INVALID'],
         'md5': ['3333', '44444'],
         'name': ['first.txt', 'second.txt']})
     error_trackerdf = pd.DataFrame({
         'id': ['syn1234', 'syn2345'],
+        'versionNumber': ['1', '1'],
         'errors': ['Invalid file format', 'Invalid formatting issues']})
+
     first_entity = synapseclient.Entity(name='first.txt', id='syn1234', md5='3333')
+    first_entity.properties.versionNumber = '1'
+
     second_entity = synapseclient.Entity(name='second.txt', id='syn2345', md5='44444')
+    second_entity.properties.versionNumber = '1'
+
     entities = [first_entity, second_entity]
     file_status = input_to_database.check_existing_file_status(
         validation_statusdf, error_trackerdf, entities)
@@ -434,7 +462,7 @@ def test_valid_validatefile():
             syn, [entity.name], center)
         patch_get_staterror_list.assert_called_once_with(
             syn, valid, message, filetype,
-            entities, [1553428800000])
+            entities)
         patch_send_email.assert_not_called()
 
 
@@ -502,7 +530,7 @@ def test_invalid_validatefile():
             syn, [entity.name], center)
         patch_get_staterror_list.assert_called_once_with(
             syn, valid, message, filetype,
-            entities, [1553428800000])
+            entities)
         patch_send_email.assert_called_once_with(
             syn, [entity.name], message, [entity.modifiedBy, entity.createdBy])
 
@@ -516,6 +544,7 @@ def test_already_validated_validatefile():
     entity = synapseclient.Entity(name="data_clinical_supp_SAGE.txt",
                                   id='syn1234', md5='44444',
                                   path='/path/to/data_clinical_supp_SAGE.txt')
+    entity.properties.versionNumber = '1'
     entity['modifiedOn'] = '2019-03-24T12:00:00.Z'
     # This modifiedOn translates to: 1553428800000
     entity.modifiedBy = '333'
@@ -532,17 +561,23 @@ def test_already_validated_validatefile():
         'status_list': ["INVALID"],
         'error_list': ["invalid file"],
         'to_validate': False}
-    expected_validate_results = (
-        [[entity.id,
-            entity.path,
-            entity.md5,
-            check_file_status_dict['status_list'][0],
-            entity.name,
-            1553428800000,
-            filetype]],
-        [[entity.id,
-            check_file_status_dict['error_list'][0],
-            entity.name]])
+
+    expected_input_status_list = [[entity.id,
+                                   entity.path,
+                                   entity.md5,
+                                   check_file_status_dict['status_list'][0],
+                                   entity.name,
+                                   1553428800000,
+                                   filetype,
+                                   entity.properties.versionNumber]]
+    
+    expected_invalid_errors_list = [[entity.id,
+                                     check_file_status_dict['error_list'][0],
+                                     entity.name,
+                                     entity.properties.versionNumber]]
+
+    expected_validate_results = (expected_input_status_list,
+                                 expected_invalid_errors_list)
     with mock.patch(
             "genie.validate.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
@@ -557,11 +592,14 @@ def test_already_validated_validatefile():
             return_value=expected_validate_results) as patch_get_staterror_list,\
         mock.patch("genie.input_to_database._send_validation_error_email") as patch_send_email:
 
-        validate_results = input_to_database.validatefile(
-            syn, entities, validation_statusdf,
-            error_trackerdf, center, threads, testing, oncotreeurl)
+        input_status_list, invalid_errors_list = \
+            input_to_database.validatefile(syn, entities, validation_statusdf,
+                                           error_trackerdf, center, threads, testing, 
+                                           oncotreeurl)
 
-        assert expected_validate_results == validate_results
+        assert expected_input_status_list == input_status_list
+        assert expected_invalid_errors_list == invalid_errors_list
+
         patch_validate.assert_not_called()
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
@@ -583,8 +621,7 @@ def test_dups_get_duplicated_files():
                  'data_clinical_supp_2', 'data_clinical_supp_3']})
     expected_dup = validation_statusdf.copy()
     expected_dup['errors'] = ''
-    dupsdf = input_to_database.get_duplicated_files(
-        syn, validation_statusdf, "")
+    dupsdf = input_to_database.get_duplicated_files(validation_statusdf, "")
     assert dupsdf.equals(expected_dup)
 
 
@@ -596,8 +633,7 @@ def test_nodups_get_duplicated_files():
         'id': ['syn1234', 'syn2345', 'syn5555', 'syn1224', 'syn34444'],
         'name': ['cbs.txt', 'second.seg', 'no_clinical.txt',
                  'data_clinical_supp_2', 'data_clinical_supp_3']})
-    dupsdf = input_to_database.get_duplicated_files(
-        syn, validation_statusdf, "")
+    dupsdf = input_to_database.get_duplicated_files(validation_statusdf, "")
     assert dupsdf.empty
 
 
@@ -649,26 +685,30 @@ def test_valid__get_status_and_error_list():
     Tests the correct status and error lists received
     when file is valid.
     '''
+    modified_on = 1561143558000
+    modified_on_string = "2019-06-21T18:59:18.456Z"
+
     entity = synapseclient.Entity(id='syn1234', md5='44444',
                                   path='/path/to/foobar.txt',
                                   name='data_clinical_supp_SAGE.txt')
+    entity.properties.versionNumber = '1'
+    entity.properties.modifiedOn = modified_on_string
+
     entities = [entity]
-    filetype = "clinical"
-
-    modified_ons = [1553428800000]
-
+    
     valid = True
     message = 'valid'
     filetype = 'clinical'
 
     input_status_list, invalid_errors_list = \
-        input_to_database._get_status_and_error_list(
-           syn, valid, message, filetype,
-           entities, modified_ons)
-    assert input_status_list == [
-        [entity.id, entity.path, entity.md5,
-         'VALIDATED', entity.name, modified_ons[0],
-         filetype]]
+        input_to_database._get_status_and_error_list(syn, valid, message, 
+                                                     filetype, entities)
+    
+    assert input_status_list == \
+        [[entity.id, entity.path, entity.md5,
+         'VALIDATED', entity.name, modified_on,
+         filetype, entity.properties.versionNumber]]
+
     assert invalid_errors_list is None
 
 
@@ -677,27 +717,31 @@ def test_invalid__get_status_and_error_list():
     Tests the correct status and error lists received
     when file is invalid.
     '''
+    modified_on = 1561143558000
+    modified_on_string = "2019-06-21T18:59:18.456Z"
     entity = synapseclient.Entity(id='syn1234', md5='44444',
                                   path='/path/to/foobar.txt',
                                   name='data_clinical_supp_SAGE.txt')
+    entity.properties.versionNumber = '1'
+    entity.properties.modifiedOn = modified_on_string
+
     entities = [entity]
     filetype = "clinical"
-    modified_ons = [1553428800000]
     # This valid variable control the validation status
     valid = False
     message = 'invalid file content'
-    filetype = 'clinical'
 
     input_status_list, invalid_errors_list = \
-        input_to_database._get_status_and_error_list(
-            syn, valid, message, filetype,
-            entities, modified_ons)
-    assert input_status_list == [
-        [entity.id, entity.path, entity.md5,
-            'INVALID', entity.name, modified_ons[0],
-            filetype]]
-    assert invalid_errors_list == [
-        ['syn1234', message, 'data_clinical_supp_SAGE.txt']]
+        input_to_database._get_status_and_error_list(syn, valid, message, 
+                                                     filetype, entities)
+    assert input_status_list == \
+        [[entity.id, entity.path, entity.md5,
+          'INVALID', entity.name, modified_on,
+          filetype, entity.properties.versionNumber]]
+
+    assert invalid_errors_list == \
+        [['syn1234', message, 'data_clinical_supp_SAGE.txt', 
+         entity.properties.versionNumber]]
 
 
 def test__send_validation_error_email():
