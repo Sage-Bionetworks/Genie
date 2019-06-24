@@ -43,10 +43,10 @@ def test_valid_determine_validity_and_log():
     Tests if no error and warning strings are passed that
     returned valid and message is correct
     '''
-    valid, message = \
+    message, valid = \
         validate.determine_validity_and_log('', '')
     assert valid
-    assert message == "YOUR FILE IS VALIDATED!\n"
+    assert message == "The file is valid."
 
 
 def test_invalid_determine_validity_and_log():
@@ -54,14 +54,14 @@ def test_invalid_determine_validity_and_log():
     Tests if error and warnings strings are passed that
     returned valid and message is correct
     '''
-    valid, message = \
+    message, valid = \
         validate.determine_validity_and_log("error\nnow", 'warning\nnow')
     assert not valid
-    assert message == (
-        "----------------ERRORS----------------\n"
-        "error\nnow"
-        "-------------WARNINGS-------------\n"
-        'warning\nnow')
+    # assert message == (
+    #     "----------------ERRORS----------------\n"
+    #     "error\nnow"
+    #     "-------------WARNINGS-------------\n"
+    #     'warning\nnow')
 
 
 def test_warning_determine_validity_and_log():
@@ -69,13 +69,10 @@ def test_warning_determine_validity_and_log():
     Tests if no error but warnings strings are passed that
     returned valid and message is correct
     '''
-    valid, message = \
+    message, valid = \
         validate.determine_validity_and_log('', 'warning\nnow')
     assert valid
-    assert message == (
-        "YOUR FILE IS VALIDATED!\n"
-        "-------------WARNINGS-------------\n"
-        'warning\nnow')
+    assert message == "The file is valid."
 
 
 def test_valid_validate_single_file():
@@ -298,21 +295,21 @@ def test_perform_validate():
     arg = argparser()
     check_input_call = "genie.validate._check_parentid_input"
     check_perm_call = "genie.validate._check_parentid_permission_container"
-    check_get_db_call = "genie.process_functions.get_synid_database_mappingdf"
+    # check_get_db_call = "genie.process_functions.get_synid_database_mappingdf"
     check_center_call = "genie.validate._check_center_input"
     validate_file_call = "genie.validate.validate_single_file"
     get_oncotree_call = "genie.validate._get_oncotreelink"
     upload_to_syn_call = "genie.validate._upload_to_synapse"
     valid = True
+        # mock.patch(
+        #     check_get_db_call,
+        #     return_value=arg.asDataFrame()) as patch_getdb,\
+        # mock.patch.object(
+        #     syn,
+        #     "tableQuery",
+        #     return_value=arg) as patch_syn_tablequery,\
     with mock.patch(check_input_call) as patch_check_input,\
         mock.patch(check_perm_call) as patch_check_parentid,\
-        mock.patch(
-            check_get_db_call,
-            return_value=arg.asDataFrame()) as patch_getdb,\
-        mock.patch.object(
-            syn,
-            "tableQuery",
-            return_value=arg) as patch_syn_tablequery,\
         mock.patch(check_center_call) as patch_check_center,\
         mock.patch(get_oncotree_call) as patch_get_onco,\
         mock.patch(
@@ -320,12 +317,13 @@ def test_perform_validate():
             return_value=(valid, 'foo', 'foo')) as patch_validate,\
         mock.patch(
             upload_to_syn_call) as patch_syn_upload:
+
         validate.perform_validate(syn, arg)
         patch_check_input.assert_called_once_with(arg.parentid,
                                                   arg.filetype)
         patch_check_parentid.assert_called_once_with(syn, arg.parentid)
-        patch_getdb.assert_called_once_with(syn, test=arg.testing)
-        patch_syn_tablequery.assert_called_once_with('select * from syn123')
+        # patch_getdb.assert_called_once_with(syn, test=arg.testing)
+        # patch_syn_tablequery.assert_called_once_with('select * from syn123')
         patch_check_center.assert_called_once_with(arg.center, ["try", "foo"])
         patch_get_onco.assert_called_once()
         patch_validate.assert_called_once_with(syn, arg.filepath,
