@@ -235,8 +235,8 @@ def _get_status_and_error_list(syn, valid, message, filetype, entities):
         invalid_errors_list = None
     else:
         invalid_errors_list = [
-            [synid, message, filename, str(ent.properties.versionNumber)]
-            for synid, ent, filename in zip(fileinfo['synId'], entities, filenames)]
+            [ent.id, message, ent.name, str(ent.properties.versionNumber)]
+            for ent in entities]
         status = "INVALID"
 
     input_status_list = []
