@@ -65,6 +65,13 @@ def build_parser():
         help='Contributing Centers')
 
     parser_validate.add_argument(
+        "--oncotreelink",
+        type=str,
+        help="Link to oncotree code")
+
+    group = parser.add_mutually_exclusive_group()
+
+    group.add_argument(
         "--filetype",
         type=str,
         choices=genie.PROCESS_FILES.keys(),
@@ -76,12 +83,7 @@ def build_parser():
              'Note, the filetypes with SP at '
              'the end are for special sponsored projects')
 
-    parser_validate.add_argument(
-        "--oncotreelink",
-        type=str,
-        help="Link to oncotree code")
-
-    parser_validate.add_argument(
+    group.add_argument(
         "--parentid",
         type=str,
         default=None,
