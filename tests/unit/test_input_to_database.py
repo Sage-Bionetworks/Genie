@@ -406,6 +406,7 @@ def test_valid_validatefile():
     entity = synapseclient.Entity(name="data_clinical_supp_SAGE.txt",
                                   id='syn1234', md5='44444',
                                   path='/path/to/data_clinical_supp_SAGE.txt')
+    entity.properties.versionNumber = '1'
     entity['modifiedOn'] = '2019-03-24T12:00:00.Z'
     # This modifiedOn translates to: 1553428800000
     entity.modifiedBy = '333'
@@ -425,7 +426,8 @@ def test_valid_validatefile():
         'VALIDATED',
         'data_clinical_supp_SAGE.txt',
         1553428800000,
-        'clinical']], None)
+        'clinical',
+        entity.properties.versionNumber]], None)
     with mock.patch(
             "genie.validate.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
