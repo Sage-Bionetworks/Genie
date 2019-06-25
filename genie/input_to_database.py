@@ -17,7 +17,6 @@ from genie import PROCESS_FILES
 from genie import process_functions
 from genie import validate
 from genie import toRetract
-from genie import input_to_database
 
 '''
 TODO:
@@ -577,12 +576,12 @@ def validation(syn, center, process,
         invalidErrors = []
 
         for ents in allFiles:
-            status, errors = input_to_database.validatefile(syn, ents,
-                                                            validation_statusdf, 
-                                                            error_trackerdf, 
-                                                            center='SAGE', threads=1, 
-                                                            testing=False, 
-                                                            oncotree_link=None)
+            status, errors = validatefile(syn, ents,
+                                          validation_statusdf, 
+                                          error_trackerdf, 
+                                          center='SAGE', threads=1, 
+                                          testing=False, 
+                                          oncotree_link=None)
             inputValidStatus.extend(status)
             if errors is not None:
                 invalidErrors.extend(errors)
