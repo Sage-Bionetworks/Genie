@@ -162,7 +162,7 @@ def check_existing_file_status(validation_statusdf, error_trackerdf, entities):
         'to_validate': to_validate})
 
 
-def _check_valid(syn, filepaths, center, oncotree_link, testing):
+def _check_valid(syn, filepaths, center, filetype, oncotree_link, testing):
     '''
     Function to validate a file
     '''
@@ -172,6 +172,7 @@ def _check_valid(syn, filepaths, center, oncotree_link, testing):
             syn,
             filepaths,
             center,
+            filetype=filetype,
             oncotreelink=oncotree_link,
             testing=testing)
         logger.info("VALIDATION COMPLETE")
@@ -286,8 +287,8 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     # Not by actual path of file
     filetype = validate.determine_filetype(syn, filenames, center)
     if check_file_status['to_validate']:
-        valid, message, filetype = _check_valid(syn, filepaths, center, 
-                                                oncotree_link, testing)
+        valid, filetype, message = _check_valid(syn, filepaths, center,
+                                                filetype, oncotree_link, testing)
 
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             syn, valid, message, filetype,
