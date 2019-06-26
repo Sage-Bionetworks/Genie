@@ -1,8 +1,10 @@
-import synapseclient
-import pandas as pd
 import mock
 import pytest
-from genie import clinicalSP
+
+import pandas as pd
+import synapseclient
+
+from genie.clinicalSP import clinicalSP
 
 syn = mock.create_autospec(synapseclient.Synapse)
 

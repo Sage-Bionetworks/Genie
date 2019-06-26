@@ -1,8 +1,12 @@
 #!/usr/bin/env python
-import genie
-import synapseclient
 import logging
 import json
+
+import genie.config
+import genie.validate
+
+import synapseclient
+
 logger = logging.getLogger('genie')
 
 
@@ -69,9 +73,16 @@ def build_parser():
         help='Contributing Centers')
 
     parser_validate.add_argument(
+        "--oncotreelink",
+        type=str,
+        help="Link to oncotree code")
+
+    validate_group = parser_validate.add_mutually_exclusive_group()
+
+    validate_group.add_argument(
         "--filetype",
         type=str,
-        choices=genie.PROCESS_FILES.keys(),
+        choices=genie.config.PROCESS_FILES.keys(),
         help='By default, the validator uses the filename to match '
              'the file format.  If your filename is incorrectly named, '
              'it will be invalid.  If you know the file format you are '
@@ -80,12 +91,7 @@ def build_parser():
              'Note, the filetypes with SP at '
              'the end are for special sponsored projects')
 
-    parser_validate.add_argument(
-        "--oncotreelink",
-        type=str,
-        help="Link to oncotree code")
-
-    parser_validate.add_argument(
+    validate_group.add_argument(
         "--parentid",
         type=str,
         default=None,

@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
+import datetime
 import logging
+import os
+import shutil
+import time
+
+import synapseclient
+import synapseutils
+import pandas as pd
+
+from .config import PROCESS_FILES
+from . import process_functions
+from . import validate
+from . import toRetract
+from . import input_to_database
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-import synapseclient
-import synapseutils
-import os
-import pandas as pd
-import datetime
-import shutil
-import time
-# Configuration file
-from genie import PROCESS_FILES
-from genie import process_functions
-from genie import validate
-from genie import toRetract
-from genie import input_to_database
 
 '''
 TODO:
@@ -576,12 +576,12 @@ def validation(syn, center, process,
         invalidErrors = []
 
         for ents in allFiles:
-            status, errors = input_to_database.validatefile(syn, ents,
-                                                            validation_statusdf, 
-                                                            error_trackerdf, 
-                                                            center='SAGE', threads=1, 
-                                                            testing=False, 
-                                                            oncotree_link=None)
+            status, errors = validatefile(syn, ents,
+                                          validation_statusdf, 
+                                          error_trackerdf, 
+                                          center='SAGE', threads=1, 
+                                          testing=False, 
+                                          oncotree_link=None)
             inputValidStatus.extend(status)
             if errors is not None:
                 invalidErrors.extend(errors)

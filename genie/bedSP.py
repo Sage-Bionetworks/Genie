@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import bed
+from .bed import bed
 import os
 import logging
 logger = logging.getLogger(__name__)
