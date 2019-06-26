@@ -69,9 +69,9 @@ def build_parser():
         type=str,
         help="Link to oncotree code")
 
-    group = parser.add_mutually_exclusive_group()
+    validate_group = parser_validate.add_mutually_exclusive_group()
 
-    group.add_argument(
+    validate_group.add_argument(
         "--filetype",
         type=str,
         choices=genie.PROCESS_FILES.keys(),
@@ -83,7 +83,7 @@ def build_parser():
              'Note, the filetypes with SP at '
              'the end are for special sponsored projects')
 
-    group.add_argument(
+    validate_group.add_argument(
         "--parentid",
         type=str,
         default=None,
