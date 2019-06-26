@@ -581,7 +581,7 @@ def validation(syn, center, process,
                                           error_trackerdf, 
                                           center='SAGE', threads=1, 
                                           testing=False, 
-                                          oncotree_link=None)
+                                          oncotree_link=oncotreeLink)
             inputValidStatus.extend(status)
             if errors is not None:
                 invalidErrors.extend(errors)
