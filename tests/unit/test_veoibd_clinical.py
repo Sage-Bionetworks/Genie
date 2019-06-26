@@ -1,6 +1,7 @@
+import mock
 import synapseclient
 import pandas as pd
-import mock
+
 from genie import veoibd_clinical
 import pytest
 import datetime
@@ -43,7 +44,7 @@ clin_class = veoibd_clinical.ClinicalIndividual(syn, "SAGE")
 
 
 def test_filetype():
-    assert clin_class._fileType == "veoibd_clinical"
+    assert clin_class._fileType == "veoibd_clinical_individual"
 
 
 @pytest.fixture(params=[
@@ -58,14 +59,12 @@ def test_incorrect_validatefilename(filename_fileformat_map):
     """Each parameter passed from filename_fileformat_map should fail with an assertion error.
     """
     filepath_list = filename_fileformat_map
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         clin_class.validateFilename(filepath_list)
 
 
 def test_correct_validatefilename():
-    assert clin_class.validateFilename(
-        ["clinical_individual.csv"]) == "veoibd_clinical"
-    
+    assert clin_class.validateFilename(["clinical_individual.csv"]) == "veoibd_clinical_individual"    
 
 # def test_patient_fillvs__process():
 #     '''
