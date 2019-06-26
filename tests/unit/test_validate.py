@@ -165,25 +165,6 @@ def test_wrongfiletype_validate_single_file():
             syn, filepathlist, center)
 
 
-def test_invalid__check_parentid_input():
-    '''
-    Test that parentid or filetype cant be specified together
-    '''
-    with pytest.raises(
-            ValueError,
-            match="If you used --parentid, you must not use --filetype"):
-        validate._check_parentid_input("foo", "foo")
-
-
-def test_valid__check_parentid_input():
-    '''
-    Test that parentid or filetype can be specified without error
-    '''
-    validate._check_parentid_input(None, "foo")
-    validate._check_parentid_input(None, None)
-    validate._check_parentid_input("foo", None)
-
-
 def test_nopermission__check_parentid_permission_container():
     '''
     Error thrown if no permissions to access
@@ -296,7 +277,6 @@ def test_perform_validate():
     Make sure all functions are called
     '''
     arg = argparser()
-    check_input_call = "genie.validate._check_parentid_input"
     check_perm_call = "genie.validate._check_parentid_permission_container"
     check_get_db_call = "genie.process_functions.get_synid_database_mappingdf"
     check_center_call = "genie.validate._check_center_input"
@@ -304,8 +284,7 @@ def test_perform_validate():
     get_oncotree_call = "genie.validate._get_oncotreelink"
     upload_to_syn_call = "genie.validate._upload_to_synapse"
     valid = True
-    with mock.patch(check_input_call) as patch_check_input,\
-        mock.patch(check_perm_call) as patch_check_parentid,\
+    with mock.patch(check_perm_call) as patch_check_parentid,\
         mock.patch(
             check_get_db_call,
             return_value=arg.asDataFrame()) as patch_getdb,\
@@ -321,8 +300,6 @@ def test_perform_validate():
         mock.patch(
             upload_to_syn_call) as patch_syn_upload:
         validate.perform_validate(syn, arg)
-        patch_check_input.assert_called_once_with(arg.parentid,
-                                                  arg.filetype)
         patch_check_parentid.assert_called_once_with(syn, arg.parentid)
         patch_getdb.assert_called_once_with(syn, test=arg.testing)
         patch_syn_tablequery.assert_called_once_with('select * from syn123')
