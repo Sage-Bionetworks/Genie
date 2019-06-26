@@ -1,18 +1,20 @@
 #!/usr/local/bin/python
-import pandas as pd
 import argparse
-import synapseclient
-import os
-import process_functions as process
+import datetime
 import logging
 import math
-import datetime
-import time
+import os
 import re
 import subprocess
+import time
+
+import pandas as pd
+import synapseclient
 import synapseutils
-import create_case_lists
-import dashboard_table_updater
+
+from . import process_functions
+from . import create_case_lists
+from . import dashboard_table_updater
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -80,7 +82,7 @@ def storeFile(
         parent = "syn9689654" if caseLists else "syn7551278"
     logger.info("STORING FILE: %s" % os.path.basename(filePath))
     # if not centerStaging:
-    #   process.center_anon(filePath, ANONYMIZE_CENTER_DF)
+    #   process_functions.center_anon(filePath, ANONYMIZE_CENTER_DF)
     if name is None:
         name = os.path.basename(filePath)
     temp = synapseclient.File(
@@ -91,7 +93,7 @@ def storeFile(
         temp.cBioFileFormat = cBioFileFormat
     temp = syn.store(temp)
     # if not centerStaging:
-    #   process.center_convert_back(filePath, ANONYMIZE_CENTER_DF)
+    #   process_functions.center_convert_back(filePath, ANONYMIZE_CENTER_DF)
     return(temp)
 
 
@@ -217,7 +219,7 @@ def configureMafRow(
             rowArray.append('')
         newRow = "\t".join(rowArray)
         newRow += "\n"
-        newRow = process.removeStringFloat(newRow)
+        newRow = process_functions.removeStringFloat(newRow)
         return(newRow)
     else:
         return(None)
@@ -281,7 +283,7 @@ def runMAFinBED(
         center_mutation = removedVariantsDf[
             removedVariantsDf['Center'] == center]
 
-        # mafText = process.removePandasDfFloat(center_mutation)
+        # mafText = process_functions.removePandasDfFloat(center_mutation)
         center_mutation.to_csv("mafinbed_filtered_variants.csv", index=False)
 
         storeFile(
@@ -307,7 +309,7 @@ def seq_date_filter(clinicalDf, processingDate, consortiumReleaseCutOff):
     Returns:
         list: Samples to remove
     '''
-    removeSeqDateSamples = process.seqDateFilter(
+    removeSeqDateSamples = process_functions.seqDateFilter(
         clinicalDf, processingDate, consortiumReleaseCutOff)
     return(removeSeqDateSamples)
 
@@ -583,7 +585,7 @@ def stagingToCbio(
 
     logger.info("ADD CANCER TYPES")
     # This removes support for both oncotree urls (only support json)
-    oncotreeDict = process.get_oncotree_code_mappings(oncotree_url)
+    oncotreeDict = process_functions.get_oncotree_code_mappings(oncotree_url)
     # Add in unknown key which maps to UNKNOWN everything
     oncotreeDict['UNKNOWN'] = {
         'CANCER_TYPE': 'UNKNOWN',
@@ -626,7 +628,7 @@ def stagingToCbio(
     clinicalDf['AGE_AT_SEQ_REPORT_DAYS'] = clinicalDf['AGE_AT_SEQ_REPORT']
     clinicalDf['AGE_AT_SEQ_REPORT'] = [
         int(math.floor(int(float(i))/365.25))
-        if process.checkInt(i) else i
+        if process_functions.checkInt(i) else i
         for i in clinicalDf['AGE_AT_SEQ_REPORT']]
     clinicalDf['AGE_AT_SEQ_REPORT'][
         clinicalDf['AGE_AT_SEQ_REPORT'] == ">32485"] = ">89"
@@ -693,7 +695,7 @@ def stagingToCbio(
     mapping_table = syn.tableQuery('SELECT * FROM syn9621600')
     mapping = mapping_table.asDataFrame()
 
-    process.addClinicalHeaders(
+    process_functions.addClinicalHeaders(
         clinicalDf, mapping, patientCols, sampleCols,
         CLINCICAL_SAMPLE_PATH, CLINCICAL_PATIENT_PATH)
     storeFile(
@@ -865,7 +867,7 @@ def stagingToCbio(
             merged = merged[merged.columns[
                 merged.columns.isin(withCenterHugoSymbol)]]
 
-            cnaText = process.removePandasDfFloat(merged)
+            cnaText = process_functions.removePandasDfFloat(merged)
             # Replace blank with NA's
             cnaText = cnaText.replace("\t\t", "\tNA\t").replace(
                 "\t\t", "\tNA\t").replace('\t\n', "\tNA\n")
@@ -883,7 +885,7 @@ def stagingToCbio(
             merged = merged[merged.columns[
                 merged.columns.isin(withMergedHugoSymbol)]]
 
-            cnaText = process.removePandasDfFloat(merged)
+            cnaText = process_functions.removePandasDfFloat(merged)
             cnaText = cnaText.replace("\t\t", "\tNA\t").replace(
                 "\t\t", "\tNA\t").replace('\t\n', "\tNA\n")
 
@@ -903,7 +905,7 @@ def stagingToCbio(
         name="data_CNA.txt",
         staging=current_release_staging)
 
-    # cnaText = process.removePandasDfFloat(mergedCNA)
+    # cnaText = process_functions.removePandasDfFloat(mergedCNA)
     # with open(CNA_PATH, "w") as cnaFile:
     #   cnaFile.write(cnaText)
     # storeFile(syn, CNA_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_CNA.txt", staging=current_release_staging)
@@ -941,7 +943,7 @@ def stagingToCbio(
     #       cols = center_cna.columns.tolist()
     #       cols = cols[-1:] + cols[:-1]
     #       center_cna = center_cna[cols]
-    #       cnaText = process.removePandasDfFloat(center_cna)
+    #       cnaText = process_functions.removePandasDfFloat(center_cna)
     #       with open(CNA_CENTER_PATH % center, "w") as cnaFile:
     #           cnaFile.write(cnaText)
     #       if not current_release_staging:
@@ -949,7 +951,7 @@ def stagingToCbio(
     #       mergedCNA = mergedCNA.merge(center_cna, on='Hugo_Symbol', how="outer")
     # mergedCNA = mergedCNA[mergedCNA.columns[mergedCNA.columns.isin(keepForMergedConsortiumSamples.append(pd.Series("Hugo_Symbol")))]]
     # mergedCNA = mergedCNA.fillna('NA')
-    # cnaText = process.removePandasDfFloat(mergedCNA)
+    # cnaText = process_functions.removePandasDfFloat(mergedCNA)
     # with open(CNA_PATH, "w") as cnaFile:
     #   cnaFile.write(cnaText)
     # storeFile(syn, CNA_PATH, parent= consortiumReleaseSynId, genieVersion=genieVersion, name="data_CNA.txt", staging=current_release_staging)
@@ -1013,7 +1015,7 @@ def stagingToCbio(
     FusionsDf = FusionsDf[~FusionsDf[
         ['Hugo_Symbol', 'Tumor_Sample_Barcode', 'Fusion']].duplicated()]
     # FusionsDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
-    fusionText = process.removePandasDfFloat(FusionsDf)
+    fusionText = process_functions.removePandasDfFloat(FusionsDf)
     with open(FUSIONS_PATH, "w") as fusionFile:
         fusionFile.write(fusionText)
     storeFile(
@@ -1045,7 +1047,7 @@ def stagingToCbio(
             center_seg = segStagingDf[segStagingDf['CENTER'] == center]
             if not center_seg.empty:
                 del center_seg['CENTER']
-                segText = process.removePandasDfFloat(center_seg)
+                segText = process_functions.removePandasDfFloat(center_seg)
                 with open(SEG_CENTER_PATH % center, "w") as segFile:
                     segFile.write(segText)
                 storeFile(
@@ -1056,7 +1058,7 @@ def stagingToCbio(
                     centerStaging=True)
     del segDf['CENTER']
     segDf = segDf[segDf['ID'].isin(keepForMergedConsortiumSamples)]
-    segText = process.removePandasDfFloat(segDf)
+    segText = process_functions.removePandasDfFloat(segDf)
     with open(SEG_PATH, "w") as segFile:
         segFile.write(segText)
     storeFile(
@@ -1312,10 +1314,10 @@ def main():
         help="Synapse debug feature")
     args = parser.parse_args()
 
-    syn = process.synLogin(args.pemFile, debug=args.debug)
+    syn = process_functions.synLogin(args.pemFile, debug=args.debug)
     genie_user = os.environ['GENIE_USER']
     if args.pemFile is not None:
-        genie_pass = process.get_password(args.pemFile)
+        genie_pass = process_functions.get_password(args.pemFile)
     else:
         genie_pass = None
 
@@ -1345,7 +1347,7 @@ def main():
 
     # Check if you can connect to oncotree link,
     # if not then don't run validation / processing
-    process.checkUrl(args.oncotreeLink)
+    process_functions.checkUrl(args.oncotreeLink)
 
     # get syn id of case list folder in consortium release
     caseListSynId = findCaseListId(syn, consortiumSynId)
@@ -1461,7 +1463,7 @@ def main():
         os.remove(cbio_validator_log)
     logger.info("REMOVING OLD FILES")
 
-    process.rmFiles(CASE_LIST_PATH)
+    process_functions.rmFiles(CASE_LIST_PATH)
     private_cna_meta_path = \
         '%s/genie_private_meta_cna_hg19_seg.txt' % GENIE_RELEASE_DIR
     if os.path.exists(private_cna_meta_path):

@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 
 import logging
+
 import synapseclient
 from synapseclient.exceptions import SynapseHTTPError
+
 from .config import PROCESS_FILES
+from . import process_functions
+
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -142,21 +146,6 @@ def _check_parentid_permission_container(syn, parentid):
                 "or a Synapse Id of a folder inside your input directory")
 
 
-def _check_parentid_input(parentid, filetype):
-    '''
-    If parentid is specified, filetype can't be
-
-    Args:
-        parentid: synapse id
-        filetype: File type
-    '''
-    if parentid is not None:
-        if filetype is not None:
-            raise ValueError(
-                "If you used --parentid, you must not use "
-                "--filetype")
-
-
 def _check_center_input(center, center_list):
     '''
     Check center input
@@ -208,7 +197,6 @@ def _upload_to_synapse(syn, filepaths, valid, parentid=None):
 
 def perform_validate(syn, args):
     # Check parentid argparse
-    _check_parentid_input(args.parentid, args.filetype)
     _check_parentid_permission_container(syn, args.parentid)
 
     databasetosynid_mappingdf = process_functions.get_synid_database_mappingdf(
