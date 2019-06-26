@@ -1,18 +1,18 @@
 #!/usr/local/bin/python
-import pandas as pd
 import argparse
-import synapseclient
 import os
-import process_functions as process
 import logging
 import math
 import datetime
 import time
 import re
 import subprocess
+import synapseclient
+import pandas as pd
 import synapseutils
 import create_case_lists
 import dashboard_table_updater
+import process_functions
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -228,7 +228,7 @@ def configureMafRow(rowArray, headers, keepSamples, remove_variants,
             rowArray.append('')
         newRow = "\t".join(rowArray)
         newRow += "\n"
-        newRow = process.removeStringFloat(newRow)
+        newRow = process_functions.removeStringFloat(newRow)
         return(newRow)
     else:
         return(None)
@@ -315,7 +315,7 @@ def seq_date_filter(clinicalDf, processingDate, consortiumReleaseCutOff):
     Returns:
         list: Samples to remove
     '''
-    removeSeqDateSamples = process.seqDateFilter(
+    removeSeqDateSamples = process_functions.seqDateFilter(
         clinicalDf, processingDate, consortiumReleaseCutOff)
     return(removeSeqDateSamples)
 
@@ -540,7 +540,7 @@ def store_fusion_files(syn,
     FusionsDf = FusionsDf[~FusionsDf[
         ['Hugo_Symbol', 'Tumor_Sample_Barcode', 'Fusion']].duplicated()]
     # FusionsDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
-    fusionText = process.removePandasDfFloat(FusionsDf)
+    fusionText = process_functions.removePandasDfFloat(FusionsDf)
     fusions_path = os.path.join(
         GENIE_RELEASE_DIR, 'data_fusions_%s.txt' % genie_version)
     with open(fusions_path, "w") as fusionFile:
@@ -761,7 +761,7 @@ def store_clinical_files(syn,
     clinicaldf = reAnnotatePHI(clinicaldf)
     logger.info("ADD CANCER TYPES")
     # This removes support for both oncotree urls (only support json)
-    oncotree_dict = process.get_oncotree_code_mappings(oncotree_url)
+    oncotree_dict = process_functions.get_oncotree_code_mappings(oncotree_url)
     # Add in unknown key which maps to UNKNOWN everything
     oncotree_dict['UNKNOWN'] = {
         'CANCER_TYPE': 'UNKNOWN',
@@ -797,7 +797,7 @@ def store_clinical_files(syn,
     clinicaldf['AGE_AT_SEQ_REPORT_DAYS'] = clinicaldf['AGE_AT_SEQ_REPORT']
     clinicaldf['AGE_AT_SEQ_REPORT'] = [
         int(math.floor(int(float(age))/365.25))
-        if process.checkInt(age) else age
+        if process_functions.checkInt(age) else age
         for age in clinicaldf['AGE_AT_SEQ_REPORT']]
     clinicaldf['AGE_AT_SEQ_REPORT'][
         clinicaldf['AGE_AT_SEQ_REPORT'] == ">32485"] = ">89"
@@ -869,7 +869,7 @@ def store_clinical_files(syn,
         GENIE_RELEASE_DIR, 'data_clinical_sample_%s.txt' % genie_version)
     clinical_patient_path = os.path.join(
         GENIE_RELEASE_DIR, 'data_clinical_patient_%s.txt' % genie_version)
-    process.addClinicalHeaders(
+    process_functions.addClinicalHeaders(
         clinicaldf, mapping, patient_cols, sample_cols,
         clinical_sample_path, clinical_patient_path)
     storeFile(
@@ -966,7 +966,7 @@ def store_cna_files(syn,
             merged_cna = merged_cna[merged_cna.columns[
                 merged_cna.columns.isin(with_center_hugo_symbol)]]
 
-            cna_text = process.removePandasDfFloat(merged_cna)
+            cna_text = process_functions.removePandasDfFloat(merged_cna)
             # Replace blank with NA's
             cna_text = cna_text.replace(
                 "\t\t", "\tNA\t").replace(
@@ -986,7 +986,7 @@ def store_cna_files(syn,
             merged_cna = merged_cna[merged_cna.columns[
                 merged_cna.columns.isin(with_merged_hugo_symbol)]]
 
-            cna_text = process.removePandasDfFloat(merged_cna)
+            cna_text = process_functions.removePandasDfFloat(merged_cna)
             cna_text = cna_text.replace(
                 "\t\t", "\tNA\t").replace(
                 "\t\t", "\tNA\t").replace(
@@ -1054,7 +1054,7 @@ def store_seg_files(syn,
             center_seg = staging_segdf[staging_segdf['CENTER'] == center]
             if not center_seg.empty:
                 del center_seg['CENTER']
-                segtext = process.removePandasDfFloat(center_seg)
+                segtext = process_functions.removePandasDfFloat(center_seg)
                 with open(SEG_CENTER_PATH % center, "w") as seg_file:
                     seg_file.write(segtext)
                 storeFile(
@@ -1065,7 +1065,7 @@ def store_seg_files(syn,
                     centerStaging=True)
     del segdf['CENTER']
     segdf = segdf[segdf['ID'].isin(keep_for_merged_consortium_samples)]
-    segtext = process.removePandasDfFloat(segdf)
+    segtext = process_functions.removePandasDfFloat(segdf)
     with open(seg_path, "w") as seg_file:
         seg_file.write(segtext)
     storeFile(
@@ -1594,10 +1594,10 @@ def main(genie_version,
         debug:  Synapse debug flag
         skip_mutationsincis: Skip mutation in cis filter
     '''
-    syn = process.synLogin(pemfile, debug=debug)
+    syn = process_functions.synLogin(pemfile, debug=debug)
     genie_user = os.environ['GENIE_USER']
     if pemfile is not None:
-        genie_pass = process.get_password(pemfile)
+        genie_pass = process_functions.get_password(pemfile)
     else:
         genie_pass = None
 
@@ -1628,7 +1628,7 @@ def main(genie_version,
 
     # Check if you can connect to oncotree link,
     # if not then don't run validation / processing
-    process.checkUrl(oncotree_link)
+    process_functions.checkUrl(oncotree_link)
 
     cbioValidatorPath = os.path.join(
         cbioportal_path, "core/src/main/scripts/importer/validateData.py")
@@ -1735,7 +1735,7 @@ def main(genie_version,
         os.remove(cbio_validator_log)
     logger.info("REMOVING OLD FILES")
 
-    process.rmFiles(CASE_LIST_PATH)
+    process_functions.rmFiles(CASE_LIST_PATH)
     private_cna_meta_path = \
         '%s/genie_private_meta_cna_hg19_seg.txt' % GENIE_RELEASE_DIR
     if os.path.exists(private_cna_meta_path):
