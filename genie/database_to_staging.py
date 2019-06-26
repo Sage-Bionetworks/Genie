@@ -1601,9 +1601,6 @@ def main(genie_version,
     else:
         genie_pass = None
 
-    assert not (test and staging), \
-        "You can only specify --test or --staging, not both"
-
     if test:
         databaseSynIdMappingId = 'syn11600968'
         genie_version = "TESTING"
@@ -1811,19 +1808,9 @@ if __name__ == "__main__":
         help="Consortium release cut off time in days")
 
     parser.add_argument(
-        "--staging",
-        action='store_true',
-        help="Store into staging folder")
-
-    parser.add_argument(
         "--skipMutationsInCis",
         action='store_true',
         help="Skip running mutation in cis script")
-
-    parser.add_argument(
-        "--test",
-        action='store_true',
-        help="Run test")
 
     parser.add_argument(
         "--pemFile",
@@ -1834,6 +1821,18 @@ if __name__ == "__main__":
         "--debug",
         action='store_true',
         help="Synapse debug feature")
+
+    test_group = parser.add_mutually_exclusive_group()
+    test_group.add_argument(
+        "--test",
+        action='store_true',
+        help="Run test")
+
+    test_group.add_argument(
+        "--staging",
+        action='store_true',
+        help="Store into staging folder")
+
     args = parser.parse_args()
 
     main(genie_version=args.genieVersion,
