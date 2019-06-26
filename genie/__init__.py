@@ -41,7 +41,6 @@ PROCESS_FILES = {'bed': bed,
                  'assayinfo': Assayinfo}
 
 # Must import validate after the fact
-from . import input_to_database
 from . import validate
 from . import toRetract
 from . import write_invalid_reasons
