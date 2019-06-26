@@ -6,8 +6,8 @@ import os
 import pandas
 import synapseclient
 
-from genie import FileTypeFormat
-from genie import process_functions
+from .example_filetype_format import FileTypeFormat
+from . import process_functions
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)

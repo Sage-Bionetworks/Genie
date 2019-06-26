@@ -1,14 +1,14 @@
-from __future__ import absolute_import
 from collections.abc import Sequence
-
-from genie import FileTypeFormat, process_functions
-import os
+import datetime
 import logging
+import os
+import tempfile
+
 import pandas as pd
 import synapseclient
-# import re
-import datetime
-import tempfile
+
+from .example_filetype_format import FileTypeFormat
+from . import process_functions
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
