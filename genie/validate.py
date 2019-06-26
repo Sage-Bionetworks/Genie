@@ -3,8 +3,7 @@
 import logging
 import synapseclient
 from synapseclient.exceptions import SynapseHTTPError
-from genie import PROCESS_FILES
-from genie import process_functions
+from .config import PROCESS_FILES
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

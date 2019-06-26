@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+from .config import PROCESS_FILES
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
