@@ -16,6 +16,8 @@ from .patientRetraction import patientRetraction
 from .mutationsInCis import mutationsInCis
 # from .vitalStatus import vitalStatus
 from .assay import Assayinfo
+from .veoibd_clinical import ClinicalIndividual, ClinicalSample
+from .veoibd_workflow import Workflow
 
 PROCESS_FILES = {'bed': bed,
                  'bedSP': bedSP,
@@ -34,4 +36,7 @@ PROCESS_FILES = {'bed': bed,
                  # 'patientCounts': patientCounts,
                  'mutationsInCis': mutationsInCis,
                  # 'vitalStatus': vitalStatus,
-                 'assayinfo': Assayinfo}
+                 'assayinfo': Assayinfo,
+                 'veoibd_clinical_individual': ClinicalIndividual,
+                 'veoibd_clinical_sample': ClinicalSample,
+                 'veoibd_workflow': Workflow}
