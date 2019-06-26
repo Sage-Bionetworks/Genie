@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+import logging
+
 import genie
 import synapseclient
-import logging
+
 logger = logging.getLogger('genie')
 
 
