@@ -1,8 +1,10 @@
-import synapseclient
-import pandas as pd
 import mock
 import pytest
-from genie import mutationsInCis
+
+import pandas as pd
+import synapseclient
+
+from genie.mutationsInCis import mutationsInCis
 
 
 def createMockTable(dataframe):

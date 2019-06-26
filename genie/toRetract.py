@@ -1,8 +1,9 @@
 #! /usr/bin/env python
+import argparse
 
 import synapseclient
-import argparse
-from genie import process_functions
+
+from . import process_functions
 
 def retract_samples(syn, database_synid, col, remove_values):
     '''
