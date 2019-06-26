@@ -19,7 +19,6 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 '''
 TODO:
 Could potentially get all the inforamation of the file entity right here
@@ -578,12 +577,12 @@ def validation(syn, center, process,
         invalidErrors = []
 
         for ents in allFiles:
-            status, errors = input_to_database.validatefile(syn, ents,
-                                                            validation_statusdf, 
-                                                            error_trackerdf, 
-                                                            center='SAGE', threads=1, 
-                                                            testing=False, 
-                                                            oncotree_link=None)
+            status, errors = validatefile(syn, ents,
+                                          validation_statusdf, 
+                                          error_trackerdf, 
+                                          center='SAGE', threads=1, 
+                                          testing=False, 
+                                          oncotree_link=None)
             inputValidStatus.extend(status)
             if errors is not None:
                 invalidErrors.extend(errors)
