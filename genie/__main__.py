@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import logging
 
-import genie
+import genie.config
+import genie.validate
+
 import synapseclient
 
 logger = logging.getLogger('genie')
@@ -76,7 +78,7 @@ def build_parser():
     validate_group.add_argument(
         "--filetype",
         type=str,
-        choices=genie.PROCESS_FILES.keys(),
+        choices=genie.config.PROCESS_FILES.keys(),
         help='By default, the validator uses the filename to match '
              'the file format.  If your filename is incorrectly named, '
              'it will be invalid.  If you know the file format you are '
