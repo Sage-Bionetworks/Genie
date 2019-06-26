@@ -43,7 +43,12 @@ second = (
      ('GENIE-SAGE-111-2222.vcf', vcf2synid)])
 center = "SAGE"
 oncotreeurl = "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
-
+center_input_synid = "syn9999"
+center_staging_synid = "syn9999"
+center_mapping = {'inputSynId': [center_input_synid],
+                  'stagingSynId': [center_input_synid],
+                  'center': [center]}
+center_mapping_df = pd.DataFrame(center_mapping)
 
 # def test_samename_rename_file():
 #     '''Test that the file path is not renamed.
@@ -383,7 +388,6 @@ def test_valid_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    center = 'SAGE'
     threads = 0
     testing = False
     valid = True
@@ -453,7 +457,6 @@ def test_invalid_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    center = 'SAGE'
     threads = 0
     testing = False
     valid = False
@@ -521,7 +524,6 @@ def test_already_validated_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    center = 'SAGE'
     threads = 0
     testing = False
     valid = True
@@ -656,7 +658,7 @@ def test_valid__get_status_and_error_list():
     entity.properties.modifiedOn = modified_on_string
 
     entities = [entity]
-    
+
     valid = True
     message = 'valid'
     filetype = 'clinical'
@@ -720,3 +722,81 @@ def test__send_validation_error_email():
         patch_syn_sendmessage.assert_called_once_with(
             ['333', '444'], "GENIE Validation Error", error_message)
         patch_syn_getuserprofile.call_count == 2
+
+
+class emptytable_mock:
+    '''
+    Validation status tablequery dataframe mocking and
+    error tracking tablequery dataframe mocking
+    This is used because assert_called_once_with has a hard
+    time with comparing pandas dataframes
+    '''
+    def asDataFrame(self):
+        return([])
+
+
+def test_validation():
+    '''
+    Test validation steps
+    '''
+    validation_statusdf = pd.DataFrame({
+        'id': ['syn1234'],
+        'status': ['VALIDATED'],
+        'path': ["/path/to/file"],
+        'fileType': ['clinical']})
+
+    thread = 2
+    testing = False
+    modified_on = 1561143558000
+    process = "main"
+    databaseToSynIdMapping = {'Database': ["clinical", 'validationStatus', 'errorTracker'],
+                              'Id': ['syn222', 'syn333', 'syn444']}
+    databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
+    entity = synapseclient.Entity(id='syn1234', md5='44444',
+                                  path='/path/to/foobar.txt',
+                                  name='data_clinical_supp_SAGE.txt')
+    entities = [entity]
+    filetype = "clinical"
+    input_status_list = [
+        [entity.id, entity.path, entity.md5,
+         'VALIDATED', entity.name, modified_on,
+         filetype]]
+    invalid_errors_list = None
+    validationstatus_mock = emptytable_mock()
+    errortracking_mock = emptytable_mock()
+    with mock.patch(
+            "genie.input_to_database.get_center_input_files",
+            return_value=entities) as patch_get_center,\
+        mock.patch.object(
+            syn, "tableQuery",
+            side_effect=[validationstatus_mock,
+                         errortracking_mock]) as patch_tablequery,\
+        mock.patch(
+            "genie.input_to_database.validatefile",
+            return_value=(input_status_list, invalid_errors_list)) as patch_validatefile,\
+        mock.patch(
+            "genie.input_to_database.update_status_and_error_tables",
+            return_value=validation_statusdf) as patch_update_status:
+        valid_filedf = input_to_database.validation(
+            syn, center, process,
+            center_mapping_df, databaseToSynIdMappingDf,
+            thread, testing, oncotreeurl)
+        patch_get_center.assert_called_once_with(
+            syn, center_input_synid, center, process)
+        patch_tablequery.calls == 2
+        patch_validatefile.assert_called_once_with(
+            syn, entity,
+            validationstatus_mock.asDataFrame(),
+            errortracking_mock.asDataFrame(),
+            center='SAGE', threads=1,
+            testing=False,
+            oncotree_link=oncotreeurl)
+        patch_update_status.assert_called_once_with(
+            syn,
+            center,
+            input_status_list,
+            [],
+            validationstatus_mock,
+            errortracking_mock)
+
+        assert valid_filedf.equals(validation_statusdf[['id', 'path', 'fileType']])
