@@ -2,10 +2,9 @@
 # ---------------------------------------------------------------
 #  Script to create case lists per cancer type
 # ---------------------------------------------------------------
-import os
-import csv
 import argparse
-from six import iteritems
+import csv
+import os
 
 CASE_LIST_TEXT_TEMPLATE = (
     'cancer_study_identifier: {study_id}\n'
@@ -84,7 +83,7 @@ def write_case_list_files(clinical_file_map, output_directory, study_id):
         list: oncotree code case list files
     '''
     case_list_files = []
-    for cancer_type, ids in iteritems(clinical_file_map):
+    for cancer_type, ids in clinical_file_map.items():
         case_list_path = _write_single_oncotree_case_list(
             cancer_type, ids, study_id, output_directory)
         case_list_files.append(case_list_path)

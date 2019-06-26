@@ -1,16 +1,16 @@
-import synapseclient
-import os
-import pandas as pd
-# import re
-import logging
-import json
-# import httplib2 as http
+import ast
+from Crypto.PublicKey import RSA
 import datetime
+import json
+import logging
+import os
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-from Crypto.PublicKey import RSA
-import ast
+
+import pandas as pd
+import synapseclient
+
 # try:
 #   from urllib.request import urlopen
 # except ImportError:
