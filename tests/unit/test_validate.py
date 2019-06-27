@@ -131,17 +131,12 @@ def test_filetype_validate_single_file():
     '''
     filepathlist = ['clinical.txt']
     center = "SAGE"
-    with pytest.raises(
-            ValueError,
-            match="Your filename is incorrect! "
-                  "Please change your filename before you run "
-                  "the validator or specify --filetype if you are "
-                  "running the validator locally"):
-        validate.validate_single_file(
-            syn,
-            filepathlist,
-            center,
-            filetype="foobar")
+    expected_error = "----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
+    valid, message, filetype = validate.validate_single_file(syn,
+                                                             filepathlist,
+                                                             center,
+                                                             filetype="foobar")
+    assert message == expected_error
 
 
 def test_wrongfiletype_validate_single_file():
@@ -151,19 +146,16 @@ def test_wrongfiletype_validate_single_file():
     '''
     filepathlist = ['clinical.txt']
     center = "SAGE"
+    expected_error = '----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally'
+
     with mock.patch(
             "genie.validate.determine_filetype",
-            return_value=None) as mock_determine_filetype,\
-        pytest.raises(
-            ValueError,
-            match="Your filename is incorrect! "
-                  "Please change your filename before you run "
-                  "the validator or specify --filetype if you are "
-                  "running the validator locally"):
-        validate.validate_single_file(
-            syn,
-            filepathlist,
-            center)
+            return_value=None) as mock_determine_filetype:
+        valid, message, filetype = validate.validate_single_file(syn,
+                                                                 filepathlist,
+                                                                 center)
+        
+        assert message == expected_error
         mock_determine_filetype.assert_called_once_with(
             syn, filepathlist, center)
 
