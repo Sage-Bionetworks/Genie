@@ -580,9 +580,6 @@ def update_status_and_error_tables(syn,
                                      error_tracker_table.tableId,
                                      ["id"], to_delete=True)
 
-    paths = input_valid_statusdf['path']
-
-    del input_valid_statusdf['path']
     logger.info("UPDATE VALIDATION STATUS DATABASE")
     input_valid_statusdf['center'] = center
     # Remove fixed duplicated files
@@ -596,7 +593,6 @@ def update_status_and_error_tables(syn,
                                      ["id"],
                                      to_delete=True)
 
-    input_valid_statusdf['path'] = paths
     return(input_valid_statusdf)
 
 
