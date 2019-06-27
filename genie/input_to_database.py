@@ -483,8 +483,8 @@ def email_duplication_error(syn, duplicated_filesdf):
         usernames = ", ".join(
             [syn.getUserProfile(user)['userName'] for user in send_to_users])
         error_email = (
-            "Dear %s,\n\n"
-            "Your files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS "
+            "Dear {},\n\n"
+            "Your files ({}) are duplicated!  FILES SHOULD BE UPLOADED AS "
             "NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE "
             "UPLOADED EVERYTIME".format(usernames, incorrect_filenames))
         syn.sendMessage(

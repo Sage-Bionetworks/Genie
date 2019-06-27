@@ -590,8 +590,8 @@ def test_dups_email_duplication_error():
     entity.modifiedBy = '333'
     entity.createdBy = '333'
     error_email = (
-        "Dear %s,\n\n"
-        "Your files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS "
+        "Dear {},\n\n"
+        "Your files ({}) are duplicated!  FILES SHOULD BE UPLOADED AS "
         "NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE "
         "UPLOADED EVERYTIME".format("trial", "first.cbs"))
     with mock.patch.object(
