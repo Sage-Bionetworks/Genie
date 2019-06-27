@@ -160,25 +160,6 @@ def check_existing_file_status(validation_statusdf, error_trackerdf, entities):
         'to_validate': to_validate})
 
 
-def _check_valid(syn, filepaths, center, filetype, filenames,
-                 oncotree_link, threads, testing):
-    '''
-    Function to validate a file
-    '''
-    # If no filetype set, means the file was named incorrectly
-    valid, message, filetype = validate.validate_single_file(
-        syn,
-        filepaths,
-        center,
-        oncotreelink=oncotree_link,
-        testing=testing)
-    logger.info("VALIDATION COMPLETE")
-
-    valid, message = determine_validity_and_log(total_error, warning)
-
-    return(valid, filetype, message)
-
-
 def _send_validation_error_email(syn, filenames, message, file_users):
     '''
     Sends validation error email
