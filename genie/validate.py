@@ -195,7 +195,10 @@ def _upload_to_synapse(syn, filepaths, valid, parentid=None):
             logger.info("Stored to {}".format(ent.id))
 
 
-def perform_validate(syn, args):
+def _perform_validate(syn, args):
+    """This is the main entry point to the genie command line tool.
+    """
+
     # Check parentid argparse
     _check_parentid_permission_container(syn, args.parentid)
 
