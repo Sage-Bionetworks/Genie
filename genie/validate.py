@@ -72,13 +72,8 @@ def determine_validity_and_log(total_error, warning):
     return(valid, message)
 
 
-def validate_single_file(syn,
-                         filepathlist,
-                         center,
-                         filetype=None,
-                         oncotreelink=None,
-                         testing=False,
-                         nosymbol_check=False):
+def validate_single_file(syn, filepathlist, center, filetype=None, oncotreelink=None,
+                         testing=False, nosymbol_check=False):
     """
     This function determines the filetype of a file
     if filetype is not specified and logs the validation errors and
@@ -101,22 +96,22 @@ def validate_single_file(syn,
     """
     if filetype is None:
         filetype = determine_filetype(syn, filepathlist, center)
-    if filetype not in PROCESS_FILES:
-        raise ValueError(
-            "Your filename is incorrect! "
-            "Please change your filename before you run "
-            "the validator or specify --filetype if you are "
-            "running the validator locally")
 
-    validator = PROCESS_FILES[filetype](syn, center)
-    total_error, warning = validator.validate(
-        filePathList=filepathlist, oncotreeLink=oncotreelink,
-        testing=testing, noSymbolCheck=nosymbol_check)
+    if filetype not in PROCESS_FILES:
+        total_error = "Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
+        warning = ""
+    else:
+        validator = PROCESS_FILES[filetype](syn, center)
+        total_error, warning = validator.validate(filePathList=filepathlist, 
+                                                  oncotreeLink=oncotreelink,
+                                                  testing=testing,
+                                                  noSymbolCheck=nosymbol_check)
 
     # Complete error message
     valid, message = determine_validity_and_log(total_error, warning)
 
     return(valid, message, filetype)
+
 
 
 def get_config(syn, synid):

@@ -166,21 +166,16 @@ def _check_valid(syn, filepaths, center, filetype, filenames,
     Function to validate a file
     '''
     # If no filetype set, means the file was named incorrectly
-    try:
-        valid, message, filetype = validate.validate_single_file(
-            syn,
-            filepaths,
-            center,
-            oncotreelink=oncotree_link,
-            testing=testing)
-        logger.info("VALIDATION COMPLETE")
-    except ValueError as e:
-        # Specify this as None for the single case where filename
-        # validation fails
-        filetype = None
-        message = str(e)
-        logger.error(message)
-        valid = False
+    valid, message, filetype = validate.validate_single_file(
+        syn,
+        filepaths,
+        center,
+        oncotreelink=oncotree_link,
+        testing=testing)
+    logger.info("VALIDATION COMPLETE")
+
+    valid, message = determine_validity_and_log(total_error, warning)
+
     return(valid, filetype, message)
 
 
@@ -285,22 +280,14 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     # Not by actual path of file
     filetype = validate.determine_filetype(syn, filenames, center)
     if check_file_status['to_validate']:
-        try:
-            valid, message, filetype = validate.validate_single_file(
-                syn,
-                filepaths,
-                center,
-                filetype=filetype,
-                oncotreelink=oncotree_link,
-                testing=testing)
-            logger.info("VALIDATION COMPLETE")
-        except ValueError as e:
-            # Specify this as None for the single case where filename
-            # validation fails
-            filetype = None
-            message = str(e)
-            logger.error(message)
-            valid = False
+        valid, message, filetype = validate.validate_single_file(
+            syn,
+            filepaths,
+            center,
+            filetype=filetype,
+            oncotreelink=oncotree_link,
+            testing=testing)
+        logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             syn, valid, message, filetype,
             entities)
