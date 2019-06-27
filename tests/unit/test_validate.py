@@ -41,25 +41,21 @@ def test_wrongfilename_noerror_determine_filetype():
     assert filetype is None
 
 
-def test_valid_determine_validity_and_log():
+def test_valid_collect_errors_and_warnings():
     '''
     Tests if no error and warning strings are passed that
     returned valid and message is correct
     '''
-    valid, message = \
-        validate.determine_validity_and_log('', '')
-    assert valid
+    message = validate.collect_errors_and_warnings('', '')
     assert message == "YOUR FILE IS VALIDATED!\n"
 
 
-def test_invalid_determine_validity_and_log():
+def test_invalid_collect_errors_and_warnings():
     '''
     Tests if error and warnings strings are passed that
     returned valid and message is correct
     '''
-    valid, message = \
-        validate.determine_validity_and_log("error\nnow", 'warning\nnow')
-    assert not valid
+    message = validate.collect_errors_and_warnings("error\nnow", 'warning\nnow')
     assert message == (
         "----------------ERRORS----------------\n"
         "error\nnow"
@@ -67,14 +63,13 @@ def test_invalid_determine_validity_and_log():
         'warning\nnow')
 
 
-def test_warning_determine_validity_and_log():
+def test_warning_collect_errors_and_warnings():
     '''
     Tests if no error but warnings strings are passed that
     returned valid and message is correct
     '''
-    valid, message = \
-        validate.determine_validity_and_log('', 'warning\nnow')
-    assert valid
+    message = \
+        validate.collect_errors_and_warnings('', 'warning\nnow')
     assert message == (
         "YOUR FILE IS VALIDATED!\n"
         "-------------WARNINGS-------------\n"
@@ -98,10 +93,10 @@ def test_valid_validate_single_file():
             return_value=expected_filetype) as mock_determine_filetype,\
         mock.patch(
             "genie.clinical.clinical.validate",
-            return_value=(error_string, warning_string)) as mock_genie_class,\
+            return_value=(expected_valid, error_string, warning_string)) as mock_genie_class,\
         mock.patch(
-            "genie.validate.determine_validity_and_log",
-            return_value=(expected_valid, expected_message)) as mock_determine:
+            "genie.validate.collect_errors_and_warnings",
+            return_value=expected_message) as mock_determine:
 
         valid, message, filetype = validate.validate_single_file(
             syn,
