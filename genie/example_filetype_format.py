@@ -153,7 +153,18 @@ class FileTypeFormat(object):
         for required_parameter in self._validation_kwargs:
             assert required_parameter in kwargs.keys(), "%s not in parameter list" % required_parameter
             mykwargs[required_parameter] = kwargs[required_parameter]
-        logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
-        df = self.read_file(filePathList)
-        total_error, warning = self._validate(df, **mykwargs)
-        return(total_error, warning)
+
+        errors = ""
+
+        try:
+            df = self.read_file(filePathList)
+        except Exception as e:
+            errors = "The file(s) ({filePathList}) cannot be read. Original error: {exception}".format(filePathList=filePathList,
+                                                                                                       exception=str(e))
+            warnings = ""
+
+        if not errors:
+            logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
+            errors, warnings = self._validate(df, **mykwargs)
+
+        return(errors, warnings)
