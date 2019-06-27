@@ -116,7 +116,6 @@ def validate_single_file(syn, filepathlist, center, filetype=None,
     return(valid, message, filetype)
 
 
-
 def get_config(syn, synid):
     '''
     Get Synapse database to Table mapping in dict
