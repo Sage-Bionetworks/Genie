@@ -72,38 +72,35 @@ def determine_validity_and_log(total_error, warning):
     return(valid, message)
 
 
-def validate_single_file(syn,
-                         filepathlist,
-                         center,
-                         filetype=None,
-                         oncotreelink=None,
-                         testing=False,
+def validate_single_file(syn, filepathlist, center, filetype=None,
+                         oncotreelink=None, testing=False, 
                          nosymbol_check=False):
     """
-    This function determines the filetype of a file
+    This function determines the filetype of a single submitted 'file'.
+    The 'file' should be one of those defined in config.PROCESS_FILES and 
+    may actually be composed of multiple files.
     if filetype is not specified and logs the validation errors and
     warnings of a file.
 
     Args:
-        syn: Synapse object
-        filepathlist: List of files (only a list because of clinical file)
+        syn: A synapseclient.Synapse object.
+        filepathlist: List of local paths to files.
         center: Center name
-        filetype: By default, filetype is determined from the filename.
-                  filetype can be specified to avoid filename validation
+        filetype: If None, filetype is determined from the filename.
+                  If specified, filetype determination is skipped.
         oncotreelink: Oncotree URL.
-        testing:  Specify to invoke testing environment
+        testing: Specify to invoke testing environment
         nosymbol_check: Do not check hugo symbols of fusion and cna file.
-                        Default is False.
 
     Returns:
-        message - errors and warnings
-        valid - Boolean value of validation status
+        message: errors and warnings
+        valid: Boolean value of validation status
+        filetype: String of the type of the file
     """
     if filetype is None:
         filetype = determine_filetype(syn, filepathlist, center)
     if filetype not in PROCESS_FILES:
-        raise ValueError(
-            "Your filename is incorrect! "
+        raise ValueError("Your filename is incorrect! "
             "Please change your filename before you run "
             "the validator or specify --filetype if you are "
             "running the validator locally")
@@ -195,7 +192,10 @@ def _upload_to_synapse(syn, filepaths, valid, parentid=None):
             logger.info("Stored to {}".format(ent.id))
 
 
-def perform_validate(syn, args):
+def _perform_validate(syn, args):
+    """This is the main entry point to the genie command line tool.
+    """
+
     # Check parentid argparse
     _check_parentid_permission_container(syn, args.parentid)
 
