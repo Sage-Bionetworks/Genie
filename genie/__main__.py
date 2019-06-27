@@ -36,76 +36,49 @@ def build_parser():
     import argparse
     parser = argparse.ArgumentParser(description='GENIE processing')
 
-    parser.add_argument(
-        "--syn_user",
-        type=str,
-        help='Synapse username')
+    parser.add_argument("--syn_user", type=str, help='Synapse username')
 
-    parser.add_argument(
-        "--syn_pass",
-        type=str,
-        help='Synapse password')
+    parser.add_argument("--syn_pass", type=str, help='Synapse password')
 
-    subparsers = parser.add_subparsers(
-        title='commands',
-        description='The following commands are available:',
-        help='For additional help: "genie <COMMAND> -h"')
+    subparsers = parser.add_subparsers(title='commands', 
+                                       description='The following commands are available:',
+                                       help='For additional help: "genie <COMMAND> -h"')
 
-    parser_validate = subparsers.add_parser(
-        'validate',
-        help='Validates GENIE file formats')
+    parser_validate = subparsers.add_parser('validate', help='Validates GENIE file formats')
 
-    parser_validate.add_argument(
-        "filepath",
-        type=str,
-        nargs="+",
-        help='File(s) that you are validating.  \
-        If you validation your clinical files and you have both sample and \
-        patient files, you must provide both')
+    parser_validate.add_argument("filepath", type=str, nargs="+",
+                                 help='File(s) that you are validating.  \
+                                       If you validation your clinical files and you have both sample and \
+                                       patient files, you must provide both')
 
-    parser_validate.add_argument(
-        "center",
-        type=str,
-        help='Contributing Centers')
+    parser_validate.add_argument("center", type=str, help='Contributing Centers')
 
-    parser_validate.add_argument(
-        "--oncotreelink",
-        type=str,
-        help="Link to oncotree code")
+    parser_validate.add_argument("--oncotreelink", type=str, help="Link to oncotree code")
 
     validate_group = parser_validate.add_mutually_exclusive_group()
 
-    validate_group.add_argument(
-        "--filetype",
-        type=str,
-        choices=genie.config.PROCESS_FILES.keys(),
-        help='By default, the validator uses the filename to match '
-             'the file format.  If your filename is incorrectly named, '
-             'it will be invalid.  If you know the file format you are '
-             'validating, you can ignore the filename validation and skip '
-             'to file content validation. '
-             'Note, the filetypes with SP at '
-             'the end are for special sponsored projects')
+    validate_group.add_argument("--filetype", type=str,
+                                choices=genie.config.PROCESS_FILES.keys(),
+                                help='By default, the validator uses the filename to match '
+                                    'the file format.  If your filename is incorrectly named, '
+                                    'it will be invalid.  If you know the file format you are '
+                                    'validating, you can ignore the filename validation and skip '
+                                    'to file content validation. '
+                                    'Note, the filetypes with SP at '
+                                    'the end are for special sponsored projects')
 
-    validate_group.add_argument(
-        "--parentid",
-        type=str,
-        default=None,
-        help='Synapse id of center input folder. '
-             'If specified, your valid files will be uploaded '
-             'to this directory.')
+    validate_group.add_argument("--parentid", type=str, default=None,
+                                help='Synapse id of center input folder. '
+                                    'If specified, your valid files will be uploaded '
+                                    'to this directory.')
 
-    parser_validate.add_argument(
-        "--testing",
-        action='store_true',
-        help='Put in testing mode')
+    parser_validate.add_argument("--testing", action='store_true', 
+                                 help='Put in testing mode')
 
-    parser_validate.add_argument(
-        "--nosymbol-check",
-        action='store_true',
-        help='Do not check hugo symbols of fusion and cna file')
+    parser_validate.add_argument("--nosymbol-check", action='store_true',
+                                 help='Do not check hugo symbols of fusion and cna file')
 
-    parser_validate.set_defaults(func=genie.validate.perform_validate)
+    parser_validate.set_defaults(func=genie.validate._perform_validate)
     return(parser)
 
 
