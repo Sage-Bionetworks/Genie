@@ -132,10 +132,10 @@ class FileTypeFormat(object):
             tuple: The errors and warnings as a file from validation.
                    Defaults to blank strings
         '''
-        total_error = ""
-        warning = ""
+        errors = ""
+        warnings = ""
         logger.info("NO VALIDATION for %s files" % self._fileType)
-        return(total_error, warning)
+        return(errors, warnings)
 
     def validate(self, filePathList, **kwargs):
         '''
