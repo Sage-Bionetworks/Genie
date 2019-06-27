@@ -166,5 +166,7 @@ class FileTypeFormat(object):
         if not errors:
             logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
             errors, warnings = self._validate(df, **mykwargs)
-
-        return(errors, warnings)
+        
+        valid = (errors == '')
+        
+        return valid, errors, warnings
