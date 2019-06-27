@@ -100,8 +100,7 @@ def validate_single_file(syn, filepathlist, center, filetype=None,
     if filetype is None:
         filetype = determine_filetype(syn, filepathlist, center)
     if filetype not in PROCESS_FILES:
-        raise ValueError(
-            "Your filename is incorrect! "
+        raise ValueError("Your filename is incorrect! "
             "Please change your filename before you run "
             "the validator or specify --filetype if you are "
             "running the validator locally")
