@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
 import logging
+
 import synapseclient
 from synapseclient.exceptions import SynapseHTTPError
-from genie import PROCESS_FILES
-from genie import process_functions
+
+from .config import PROCESS_FILES
+from . import process_functions
+
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

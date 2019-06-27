@@ -1,11 +1,12 @@
-import pytest
-import os
-import synapseclient
-import synapseutils as synu
 import mock
+import os
+import pytest
+
 import pandas as pd
+import synapseclient
+import synapseutils
+
 from genie import input_to_database
-# from genie import validate
 
 syn = mock.create_autospec(synapseclient.Synapse)
 sample_clinical_synid = 'syn2222'
@@ -89,7 +90,7 @@ emptydf = pd.DataFrame(columns=['id'], dtype=str)
 
 def walk_return():
     '''
-    Generator returned by synu.walk
+    Generator returned by synapseutils.walk
     '''
     yield first
     yield second
@@ -97,7 +98,7 @@ def walk_return():
 
 def walk_return_empty():
     '''
-    Generator returned by synu.walk
+    Generator returned by synapseutils.walk
     '''
     yield ([], [], [])
 
@@ -113,8 +114,8 @@ def test_main_get_center_input_files():
     calls = [mock.call(sample_clinical_synid),
              mock.call(patient_clinical_synid)]
 
-    with mock.patch.object(synu, "walk",
-                           return_value=walk_return()) as patch_synu_walk,\
+    with mock.patch.object(synapseutils, "walk",
+                           return_value=walk_return()) as patch_synapseutils_walk,\
         mock.patch.object(syn, "get",
                           side_effect=syn_get_effects) as patch_syn_get:
         center_file_list = input_to_database.get_center_input_files(syn,
@@ -124,7 +125,7 @@ def test_main_get_center_input_files():
         assert len(center_file_list) == len(expected_center_file_list)
         assert len(center_file_list[0]) == 2
         assert center_file_list == expected_center_file_list
-        patch_synu_walk.assert_called_once_with(syn, 'syn12345')
+        patch_synapseutils_walk.assert_called_once_with(syn, 'syn12345')
         patch_syn_get.assert_has_calls(calls)
 
 
@@ -144,8 +145,8 @@ def test_vcf_get_center_input_files():
         mock.call(vcf1synid),
         mock.call(vcf2synid)]
 
-    with mock.patch.object(synu, "walk",
-                           return_value=walk_return()) as patch_synu_walk,\
+    with mock.patch.object(synapseutils, "walk",
+                           return_value=walk_return()) as patch_synapseutils_walk,\
         mock.patch.object(syn, "get",
                           side_effect=syn_get_effects) as patch_syn_get:
         center_file_list = input_to_database.get_center_input_files(syn,
@@ -155,7 +156,7 @@ def test_vcf_get_center_input_files():
         assert len(center_file_list) == len(expected_center_file_list)
         assert len(center_file_list[2]) == 2
         assert center_file_list == expected_center_file_list
-        patch_synu_walk.assert_called_once_with(syn, 'syn12345')
+        patch_synapseutils_walk.assert_called_once_with(syn, 'syn12345')
         patch_syn_get.assert_has_calls(calls)
 
 
@@ -164,12 +165,12 @@ def test_empty_get_center_input_files():
     Test that center input files is empty if directory
     pass in is empty
     '''
-    with mock.patch.object(synu, "walk",
-                           return_value=walk_return_empty()) as patch_synu_walk:
+    with mock.patch.object(synapseutils, "walk",
+                           return_value=walk_return_empty()) as patch_synapseutils_walk:
         center_file_list = input_to_database.get_center_input_files(
             syn, "syn12345", center, process="vcf")
         assert center_file_list == []
-        patch_synu_walk.assert_called_once_with(syn, 'syn12345')
+        patch_synapseutils_walk.assert_called_once_with(syn, 'syn12345')
 
 
 # @pytest.fixture(params=[

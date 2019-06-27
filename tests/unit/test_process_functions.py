@@ -1,8 +1,11 @@
 import pytest
 import mock
+
 import pandas as pd
 import synapseclient
-import genie
+
+import genie.process_functions
+
 syn = mock.create_autospec(synapseclient.Synapse)
 
 DATABASE_DF = pd.DataFrame({

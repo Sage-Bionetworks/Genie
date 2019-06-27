@@ -1,13 +1,19 @@
-import pandas as pd
 import datetime
+import mock
 import os
+import pytest
 import sys
+
+import pandas as pd
+import synapseclient
+
 from genie.process_functions import seqDateFilter
+from genie.database_to_staging import seq_assay_id_filter, reAnnotatePHI,\
+                                no_genepanel_filter
+from genie.consortium_to_public import commonVariantFilter
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(SCRIPT_DIR, "../../genie"))
-from database_to_staging import seq_assay_id_filter, reAnnotatePHI,\
-                                no_genepanel_filter
-from consortium_to_public import commonVariantFilter
 
 
 # syn = synapseclient.login()

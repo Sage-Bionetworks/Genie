@@ -1,8 +1,10 @@
-import synapseclient
-import pandas as pd
 import mock
 import pytest
-from genie import fusions
+
+import pandas as pd
+import synapseclient
+
+from genie.fusions import fusions
 
 
 def createMockTable(dataframe):
