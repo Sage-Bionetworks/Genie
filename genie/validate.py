@@ -72,12 +72,8 @@ def determine_validity_and_log(total_error, warning):
     return(valid, message)
 
 
-def validate_single_file(syn,
-                         filepathlist,
-                         center,
-                         filetype=None,
-                         oncotreelink=None,
-                         testing=False,
+def validate_single_file(syn, filepathlist, center, filetype=None,
+                         oncotreelink=None, testing=False, 
                          nosymbol_check=False):
     """
     This function determines the filetype of a file
