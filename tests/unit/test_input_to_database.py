@@ -43,7 +43,7 @@ second = (
     [('GENIE-SAGE-000-1111.vcf', vcf1synid),
      ('GENIE-SAGE-111-2222.vcf', vcf2synid)])
 center = "SAGE"
-oncotreeurl = "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
+oncotree_link = "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
 center_input_synid = "syn9999"
 center_staging_synid = "syn9999"
 center_mapping = {'inputSynId': [center_input_synid],
@@ -399,7 +399,7 @@ def test_valid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
-            error_trackerdf, center, threads, testing, oncotreeurl)
+            error_trackerdf, center, threads, testing, oncotree_link)
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
@@ -407,7 +407,7 @@ def test_valid_validatefile():
             [entity.path],
             center,
             filetype=filetype,
-            oncotreelink=oncotreeurl,
+            oncotreelink=oncotree_link,
             testing=testing
         )
         patch_check.assert_called_once_with(
@@ -466,7 +466,7 @@ def test_invalid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
-            error_trackerdf, center, threads, testing, oncotreeurl)
+            error_trackerdf, center, threads, testing, oncotree_link)
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
@@ -474,7 +474,7 @@ def test_invalid_validatefile():
             [entity.path],
             center,
             filetype=filetype,
-            oncotreelink=oncotreeurl,
+            oncotreelink=oncotree_link,
             testing=testing
         )
         patch_check.assert_called_once_with(
@@ -539,7 +539,7 @@ def test_already_validated_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
-            error_trackerdf, center, threads, testing, oncotreeurl)
+            error_trackerdf, center, threads, testing, oncotree_link)
 
         assert expected_validate_results == validate_results
         patch_validate.assert_not_called()
@@ -800,7 +800,7 @@ def test_validation():
         valid_filedf = input_to_database.validation(
             syn, center, process,
             center_mapping_df, databaseToSynIdMappingDf,
-            thread, testing, oncotreeurl)
+            thread, testing, oncotree_link)
         patch_get_center.assert_called_once_with(
             syn, center_input_synid, center, process)
         assert patch_tablequery.call_count == 2
@@ -810,7 +810,7 @@ def test_validation():
             errortracking_mock.asDataFrame(),
             center='SAGE', threads=1,
             testing=False,
-            oncotree_link=oncotreeurl)
+            oncotree_link=oncotree_link)
         patch_update_status.assert_called_once_with(
             syn,
             center,
