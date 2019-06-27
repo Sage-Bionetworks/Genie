@@ -39,14 +39,14 @@ def determine_filetype(syn, filepathlist, center):
     return(filetype)
 
 
-def determine_validity_and_log(total_error, warning):
+def determine_validity_and_log(errors, warnings):
     '''
     Determines the validity of the file based on the
     the error message
 
     Args:
-        total_error: string of file errors
-        warning: string of file warnings
+        errors: string of file errors, separated by new lines.
+        warning: string of file warnings, separated by new lines.
 
     Returns:
         valid - Boolean value of validation status
@@ -54,21 +54,21 @@ def determine_validity_and_log(total_error, warning):
     '''
     # Complete error message
     message = "----------------ERRORS----------------\n"
-    if total_error == "":
+    if errors == "":
         message = "YOUR FILE IS VALIDATED!\n"
         logger.info(message)
         valid = True
     else:
-        for errors in total_error.split("\n"):
-            if errors != '':
-                logger.error(errors)
-        message += total_error
+        for error in errors.split("\n"):
+            if error != '':
+                logger.error(error)
+        message += errors
         valid = False
-    if warning != "":
-        for warn in warning.split("\n"):
-            if warn != '':
-                logger.warning(warn)
-        message += "-------------WARNINGS-------------\n" + warning
+    if warnings != "":
+        for warning in warnings.split("\n"):
+            if warning != '':
+                logger.warning(warning)
+        message += "-------------WARNINGS-------------\n" + warnings
     return(valid, message)
 
 
@@ -101,17 +101,17 @@ def validate_single_file(syn, filepathlist, center, filetype=None,
         filetype = determine_filetype(syn, filepathlist, center)
 
     if filetype not in PROCESS_FILES:
-        total_error = "Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
-        warning = ""
+        errors = "Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
+        warnings = ""
     else:
         validator = PROCESS_FILES[filetype](syn, center)
-        total_error, warning = validator.validate(filePathList=filepathlist, 
-                                                  oncotreeLink=oncotreelink,
-                                                  testing=testing,
-                                                  noSymbolCheck=nosymbol_check)
+        errors, warnings = validator.validate(filePathList=filepathlist, 
+                                              oncotreeLink=oncotreelink,
+                                              testing=testing,
+                                              noSymbolCheck=nosymbol_check)
 
     # Complete error message
-    valid, message = determine_validity_and_log(total_error, warning)
+    valid, message = determine_validity_and_log(errors, warnings)
 
     return(valid, message, filetype)
 
