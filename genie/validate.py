@@ -39,37 +39,32 @@ def determine_filetype(syn, filepathlist, center):
     return(filetype)
 
 
-def determine_validity_and_log(errors, warnings):
-    '''
-    Determines the validity of the file based on the
-    the error message
+def collect_errors_and_warnings(errors, warnings):
+    '''Aggregates error and warnings into a string.
 
     Args:
         errors: string of file errors, separated by new lines.
-        warning: string of file warnings, separated by new lines.
+        warnings: string of file warnings, separated by new lines.
 
     Returns:
-        valid - Boolean value of validation status
-        message - error + warning
+        message - errors + warnings
     '''
     # Complete error message
     message = "----------------ERRORS----------------\n"
     if errors == "":
         message = "YOUR FILE IS VALIDATED!\n"
         logger.info(message)
-        valid = True
     else:
         for error in errors.split("\n"):
             if error != '':
                 logger.error(error)
         message += errors
-        valid = False
     if warnings != "":
         for warning in warnings.split("\n"):
             if warning != '':
                 logger.warning(warning)
         message += "-------------WARNINGS-------------\n" + warnings
-    return(valid, message)
+    return message
 
 
 def validate_single_file(syn, filepathlist, center, filetype=None,
@@ -101,17 +96,18 @@ def validate_single_file(syn, filepathlist, center, filetype=None,
         filetype = determine_filetype(syn, filepathlist, center)
 
     if filetype not in PROCESS_FILES:
+        valid = False
         errors = "Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
         warnings = ""
     else:
         validator = PROCESS_FILES[filetype](syn, center)
-        errors, warnings = validator.validate(filePathList=filepathlist, 
-                                              oncotreeLink=oncotreelink,
-                                              testing=testing,
-                                              noSymbolCheck=nosymbol_check)
+        valid, errors, warnings = validator.validate(filePathList=filepathlist, 
+                                                     oncotreeLink=oncotreelink,
+                                                     testing=testing,
+                                                     noSymbolCheck=nosymbol_check)
 
     # Complete error message
-    valid, message = determine_validity_and_log(errors, warnings)
+    message = collect_errors_and_warnings(errors, warnings)
 
     return(valid, message, filetype)
 
