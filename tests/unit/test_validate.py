@@ -1,9 +1,12 @@
-import pytest
 import mock
+import pytest
+
+import pandas as pd
 import synapseclient
 from synapseclient.exceptions import SynapseHTTPError
+
 from genie import validate
-import pandas as pd
+
 center = "SAGE"
 syn = mock.create_autospec(synapseclient.Synapse)
 
@@ -38,25 +41,21 @@ def test_wrongfilename_noerror_determine_filetype():
     assert filetype is None
 
 
-def test_valid_determine_validity_and_log():
+def test_valid_collect_errors_and_warnings():
     '''
     Tests if no error and warning strings are passed that
     returned valid and message is correct
     '''
-    valid, message = \
-        validate.determine_validity_and_log('', '')
-    assert valid
+    message = validate.collect_errors_and_warnings('', '')
     assert message == "YOUR FILE IS VALIDATED!\n"
 
 
-def test_invalid_determine_validity_and_log():
+def test_invalid_collect_errors_and_warnings():
     '''
     Tests if error and warnings strings are passed that
     returned valid and message is correct
     '''
-    valid, message = \
-        validate.determine_validity_and_log("error\nnow", 'warning\nnow')
-    assert not valid
+    message = validate.collect_errors_and_warnings("error\nnow", 'warning\nnow')
     assert message == (
         "----------------ERRORS----------------\n"
         "error\nnow"
@@ -64,14 +63,13 @@ def test_invalid_determine_validity_and_log():
         'warning\nnow')
 
 
-def test_warning_determine_validity_and_log():
+def test_warning_collect_errors_and_warnings():
     '''
     Tests if no error but warnings strings are passed that
     returned valid and message is correct
     '''
-    valid, message = \
-        validate.determine_validity_and_log('', 'warning\nnow')
-    assert valid
+    message = \
+        validate.collect_errors_and_warnings('', 'warning\nnow')
     assert message == (
         "YOUR FILE IS VALIDATED!\n"
         "-------------WARNINGS-------------\n"
@@ -94,11 +92,11 @@ def test_valid_validate_single_file():
             "genie.validate.determine_filetype",
             return_value=expected_filetype) as mock_determine_filetype,\
         mock.patch(
-            "genie.clinical.validate",
-            return_value=(error_string, warning_string)) as mock_genie_class,\
+            "genie.clinical.clinical.validate",
+            return_value=(expected_valid, error_string, warning_string)) as mock_genie_class,\
         mock.patch(
-            "genie.validate.determine_validity_and_log",
-            return_value=(expected_valid, expected_message)) as mock_determine:
+            "genie.validate.collect_errors_and_warnings",
+            return_value=expected_message) as mock_determine:
 
         valid, message, filetype = validate.validate_single_file(
             syn,
@@ -128,17 +126,12 @@ def test_filetype_validate_single_file():
     '''
     filepathlist = ['clinical.txt']
     center = "SAGE"
-    with pytest.raises(
-            ValueError,
-            match="Your filename is incorrect! "
-                  "Please change your filename before you run "
-                  "the validator or specify --filetype if you are "
-                  "running the validator locally"):
-        validate.validate_single_file(
-            syn,
-            filepathlist,
-            center,
-            filetype="foobar")
+    expected_error = "----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
+    valid, message, filetype = validate.validate_single_file(syn,
+                                                             filepathlist,
+                                                             center,
+                                                             filetype="foobar")
+    assert message == expected_error
 
 
 def test_wrongfiletype_validate_single_file():
@@ -148,40 +141,18 @@ def test_wrongfiletype_validate_single_file():
     '''
     filepathlist = ['clinical.txt']
     center = "SAGE"
+    expected_error = '----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally'
+
     with mock.patch(
             "genie.validate.determine_filetype",
-            return_value=None) as mock_determine_filetype,\
-        pytest.raises(
-            ValueError,
-            match="Your filename is incorrect! "
-                  "Please change your filename before you run "
-                  "the validator or specify --filetype if you are "
-                  "running the validator locally"):
-        validate.validate_single_file(
-            syn,
-            filepathlist,
-            center)
+            return_value=None) as mock_determine_filetype:
+        valid, message, filetype = validate.validate_single_file(syn,
+                                                                 filepathlist,
+                                                                 center)
+        
+        assert message == expected_error
         mock_determine_filetype.assert_called_once_with(
             syn, filepathlist, center)
-
-
-def test_invalid__check_parentid_input():
-    '''
-    Test that parentid or filetype cant be specified together
-    '''
-    with pytest.raises(
-            ValueError,
-            match="If you used --parentid, you must not use --filetype"):
-        validate._check_parentid_input("foo", "foo")
-
-
-def test_valid__check_parentid_input():
-    '''
-    Test that parentid or filetype can be specified without error
-    '''
-    validate._check_parentid_input(None, "foo")
-    validate._check_parentid_input(None, None)
-    validate._check_parentid_input("foo", None)
 
 
 def test_nopermission__check_parentid_permission_container():
@@ -296,7 +267,6 @@ def test_perform_validate():
     Make sure all functions are called
     '''
     arg = argparser()
-    check_input_call = "genie.validate._check_parentid_input"
     check_perm_call = "genie.validate._check_parentid_permission_container"
     check_get_db_call = "genie.process_functions.get_synid_database_mappingdf"
     check_center_call = "genie.validate._check_center_input"
@@ -304,8 +274,7 @@ def test_perform_validate():
     get_oncotree_call = "genie.validate._get_oncotreelink"
     upload_to_syn_call = "genie.validate._upload_to_synapse"
     valid = True
-    with mock.patch(check_input_call) as patch_check_input,\
-        mock.patch(check_perm_call) as patch_check_parentid,\
+    with mock.patch(check_perm_call) as patch_check_parentid,\
         mock.patch(
             check_get_db_call,
             return_value=arg.asDataFrame()) as patch_getdb,\
@@ -320,9 +289,7 @@ def test_perform_validate():
             return_value=(valid, 'foo', 'foo')) as patch_validate,\
         mock.patch(
             upload_to_syn_call) as patch_syn_upload:
-        validate.perform_validate(syn, arg)
-        patch_check_input.assert_called_once_with(arg.parentid,
-                                                  arg.filetype)
+        validate._perform_validate(syn, arg)
         patch_check_parentid.assert_called_once_with(syn, arg.parentid)
         patch_getdb.assert_called_once_with(syn, test=arg.testing)
         patch_syn_tablequery.assert_called_once_with('select * from syn123')

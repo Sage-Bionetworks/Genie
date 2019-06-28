@@ -1,12 +1,18 @@
-import pytest
-import os
-import synapseclient
-import synapseutils as synu
 import mock
+import os
+import pytest
+
 import pandas as pd
+import synapseclient
+import synapseutils
+
 from genie import input_to_database
-import genie
-# from genie import validate
+from genie.clinical import clinical
+from genie.mafSP import mafSP
+from genie.maf import maf
+from genie.vcf import vcf
+
+
 
 syn = mock.create_autospec(synapseclient.Synapse)
 sample_clinical_synid = 'syn2222'
@@ -77,7 +83,7 @@ oncotreeurl = "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_20
 
 def walk_return():
     '''
-    Generator returned by synu.walk
+    Generator returned by synapseutils.walk
     '''
     yield first
     yield second
@@ -85,7 +91,7 @@ def walk_return():
 
 def walk_return_empty():
     '''
-    Generator returned by synu.walk
+    Generator returned by synapseutils.walk
     '''
     yield ([], [], [])
 
@@ -101,8 +107,8 @@ def test_main_get_center_input_files():
     calls = [mock.call(sample_clinical_synid),
              mock.call(patient_clinical_synid)]
 
-    with mock.patch.object(synu, "walk",
-                           return_value=walk_return()) as patch_synu_walk,\
+    with mock.patch.object(synapseutils, "walk",
+                           return_value=walk_return()) as patch_synapseutils_walk,\
         mock.patch.object(syn, "get",
                           side_effect=syn_get_effects) as patch_syn_get:
         center_file_list = input_to_database.get_center_input_files(syn,
@@ -112,7 +118,7 @@ def test_main_get_center_input_files():
         assert len(center_file_list) == len(expected_center_file_list)
         assert len(center_file_list[0]) == 2
         assert center_file_list == expected_center_file_list
-        patch_synu_walk.assert_called_once_with(syn, 'syn12345')
+        patch_synapseutils_walk.assert_called_once_with(syn, 'syn12345')
         patch_syn_get.assert_has_calls(calls)
 
 
@@ -132,8 +138,8 @@ def test_vcf_get_center_input_files():
         mock.call(vcf1synid),
         mock.call(vcf2synid)]
 
-    with mock.patch.object(synu, "walk",
-                           return_value=walk_return()) as patch_synu_walk,\
+    with mock.patch.object(synapseutils, "walk",
+                           return_value=walk_return()) as patch_synapseutils_walk,\
         mock.patch.object(syn, "get",
                           side_effect=syn_get_effects) as patch_syn_get:
         center_file_list = input_to_database.get_center_input_files(syn,
@@ -143,7 +149,7 @@ def test_vcf_get_center_input_files():
         assert len(center_file_list) == len(expected_center_file_list)
         assert len(center_file_list[2]) == 2
         assert center_file_list == expected_center_file_list
-        patch_synu_walk.assert_called_once_with(syn, 'syn12345')
+        patch_synapseutils_walk.assert_called_once_with(syn, 'syn12345')
         patch_syn_get.assert_has_calls(calls)
 
 
@@ -153,12 +159,12 @@ def test_empty_get_center_input_files():
     pass in is empty
     '''
     filename = synapseclient.utils.make_bogus_data_file()
-    with mock.patch.object(synu, "walk",
-                           return_value=walk_return_empty()) as patch_synu_walk:
+    with mock.patch.object(synapseutils, "walk",
+                           return_value=walk_return_empty()) as patch_synapseutils_walk:
         center_file_list = input_to_database.get_center_input_files(
             syn, "syn12345", center, process="vcf")
         assert center_file_list == []
-        patch_synu_walk.assert_called_once_with(syn, 'syn12345')
+        patch_synapseutils_walk.assert_called_once_with(syn, 'syn12345')
     os.remove(filename)
 
 
@@ -435,7 +441,7 @@ def test_valid_validatefile():
             syn, [entity.name], center)
         patch_get_staterror_list.assert_called_once_with(
             syn, valid, message, filetype,
-            entities, [1553428800000])
+            entities)
         patch_send_email.assert_not_called()
 
 
@@ -503,7 +509,7 @@ def test_invalid_validatefile():
             syn, [entity.name], center)
         patch_get_staterror_list.assert_called_once_with(
             syn, valid, message, filetype,
-            entities, [1553428800000])
+            entities)
         patch_send_email.assert_called_once_with(
             syn, [entity.name], message, [entity.modifiedBy, entity.createdBy])
 
@@ -648,14 +654,16 @@ def test_valid__get_status_and_error_list():
     Tests the correct status and error lists received
     when file is valid.
     '''
+    modified_on = 1561143558000
+    modified_on_string = "2019-06-21T18:59:18.456Z"
+
     entity = synapseclient.Entity(id='syn1234', md5='44444',
                                   path='/path/to/foobar.txt',
                                   name='data_clinical_supp_SAGE.txt')
+    entity.properties.modifiedOn = modified_on_string
+
     entities = [entity]
-    filetype = "clinical"
-
-    modified_ons = [1553428800000]
-
+    
     valid = True
     message = 'valid'
     filetype = 'clinical'
@@ -663,10 +671,10 @@ def test_valid__get_status_and_error_list():
     input_status_list, invalid_errors_list = \
         input_to_database._get_status_and_error_list(
            syn, valid, message, filetype,
-           entities, modified_ons)
+           entities)
     assert input_status_list == [
         [entity.id, entity.path, entity.md5,
-         'VALIDATED', entity.name, modified_ons[0],
+         'VALIDATED', entity.name, modified_on,
          filetype]]
     assert invalid_errors_list is None
 
@@ -676,24 +684,26 @@ def test_invalid__get_status_and_error_list():
     Tests the correct status and error lists received
     when file is invalid.
     '''
+    modified_on = 1561143558000
+    modified_on_string = "2019-06-21T18:59:18.456Z"
     entity = synapseclient.Entity(id='syn1234', md5='44444',
                                   path='/path/to/foobar.txt',
                                   name='data_clinical_supp_SAGE.txt')
+    entity.properties.modifiedOn = modified_on_string
+
     entities = [entity]
     filetype = "clinical"
-    modified_ons = [1553428800000]
     # This valid variable control the validation status
     valid = False
     message = 'invalid file content'
-    filetype = 'clinical'
 
     input_status_list, invalid_errors_list = \
         input_to_database._get_status_and_error_list(
             syn, valid, message, filetype,
-            entities, modified_ons)
+            entities)
     assert input_status_list == [
         [entity.id, entity.path, entity.md5,
-            'INVALID', entity.name, modified_ons[0],
+            'INVALID', entity.name, modified_on,
             filetype]]
     assert invalid_errors_list == [
         ['syn1234', message, 'data_clinical_supp_SAGE.txt']]
@@ -735,7 +745,7 @@ def test_main_processfile():
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
 
-    with mock.patch.object(genie.clinical, "process") as patch_clin:
+    with mock.patch.object(clinical, "process") as patch_clin:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie, threads,
             center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
@@ -764,7 +774,7 @@ def test_mainnone_processfile():
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
 
-    with mock.patch.object(genie.clinical, "process") as patch_clin:
+    with mock.patch.object(clinical, "process") as patch_clin:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie, threads,
             center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
@@ -775,13 +785,13 @@ def test_mainnone_processfile():
 
 
 @pytest.mark.parametrize(
-    'process', [
-        ('vcf'),
-        ('maf'),
-        ('mafSP')
+    'process, genieclass', [
+        ('vcf', vcf),
+        ('maf', maf),
+        ('mafSP', mafSP)
     ]
 )
-def test_notmain_processfile(process):
+def test_notmain_processfile(process, genieclass):
     '''
     Make sure vcf, maf, mafSP is called correctly
     '''
@@ -800,7 +810,7 @@ def test_notmain_processfile(process):
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
 
-    with mock.patch("genie." + process + ".process") as patch_process:
+    with mock.patch.object(genieclass, "process") as patch_process:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie, threads,
             center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,

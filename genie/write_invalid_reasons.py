@@ -2,8 +2,9 @@ import argparse
 import logging
 import os
 
-from genie import process_functions
 import synapseclient
+
+from . import process_functions
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
