@@ -7,6 +7,12 @@ import synapseclient
 import synapseutils
 
 from genie import input_to_database
+from genie.clinical import clinical
+from genie.mafSP import mafSP
+from genie.maf import maf
+from genie.vcf import vcf
+
+
 
 syn = mock.create_autospec(synapseclient.Synapse)
 sample_clinical_synid = 'syn2222'
@@ -820,3 +826,94 @@ def test_validation():
             errortracking_mock)
 
         assert valid_filedf.equals(validation_statusdf[['id', 'path', 'fileType']])
+
+
+def test_main_processfile():
+    validfiles = {'id': ['syn1'],
+                  'path': ['/path/to/data_clinical_supp_SAGE.txt'],
+                  'fileType': ['clinical']}
+    validfilesdf = pd.DataFrame(validfiles)
+    center = "SAGE"
+    path_to_genie = "./"
+    threads = 2
+    oncotreeLink = "www.google.com"
+    center_mapping = {'stagingSynId': ["syn123"],
+                      'center': [center]}
+    center_mapping_df = pd.DataFrame(center_mapping)
+    databaseToSynIdMapping = {'Database': ["clinical"],
+                              'Id': ['syn222']}
+    databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
+
+    with mock.patch.object(clinical, "process") as patch_clin:
+        input_to_database.processfiles(
+            syn, validfilesdf, center, path_to_genie, threads,
+            center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+            validVCF=None, vcf2mafPath=None,
+            veppath=None, vepdata=None,
+            processing="main", test=False, reference=None)
+        patch_clin.assert_called_once()
+
+
+def test_mainnone_processfile():
+    '''
+    If file type is None, the processing function is not called
+    '''
+    validfiles = {'id': ['syn1'],
+                  'path': ['/path/to/data_clinical_supp_SAGE.txt'],
+                  'fileType': [None]}
+    validfilesdf = pd.DataFrame(validfiles)
+    center = "SAGE"
+    path_to_genie = "./"
+    threads = 2
+    oncotreeLink = "www.google.com"
+    center_mapping = {'stagingSynId': ["syn123"],
+                      'center': [center]}
+    center_mapping_df = pd.DataFrame(center_mapping)
+    databaseToSynIdMapping = {'Database': ["clinical"],
+                              'Id': ['syn222']}
+    databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
+
+    with mock.patch.object(clinical, "process") as patch_clin:
+        input_to_database.processfiles(
+            syn, validfilesdf, center, path_to_genie, threads,
+            center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+            validVCF=None, vcf2mafPath=None,
+            veppath=None, vepdata=None,
+            processing="main", test=False, reference=None)
+        patch_clin.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    'process, genieclass', [
+        ('vcf', vcf),
+        ('maf', maf),
+        ('mafSP', mafSP)
+    ]
+)
+def test_notmain_processfile(process, genieclass):
+    '''
+    Make sure vcf, maf, mafSP is called correctly
+    '''
+    validfiles = {'id': ['syn1'],
+                  'path': ['/path/to/data_clinical_supp_SAGE.txt'],
+                  'fileType': [None]}
+    validfilesdf = pd.DataFrame(validfiles)
+    center = "SAGE"
+    path_to_genie = "./"
+    threads = 2
+    oncotreeLink = "www.google.com"
+    center_mapping = {'stagingSynId': ["syn123"],
+                      'center': [center]}
+    center_mapping_df = pd.DataFrame(center_mapping)
+    databaseToSynIdMapping = {'Database': [process],
+                              'Id': ['syn222']}
+    databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
+
+    with mock.patch.object(genieclass, "process") as patch_process:
+        input_to_database.processfiles(
+            syn, validfilesdf, center, path_to_genie, threads,
+            center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+            validVCF=None, vcf2mafPath=None,
+            veppath=None, vepdata=None,
+            processing=process, test=False, reference=None)
+        patch_process.assert_called_once()

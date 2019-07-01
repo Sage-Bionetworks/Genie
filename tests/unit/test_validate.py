@@ -41,25 +41,21 @@ def test_wrongfilename_noerror_determine_filetype():
     assert filetype is None
 
 
-def test_valid_determine_validity_and_log():
+def test_valid_collect_errors_and_warnings():
     '''
     Tests if no error and warning strings are passed that
     returned valid and message is correct
     '''
-    valid, message = \
-        validate.determine_validity_and_log('', '')
-    assert valid
+    message = validate.collect_errors_and_warnings('', '')
     assert message == "YOUR FILE IS VALIDATED!\n"
 
 
-def test_invalid_determine_validity_and_log():
+def test_invalid_collect_errors_and_warnings():
     '''
     Tests if error and warnings strings are passed that
     returned valid and message is correct
     '''
-    valid, message = \
-        validate.determine_validity_and_log("error\nnow", 'warning\nnow')
-    assert not valid
+    message = validate.collect_errors_and_warnings("error\nnow", 'warning\nnow')
     assert message == (
         "----------------ERRORS----------------\n"
         "error\nnow"
@@ -67,14 +63,13 @@ def test_invalid_determine_validity_and_log():
         'warning\nnow')
 
 
-def test_warning_determine_validity_and_log():
+def test_warning_collect_errors_and_warnings():
     '''
     Tests if no error but warnings strings are passed that
     returned valid and message is correct
     '''
-    valid, message = \
-        validate.determine_validity_and_log('', 'warning\nnow')
-    assert valid
+    message = \
+        validate.collect_errors_and_warnings('', 'warning\nnow')
     assert message == (
         "YOUR FILE IS VALIDATED!\n"
         "-------------WARNINGS-------------\n"
@@ -98,10 +93,10 @@ def test_valid_validate_single_file():
             return_value=expected_filetype) as mock_determine_filetype,\
         mock.patch(
             "genie.clinical.clinical.validate",
-            return_value=(error_string, warning_string)) as mock_genie_class,\
+            return_value=(expected_valid, error_string, warning_string)) as mock_genie_class,\
         mock.patch(
-            "genie.validate.determine_validity_and_log",
-            return_value=(expected_valid, expected_message)) as mock_determine:
+            "genie.validate.collect_errors_and_warnings",
+            return_value=expected_message) as mock_determine:
 
         valid, message, filetype = validate.validate_single_file(
             syn,
@@ -131,17 +126,12 @@ def test_filetype_validate_single_file():
     '''
     filepathlist = ['clinical.txt']
     center = "SAGE"
-    with pytest.raises(
-            ValueError,
-            match="Your filename is incorrect! "
-                  "Please change your filename before you run "
-                  "the validator or specify --filetype if you are "
-                  "running the validator locally"):
-        validate.validate_single_file(
-            syn,
-            filepathlist,
-            center,
-            filetype="foobar")
+    expected_error = "----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
+    valid, message, filetype = validate.validate_single_file(syn,
+                                                             filepathlist,
+                                                             center,
+                                                             filetype="foobar")
+    assert message == expected_error
 
 
 def test_wrongfiletype_validate_single_file():
@@ -151,19 +141,16 @@ def test_wrongfiletype_validate_single_file():
     '''
     filepathlist = ['clinical.txt']
     center = "SAGE"
+    expected_error = '----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally'
+
     with mock.patch(
             "genie.validate.determine_filetype",
-            return_value=None) as mock_determine_filetype,\
-        pytest.raises(
-            ValueError,
-            match="Your filename is incorrect! "
-                  "Please change your filename before you run "
-                  "the validator or specify --filetype if you are "
-                  "running the validator locally"):
-        validate.validate_single_file(
-            syn,
-            filepathlist,
-            center)
+            return_value=None) as mock_determine_filetype:
+        valid, message, filetype = validate.validate_single_file(syn,
+                                                                 filepathlist,
+                                                                 center)
+        
+        assert message == expected_error
         mock_determine_filetype.assert_called_once_with(
             syn, filepathlist, center)
 
@@ -302,7 +289,7 @@ def test_perform_validate():
             return_value=(valid, 'foo', 'foo')) as patch_validate,\
         mock.patch(
             upload_to_syn_call) as patch_syn_upload:
-        validate.perform_validate(syn, arg)
+        validate._perform_validate(syn, arg)
         patch_check_parentid.assert_called_once_with(syn, arg.parentid)
         patch_getdb.assert_called_once_with(syn, test=arg.testing)
         patch_syn_tablequery.assert_called_once_with('select * from syn123')

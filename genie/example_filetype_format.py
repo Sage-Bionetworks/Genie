@@ -112,7 +112,7 @@ class FileTypeFormat(object):
             mykwargs[required_parameter] = kwargs[required_parameter]
         logger.info('PROCESSING %s' % filePath)
         # If file type is vcf or maf file, processing requires a filepath
-        if self._fileType not in ['vcf', 'maf', 'mafSP', 'md', 'clinical']:
+        if self._fileType not in ['vcf', 'maf', 'mafSP', 'md']:
             path_or_df = self.read_file([filePath])
         else:
             path_or_df = filePath
@@ -132,10 +132,10 @@ class FileTypeFormat(object):
             tuple: The errors and warnings as a file from validation.
                    Defaults to blank strings
         '''
-        total_error = ""
-        warning = ""
+        errors = ""
+        warnings = ""
         logger.info("NO VALIDATION for %s files" % self._fileType)
-        return(total_error, warning)
+        return(errors, warnings)
 
     def validate(self, filePathList, **kwargs):
         '''
@@ -153,7 +153,20 @@ class FileTypeFormat(object):
         for required_parameter in self._validation_kwargs:
             assert required_parameter in kwargs.keys(), "%s not in parameter list" % required_parameter
             mykwargs[required_parameter] = kwargs[required_parameter]
-        logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
-        df = self.read_file(filePathList)
-        total_error, warning = self._validate(df, **mykwargs)
-        return(total_error, warning)
+
+        errors = ""
+
+        try:
+            df = self.read_file(filePathList)
+        except Exception as e:
+            errors = "The file(s) ({filePathList}) cannot be read. Original error: {exception}".format(filePathList=filePathList,
+                                                                                                       exception=str(e))
+            warnings = ""
+
+        if not errors:
+            logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
+            errors, warnings = self._validate(df, **mykwargs)
+        
+        valid = (errors == '')
+        
+        return valid, errors, warnings
