@@ -196,7 +196,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
             bedDf = bedDf[bedDf.SEQ_ASSAY_ID.isin(allClin.SEQ_ASSAY_ID)]
             bedDf.to_csv(COMBINED_BED_PATH,sep="\t",index=False)
             storeFile(syn, COMBINED_BED_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="genie_combined.bed")
-        elif entName in ["data_clinical_sample.txt","data_clinical_patient.txt"]:
+        elif entName in ["data_clinical_sample.txt", "data_clinical_patient.txt"] or entName.endswith(".html"):
             continue
         elif entName.startswith("data_gene_panel"):
             genePanel = syn.get(entId, followLink=True)
