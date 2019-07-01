@@ -263,8 +263,9 @@ def consortiumToPublic(syn, processingDate, genie_version,
             bedDf = pd.read_csv(bed.path, sep="\t")
             bedDf = bedDf[bedDf.SEQ_ASSAY_ID.isin(allClin.SEQ_ASSAY_ID)]
             bedDf.to_csv(COMBINED_BED_PATH, sep="\t", index=False)
-            storeFile(syn, COMBINED_BED_PATH, PUBLIC_RELEASE_PREVIEW, genie_version, name="genie_combined.bed")
-        elif entName in ["data_clinical_sample.txt", "data_clinical_patient.txt"]:
+            storeFile(syn, COMBINED_BED_PATH, PUBLIC_RELEASE_PREVIEW,
+                      genie_version, name="genie_combined.bed")
+        elif entName in ["data_clinical_sample.txt", "data_clinical_patient.txt"] or entName.endswith(".html"):
             continue
         elif entName.startswith("data_gene_panel"):
             genePanel = syn.get(entId, followLink=True)
@@ -311,7 +312,8 @@ def createLinkVersion(syn, genie_version, caseListEntities,
     # second = ".".join(versioning[1:])
     releases = synapseutils.walk(syn, releaseSynId)
     mainReleaseFolders = next(releases)[1]
-    releaseFolderSynId = [synId for folderName, synId in mainReleaseFolders if folderName == "Release %s" % main] 
+    releaseFolderSynId = [synId for folderName, synId in mainReleaseFolders
+                          if folderName == "Release %s" % main]
     if len(releaseFolderSynId) > 0:
         secondRelease = synapseutils.walk(syn, releaseFolderSynId[0])
         secondReleaseFolders = next(secondRelease)[1]
