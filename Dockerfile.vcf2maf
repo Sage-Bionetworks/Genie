@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
 	dos2unix \
 	g++ \
 	gcc 
+
 # VCF2MAF dependencies
 RUN apt-get install -y \
 	build-essential \
