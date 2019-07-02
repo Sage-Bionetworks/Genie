@@ -1,35 +1,37 @@
-FROM ubuntu:16.04
+FROM ubuntu:bionic
 
-RUN echo "deb http://cran.rstudio.com/bin/linux/ubuntu xenial/" | tee -a /etc/apt/sources.list
+RUN echo "deb http://cran.rstudio.com/bin/linux/ubuntu bionic-cran35/" | tee -a /etc/apt/sources.list
 RUN gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9
 RUN gpg -a --export E084DAB9 | apt-key add -
-
+# GENIE dependencies
 RUN apt-get update && apt-get install -y \
-	autoconf \
-	automake \
-	make \
-	g++ \
-	gcc \
-	build-essential \ 
-	zlib1g-dev \
-	libgsl0-dev \
-	perl \
-	curl \
 	git \
-	wget \
-	unzip \
-	tabix \
-	libncurses5-dev \
-	bedtools \ 
-	dos2unix \
+	r-base-core \
+	r-base-dev \
 	python3 \
 	python3-pip \
-	r-base \
-	r-base-dev \
-	dpkg-dev \
-	libcurl3 \
-	libcurl3-dev \ 
-	libffi-dev 
+	bedtools \ 
+	dos2unix \
+	g++ \
+	gcc 
+# VCF2MAF dependencies
+RUN apt-get install -y \
+	build-essential \
+	cpanminus \
+	curl \
+	wget \
+	unzip \
+	automake \
+	samtools \
+	tabix 
+
+RUN apt install -y \
+	libmysqlclient-dev \
+	libncurses5-dev \
+	zlib1g-dev \
+	libgsl0-dev \
+	libexpat1-dev \
+	libgd-dev
 
 RUN pip3 install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto PyYAML
@@ -38,43 +40,14 @@ RUN pip install pandas numexpr --upgrade
 RUN rm /usr/bin/python 
 RUN ln -s /usr/bin/python3 /usr/bin/python 
 
-RUN apt-get install -y cpanminus
-RUN apt-get install -y libmysqlclient-dev
-RUN apt-get install -y libxml2-dev libgd-perl
-
-RUN cpanm CPAN::Meta \
-	Archive::Zip \
-	DBI \
-	Devel::CheckLib \
-	DBD::mysql \ 
-	JSON \
-	DBD::SQLite \
-	Set::IntervalTree \
-	LWP \
-	LWP::Simple \
-	Archive::Extract \
-	Archive::Tar \
-	Archive::Zip \
-	CGI \
-	Time::HiRes \
-	Encode \
-	File::Copy::Recursive \
-	Perl::OSType \
-	Module::Metadata version \
-	Bio::Root::Version \
-	TAP::Harness \
-	Module::Build --force
+RUN cpanm --notest LWP::Simple DBI DBD::mysql Archive::Zip Archive::Extract HTTP::Tiny Test::Simple
+RUN cpanm --notest File::Copy::Recursive Perl::OSType Module::Metadata version TAP::Harness CGI Encode
+RUN cpanm --notest CPAN::Meta JSON DBD::SQLite Set::IntervalTree Archive::Tar Time::HiRes Module::Build
+RUN cpanm --notest Bio::Root::Version
 
 WORKDIR /root
 RUN wget https://github.com/mskcc/vcf2maf/archive/v1.6.17.zip
 RUN unzip v1.6.17.zip
-
-RUN wget https://github.com/samtools/samtools/releases/download/1.4.1/samtools-1.4.1.tar.bz2
-RUN tar jxf samtools-1.4.1.tar.bz2
-WORKDIR /root/samtools-1.4.1
-
-RUN make
-RUN make install
 
 WORKDIR /root/Genie
 COPY ./ ./
