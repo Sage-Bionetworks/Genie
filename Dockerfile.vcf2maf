@@ -1,4 +1,7 @@
 FROM ubuntu:bionic
+ENV DEBIAN_FRONTEND=noninteractive 
+
+RUN apt-get update && apt-get install -y gnupg2
 
 RUN echo "deb http://cran.rstudio.com/bin/linux/ubuntu bionic-cran35/" | tee -a /etc/apt/sources.list
 RUN gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9

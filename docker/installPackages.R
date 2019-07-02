@@ -5,8 +5,8 @@ install.packages("rmarkdown", repo="https://ftp.osuosl.org/pub/cran/")
 install.packages("UpSetR", repo="https://ftp.osuosl.org/pub/cran/")
 install.packages("testthat", repo="https://ftp.osuosl.org/pub/cran/")
 
-source("https://bioconductor.org/biocLite.R")
-biocLite("VariantAnnotation")
+install.packages("BiocManager", repo="https://ftp.osuosl.org/pub/cran/")
+BiocManager::install("VariantAnnotation")
 
 library(synapser)
 library(dplyr)

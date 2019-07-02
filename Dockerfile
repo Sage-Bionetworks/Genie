@@ -1,4 +1,8 @@
 FROM ubuntu:bionic
+ENV DEBIAN_FRONTEND=noninteractive 
+
+# Must install this because gpg not installed
+RUN apt-get update && apt-get install -y gnupg2
 
 RUN echo "deb http://cran.rstudio.com/bin/linux/ubuntu bionic-cran35/" | tee -a /etc/apt/sources.list
 RUN gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9
@@ -13,23 +17,25 @@ RUN apt-get update && apt-get install -y \
 	git \
 	r-base-core \
 	r-base-dev \
-	dpkg-dev \
-	zlib1g-dev \
-	libssl-dev \
-	curl \
-	libcurl3 \
-	libcurl3-dev \ 
-	libffi-dev \
-	libmariadb-client-lgpl-dev \
-	libxml2-dev \ 
-	libcurl4-openssl-dev
+	curl 
+
+#  RUN apt-get install -y \
+# 	dpkg-dev \
+# 	zlib1g-dev \
+# 	libssl-dev \
+# 	libcurl3 \
+# 	libcurl3-dev \ 
+# 	libffi-dev \
+# 	libmariadb-client-lgpl-dev \
+# 	libxml2-dev \ 
+# 	libcurl4-openssl-dev
 
 RUN pip3 install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto PyYAML
 RUN pip install pandas numexpr --upgrade
 
-RUN rm /usr/bin/python 
-RUN ln -s /usr/bin/python3 /usr/bin/python 
+# RUN rm /usr/bin/python 
+# RUN ln -s /usr/bin/python3 /usr/bin/python 
 
 #install pandoc 1.19.2.1 (dashboard use)
 RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.1-1-amd64.deb
