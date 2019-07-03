@@ -18,17 +18,18 @@ RUN apt-get update && apt-get install -y \
 	r-base-core \
 	r-base-dev \
 	curl 
+#synapser client dependencies
+RUN apt-get install -y \
+    dpkg-dev \
+	zlib1g-dev \
+	libssl-dev \
+	libffi-dev \
+	libcurl4-openssl-dev
 
-#  RUN apt-get install -y \
-# 	dpkg-dev \
-# 	zlib1g-dev \
-# 	libssl-dev \
 # 	libcurl3 \
 # 	libcurl3-dev \ 
-# 	libffi-dev \
 # 	libmariadb-client-lgpl-dev \
 # 	libxml2-dev \ 
-# 	libcurl4-openssl-dev
 
 RUN pip3 install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto PyYAML
