@@ -6,7 +6,7 @@ import subprocess
 import pandas as pd
 import synapseclient
 from synapseclient.exceptions import SynapseTimeoutError
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('genie')
 
 
 class maf(FileTypeFormat):
