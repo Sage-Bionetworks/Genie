@@ -148,7 +148,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
     #PROCESS_FILES is in config_process_scripts.py
     if not os.path.exists(centerStagingFolder):
         os.makedirs(centerStagingFolder)
-    if processing == "main":
+    if processing != 'vcf':
         for fileSynId, filePath, fileType in zip(validFiles['id'],validFiles['path'],validFiles['fileType']):
             filename = os.path.basename(filePath)
             newPath = os.path.join(centerStagingFolder, filename)
@@ -158,8 +158,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
                 synId = None
             else:
                 synId = synId[0]
-            if fileType is not None:
-            #if fileType not in [None,"cna"]:
+            if fileType is not None and (processing == "main" or processing == fileType):
                 PROCESS_FILES[fileType](syn, center, threads).process(filePath=filePath, newPath=newPath, 
                                     parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
                                     fileSynId=fileSynId, validVCF=validVCF, 
@@ -167,7 +166,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
                                     veppath=veppath,vepdata=vepdata,
                                     processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, reference=reference, test=test)
 
-    elif processing in ["vcf","maf","mafSP"]:
+    else:
         filePath = None
         newPath = None
         fileType = None
