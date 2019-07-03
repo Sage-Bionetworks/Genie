@@ -24,12 +24,12 @@ RUN apt-get install -y \
 	zlib1g-dev \
 	libssl-dev \
 	libffi-dev \
-	libcurl4-openssl-dev
-
+	libcurl4-openssl-dev \
+# VariantAnnotation dependency
+	libxml2-dev
 # 	libcurl3 \
 # 	libcurl3-dev \ 
 # 	libmariadb-client-lgpl-dev \
-# 	libxml2-dev \ 
 
 RUN pip3 install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto PyYAML
