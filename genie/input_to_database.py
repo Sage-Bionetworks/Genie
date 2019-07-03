@@ -1,9 +1,7 @@
 #! /usr/bin/env python
 import logging
-
-logging.basicConfig()
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 import synapseclient
 from synapseclient import File, Table
@@ -22,6 +20,7 @@ import write_invalid_reasons
 
 #Configuration file
 from genie import PROCESS_FILES, process_functions, validate
+
 
 def reNameFile(syn, synId):
     temp = syn.get(synId)
