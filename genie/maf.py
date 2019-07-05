@@ -45,7 +45,11 @@ class maf(FileTypeFormat):
             'Sequence_Source', 'Validation_Method', 'Score', 'BAM_File',
             'Sequencer', 'HGVSp_Short', 't_ref_count', 't_alt_count',
             'n_ref_count', 'n_alt_count', 'Protein_position', 'Codons',
-            'SWISSPROT', 'RefSeq', 't_depth', 'n_depth', 'FILTER']
+            'SWISSPROT', 'RefSeq', 't_depth', 'n_depth', 'FILTER',
+            'gnomAD_AF', 'gnomAD_AFR_AF', 'gnomAD_AMR_AF', 'gnomAD_ASJ_AF',
+            'gnomAD_EAS_AF', 'gnomAD_FIN_AF', 'gnomAD_NFE_AF', 'gnomAD_OTH_AF',
+            'gnomAD_SAS_AF']
+
         mafDf = mafDf[keepMafColumns]
         mafDf['Center'] = self.center
         mafDf['Tumor_Sample_Barcode'] = [
