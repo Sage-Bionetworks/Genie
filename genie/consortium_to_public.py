@@ -205,8 +205,6 @@ def consortiumToPublic(syn, processingDate, genie_version,
 
         elif "mutation" in entName:
             mutation = syn.get(entId, followLink=True)
-            with open(mutation.path, 'r') as f:
-                sequenced_samples = f.readline()
             mutationDf = pd.read_csv(mutation.path, sep="\t", comment="#")
             mutationDf = commonVariantFilter(mutationDf)
             mutationDf['FILTER'] = "PASS"
@@ -214,7 +212,6 @@ def consortiumToPublic(syn, processingDate, genie_version,
                 mutationDf['Tumor_Sample_Barcode'].isin(publicReleaseSamples)]
             text = process.removeFloat(mutationDf)
             with open(MUTATIONS_PATH, 'w') as f:
-                f.write(sequenced_samples)
                 f.write(text)
             storeFile(syn, MUTATIONS_PATH, PUBLIC_RELEASE_PREVIEW,
                       genie_version, name="data_mutations_extended.txt")
