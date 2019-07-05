@@ -828,10 +828,17 @@ def test_validation():
         assert valid_filedf.equals(validation_statusdf[['id', 'path', 'fileType']])
 
 
-def test_main_processfile():
+@pytest.mark.parametrize(
+    'process, genieclass, filetype', [
+        ('main', clinical, 'clinical'),
+        ('maf', maf, 'maf'),
+        ('mafSP', mafSP, 'mafSP')
+    ]
+)
+def test_main_processfile(process, genieclass, filetype):
     validfiles = {'id': ['syn1'],
                   'path': ['/path/to/data_clinical_supp_SAGE.txt'],
-                  'fileType': ['clinical']}
+                  'fileType': [filetype]}
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
@@ -840,18 +847,18 @@ def test_main_processfile():
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
     center_mapping_df = pd.DataFrame(center_mapping)
-    databaseToSynIdMapping = {'Database': ["clinical"],
+    databaseToSynIdMapping = {'Database': [filetype],
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
 
-    with mock.patch.object(clinical, "process") as patch_clin:
+    with mock.patch.object(genieclass, "process") as patch_class:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie, threads,
             center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
-            processing="main", test=False, reference=None)
-        patch_clin.assert_called_once()
+            processing=process, test=False, reference=None)
+        patch_class.assert_called_once()
 
 
 def test_mainnone_processfile():
@@ -883,14 +890,7 @@ def test_mainnone_processfile():
         patch_clin.assert_not_called()
 
 
-@pytest.mark.parametrize(
-    'process, genieclass', [
-        ('vcf', vcf),
-        ('maf', maf),
-        ('mafSP', mafSP)
-    ]
-)
-def test_notmain_processfile(process, genieclass):
+def test_notvcf_processfile():
     '''
     Make sure vcf, maf, mafSP is called correctly
     '''
@@ -905,15 +905,15 @@ def test_notmain_processfile(process, genieclass):
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
     center_mapping_df = pd.DataFrame(center_mapping)
-    databaseToSynIdMapping = {'Database': [process],
+    databaseToSynIdMapping = {'Database': ['vcf'],
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
 
-    with mock.patch.object(genieclass, "process") as patch_process:
+    with mock.patch.object(vcf, "process") as patch_process:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie, threads,
             center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
-            processing=process, test=False, reference=None)
+            processing='vcf', test=False, reference=None)
         patch_process.assert_called_once()

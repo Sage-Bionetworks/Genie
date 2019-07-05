@@ -28,7 +28,10 @@ def test_processing():
         'Sequencing_Phase', 'Sequence_Source', 'Validation_Method', 'Score',
         'BAM_File', 'Sequencer', 'HGVSp_Short', 't_ref_count', 't_alt_count',
         'n_ref_count', 'n_alt_count', 'Protein_position', 'Codons',
-        'SWISSPROT', 'RefSeq', 't_depth', 'n_depth', 'FILTER']
+        'SWISSPROT', 'RefSeq', 't_depth', 'n_depth', 'FILTER',
+        'gnomAD_AF', 'gnomAD_AFR_AF', 'gnomAD_AMR_AF', 'gnomAD_ASJ_AF',
+        'gnomAD_EAS_AF', 'gnomAD_FIN_AF', 'gnomAD_NFE_AF', 'gnomAD_OTH_AF',
+        'gnomAD_SAS_AF']
     maf_dict = {key: ['', '', ''] for key in keep_maf_columns}
     maf_dict['Center'] = ["foo", "dsdf", "sdf"]
     maf_dict['Tumor_Sample_Barcode'] = ["GENIE-SAGE-1-3", "1-2", "3-2"]

@@ -15,9 +15,8 @@ from . import validate
 from . import toRetract
 from . import input_to_database
 
-logging.basicConfig()
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 '''
 TODO:
@@ -322,7 +321,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
     if not os.path.exists(center_staging_folder):
         os.makedirs(center_staging_folder)
 
-    if processing == "main":
+    if processing != 'vcf':
         for fileSynId, filePath, fileType in zip(validfiles['id'],
                                                  validfiles['path'],
                                                  validfiles['fileType']):
@@ -335,8 +334,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
                 synId = None
             else:
                 synId = synId[0]
-            # if fileType not in [None,"cna"]:
-            if fileType is not None:
+            if fileType is not None and (processing == "main" or processing == fileType):
                 processor = PROCESS_FILES[fileType](syn, center, threads)
                 processor.process(
                     filePath=filePath, newPath=newPath,
@@ -349,7 +347,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf,
                     reference=reference, test=test)
 
-    elif processing in ["vcf", "maf", "mafSP"]:
+    else:
         filePath = None
         newPath = None
         fileType = None

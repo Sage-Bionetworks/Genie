@@ -145,16 +145,13 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 
         elif "mutation" in entName:
             mutation = syn.get(entId, followLink=True)
-            with open(mutation.path, 'r') as f:
-                sequenced_samples = f.readline()
             mutationDf = pd.read_csv(mutation.path, sep="\t", comment="#")
             mutationDf = commonVariantFilter(mutationDf)
             mutationDf['FILTER'] = "PASS"
             mutationDf = mutationDf[mutationDf['Tumor_Sample_Barcode'].isin(publicReleaseSamples)]
             text = process_functions.removeFloat(mutationDf)
             with open(MUTATIONS_PATH, 'w') as f:
-                f.write(sequenced_samples) 
-                f.write(text) 
+                f.write(text)
             storeFile(syn, MUTATIONS_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_mutations_extended.txt")
 
         elif "fusion" in entName:
@@ -196,7 +193,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
             bedDf = bedDf[bedDf.SEQ_ASSAY_ID.isin(allClin.SEQ_ASSAY_ID)]
             bedDf.to_csv(COMBINED_BED_PATH,sep="\t",index=False)
             storeFile(syn, COMBINED_BED_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="genie_combined.bed")
-        elif entName in ["data_clinical_sample.txt","data_clinical_patient.txt"]:
+        elif entName in ["data_clinical_sample.txt", "data_clinical_patient.txt"] or entName.endswith(".html"):
             continue
         elif entName.startswith("data_gene_panel"):
             genePanel = syn.get(entId, followLink=True)
