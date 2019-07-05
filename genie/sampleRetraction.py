@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
+from genie import FileTypeFormat, process_functions
 import logging
 import os
 import pandas as pd
@@ -7,11 +7,21 @@ import synapseclient
 import datetime
 logger = logging.getLogger(__name__)
 
-class sampleRetraction(example_filetype_format.FileTypeFormat):
+
+class sampleRetraction(FileTypeFormat):
 
     _fileType = "sampleRetraction"
 
     _process_kwargs = ["newPath", "databaseSynId","fileSynId"]
+
+    def _get_dataframe(self, filePathList):
+        '''
+        This function by defaults assumes the filePathList is length of 1 
+        and is a tsv file.  Could change depending on file type.
+        '''
+        filePath = filePathList[0]
+        df = pd.read_csv(filePath,header=None)
+        return(df)
 
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "%s.csv" % self._fileType
@@ -26,13 +36,8 @@ class sampleRetraction(example_filetype_format.FileTypeFormat):
         deleteSamplesDf['center'] = self.center
         return(deleteSamplesDf)
 
-    def process_steps(self, filePath, **kwargs):
-        logger.info('PROCESSING %s' % filePath)
-        fileSynId = kwargs['fileSynId']
-        databaseSynId = kwargs['databaseSynId']
-        newPath = kwargs['newPath']
+    def process_steps(self, deleteSamples, fileSynId, databaseSynId, newPath):
         info = self.syn.get(fileSynId, downloadFile=False)
-        deleteSamples = pd.read_csv(filePath,header=None)
         deleteSamples = self._process(deleteSamples, info.modifiedOn.split(".")[0])
         process_functions.updateData(self.syn, databaseSynId, deleteSamples, self.center, filterByColumn="center", toDelete=True)
         return(newPath)

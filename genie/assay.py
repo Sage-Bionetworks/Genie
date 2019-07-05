@@ -18,11 +18,9 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
     def _validateFilename(self, filepath_list):
         assert os.path.basename(filepath_list[0]) == "assay_information.yaml"
 
-    def process_steps(self, filePath, newPath, databaseSynId):
-        logger.info('PROCESSING %s' % filePath)
+    def process_steps(self, assay_info_df, newPath, databaseSynId):
         # databaseSynId = kwargs['databaseSynId']
         # Must pass in a list
-        assay_info_df = self._get_dataframe([filePath])
         process_assay_info_df = self._process(assay_info_df)
         col = ['SEQ_ASSAY_ID', 'is_paired_end', 'library_selection',
                'library_strategy', 'platform', 'read_length',
@@ -36,7 +34,8 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
             col=col,
             filterByColumn="CENTER",
             toDelete=True)
-        return(filePath)
+        process_assay_info_df.to_csv(newPath, sep="\t", index=False)
+        return(newPath)
 
     def _process(self, df):
         '''

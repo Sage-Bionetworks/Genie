@@ -1,12 +1,15 @@
-import genie
-import os
-import synapseclient
-import pandas as pd
 import argparse
 import datetime
 import logging
-logger = logging.getLogger(__name__)
+import os
 
+import synapseclient
+import genie
+import pandas as pd
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def get_center_data_completion(center, df):
     '''
@@ -26,6 +29,7 @@ def get_center_data_completion(center, df):
     total = len(centerdf)
     center_data = pd.DataFrame()
     for col in centerdf:
+        # Remove this when _NUMERICAL cols are removed from master table
         if not col.endswith("_NUMERICAL") and col not in \
                 ['CENTER', 'PATIENT_ID', 'SAMPLE_ID', 'SAMPLE_TYPE_DETAILED']:
             not_missing = [not pd.isnull(value) for value in centerdf[col]]
@@ -315,7 +319,7 @@ def update_oncotree_code_tables(syn, database_mappingdf):
     oncotree_distribution_dbdf = oncotree_distribution_db.asDataFrame()
     genie.process_functions.updateDatabase(
         syn, oncotree_distribution_dbdf, oncotree_code_distributiondf,
-        oncotree_distribution_synid, ["Oncotree_Code"], toDelete=True)
+        oncotree_distribution_synid, ["Oncotree_Code"], to_delete=True)
 
     # DISTRIBUTION OF PRIMARY CODE TABLE UPDATE
     oncotree_link_synid = database_mappingdf['Id'][
@@ -360,7 +364,7 @@ def update_oncotree_code_tables(syn, database_mappingdf):
     primary_code_dist_dbdf = primary_code_dist_db.asDataFrame()
     genie.process_functions.updateDatabase(
         syn, primary_code_dist_dbdf, primary_code_distributiondf,
-        primary_code_synId, ["Oncotree_Code"], toDelete=True)
+        primary_code_synId, ["Oncotree_Code"], to_delete=True)
 
 
 def update_sample_difference_table(syn, database_mappingdf):
@@ -434,7 +438,7 @@ def update_sample_difference_table(syn, database_mappingdf):
 
     genie.process_functions.updateDatabase(
         syn, difftable_dbdf, diff_between_releasesdf,
-        sample_diff_count_synid, ["Center", "Release"], toDelete=True)
+        sample_diff_count_synid, ["Center", "Release"], to_delete=True)
 
 
 def update_data_completeness_table(syn, database_mappingdf):
@@ -481,7 +485,7 @@ def update_data_completeness_table(syn, database_mappingdf):
         data_completenessdf,
         data_completion_synid,
         ["FIELD", "CENTER"],
-        toDelete=True)
+        to_delete=True)
 
 
 def update_wiki(syn, database_mappingdf):
@@ -716,7 +720,7 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
     clinical_key_decreasedbdf = clinical_key_decrease.asDataFrame()
     genie.process_functions.updateDatabase(
         syn, clinical_key_decreasedbdf, center_decrease_mapping,
-        clinical_key_decrease_synid, ["CENTER"], toDelete=True)
+        clinical_key_decrease_synid, ["CENTER"], to_delete=True)
 
 
 def run_dashboard(

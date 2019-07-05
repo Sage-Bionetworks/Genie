@@ -10,7 +10,7 @@ import datetime
 import time
 import re
 import subprocess
-import synapseutils as synu
+import synapseutils
 import create_case_lists
 import dashboard_table_updater
 
@@ -48,7 +48,7 @@ def findCaseListId(syn, parentId):
         syn: Synapse object
         parentId: Synapse Id of Folder or Project
     '''
-    releaseEnts = synu.walk(syn, parentId)
+    releaseEnts = synapseutils.walk(syn, parentId)
     releaseFolders = next(releaseEnts)
     if len(releaseFolders[1]) == 0:
         caselistId = syn.store(
@@ -501,16 +501,20 @@ def stagingToCbio(
         "SELECT * FROM {} where CENTER in ('{}')".format(
             sampleSynId, "','".join(CENTER_MAPPING_DF.center)))
     bed = syn.tableQuery(
-        "SELECT Chromosome,Start_Position,End_Position,Hugo_Symbol,ID,"
-        "SEQ_ASSAY_ID,Feature_Type,includeInPanel FROM"
-        " {} where CENTER in ('{}')".format(
+        "SELECT * FROM {} where CENTER in ('{}')".format(
             bedSynId, "','".join(CENTER_MAPPING_DF.center)))
     patientDf = patient.asDataFrame()
     sampleDf = sample.asDataFrame()
+    # Remove this when these columns are removed from both databases
+    if sampleDf.get("AGE_AT_SEQ_REPORT_NUMERICAL") is not None:
+        del sampleDf['AGE_AT_SEQ_REPORT_NUMERICAL']
     bedDf = bed.asDataFrame()
-    del sampleDf['AGE_AT_SEQ_REPORT_NUMERICAL']
+    del bedDf['CENTER']
     del sampleDf['CENTER']
-    del patientDf['BIRTH_YEAR_NUMERICAL']
+    # Remove this when these columns are removed from both databases
+    if patientDf.get("BIRTH_YEAR_NUMERICAL") is not None:
+        del patientDf['BIRTH_YEAR_NUMERICAL']
+    # del patientDf['BIRTH_YEAR_NUMERICAL']
     # Clinical release scope filter
     # If private -> Don't release to public
     clinicalReleaseScope = syn.tableQuery(
@@ -724,9 +728,6 @@ def stagingToCbio(
     data_gene_panel.drop_duplicates("SAMPLE_ID", inplace=True)
     # Gene panel file is written below CNA, because of the "cna" column
 
-    samples = data_gene_panel['SAMPLE_ID']
-    sequenced_samples = "#sequenced_samples: " + " ".join(samples)
-
     logger.info("FILTERING, STORING MUTATION FILES")
     centerMafFileViewSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == "centerMafView"][0]
@@ -734,8 +735,9 @@ def stagingToCbio(
         "select id from %s " % centerMafFileViewSynId +
         "where name like '%mutation%'")
     centerMafSynIdsDf = centerMafSynIds.asDataFrame()
-    with open(MUTATIONS_PATH, 'w') as f:
-        f.write(sequenced_samples + "\n")
+    with open(MUTATIONS_PATH, 'w'):
+        pass
+
     for index, mafSynId in enumerate(centerMafSynIdsDf.id):
         mafEnt = syn.get(mafSynId)
         logger.info(mafEnt.path)
@@ -1176,14 +1178,14 @@ def createLinkVersion(
     # second = ".".join(versioning[1:])
     releaseSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == 'release'].values[0]
-    releases = synu.walk(syn, releaseSynId)
+    releases = synapseutils.walk(syn, releaseSynId)
     mainReleaseFolders = next(releases)[1]
     releaseFolderSynId = [
         synId for folderName, synId in mainReleaseFolders
         if folderName == "Release {}".format(main)]
 
     if len(releaseFolderSynId) > 0:
-        secondRelease = synu.walk(syn, releaseFolderSynId[0])
+        secondRelease = synapseutils.walk(syn, releaseFolderSynId[0])
         secondReleaseFolders = next(secondRelease)[1]
         secondReleaseFolderSynIdList = [
             synId for folderName, synId in secondReleaseFolders
@@ -1450,10 +1452,12 @@ def main():
     cbio_validator_log = "cbioValidatorLogsConsortium_{}.txt".format(
         args.genieVersion)
     if not args.test and not args.staging:
+        log_folder_synid = databaseSynIdMappingDf['Id'][
+            databaseSynIdMappingDf['Database'] == 'logs'].values[0]
         with open(cbio_validator_log, "w") as cbioLog:
             cbioLog.write(cbioOutput.decode("utf-8"))
         syn.store(synapseclient.File(
-            cbio_validator_log, parentId="syn10155804"))
+            cbio_validator_log, parentId=log_folder_synid))
         os.remove(cbio_validator_log)
     logger.info("REMOVING OLD FILES")
 

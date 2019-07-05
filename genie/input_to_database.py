@@ -1,9 +1,11 @@
 #! /usr/bin/env python
 import logging
-logger = logging.getLogger("genie")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 import synapseclient
 from synapseclient import File, Table
-import synapseutils as synu
+import synapseutils
 import argparse
 import os
 from multiprocessing import Pool
@@ -18,6 +20,7 @@ import write_invalid_reasons
 
 #Configuration file
 from genie import PROCESS_FILES, process_functions, validate
+
 
 def reNameFile(syn, synId):
     temp = syn.get(synId)
@@ -36,7 +39,7 @@ def getCenterInputFiles(syn, synId, center, process="main"):
     ################################################################
     logger.info("GETTING %s INPUT FILES" % center)
     CLINICAL_PAIR_NAME = ["data_clinical_supp_sample_%s.txt" % center, "data_clinical_supp_patient_%s.txt" % center]
-    walked = synu.walk(syn, synId)
+    walked = synapseutils.walk(syn, synId)
     clinicalpair = []
     allFiles = []
     for dirpath, dirname, filenames in walked:
@@ -134,9 +137,8 @@ def validateFile(syn, validationStatusDf, errorTracker, center, threads, x, test
 #Processing single file
 def processFiles(syn, validFiles, center, path_to_GENIE, threads, 
                  center_mapping_df, oncotreeLink, databaseToSynIdMappingDf, 
-                 validVCF=None, validMAFs=None,
-                 vcf2mafPath=None,
-                 veppath=None,vepdata=None,
+                 validVCF=None, vcf2mafPath=None,
+                 veppath=None, vepdata=None,
                  processing="main", test=False, reference=None):
 
     logger.info("PROCESSING %s FILES: %d" % (center, len(validFiles)))
@@ -145,7 +147,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
     #PROCESS_FILES is in config_process_scripts.py
     if not os.path.exists(centerStagingFolder):
         os.makedirs(centerStagingFolder)
-    if processing == "main":
+    if processing != 'vcf':
         for fileSynId, filePath, fileType in zip(validFiles['id'],validFiles['path'],validFiles['fileType']):
             filename = os.path.basename(filePath)
             newPath = os.path.join(centerStagingFolder, filename)
@@ -155,17 +157,15 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
                 synId = None
             else:
                 synId = synId[0]
-            if fileType is not None:
-            #if fileType not in [None,"cna"]:
+            if fileType is not None and (processing == "main" or processing == fileType):
                 PROCESS_FILES[fileType](syn, center, threads).process(filePath=filePath, newPath=newPath, 
                                     parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
                                     fileSynId=fileSynId, validVCF=validVCF, 
-                                    validMAFs=validMAFs,
                                     path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
                                     veppath=veppath,vepdata=vepdata,
                                     processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, reference=reference, test=test)
 
-    elif processing in ["vcf","maf","mafSP"]:
+    else:
         filePath = None
         newPath = None
         fileType = None
@@ -173,8 +173,7 @@ def processFiles(syn, validFiles, center, path_to_GENIE, threads,
         fileSynId = None
         PROCESS_FILES[processing](syn, center, threads).process(filePath=filePath, newPath=newPath, 
                                     parentId=centerStagingSynId, databaseSynId=synId, oncotreeLink=oncotreeLink, 
-                                    fileSynId=fileSynId, validVCF=validVCF, 
-                                    validMAFs=validMAFs,
+                                    fileSynId=fileSynId, validVCF=validVCF,
                                     path_to_GENIE=path_to_GENIE, vcf2mafPath=vcf2mafPath,
                                     veppath=veppath,vepdata=vepdata,
                                     processing=processing,databaseToSynIdMappingDf=databaseToSynIdMappingDf, reference=reference)
@@ -283,7 +282,7 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
         invalidErrors['center'] = center
         invalidIds = inputValidStatus['id'][inputValidStatus['status'] == "INVALID"]
         invalidErrors = invalidErrors[invalidErrors['id'].isin(invalidIds)]
-        process_functions.updateDatabase(syn, errorTracker.asDataFrame(), invalidErrors, process_functions.getDatabaseSynId(syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf), ["id"], toDelete=True)
+        process_functions.updateDatabase(syn, errorTracker.asDataFrame(), invalidErrors, process_functions.getDatabaseSynId(syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf), ["id"], to_delete=True)
 
         paths = inputValidStatus['path']
         filenames = [os.path.basename(name) for name in paths]
@@ -293,7 +292,7 @@ def validation(syn, center, process, center_mapping_df, databaseToSynIdMappingDf
         #Remove fixed duplicated files
         inputValidStatus = inputValidStatus[~inputValidStatus['id'].isin(removeIds)]
 
-        process_functions.updateDatabase(syn, validationStatus.asDataFrame(), inputValidStatus[["id",'md5','status','name','center','modifiedOn']], process_functions.getDatabaseSynId(syn, "validationStatus", databaseToSynIdMappingDf=databaseToSynIdMappingDf), ["id"], toDelete=True)
+        process_functions.updateDatabase(syn, validationStatus.asDataFrame(), inputValidStatus[["id",'md5','status','name','center','modifiedOn']], process_functions.getDatabaseSynId(syn, "validationStatus", databaseToSynIdMappingDf=databaseToSynIdMappingDf), ["id"], to_delete=True)
         inputValidStatus['path'] = paths
         validFiles = inputValidStatus[['id','path','fileType']][inputValidStatus['status'] == "VALIDATED"]
         return(validFiles)
@@ -339,15 +338,9 @@ def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path
         beds = validFiles[validBED]
         validFiles = beds.append(validFiles)
         validFiles.drop_duplicates(inplace=True)
-        #Valid maf, mafsp, vcf and cbs files
-        validMAF = [i for i in validFiles['path'] if os.path.basename(i) == "data_mutations_extended_%s.txt" % center]
-        validMAFSP = [i for i in validFiles['path'] if os.path.basename(i)  == "nonGENIE_data_mutations_extended_%s.txt" % center]
+        #Valid vcf files
         validVCF = [i for i in validFiles['path'] if os.path.basename(i).endswith('.vcf')]
         #validCBS = [i for i in validFiles['path'] if os.path.basename(i).endswith('.cbs')]
-        if process == 'mafSP':
-            validMAFs = validMAFSP
-        else:
-            validMAFs = validMAF
 
         processTrackerSynId = process_functions.getDatabaseSynId(syn, "processTracker", databaseToSynIdMappingDf = database_to_synid_mappingdf)
         #Add process tracker for time start
@@ -362,7 +355,7 @@ def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path
 
         processFiles(syn, validFiles, center, path_to_genie, thread, 
                      center_mapping_df, oncotree_link, database_to_synid_mappingdf, 
-                     validVCF=validVCF, validMAFs=validMAFs,
+                     validVCF=validVCF,
                      vcf2mafPath=vcf2maf_path,
                      veppath=vep_path,vepdata=vep_data,
                      test=testing, processing=process,reference=reference)
@@ -380,8 +373,10 @@ def input_to_database(syn, center, process, testing, only_validate, vcf2maf_path
         messageOut = "%s does not have any valid files" if not only_validate else "ONLY VALIDATION OCCURED FOR %s"
         logger.info(messageOut % center)
 
-    #Store log file
-    syn.store(synapseclient.File(log_path, parentId="syn10155804"))
+    # Store log file
+    log_folder_synid = process_functions.getDatabaseSynId(
+        syn, "logs", databaseToSynIdMappingDf=database_to_synid_mappingdf)
+    syn.store(synapseclient.File(log_path, parentId=log_folder_synid))
     os.remove(log_path)
     logger.info("ALL PROCESSES COMPLETE")
 
