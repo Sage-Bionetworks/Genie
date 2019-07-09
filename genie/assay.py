@@ -74,16 +74,41 @@ class Assayinfo(example_filetype_format.FileTypeFormat):
             with open(filepath, 'r') as yamlfile:
                 # https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation
                 # Must add this because yaml load deprecation
-                panel_info_dict = yaml.load(yamlfile, Loader=yaml.FullLoader)
+                assay_info_dict = yaml.load(yamlfile, Loader=yaml.FullLoader)
         except Exception:
             raise ValueError(
                 "assay_information.yaml: Can't read in your file. "
                 "Please make sure the file is a correctly formatted yaml")
-        assay_info_df = pd.DataFrame(panel_info_dict)
-        assay_info_df = assay_info_df.transpose()
-        assay_info_df['SEQ_ASSAY_ID'] = assay_info_df.index
-        assay_info_df.reset_index(drop=True, inplace=True)
-        return(assay_info_df)
+        # assay_info_df = pd.DataFrame(panel_info_dict)
+        # assay_info_df = assay_info_df.transpose()
+        # assay_info_df['SEQ_ASSAY_ID'] = assay_info_df.index
+        # assay_info_df.reset_index(drop=True, inplace=True)
+        assay_infodf = pd.DataFrame(assay_info_dict)
+        assay_info_transposeddf = assay_infodf.transpose()
+
+        all_panel_info = pd.DataFrame()
+        for assay in assay_info_dict:
+            assay_specific_info = assay_info_dict[assay]['assay_specific_info']
+            assay_specific_infodf = pd.DataFrame(assay_specific_info)
+
+            seq_assay_id_infodf = assay_info_transposeddf.loc[[assay]]
+
+            to_appenddf = [seq_assay_id_infodf]*(len(assay_specific_info) - 1)
+            if to_appenddf:
+                seq_assay_id_infodf = seq_assay_id_infodf.append(to_appenddf)
+            seq_assay_id_infodf.reset_index(drop=True, inplace=True)
+            assay_finaldf = pd.concat(
+                [assay_specific_infodf, seq_assay_id_infodf], axis=1)
+            del assay_finaldf['assay_specific_info']
+
+            columns_containing_lists = [
+                'variant_classifications', 'alteration_types',
+                'specimen_type', 'coverage']
+
+            for col in columns_containing_lists:
+                assay_finaldf[col] = [";".join(row) for row in assay_finaldf[col]]
+            all_panel_info = all_panel_info.append(assay_finaldf)
+        return(all_panel_info)
 
     def _validate(self, assay_info_df):
         '''
