@@ -1313,7 +1313,7 @@ def main():
     args = parser.parse_args()
 
     syn = process.synLogin(args.pemFile, debug=args.debug)
-    genie_user = os.environ['GENIE_USER']
+    genie_user = os.environ.get('GENIE_USER')
     if args.pemFile is not None:
         genie_pass = process.get_password(args.pemFile)
     else:
