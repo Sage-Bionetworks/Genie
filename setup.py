@@ -9,6 +9,7 @@ setup(name='aacrgenie',
       license='MIT',
       packages=find_packages(),
       zip_safe=False,
+      python_requires='>=3.5',
       entry_points={
         'console_scripts': ['genie = genie.__main__:main']},
       install_requires=[
@@ -16,4 +17,4 @@ setup(name='aacrgenie',
         'synapseclient>=1.9',
         'httplib2>=0.11.3',
         'pycrypto>=2.6.1',
-        'PyYAML>=3.11'])
+        'PyYAML>=5.1'])
