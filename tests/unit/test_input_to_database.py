@@ -49,9 +49,22 @@ second = (
     [('GENIE-SAGE-000-1111.vcf', vcf1synid),
      ('GENIE-SAGE-111-2222.vcf', vcf2synid)])
 center = "SAGE"
-oncotreeurl = "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
-
-
+oncotree_link = "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
+center_input_synid = "syn9999"
+center_staging_synid = "syn9999"
+center_mapping = {'inputSynId': [center_input_synid],
+                  'stagingSynId': [center_input_synid],
+                  'center': [center]}
+center_mapping_df = pd.DataFrame(center_mapping)
+validation_statusdf = pd.DataFrame({
+    'id': ['syn1234', 'syn2345'],
+    'status': ['VALID', 'INVALID'],
+    'md5': ['3333', '44444'],
+    'name': ['first.txt', 'second.txt']})
+error_trackerdf = pd.DataFrame({
+    'id': ['syn2345'],
+    'errors': ['Invalid file format']})
+emptydf = pd.DataFrame(columns=['id'], dtype=str)
 # def test_samename_rename_file():
 #     '''Test that the file path is not renamed.
 #     '''
@@ -158,14 +171,12 @@ def test_empty_get_center_input_files():
     Test that center input files is empty if directory
     pass in is empty
     '''
-    filename = synapseclient.utils.make_bogus_data_file()
     with mock.patch.object(synapseutils, "walk",
                            return_value=walk_return_empty()) as patch_synapseutils_walk:
         center_file_list = input_to_database.get_center_input_files(
             syn, "syn12345", center, process="vcf")
         assert center_file_list == []
         patch_synapseutils_walk.assert_called_once_with(syn, 'syn12345')
-    os.remove(filename)
 
 
 # @pytest.fixture(params=[
@@ -189,26 +200,22 @@ def test_empty_get_center_input_files():
 
 
 def test_unvalidatedinput_check_existing_file_status():
-    validation_statusdf = pd.DataFrame(columns=['id'], dtype=str)
-    error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
+    '''
+    Test the values returned by input that hasn't be validated
+    '''
     entity = synapseclient.Entity(id='syn1234')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities)
+        emptydf, emptydf, entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == []
     assert file_status['error_list'] == []
 
 
 def test_valid_check_existing_file_status():
-    validation_statusdf = pd.DataFrame({
-        'id': ['syn1234', 'syn2345'],
-        'status': ['VALID', 'INVALID'],
-        'md5': ['3333', '44444'],
-        'name': ['first.txt', 'second.txt']})
-    error_trackerdf = pd.DataFrame({
-        'id': ['syn2345'],
-        'errors': ['Invalid file format']})
+    '''
+    Test the values returned by input that is already valid
+    '''
     entity = synapseclient.Entity(name='first.txt', id='syn1234', md5='3333')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
@@ -219,14 +226,9 @@ def test_valid_check_existing_file_status():
 
 
 def test_invalid_check_existing_file_status():
-    validation_statusdf = pd.DataFrame({
-        'id': ['syn1234', 'syn2345'],
-        'status': ['VALID', 'INVALID'],
-        'md5': ['3333', '44444'],
-        'name': ['first.txt', 'second.txt']})
-    error_trackerdf = pd.DataFrame({
-        'id': ['syn2345'],
-        'errors': ['Invalid file format']})
+    '''
+    Test the values returned by input that is invalid
+    '''
     entity = synapseclient.Entity(name='second.txt', id='syn2345', md5='44444')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
@@ -240,16 +242,10 @@ def test_nostorederrors_check_existing_file_status():
     '''
     If there is no error uploaded, must re-validate file
     '''
-    validation_statusdf = pd.DataFrame({
-        'id': ['syn1234', 'syn2345'],
-        'status': ['VALID', 'INVALID'],
-        'md5': ['3333', '44444'],
-        'name': ['first.txt', 'second.txt']})
-    error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
     entity = synapseclient.Entity(name='second.txt', id='syn2345', md5='44444')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities)
+        validation_statusdf, emptydf, entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == ['INVALID']
     assert file_status['error_list'] == []
@@ -259,16 +255,10 @@ def test_diffmd5validate_check_existing_file_status():
     '''
     If md5 is different from stored md5, must re-validate file
     '''
-    validation_statusdf = pd.DataFrame({
-        'id': ['syn1234', 'syn2345'],
-        'status': ['VALID', 'INVALID'],
-        'md5': ['3333', '44444'],
-        'name': ['first.txt', 'second.txt']})
-    error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
     entity = synapseclient.Entity(name='first.txt', id='syn1234', md5='44444')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities)
+        validation_statusdf, emptydf, entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == ['VALID']
     assert file_status['error_list'] == []
@@ -278,16 +268,10 @@ def test_diffnametovalidate_check_existing_file_status():
     '''
     If name is different from stored name, must re-validate file
     '''
-    validation_statusdf = pd.DataFrame({
-        'id': ['syn1234', 'syn2345'],
-        'status': ['VALID', 'INVALID'],
-        'md5': ['3333', '44444'],
-        'name': ['first.txt', 'second.txt']})
-    error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
     entity = synapseclient.Entity(name='second.txt', id='syn1234', md5='3333')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities)
+        validation_statusdf, emptydf, entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == ['VALID']
     assert file_status['error_list'] == []
@@ -325,11 +309,9 @@ def test_error_check_existing_file_status():
     with pytest.raises(
             ValueError,
             match='There should never be more than 2 files being validated.'):
-        validation_statusdf = pd.DataFrame(columns=['id'], dtype=str)
-        error_trackerdf = pd.DataFrame(columns=['id'], dtype=str)
         entities = ['foo', 'doo', 'boo']
         input_to_database.check_existing_file_status(
-            validation_statusdf, error_trackerdf, entities)
+            emptydf, emptydf, entities)
 
 
 def test_create_and_archive_maf_database():
@@ -390,7 +372,6 @@ def test_valid_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    center = 'SAGE'
     threads = 0
     testing = False
     valid = True
@@ -424,7 +405,7 @@ def test_valid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
-            error_trackerdf, center, threads, testing, oncotreeurl)
+            error_trackerdf, center, threads, testing, oncotree_link)
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
@@ -432,7 +413,7 @@ def test_valid_validatefile():
             [entity.path],
             center,
             filetype=filetype,
-            oncotreelink=oncotreeurl,
+            oncotreelink=oncotree_link,
             testing=testing
         )
         patch_check.assert_called_once_with(
@@ -460,7 +441,6 @@ def test_invalid_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    center = 'SAGE'
     threads = 0
     testing = False
     valid = False
@@ -492,7 +472,7 @@ def test_invalid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
-            error_trackerdf, center, threads, testing, oncotreeurl)
+            error_trackerdf, center, threads, testing, oncotree_link)
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
@@ -500,7 +480,7 @@ def test_invalid_validatefile():
             [entity.path],
             center,
             filetype=filetype,
-            oncotreelink=oncotreeurl,
+            oncotreelink=oncotree_link,
             testing=testing
         )
         patch_check.assert_called_once_with(
@@ -528,7 +508,6 @@ def test_already_validated_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    center = 'SAGE'
     threads = 0
     testing = False
     valid = True
@@ -566,7 +545,7 @@ def test_already_validated_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
-            error_trackerdf, center, threads, testing, oncotreeurl)
+            error_trackerdf, center, threads, testing, oncotree_link)
 
         assert expected_validate_results == validate_results
         patch_validate.assert_not_called()
@@ -617,8 +596,8 @@ def test_dups_email_duplication_error():
     entity.modifiedBy = '333'
     entity.createdBy = '333'
     error_email = (
-        "Dear %s,\n\n"
-        "Your files (%s) are duplicated!  FILES SHOULD BE UPLOADED AS "
+        "Dear {},\n\n"
+        "Your files ({}) are duplicated!  FILES SHOULD BE UPLOADED AS "
         "NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE "
         "UPLOADED EVERYTIME".format("trial", "first.cbs"))
     with mock.patch.object(
@@ -663,7 +642,7 @@ def test_valid__get_status_and_error_list():
     entity.properties.modifiedOn = modified_on_string
 
     entities = [entity]
-    
+
     valid = True
     message = 'valid'
     filetype = 'clinical'
@@ -727,6 +706,126 @@ def test__send_validation_error_email():
         patch_syn_sendmessage.assert_called_once_with(
             ['333', '444'], "GENIE Validation Error", error_message)
         patch_syn_getuserprofile.call_count == 2
+
+
+class emptytable_mock:
+    '''
+    Validation status tablequery dataframe mocking and
+    error tracking tablequery dataframe mocking
+    This is used because assert_called_once_with has a hard
+    time with comparing pandas dataframes
+    '''
+    tableId = "syn555"
+
+    def asDataFrame(self):
+        return([])
+
+
+def test_update_status_and_error_tables():
+    '''
+    Test updating validation status and error table
+    '''
+    validation_status_table = emptytable_mock()
+    error_tracker_table = emptytable_mock()
+    input_valid_statuses = [[
+        sample_clinical_entity.id,
+        sample_clinical_entity.path,
+        '44444',
+        'VALIDATED',
+        'data_clinical_supp_SAGE.txt',
+        1553428800000,
+        'clinical']]
+    invalid_errors = []
+    input_valid_statusdf = pd.DataFrame(input_valid_statuses,
+                                        columns=["id", 'path', 'md5', 'status',
+                                                 'name', 'modifiedOn',
+                                                 'fileType'])
+    input_valid_statusdf['center'] = center
+    with mock.patch(
+            "genie.input_to_database.get_duplicated_files",
+            return_value=pd.DataFrame(columns=['id', 'errors', 'name'], dtype=str)) as mock_get_duplicated,\
+        mock.patch(
+            "genie.input_to_database.email_duplication_error") as mock_email,\
+        mock.patch(
+            "genie.process_functions.updateDatabase") as mock_update:
+        input_validdf = input_to_database.update_status_and_error_tables(
+            syn,
+            center,
+            input_valid_statuses,
+            invalid_errors,
+            validation_status_table,
+            error_tracker_table)
+        mock_get_duplicated.assert_called_once()
+        mock_email.assert_not_called()
+        assert mock_update.call_count == 2
+        assert input_validdf.equals(input_valid_statusdf)
+
+
+def test_validation():
+    '''
+    Test validation steps
+    '''
+    validation_statusdf = pd.DataFrame({
+        'id': ['syn1234'],
+        'status': ['VALIDATED'],
+        'path': ["/path/to/file"],
+        'fileType': ['clinical']})
+
+    thread = 2
+    testing = False
+    modified_on = 1561143558000
+    process = "main"
+    databaseToSynIdMapping = {'Database': ["clinical", 'validationStatus', 'errorTracker'],
+                              'Id': ['syn222', 'syn333', 'syn444']}
+    databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
+    entity = synapseclient.Entity(id='syn1234', md5='44444',
+                                  path='/path/to/foobar.txt',
+                                  name='data_clinical_supp_SAGE.txt')
+    entities = [entity]
+    filetype = "clinical"
+    input_status_list = [
+        [entity.id, entity.path, entity.md5,
+         'VALIDATED', entity.name, modified_on,
+         filetype]]
+    invalid_errors_list = None
+    validationstatus_mock = emptytable_mock()
+    errortracking_mock = emptytable_mock()
+    with mock.patch(
+            "genie.input_to_database.get_center_input_files",
+            return_value=entities) as patch_get_center,\
+        mock.patch.object(
+            syn, "tableQuery",
+            side_effect=[validationstatus_mock,
+                         errortracking_mock]) as patch_tablequery,\
+        mock.patch(
+            "genie.input_to_database.validatefile",
+            return_value=(input_status_list, invalid_errors_list)) as patch_validatefile,\
+        mock.patch(
+            "genie.input_to_database.update_status_and_error_tables",
+            return_value=validation_statusdf) as patch_update_status:
+        valid_filedf = input_to_database.validation(
+            syn, center, process,
+            center_mapping_df, databaseToSynIdMappingDf,
+            thread, testing, oncotree_link)
+        patch_get_center.assert_called_once_with(
+            syn, center_input_synid, center, process)
+        assert patch_tablequery.call_count == 2
+        patch_validatefile.assert_called_once_with(
+            syn, entity,
+            validationstatus_mock.asDataFrame(),
+            errortracking_mock.asDataFrame(),
+            center='SAGE', threads=1,
+            testing=False,
+            oncotree_link=oncotree_link)
+        patch_update_status.assert_called_once_with(
+            syn,
+            center,
+            input_status_list,
+            [],
+            validationstatus_mock,
+            errortracking_mock)
+
+        assert valid_filedf.equals(validation_statusdf[['id', 'path', 'fileType']])
 
 
 @pytest.mark.parametrize(
