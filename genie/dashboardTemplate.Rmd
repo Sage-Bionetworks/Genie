@@ -413,10 +413,7 @@ if (!is.null(this_bed)) {
   this_assays = this_assays[this_assays %in% this_bed$SEQ_ASSAY_ID]
   myeloid_panels = c("VICC-01-MYELOID","UHN-54-V1","UCHI-ONCOHEME55-V1","CHOP-HEMEP","MSK-IMPACT-HEME-400")
   myeloid = this_assays[this_assays %in% myeloid_panels]
-  if (length(myeloid) > 1) {
-    print("Overlap of myeloid gene panels")
-    plotPanelOverlap(this_samples, this_bed, myeloid)
-  }
+
   normal = this_assays[!this_assays %in% myeloid_panels]
   smallPanels = c()
   largePanels = c()
@@ -429,13 +426,31 @@ if (!is.null(this_bed)) {
       largePanels = c(largePanels, panel)
     }
   }
-  if (length(smallPanels) > 1) {
-    print("Overlap of small (<100) gene panels")
-    plotPanelOverlap(this_samples, this_bed, smallPanels)
-  }
-  if (length(largePanels) > 1) {
-    print("Overlap of large (>100) gene panels")
-    plotPanelOverlap(this_samples, this_bed, largePanels)
-  }
+} else {
+  largePanels = c()
+  smallPanels = c()
+  myeloid = c()
+}
+```
+  
+```{r myeloid_panel_upset}
+if (length(myeloid) > 1) {
+  print("Overlap of myeloid gene panels")
+  plotPanelOverlap(this_samples, this_bed, myeloid)
+}
+
+```
+
+```{r small_panel_upset}
+if (length(smallPanels) > 1) {
+  print("Overlap of small (<100) gene panels")
+  plotPanelOverlap(this_samples, this_bed, smallPanels)
+}
+```
+
+```{r large_panel_upset}
+if (length(largePanels) > 1) {
+  print("Overlap of large (>100) gene panels")
+  plotPanelOverlap(this_samples, this_bed, largePanels)
 }
 ```
