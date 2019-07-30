@@ -1,9 +1,11 @@
-import synapseclient
-import pandas as pd
 import mock
 import pytest
-from genie import seg
-from genie import cbs
+
+import pandas as pd
+import synapseclient
+
+from genie.seg import seg
+from genie.cbs import cbs
 
 syn = mock.create_autospec(synapseclient.Synapse)
 

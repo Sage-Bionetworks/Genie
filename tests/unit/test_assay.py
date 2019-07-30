@@ -1,8 +1,10 @@
+import mock
+import pytest
+
 import synapseclient
 import pandas as pd
-import mock
+
 from genie.assay import Assayinfo
-import pytest
 
 
 TEST_GDC_DATA_DICT = {

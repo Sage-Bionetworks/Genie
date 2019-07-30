@@ -1,13 +1,17 @@
-from __future__ import absolute_import
-from genie import example_filetype_format, process_functions
 import os
 import logging
+import subprocess
 import yaml
+
 import pandas as pd
+
+from .example_filetype_format import FileTypeFormat
+from . import process_functions
+
 logger = logging.getLogger(__name__)
 
 
-class Assayinfo(example_filetype_format.FileTypeFormat):
+class Assayinfo(FileTypeFormat):
     '''
     Assay information file type
     '''
