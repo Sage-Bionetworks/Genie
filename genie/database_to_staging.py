@@ -1,18 +1,21 @@
-#!/usr/local/bin/python
+#!/usr/local/bin/ python3
+
 import argparse
-import os
+import datetime
 import logging
 import math
-import datetime
-import time
+import os
 import re
 import subprocess
-import synapseclient
+import time
+
 import pandas as pd
+import synapseclient
 import synapseutils
-import create_case_lists
-import dashboard_table_updater
-import process_functions
+
+from . import process_functions
+from . import create_case_lists
+from . import dashboard_table_updater
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -82,7 +85,7 @@ def storeFile(syn,
         parent = "syn9689654" if caseLists else "syn7551278"
     logger.info("STORING FILE: %s" % os.path.basename(filePath))
     # if not centerStaging:
-    #   process.center_anon(filePath, ANONYMIZE_CENTER_DF)
+    #   process_functions.center_anon(filePath, ANONYMIZE_CENTER_DF)
     if name is None:
         name = os.path.basename(filePath)
     temp = synapseclient.File(
@@ -93,7 +96,7 @@ def storeFile(syn,
         temp.cBioFileFormat = cBioFileFormat
     temp = syn.store(temp)
     # if not centerStaging:
-    #   process.center_convert_back(filePath, ANONYMIZE_CENTER_DF)
+    #   process_functions.center_convert_back(filePath, ANONYMIZE_CENTER_DF)
     return(temp)
 
 
@@ -289,7 +292,7 @@ def runMAFinBED(syn,
         center_mutation = removedVariantsDf[
             removedVariantsDf['Center'] == center]
 
-        # mafText = process.removePandasDfFloat(center_mutation)
+        # mafText = process_functions.removePandasDfFloat(center_mutation)
         center_mutation.to_csv("mafinbed_filtered_variants.csv", index=False)
 
         storeFile(
