@@ -1598,7 +1598,7 @@ def main(genie_version,
         skip_mutationsincis: Skip mutation in cis filter
     '''
     syn = process_functions.synLogin(pemfile, debug=debug)
-    genie_user = os.environ['GENIE_USER']
+    genie_user = os.environ.get('GENIE_USER')
     if pemfile is not None:
         genie_pass = process_functions.get_password(pemfile)
     else:
