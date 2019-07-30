@@ -1,7 +1,10 @@
-from __future__ import absolute_import
-from genie import sampleRetraction
 import logging
 import os
+
+import pandas as pd
+
+from .sampleRetraction import sampleRetraction
+
 logger = logging.getLogger(__name__)
 
 class patientRetraction(sampleRetraction):

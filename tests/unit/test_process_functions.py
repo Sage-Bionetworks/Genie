@@ -1,6 +1,12 @@
-import pandas as pd
-import genie
 import pytest
+import mock
+
+import pandas as pd
+import synapseclient
+
+import genie.process_functions
+
+syn = mock.create_autospec(synapseclient.Synapse)
 
 DATABASE_DF = pd.DataFrame({
     'UNIQUE_KEY': ['test1', 'test2', 'test3'],
@@ -258,3 +264,52 @@ def test_norows__delete_rows():
     delete_rows = genie.process_functions._delete_rows(
         DATABASE_DF, DATABASE_DF, 'UNIQUE_KEY')
     assert delete_rows.empty
+
+
+@pytest.fixture(params=[
+    # tuple with (input, expectedOutput)
+    (False, False, "syn10967259"),
+    (False, True, "syn12094210"),
+    (True, False, "syn11600968")])
+def database_map(request):
+    return request.param
+
+
+class argparser:
+    def asDataFrame(self):
+        database_dict = {"Database": ["centerMapping"],
+                         "Id": ["syn123"]}
+        databasetosynid_mappingdf = pd.DataFrame(database_dict)
+        return(databasetosynid_mappingdf)
+
+
+def test_get_synid_database_mappingdf(database_map):
+    '''
+    Test getting database mapping config
+    no flags
+    staging flag
+    test flag
+    '''
+    (test, staging, synid) = database_map
+    arg = argparser()
+    with mock.patch(
+            "genie.process_functions.get_syntabledf",
+            return_value=arg.asDataFrame()) as patch_gettabledf:
+        df = genie.process_functions.get_synid_database_mappingdf(
+            syn, test=test, staging=staging)
+        patch_gettabledf.assert_called_once_with(
+            syn, "SELECT * FROM {}".format(synid))
+        assert df.equals(arg.asDataFrame())
+
+
+def test_get_syntabledf():
+    '''
+    Test helper function that queries synapse tables and returns dataframes
+    '''
+    arg = argparser()
+    with mock.patch.object(
+            syn, "tableQuery", return_value=arg) as patch_syn_tablequery:
+        querystring = "select * from foo"
+        df = genie.process_functions.get_syntabledf(syn, querystring)
+        patch_syn_tablequery.assert_called_once_with(querystring)
+        assert df.equals(arg.asDataFrame())

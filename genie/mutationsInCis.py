@@ -1,8 +1,11 @@
-from __future__ import absolute_import
-from genie import FileTypeFormat, process_functions
-import os
-import pandas as pd
 import logging
+import os
+
+import pandas as pd
+
+from .example_filetype_format import FileTypeFormat
+from . import process_functions
+
 logger = logging.getLogger(__name__)
 
 # def updateMutationInCisData(syn, databaseSynId, newData, center, col, toDelete=False):
