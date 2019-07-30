@@ -1,12 +1,11 @@
-import pytest
-import sys
-import os
-import synapseclient
+# import pytest
+# import sys
 import mock
+import os
+
+from genie import database_to_staging
 import pandas as pd
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(SCRIPT_DIR, "../../genie"))
-import database_to_staging
+import synapseclient
 
 syn = synapseclient.Synapse()
 fileviewSynId = "syn12345"
@@ -27,8 +26,8 @@ def test_store_gene_panel_files():
     with mock.patch.object(
             syn, "tableQuery",
             return_value=gene_panel()) as patch_syn_table_query,\
-        mock.patch(
-            "database_to_staging.storeFile",
+        mock.patch.object(
+            database_to_staging, "storeFile",
             return_value=synapseclient.Entity()) as patch_storefile,\
         mock.patch.object(
             syn, "get",
