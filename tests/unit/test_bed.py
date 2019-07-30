@@ -4,6 +4,7 @@ import shutil
 
 import synapseclient
 import pandas as pd
+from pandas.testing import assert_frame_equal
 
 from genie.bed import bed
 from genie.bedSP import bedSP
@@ -11,6 +12,7 @@ from genie.bedSP import bedSP
 if not shutil.which('bedtools'):
     pytest.skip("bedtools is not found, skipping bed tests", 
                 allow_module_level=True)
+
 
 def create_mock_table(dataframe):
     table = mock.create_autospec(synapseclient.table.CsvFileTable)
@@ -71,7 +73,9 @@ def test_perfect___process():
         beddf, seq_assay_id, new_path, parentid, createPanel=False)
     new_beddf.sort_values("ID", inplace=True)
     new_beddf.reset_index(drop=True, inplace=True)
-    assert expected_beddf.equals(new_beddf[expected_beddf.columns])
+    assert_frame_equal(expected_beddf,
+                       new_beddf[expected_beddf.columns],
+                       check_dtype=False)
 
 
 def test_includeinpanel___process():
@@ -103,7 +107,9 @@ def test_includeinpanel___process():
         beddf, seq_assay_id, new_path, parentid, createPanel=False)
     new_beddf.sort_values("Chromosome", inplace=True)
     new_beddf.reset_index(drop=True, inplace=True)
-    assert expected_beddf.equals(new_beddf[expected_beddf.columns])
+    assert_frame_equal(expected_beddf,
+                       new_beddf[expected_beddf.columns],
+                       check_dtype=False)
 
 
 def test_clinicalreport___process():
@@ -136,7 +142,9 @@ def test_clinicalreport___process():
         beddf, seq_assay_id, new_path, parentid, createPanel=False)
     new_beddf.sort_values("Chromosome", inplace=True)
     new_beddf.reset_index(drop=True, inplace=True)
-    assert expected_beddf.equals(new_beddf[expected_beddf.columns])
+    assert_frame_equal(expected_beddf,
+                       new_beddf[expected_beddf.columns],
+                       check_dtype=False)
 
 
 def test_filetype():

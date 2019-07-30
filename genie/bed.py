@@ -179,10 +179,10 @@ def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
     genie_combineddf = genie_combineddf.append(genie_introndf)
     genie_combineddf = genie_combineddf.append(genie_intergenicdf)
     # genie_combineddf.sort_values()
-    genie_combined_path = \
-        os.path.join(process_functions.SCRIPT_DIR, "genie_combined.bed")
-    genie_combineddf.to_csv(genie_combined_path, sep="\t", index=False)
-    return(genie_combined_path)
+    # genie_combined_path = \
+    #     os.path.join(process_functions.SCRIPT_DIR, "genie_combined.bed")
+    # genie_combineddf.to_csv(genie_combined_path, sep="\t", index=False)
+    return(genie_combineddf)
 
 
 def _check_to_map(x, gene_positiondf):
@@ -360,16 +360,15 @@ class bed(FileTypeFormat):
         assert os.path.basename(filePath[0]).startswith("%s-" % self.center)\
             and os.path.basename(filePath[0]).endswith(".bed")
 
-    def createdBEDandGenePanel(
-            self, bed, seq_assay_id,
-            genePanelPath, parentId,
-            exon_gtf_path,
-            createGenePanel=True):
+    def create_gene_panel(self, temp_bed_path, seq_assay_id,
+                          genePanelPath, parentId,
+                          exon_gtf_path,
+                          createGenePanel=True):
         '''
         Create bed file and gene panel files from the bed file
 
         Args:
-            bed: Bed dataframe
+            temp_bed_path: Temporary bed file
             seq_assay_id: GENIE SEQ_ASSAY_ID
             genePanelPath: Gene panel folder path
             parentId: Synapse id of gene panel folder
@@ -379,78 +378,53 @@ class bed(FileTypeFormat):
         Returns:
             pd.DataFrame: configured bed dataframe
         '''
-        logger.info("REMAPPING %s" % seq_assay_id)
-        # bedname = seq_assay_id + ".bed"
-        bed.columns = ["Chromosome", "Start_Position", "End_Position",
-                       "Hugo_Symbol", "includeInPanel", "clinicalReported"]
-        # Validate gene symbols
-        # Gene symbols can be split by ; and _ and : and .
-        bed['Hugo_Symbol'] = [
-            i.split(";")[0].split("_")[0].split(":")[0].split(".")[0]
-            for i in bed['Hugo_Symbol']]
-        bed['Chromosome'] = [
-            str(i).replace("chr", "") for i in bed['Chromosome']]
-        bed['Start_Position'] = bed['Start_Position'].apply(int)
-        bed['End_Position'] = bed['End_Position'].apply(int)
-
-        genePosition = self.syn.tableQuery('SELECT * FROM syn11806563')
-        genePositionDf = genePosition.asDataFrame()
-        bed['ID'] = bed['Hugo_Symbol']
-        bed = bed.apply(lambda x: validateSymbol(
-            x, genePositionDf, returnMappedDf=True), axis=1)
-
-        temp_bed_path = \
-            os.path.join(process_functions.SCRIPT_DIR, "temp.bed")
-        bed['SEQ_ASSAY_ID'] = seq_assay_id
-        bed.to_csv(temp_bed_path, sep="\t", index=False, header=None)
-        command = [
-            'bedtools', 'intersect', '-a',
-            temp_bed_path,
-            '-b', exon_gtf_path,
-            '-u']
+        logger.info("CREATING GENE PANEL")
+        command = ['bedtools', 'intersect', '-a',
+                   temp_bed_path,
+                   '-b', exon_gtf_path,
+                   '-u']
         # Create GENIE genie_exons.bed for gene panel file
-        genie_exon_path = \
-            os.path.join(process_functions.SCRIPT_DIR, 'genie_exons.bed')
-        genie_exon_text = subprocess.check_output(
-            command, universal_newlines=True)
+        genie_exon_text = subprocess.check_output(command,
+                                                  universal_newlines=True)
+        genie_exon_path = os.path.join(process_functions.SCRIPT_DIR,
+                                       'genie_exons.bed')
         with open(genie_exon_path, "w") as genie_exon:
             genie_exon.write(genie_exon_text)
 
         genie_exon_stat = os.stat(genie_exon_path)
         if genie_exon_stat.st_size > 0 and createGenePanel:
-            temp = pd.read_csv(genie_exon_path, sep="\t", header=None)
-            temp.columns = [
-                "Chromosome", "Start_Position", "End_Position",
-                "Hugo_Symbol", "includeInPanel", "clinicalReported",
-                "ID", "SEQ_ASSAY_ID"]
+            exonsdf = pd.read_csv(genie_exon_path, sep="\t", header=None)
+            exonsdf.columns = ["Chromosome", "Start_Position", "End_Position",
+                               "Hugo_Symbol", "includeInPanel",
+                               "clinicalReported",
+                               "ID", "SEQ_ASSAY_ID"]
             # Only include genes that should be included in the panels
-            temp = temp[temp['includeInPanel']]
+            include_exonsdf = exonsdf[exonsdf['includeInPanel']]
             # Write gene panel
-            allgenes = set(temp['Hugo_Symbol'][~temp['Hugo_Symbol'].isnull()])
-            gene_panel_text = (
-                "stable_id: {seq_assay_id}\n"
-                "description: {seq_assay_id}, "
-                "Number of Genes - {num_genes}\n"
-                "gene_list:\t{genelist}".format(
-                    seq_assay_id=seq_assay_id,
-                    num_genes=len(allgenes),
-                    genelist="\t".join(allgenes)))
+            null_genes = include_exonsdf['Hugo_Symbol'].isnull()
+            unique_genes = set(include_exonsdf['Hugo_Symbol'][~null_genes])
+            gene_panel_text = ("stable_id: {seq_assay_id}\n"
+                               "description: {seq_assay_id}, "
+                               "Number of Genes - {num_genes}\n"
+                               "gene_list:\t{genelist}".format(
+                                    seq_assay_id=seq_assay_id,
+                                    num_genes=len(unique_genes),
+                                    genelist="\t".join(unique_genes)))
             genepanelname = "data_gene_panel_" + seq_assay_id + ".txt"
 
             with open(os.path.join(genePanelPath, genepanelname), "w+") as f:
                 f.write(gene_panel_text)
-            process_functions.storeFile(
-                self.syn,
-                os.path.join(genePanelPath, genepanelname),
-                parentId=parentId,
-                center=self.center,
-                fileFormat="bed",
-                dataSubType="metadata",
-                cBioFileFormat="genePanel")
-        return(bed, temp_bed_path)
+            process_functions.storeFile(self.syn,
+                                        os.path.join(genePanelPath,
+                                                     genepanelname),
+                                        parentId=parentId,
+                                        center=self.center,
+                                        fileFormat="bed",
+                                        dataSubType="metadata",
+                                        cBioFileFormat="genePanel")
 
-    def _process(
-            self, gene, seq_assay_id, newPath, parentId, createPanel=True):
+    def _process(self, gene, seq_assay_id, newPath,
+                 parentId, createPanel=True):
         '''
         Process bed file, add feature type
 
@@ -479,16 +453,39 @@ class bed(FileTypeFormat):
         exon_gtf_path, gene_gtf_path = \
             create_gtf(process_functions.SCRIPT_DIR)
 
-        bed, temp_bed_path = self.createdBEDandGenePanel(
-            bed, seq_assay_id, genePanelPath, parentId, exon_gtf_path,
-            createGenePanel=createPanel)
-        genie_combined_path = \
-            add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path)
+        logger.info("REMAPPING %s" % seq_assay_id)
+        # bedname = seq_assay_id + ".bed"
+        bed.columns = ["Chromosome", "Start_Position", "End_Position",
+                       "Hugo_Symbol", "includeInPanel", "clinicalReported"]
+        # Validate gene symbols
+        # Gene symbols can be split by ; and _ and : and .
+        bed['Hugo_Symbol'] = [
+            i.split(";")[0].split("_")[0].split(":")[0].split(".")[0]
+            for i in bed['Hugo_Symbol']]
+        # Replace all chr with blank
+        bed['Chromosome'] = [
+            str(i).replace("chr", "") for i in bed['Chromosome']]
+        # Change all start and end to int
+        bed['Start_Position'] = bed['Start_Position'].apply(int)
+        bed['End_Position'] = bed['End_Position'].apply(int)
 
-        bed = pd.read_csv(genie_combined_path, sep="\t")
-        bed['CENTER'] = self.center
-        bed['Chromosome'] = bed['Chromosome'].astype(str)
-        return(bed)
+        genePosition = self.syn.tableQuery('SELECT * FROM syn11806563')
+        genePositionDf = genePosition.asDataFrame()
+        bed['ID'] = bed['Hugo_Symbol']
+        bed = bed.apply(lambda x: validateSymbol(x, genePositionDf,
+                                                 returnMappedDf=True), axis=1)
+        bed['SEQ_ASSAY_ID'] = seq_assay_id
+        temp_bed_path = os.path.join(process_functions.SCRIPT_DIR, "temp.bed")
+        bed.to_csv(temp_bed_path, sep="\t", index=False, header=None)
+        self.create_gene_panel(temp_bed_path, seq_assay_id,
+                               genePanelPath, parentId, exon_gtf_path,
+                               createGenePanel=createPanel)
+        final_bed = add_feature_type(temp_bed_path, exon_gtf_path,
+                                     gene_gtf_path)
+
+        final_bed['CENTER'] = self.center
+        final_bed['Chromosome'] = final_bed['Chromosome'].astype(str)
+        return(final_bed)
 
     def preprocess(self, filePath):
         '''
