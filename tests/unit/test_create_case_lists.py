@@ -1,6 +1,7 @@
-import pytest
-from genie import create_case_lists
 import os
+import pytest
+
+from genie import create_case_lists
 
 study_id = "test"
 
