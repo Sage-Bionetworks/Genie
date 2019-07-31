@@ -421,7 +421,8 @@ class bed(FileTypeFormat):
                 "Hugo_Symbol", "includeInPanel", "clinicalReported",
                 "ID", "SEQ_ASSAY_ID"]
             # Only include genes that should be included in the panels
-            temp = temp[temp['includeInPanel']]
+            # Must be .astype(bool) because `1, 0 in [True, False]``
+            temp = temp[temp['includeInPanel'].astype(bool)]
             # Write gene panel
             allgenes = set(temp['Hugo_Symbol'][~temp['Hugo_Symbol'].isnull()])
             gene_panel_text = (
