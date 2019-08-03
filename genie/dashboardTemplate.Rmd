@@ -397,7 +397,7 @@ plotCenterXSex(this_patient)
 plotCenterXAge(this_samples)
 ```
 
-```{r cancer_type_plot, fig.width=12}
+```{r cancer_type_plot, fig.width=14}
 if (!is.null(this_samples$CANCER_TYPE)) {
   #Samples, by cancer type and institution
   plotCancerType(this_samples)
@@ -447,14 +447,14 @@ if (length(myeloid) > 1) {
 
 ```
 
-```{r small_panel_upset, fig.height=10}
+```{r small_panel_upset, fig.height=12}
 if (length(smallPanels) > 1) {
   print("Overlap of small (<100) gene panels")
   plotPanelOverlap(this_samples, this_bed, smallPanels)
 }
 ```
 
-```{r large_panel_upset, fig.height=10}
+```{r large_panel_upset, fig.height=15}
 if (length(largePanels) > 1) {
   print("Overlap of large (>100) gene panels")
   plotPanelOverlap(this_samples, this_bed, largePanels)
