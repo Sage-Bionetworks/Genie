@@ -2,7 +2,6 @@
 import datetime
 import logging
 import os
-import shutil
 import time
 
 import synapseclient
@@ -13,7 +12,6 @@ from .config import PROCESS_FILES
 from . import process_functions
 from . import validate
 from . import toRetract
-from . import input_to_database
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
