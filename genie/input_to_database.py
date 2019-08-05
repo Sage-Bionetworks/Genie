@@ -470,14 +470,16 @@ def get_duplicated_files(validation_statusdf, duplicated_error_message):
     logger.info("CHECK FOR DUPLICATED FILES")
     duplicated_filesdf = validation_statusdf[
         validation_statusdf['name'].duplicated(keep=False)]
+    # Define filename str vector
+    filename_str = validation_statusdf.name.str
     # cbs/seg files should not be duplicated.
-    cbs_seg_files = validation_statusdf.query(
-        'name.str.endswith("cbs") or name.str.endswith("seg")')
+    cbs_seg_index = filename_str.endswith(("cbs", "seg"))
+    cbs_seg_files = validation_statusdf[cbs_seg_index]
     if len(cbs_seg_files) > 1:
         duplicated_filesdf = duplicated_filesdf.append(cbs_seg_files)
     # clinical files should not be duplicated.
-    clinical_files = validation_statusdf.query(
-        'name.str.startswith("data_clinical_supp")')
+    clinical_index = filename_str.startswith("data_clinical_supp")
+    clinical_files = validation_statusdf[clinical_index]
     if len(clinical_files) > 2:
         duplicated_filesdf = duplicated_filesdf.append(clinical_files)
     duplicated_filesdf.drop_duplicates("id", inplace=True)
