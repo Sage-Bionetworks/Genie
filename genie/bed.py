@@ -469,12 +469,16 @@ class bed(FileTypeFormat):
 
         # Add in 6th column which is the clinicalReported
         if len(gene.columns) > 5:
-            if not all(gene[5].apply(lambda x: isinstance(x, bool))):
+            if all(gene[5].apply(lambda x: x in [True, False])):
+                gene[5] = gene[5].astype(bool)
+            else:
                 gene[5] = pd.np.nan
         else:
             gene[5] = pd.np.nan
         bed = gene[[0, 1, 2, 3, 4, 5]]
         genePanelPath = os.path.dirname(newPath)
+        # Must be .astype(bool) because `1, 0 in [True, False]`
+        bed[4] = bed[4].astype(bool)
 
         exon_gtf_path, gene_gtf_path = \
             create_gtf(process_functions.SCRIPT_DIR)
