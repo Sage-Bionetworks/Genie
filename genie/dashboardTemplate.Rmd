@@ -159,7 +159,7 @@ plotCancerType <- function(this_samples) {
   op = par(mar = c(13, 4, 4, 2))
   barplot(typeCounts[order(typeCounts,decreasing = TRUE)],
           las = 2,
-          cex.names = 0.8,
+          cex.names = 0.7,
           ylab = "Number of samples",
           main = "Samples, by cancer type and institution")
   typeCountsByCen = table(this_samples$CENTER,this_samples$CANCER_TYPE)
@@ -173,7 +173,7 @@ plotCancerType <- function(this_samples) {
   }
   barplot(toPlot,
           las = 2,
-          cex.names = 0.8,
+          cex.names = 0.7,
           ylab = "Fraction of samples",
           col = brewer.pal(8,"Spectral"),
           legend.text = rownames(typeCountsByCen),
@@ -395,10 +395,16 @@ plotCenterXEthnicity(this_patient)
 plotCenterXSex(this_patient)
 #Center X Age
 plotCenterXAge(this_samples)
+```
+
+```{r cancer_type_plot, fig.width=14}
 if (!is.null(this_samples$CANCER_TYPE)) {
   #Samples, by cancer type and institution
   plotCancerType(this_samples)
 }
+```
+
+```{r bed_process, include=F}
 if (!is.null(this_bed)) {
   this_bed <- this_bed[this_bed$Feature_Type == "exon",]
   #Make it so that I use include in panel
@@ -441,14 +447,14 @@ if (length(myeloid) > 1) {
 
 ```
 
-```{r small_panel_upset}
+```{r small_panel_upset, fig.height=12}
 if (length(smallPanels) > 1) {
   print("Overlap of small (<100) gene panels")
   plotPanelOverlap(this_samples, this_bed, smallPanels)
 }
 ```
 
-```{r large_panel_upset}
+```{r large_panel_upset, fig.height=15}
 if (length(largePanels) > 1) {
   print("Overlap of large (>100) gene panels")
   plotPanelOverlap(this_samples, this_bed, largePanels)
