@@ -74,6 +74,9 @@ class vcf(maf):
             # which is not allowed in VCF specs. Replace that with a comma
             command = ['sed', '-i', "'s/ p\./,p./'", newVCFPath]
             subprocess.check_call(" ".join(command), shell=True)
+            # Remove empty white space lines (VCF2MAF fails)
+            command = ['sed', '-i', "'/^\s*$/d'", newVCFPath]
+            subprocess.check_call(" ".join(command), shell=True)
             # Strips out windows indentations \r
             command = ['dos2unix', newVCFPath]
             subprocess.check_call(command)
