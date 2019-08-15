@@ -133,8 +133,8 @@ def check_existing_file_status(validation_statusdf, error_trackerdf, entities):
 
         # Get the current status and errors from the tables.
         current_status = \
-            validation_statusdf[(validation_statusdf['id'] == ent.id) & (validation_statusdf['versionNumber'] == versionNumber)]
-        current_error = error_trackerdf[(error_trackerdf['id'] == ent.id) & (error_trackerdf['versionNumber'] == versionNumber)]
+            validation_statusdf[(validation_statusdf['id'] == ent.id)]
+        current_error = error_trackerdf[(error_trackerdf['id'] == ent.id)]
 
         if current_status.empty:
             to_validate = True
@@ -235,7 +235,7 @@ def _get_status_and_error_list(syn, valid, message, filetype, entities):
         invalid_errors_list = None
     else:
         invalid_errors_list = [
-            [ent.id, message, ent.name, str(ent.properties.versionNumber)]
+            [ent.id, message, ent.name]
             for ent in entities]
         status = "INVALID"
 
@@ -243,7 +243,7 @@ def _get_status_and_error_list(syn, valid, message, filetype, entities):
     for ent in entities:
         record = [ent.id, ent.path, ent.md5, status, 
                   ent.name, entity_date_to_timestamp(ent.properties.modifiedOn),
-                  filetype, str(ent.properties.versionNumber)]
+                  filetype]
         input_status_list.append(record)
 
     return(input_status_list, invalid_errors_list)
@@ -299,11 +299,10 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     else:
         input_status_list = [
             [ent.id, path, ent.md5, status, filename, 
-             entity_date_to_timestamp(ent.properties.modifiedOn), filetype, 
-             str(ent.properties.versionNumber)] for ent, path, status, filename in
+             entity_date_to_timestamp(ent.properties.modifiedOn), filetype] for ent, path, status, filename in
             zip(entities, filepaths, status_list, filenames)]
         invalid_errors_list = [
-            [entity.id, error, filename, str(entity.properties.versionNumber)]
+            [entity.id, error, filename]
             for entity, error, filename in
             zip(entities, error_list, filenames)]
     return(input_status_list, invalid_errors_list)

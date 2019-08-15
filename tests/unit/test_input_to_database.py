@@ -404,8 +404,7 @@ def test_valid_validatefile():
         'VALIDATED',
         'data_clinical_supp_SAGE.txt',
         1553428800000,
-        'clinical',
-        entity.properties.versionNumber]], None)
+        'clinical']], None)
     with mock.patch(
             "genie.validate.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
@@ -546,13 +545,11 @@ def test_already_validated_validatefile():
                                    check_file_status_dict['status_list'][0],
                                    entity.name,
                                    1553428800000,
-                                   filetype,
-                                   entity.properties.versionNumber]]
+                                   filetype]]
     
     expected_invalid_errors_list = [[entity.id,
                                      check_file_status_dict['error_list'][0],
-                                     entity.name,
-                                     entity.properties.versionNumber]]
+                                     entity.name]]
 
     expected_validate_results = (expected_input_status_list,
                                  expected_invalid_errors_list)
@@ -681,7 +678,7 @@ def test_valid__get_status_and_error_list():
     assert input_status_list == \
         [[entity.id, entity.path, entity.md5,
          'VALIDATED', entity.name, modified_on,
-         filetype, entity.properties.versionNumber]]
+         filetype]]
 
     assert invalid_errors_list is None
 
@@ -711,11 +708,10 @@ def test_invalid__get_status_and_error_list():
     assert input_status_list == \
         [[entity.id, entity.path, entity.md5,
           'INVALID', entity.name, modified_on,
-          filetype, entity.properties.versionNumber]]
+          filetype]]
 
     assert invalid_errors_list == \
-        [['syn1234', message, 'data_clinical_supp_SAGE.txt', 
-         entity.properties.versionNumber]]
+        [['syn1234', message, 'data_clinical_supp_SAGE.txt']]
 
 
 def test__send_validation_error_email():

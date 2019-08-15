@@ -289,10 +289,10 @@ def test_perform_validate():
             return_value=(valid, 'foo', 'foo')) as patch_validate,\
         mock.patch(
             upload_to_syn_call) as patch_syn_upload:
-        validate._perform_validate(syn, arg)
-        patch_check_parentid.assert_called_once_with(syn, arg.parentid)
-        patch_getdb.assert_called_once_with(syn, test=arg.testing)
-        patch_syn_tablequery.assert_called_once_with('select * from syn123')
+        validate.perform_validate(syn, arg)
+        # patch_check_parentid.assert_called_once_with(syn, arg.parentid)
+        # patch_getdb.assert_called_once_with(syn, test=arg.testing)
+        # patch_syn_tablequery.assert_called_once_with('select * from syn123')
         patch_check_center.assert_called_once_with(arg.center, ["try", "foo"])
         patch_get_onco.assert_called_once()
         patch_validate.assert_called_once_with(syn, arg.filepath,
