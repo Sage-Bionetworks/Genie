@@ -4,4 +4,4 @@ import logging
 from . import process_functions
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("genie")
+logger = logging.getLogger(__name__)

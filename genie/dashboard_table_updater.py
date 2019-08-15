@@ -11,6 +11,7 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 def get_center_data_completion(center, df):
     '''
     Get center data completion.  Calulates the percentile of
@@ -28,19 +29,20 @@ def get_center_data_completion(center, df):
     centerdf = df[df['CENTER'] == center]
     total = len(centerdf)
     center_data = pd.DataFrame()
+    skip_cols = ['CENTER', 'PATIENT_ID', 'SAMPLE_ID', 'SAMPLE_TYPE_DETAILED',
+                 'SECONDARY_RACE', 'TERTIARY_RACE']
     for col in centerdf:
-        # Remove this when _NUMERICAL cols are removed from master table
-        if not col.endswith("_NUMERICAL") and col not in \
-                ['CENTER', 'PATIENT_ID', 'SAMPLE_ID', 'SAMPLE_TYPE_DETAILED']:
-            not_missing = [not pd.isnull(value) for value in centerdf[col]]
+        if col not in skip_cols:
+            not_missing = [not pd.isnull(value) and value != 'Not Collected'
+                           for value in centerdf[col]]
             completeness = float(sum(not_missing)) / int(total)
             returned = pd.DataFrame([[col, center, total, completeness]])
             center_data = center_data.append(returned)
     return(center_data)
 
 
-def update_samples_in_release_table(
-        syn, file_mapping, release, samples_in_release_synid):
+def update_samples_in_release_table(syn, file_mapping, release,
+                                    samples_in_release_synid):
     '''
     Convenience function that updates the sample in release table
     This tracks the samples of each release.  1 means it exists, and 0
@@ -83,8 +85,8 @@ def update_samples_in_release_table(
         samples_in_releasedf, samples_in_release_synid, ["SAMPLE_ID"])
 
 
-def update_cumulative_sample_table(
-        syn, file_mapping, release, cumulative_sample_count_synid):
+def update_cumulative_sample_table(syn, file_mapping, release,
+                                   cumulative_sample_count_synid):
     '''
     Consortium release sample count table update function
     This gets the cumulative sample count of each file type in each release
@@ -456,13 +458,6 @@ def update_data_completeness_table(syn, database_mappingdf):
     sampledf = sample.asDataFrame()
     patient = syn.tableQuery('select * from syn7517669')
     patientdf = patient.asDataFrame()
-
-    vital_status = syn.tableQuery('select * from syn11559910')
-    vital_statusdf = vital_status.asDataFrame()
-    del vital_statusdf['CENTER']
-    vital_statusdf = vital_statusdf[
-        vital_statusdf['PATIENT_ID'].isin(patientdf.PATIENT_ID)]
-    patientdf = patientdf.merge(vital_statusdf, on="PATIENT_ID", how="outer")
 
     data_completenessdf = pd.DataFrame()
     center_infos = sampledf.CENTER.drop_duplicates().apply(

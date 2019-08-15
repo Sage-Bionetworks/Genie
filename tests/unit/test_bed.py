@@ -1,5 +1,6 @@
 import mock
 import pytest
+import shutil
 
 import synapseclient
 import pandas as pd
@@ -7,6 +8,9 @@ import pandas as pd
 from genie.bed import bed
 from genie.bedSP import bedSP
 
+if not shutil.which('bedtools'):
+    pytest.skip("bedtools is not found, skipping bed tests", 
+                allow_module_level=True)
 
 def create_mock_table(dataframe):
     table = mock.create_autospec(synapseclient.table.CsvFileTable)
@@ -60,8 +64,8 @@ def test_perfect___process():
         1: [69688533, 99401860, 53701241, 44084466, 44084466],
         2: [69901480, 99417584, 53718647, 44084638, 44084638],
         3: ['AAK1', 'AAED1', 'AAAS', 'XRCC1', 'foo'],
-        4: [True, True, True, True, True],
-        5: [True, True, False, False, True]})
+        4: [True, True, True, 1, 1],
+        5: [True, True, False, 0, 1]})
 
     new_beddf = bed_class._process(
         beddf, seq_assay_id, new_path, parentid, createPanel=False)
@@ -93,7 +97,7 @@ def test_includeinpanel___process():
         1: [69688432, 1111, 53700240, 44080953],
         2: [69689532, 1111, 53719548, 44084624],
         3: ['foo', 'bar', 'baz', 'boo'],
-        4: [True, True, False, True]})
+        4: [True, True, 0, 1]})
 
     new_beddf = bedsp_class._process(
         beddf, seq_assay_id, new_path, parentid, createPanel=False)
