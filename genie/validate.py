@@ -12,6 +12,52 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+class Validator(object):
+    def __init__(self, syn):
+        self._synapse_client = syn
+
+    def determine_filetype(self, filepathlist, center):
+        '''
+        Get the file type of the file by validating its filename
+
+        Args:
+            syn: Synapse object
+            filepathlist: list of filepaths to center files
+            center: Participating Center
+
+        Returns:
+            str: File type of input files.  None if no filetype found
+        '''
+        filetype = None
+        # Loop through file formats
+        for file_format in PROCESS_FILES:
+            validator = PROCESS_FILES[file_format](self._synapse_client, center)
+            try:
+                filetype = validator.validateFilename(filepathlist)
+            except AssertionError:
+                continue
+            # If valid filename, return file type.
+            if filetype is not None:
+                break
+        return(filetype)
+
+        
+
+# Validates annotations on Synapse
+# def validateAnnotations(fileList):
+#     logger.info("VALIDATING ANNOTATIONS")
+#     notcorrect = []
+#     for i,ID in enumerate(fileList['entity.id']):
+#         foo = syn.get(ID, downloadFile=False)
+#         required_annot = ["center","dataType","fileType","disease","consortium",
+#         "platform","tissueSource","organism","dataSubType"]
+#         check = [annot for annot in required_annot if foo.annotations.has_key(annot)]
+#         if len(check) != len(required_annot):
+#             notcorrect.append(fileList.iloc[i]['entity.id'])
+#     if len(notcorrect) >0:
+#         return(False)
+#     else:
+#         return(True)
 
 def determine_filetype(syn, filepathlist, center):
     '''
