@@ -25,11 +25,10 @@ def test_perfect_determine_filetype(filename_fileformat_map):
     Tests determining of file type through filenames
     Parameters are passed in from filename_fileformat_map
     '''
-    validator = validate.Validator(syn, center)
-
     (filepath_list, fileformat) = filename_fileformat_map
-    assert validator.determine_filetype(
-        filepath_list) == fileformat
+    validator = validate.Validator(syn, center, filepath_list)
+
+    assert validator.determine_filetype() == fileformat
 
 
 def test_wrongfilename_noerror_determine_filetype():
@@ -37,10 +36,10 @@ def test_wrongfilename_noerror_determine_filetype():
     Tests None is passed back when wrong filename is passed
     when raise_error flag is False
     '''
-    validator = validate.Validator(syn, center)
+    filepathlist = ['wrong.txt']
+    validator = validate.Validator(syn, center=center, filepathlist=filepathlist)
 
-    filetype = validator.determine_filetype(['wrong.txt'])
-    assert filetype is None
+    assert validator.file_type is None
 
 
 def test_valid_collect_errors_and_warnings():
@@ -102,17 +101,15 @@ def test_valid_validate_single_file():
             "genie.validate.collect_errors_and_warnings",
             return_value=expected_message) as mock_determine:
 
-        validator = validate.Validator(syn=syn, center=center)
+        validator = validate.Validator(syn, center=center, filepathlist=filepathlist)
 
-        valid, message, filetype = validator.validate_single_file(
-            filepathlist)
+        valid, message, filetype = validator.validate_single_file()
 
         assert valid == expected_valid
         assert message == expected_message
         assert filetype == expected_filetype
 
-        mock_determine_filetype.assert_called_once_with(
-            filepathlist)
+        mock_determine_filetype.assert_called_once_with()
 
         mock_genie_class.assert_called_once_with(
             filePathList=filepathlist,
@@ -131,10 +128,9 @@ def test_filetype_validate_single_file():
     filepathlist = ['clinical.txt']
     center = "SAGE"
     expected_error = "----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
-    validator = validate.Validator(syn, center)
+    validator = validate.Validator(syn, center, filepathlist)
 
-    valid, message, filetype = validator.validate_single_file(filepathlist,
-                                                              filetype="foobar")
+    valid, message, filetype = validator.validate_single_file(filetype="foobar")
     assert message == expected_error
 
 
@@ -150,11 +146,12 @@ def test_wrongfiletype_validate_single_file():
     with mock.patch(
             "genie.validate.Validator.determine_filetype",
             return_value=None) as mock_determine_filetype:
-        validator = validate.Validator(syn=syn, center=center)
-        valid, message, filetype = validator.validate_single_file(filepathlist)
+        validator = validate.Validator(syn=syn, center=center, 
+                                       filepathlist=filepathlist)
+        valid, message, filetype = validator.validate_single_file()
         
         assert message == expected_error
-        mock_determine_filetype.assert_called_once_with(filepathlist)
+        mock_determine_filetype.assert_called_once_with()
 
 
 def test_nopermission__check_parentid_permission_container():
@@ -297,8 +294,7 @@ def test_perform_validate():
         patch_syn_tablequery.assert_called_once_with('select * from syn123')
         patch_check_center.assert_called_once_with(arg.center, ["try", "foo"])
         patch_get_onco.assert_called_once()
-        patch_validate.assert_called_once_with(arg.filepath,
-                                               arg.filetype,
+        patch_validate.assert_called_once_with(arg.filetype,
                                                arg.oncotreelink, arg.testing,
                                                arg.nosymbol_check)
         patch_syn_upload.assert_called_once_with(
