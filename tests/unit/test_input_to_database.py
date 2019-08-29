@@ -409,15 +409,12 @@ def test_valid_validatefile():
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
-            [entity.path],
-            filetype=filetype,
             oncotreelink=oncotree_link,
             testing=testing
         )
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            [entity.name])
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_called_once_with(
             syn, valid, message, filetype,
             entities)
@@ -474,15 +471,12 @@ def test_invalid_validatefile():
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
-            [entity.path],
-            filetype=filetype,
             oncotreelink=oncotree_link,
             testing=testing
         )
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            [entity.name])
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_called_once_with(
             syn, valid, message, filetype,
             entities)
@@ -547,8 +541,7 @@ def test_already_validated_validatefile():
         patch_validate.assert_not_called()
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            [entity.name])
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_not_called()
         patch_send_email.assert_not_called()
 
