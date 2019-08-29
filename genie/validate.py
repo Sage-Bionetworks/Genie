@@ -16,7 +16,7 @@ class Validator(object):
     """A validator helper class for a center's files.
     """
 
-    def __init__(self, syn, center, format_registry=PROCESS_FILES):
+    def __init__(self, syn, center, filepathlist, format_registry=PROCESS_FILES):
         """A validator helper class for a center's files.
 
         Args:
@@ -24,10 +24,12 @@ class Validator(object):
         """
 
         self._synapse_client = syn
+        self.filepathlist = filepathlist
         self.center = center
         self._format_registry = format_registry
+        self.file_type = self.determine_filetype()
 
-    def determine_filetype(self, filepathlist):
+    def determine_filetype(self):
         '''
         Get the file type of the file by validating its filename
 
@@ -43,7 +45,7 @@ class Validator(object):
         for file_format in self._format_registry:
             validator = self._format_registry[file_format](self._synapse_client, self.center)
             try:
-                filetype = validator.validateFilename(filepathlist)
+                filetype = validator.validateFilename(self.filepathlist)
             except AssertionError:
                 continue
             # If valid filename, return file type.
@@ -51,7 +53,7 @@ class Validator(object):
                 break
         return(filetype)
 
-    def validate_single_file(self, filepathlist, filetype=None,
+    def validate_single_file(self, filetype=None,
                              oncotreelink=None, testing=False, 
                              nosymbol_check=False):
         """
@@ -76,7 +78,7 @@ class Validator(object):
             filetype: String of the type of the file
         """
         if filetype is None:
-            filetype = self.determine_filetype(filepathlist)
+            filetype = self.file_type
 
         if filetype not in self._format_registry:
             valid = False
@@ -84,7 +86,7 @@ class Validator(object):
             warnings = ""
         else:
             validator = self._format_registry[filetype](self._synapse_client, self.center)
-            valid, errors, warnings = validator.validate(filePathList=filepathlist, 
+            valid, errors, warnings = validator.validate(filePathList=self.filepathlist, 
                                                          oncotreeLink=oncotreelink,
                                                          testing=testing,
                                                          noSymbolCheck=nosymbol_check)
@@ -239,9 +241,8 @@ def _perform_validate(syn, args):
     args.oncotreelink = _get_oncotreelink(syn, databasetosynid_mappingdf,
                                           oncotreelink=args.oncotreelink)
 
-    validator = Validator(syn=syn, center=args.center)
-    valid, message, filetype = validator.validate_single_file(
-        args.filepath, args.filetype,
+    validator = Validator(syn=syn, center=args.center, filepathlist=args.filepath)
+    valid, message, filetype = validator.validate_single_file(args.filetype,
         args.oncotreelink, args.testing, args.nosymbol_check)
 
     # Upload to synapse if parentid is specified and valid
