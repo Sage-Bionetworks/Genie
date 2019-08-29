@@ -13,25 +13,35 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 class Validator(object):
-    def __init__(self, syn):
-        self._synapse_client = syn
+    """A validator helper class for a center's files.
+    """
 
-    def determine_filetype(self, filepathlist, center):
+    def __init__(self, syn, center, format_registry=PROCESS_FILES):
+        """A validator helper class for a center's files.
+
+        Args:
+            center: Participating Center
+        """
+
+        self._synapse_client = syn
+        self.center = center
+        self._format_registry = format_registry
+
+    def determine_filetype(self, filepathlist):
         '''
         Get the file type of the file by validating its filename
 
         Args:
             syn: Synapse object
             filepathlist: list of filepaths to center files
-            center: Participating Center
 
         Returns:
             str: File type of input files.  None if no filetype found
         '''
         filetype = None
         # Loop through file formats
-        for file_format in PROCESS_FILES:
-            validator = PROCESS_FILES[file_format](self._synapse_client, center)
+        for file_format in self._format_registry:
+            validator = self._format_registry[file_format](self._synapse_client, self.center)
             try:
                 filetype = validator.validateFilename(filepathlist)
             except AssertionError:
@@ -41,9 +51,9 @@ class Validator(object):
                 break
         return(filetype)
 
-    def validate_single_file(self, filepathlist, center, filetype=None,
-                            oncotreelink=None, testing=False, 
-                            nosymbol_check=False):
+    def validate_single_file(self, filepathlist, filetype=None,
+                             oncotreelink=None, testing=False, 
+                             nosymbol_check=False):
         """
         This function determines the filetype of a single submitted 'file'.
         The 'file' should be one of those defined in config.PROCESS_FILES and 
@@ -66,14 +76,14 @@ class Validator(object):
             filetype: String of the type of the file
         """
         if filetype is None:
-            filetype = self.determine_filetype(filepathlist, center)
+            filetype = self.determine_filetype(filepathlist)
 
-        if filetype not in PROCESS_FILES:
+        if filetype not in self._format_registry:
             valid = False
             errors = "Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
             warnings = ""
         else:
-            validator = PROCESS_FILES[filetype](self._synapse_client, center)
+            validator = self._format_registry[filetype](self._synapse_client, self.center)
             valid, errors, warnings = validator.validate(filePathList=filepathlist, 
                                                          oncotreeLink=oncotreelink,
                                                          testing=testing,
@@ -229,9 +239,9 @@ def _perform_validate(syn, args):
     args.oncotreelink = _get_oncotreelink(syn, databasetosynid_mappingdf,
                                           oncotreelink=args.oncotreelink)
 
-    validator = Validator(syn=syn)
+    validator = Validator(syn=syn, center=args.center)
     valid, message, filetype = validator.validate_single_file(
-        args.filepath, args.center, args.filetype,
+        args.filepath, args.filetype,
         args.oncotreelink, args.testing, args.nosymbol_check)
 
     # Upload to synapse if parentid is specified and valid
