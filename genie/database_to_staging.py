@@ -599,6 +599,9 @@ def store_maf_files(syn,
         with open(mafEnt.path, "r") as mafFile:
             header = mafFile.readline()
             headers = header.replace("\n", "").split("\t")
+            # Add in mutation in cis flag header
+            headers.append("mutationInCis_Flag")
+            header = "\t".join(headers) + "\n"
             if index == 0:
                 with open(mutations_path, 'a') as f:
                     f.write(header)
