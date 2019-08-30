@@ -387,7 +387,7 @@ def test_valid_validatefile():
         1553428800000,
         'clinical']], None)
     with mock.patch(
-            "genie.validate.determine_filetype",
+            "genie.validate.Validator.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
@@ -396,7 +396,7 @@ def test_valid_validatefile():
                 'error_list': [],
                 'to_validate': True}) as patch_check, \
         mock.patch(
-            "genie.validate.validate_single_file",
+            "genie.validate.Validator.validate_single_file",
             return_value=(valid, message, filetype)) as patch_validate,\
         mock.patch(
             "genie.input_to_database._get_status_and_error_list",
@@ -409,17 +409,12 @@ def test_valid_validatefile():
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
-            syn,
-            [entity.path],
-            center,
-            filetype=filetype,
             oncotreelink=oncotree_link,
             testing=testing
         )
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            syn, [entity.name], center)
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_called_once_with(
             syn, valid, message, filetype,
             entities)
@@ -454,7 +449,7 @@ def test_invalid_validatefile():
         entity.name, 1553428800000, 'clinical']],
         [entity.id, message, entity.name])
     with mock.patch(
-            "genie.validate.determine_filetype",
+            "genie.validate.Validator.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
@@ -463,7 +458,7 @@ def test_invalid_validatefile():
                 'error_list': [],
                 'to_validate': True}) as patch_check, \
         mock.patch(
-            "genie.validate.validate_single_file",
+            "genie.validate.Validator.validate_single_file",
             return_value=(valid, message, filetype)) as patch_validate,\
         mock.patch(
             "genie.input_to_database._get_status_and_error_list",
@@ -476,17 +471,12 @@ def test_invalid_validatefile():
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
-            syn,
-            [entity.path],
-            center,
-            filetype=filetype,
             oncotreelink=oncotree_link,
             testing=testing
         )
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            syn, [entity.name], center)
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_called_once_with(
             syn, valid, message, filetype,
             entities)
@@ -530,13 +520,13 @@ def test_already_validated_validatefile():
             check_file_status_dict['error_list'][0],
             entity.name]])
     with mock.patch(
-            "genie.validate.determine_filetype",
+            "genie.validate.Validator.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
             return_value=check_file_status_dict) as patch_check, \
         mock.patch(
-            "genie.validate.validate_single_file",
+            "genie.validate.Validator.validate_single_file",
             return_value=(valid, message, filetype)) as patch_validate,\
         mock.patch(
             "genie.input_to_database._get_status_and_error_list",
@@ -551,8 +541,7 @@ def test_already_validated_validatefile():
         patch_validate.assert_not_called()
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            syn, [entity.name], center)
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_not_called()
         patch_send_email.assert_not_called()
 

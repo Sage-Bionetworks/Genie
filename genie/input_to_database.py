@@ -259,13 +259,10 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     # Need to figure out to how to remove this
     # This must pass in filenames, because filetype is determined by entity name
     # Not by actual path of file
-    filetype = validate.determine_filetype(syn, filenames, center)
+    validator = validate.Validator(syn=syn, center=center, filepathlist=filepaths)
+    filetype = validator.file_type
     if check_file_status['to_validate']:
-        valid, message, filetype = validate.validate_single_file(
-            syn,
-            filepaths,
-            center,
-            filetype=filetype,
+        valid, message, filetype = validator.validate_single_file(
             oncotreelink=oncotree_link,
             testing=testing)
         logger.info("VALIDATION COMPLETE")
