@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='aacrgenie',
-      version='1.6.2',
+      version='1.6.2-veoibddevelop',
       description='Processing and validation for GENIE',
       url='https://github.com/Sage-Bionetworks/Genie',
       author='Thomas Yu',
