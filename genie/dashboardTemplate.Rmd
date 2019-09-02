@@ -359,6 +359,7 @@ variant_counts = table(this_mut$Center)
 variant_countsdf = as.data.frame(variant_counts)
 colnames(variant_countsdf) = c("Center", "Variants")
 release_infodf = merge.data.frame(samplesPerReleaseDf, variant_countsdf, by="Center", all=T)
+release_infodf[is.na(release_infodf)] = 0
 samplesPerReleaseDf = rbind(release_infodf,
                             data.frame("Center" = "Total",
                                        "Samples" = sum(sampleCounts),
