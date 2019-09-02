@@ -356,7 +356,7 @@ sampleCounts = table(this_samples$CENTER)
 samplesPerReleaseDf = as.data.frame(sampleCounts)
 colnames(samplesPerReleaseDf) = c("Center", "Samples")
 variant_counts = table(this_mut$Center)
-variant_countsdf = as.data.frame(sampleCounts)
+variant_countsdf = as.data.frame(variant_counts)
 colnames(variant_countsdf) = c("Center", "Variants")
 release_infodf = merge.data.frame(samplesPerReleaseDf, variant_countsdf, by="Center")
 samplesPerReleaseDf = rbind(release_infodf,
