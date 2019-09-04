@@ -7,7 +7,7 @@ RUN echo "deb http://cran.rstudio.com/bin/linux/ubuntu bionic-cran35/" | tee -a 
 RUN gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9
 RUN gpg -a --export E084DAB9 | apt-key add -
 # GENIE dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --allow-unauthenticated \
 	git \
 	r-base-core \
 	r-base-dev \
@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
 	gcc 
 
 # VCF2MAF dependencies
-RUN apt-get install -y \
+RUN apt-get install -y --allow-unauthenticated \
 	build-essential \
 	cpanminus \
 	curl \
@@ -29,7 +29,7 @@ RUN apt-get install -y \
 	samtools \
 	tabix 
 
-RUN apt install -y \
+RUN apt install -y --allow-unauthenticated \
 	libmysqlclient-dev \
 	libncurses5-dev \
 	zlib1g-dev \
