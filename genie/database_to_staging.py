@@ -794,13 +794,25 @@ def stagingToCbio(
                     CENTER_MAPPING_DF['center'] == center][0],
                 centerStaging=True)
 
+    # Grab assay information
+    assay_info_ind = databaseSynIdMappingDf['Database'] == "assayinfo"
+    assay_info_synid = databaseSynIdMappingDf['Id'][assay_info_ind][0]
+    # Get whole exome seq panels to exclude from gene matrix and gene panel
+    wes_panels = syn.tableQuery("select SEQ_ASSAY_ID from {} where "
+                                "library_strategy = 'WXS'".format(assay_info_synid))
+    wes_paneldf = wes_panels.asDataFrame()
+    wes_seqassayids = wes_paneldf['SEQ_ASSAY_ID']
+    wes_genepanel_filenames = ["data_gene_panel_{}.txt".format(seqassayid)
+                               for seqassayid in wes_seqassayids]
     # Only need to upload these files once
     logger.info("STORING GENE PANELS FILES")
     fileviewSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == "fileview"][0]
-    genePanels = syn.tableQuery(
-        "select id from %s where cBioFileFormat = 'genePanel' "
-        "and fileStage = 'staging'" % fileviewSynId)
+    genePanels = syn.tableQuery("select id from {} where "
+                                "cBioFileFormat = 'genePanel' and "
+                                "fileStage = 'staging' and "
+                                "name not in ('{}')".format(fileviewSynId,
+                                                            "','".join(wes_genepanel_filenames)))
     genePanelDf = genePanels.asDataFrame()
     genePanelEntities = []
     for synId in genePanelDf['id']:
@@ -959,6 +971,12 @@ def stagingToCbio(
         data_gene_panel['SAMPLE_ID'].isin(cnaSamples)].unique()
     data_gene_panel['cna'] = data_gene_panel['mutations']
     data_gene_panel['cna'][~data_gene_panel['cna'].isin(cnaSeqIds)] = "NA"
+    # Exclude WES panels from gene matrix file
+    wes_panel_mut = data_gene_panel['mutations'].isin(wes_seqassayids)
+    data_gene_panel = data_gene_panel[~wes_panel_mut]
+    wes_panel_cna = data_gene_panel['cna'].isin(wes_seqassayids)
+    data_gene_panel = data_gene_panel[~wes_panel_cna]
+
     data_gene_panel.to_csv(DATA_GENE_PANEL_PATH, sep="\t", index=False)
     storeFile(
         syn, DATA_GENE_PANEL_PATH,
