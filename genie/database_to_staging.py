@@ -804,6 +804,8 @@ def stagingToCbio(
     wes_seqassayids = wes_paneldf['SEQ_ASSAY_ID']
     wes_genepanel_filenames = ["data_gene_panel_{}.txt".format(seqassayid)
                                for seqassayid in wes_seqassayids]
+    # Format string for tableQuery statement
+    wes_genepanel_str = "','".join(wes_genepanel_filenames)
     # Only need to upload these files once
     logger.info("STORING GENE PANELS FILES")
     fileviewSynId = databaseSynIdMappingDf['Id'][
@@ -812,7 +814,7 @@ def stagingToCbio(
                                 "cBioFileFormat = 'genePanel' and "
                                 "fileStage = 'staging' and "
                                 "name not in ('{}')".format(fileviewSynId,
-                                                            "','".join(wes_genepanel_filenames)))
+                                                            wes_genepanel_str))
     genePanelDf = genePanels.asDataFrame()
     genePanelEntities = []
     for synId in genePanelDf['id']:
