@@ -86,7 +86,7 @@ def store_file(syn, filePath, genieVersion="database", name=None,
     return ent
 
 
-def redaction_phi(values):
+def _redaction_phi(values):
     '''
     Boolean vector of pediatric and PHI rows
 
@@ -116,12 +116,12 @@ def redaction_phi(values):
         int(float(value)) < pediatric_cutoff
         if value not in ['', 'Unknown', 'Not Applicable', 'Not Collected']
         else False for value in values]
-    return(to_redact, to_redact_pediatric)
+    return to_redact, to_redact_pediatric
 
 
-def reAnnotatePHI(mergedClinical):
+def redact_phi(clinicaldf):
     '''
-    Re annotate PHI data
+    Redact the PHI by re-annotating the clinical file
 
     Args:
         mergedClinical: merged clinical dataframe
@@ -130,51 +130,50 @@ def reAnnotatePHI(mergedClinical):
         pandas.DataFrame: Re-annotated clinical file
     '''
     # Remove PHI data
-    mergedClinical['AGE_AT_SEQ_REPORT'] = \
-        mergedClinical['AGE_AT_SEQ_REPORT'].fillna('')
-    mergedClinical['BIRTH_YEAR'] = mergedClinical['BIRTH_YEAR'].fillna('')
-    toRedact, toRedactPeds = redaction_phi(mergedClinical['AGE_AT_SEQ_REPORT'])
+    age_fill_na = clinicaldf['AGE_AT_SEQ_REPORT'].fillna('')
+    clinicaldf['AGE_AT_SEQ_REPORT'] = age_fill_na
+    clinicaldf['BIRTH_YEAR'] = clinicaldf['BIRTH_YEAR'].fillna('')
+    to_redact, to_redactpeds = _redaction_phi(clinicaldf['AGE_AT_SEQ_REPORT'])
     logger.info("Redacting >89")
-    logger.info(mergedClinical[toRedact])
+    logger.info(clinicaldf[to_redact])
     logger.info("Redacting <18")
-    logger.info(mergedClinical[toRedactPeds])
+    logger.info(clinicaldf[to_redactpeds])
     '''
     Moved to cannotReleaseHIPAA and withheld because the HIPAA
     years would change every single year.
     mergedClinical['BIRTH_YEAR'][toRedact] = "<1926"
     mergedClinical['BIRTH_YEAR'][toRedactPeds] = ">1998"
     '''
-    mergedClinical['BIRTH_YEAR'][toRedact] = "cannotReleaseHIPAA"
-    mergedClinical['AGE_AT_SEQ_REPORT'][toRedact] = ">32485"
-    mergedClinical['BIRTH_YEAR'][toRedactPeds] = "withheld"
-    mergedClinical['AGE_AT_SEQ_REPORT'][toRedactPeds] = "<6570"
+    clinicaldf['BIRTH_YEAR'][to_redact] = "cannotReleaseHIPAA"
+    clinicaldf['AGE_AT_SEQ_REPORT'][to_redact] = ">32485"
+    clinicaldf['BIRTH_YEAR'][to_redactpeds] = "withheld"
+    clinicaldf['AGE_AT_SEQ_REPORT'][to_redactpeds] = "<6570"
 
-    mergedClinical['INT_CONTACT'] = mergedClinical['INT_CONTACT'].fillna('')
-    toRedact, toRedactPeds = redaction_phi(mergedClinical['INT_CONTACT'])
+    clinicaldf['INT_CONTACT'] = clinicaldf['INT_CONTACT'].fillna('')
+    to_redact, to_redactpeds = _redaction_phi(clinicaldf['INT_CONTACT'])
 
-    mergedClinical['INT_CONTACT'][toRedact] = ">32485"
-    mergedClinical['INT_CONTACT'][toRedactPeds] = "<6570"
-    mergedClinical['BIRTH_YEAR'][toRedact] = "cannotReleaseHIPAA"
-    mergedClinical['BIRTH_YEAR'][toRedactPeds] = "withheld"
+    clinicaldf['INT_CONTACT'][to_redact] = ">32485"
+    clinicaldf['INT_CONTACT'][to_redactpeds] = "<6570"
+    clinicaldf['BIRTH_YEAR'][to_redact] = "cannotReleaseHIPAA"
+    clinicaldf['BIRTH_YEAR'][to_redactpeds] = "withheld"
 
-    mergedClinical['INT_DOD'] = mergedClinical['INT_DOD'].fillna('')
-    toRedact, toRedactPeds = redaction_phi(mergedClinical['INT_DOD'])
+    clinicaldf['INT_DOD'] = clinicaldf['INT_DOD'].fillna('')
+    to_redact, to_redactpeds = _redaction_phi(clinicaldf['INT_DOD'])
 
-    mergedClinical['INT_DOD'][toRedact] = ">32485"
-    mergedClinical['INT_DOD'][toRedactPeds] = "<6570"
-    mergedClinical['BIRTH_YEAR'][toRedact] = "cannotReleaseHIPAA"
-    mergedClinical['BIRTH_YEAR'][toRedactPeds] = "withheld"
+    clinicaldf['INT_DOD'][to_redact] = ">32485"
+    clinicaldf['INT_DOD'][to_redactpeds] = "<6570"
+    clinicaldf['BIRTH_YEAR'][to_redact] = "cannotReleaseHIPAA"
+    clinicaldf['BIRTH_YEAR'][to_redactpeds] = "withheld"
 
     # Redact DFCI inputed fields
-    mergedClinical['BIRTH_YEAR'] = [
-        "cannotReleaseHIPAA" if ">" in str(year) else year
-        for year in mergedClinical['BIRTH_YEAR']]
+    clinicaldf['BIRTH_YEAR'] = ["cannotReleaseHIPAA"
+                                if ">" in str(year) else year
+                                for year in clinicaldf['BIRTH_YEAR']]
 
-    mergedClinical['BIRTH_YEAR'] = [
-        "withheld" if "<" in str(year) else year
-        for year in mergedClinical['BIRTH_YEAR']]
+    clinicaldf['BIRTH_YEAR'] = ["withheld" if "<" in str(year) else year
+                                for year in clinicaldf['BIRTH_YEAR']]
 
-    return(mergedClinical)
+    return clinicaldf
 
 
 # Configure each maf row
@@ -771,7 +770,7 @@ def store_clinical_files(syn,
 
     logger.info("CONFIGURING CLINICAL FILES")
     logger.info("REMOVING PHI")
-    clinicaldf = reAnnotatePHI(clinicaldf)
+    clinicaldf = redact_phi(clinicaldf)
     logger.info("ADD CANCER TYPES")
     # This removes support for both oncotree urls (only support json)
     oncotree_dict = process_functions.get_oncotree_code_mappings(oncotree_url)
