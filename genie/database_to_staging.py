@@ -1,5 +1,7 @@
 #!/usr/local/bin/ python3
-
+'''
+Functions for releasing GENIE consortium releases
+'''
 import logging
 import math
 import os
@@ -73,7 +75,7 @@ def store_file(syn, filePath, genieVersion="database", name=None,
         staging: Staging GENIE release.  Default to False
         caseLists: Case lists are stored elsewhere
     '''
-    logger.info("STORING FILE: %s" % os.path.basename(filePath))
+    logger.info("STORING FILE: {}".format(os.path.basename(filePath)))
     if name is None:
         name = os.path.basename(filePath)
     ent = synapseclient.File(filePath, name=name, parent=parent,
@@ -138,12 +140,12 @@ def redact_phi(clinicaldf):
     logger.info(clinicaldf[to_redact])
     logger.info("Redacting <18")
     logger.info(clinicaldf[to_redactpeds])
-    '''
-    Moved to cannotReleaseHIPAA and withheld because the HIPAA
-    years would change every single year.
-    mergedClinical['BIRTH_YEAR'][toRedact] = "<1926"
-    mergedClinical['BIRTH_YEAR'][toRedactPeds] = ">1998"
-    '''
+    
+    # Moved to cannotReleaseHIPAA and withheld because the HIPAA
+    # years would change every single year.
+    # mergedClinical['BIRTH_YEAR'][toRedact] = "<1926"
+    # mergedClinical['BIRTH_YEAR'][toRedactPeds] = ">1998"
+
     clinicaldf['BIRTH_YEAR'][to_redact] = "cannotReleaseHIPAA"
     clinicaldf['AGE_AT_SEQ_REPORT'][to_redact] = ">32485"
     clinicaldf['BIRTH_YEAR'][to_redactpeds] = "withheld"
@@ -449,7 +451,6 @@ def store_gene_panel_files(syn,
                            genieVersion,
                            data_gene_panel,
                            consortiumReleaseSynId,
-                           current_release_staging,
                            wes_seqassayids):
     # Only need to upload these files once
     logger.info("STORING GENE PANELS FILES")
@@ -663,7 +664,6 @@ def run_genie_filters(syn,
                       variant_filtering_synId,
                       clinicaldf,
                       beddf,
-                      sample_cols,
                       center_mappingdf,
                       processing_date,
                       skip_mutationsincis,
@@ -680,7 +680,6 @@ def run_genie_filters(syn,
         variant_filtering_synId: Synapse id of mutationInCis table
         clinicaldf: Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID
         beddf: Bed dataframe
-        sample_cols: Clinical sample columns
         center_mappingdf: Center mapping dataframe
         processing_date: Processing date
         skip_mutationsincis: Skip mutation in cis filter
@@ -698,8 +697,7 @@ def run_genie_filters(syn,
     # Throw error if things don't go through
     logger.info("RUN GENIE FILTERS")
     # STORING CLINICAL FILES INTO CBIOPORTAL
-
-    ''' FILTERING '''
+    # FILTERING
     logger.info("MAF IN BED FILTER")
     remove_mafinbed_variants = runMAFinBED(
         syn, center_mappingdf, test=test,
@@ -1240,7 +1238,6 @@ def stagingToCbio(syn, processingDate, genieVersion,
                           variant_filtering_synId,
                           clinicalDf,
                           bedDf,
-                          sampleCols,
                           CENTER_MAPPING_DF,
                           processingDate,
                           skipMutationsInCis,
@@ -1303,7 +1300,6 @@ def stagingToCbio(syn, processingDate, genieVersion,
         genieVersion,
         data_gene_matrix,
         consortiumReleaseSynId,
-        current_release_staging,
         wes_panelids)
 
     store_fusion_files(
