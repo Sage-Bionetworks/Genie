@@ -1047,7 +1047,6 @@ def store_seg_files(syn, genie_version,
 
 def store_data_gene_matrix(syn, genie_version, clinicaldf,
                            cna_samples, release_synid,
-                           current_release_staging,
                            wes_seqassayids):
     '''
     Create and store data gene matrix file
@@ -1058,7 +1057,6 @@ def store_data_gene_matrix(syn, genie_version, clinicaldf,
         clinicaldf: Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID
         cna_samples: Samples with CNA
         release_synid: Synapse id to store release file
-        current_release_staging: Staging flag
 
     Returns:
         pandas.DataFrame: data gene matrix dataframe
@@ -1293,7 +1291,6 @@ def stagingToCbio(syn, processingDate, genieVersion,
         clinicalDf,
         cnaSamples,
         consortiumReleaseSynId,
-        current_release_staging,
         wes_panelids)
 
     genePanelEntities = store_gene_panel_files(

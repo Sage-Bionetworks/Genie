@@ -1,11 +1,11 @@
+'''
+Test GENIE filters
+'''
 import datetime
-import mock
 import os
-import pytest
 import sys
 
 import pandas as pd
-import synapseclient
 
 from genie.process_functions import seqDateFilter
 from genie.database_to_staging import seq_assay_id_filter
