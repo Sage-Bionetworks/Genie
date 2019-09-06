@@ -20,7 +20,8 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-def storeFile(syn, filePath, parentId, anonymizeCenterDf, genie_version, name=None):
+def storeFile(syn, filePath, parentId, anonymizeCenterDf,
+              genie_version, name=None):
     #process.center_anon(filePath, anonymizeCenterDf)
     if name is None:
         name = os.path.basename(filePath)
@@ -60,7 +61,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
     # else:
     #public release preview
     PUBLIC_RELEASE_PREVIEW =  databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'public'].values[0]
-    PUBLIC_RELEASE_PREVIEW_CASELIST = db_to_staging.findCaseListId(syn, PUBLIC_RELEASE_PREVIEW)
+    PUBLIC_RELEASE_PREVIEW_CASELIST = db_to_staging.find_caselistid(syn, PUBLIC_RELEASE_PREVIEW)
 
     ##############################################################################################################################
     ## Sponsored projects filter
@@ -286,7 +287,7 @@ def createLinkVersion(syn, genie_version, caseListEntities, genePanelEntities, d
         mainReleaseFolderId = syn.store(synapseclient.Folder("Release %s" % main, parent = releaseSynId)).id
         secondReleaseFolderSynId = syn.store(synapseclient.Folder(genie_version, parent = mainReleaseFolderId)).id
 
-    caselistId = db_to_staging.findCaseListId(syn, secondReleaseFolderSynId)
+    caselistId = db_to_staging.find_caselistid(syn, secondReleaseFolderSynId)
 
     publicRelease = syn.getChildren(publicSynId)
     [syn.store(synapseclient.Link(ents['id'], parent=secondReleaseFolderSynId, targetVersion=ents['versionNumber'])) for ents in publicRelease if ents['type'] != "org.sagebionetworks.repo.model.Folder" and ents['name'] != "data_clinical.txt"  and not ents['name'].startswith("data_gene_panel")]
