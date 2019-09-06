@@ -140,7 +140,7 @@ def redact_phi(clinicaldf):
     logger.info(clinicaldf[to_redact])
     logger.info("Redacting <18")
     logger.info(clinicaldf[to_redactpeds])
-    
+
     # Moved to cannotReleaseHIPAA and withheld because the HIPAA
     # years would change every single year.
     # mergedClinical['BIRTH_YEAR'][toRedact] = "<1926"
@@ -178,24 +178,26 @@ def redact_phi(clinicaldf):
     return clinicaldf
 
 
-# Configure each maf row
 def configureMafRow(rowArray, headers, keepSamples, remove_variants,
                     flagged_variants):
+    '''
+    Configure each maf row
+    '''
     chrom = str(rowArray[headers.index('Chromosome')])
     start = str(rowArray[headers.index('Start_Position')])
     end = str(rowArray[headers.index('End_Position')])
     ref = str(rowArray[headers.index('Reference_Allele')])
     seq = str(rowArray[headers.index('Tumor_Seq_Allele2')])
-    sampleId = str(rowArray[headers.index('Tumor_Sample_Barcode')])
+    sampleid = str(rowArray[headers.index('Tumor_Sample_Barcode')])
     hgvsp = str(rowArray[headers.index('HGVSp_Short')])
-    variant = chrom+' '+start+' '+end+' '+ref+' '+seq+' '+sampleId
+    variant = chrom+' '+start+' '+end+' '+ref+' '+seq+' '+sampleid
     # Add this line for now because merge check uses
     # different primary key from maf
     mergecheck_variant = \
-        chrom+' '+start+' '+hgvsp+' '+ref+' '+seq+' '+sampleId
+        chrom+' '+start+' '+hgvsp+' '+ref+' '+seq+' '+sampleid
     # if pd.Series(sampleId).isin(keepSamples).any() and \
     # not pd.Series(variant).isin(remove_variants).any():
-    if sampleId in keepSamples.tolist() \
+    if sampleid in keepSamples.tolist() \
             and variant not in remove_variants.tolist():
         fillnas = ['t_depth', 't_ref_count', 't_alt_count',
                    'n_depth', 'n_ref_count', 'n_alt_count']
@@ -399,11 +401,11 @@ def seq_assay_id_filter(clinicaldf):
     Returns:
         pd.Series: samples to remove
     '''
-    remove_seqassayId = clinicaldf['SEQ_ASSAY_ID'].value_counts()[
+    remove_seqassayid = clinicaldf['SEQ_ASSAY_ID'].value_counts()[
         clinicaldf['SEQ_ASSAY_ID'].value_counts() < 50]
     clinicaldf = clinicaldf[clinicaldf['SEQ_ASSAY_ID'].isin(
-        remove_seqassayId.keys().values)]
-    return(clinicaldf.SAMPLE_ID)
+        remove_seqassayid.keys().values)]
+    return clinicaldf['SAMPLE_ID']
 
 
 def no_genepanel_filter(clinicaldf, beddf):
