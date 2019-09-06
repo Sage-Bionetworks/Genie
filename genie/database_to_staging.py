@@ -217,9 +217,9 @@ def configureMafRow(rowArray, headers, keepSamples, remove_variants,
         newRow = "\t".join(rowArray)
         newRow += "\n"
         newRow = process_functions.removeStringFloat(newRow)
-        return(newRow)
+        return newRow
     else:
-        return(None)
+        return None
 
 
 def runMAFinBED(syn,
@@ -775,11 +775,10 @@ def store_clinical_files(syn,
     # This removes support for both oncotree urls (only support json)
     oncotree_dict = process_functions.get_oncotree_code_mappings(oncotree_url)
     # Add in unknown key which maps to UNKNOWN everything
-    oncotree_dict['UNKNOWN'] = {
-        'CANCER_TYPE': 'UNKNOWN',
-        'CANCER_TYPE_DETAILED': 'UNKNOWN',
-        'ONCOTREE_PRIMARY_NODE': 'UNKNOWN',
-        'ONCOTREE_SECONDARY_NODE': 'UNKNOWN'}
+    oncotree_dict['UNKNOWN'] = {'CANCER_TYPE': 'UNKNOWN',
+                                'CANCER_TYPE_DETAILED': 'UNKNOWN',
+                                'ONCOTREE_PRIMARY_NODE': 'UNKNOWN',
+                                'ONCOTREE_SECONDARY_NODE': 'UNKNOWN'}
 
     clinicaldf['CANCER_TYPE'] = [
         oncotree_dict[code.upper()]["CANCER_TYPE"]
@@ -858,14 +857,6 @@ def store_clinical_files(syn,
 
     clinicaldf = clinicaldf[~clinicaldf['SAMPLE_ID'].isin(
         remove_merged_consortium_samples)]
-    # This must happen here because the seq assay filter
-    # must happen after all the other filters
-    # logger.info("SEQ ASSAY FILTER")
-    # remove_seqAssayId_samples = seq_assay_id_filter(clinicalDf)
-    # removeForMergedConsortiumSamples = \
-    #     removeForMergedConsortiumSamples.union(set(remove_seqAssayId_samples))
-    # clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isin(
-    #    remove_seqAssayId_samples)]
 
     keep_center_consortium_samples = staging_clinicaldf.SAMPLE_ID
     keep_merged_consortium_samples = clinicaldf.SAMPLE_ID
@@ -873,8 +864,8 @@ def store_clinical_files(syn,
     # mapping to generate the headers of the clinical file
     mapping_table = syn.tableQuery('SELECT * FROM syn9621600')
     mapping = mapping_table.asDataFrame()
-    clinical_path = os.path.join(
-        GENIE_RELEASE_DIR, 'data_clinical_%s.txt' % genie_version)
+    clinical_path = os.path.join(GENIE_RELEASE_DIR,
+                                 'data_clinical_%s.txt' % genie_version)
     clinical_sample_path = os.path.join(
         GENIE_RELEASE_DIR, 'data_clinical_sample_%s.txt' % genie_version)
     clinical_patient_path = os.path.join(
@@ -995,7 +986,7 @@ def store_cna_files(syn, flatfiles_view_synid,
     store_file(syn, cna_path, parent=release_synid, genieVersion=genie_version,
                name="data_CNA.txt")
 
-    return(cna_samples)
+    return cna_samples
 
 
 # SEG
