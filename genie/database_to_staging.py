@@ -1,7 +1,5 @@
 #!/usr/local/bin/ python3
 
-# import argparse
-# import datetime
 import logging
 import math
 import os
@@ -14,8 +12,6 @@ import synapseclient
 import synapseutils
 
 from . import process_functions
-# from . import create_case_lists
-# from . import dashboard_table_updater
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,24 +19,20 @@ logger = logging.getLogger(__name__)
 # GENIE CONSTANTS
 # GENIE_RELEASE_DIR = os.path.join(
 #    os.path.dirname(os.path.abspath(__file__)),"GENIE_release")
-GENIE_RELEASE_DIR = os.path.join(
-    os.path.expanduser("~/.synapseCache"), "GENIE_release")
-CASE_LIST_PATH = os.path.join(
-    GENIE_RELEASE_DIR, 'case_lists')
-CNA_CENTER_PATH = os.path.join(
-    GENIE_RELEASE_DIR, "data_CNA_%s.txt")
-SAMPLE_CENTER_PATH = os.path.join(
-    GENIE_RELEASE_DIR, 'data_clinical_supp_sample_%s.txt')
-PATIENT_CENTER_PATH = os.path.join(
-    GENIE_RELEASE_DIR, 'data_clinical_supp_patient_%s.txt')
-MUTATIONS_CENTER_PATH = os.path.join(
-    GENIE_RELEASE_DIR, 'data_mutations_extended_%s.txt')
-FUSIONS_CENTER_PATH = os.path.join(
-    GENIE_RELEASE_DIR, 'data_fusions_%s.txt')
-SEG_CENTER_PATH = os.path.join(
-    GENIE_RELEASE_DIR, 'genie_data_cna_hg19_%s.seg')
-BED_DIFFS_SEQASSAY_PATH = os.path.join(
-    GENIE_RELEASE_DIR, 'diff_%s.csv')
+GENIE_RELEASE_DIR = os.path.join(os.path.expanduser("~/.synapseCache"),
+                                 "GENIE_release")
+CASE_LIST_PATH = os.path.join(GENIE_RELEASE_DIR, 'case_lists')
+CNA_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_CNA_%s.txt")
+SAMPLE_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR,
+                                  'data_clinical_supp_sample_%s.txt')
+PATIENT_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR,
+                                   'data_clinical_supp_patient_%s.txt')
+MUTATIONS_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR,
+                                     'data_mutations_extended_%s.txt')
+FUSIONS_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, 'data_fusions_%s.txt')
+SEG_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR,
+                               'genie_data_cna_hg19_%s.seg')
+BED_DIFFS_SEQASSAY_PATH = os.path.join(GENIE_RELEASE_DIR, 'diff_%s.csv')
 
 
 def find_caselistid(syn, parentid):
