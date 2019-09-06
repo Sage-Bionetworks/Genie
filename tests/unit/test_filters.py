@@ -8,8 +8,8 @@ import pandas as pd
 import synapseclient
 
 from genie.process_functions import seqDateFilter
-from genie.database_to_staging import seq_assay_id_filter, reAnnotatePHI,\
-                                no_genepanel_filter
+from genie.database_to_staging import seq_assay_id_filter
+from genie.database_to_staging import redact_phi, no_genepanel_filter
 from genie.consortium_to_public import commonVariantFilter
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -79,7 +79,7 @@ def test_seqdatefilter():
     assert all(samples == expected)
 
 
-def test_reAnnotatePHI():
+def test_redact_phi():
     # Remove PHI, "Make sure that removePHI fills in the right values"
     clinicalDf = pd.DataFrame([
         'SAGE-TEST-1', 'SAGE-TEST-2', 'SAGE-TEST-3', 'SAGE-TEST-4',
@@ -92,7 +92,7 @@ def test_reAnnotatePHI():
     clinicalDf['INT_CONTACT'] = [32850, 32485, 6570, 6569, '<foo', '>testing']
     clinicalDf['INT_DOD'] = [32850, 32485, 6570, 6569, '<foo', '>testing']
 
-    finalClin = reAnnotatePHI(clinicalDf)
+    finalClin = redact_phi(clinicalDf)
     expectedAge = pd.Series([
         '>32485', 32485, 6570, '<6570', '<6570', '>32485'])
     expectedBirth = pd.Series([
@@ -112,7 +112,7 @@ def test_reAnnotatePHI():
     clinicalDf['INT_CONTACT'] = [32485, 32850, 6569, 6570, 6570, 32485]
     clinicalDf['INT_DOD'] = [32485, 32485, 6570, 6569, 6570, '>testing']
     clinicalDf['BIRTH_YEAR'] = [1900, 1901, 1902, 1903, 1900, 1900]
-    finalClin = reAnnotatePHI(clinicalDf)
+    finalClin = redact_phi(clinicalDf)
     assert all(finalClin['BIRTH_YEAR'] == expectedBirth)
 
     # Test to check if > or < submitted in BIRTH_YEAR.  If so, redact
@@ -122,7 +122,7 @@ def test_reAnnotatePHI():
     clinicalDf['INT_CONTACT'] = [32485, 6570]
     clinicalDf['INT_DOD'] = [32485, 6570]
     clinicalDf['BIRTH_YEAR'] = [">asdf", "<adf"]
-    finalClin = reAnnotatePHI(clinicalDf)
+    finalClin = redact_phi(clinicalDf)
     assert all(finalClin['BIRTH_YEAR'] == expectedBirth)
 
 # def test_MAFinBED():
