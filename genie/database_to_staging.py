@@ -442,17 +442,45 @@ def no_genepanel_filter(clinicaldf, beddf):
     return(remove_samples)
 
 
+def _get_wes_panels(syn, assay_info_synid):
+    '''
+    Grab whole exome sequencing panel ids
+
+    Args:
+        syn: Synapse object
+        databaseSynIdMappingDf: database to synapse id mapping df
+
+    Returns:
+        List of whole exome sequenceing SEQ_ASSAY_IDs
+    '''
+    # Get whole exome seq panels to exclude from gene matrix and gene panel
+    wes_panels = syn.tableQuery("select SEQ_ASSAY_ID from {} where "
+                                "library_strategy = 'WXS'".format(assay_info_synid))
+    wes_paneldf = wes_panels.asDataFrame()
+    wes_seqassayids = wes_paneldf['SEQ_ASSAY_ID']
+    return wes_seqassayids
+
+
 def store_gene_panel_files(syn,
                            fileviewSynId,
                            genieVersion,
                            data_gene_panel,
                            consortiumReleaseSynId,
-                           current_release_staging):
+                           current_release_staging,
+                           wes_seqassayids):
     # Only need to upload these files once
     logger.info("STORING GENE PANELS FILES")
-    genePanels = syn.tableQuery(
-        "select id from %s where cBioFileFormat = 'genePanel' "
-        "and fileStage = 'staging'" % fileviewSynId)
+    wes_genepanel_filenames = ["data_gene_panel_{}.txt".format(seqassayid)
+                               for seqassayid in wes_seqassayids]
+    # Format string for tableQuery statement
+    wes_genepanel_str = "','".join(wes_genepanel_filenames)
+    # Only need to upload these files once
+    logger.info("STORING GENE PANELS FILES")
+    genePanels = syn.tableQuery("select id from {} where "
+                                "cBioFileFormat = 'genePanel' and "
+                                "fileStage = 'staging' and "
+                                "name not in ('{}')".format(fileviewSynId,
+                                                            wes_genepanel_str))
     genePanelDf = genePanels.asDataFrame()
     genePanelEntities = []
     for synId in genePanelDf['id']:
@@ -472,7 +500,29 @@ def store_gene_panel_files(syn,
                 name=genePanelName,
                 cBioFileFormat="genePanel",
                 staging=current_release_staging))
-    return(genePanelEntities)
+    # genePanels = syn.tableQuery(
+    #     "select id from %s where cBioFileFormat = 'genePanel' "
+    #     "and fileStage = 'staging'" % fileviewSynId)
+    # genePanelDf = genePanels.asDataFrame()
+    # genePanelEntities = []
+    # for synId in genePanelDf['id']:
+    #     genePanel = syn.get(synId)
+    #     panelNames = set(data_gene_panel['mutations'])
+    #     genePanelName = os.path.basename(genePanel.path)
+    #     newGenePanelPath = os.path.join(
+    #         GENIE_RELEASE_DIR,
+    #         genePanelName.replace(".txt", "_%s.txt" % genieVersion))
+    #     if genePanelName.replace(".txt", "").replace(
+    #             "data_gene_panel_", "") in panelNames:
+    #         os.rename(genePanel.path, newGenePanelPath)
+    #         genePanelEntities.append(storeFile(
+    #             syn, newGenePanelPath,
+    #             parent=consortiumReleaseSynId,
+    #             genieVersion=genieVersion,
+    #             name=genePanelName,
+    #             cBioFileFormat="genePanel",
+    #             staging=current_release_staging))
+    return genePanelEntities
 
 
 def return_syn_tablequerydf(syn, query):
@@ -1087,7 +1137,8 @@ def store_data_gene_matrix(syn,
                            clinicaldf,
                            cna_samples,
                            release_synid,
-                           current_release_staging):
+                           current_release_staging,
+                           wes_seqassayids):
     '''
     Create and store data gene matrix file
 
@@ -1119,6 +1170,11 @@ def store_data_gene_matrix(syn,
         data_gene_matrix['SAMPLE_ID'].isin(cna_samples)].unique()
     data_gene_matrix['cna'] = data_gene_matrix['mutations']
     data_gene_matrix['cna'][~data_gene_matrix['cna'].isin(cna_seqids)] = "NA"
+    wes_panel_mut = data_gene_matrix['mutations'].isin(wes_seqassayids)
+    data_gene_matrix = data_gene_matrix[~wes_panel_mut]
+    wes_panel_cna = data_gene_matrix['cna'].isin(wes_seqassayids)
+    data_gene_matrix = data_gene_matrix[~wes_panel_cna]
+
     data_gene_matrix.to_csv(data_gene_matrix_path, sep="\t", index=False)
 
     storeFile(
@@ -1226,6 +1282,10 @@ def stagingToCbio(syn, processingDate, genieVersion,
         databaseSynIdMappingDf['Database'] == "mutationsInCis"][0]
     fusionSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == "fusions"][0]
+    # Grab assay information
+    assay_info_ind = databaseSynIdMappingDf['Database'] == "assayinfo"
+    assay_info_synid = databaseSynIdMappingDf['Id'][assay_info_ind][0]
+
     # Using center mapping df to gate centers in release fileStage
     patient = syn.tableQuery(
         "SELECT * FROM {} where CENTER in ('{}')".format(
@@ -1330,13 +1390,16 @@ def stagingToCbio(syn, processingDate, genieVersion,
         consortiumReleaseSynId,
         current_release_staging)
 
+    wes_panelids = _get_wes_panels(syn, assay_info_synid)
+
     data_gene_matrix = store_data_gene_matrix(
         syn,
         genieVersion,
         clinicalDf,
         cnaSamples,
         consortiumReleaseSynId,
-        current_release_staging)
+        current_release_staging,
+        wes_panelids)
 
     genePanelEntities = store_gene_panel_files(
         syn,
@@ -1344,7 +1407,8 @@ def stagingToCbio(syn, processingDate, genieVersion,
         genieVersion,
         data_gene_matrix,
         consortiumReleaseSynId,
-        current_release_staging)
+        current_release_staging,
+        wes_panelids)
 
     store_fusion_files(
         syn,
