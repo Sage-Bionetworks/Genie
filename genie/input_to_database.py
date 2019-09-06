@@ -187,13 +187,12 @@ def _send_validation_error_email(syn, filenames, message, file_users):
         file_users, "GENIE Validation Error", email_message)
 
 
-def _get_status_and_error_list(syn, valid, message, filetype, entities):
+def _get_status_and_error_list(valid, message, filetype, entities):
     '''
     Helper function to return the status and error list of the
     files based on validation result.
 
     Args:
-        syn: Synapse object
         valid: Boolean value of results of validation
         message: Validation message
         filetype: File type
@@ -269,7 +268,7 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
             testing=testing)
         logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
-            syn, valid, message, filetype,
+            valid, message, filetype,
             entities)
         # Send email the first time the file is invalid
         if invalid_errors_list is not None:
