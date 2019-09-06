@@ -354,12 +354,18 @@ black_list_variantsdf = black_list_variants$asDataFrame()
 #sampleCountNoTotalDf <- sampleCountNoTotalDf[sampleCountNoTotalDf$Center!="Total",]
 sampleCounts = table(this_samples$CENTER)
 samplesPerReleaseDf = as.data.frame(sampleCounts)
-colnames(samplesPerReleaseDf) = c("Center","Samples")
-samplesPerReleaseDf = rbind(samplesPerReleaseDf,
+colnames(samplesPerReleaseDf) = c("Center", "Samples")
+variant_counts = table(this_mut$Center)
+variant_countsdf = as.data.frame(variant_counts)
+colnames(variant_countsdf) = c("Center", "Variants")
+release_infodf = merge.data.frame(samplesPerReleaseDf, variant_countsdf, by="Center", all=T)
+release_infodf[is.na(release_infodf)] = 0
+samplesPerReleaseDf = rbind(release_infodf,
                             data.frame("Center" = "Total",
-                                       "Samples" = sum(sampleCounts)))
+                                       "Samples" = sum(sampleCounts),
+                                       "Variants" = sum(variant_counts)))
 kable(samplesPerReleaseDf, row.names = F,
-      caption = "Sample count")
+      caption = "Number of samples and variants per center")
 # row.names(sampleCountNoTotalDf) <- sampleCountNoTotalDf$Center
 # sampleCountNoTotalDf$Center <- NULL
 # sampleCountNoTotalDf <- t(sampleCountNoTotalDf)
