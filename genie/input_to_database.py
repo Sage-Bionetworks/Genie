@@ -223,7 +223,8 @@ def _get_status_and_error_list(syn, valid, message, filetype, entities):
 
 
 def validatefile(syn, entities, validation_statusdf, error_trackerdf,
-                 center, threads, testing, oncotree_link):
+                 center, threads, testing, oncotree_link, 
+                 format_registry=PROCESS_FILES):
     '''Validate a list of entities.
 
     If a file has not changed, then it doesn't need to be validated.
@@ -259,7 +260,9 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     # Need to figure out to how to remove this
     # This must pass in filenames, because filetype is determined by entity name
     # Not by actual path of file
-    validator = validate.GenieValidationHelper(syn=syn, center=center, filepathlist=filepaths)
+    validator = validate.GenieValidationHelper(syn=syn, center=center, 
+                                               filepathlist=filepaths,
+                                               format_registry=format_registry)
     filetype = validator.file_type
     if check_file_status['to_validate']:
         valid, message, filetype = validator.validate_single_file(
