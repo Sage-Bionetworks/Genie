@@ -12,9 +12,7 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class Validator(object):
-    """A validator helper class for a center's files.
-    """
+class ValidationHelper(object):
 
     def __init__(self, syn, center, filepathlist, format_registry=PROCESS_FILES):
         """A validator helper class for a center's files.
@@ -52,6 +50,23 @@ class Validator(object):
             if filetype is not None:
                 break
         return(filetype)
+
+    def validate_single_file(self, filetype=None,
+                             oncotreelink=None, testing=False, 
+                             nosymbol_check=False):
+        """
+        This function determines the filetype of a single submitted 'file'.
+        The 'file' should be one of those defined in config.PROCESS_FILES and 
+        may actually be composed of multiple files.
+        if filetype is not specified and logs the validation errors and
+        warnings of a file.
+        """
+
+        raise NotImplementedError
+
+class GenieValidationHelper(ValidationHelper):
+    """A validator helper class for AACR Project Genie.
+    """
 
     def validate_single_file(self, filetype=None,
                              oncotreelink=None, testing=False, 
@@ -241,7 +256,8 @@ def _perform_validate(syn, args):
     args.oncotreelink = _get_oncotreelink(syn, databasetosynid_mappingdf,
                                           oncotreelink=args.oncotreelink)
 
-    validator = Validator(syn=syn, center=args.center, filepathlist=args.filepath)
+    validator = GenieValidationHelper(syn=syn, center=args.center, 
+                                      filepathlist=args.filepath)
     valid, message, filetype = validator.validate_single_file(args.filetype,
         args.oncotreelink, args.testing, args.nosymbol_check)
 

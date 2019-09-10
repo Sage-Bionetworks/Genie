@@ -26,7 +26,7 @@ def test_perfect_determine_filetype(filename_fileformat_map):
     Parameters are passed in from filename_fileformat_map
     '''
     (filepath_list, fileformat) = filename_fileformat_map
-    validator = validate.Validator(syn, center, filepath_list)
+    validator = validate.GenieValidationHelper(syn, center, filepath_list)
 
     assert validator.determine_filetype() == fileformat
 
@@ -37,7 +37,7 @@ def test_wrongfilename_noerror_determine_filetype():
     when raise_error flag is False
     '''
     filepathlist = ['wrong.txt']
-    validator = validate.Validator(syn, center=center, filepathlist=filepathlist)
+    validator = validate.GenieValidationHelper(syn, center=center, filepathlist=filepathlist)
 
     assert validator.file_type is None
 
@@ -92,7 +92,7 @@ def test_valid_validate_single_file():
 
 
     with mock.patch(
-            "genie.validate.Validator.determine_filetype",
+            "genie.validate.GenieValidationHelper.determine_filetype",
             return_value=expected_filetype) as mock_determine_filetype,\
         mock.patch(
             "genie.clinical.clinical.validate",
@@ -101,7 +101,7 @@ def test_valid_validate_single_file():
             "genie.validate.collect_errors_and_warnings",
             return_value=expected_message) as mock_determine:
 
-        validator = validate.Validator(syn, center=center, filepathlist=filepathlist)
+        validator = validate.GenieValidationHelper(syn, center=center, filepathlist=filepathlist)
 
         valid, message, filetype = validator.validate_single_file()
 
@@ -128,7 +128,7 @@ def test_filetype_validate_single_file():
     filepathlist = ['clinical.txt']
     center = "SAGE"
     expected_error = "----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
-    validator = validate.Validator(syn, center, filepathlist)
+    validator = validate.GenieValidationHelper(syn, center, filepathlist)
 
     valid, message, filetype = validator.validate_single_file(filetype="foobar")
     assert message == expected_error
@@ -144,10 +144,10 @@ def test_wrongfiletype_validate_single_file():
     expected_error = '----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally'
 
     with mock.patch(
-            "genie.validate.Validator.determine_filetype",
+            "genie.validate.GenieValidationHelper.determine_filetype",
             return_value=None) as mock_determine_filetype:
-        validator = validate.Validator(syn=syn, center=center, 
-                                       filepathlist=filepathlist)
+        validator = validate.GenieValidationHelper(syn=syn, center=center, 
+                                                   filepathlist=filepathlist)
         valid, message, filetype = validator.validate_single_file()
         
         assert message == expected_error
@@ -269,7 +269,7 @@ def test_perform_validate():
     check_perm_call = "genie.validate._check_parentid_permission_container"
     check_get_db_call = "genie.process_functions.get_synid_database_mappingdf"
     check_center_call = "genie.validate._check_center_input"
-    validate_file_call = "genie.validate.Validator.validate_single_file"
+    validate_file_call = "genie.validate.GenieValidationHelper.validate_single_file"
     get_oncotree_call = "genie.validate._get_oncotreelink"
     upload_to_syn_call = "genie.validate._upload_to_synapse"
     valid = True
