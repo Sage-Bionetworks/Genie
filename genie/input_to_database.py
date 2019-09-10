@@ -223,7 +223,7 @@ def _get_status_and_error_list(syn, valid, message, filetype, entities):
 
 
 def validatefile(syn, entities, validation_statusdf, error_trackerdf,
-                 center, threads, testing, oncotree_link, 
+                 center, threads, testing, oncotree_link,
                  format_registry=PROCESS_FILES):
     '''Validate a list of entities.
 
