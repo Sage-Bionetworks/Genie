@@ -58,14 +58,13 @@ def build_parser():
     validate_group = parser_validate.add_mutually_exclusive_group()
 
     validate_group.add_argument("--filetype", type=str,
-                                choices=genie.config.PROCESS_FILES.keys(),
                                 help='By default, the validator uses the filename to match '
                                     'the file format.  If your filename is incorrectly named, '
                                     'it will be invalid.  If you know the file format you are '
                                     'validating, you can ignore the filename validation and skip '
                                     'to file content validation. '
                                     'Note, the filetypes with SP at '
-                                    'the end are for special sponsored projects')
+                                    'the end are for special sponsored projects.')
 
     validate_group.add_argument("--parentid", type=str, default=None,
                                 help='Synapse id of center input folder. '
