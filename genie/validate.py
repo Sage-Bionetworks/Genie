@@ -14,7 +14,8 @@ logger.setLevel(logging.INFO)
 
 class ValidationHelper(object):
 
-    def __init__(self, syn, center, filepathlist, format_registry=PROCESS_FILES):
+    def __init__(self, syn, center, filepathlist,
+                 format_registry=PROCESS_FILES):
         """A validator helper class for a center's files.
 
         Args:
@@ -40,8 +41,8 @@ class ValidationHelper(object):
         '''
         filetype = None
         # Loop through file formats
-        for file_format in self._format_registry:
-            validator = self._format_registry[file_format](self._synapse_client, self.center)
+        for cls in self._format_registry.values():
+            validator = cls(self._synapse_client, self.center)
             try:
                 filetype = validator.validateFilename(self.filepathlist)
             except AssertionError:
