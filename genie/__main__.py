@@ -53,6 +53,10 @@ def build_parser():
 
     parser_validate.add_argument("center", type=str, help='Contributing Centers')
 
+    parser_validate.add_argument("--format_registry_package", type=str, nargs="+",
+                                 default="genie",
+                                 help="Python package name(s) to get valid file formats from (default: %(default)s).")
+
     parser_validate.add_argument("--oncotreelink", type=str, help="Link to oncotree code")
 
     validate_group = parser_validate.add_mutually_exclusive_group()
