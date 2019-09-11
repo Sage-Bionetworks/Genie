@@ -16,7 +16,7 @@ def main(process,
          pemfile=None,
          delete_old=False,
          only_validate=False,
-         oncotreelink=None,
+         oncotree_link=None,
          create_new_maf_database=False,
          testing=False,
          debug=False,
@@ -68,14 +68,14 @@ def main(process,
         center_mapping_df = center_mapping_df[center_mapping_df['release']]
         centers = center_mapping_df.center
 
-    if oncotreelink is None:
+    if oncotree_link is None:
         onco_link = databaseToSynIdMappingDf['Id'][
             databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
         onco_link_ent = syn.get(onco_link)
-        oncotreelink = onco_link_ent.externalURL
+        oncotree_link = onco_link_ent.externalURL
     # Check if you can connect to oncotree link,
     # if not then don't run validation / processing
-    process_functions.checkUrl(oncotreelink)
+    process_functions.checkUrl(oncotree_link)
 
     center_mapping_ent = syn.get(center_mapping_id)
     if center_mapping_ent.get('isProcessing', ['True'])[0] == 'True':
@@ -102,7 +102,7 @@ def main(process,
             vep_data, databaseToSynIdMappingDf,
             center_mapping_df, reference=reference,
             delete_old=delete_old,
-            oncotree_link=oncotreelink,
+            oncotree_link=oncotree_link,
             thread=thread)
 
     # To ensure that this is the new entity
@@ -147,7 +147,7 @@ if __name__ == "__main__":
         action='store_true',
         help="Only validate the files, don't process")
     parser.add_argument(
-        "--oncotreeLink",
+        "--oncotree_link",
         type=str,
         help="Link to oncotree code")
     parser.add_argument(
@@ -199,7 +199,7 @@ if __name__ == "__main__":
          pemfile=args.pemFile,
          delete_old=args.deleteOld,
          only_validate=args.onlyValidate,
-         oncotreelink=args.oncotreeLink,
+         oncotree_link=args.oncotree_ink,
          create_new_maf_database=args.createNewMafDatabase,
          testing=args.testing,
          debug=args.debug,

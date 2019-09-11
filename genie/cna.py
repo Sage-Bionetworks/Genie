@@ -86,7 +86,7 @@ class cna(FileTypeFormat):
 
     _process_kwargs = ["newPath", 'databaseToSynIdMappingDf']
 
-    _validation_kwargs = ['noSymbolCheck']
+    _validation_kwargs = ['nosymbol_check']
 
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
@@ -151,7 +151,7 @@ class cna(FileTypeFormat):
             self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
         return(newPath)
 
-    def _validate(self, cnvDF, noSymbolCheck):
+    def _validate(self, cnvDF, nosymbol_check):
         total_error = ""
         warning = ""
         cnvDF.columns = [col.upper() for col in cnvDF.columns]
@@ -179,7 +179,7 @@ class cna(FileTypeFormat):
                 "0, 0.5, 1, 1.5, or 2.\n")
         else:
             cnvDF['HUGO_SYMBOL'] = keepSymbols
-            if haveColumn and not noSymbolCheck:
+            if haveColumn and not nosymbol_check:
                 bedSynId = process_functions.getDatabaseSynId(
                     self.syn, "bed", test=self.testing)
                 bed = self.syn.tableQuery(

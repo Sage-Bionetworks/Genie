@@ -99,7 +99,7 @@ class GenieValidationHelper(ValidationHelper):
     """A validator helper class for AACR Project Genie.
     """
 
-    _validate_kwargs = ['oncotreeLink', 'noSymbolCheck']
+    _validate_kwargs = ['oncotree_link', 'nosymbol_check']
 
 # Validates annotations on Synapse
 # def validateAnnotations(fileList):
@@ -187,21 +187,21 @@ def _check_center_input(center, center_list):
                 ", ".join(center_list)))
 
 
-def _get_oncotreelink(syn, databasetosynid_mappingdf, oncotreelink=None):
+def _get_oncotreelink(syn, databasetosynid_mappingdf, oncotree_link=None):
     '''
     Get oncotree link unless a link is specified by the user
 
     Args:
         syn: Synapse object
         databasetosynid_mappingdf: database to synid mapping
-        oncotreelink: link to oncotree. Default is None
+        oncotree_link: link to oncotree. Default is None
     '''
-    if oncotreelink is None:
+    if oncotree_link is None:
         oncolink = databasetosynid_mappingdf.query(
             'Database == "oncotreeLink"').Id
         oncolink_ent = syn.get(oncolink.iloc[0])
-        oncotreelink = oncolink_ent.externalURL
-    return(oncotreelink)
+        oncotree_link = oncolink_ent.externalURL
+    return(oncotree_link)
 
 
 def _upload_to_synapse(syn, filepaths, valid, parentid=None):
@@ -240,12 +240,12 @@ def _perform_validate(syn, args):
     # Check center argparse
     _check_center_input(args.center, center_mapping_df.center.tolist())
 
-    args.oncotreelink = _get_oncotreelink(syn, databasetosynid_mappingdf,
-                                          oncotreelink=args.oncotreelink)
+    args.oncotree_link = _get_oncotreelink(syn, databasetosynid_mappingdf,
+                                          oncotree_link=args.oncotree_link)
 
     validator = GenieValidationHelper(syn=syn, center=args.center,
                                       filepathlist=args.filepath)
-    mykwargs = dict(oncotreeLink=args.oncotreelink, noSymbolCheck=args.nosymbol_check)
+    mykwargs = dict(oncotree_link=args.oncotree_link, nosymbol_check=args.nosymbol_check)
     valid, message, filetype = validator.validate_single_file(**mykwargs)
 
     # Upload to synapse if parentid is specified and valid

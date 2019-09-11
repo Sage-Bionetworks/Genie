@@ -39,10 +39,10 @@ class clinical(FileTypeFormat):
     #     "newPath", "patientSynId", "sampleSynId",
     #     "parentId", "retractedSampleSynId", "retractedPatientSynId"]
     _process_kwargs = [
-        "newPath", "parentId", "databaseToSynIdMappingDf", "oncotreeLink",
+        "newPath", "parentId", "databaseToSynIdMappingDf", "oncotree_link",
         'clinicalTemplate', 'sample', 'patient', 'patientCols', 'sampleCols']
 
-    _validation_kwargs = ["oncotreeLink"]
+    _validation_kwargs = ["oncotree_link"]
 
     # VALIDATE FILE NAME
     def _validateFilename(self, filePath):
@@ -239,7 +239,7 @@ class clinical(FileTypeFormat):
 
     def process_steps(self, clinicalDf,
                       databaseToSynIdMappingDf, newPath,
-                      parentId, oncotreeLink, clinicalTemplate,
+                      parentId, oncotree_link, clinicalTemplate,
                       sample, patient, patientCols, sampleCols):
         patientSynId = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == "patient"][0]
@@ -268,7 +268,7 @@ class clinical(FileTypeFormat):
             # Exclude all clinical samples with wrong oncotree codes
             oncotree_mapping = pd.DataFrame()
             oncotree_mapping_dict = \
-                process_functions.get_oncotree_code_mappings(oncotreeLink)
+                process_functions.get_oncotree_code_mappings(oncotree_link)
             # Add in unknown key for oncotree code
             oncotree_mapping_dict['UNKNOWN'] = {}
             oncotree_mapping['ONCOTREE_CODE'] = oncotree_mapping_dict.keys()
@@ -288,7 +288,7 @@ class clinical(FileTypeFormat):
         return(newPath)
 
     # VALIDATION
-    def _validate(self, clinicalDF, oncotreeLink):
+    def _validate(self, clinicalDF, oncotree_link):
         """
         This function validates the clinical file to make sure it adhere
         to the clinical SOP.
@@ -296,7 +296,7 @@ class clinical(FileTypeFormat):
         Args:
             clinicalDF: Merged clinical file with patient and sample
                         information
-            oncotreeLink: Link to oncotree
+            oncotree_link: Link to oncotree
 
         Returns:
             Error message
@@ -307,11 +307,11 @@ class clinical(FileTypeFormat):
         clinicalDF.columns = [col.upper() for col in clinicalDF.columns]
         clinicalDF = clinicalDF.fillna("")
 
-        # oncotree_mapping = process_functions.get_oncotree_codes(oncotreeLink)
+        # oncotree_mapping = process_functions.get_oncotree_codes(oncotree_link)
         # if oncotree_mapping.empty:
         oncotree_mapping = pd.DataFrame()
         oncotree_mapping_dict = \
-            process_functions.get_oncotree_code_mappings(oncotreeLink)
+            process_functions.get_oncotree_code_mappings(oncotree_link)
         oncotree_mapping['ONCOTREE_CODE'] = oncotree_mapping_dict.keys()
 
         sampleType_mapping = \

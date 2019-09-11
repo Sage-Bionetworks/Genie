@@ -52,7 +52,7 @@ class fusions(FileTypeFormat):
 
     _process_kwargs = ["newPath", "databaseSynId"]
 
-    _validation_kwargs = ['noSymbolCheck']
+    _validation_kwargs = ['nosymbol_check']
 
     #VALIDATE FILENAME
     def _validateFilename(self, filePath):
@@ -98,7 +98,7 @@ class fusions(FileTypeFormat):
         fusion.to_csv(newPath, sep="\t",index=False)
         return(newPath)
 
-    def _validate(self, fusionDF, noSymbolCheck):
+    def _validate(self, fusionDF, nosymbol_check):
         total_error = ""
         warning = ""
 
@@ -113,7 +113,7 @@ class fusions(FileTypeFormat):
             fusionDF['COMMENTS'] = float('nan')
         if not all(REQUIRED_HEADERS.isin(fusionDF.columns)):
             total_error += "Your fusion file must at least have these headers: %s.\n" % ",".join(REQUIRED_HEADERS[~REQUIRED_HEADERS.isin(fusionDF.columns)])
-        if process_functions.checkColExist(fusionDF, "HUGO_SYMBOL") and not noSymbolCheck:
+        if process_functions.checkColExist(fusionDF, "HUGO_SYMBOL") and not nosymbol_check:
            # logger.info("VALIDATING %s GENE SYMBOLS" % os.path.basename(filePath))
             #invalidated_genes = fusionDF["HUGO_SYMBOL"].drop_duplicates().apply(validateSymbol)
             bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=self.testing)
