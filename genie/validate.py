@@ -71,9 +71,8 @@ class ValidationHelper(object):
             valid: Boolean value of validation status
             filetype: String of the type of the file
         """
-        filetype = self.file_type
 
-        if filetype not in self._format_registry:
+        if self.file_type not in self._format_registry:
             valid = False
             errors = "Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
             warnings = ""
@@ -84,15 +83,16 @@ class ValidationHelper(object):
                     "%s not in parameter list" % required_parameter
                 mykwargs[required_parameter] = kwargs[required_parameter]
 
-            validator = self._format_registry[filetype](self._synapse_client, self.center,
-                                                        testing=self.testing)
+            validator_cls = self._format_registry[self.file_type]
+            validator = validator_cls(self._synapse_client, self.center,
+                                      testing=self.testing)
             valid, errors, warnings = validator.validate(filePathList=self.filepathlist,
                                                          **mykwargs)
 
         # Complete error message
         message = collect_errors_and_warnings(errors, warnings)
 
-        return(valid, message, filetype)
+        return(valid, message, self.file_type)
 
 
 class GenieValidationHelper(ValidationHelper):
