@@ -24,7 +24,11 @@ class ValidationHelper(object):
         """A validator helper class for a center's files.
 
         Args:
-            center: Participating Center
+            syn: a synapseclient.Synapse object
+            center: The participating center name.
+            filepathlist: a list of file paths.
+            format_registry: A dictionary mapping file format name to the format class.
+            testing: Run in testing mode.
         """
 
         self._synapse_client = syn
