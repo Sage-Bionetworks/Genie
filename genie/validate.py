@@ -64,12 +64,7 @@ class ValidationHelper(object):
         return(filetype)
 
     def validate_single_file(self, **kwargs):
-        """
-        This function determines the filetype of a single submitted 'file'.
-        The 'file' should be one of those defined in config.PROCESS_FILES and
-        may actually be composed of multiple files.
-        if filetype is not specified and logs the validation errors and
-        warnings of a file.
+        """Validate a submitted file unit.
 
         Returns:
             message: errors and warnings
