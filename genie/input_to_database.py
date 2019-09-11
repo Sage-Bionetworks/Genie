@@ -2,7 +2,6 @@
 import datetime
 import logging
 import os
-import shutil
 import time
 
 import synapseclient
@@ -13,7 +12,6 @@ from .config import PROCESS_FILES
 from . import process_functions
 from . import validate
 from . import toRetract
-from . import input_to_database
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -188,13 +186,12 @@ def _send_validation_error_email(syn, filenames, message, file_users):
         file_users, "GENIE Validation Error", email_message)
 
 
-def _get_status_and_error_list(syn, valid, message, filetype, entities):
+def _get_status_and_error_list(valid, message, filetype, entities):
     '''
     Helper function to return the status and error list of the
     files based on validation result.
 
     Args:
-        syn: Synapse object
         valid: Boolean value of results of validation
         message: Validation message
         filetype: File type
@@ -223,7 +220,8 @@ def _get_status_and_error_list(syn, valid, message, filetype, entities):
 
 
 def validatefile(syn, entities, validation_statusdf, error_trackerdf,
-                 center, threads, testing, oncotree_link):
+                 center, threads, testing, oncotree_link,
+                 format_registry=PROCESS_FILES):
     '''Validate a list of entities.
 
     If a file has not changed, then it doesn't need to be validated.
@@ -259,7 +257,9 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     # Need to figure out to how to remove this
     # This must pass in filenames, because filetype is determined by entity name
     # Not by actual path of file
-    validator = validate.Validator(syn=syn, center=center, filepathlist=filepaths)
+    validator = validate.GenieValidationHelper(syn=syn, center=center, 
+                                               filepathlist=filepaths,
+                                               format_registry=format_registry)
     filetype = validator.file_type
     if check_file_status['to_validate']:
         valid, message, filetype = validator.validate_single_file(
@@ -267,7 +267,7 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
             testing=testing)
         logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
-            syn, valid, message, filetype,
+            valid, message, filetype,
             entities)
         # Send email the first time the file is invalid
         if invalid_errors_list is not None:
@@ -469,14 +469,16 @@ def get_duplicated_files(validation_statusdf, duplicated_error_message):
     logger.info("CHECK FOR DUPLICATED FILES")
     duplicated_filesdf = validation_statusdf[
         validation_statusdf['name'].duplicated(keep=False)]
+    # Define filename str vector
+    filename_str = validation_statusdf.name.str
     # cbs/seg files should not be duplicated.
-    cbs_seg_files = validation_statusdf.query(
-        'name.str.endswith("cbs") or name.str.endswith("seg")')
+    cbs_seg_index = filename_str.endswith(("cbs", "seg"))
+    cbs_seg_files = validation_statusdf[cbs_seg_index]
     if len(cbs_seg_files) > 1:
         duplicated_filesdf = duplicated_filesdf.append(cbs_seg_files)
     # clinical files should not be duplicated.
-    clinical_files = validation_statusdf.query(
-        'name.str.startswith("data_clinical_supp")')
+    clinical_index = filename_str.startswith("data_clinical_supp")
+    clinical_files = validation_statusdf[clinical_index]
     if len(clinical_files) > 2:
         duplicated_filesdf = duplicated_filesdf.append(clinical_files)
     duplicated_filesdf.drop_duplicates("id", inplace=True)
@@ -622,7 +624,7 @@ def validation(syn, center, process,
                                           validation_statusdf,
                                           error_trackerdf,
                                           center='SAGE', threads=1,
-                                          testing=False,
+                                          testing=testing,
                                           oncotree_link=oncotree_link)
             input_valid_statuses.extend(status)
             if errors is not None:
