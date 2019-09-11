@@ -99,7 +99,7 @@ class GenieValidationHelper(ValidationHelper):
     """A validator helper class for AACR Project Genie.
     """
 
-    _validate_kwargs = ['oncotree_link', 'noSymbolCheck']
+    _validate_kwargs = ['oncotree_link', 'nosymbol_check']
 
 # Validates annotations on Synapse
 # def validateAnnotations(fileList):
@@ -245,7 +245,7 @@ def _perform_validate(syn, args):
 
     validator = GenieValidationHelper(syn=syn, center=args.center,
                                       filepathlist=args.filepath)
-    mykwargs = dict(oncotree_link=args.oncotree_link, noSymbolCheck=args.nosymbol_check)
+    mykwargs = dict(oncotree_link=args.oncotree_link, nosymbol_check=args.nosymbol_check)
     valid, message, filetype = validator.validate_single_file(**mykwargs)
 
     # Upload to synapse if parentid is specified and valid

@@ -103,7 +103,7 @@ def test_valid_validate_single_file():
 
         validator = validate.GenieValidationHelper(syn, center=center, filepathlist=filepathlist)
 
-        valid, message, filetype = validator.validate_single_file(oncotree_link=None, noSymbolCheck=False)
+        valid, message, filetype = validator.validate_single_file(oncotree_link=None, nosymbol_check=False)
 
         assert valid == expected_valid
         assert message == expected_message
@@ -114,7 +114,7 @@ def test_valid_validate_single_file():
         mock_genie_class.assert_called_once_with(
             filePathList=filepathlist,
             oncotree_link=None,
-            noSymbolCheck=False)
+            nosymbol_check=False)
 
         mock_determine.assert_called_once_with(error_string, warning_string)
 
@@ -294,6 +294,6 @@ def test_perform_validate():
         patch_check_center.assert_called_once_with(arg.center, ["try", "foo"])
         patch_get_onco.assert_called_once()
         patch_validate.assert_called_once_with(oncotree_link=arg.oncotree_link,
-                                               noSymbolCheck=arg.nosymbol_check)
+                                               nosymbol_check=arg.nosymbol_check)
         patch_syn_upload.assert_called_once_with(
             syn, arg.filepath, valid, parentid=arg.parentid)
