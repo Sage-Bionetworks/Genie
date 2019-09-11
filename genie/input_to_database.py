@@ -267,7 +267,7 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     filetype = validator.file_type
     if check_file_status['to_validate']:
         valid, message, filetype = validator.validate_single_file(
-            oncotreelink=oncotree_link)
+            oncotree_link=oncotree_link)
         logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             syn, valid, message, filetype,
@@ -288,7 +288,7 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
 
 
 def processfiles(syn, validfiles, center, path_to_genie, threads,
-                 center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+                 center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
                  validVCF=None, vcf2mafPath=None,
                  veppath=None, vepdata=None,
                  processing="main", test=False, reference=None):
@@ -303,7 +303,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
         path_to_genie: Path to GENIE workdir
         threads: Threads used
         center_mapping_df: Center mapping dataframe
-        oncotreeLink: Link to oncotree
+        oncotree_link: Link to oncotree
         databaseToSynIdMappingDf: Database to synapse id mapping dataframe
         validVCF: Valid vcf files
         vcf2mafPath: Path to vcf2maf
@@ -339,7 +339,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
                 processor.process(
                     filePath=filePath, newPath=newPath,
                     parentId=center_staging_synid, databaseSynId=synId,
-                    oncotreeLink=oncotreeLink,
+                    oncotree_link=oncotree_link,
                     fileSynId=fileSynId, validVCF=validVCF,
                     path_to_GENIE=path_to_genie, vcf2mafPath=vcf2mafPath,
                     veppath=veppath, vepdata=vepdata,
@@ -358,7 +358,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
         processor.process(
             filePath=filePath, newPath=newPath,
             parentId=center_staging_synid, databaseSynId=synId,
-            oncotreeLink=oncotreeLink,
+            oncotree_link=oncotree_link,
             fileSynId=fileSynId, validVCF=validVCF,
             path_to_GENIE=path_to_genie, vcf2mafPath=vcf2mafPath,
             veppath=veppath, vepdata=vepdata,
@@ -575,7 +575,7 @@ def validation(syn, center, process,
         center_mapping_df: center mapping dataframe
         thread: Unused parameter for now
         testing: True if testing
-        oncotreeLink: Link to oncotree
+        oncotree_link: Link to oncotree
 
     Returns:
         dataframe: Valid files
