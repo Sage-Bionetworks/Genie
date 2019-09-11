@@ -409,9 +409,7 @@ def test_valid_validatefile():
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
-            oncotreelink=oncotree_link,
-            testing=testing
-        )
+            oncotreelink=oncotree_link)
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
         patch_determine_filetype.assert_called_once()
@@ -471,9 +469,7 @@ def test_invalid_validatefile():
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
-            oncotreelink=oncotree_link,
-            testing=testing
-        )
+            oncotreelink=oncotree_link)
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
         patch_determine_filetype.assert_called_once()
