@@ -3,13 +3,12 @@ import os
 import argparse
 import logging
 
-logging.basicConfig()
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
 from genie import input_to_database
 from genie import write_invalid_reasons
 from genie import process_functions
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def main(process,

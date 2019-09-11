@@ -356,6 +356,9 @@ class clinical(FileTypeFormat):
         # CHECK: within the sample file that the sample ids match
         # the patient ids
         if haveSampleColumn and havePatientColumn:
+            # Make sure sample and patient ids are string cols
+            clinicalDF[sampleId] = clinicalDF[sampleId].astype(str)
+            clinicalDF[patientId] = clinicalDF[patientId].astype(str)
             if not all([patient in sample
                         for sample, patient in
                         zip(clinicalDF[sampleId], clinicalDF[patientId])]):

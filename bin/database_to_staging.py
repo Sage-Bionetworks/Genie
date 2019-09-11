@@ -93,13 +93,14 @@ def main(genie_version,
         databaseSynIdMappingDf['Database'] == 'processTracker'].values[0]
     # get syn id of case list folder in consortium release
     # caseListSynId = findCaseListId(syn, consortiumSynId)
-    caseListSynId, already_exists = \
-        database_to_staging.search_and_create_folder(
+    caseListSynId, _ = database_to_staging.search_and_create_folder(
             syn, consortiumSynId, "case_lists")
 
     if not staging:
-        database_to_staging.update_process_trackingdf(
-            syn, processTrackerSynId, 'SAGE', 'dbToStage', start=True)
+        database_to_staging.update_process_trackingdf(syn,
+                                                      processTrackerSynId,
+                                                      'SAGE', 'dbToStage',
+                                                      start=True)
 
     centerMappingSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == 'centerMapping'].values[0]
@@ -147,21 +148,19 @@ def main(genie_version,
     caseListEntities = []
     for casePath in caseListFiles:
         casePath = os.path.join(database_to_staging.CASE_LIST_PATH, casePath)
-        caseListEntities.append(database_to_staging.storeFile(
+        caseListEntities.append(database_to_staging.store_file(
             syn,
             casePath,
             parent=caseListSynId,
-            staging=staging,
-            caseLists=True,
             genieVersion=genie_version))
 
     logger.info("REMOVING UNNECESSARY FILES")
     genie_files = os.listdir(database_to_staging.GENIE_RELEASE_DIR)
-    for genieFile in genie_files:
-        if genie_version not in genieFile and \
-             "meta" not in genieFile and "case_lists" not in genieFile:
+    for genie_file in genie_files:
+        if genie_version not in genie_file and \
+             "meta" not in genie_file and "case_lists" not in genie_file:
             os.remove(os.path.join(database_to_staging.GENIE_RELEASE_DIR,
-                                   genieFile))
+                                   genie_file))
     os.remove(clinical_path)
 
     logger.info("REVISE METADATA FILES")
@@ -192,15 +191,16 @@ def main(genie_version,
     logger.info("REMOVING OLD FILES")
 
     process_functions.rmFiles(database_to_staging.CASE_LIST_PATH)
-    private_cna_meta_path = \
-        '%s/genie_private_meta_cna_hg19_seg.txt' % database_to_staging.GENIE_RELEASE_DIR
+    private_cna_meta_path = os.path.join(database_to_staging.GENIE_RELEASE_DIR,
+                                         "genie_private_meta_cna_hg19_seg.txt")
     if os.path.exists(private_cna_meta_path):
         os.unlink(private_cna_meta_path)
 
     logger.info("CREATING LINK VERSION")
-    database_to_staging.create_link_version(
-        syn, genie_version, caseListEntities,
-        genePanelEntities, databaseSynIdMappingDf)
+    database_to_staging.create_link_version(syn, genie_version,
+                                            caseListEntities,
+                                            genePanelEntities,
+                                            databaseSynIdMappingDf)
 
     if not staging:
         database_to_staging.update_process_trackingdf(
