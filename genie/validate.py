@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-
+import importlib
+import inspect
 import logging
 
 import synapseclient
@@ -234,6 +235,19 @@ def _upload_to_synapse(syn, filepaths, valid, parentid=None):
             file_ent = synapseclient.File(path, parent=parentid)
             ent = syn.store(file_ent)
             logger.info("Stored to {}".format(ent.id))
+
+def predicate(obj):
+        """A predicate to get all classes that are subclasses of
+        example_file_format.FileTypeFormat"""
+        return inspect.isclass(obj) and issubclass(obj, example_file_format.FileTypeFormat)
+
+def collect_format_types(module_names):
+    file_format_list = []
+    for module_name in module_names:
+        modules= sys.modules["module_name"]
+        for name, cls in inspect.getmembers(mod, predicate):
+            file_format_list.append(m)
+
 
 
 def _perform_validate(syn, args):
