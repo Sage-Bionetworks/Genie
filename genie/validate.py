@@ -243,7 +243,7 @@ def _perform_validate(syn, args):
     args.oncotreelink = _get_oncotreelink(syn, databasetosynid_mappingdf,
                                           oncotreelink=args.oncotreelink)
 
-    validator = GenieValidationHelper(syn=syn, center=args.center, 
+    validator = GenieValidationHelper(syn=syn, center=args.center,
                                       filepathlist=args.filepath)
     mykwargs = dict(oncotreeLink=args.oncotreelink, noSymbolCheck=args.nosymbol_check)
     valid, message, filetype = validator.validate_single_file(**mykwargs)
