@@ -262,12 +262,12 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     # Not by actual path of file
     validator = validate.GenieValidationHelper(syn=syn, center=center, 
                                                filepathlist=filepaths,
-                                               format_registry=format_registry)
+                                               format_registry=format_registry,
+                                               testing=testing)
     filetype = validator.file_type
     if check_file_status['to_validate']:
         valid, message, filetype = validator.validate_single_file(
-            oncotreelink=oncotree_link,
-            testing=testing)
+            oncotreelink=oncotree_link)
         logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             syn, valid, message, filetype,
