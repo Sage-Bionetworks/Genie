@@ -35,8 +35,8 @@ class ValidationHelper(object):
         self.filepathlist = filepathlist
         self.center = center
         self._format_registry = format_registry
-        self.file_type = self.determine_filetype()
         self.testing = testing
+        self.file_type = self.determine_filetype()
 
     def determine_filetype(self):
         '''
