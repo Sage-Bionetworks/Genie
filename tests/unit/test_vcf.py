@@ -1,8 +1,10 @@
-import synapseclient
-import pandas as pd
 import mock
 import pytest
-from genie import vcf
+
+import pandas as pd
+import synapseclient
+
+from genie.vcf import vcf
 
 syn = mock.create_autospec(synapseclient.Synapse)
 
