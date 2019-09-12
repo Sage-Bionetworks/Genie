@@ -135,7 +135,7 @@ class cna(FileTypeFormat):
 
     def process_steps(self, cnaDf, newPath, databaseToSynIdMappingDf):
 
-        newCNA = self._process(cnaDf, test=self.testing)
+        newCNA = self._process(cnaDf)
 
         centerMafSynId = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
