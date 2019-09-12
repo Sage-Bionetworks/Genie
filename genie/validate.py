@@ -12,6 +12,7 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class ValidationHelper(object):
 
     # Used for the kwargs in validate_single_file
@@ -100,22 +101,6 @@ class GenieValidationHelper(ValidationHelper):
     """
 
     _validate_kwargs = ['oncotree_link', 'nosymbol_check']
-
-# Validates annotations on Synapse
-# def validateAnnotations(fileList):
-#     logger.info("VALIDATING ANNOTATIONS")
-#     notcorrect = []
-#     for i,ID in enumerate(fileList['entity.id']):
-#         foo = syn.get(ID, downloadFile=False)
-#         required_annot = ["center","dataType","fileType","disease","consortium",
-#         "platform","tissueSource","organism","dataSubType"]
-#         check = [annot for annot in required_annot if foo.annotations.has_key(annot)]
-#         if len(check) != len(required_annot):
-#             notcorrect.append(fileList.iloc[i]['entity.id'])
-#     if len(notcorrect) >0:
-#         return(False)
-#     else:
-#         return(True)
 
 
 def collect_errors_and_warnings(errors, warnings):
@@ -241,11 +226,12 @@ def _perform_validate(syn, args):
     _check_center_input(args.center, center_mapping_df.center.tolist())
 
     args.oncotree_link = _get_oncotreelink(syn, databasetosynid_mappingdf,
-                                          oncotree_link=args.oncotree_link)
+                                           oncotree_link=args.oncotree_link)
 
     validator = GenieValidationHelper(syn=syn, center=args.center,
                                       filepathlist=args.filepath)
-    mykwargs = dict(oncotree_link=args.oncotree_link, nosymbol_check=args.nosymbol_check)
+    mykwargs = dict(oncotree_link=args.oncotree_link,
+                    nosymbol_check=args.nosymbol_check)
     valid, message, filetype = validator.validate_single_file(**mykwargs)
 
     # Upload to synapse if parentid is specified and valid

@@ -257,14 +257,14 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     # Need to figure out to how to remove this
     # This must pass in filenames, because filetype is determined by entity name
     # Not by actual path of file
-    validator = validate.GenieValidationHelper(syn=syn, center=center, 
+    validator = validate.GenieValidationHelper(syn=syn, center=center,
                                                filepathlist=filepaths,
                                                format_registry=format_registry,
                                                testing=testing)
     filetype = validator.file_type
     if check_file_status['to_validate']:
         valid, message, filetype = validator.validate_single_file(
-            oncotree_link=oncotree_link)
+            oncotree_link=oncotree_link, nosymbol_check=False)
         logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             valid, message, filetype,
@@ -623,7 +623,7 @@ def validation(syn, center, process,
             status, errors = validatefile(syn, ents,
                                           validation_statusdf,
                                           error_trackerdf,
-                                          center='SAGE', threads=1,
+                                          center=center, threads=1,
                                           testing=testing,
                                           oncotree_link=oncotree_link)
             input_valid_statuses.extend(status)

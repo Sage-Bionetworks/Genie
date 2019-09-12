@@ -199,7 +199,7 @@ if __name__ == "__main__":
          pemfile=args.pemFile,
          delete_old=args.deleteOld,
          only_validate=args.onlyValidate,
-         oncotree_link=args.oncotree_ink,
+         oncotree_link=args.oncotree_link,
          create_new_maf_database=args.createNewMafDatabase,
          testing=args.testing,
          debug=args.debug,
