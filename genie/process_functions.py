@@ -706,7 +706,7 @@ def updateData(
         col=None, toDelete=False):
     databaseEnt = syn.get(databaseSynId)
     database = syn.tableQuery(
-        "SELECT * FROM {} where {} ='{}'".format(
+        "SELECT * FROM {} where {} = '{}'".format(
             databaseSynId, filterByColumn, filterBy))
     database = database.asDataFrame()
     if col is not None:

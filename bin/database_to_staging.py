@@ -255,7 +255,7 @@ if __name__ == "__main__":
         help="GENIE release version")
 
     parser.add_argument(
-        "--oncotreeLink",
+        "--oncotree_link",
         type=str,
         help="Link to oncotree code")
 
@@ -297,7 +297,7 @@ if __name__ == "__main__":
     main(genie_version=args.genieVersion,
          processing_date=args.processingDate,
          cbioportal_path=args.cbioportalPath,
-         oncotree_link=args.oncotreeLink,
+         oncotree_link=args.oncotree_link,
          consortium_release_cutoff=args.consortiumReleaseCutOff,
          pemfile=args.pemFile,
          test=args.test,

@@ -125,12 +125,14 @@ def check_existing_file_status(validation_statusdf, error_trackerdf, entities):
 
     statuses = []
     errors = []
-
     for ent in entities:
         to_validate = False
+        versionNumber = str(ent.properties.versionNumber)
+
         # Get the current status and errors from the tables.
-        current_status = validation_statusdf[validation_statusdf['id'] == ent.id]
-        current_error = error_trackerdf[error_trackerdf['id'] == ent.id]
+        current_status = \
+            validation_statusdf[(validation_statusdf['id'] == ent.id)]
+        current_error = error_trackerdf[(error_trackerdf['id'] == ent.id)]
 
         if current_status.empty:
             to_validate = True
@@ -156,6 +158,30 @@ def check_existing_file_status(validation_statusdf, error_trackerdf, entities):
         'status_list': statuses,
         'error_list': errors,
         'to_validate': to_validate})
+
+
+def _check_valid(syn, filepaths, center, filetype, oncotree_link, testing):
+    '''
+    Function to validate a file
+    '''
+    # If no filetype set, means the file was named incorrectly
+    try:
+        valid, message, filetype = validate.validate_single_file(
+            syn,
+            filepaths,
+            center,
+            filetype=filetype,
+            oncotreelink=oncotree_link,
+            testing=testing)
+        logger.info("VALIDATION COMPLETE")
+    except ValueError as e:
+        # Specify this as None for the single case where filename
+        # validation fails
+        filetype = None
+        message = str(e)
+        logger.error(message)
+        valid = False
+    return(valid, filetype, message)
 
 
 def _send_validation_error_email(syn, filenames, message, file_users):
@@ -202,20 +228,21 @@ def _get_status_and_error_list(valid, message, filetype, entities):
                invalid_errors_list - error list
     '''
     if valid:
-        input_status_list = [
-            [ent.id, ent.path, ent.md5, "VALIDATED",
-             ent.name, entity_date_to_timestamp(ent.properties.modifiedOn), filetype]
-            for ent in
-            entities]
+        status = "VALIDATED"
         invalid_errors_list = None
     else:
-        input_status_list = [
-            [ent.id, ent.path, ent.md5, "INVALID",
-             ent.name, entity_date_to_timestamp(ent.properties.modifiedOn), filetype]
-            for ent in entities]
         invalid_errors_list = [
             [ent.id, message, ent.name]
             for ent in entities]
+        status = "INVALID"
+
+    input_status_list = []
+    for ent in entities:
+        record = [ent.id, ent.path, ent.md5, status, 
+                  ent.name, entity_date_to_timestamp(ent.properties.modifiedOn),
+                  filetype]
+        input_status_list.append(record)
+
     return(input_status_list, invalid_errors_list)
 
 
@@ -244,8 +271,7 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     filepaths = [entity.path for entity in entities]
     filenames = [entity.name for entity in entities]
 
-    logger.info(
-        "VALIDATING {filenames}".format(filenames=", ".join(filenames)))
+    logger.info("VALIDATING {filenames}".format(filenames=", ".join(filenames)))
 
     file_users = [entities[0].modifiedBy, entities[0].createdBy]
 
@@ -257,14 +283,14 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     # Need to figure out to how to remove this
     # This must pass in filenames, because filetype is determined by entity name
     # Not by actual path of file
-    validator = validate.GenieValidationHelper(syn=syn, center=center, 
+    validator = validate.GenieValidationHelper(syn=syn, center=center,
                                                filepathlist=filepaths,
-                                               format_registry=format_registry)
+                                               format_registry=format_registry,
+                                               testing=testing)
     filetype = validator.file_type
     if check_file_status['to_validate']:
         valid, message, filetype = validator.validate_single_file(
-            oncotreelink=oncotree_link,
-            testing=testing)
+            oncotree_link=oncotree_link, nosymbol_check=False)
         logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             valid, message, filetype,
@@ -274,8 +300,8 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
             _send_validation_error_email(syn, filenames, message, file_users)
     else:
         input_status_list = [
-            [ent.id, path, ent.md5, status, filename, entity_date_to_timestamp(ent.properties.modifiedOn), filetype]
-            for ent, path, status, filename in
+            [ent.id, path, ent.md5, status, filename, 
+             entity_date_to_timestamp(ent.properties.modifiedOn), filetype] for ent, path, status, filename in
             zip(entities, filepaths, status_list, filenames)]
         invalid_errors_list = [
             [entity.id, error, filename]
@@ -285,7 +311,7 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
 
 
 def processfiles(syn, validfiles, center, path_to_genie, threads,
-                 center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+                 center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
                  validVCF=None, vcf2mafPath=None,
                  veppath=None, vepdata=None,
                  processing="main", test=False, reference=None):
@@ -300,7 +326,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
         path_to_genie: Path to GENIE workdir
         threads: Threads used
         center_mapping_df: Center mapping dataframe
-        oncotreeLink: Link to oncotree
+        oncotree_link: Link to oncotree
         databaseToSynIdMappingDf: Database to synapse id mapping dataframe
         validVCF: Valid vcf files
         vcf2mafPath: Path to vcf2maf
@@ -336,13 +362,15 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
                 processor.process(
                     filePath=filePath, newPath=newPath,
                     parentId=center_staging_synid, databaseSynId=synId,
-                    oncotreeLink=oncotreeLink,
+                    oncotree_link=oncotree_link,
                     fileSynId=fileSynId, validVCF=validVCF,
                     path_to_GENIE=path_to_genie, vcf2mafPath=vcf2mafPath,
                     veppath=veppath, vepdata=vepdata,
                     processing=processing,
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf,
                     reference=reference, test=test)
+            else:
+                logger.debug("Missing a file type, skipping {}".format(filePath))
 
     else:
         filePath = None
@@ -355,7 +383,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
         processor.process(
             filePath=filePath, newPath=newPath,
             parentId=center_staging_synid, databaseSynId=synId,
-            oncotreeLink=oncotreeLink,
+            oncotree_link=oncotree_link,
             fileSynId=fileSynId, validVCF=validVCF,
             path_to_GENIE=path_to_genie, vcf2mafPath=vcf2mafPath,
             veppath=veppath, vepdata=vepdata,
@@ -574,7 +602,7 @@ def validation(syn, center, process,
         center_mapping_df: center mapping dataframe
         thread: Unused parameter for now
         testing: True if testing
-        oncotreeLink: Link to oncotree
+        oncotree_link: Link to oncotree
 
     Returns:
         dataframe: Valid files
@@ -623,7 +651,7 @@ def validation(syn, center, process,
             status, errors = validatefile(syn, ents,
                                           validation_statusdf,
                                           error_trackerdf,
-                                          center='SAGE', threads=1,
+                                          center=center, threads=1,
                                           testing=testing,
                                           oncotree_link=oncotree_link)
             input_valid_statuses.extend(status)
@@ -751,8 +779,9 @@ def center_input_to_database(
         processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
-        logger.info("SAMPLE/PATIENT RETRACTION")
-        toRetract.retract(syn, testing)
+        # Resolve with https://github.com/Sage-Bionetworks/Genie/issues/94
+        # logger.info("SAMPLE/PATIENT RETRACTION")
+        # toRetract.retract(syn, testing)
 
     else:
         messageOut = \

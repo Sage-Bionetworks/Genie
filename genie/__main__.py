@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import logging
+import json
 
 import genie.config
 import genie.validate
@@ -31,11 +32,14 @@ def synapse_login(username=None, password=None):
                 silent=True)
     return(syn)
 
+    return result
+
 
 def build_parser():
     import argparse
     parser = argparse.ArgumentParser(description='GENIE processing')
 
+    parser.add_argument('--config', help='JSON config file.')
     parser.add_argument("--syn_user", type=str, help='Synapse username')
 
     parser.add_argument("--syn_pass", type=str, help='Synapse password')
@@ -53,7 +57,7 @@ def build_parser():
 
     parser_validate.add_argument("center", type=str, help='Contributing Centers')
 
-    parser_validate.add_argument("--oncotreelink", type=str, help="Link to oncotree code")
+    parser_validate.add_argument("--oncotree_link", type=str, help="Link to oncotree code")
 
     validate_group = parser_validate.add_mutually_exclusive_group()
 
@@ -84,10 +88,17 @@ def build_parser():
 
 def main():
     args = build_parser().parse_args()
+
+    if args.config:
+        config = json.load(open(args.config))
+    else:
+        config = genie.validate._DEFAULT_CONFIG
+
     syn = synapse_login(args.syn_user, args.syn_pass)
+
     if 'func' in args:
         try:
-            args.func(syn, args)
+            args.func(syn, args, config)
         except Exception:
             raise
 

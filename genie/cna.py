@@ -84,16 +84,16 @@ class cna(FileTypeFormat):
 
     _fileType = "cna"
 
-    _process_kwargs = ["newPath", 'test', 'databaseToSynIdMappingDf']
+    _process_kwargs = ["newPath", 'databaseToSynIdMappingDf']
 
-    _validation_kwargs = ['testing', 'noSymbolCheck']
+    _validation_kwargs = ['nosymbol_check']
 
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == \
             "data_CNA_{}.txt".format(self.center)
 
-    def _process(self, cnaDf, test=False):
+    def _process(self, cnaDf):
         cnaDf.rename(columns={
             cnaDf.columns[0]: cnaDf.columns[0].upper()}, inplace=True)
         cnaDf.rename(columns={
@@ -104,7 +104,7 @@ class cna(FileTypeFormat):
         if len(index) > 0:
             del cnaDf[cnaDf.columns[index][0]]
         bedSynId = process_functions.getDatabaseSynId(
-            self.syn, "bed", test=test)
+            self.syn, "bed", test=self.testing)
         bed = self.syn.tableQuery(
             "select Hugo_Symbol, ID from {} where CENTER = '{}'" .format(
                 bedSynId, self.center))
@@ -133,9 +133,9 @@ class cna(FileTypeFormat):
 
         return(cnaDf)
 
-    def process_steps(self, cnaDf, newPath, databaseToSynIdMappingDf, test):
+    def process_steps(self, cnaDf, newPath, databaseToSynIdMappingDf):
 
-        newCNA = self._process(cnaDf, test=test)
+        newCNA = self._process(cnaDf)
 
         centerMafSynId = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
@@ -151,7 +151,7 @@ class cna(FileTypeFormat):
             self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
         return(newPath)
 
-    def _validate(self, cnvDF, noSymbolCheck, testing=False):
+    def _validate(self, cnvDF, nosymbol_check):
         total_error = ""
         warning = ""
         cnvDF.columns = [col.upper() for col in cnvDF.columns]
@@ -179,9 +179,9 @@ class cna(FileTypeFormat):
                 "0, 0.5, 1, 1.5, or 2.\n")
         else:
             cnvDF['HUGO_SYMBOL'] = keepSymbols
-            if haveColumn and not noSymbolCheck:
+            if haveColumn and not nosymbol_check:
                 bedSynId = process_functions.getDatabaseSynId(
-                    self.syn, "bed", test=testing)
+                    self.syn, "bed", test=self.testing)
                 bed = self.syn.tableQuery(
                     "select Hugo_Symbol, ID from {} where "
                     "CENTER = '{}'".format(bedSynId, self.center))
