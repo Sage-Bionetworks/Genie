@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 
-setup(name='veoibd-data-pipeline',
-      version='1.6.2-rc1',
-      description='Processing and validation for VEOIBD',
-      url='https://github.com/veo-ibd/veoibd-data-pipeline',
-      author='Kenneth Daily',
-      author_email='kenneth.daily@sagebionetworks.org',
+setup(name='aacrgenie',
+      version='1.7.0-veoibddevelop',
+      description='Processing and validation for GENIE',
+      url='https://github.com/Sage-Bionetworks/Genie',
+      author='Thomas Yu',
+      author_email='thomasyu888@gmail.com',
       license='MIT',
       packages=find_packages(),
       zip_safe=False,

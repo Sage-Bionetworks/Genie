@@ -406,7 +406,7 @@ def test_valid_validatefile():
         1553428800000,
         'clinical']], None)
     with mock.patch(
-            "genie.validate.determine_filetype",
+            "genie.validate.GenieValidationHelper.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
@@ -415,7 +415,7 @@ def test_valid_validatefile():
                 'error_list': [],
                 'to_validate': True}) as patch_check, \
         mock.patch(
-            "genie.validate.validate_single_file",
+            "genie.validate.GenieValidationHelper.validate_single_file",
             return_value=(valid, message, filetype)) as patch_validate,\
         mock.patch(
             "genie.input_to_database._get_status_and_error_list",
@@ -428,19 +428,14 @@ def test_valid_validatefile():
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
-            syn,
-            [entity.path],
-            center,
-            filetype=filetype,
             oncotreelink=oncotree_link,
             testing=testing
         )
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            syn, [entity.name], center)
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_called_once_with(
-            syn, valid, message, filetype,
+            valid, message, filetype,
             entities)
         patch_send_email.assert_not_called()
 
@@ -473,7 +468,7 @@ def test_invalid_validatefile():
         entity.name, 1553428800000, 'clinical']],
         [entity.id, message, entity.name])
     with mock.patch(
-            "genie.validate.determine_filetype",
+            "genie.validate.GenieValidationHelper.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
@@ -482,7 +477,7 @@ def test_invalid_validatefile():
                 'error_list': [],
                 'to_validate': True}) as patch_check, \
         mock.patch(
-            "genie.validate.validate_single_file",
+            "genie.validate.GenieValidationHelper.validate_single_file",
             return_value=(valid, message, filetype)) as patch_validate,\
         mock.patch(
             "genie.input_to_database._get_status_and_error_list",
@@ -495,19 +490,14 @@ def test_invalid_validatefile():
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
-            syn,
-            [entity.path],
-            center,
-            filetype=filetype,
             oncotreelink=oncotree_link,
             testing=testing
         )
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            syn, [entity.name], center)
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_called_once_with(
-            syn, valid, message, filetype,
+            valid, message, filetype,
             entities)
         patch_send_email.assert_called_once_with(
             syn, [entity.name], message, [entity.modifiedBy, entity.createdBy])
@@ -554,13 +544,13 @@ def test_already_validated_validatefile():
     expected_validate_results = (expected_input_status_list,
                                  expected_invalid_errors_list)
     with mock.patch(
-            "genie.validate.determine_filetype",
+            "genie.validate.GenieValidationHelper.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
             return_value=check_file_status_dict) as patch_check, \
         mock.patch(
-            "genie.validate.validate_single_file",
+            "genie.validate.GenieValidationHelper.validate_single_file",
             return_value=(valid, message, filetype)) as patch_validate,\
         mock.patch(
             "genie.input_to_database._get_status_and_error_list",
@@ -574,8 +564,7 @@ def test_already_validated_validatefile():
         patch_validate.assert_not_called()
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            syn, [entity.name], center)
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_not_called()
         patch_send_email.assert_not_called()
 
@@ -672,11 +661,11 @@ def test_valid__get_status_and_error_list():
     filetype = 'clinical'
 
     input_status_list, invalid_errors_list = \
-        input_to_database._get_status_and_error_list(syn, valid, message, 
-                                                     filetype, entities)
-    
-    assert input_status_list == \
-        [[entity.id, entity.path, entity.md5,
+        input_to_database._get_status_and_error_list(
+           valid, message, filetype,
+           entities)
+    assert input_status_list == [
+        [entity.id, entity.path, entity.md5,
          'VALIDATED', entity.name, modified_on,
          filetype]]
 
@@ -703,15 +692,15 @@ def test_invalid__get_status_and_error_list():
     message = 'invalid file content'
 
     input_status_list, invalid_errors_list = \
-        input_to_database._get_status_and_error_list(syn, valid, message, 
-                                                     filetype, entities)
-    assert input_status_list == \
-        [[entity.id, entity.path, entity.md5,
-          'INVALID', entity.name, modified_on,
-          filetype]]
-
-    assert invalid_errors_list == \
-        [['syn1234', message, 'data_clinical_supp_SAGE.txt']]
+        input_to_database._get_status_and_error_list(
+            valid, message, filetype,
+            entities)
+    assert input_status_list == [
+        [entity.id, entity.path, entity.md5,
+            'INVALID', entity.name, modified_on,
+            filetype]]
+    assert invalid_errors_list == [
+        ['syn1234', message, 'data_clinical_supp_SAGE.txt']]
 
 
 def test__send_validation_error_email():
