@@ -50,16 +50,16 @@ class fusions(FileTypeFormat):
    
     _fileType = "fusions"
 
-    _process_kwargs = ["newPath", "databaseSynId",'test']
+    _process_kwargs = ["newPath", "databaseSynId"]
 
-    _validation_kwargs = ['testing','noSymbolCheck']
+    _validation_kwargs = ['nosymbol_check']
 
     #VALIDATE FILENAME
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "data_fusions_%s.txt" % self.center
 
 
-    def _process(self, fusion, test=False):
+    def _process(self, fusion):
         fusion.columns = [col.upper() for col in fusion.columns]
         fusion['CENTER'] = self.center
         newsamples = [process_functions.checkGenieId(i,self.center) for i in fusion['TUMOR_SAMPLE_BARCODE']]
@@ -73,7 +73,7 @@ class fusions(FileTypeFormat):
         fusion['ENTREZ_GENE_ID'] = fusion['ENTREZ_GENE_ID'].fillna(0)
         fusion = fusion.drop_duplicates()
         fusion['ID'] = fusion['HUGO_SYMBOL'].copy()
-        bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=test)
+        bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=self.testing)
         bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))
         bedDf = bed.asDataFrame()
         fusion = fusion.apply(lambda x: validateSymbol(x, bedDf), axis=1)
@@ -92,13 +92,13 @@ class fusions(FileTypeFormat):
         return(fusion)
 
     #PROCESSING
-    def process_steps(self, fusion, databaseSynId, newPath, test):
-        fusion = self._process(fusion, test)
+    def process_steps(self, fusion, databaseSynId, newPath):
+        fusion = self._process(fusion)
         process_functions.updateData(self.syn, databaseSynId, fusion, self.center, toDelete=True)
         fusion.to_csv(newPath, sep="\t",index=False)
         return(newPath)
 
-    def _validate(self, fusionDF, noSymbolCheck, testing=False):
+    def _validate(self, fusionDF, nosymbol_check):
         total_error = ""
         warning = ""
 
@@ -113,10 +113,10 @@ class fusions(FileTypeFormat):
             fusionDF['COMMENTS'] = float('nan')
         if not all(REQUIRED_HEADERS.isin(fusionDF.columns)):
             total_error += "Your fusion file must at least have these headers: %s.\n" % ",".join(REQUIRED_HEADERS[~REQUIRED_HEADERS.isin(fusionDF.columns)])
-        if process_functions.checkColExist(fusionDF, "HUGO_SYMBOL") and not noSymbolCheck:
+        if process_functions.checkColExist(fusionDF, "HUGO_SYMBOL") and not nosymbol_check:
            # logger.info("VALIDATING %s GENE SYMBOLS" % os.path.basename(filePath))
             #invalidated_genes = fusionDF["HUGO_SYMBOL"].drop_duplicates().apply(validateSymbol)
-            bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=testing)
+            bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=self.testing)
             bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))
             bedDf = bed.asDataFrame()
             #invalidated_genes = self.pool.map(process_functions.validateSymbol, fusionDF["HUGO_SYMBOL"].drop_duplicates())

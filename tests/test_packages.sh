@@ -21,4 +21,3 @@ genie validate SAGE_workflow.md SAGE --test
 genie validate sampleRetraction.csv SAGE --test
 genie validate genie_data_cna_hg19_SAGE.seg SAGE --test
 genie validate data_fusions_SAGE.txt SAGE --test
-genie validate vital_status.txt SAGE --test
