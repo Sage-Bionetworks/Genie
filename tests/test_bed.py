@@ -1,10 +1,16 @@
-import synapseclient
-import pandas as pd
 import mock
 import pytest
-from genie import bed
-from genie import bedSP
+import shutil
 
+import synapseclient
+import pandas as pd
+
+from genie.bed import bed
+from genie.bedSP import bedSP
+
+if not shutil.which('bedtools'):
+    pytest.skip("bedtools is not found, skipping bed tests", 
+                allow_module_level=True)
 
 def create_mock_table(dataframe):
     table = mock.create_autospec(synapseclient.table.CsvFileTable)

@@ -1,9 +1,11 @@
-import synapseclient
-import pandas as pd
-import mock
-from genie import clinical
-import pytest
 import datetime
+import mock
+import pytest
+
+import pandas as pd
+import synapseclient
+
+from genie.clinical import clinical
 
 
 def createMockTable(dataframe):

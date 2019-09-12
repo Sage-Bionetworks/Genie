@@ -1,8 +1,11 @@
-from __future__ import absolute_import
-from genie import FileTypeFormat, process_functions
 import logging
 import os
+
 import pandas as pd
+
+from .example_filetype_format import FileTypeFormat
+from . import process_functions
+
 logger = logging.getLogger(__name__)
 
 
@@ -12,17 +15,17 @@ class patientCounts(FileTypeFormat):
     '''
     _fileType = "patientCounts"
 
-    _process_kwargs = ["newPath", "oncotreeLink", "databaseSynId"]
+    _process_kwargs = ["newPath", "oncotree_link", "databaseSynId"]
 
-    _validation_kwargs = ["oncotreeLink"]
+    _validation_kwargs = ["oncotree_link"]
 
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "patient_counts.txt"
 
-    def _process(self, patientCountsDf, oncotreeLink):
+    def _process(self, patientCountsDf, oncotree_link):
         patientCountsDf['CENTER'] = self.center
         oncotree_mapping_dict = \
-            process_functions.get_oncotree_code_mappings(oncotreeLink)
+            process_functions.get_oncotree_code_mappings(oncotree_link)
         patientCountsDf['PRIMARY_CODE'] = [
             oncotree_mapping_dict[i.upper()]['ONCOTREE_PRIMARY_NODE']
             for i in patientCountsDf.ONCOTREE_CODE]
@@ -30,21 +33,21 @@ class patientCounts(FileTypeFormat):
         return(patientCountsDf)
 
     def process_steps(
-            self, patientCountsDf, newPath, oncotreeLink, databaseSynId):
-        patientCountsDf = self._process(patientCountsDf, oncotreeLink)
+            self, patientCountsDf, newPath, oncotree_link, databaseSynId):
+        patientCountsDf = self._process(patientCountsDf, oncotree_link)
         process_functions.updateData(
             self.syn, databaseSynId, patientCountsDf, self.center)
         patientCountsDf.to_csv(newPath, sep="\t", index=False)
         return(newPath)
 
-    def _validate(self, patCountsDf, oncotreeLink):
+    def _validate(self, patCountsDf, oncotree_link):
         total_error = ""
         warning = ""
-        # oncotree_mapping = process_functions.get_oncotree_codes(oncotreeLink)
+        # oncotree_mapping = process_functions.get_oncotree_codes(oncotree_link)
         # if oncotree_mapping.empty:
         oncotree_mapping = pd.DataFrame()
         oncotree_mapping_dict = \
-            process_functions.get_oncotree_code_mappings(oncotreeLink)
+            process_functions.get_oncotree_code_mappings(oncotree_link)
         oncotree_mapping['ONCOTREE_CODE'] = oncotree_mapping_dict.keys()
 
         haveColumn = \
