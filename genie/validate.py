@@ -13,30 +13,94 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def determine_filetype(syn, filepathlist, center):
-    '''
-    Get the file type of the file by validating its filename
+class ValidationHelper(object):
 
-    Args:
-        syn: Synapse object
-        filepathlist: list of filepaths to center files
-        center: Participating Center
+    # Used for the kwargs in validate_single_file
+    # Overload this per class
+    _validate_kwargs = []
 
-    Returns:
-        str: File type of input files.  None if no filetype found
-    '''
-    filetype = None
-    # Loop through file formats
-    for file_format in PROCESS_FILES:
-        validator = PROCESS_FILES[file_format](syn, center)
-        try:
-            filetype = validator.validateFilename(filepathlist)
-        except AssertionError:
-            continue
-        # If valid filename, return file type.
-        if filetype is not None:
-            break
-    return(filetype)
+    def __init__(self, syn, center, filepathlist,
+                 format_registry=PROCESS_FILES,
+                 testing=False):
+        """A validator helper class for a center's files.
+
+        Args:
+            syn: a synapseclient.Synapse object
+            center: The participating center name.
+            filepathlist: a list of file paths.
+            format_registry: A dictionary mapping file format name to the format class.
+            testing: Run in testing mode.
+        """
+
+        self._synapse_client = syn
+        self.filepathlist = filepathlist
+        self.center = center
+        self._format_registry = format_registry
+        self.testing = testing
+        self.file_type = self.determine_filetype()
+
+    def determine_filetype(self):
+        '''
+        Get the file type of the file by validating its filename
+
+        Args:
+            syn: Synapse object
+            filepathlist: list of filepaths to center files
+
+        Returns:
+            str: File type of input files.  None if no filetype found
+        '''
+        filetype = None
+        # Loop through file formats
+        for file_format in self._format_registry:
+            validator = self._format_registry[file_format](self._synapse_client, self.center,
+                                                           testing=self.testing)
+            try:
+                filetype = validator.validateFilename(self.filepathlist)
+            except AssertionError:
+                continue
+            # If valid filename, return file type.
+            if filetype is not None:
+                break
+        return(filetype)
+
+    def validate_single_file(self, **kwargs):
+        """Validate a submitted file unit.
+
+        Returns:
+            message: errors and warnings
+            valid: Boolean value of validation status
+            filetype: String of the type of the file
+        """
+
+        if self.file_type not in self._format_registry:
+            valid = False
+            errors = "Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
+            warnings = ""
+        else:
+            mykwargs = {}
+            for required_parameter in self._validate_kwargs:
+                assert required_parameter in kwargs.keys(), \
+                    "%s not in parameter list" % required_parameter
+                mykwargs[required_parameter] = kwargs[required_parameter]
+
+            validator_cls = self._format_registry[self.file_type]
+            validator = validator_cls(self._synapse_client, self.center,
+                                      testing=self.testing)
+            valid, errors, warnings = validator.validate(filePathList=self.filepathlist,
+                                                         **mykwargs)
+
+        # Complete error message
+        message = collect_errors_and_warnings(errors, warnings)
+
+        return(valid, message, self.file_type)
+
+
+class GenieValidationHelper(ValidationHelper):
+    """A validator helper class for AACR Project Genie.
+    """
+
+    _validate_kwargs = ['oncotree_link', 'nosymbol_check']
 
 
 def collect_errors_and_warnings(errors, warnings):
@@ -65,51 +129,6 @@ def collect_errors_and_warnings(errors, warnings):
                 logger.warning(warning)
         message += "-------------WARNINGS-------------\n" + warnings
     return message
-
-
-def validate_single_file(syn, filepathlist, center, filetype=None,
-                         oncotreelink=None, testing=False, 
-                         nosymbol_check=False):
-    """
-    This function determines the filetype of a single submitted 'file'.
-    The 'file' should be one of those defined in config.PROCESS_FILES and 
-    may actually be composed of multiple files.
-    if filetype is not specified and logs the validation errors and
-    warnings of a file.
-
-    Args:
-        syn: A synapseclient.Synapse object.
-        filepathlist: List of local paths to files.
-        center: Center name
-        filetype: If None, filetype is determined from the filename.
-                  If specified, filetype determination is skipped.
-        oncotreelink: Oncotree URL.
-        testing: Specify to invoke testing environment
-        nosymbol_check: Do not check hugo symbols of fusion and cna file.
-
-    Returns:
-        message: errors and warnings
-        valid: Boolean value of validation status
-        filetype: String of the type of the file
-    """
-    if filetype is None:
-        filetype = determine_filetype(syn, filepathlist, center)
-
-    if filetype not in PROCESS_FILES:
-        valid = False
-        errors = "Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
-        warnings = ""
-    else:
-        validator = PROCESS_FILES[filetype](syn, center)
-        valid, errors, warnings = validator.validate(filePathList=filepathlist, 
-                                                     oncotreeLink=oncotreelink,
-                                                     testing=testing,
-                                                     noSymbolCheck=nosymbol_check)
-
-    # Complete error message
-    message = collect_errors_and_warnings(errors, warnings)
-
-    return(valid, message, filetype)
 
 
 def get_config(syn, synid):
@@ -153,21 +172,21 @@ def _check_center_input(center, center_list):
                 ", ".join(center_list)))
 
 
-def _get_oncotreelink(syn, databasetosynid_mappingdf, oncotreelink=None):
+def _get_oncotreelink(syn, databasetosynid_mappingdf, oncotree_link=None):
     '''
     Get oncotree link unless a link is specified by the user
 
     Args:
         syn: Synapse object
         databasetosynid_mappingdf: database to synid mapping
-        oncotreelink: link to oncotree. Default is None
+        oncotree_link: link to oncotree. Default is None
     '''
-    if oncotreelink is None:
+    if oncotree_link is None:
         oncolink = databasetosynid_mappingdf.query(
             'Database == "oncotreeLink"').Id
         oncolink_ent = syn.get(oncolink.iloc[0])
-        oncotreelink = oncolink_ent.externalURL
-    return(oncotreelink)
+        oncotree_link = oncolink_ent.externalURL
+    return(oncotree_link)
 
 
 def _upload_to_synapse(syn, filepaths, valid, parentid=None):
@@ -206,12 +225,14 @@ def _perform_validate(syn, args):
     # Check center argparse
     _check_center_input(args.center, center_mapping_df.center.tolist())
 
-    args.oncotreelink = _get_oncotreelink(syn, databasetosynid_mappingdf,
-                                          oncotreelink=args.oncotreelink)
+    args.oncotree_link = _get_oncotreelink(syn, databasetosynid_mappingdf,
+                                           oncotree_link=args.oncotree_link)
 
-    valid, message, filetype = validate_single_file(
-        syn, args.filepath, args.center, args.filetype,
-        args.oncotreelink, args.testing, args.nosymbol_check)
+    validator = GenieValidationHelper(syn=syn, center=args.center,
+                                      filepathlist=args.filepath)
+    mykwargs = dict(oncotree_link=args.oncotree_link,
+                    nosymbol_check=args.nosymbol_check)
+    valid, message, filetype = validator.validate_single_file(**mykwargs)
 
     # Upload to synapse if parentid is specified and valid
     _upload_to_synapse(syn, args.filepath, valid, parentid=args.parentid)

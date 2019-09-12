@@ -53,7 +53,7 @@ def build_parser():
 
     parser_validate.add_argument("center", type=str, help='Contributing Centers')
 
-    parser_validate.add_argument("--oncotreelink", type=str, help="Link to oncotree code")
+    parser_validate.add_argument("--oncotree_link", type=str, help="Link to oncotree code")
 
     validate_group = parser_validate.add_mutually_exclusive_group()
 

@@ -387,7 +387,7 @@ def test_valid_validatefile():
         1553428800000,
         'clinical']], None)
     with mock.patch(
-            "genie.validate.determine_filetype",
+            "genie.validate.GenieValidationHelper.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
@@ -396,7 +396,7 @@ def test_valid_validatefile():
                 'error_list': [],
                 'to_validate': True}) as patch_check, \
         mock.patch(
-            "genie.validate.validate_single_file",
+            "genie.validate.GenieValidationHelper.validate_single_file",
             return_value=(valid, message, filetype)) as patch_validate,\
         mock.patch(
             "genie.input_to_database._get_status_and_error_list",
@@ -409,19 +409,12 @@ def test_valid_validatefile():
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
-            syn,
-            [entity.path],
-            center,
-            filetype=filetype,
-            oncotreelink=oncotree_link,
-            testing=testing
-        )
+            oncotree_link=oncotree_link, nosymbol_check=False)
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            syn, [entity.name], center)
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_called_once_with(
-            syn, valid, message, filetype,
+            valid, message, filetype,
             entities)
         patch_send_email.assert_not_called()
 
@@ -454,7 +447,7 @@ def test_invalid_validatefile():
         entity.name, 1553428800000, 'clinical']],
         [entity.id, message, entity.name])
     with mock.patch(
-            "genie.validate.determine_filetype",
+            "genie.validate.GenieValidationHelper.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
@@ -463,7 +456,7 @@ def test_invalid_validatefile():
                 'error_list': [],
                 'to_validate': True}) as patch_check, \
         mock.patch(
-            "genie.validate.validate_single_file",
+            "genie.validate.GenieValidationHelper.validate_single_file",
             return_value=(valid, message, filetype)) as patch_validate,\
         mock.patch(
             "genie.input_to_database._get_status_and_error_list",
@@ -476,19 +469,12 @@ def test_invalid_validatefile():
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
-            syn,
-            [entity.path],
-            center,
-            filetype=filetype,
-            oncotreelink=oncotree_link,
-            testing=testing
-        )
+            oncotree_link=oncotree_link, nosymbol_check=False)
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            syn, [entity.name], center)
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_called_once_with(
-            syn, valid, message, filetype,
+            valid, message, filetype,
             entities)
         patch_send_email.assert_called_once_with(
             syn, [entity.name], message, [entity.modifiedBy, entity.createdBy])
@@ -530,13 +516,13 @@ def test_already_validated_validatefile():
             check_file_status_dict['error_list'][0],
             entity.name]])
     with mock.patch(
-            "genie.validate.determine_filetype",
+            "genie.validate.GenieValidationHelper.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
         mock.patch(
             "genie.input_to_database.check_existing_file_status",
             return_value=check_file_status_dict) as patch_check, \
         mock.patch(
-            "genie.validate.validate_single_file",
+            "genie.validate.GenieValidationHelper.validate_single_file",
             return_value=(valid, message, filetype)) as patch_validate,\
         mock.patch(
             "genie.input_to_database._get_status_and_error_list",
@@ -551,8 +537,7 @@ def test_already_validated_validatefile():
         patch_validate.assert_not_called()
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            syn, [entity.name], center)
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_not_called()
         patch_send_email.assert_not_called()
 
@@ -649,7 +634,7 @@ def test_valid__get_status_and_error_list():
 
     input_status_list, invalid_errors_list = \
         input_to_database._get_status_and_error_list(
-           syn, valid, message, filetype,
+           valid, message, filetype,
            entities)
     assert input_status_list == [
         [entity.id, entity.path, entity.md5,
@@ -678,7 +663,7 @@ def test_invalid__get_status_and_error_list():
 
     input_status_list, invalid_errors_list = \
         input_to_database._get_status_and_error_list(
-            syn, valid, message, filetype,
+            valid, message, filetype,
             entities)
     assert input_status_list == [
         [entity.id, entity.path, entity.md5,
@@ -843,7 +828,7 @@ def test_main_processfile(process, genieclass, filetype):
     center = "SAGE"
     path_to_genie = "./"
     threads = 2
-    oncotreeLink = "www.google.com"
+    oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
     center_mapping_df = pd.DataFrame(center_mapping)
@@ -854,7 +839,7 @@ def test_main_processfile(process, genieclass, filetype):
     with mock.patch.object(genieclass, "process") as patch_class:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie, threads,
-            center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
             processing=process, test=False, reference=None)
@@ -872,7 +857,7 @@ def test_mainnone_processfile():
     center = "SAGE"
     path_to_genie = "./"
     threads = 2
-    oncotreeLink = "www.google.com"
+    oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
     center_mapping_df = pd.DataFrame(center_mapping)
@@ -883,7 +868,7 @@ def test_mainnone_processfile():
     with mock.patch.object(clinical, "process") as patch_clin:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie, threads,
-            center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
             processing="main", test=False, reference=None)
@@ -901,7 +886,7 @@ def test_notvcf_processfile():
     center = "SAGE"
     path_to_genie = "./"
     threads = 2
-    oncotreeLink = "www.google.com"
+    oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
     center_mapping_df = pd.DataFrame(center_mapping)
@@ -912,7 +897,7 @@ def test_notvcf_processfile():
     with mock.patch.object(vcf, "process") as patch_process:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie, threads,
-            center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
             processing='vcf', test=False, reference=None)
