@@ -15,9 +15,9 @@ from . import cna
 from . import fusions
 from . import sampleRetraction
 from . import patientRetraction
-from . import patientCounts
+# from . import patientCounts
 from . import mutationsInCis
-from . import vitalStatus
+# from . import vitalStatus
 from . import assay
 
 logging.basicConfig(level=logging.INFO)
