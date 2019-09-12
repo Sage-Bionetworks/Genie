@@ -1,8 +1,15 @@
 """genie package setup"""
+import os
 from setuptools import setup, find_packages
 
-setup(name='aacrgenie',
-      version='3.2',
+# figure out the version
+about = {}
+here = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(here, "genie", "__version__.py")) as f:
+    exec(f.read(), about)
+
+setup(name='genie',
+      version=about["__version__"],
       description='Processing and validation for GENIE',
       url='https://github.com/Sage-Bionetworks/Genie',
       author='Thomas Yu',
