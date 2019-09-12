@@ -173,7 +173,7 @@ if __name__ == "__main__":
         action='store_true',
         help="Only validate the files, don't process")
     parser.add_argument(
-        "--oncotreeLink",
+        "--oncotree_link",
         type=str,
         help="Link to oncotree code")
     parser.add_argument(
@@ -227,7 +227,7 @@ if __name__ == "__main__":
          pemfile=args.pemFile,
          delete_old=args.deleteOld,
          only_validate=args.onlyValidate,
-         oncotreelink=args.oncotreeLink,
+         oncotree_link=args.oncotree_link,
          create_new_maf_database=args.createNewMafDatabase,
          testing=args.testing,
          debug=args.debug,

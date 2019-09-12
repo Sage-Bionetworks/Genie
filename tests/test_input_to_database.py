@@ -428,9 +428,7 @@ def test_valid_validatefile():
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
-            oncotreelink=oncotree_link,
-            testing=testing
-        )
+            oncotree_link=oncotree_link, nosymbol_check=False)
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
         patch_determine_filetype.assert_called_once()
@@ -490,9 +488,7 @@ def test_invalid_validatefile():
 
         assert expected_validate_results == validate_results
         patch_validate.assert_called_once_with(
-            oncotreelink=oncotree_link,
-            testing=testing
-        )
+            oncotree_link=oncotree_link, nosymbol_check=False)
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
         patch_determine_filetype.assert_called_once()
@@ -858,7 +854,7 @@ def test_main_processfile(process, genieclass, filetype):
     center = "SAGE"
     path_to_genie = "./"
     threads = 2
-    oncotreeLink = "www.google.com"
+    oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
     center_mapping_df = pd.DataFrame(center_mapping)
@@ -869,7 +865,7 @@ def test_main_processfile(process, genieclass, filetype):
     with mock.patch.object(genieclass, "process") as patch_class:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie, threads,
-            center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
             processing=process, test=False, reference=None)
@@ -887,7 +883,7 @@ def test_mainnone_processfile():
     center = "SAGE"
     path_to_genie = "./"
     threads = 2
-    oncotreeLink = "www.google.com"
+    oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
     center_mapping_df = pd.DataFrame(center_mapping)
@@ -898,7 +894,7 @@ def test_mainnone_processfile():
     with mock.patch.object(clinical, "process") as patch_clin:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie, threads,
-            center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
             processing="main", test=False, reference=None)
@@ -916,7 +912,7 @@ def test_notvcf_processfile():
     center = "SAGE"
     path_to_genie = "./"
     threads = 2
-    oncotreeLink = "www.google.com"
+    oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
     center_mapping_df = pd.DataFrame(center_mapping)
@@ -927,7 +923,7 @@ def test_notvcf_processfile():
     with mock.patch.object(vcf, "process") as patch_process:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie, threads,
-            center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
             processing='vcf', test=False, reference=None)

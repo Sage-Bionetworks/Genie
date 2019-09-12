@@ -103,7 +103,7 @@ def test_valid_validate_single_file():
 
         validator = validate.GenieValidationHelper(syn, center=center, filepathlist=filepathlist)
 
-        valid, message, filetype = validator.validate_single_file()
+        valid, message, filetype = validator.validate_single_file(oncotree_link=None, nosymbol_check=False)
 
         assert valid == expected_valid
         assert message == expected_message
@@ -113,9 +113,8 @@ def test_valid_validate_single_file():
 
         mock_genie_class.assert_called_once_with(
             filePathList=filepathlist,
-            oncotreeLink=None,
-            testing=False,
-            noSymbolCheck=False)
+            oncotree_link=None,
+            nosymbol_check=False)
 
         mock_determine.assert_called_once_with(error_string, warning_string)
 
@@ -130,7 +129,7 @@ def test_filetype_validate_single_file():
     expected_error = "----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
     validator = validate.GenieValidationHelper(syn, center, filepathlist)
 
-    valid, message, filetype = validator.validate_single_file(filetype="foobar")
+    valid, message, filetype = validator.validate_single_file()
     assert message == expected_error
 
 
@@ -211,7 +210,7 @@ ONCOTREE_ENT = 'syn222'
 
 
 class argparser:
-    oncotreelink = "link"
+    oncotree_link = "link"
     parentid = None
     filetype = None
     testing = False
@@ -227,13 +226,13 @@ class argparser:
         return(databasetosynid_mappingdf)
 
 
-def test_notnone_get_oncotreelink():
+def test_notnone_get_oncotree_link():
     '''
     Test link passed in by user is used
     '''
     arg = argparser()
     url = "https://www.synapse.org"
-    link = validate._get_oncotreelink(syn, arg.asDataFrame(), oncotreelink=url)
+    link = validate._get_oncotreelink(syn, arg.asDataFrame(), oncotree_link=url)
     assert link == url
 
 
@@ -294,8 +293,7 @@ def test_perform_validate():
         # patch_syn_tablequery.assert_called_once_with('select * from syn123')
         patch_check_center.assert_called_once_with(arg.center, ["try", "foo"])
         patch_get_onco.assert_called_once()
-        patch_validate.assert_called_once_with(arg.filetype,
-                                               arg.oncotreelink, arg.testing,
-                                               arg.nosymbol_check)
+        patch_validate.assert_called_once_with(oncotree_link=arg.oncotree_link,
+                                               nosymbol_check=arg.nosymbol_check)
         patch_syn_upload.assert_called_once_with(
             syn, arg.filepath, valid, parentid=arg.parentid)
