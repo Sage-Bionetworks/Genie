@@ -15,10 +15,12 @@ from . import cna
 from . import fusions
 from . import sampleRetraction
 from . import patientRetraction
-from . import patientCounts
+# from . import patientCounts
 from . import mutationsInCis
-from . import vitalStatus
+# from . import vitalStatus
 from . import assay
+
+from .__version__ import __version__
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
