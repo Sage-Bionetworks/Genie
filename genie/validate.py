@@ -237,7 +237,7 @@ def collect_format_types(package_names):
     return file_format_dict
 
 
-def _perform_validate(syn, args):
+def _perform_validate(syn, args, config):
     """This is the main entry point to the genie command line tool.
     """
 
