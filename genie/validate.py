@@ -2,11 +2,13 @@
 import importlib
 import inspect
 import logging
+import sys
 
 import synapseclient
 from synapseclient.exceptions import SynapseHTTPError
 
-from .config import PROCESS_FILES
+from . import config
+from . import example_filetype_format
 from . import process_functions
 
 logging.basicConfig()
@@ -16,7 +18,7 @@ logger.setLevel(logging.INFO)
 class ValidationHelper(object):
 
     def __init__(self, syn, center, filepathlist,
-                 format_registry=PROCESS_FILES):
+                 format_registry=config.PROCESS_FILES):
         """A validator helper class for a center's files.
 
         Args:
@@ -236,18 +238,16 @@ def _upload_to_synapse(syn, filepaths, valid, parentid=None):
             ent = syn.store(file_ent)
             logger.info("Stored to {}".format(ent.id))
 
-def predicate(obj):
-        """A predicate to get all classes that are subclasses of
-        example_file_format.FileTypeFormat"""
-        return inspect.isclass(obj) and issubclass(obj, example_file_format.FileTypeFormat)
 
 def collect_format_types(module_names):
     file_format_list = []
-    for module_name in module_names:
-        modules= sys.modules["module_name"]
-        for name, cls in inspect.getmembers(mod, predicate):
-            file_format_list.append(m)
-
+    for cls in config.PROCESS_FILES_LIST:
+        cls_module_name = cls.__module__
+        cls_pkg = cls_module_name.split('.')[0]
+        if cls_pkg in module_names:
+            file_format_list.append(cls)
+    file_format_dict = config.make_format_registry_dict(file_format_list)
+    return file_format_dict
 
 
 def _perform_validate(syn, args):
@@ -271,8 +271,11 @@ def _perform_validate(syn, args):
     args.oncotreelink = _get_oncotreelink(syn, databasetosynid_mappingdf,
                                           oncotreelink=args.oncotreelink)
 
-    validator = GenieValidationHelper(syn=syn, center=args.center, 
-                                      filepathlist=args.filepath)
+    format_registry = collect_format_types(args.format_registry_packages)
+    
+    validator = GenieValidationHelper(syn=syn, center=args.center,
+                                      filepathlist=args.filepath,
+                                      format_registry=format_registry)
     valid, message, filetype = validator.validate_single_file(args.filetype,
         args.oncotreelink, args.testing, args.nosymbol_check)
 
