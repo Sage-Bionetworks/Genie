@@ -222,7 +222,7 @@ def collect_format_types(package_names):
 
     file_format_list = []
     for package_name in package_names:
-        importlib.import_module(module_name)
+        importlib.import_module(package_name)
 
     for cls in config.get_subclasses(example_filetype_format.FileTypeFormat):
         logger.debug(f"checking {cls}.")
