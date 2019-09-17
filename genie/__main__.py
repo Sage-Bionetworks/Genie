@@ -53,7 +53,7 @@ def build_parser():
 
     parser_validate.add_argument("center", type=str, help='Contributing Centers')
 
-    parser_validate.add_argument("--format_registry_package", type=str, nargs="+",
+    parser_validate.add_argument("--format_registry_packages", type=str, nargs="+",
                                  default="genie",
                                  help="Python package name(s) to get valid file formats from (default: %(default)s).")
 
