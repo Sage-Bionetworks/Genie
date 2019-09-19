@@ -102,14 +102,14 @@ def get_center_input_files(syn, synid, center, process="main"):
     return prepared_center_file_list
 
 
-def check_existing_file_status(validation_statusdf, error_trackerdf, entities):
+def check_existing_file_status(validation_status_table, error_tracker_table, entities):
     '''
     This function checks input files against the existing validation and error
     tracking dataframe
 
     Args:
-        validation_statusdf: Validation status dataframe
-        error_trackerdf: Error tracking dataframe
+        validation_status_table: Validation status Synapse Table query result
+        error_tracker_table: Error tracking Synapse Table query result
         entities: list of center input entites
 
     Returns:
@@ -125,6 +125,9 @@ def check_existing_file_status(validation_statusdf, error_trackerdf, entities):
 
     statuses = []
     errors = []
+
+    validation_statusdf = validation_status_table.asDataFrame()
+    error_trackerdf = error_tracker_table.asDataFrame()
 
     for ent in entities:
         to_validate = False
@@ -219,7 +222,7 @@ def _get_status_and_error_list(valid, message, filetype, entities):
     return(input_status_list, invalid_errors_list)
 
 
-def validatefile(syn, entities, validation_statusdf, error_trackerdf,
+def validatefile(syn, entities, validation_status_table, error_tracker_table,
                  center, threads, testing, oncotree_link,
                  format_registry=PROCESS_FILES):
     '''Validate a list of entities.
@@ -250,7 +253,7 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     file_users = [entities[0].modifiedBy, entities[0].createdBy]
 
     check_file_status = check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities)
+        validation_status_table, error_tracker_table, entities)
 
     status_list = check_file_status['status_list']
     error_list = check_file_status['error_list']
@@ -609,22 +612,21 @@ def validation(syn, center, process,
                 synid=validation_status_synid,
                 center=center,
                 add=add_query_str))
-        validation_statusdf = validation_status_table.asDataFrame()
+
         error_tracker_table = syn.tableQuery(
             "SELECT id,center,errors,name FROM {synid} "
             "where center = '{center}' {add}".format(
                 synid=error_tracker_synid,
                 center=center,
                 add=add_query_str))
-        error_trackerdf = error_tracker_table.asDataFrame()
 
         input_valid_statuses = []
         invalid_errors = []
 
         for ents in center_files:
             status, errors = validatefile(syn, ents,
-                                          validation_statusdf,
-                                          error_trackerdf,
+                                          validation_status_table,
+                                          error_tracker_table,
                                           center=center, threads=1,
                                           testing=testing,
                                           oncotree_link=oncotree_link)
