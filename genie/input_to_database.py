@@ -78,11 +78,6 @@ def get_center_input_files(syn, synid, center, process="main"):
 
     for _, _, entities in center_files:
         for name, ent_synid in entities:
-            # This is to remove vcfs from being validated during main
-            # processing. Often there are too many vcf files, and it is
-            # not necessary for them to be run everytime.
-            if name.endswith(".vcf") and process != "vcf":
-                continue
 
             ent = syn.get(ent_synid)
             logger.debug(ent)
