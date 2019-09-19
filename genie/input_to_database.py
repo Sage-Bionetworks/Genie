@@ -464,7 +464,7 @@ def get_duplicated_files(validation_statusdf, duplicated_error_message):
         duplicated_error_message: Error message for duplicated files
 
     Returns:
-        dataframe with 'id', 'name' and 'errors' of duplicated files
+        dataframe with 'id', 'name', 'errors', and 'fileType' of duplicated files
     '''
     logger.info("CHECK FOR DUPLICATED FILES")
     duplicated_filesdf = validation_statusdf[
