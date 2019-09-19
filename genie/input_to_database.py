@@ -553,7 +553,7 @@ def update_status_and_error_tables(syn,
 
     process_functions.updateDatabase(syn,
                                      validation_status_table.asDataFrame(),
-                                     input_valid_statusdf[["id", 'md5', 'status', 'name', 'center', 'modifiedOn']],
+                                     input_valid_statusdf[["id", 'md5', 'status', 'name', 'center', 'modifiedOn', 'fileType']],
                                      validation_status_table.tableId,
                                      ["id"],
                                      to_delete=True)
