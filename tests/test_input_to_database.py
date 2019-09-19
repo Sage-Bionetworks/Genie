@@ -60,11 +60,20 @@ validation_statusdf = pd.DataFrame({
     'id': ['syn1234', 'syn2345'],
     'status': ['VALID', 'INVALID'],
     'md5': ['3333', '44444'],
-    'name': ['first.txt', 'second.txt']})
+    'name': ['first.txt', 'second.txt'],
+    'fileType': ['filetype1', 'filetype2']})
 error_trackerdf = pd.DataFrame({
     'id': ['syn2345'],
-    'errors': ['Invalid file format']})
+    'errors': ['Invalid file format'],
+    'fileType': ['filetype1']})
 emptydf = pd.DataFrame(columns=['id'], dtype=str)
+
+class mock_csv_query_result(object):
+    def __init__(self, df):
+        self.df = df
+    def asDataFrame(self):
+        return self.df
+
 # def test_samename_rename_file():
 #     '''Test that the file path is not renamed.
 #     '''
@@ -205,8 +214,9 @@ def test_unvalidatedinput_check_existing_file_status():
     '''
     entity = synapseclient.Entity(id='syn1234')
     entities = [entity]
+
     file_status = input_to_database.check_existing_file_status(
-        emptydf, emptydf, entities)
+        mock_csv_query_result(emptydf), mock_csv_query_result(emptydf), entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == []
     assert file_status['error_list'] == []
@@ -219,7 +229,7 @@ def test_valid_check_existing_file_status():
     entity = synapseclient.Entity(name='first.txt', id='syn1234', md5='3333')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities)
+        mock_csv_query_result(validation_statusdf), mock_csv_query_result(error_trackerdf), entities)
     assert not file_status['to_validate']
     assert file_status['status_list'] == ['VALID']
     assert file_status['error_list'] == []
@@ -232,7 +242,7 @@ def test_invalid_check_existing_file_status():
     entity = synapseclient.Entity(name='second.txt', id='syn2345', md5='44444')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities)
+        mock_csv_query_result(validation_statusdf), mock_csv_query_result(error_trackerdf), entities)
     assert not file_status['to_validate']
     assert file_status['status_list'] == ['INVALID']
     assert file_status['error_list'] == ['Invalid file format']
@@ -245,7 +255,7 @@ def test_nostorederrors_check_existing_file_status():
     entity = synapseclient.Entity(name='second.txt', id='syn2345', md5='44444')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, emptydf, entities)
+        mock_csv_query_result(validation_statusdf), mock_csv_query_result(emptydf), entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == ['INVALID']
     assert file_status['error_list'] == []
@@ -258,7 +268,7 @@ def test_diffmd5validate_check_existing_file_status():
     entity = synapseclient.Entity(name='first.txt', id='syn1234', md5='44444')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, emptydf, entities)
+        mock_csv_query_result(validation_statusdf), mock_csv_query_result(emptydf), entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == ['VALID']
     assert file_status['error_list'] == []
@@ -271,7 +281,7 @@ def test_diffnametovalidate_check_existing_file_status():
     entity = synapseclient.Entity(name='second.txt', id='syn1234', md5='3333')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, emptydf, entities)
+        mock_csv_query_result(validation_statusdf), mock_csv_query_result(emptydf), entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == ['VALID']
     assert file_status['error_list'] == []
@@ -293,7 +303,7 @@ def test_twoinvalid_check_existing_file_status():
     second_entity = synapseclient.Entity(name='second.txt', id='syn2345', md5='44444')
     entities = [first_entity, second_entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities)
+        mock_csv_query_result(validation_statusdf), mock_csv_query_result(error_trackerdf), entities)
     assert not file_status['to_validate']
     assert file_status['status_list'] == [
         'INVALID', 'INVALID']
@@ -798,8 +808,8 @@ def test_validation():
         assert patch_tablequery.call_count == 2
         patch_validatefile.assert_called_once_with(
             syn, entity,
-            validationstatus_mock.asDataFrame(),
-            errortracking_mock.asDataFrame(),
+            validationstatus_mock,
+            errortracking_mock,
             center='SAGE', threads=1,
             testing=False,
             oncotree_link=oncotree_link)
