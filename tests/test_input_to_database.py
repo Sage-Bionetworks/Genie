@@ -514,7 +514,8 @@ def test_already_validated_validatefile():
             filetype]],
         [[entity.id,
             check_file_status_dict['error_list'][0],
-            entity.name]])
+            entity.name,
+            filetype]])
     with mock.patch(
             "genie.validate.GenieValidationHelper.determine_filetype",
             return_value=filetype) as patch_determine_filetype,\
@@ -670,7 +671,7 @@ def test_invalid__get_status_and_error_list():
             'INVALID', entity.name, modified_on,
             filetype]]
     assert invalid_errors_list == [
-        ['syn1234', message, 'data_clinical_supp_SAGE.txt']]
+        ['syn1234', message, 'data_clinical_supp_SAGE.txt', filetype]]
 
 
 def test__send_validation_error_email():
@@ -728,7 +729,7 @@ def test_update_status_and_error_tables():
     input_valid_statusdf['center'] = center
     with mock.patch(
             "genie.input_to_database.get_duplicated_files",
-            return_value=pd.DataFrame(columns=['id', 'errors', 'name'], dtype=str)) as mock_get_duplicated,\
+            return_value=pd.DataFrame(columns=['id', 'errors', 'name', 'fileType'], dtype=str)) as mock_get_duplicated,\
         mock.patch(
             "genie.input_to_database.email_duplication_error") as mock_email,\
         mock.patch(

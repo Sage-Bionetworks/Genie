@@ -214,7 +214,7 @@ def _get_status_and_error_list(valid, message, filetype, entities):
              ent.name, entity_date_to_timestamp(ent.properties.modifiedOn), filetype]
             for ent in entities]
         invalid_errors_list = [
-            [ent.id, message, ent.name]
+            [ent.id, message, ent.name, filetype]
             for ent in entities]
     return(input_status_list, invalid_errors_list)
 
@@ -278,7 +278,7 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
             for ent, path, status, filename in
             zip(entities, filepaths, status_list, filenames)]
         invalid_errors_list = [
-            [entity.id, error, filename]
+            [entity.id, error, filename, filetype]
             for entity, error, filename in
             zip(entities, error_list, filenames)]
     return(input_status_list, invalid_errors_list)
@@ -508,10 +508,12 @@ def update_status_and_error_tables(syn,
     Returns:
         input validation status dataframe
     '''
+
+    error_table_columns = ["id", 'errors', 'name', 'fileType']
+    status_table_columns = ["id", 'path', 'md5', 'status',
+                            'name', 'modifiedOn', 'fileType']
     input_valid_statusdf = pd.DataFrame(input_valid_statuses,
-                                        columns=["id", 'path', 'md5', 'status',
-                                                 'name', 'modifiedOn',
-                                                 'fileType'])
+                                        columns=status_table_columns)
 
     duplicated_file_error = (
         "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS "
@@ -526,7 +528,7 @@ def update_status_and_error_tables(syn,
     # Create invalid error synapse table
     logger.info("UPDATE INVALID FILE REASON DATABASE")
     invalid_errorsdf = pd.DataFrame(invalid_errors,
-                                    columns=["id", 'errors', 'name'])
+                                    columns=error_table_columns)
     # Remove fixed duplicated files
     # This makes sure that the files removed actually had duplicated file
     # errors and not some other error
@@ -536,7 +538,7 @@ def update_status_and_error_tables(syn,
     invalid_errorsdf = invalid_errorsdf[~invalid_errorsdf['id'].isin(remove_ids)]
     # Append duplicated file errors
     invalid_errorsdf = invalid_errorsdf.append(
-        duplicated_filesdf[['id', 'errors', 'name']])
+        duplicated_filesdf[error_table_columns])
     invalid_errorsdf['center'] = center
     invalidIds = input_valid_statusdf['id'][input_valid_statusdf['status'] == "INVALID"]
     invalid_errorsdf = invalid_errorsdf[invalid_errorsdf['id'].isin(invalidIds)]
@@ -553,7 +555,7 @@ def update_status_and_error_tables(syn,
 
     process_functions.updateDatabase(syn,
                                      validation_status_table.asDataFrame(),
-                                     input_valid_statusdf[["id", 'md5', 'status', 'name', 'center', 'modifiedOn', 'fileType']],
+                                     input_valid_statusdf[status_table_columns],
                                      validation_status_table.tableId,
                                      ["id"],
                                      to_delete=True)
@@ -602,7 +604,7 @@ def validation(syn, center, process,
         add_query_str = "and name not like '%.vcf'" if process != "vcf" else ''
 
         validation_status_table = syn.tableQuery(
-            "SELECT id,md5,status,name,center,modifiedOn FROM {synid} "
+            "SELECT id,md5,status,name,center,modifiedOn,fileType FROM {synid} "
             "where center = '{center}' {add}".format(
                 synid=validation_status_synid,
                 center=center,
