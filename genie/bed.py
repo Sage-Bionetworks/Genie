@@ -1,3 +1,4 @@
+"""GENIE bed class and functions"""
 import os
 import logging
 import subprocess
@@ -56,7 +57,7 @@ logger = logging.getLogger(__name__)
 #     return(genes)
 
 def create_gtf(dirname):
-    '''
+    """
     Create exon.gtf and gene.gtf from GRCh37 gtf
 
     Args:
@@ -65,15 +66,14 @@ def create_gtf(dirname):
     Returns:
         exon_gtf_path: exon GTF
         gene_gtf_path: gene GTF
-    '''
+    """
     exon_gtf_path = os.path.join(dirname, "exon.gtf")
     gene_gtf_path = os.path.join(dirname, "gene.gtf")
 
     if not os.path.exists(exon_gtf_path) or not os.path.exists(gene_gtf_path):
-        download_cmd = [
-            'wget',
-            'http://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz',
-            '-P', dirname]
+        download_cmd = ['wget',
+                        'http://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz',
+                        '-P', dirname]
         subprocess.check_call(download_cmd)
         gtfgz_path = os.path.join(dirname, "Homo_sapiens.GRCh37.75.gtf.gz")
         gunzip_cmd = ['gunzip', '-f', gtfgz_path]
@@ -313,15 +313,12 @@ def validateSymbol(x, genePositionDf, returnMappedDf=False):
                 x['Hugo_Symbol'] = endRows['hgnc_symbol'].values[0]
 
     if returnMappedDf:
-        return(x)
-    else:
-        return(valid)
+        return x
+    return valid
 
 
 class bed(FileTypeFormat):
-    '''
-    GENIE bed format
-    '''
+    """GENIE bed format"""
     _fileType = "bed"
 
     _process_kwargs = ["newPath", "parentId", "databaseSynId", 'seq_assay_id']
@@ -454,9 +451,7 @@ class bed(FileTypeFormat):
         # Must be .astype(bool) because `1, 0 in [True, False]`
         bed[4] = bed[4].astype(bool)
 
-        exon_gtf_path, gene_gtf_path = \
-            create_gtf(process_functions.SCRIPT_DIR)
-
+        exon_gtf_path, gene_gtf_path = create_gtf(process_functions.SCRIPT_DIR)
         logger.info("REMAPPING %s" % seq_assay_id)
         # bedname = seq_assay_id + ".bed"
         bed.columns = ["Chromosome", "Start_Position", "End_Position",
@@ -489,7 +484,7 @@ class bed(FileTypeFormat):
 
         final_bed['CENTER'] = self.center
         final_bed['Chromosome'] = final_bed['Chromosome'].astype(str)
-        return(final_bed)
+        return final_bed
 
     def preprocess(self, filePath):
         '''
@@ -503,10 +498,10 @@ class bed(FileTypeFormat):
         '''
         seq_assay_id = os.path.basename(filePath).replace(".bed", "")
         seq_assay_id = seq_assay_id.upper().replace("_", "-")
-        return({'seq_assay_id': seq_assay_id})
+        return {'seq_assay_id': seq_assay_id}
 
-    def process_steps(
-            self, gene, newPath, parentId, databaseSynId, seq_assay_id):
+    def process_steps(self, gene, newPath, parentId, databaseSynId,
+                      seq_assay_id):
         '''
         Process bed file, update bed database, write bed file to path
 
@@ -521,9 +516,10 @@ class bed(FileTypeFormat):
             string: Path to new bed file
         '''
         bed = self._process(gene, seq_assay_id, newPath, parentId)
-        process_functions.updateData(
-            self.syn, databaseSynId, bed, seq_assay_id,
-            filterByColumn="SEQ_ASSAY_ID", toDelete=True)
+        process_functions.updateData(self.syn, databaseSynId, bed,
+                                     seq_assay_id,
+                                     filterByColumn="SEQ_ASSAY_ID",
+                                     toDelete=True)
         bed.to_csv(newPath, sep="\t", index=False)
         return(newPath)
 
@@ -540,10 +536,9 @@ class bed(FileTypeFormat):
         '''
         total_error = ""
         warning = ""
-        newCols = [
-            "Chromosome", "Start_Position",
-            "End_Position", "Hugo_Symbol",
-            "includeInPanel"]
+        newCols = ["Chromosome", "Start_Position",
+                   "End_Position", "Hugo_Symbol",
+                   "includeInPanel"]
         if len(bed.columns) < len(newCols):
             total_error += (
                 "BED file: Must at least have five columns in this "
