@@ -8,7 +8,7 @@ import pandas as pd
 from .example_filetype_format import FileTypeFormat
 from . import process_functions
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 # def createGenePositionsTables():
@@ -94,7 +94,7 @@ def create_gtf(dirname):
 
 
 def _add_feature_type_todf(filepath, featuretype):
-    '''
+    """
     Add Feature_Type to dataframe
 
     Args:
@@ -103,22 +103,21 @@ def _add_feature_type_todf(filepath, featuretype):
 
     Returns:
         df: empty dataframe or dataframe with appended feature type
-    '''
+    """
     # No need to add anything if the dataframe is empty
     if os.stat(filepath).st_size != 0:
-        df = pd.read_csv(filepath, sep="\t", header=None)
-        df.columns = [
-            "Chromosome", "Start_Position", "End_Position",
-            "Hugo_Symbol", "includeInPanel", "clinicalReported",
-            "ID", "SEQ_ASSAY_ID"]
-        df['Feature_Type'] = featuretype
+        beddf = pd.read_csv(filepath, sep="\t", header=None)
+        beddf.columns = ["Chromosome", "Start_Position", "End_Position",
+                         "Hugo_Symbol", "includeInPanel", "clinicalReported",
+                         "ID", "SEQ_ASSAY_ID"]
+        beddf['Feature_Type'] = featuretype
     else:
-        df = pd.DataFrame()
-    return(df)
+        beddf = pd.DataFrame()
+    return beddf
 
 
 def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
-    '''
+    """
     Add Feature_Type to bed file (exon, intron, intergenic)
 
     Args:
@@ -128,64 +127,56 @@ def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
 
     Returns:
         genie_combined_path: Path to final bed file
-    '''
-    genie_exon_path = \
-        os.path.join(process_functions.SCRIPT_DIR, 'genie_exons.bed')
-    genie_intron_path = \
-        os.path.join(process_functions.SCRIPT_DIR, 'genie_introns.bed')
-    genie_intergenic_path = \
-        os.path.join(process_functions.SCRIPT_DIR, 'genie_intergenic.bed')
-    intron_intergenic_path = \
-        os.path.join(process_functions.SCRIPT_DIR, 'intron_intergenic.bed')
-    gene_path = \
-        os.path.join(process_functions.SCRIPT_DIR, 'gene.bed')
+    """
+    genie_exon_path = os.path.join(process_functions.SCRIPT_DIR,
+                                   'genie_exons.bed')
+    genie_intron_path = os.path.join(process_functions.SCRIPT_DIR,
+                                     'genie_introns.bed')
+    genie_intergenic_path = os.path.join(process_functions.SCRIPT_DIR,
+                                         'genie_intergenic.bed')
+    intron_intergenic_path = os.path.join(process_functions.SCRIPT_DIR,
+                                          'intron_intergenic.bed')
+    gene_path = os.path.join(process_functions.SCRIPT_DIR, 'gene.bed')
 
-    command = [
-        'bedtools', 'intersect', '-a',
-        temp_bed_path, '-b', exon_gtf_path, '-wa',
-        '|', 'sort', '|', 'uniq', '>', genie_exon_path]
+    command = ['bedtools', 'intersect', '-a',
+               temp_bed_path, '-b', exon_gtf_path, '-wa',
+               '|', 'sort', '|', 'uniq', '>', genie_exon_path]
     subprocess.check_call(" ".join(command), shell=True)
-    command = [
-        'bedtools', 'intersect', '-a',
-        temp_bed_path, '-b', exon_gtf_path, '-wa', '-v'
-        '|', 'sort', '|', 'uniq', '>', intron_intergenic_path]
+    command = ['bedtools', 'intersect', '-a',
+               temp_bed_path, '-b', exon_gtf_path, '-wa', '-v'
+               '|', 'sort', '|', 'uniq', '>', intron_intergenic_path]
     subprocess.check_call(" ".join(command), shell=True)
-    command = [
-        'bedtools', 'intersect', '-a',
-        temp_bed_path, '-b', gene_gtf_path, '-wa',
-        '|', 'sort', '|', 'uniq', '>', gene_path]
+    command = ['bedtools', 'intersect', '-a',
+               temp_bed_path, '-b', gene_gtf_path, '-wa',
+               '|', 'sort', '|', 'uniq', '>', gene_path]
     subprocess.check_call(" ".join(command), shell=True)
-    command = [
-        'diff', gene_path, genie_exon_path, '|',
-        'grep', "'<'", '|', 'sed', "'s/< //'", '>',
-        genie_intron_path]
+    command = ['diff', gene_path, genie_exon_path, '|',
+               'grep', "'<'", '|', 'sed', "'s/< //'", '>',
+               genie_intron_path]
     subprocess.check_call(" ".join(command), shell=True)
-    command = [
-        'diff', intron_intergenic_path, genie_intron_path, '|',
-        'grep', "'<'", '|', 'sed', "'s/< //'", '>',
-        genie_intergenic_path]
+    command = ['diff', intron_intergenic_path, genie_intron_path, '|',
+               'grep', "'<'", '|', 'sed', "'s/< //'", '>',
+               genie_intergenic_path]
     subprocess.check_call(" ".join(command), shell=True)
 
     genie_exondf = _add_feature_type_todf(genie_exon_path, "exon")
     genie_introndf = _add_feature_type_todf(genie_intron_path, "intron")
-    genie_intergenicdf = _add_feature_type_todf(
-        genie_intergenic_path, "intergenic")
+    genie_intergenicdf = _add_feature_type_todf(genie_intergenic_path,
+                                                "intergenic")
     # Specify the combined df in case there no bed hits at all
-    genie_combineddf = pd.DataFrame(columns=[
-        "Chromosome", "Start_Position", "End_Position",
-        "Hugo_Symbol", "includeInPanel", "clinicalReported",
-        "ID", "SEQ_ASSAY_ID", "Feature_Type"])
+    genie_combineddf = pd.DataFrame(columns=["Chromosome", "Start_Position",
+                                             "End_Position", "Hugo_Symbol",
+                                             "includeInPanel",
+                                             "clinicalReported",
+                                             "ID", "SEQ_ASSAY_ID",
+                                             "Feature_Type"])
     genie_combineddf = genie_combineddf.append(genie_exondf)
     genie_combineddf = genie_combineddf.append(genie_introndf)
     genie_combineddf = genie_combineddf.append(genie_intergenicdf)
-    # genie_combineddf.sort_values()
-    # genie_combined_path = \
-    #     os.path.join(process_functions.SCRIPT_DIR, "genie_combined.bed")
-    # genie_combineddf.to_csv(genie_combined_path, sep="\t", index=False)
-    return(genie_combineddf)
+    return genie_combineddf
 
 
-def _check_to_map(x, gene_positiondf):
+def _check_to_map(row, gene_positiondf):
     '''
     Make sure there are no overlaps in the submitted gene symbol and the gene
     position database
@@ -197,87 +188,104 @@ def _check_to_map(x, gene_positiondf):
     Return:
         bool:  Whether mapping needs to happen
     '''
-    match_with_genedb = \
-        gene_positiondf[gene_positiondf['hgnc_symbol'] == x['Hugo_Symbol']]
+    matching_symbol_ind = gene_positiondf['hgnc_symbol'] == row['Hugo_Symbol']
+    match_with_genedb = gene_positiondf[matching_symbol_ind]
 
     if not match_with_genedb.empty:
         start_position = match_with_genedb['start_position'].values[0]
         end_position = match_with_genedb['end_position'].values[0]
-        if (start_position >= x['Start_Position'] and
-                end_position <= x['End_Position']) or \
-            (start_position <= x['End_Position'] and
-                end_position >= x['Start_Position']):
+        if (start_position >= row['Start_Position'] and
+                end_position <= row['End_Position']) or \
+           (start_position <= row['End_Position'] and
+                end_position >= row['Start_Position']):
             to_map = False
         else:
             to_map = True
     else:
         to_map = True
-    return(to_map)
+    return to_map
 
 
-def _map_gene_within_boundary(x, genePositionDf, boundary=0.9):
-    '''
-    As long as the strand is a percent within the boundary of the
-    start goes over start boundary, but end is contained in gene
+def _get_max_overlap_index(overlap, bed_length, boundary):
+    """
+    Calculate the ratio of overlap between the submitted bed
+    region and gene position dataframe and return the index of
+    the max overlapping region
 
     Args:
-        x: start and end position
+        overlap: Possible overlapping region
+        bed_length: Length of submitted region
+        boundary: specified ratio overlap
+    
+    Returns:
+        Index of regions with maximum overlap or None
+    """
+    ratio_overlap = overlap / bed_length
+    ratio_overlap = ratio_overlap[ratio_overlap > boundary]
+    ratio_overlap = ratio_overlap[ratio_overlap <= 1]
+    if not ratio_overlap.empty:
+        return ratio_overlap.idxmax()
+    return None
+
+
+def _map_gene_within_boundary(row, gene_positiondf, boundary=0.9):
+    """
+    Map gene as long as the strand is a percent within the boundary
+    of the start goes over start boundary, but end is contained in gene
+
+    Args:
+        row: start and end position
         genePositionDf: Actual gene position dataframe
         boundary: Percent boundary defined
 
     Return:
         pd.Series: mapped gene
-    '''
-    chromRows = genePositionDf[
-        genePositionDf['chromosome_name'] == str(x['Chromosome'])]
-    startRows = \
-        chromRows[chromRows['start_position'] <= x['Start_Position']]
+    """
+    # First filter just based on whether or not region is within the gene
+    # position dataframe
+    match_chr = gene_positiondf['chromosome_name'] == str(row['Chromosome'])
+    chrom_rows = gene_positiondf[match_chr]
+    match_start = chrom_rows['start_position'] <= row['Start_Position']
+    start_rows = chrom_rows[match_start]
+    end_rows = start_rows[start_rows['end_position'] >= row['End_Position']]
 
-    endRows = startRows[startRows['end_position'] >= x['End_Position']]
-    # geneDiff = chromRows['end_position'] - chromRows['start_position']
-    bedLength = x['End_Position'] - x['Start_Position']
+    bed_length = row['End_Position'] - row['Start_Position']
     # as long as the strand is 90% within the boundary of the
     # Start goes over start boundary, but end is contained in gene
-    if len(endRows) == 0:
-        if sum(chromRows['end_position'] >= x['End_Position']) > 0:
-            overlap = x['End_Position'] - chromRows['start_position']
+    if len(end_rows) == 0:
+        if sum(chrom_rows['end_position'] >= row['End_Position']) > 0:
+            overlap = row['End_Position'] - chrom_rows['start_position']
             # difference =  difference * -1.0
-            ratioOverlap = overlap / bedLength
-            ratioOverlap = ratioOverlap[ratioOverlap > boundary]
-            ratioOverlap = ratioOverlap[ratioOverlap <= 1]
-            if not ratioOverlap.empty:
-                endRows = endRows.append(
-                    chromRows.loc[[ratioOverlap.idxmax()]])
+            max_overlap = _get_max_overlap_index(overlap, bed_length,
+                                                 boundary)
+            if max_overlap is not None:
+                end_rows = end_rows.append(chrom_rows.loc[[max_overlap]])
         # End goes over end boundary, but start is contained in gene
-        if sum(chromRows['start_position'] <= x['Start_Position']) > 0:
-            overlap = chromRows['end_position'] - x['Start_Position']
-            ratioOverlap = overlap / bedLength
-            ratioOverlap = ratioOverlap[ratioOverlap > boundary]
-            ratioOverlap = ratioOverlap[ratioOverlap <= 1]
-            if not ratioOverlap.empty:
-                endRows = endRows.append(
-                    chromRows.loc[[ratioOverlap.idxmax()]])
+        if sum(chrom_rows['start_position'] <= row['Start_Position']) > 0:
+            overlap = chrom_rows['end_position'] - row['Start_Position']
+            max_overlap = _get_max_overlap_index(overlap, bed_length,
+                                                 boundary)
+            if max_overlap is not None:
+                end_rows = end_rows.append(chrom_rows.loc[[max_overlap]])
         # Start and end go over gene boundary
-        check = chromRows[chromRows['start_position'] >= x['Start_Position']]
-        check = check[check['end_position'] <= x['End_Position']]
+        check = chrom_rows[chrom_rows['start_position'] >= row['Start_Position']]
+        check = check[check['end_position'] <= row['End_Position']]
         if not check.empty:
-            overlap = chromRows['end_position'] - chromRows['start_position']
-            ratioOverlap = overlap / bedLength
-            ratioOverlap = ratioOverlap[ratioOverlap > boundary]
-            ratioOverlap = ratioOverlap[ratioOverlap <= 1]
-            if not ratioOverlap.empty:
-                endRows = endRows.append(
-                    chromRows.loc[[ratioOverlap.idxmax()]])
-    return(endRows)
+            overlap = chrom_rows['end_position'] - chrom_rows['start_position']
+            max_overlap = _get_max_overlap_index(overlap, bed_length,
+                                                 boundary)
+            if max_overlap is not None:
+                end_rows = end_rows.append(chrom_rows.loc[[max_overlap]])
+    return end_rows
 
 
-def validateSymbol(x, genePositionDf, returnMappedDf=False):
+def validateSymbol(row, genePositionDf, returnMappedDf=False):
     '''
     The apply function of a DataFrame is called twice on the first row (known
     pandas behavior)
 
     Args:
-        x: start and end position
+        row: start and end position
         genePositionDf: Actual gene position dataframe
         returnMappedDf: Return mapped dataframe. Default is False.
 
@@ -286,34 +294,34 @@ def validateSymbol(x, genePositionDf, returnMappedDf=False):
                         the remapped gene
     '''
     valid = True
-    to_map = _check_to_map(x, genePositionDf)
+    to_map = _check_to_map(row, genePositionDf)
     if to_map:
-        endRows = _map_gene_within_boundary(x, genePositionDf)
+        endRows = _map_gene_within_boundary(row, genePositionDf)
         if len(endRows) == 0:
-            logger.warning(
+            LOGGER.warning(
                 "{} cannot be remapped. "
                 "These rows will have an empty gene symbol".format(
-                    x['Hugo_Symbol']))
-            x['Hugo_Symbol'] = pd.np.nan
+                    row['Hugo_Symbol']))
+            row['Hugo_Symbol'] = pd.np.nan
             valid = False
         elif len(endRows) > 1:
-            if x['Hugo_Symbol'] not in endRows['hgnc_symbol'].tolist():
+            if row['Hugo_Symbol'] not in endRows['hgnc_symbol'].tolist():
                 # if "MLL4", then the HUGO symbol should be KMT2D and KMT2B
-                logger.warning(
+                LOGGER.warning(
                     "{} can be mapped to different symbols: {}. "
                     "Please correct or it will be removed.".format(
-                        x['Hugo_Symbol'], ", ".join(endRows['hgnc_symbol'])))
-                x['Hugo_Symbol'] = pd.np.nan
+                        row['Hugo_Symbol'], ", ".join(endRows['hgnc_symbol'])))
+                row['Hugo_Symbol'] = pd.np.nan
                 valid = False
         else:
-            if x['Hugo_Symbol'] != endRows['hgnc_symbol'].values[0]:
-                logger.info(
+            if row['Hugo_Symbol'] != endRows['hgnc_symbol'].values[0]:
+                LOGGER.info(
                     "{} will be remapped to {}".format(
-                        x['Hugo_Symbol'], endRows['hgnc_symbol'].values[0]))
-                x['Hugo_Symbol'] = endRows['hgnc_symbol'].values[0]
+                        row['Hugo_Symbol'], endRows['hgnc_symbol'].values[0]))
+                row['Hugo_Symbol'] = endRows['hgnc_symbol'].values[0]
 
     if returnMappedDf:
-        return x
+        return row
     return valid
 
 
@@ -375,7 +383,7 @@ class bed(FileTypeFormat):
         Returns:
             pd.DataFrame: configured bed dataframe
         '''
-        logger.info("CREATING GENE PANEL")
+        LOGGER.info("CREATING GENE PANEL")
         command = ['bedtools', 'intersect', '-a',
                    temp_bed_path,
                    '-b', exon_gtf_path,
@@ -452,7 +460,7 @@ class bed(FileTypeFormat):
         bed[4] = bed[4].astype(bool)
 
         exon_gtf_path, gene_gtf_path = create_gtf(process_functions.SCRIPT_DIR)
-        logger.info("REMAPPING %s" % seq_assay_id)
+        LOGGER.info("REMAPPING %s" % seq_assay_id)
         # bedname = seq_assay_id + ".bed"
         bed.columns = ["Chromosome", "Start_Position", "End_Position",
                        "Hugo_Symbol", "includeInPanel", "clinicalReported"]
@@ -563,7 +571,7 @@ class bed(FileTypeFormat):
                     "Make sure there are no headers.\n")
                 toValidateSymbol = False
 
-            logger.info("VALIDATING GENE SYMBOLS")
+            LOGGER.info("VALIDATING GENE SYMBOLS")
             if any(bed['Hugo_Symbol'].isnull()):
                 total_error += \
                     "BED file: You cannot submit any null symbols.\n"
