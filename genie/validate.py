@@ -225,7 +225,7 @@ def collect_format_types(package_names):
         importlib.import_module(package_name)
 
     for cls in config.get_subclasses(example_filetype_format.FileTypeFormat):
-        logger.debug(f"checking {cls}.")
+        logger.debug("checking {}.".format(cls))
         cls_module_name = cls.__module__
         cls_pkg = cls_module_name.split('.')[0]
         if cls_pkg in package_names:
