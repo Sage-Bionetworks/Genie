@@ -279,48 +279,47 @@ def _map_gene_within_boundary(row, gene_positiondf, boundary=0.9):
     return end_rows
 
 
-def validateSymbol(row, genePositionDf, returnMappedDf=False):
-    '''
+def validate_symbol(row, gene_positiondf, return_mappeddf=False):
+    """
     The apply function of a DataFrame is called twice on the first row (known
     pandas behavior)
 
     Args:
         row: start and end position
-        genePositionDf: Actual gene position dataframe
-        returnMappedDf: Return mapped dataframe. Default is False.
+        gene_positiondf: Actual gene position dataframe
+        return_mappeddf: Return mapped dataframe. Default is False.
 
     Return:
         bool or Series: if the gene passed in need to be remapped or
                         the remapped gene
-    '''
+    """
     valid = True
-    to_map = _check_to_map(row, genePositionDf)
+    to_map = _check_to_map(row, gene_positiondf)
     if to_map:
-        endRows = _map_gene_within_boundary(row, genePositionDf)
-        if len(endRows) == 0:
-            LOGGER.warning(
-                "{} cannot be remapped. "
-                "These rows will have an empty gene symbol".format(
-                    row['Hugo_Symbol']))
+        end_rows = _map_gene_within_boundary(row, gene_positiondf)
+        if len(end_rows) == 0:
+            LOGGER.warning("{} cannot be remapped. "
+                           "These rows will have an empty gene symbol".format(
+                                row['Hugo_Symbol']))
             row['Hugo_Symbol'] = pd.np.nan
             valid = False
-        elif len(endRows) > 1:
-            if row['Hugo_Symbol'] not in endRows['hgnc_symbol'].tolist():
+        elif len(end_rows) > 1:
+            if row['Hugo_Symbol'] not in end_rows['hgnc_symbol'].tolist():
                 # if "MLL4", then the HUGO symbol should be KMT2D and KMT2B
-                LOGGER.warning(
-                    "{} can be mapped to different symbols: {}. "
-                    "Please correct or it will be removed.".format(
-                        row['Hugo_Symbol'], ", ".join(endRows['hgnc_symbol'])))
+                LOGGER.warning("{} can be mapped to different symbols: {}. "
+                               "Please correct or it will be removed.".format(
+                                    row['Hugo_Symbol'],
+                                    ", ".join(end_rows['hgnc_symbol'])))
                 row['Hugo_Symbol'] = pd.np.nan
                 valid = False
         else:
-            if row['Hugo_Symbol'] != endRows['hgnc_symbol'].values[0]:
-                LOGGER.info(
-                    "{} will be remapped to {}".format(
-                        row['Hugo_Symbol'], endRows['hgnc_symbol'].values[0]))
-                row['Hugo_Symbol'] = endRows['hgnc_symbol'].values[0]
+            if row['Hugo_Symbol'] != end_rows['hgnc_symbol'].values[0]:
+                LOGGER.info("{} will be remapped to {}".format(
+                                row['Hugo_Symbol'],
+                                end_rows['hgnc_symbol'].values[0]))
+                row['Hugo_Symbol'] = end_rows['hgnc_symbol'].values[0]
 
-    if returnMappedDf:
+    if return_mappeddf:
         return row
     return valid
 
@@ -479,8 +478,8 @@ class bed(FileTypeFormat):
         genePosition = self.syn.tableQuery('SELECT * FROM syn11806563')
         genePositionDf = genePosition.asDataFrame()
         bed['ID'] = bed['Hugo_Symbol']
-        bed = bed.apply(lambda x: validateSymbol(x, genePositionDf,
-                                                 returnMappedDf=True), axis=1)
+        bed = bed.apply(lambda x: validate_symbol(x, genePositionDf,
+                                                  return_mappeddf=True), axis=1)
         bed['SEQ_ASSAY_ID'] = seq_assay_id
         temp_bed_path = os.path.join(process_functions.SCRIPT_DIR, "temp.bed")
         bed.to_csv(temp_bed_path, sep="\t", index=False, header=None)
@@ -598,8 +597,8 @@ class bed(FileTypeFormat):
                 genePosition = self.syn.tableQuery('SELECT * FROM syn11806563')
                 genePositionDf = genePosition.asDataFrame()
                 bed = bed.apply(
-                    lambda x: validateSymbol(
-                        x, genePositionDf, returnMappedDf=True), axis=1)
+                    lambda x: validate_symbol(
+                        x, genePositionDf, return_mappeddf=True), axis=1)
 
                 if any(bed['Hugo_Symbol'].isnull()):
                     warning += (
