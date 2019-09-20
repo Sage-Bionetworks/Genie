@@ -256,7 +256,7 @@ def _perform_validate(syn, args):
                                            oncotree_link=args.oncotree_link)
 
     format_registry = collect_format_types(args.format_registry_packages)
-    logger.debug(f"Using {format_registry} file formats.")
+    logger.debug("Using {} file formats.".format(format_registry))
     
     validator = GenieValidationHelper(syn=syn, center=args.center,
                                       filepathlist=args.filepath,
