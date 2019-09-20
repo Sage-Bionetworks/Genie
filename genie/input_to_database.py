@@ -102,14 +102,14 @@ def get_center_input_files(syn, synid, center, process="main"):
     return prepared_center_file_list
 
 
-def check_existing_file_status(validation_statusdf, error_trackerdf, entities):
+def check_existing_file_status(validation_status_table, error_tracker_table, entities):
     '''
     This function checks input files against the existing validation and error
     tracking dataframe
 
     Args:
-        validation_statusdf: Validation status dataframe
-        error_trackerdf: Error tracking dataframe
+        validation_status_table: Validation status Synapse Table query result
+        error_tracker_table: Error tracking Synapse Table query result
         entities: list of center input entites
 
     Returns:
@@ -125,6 +125,9 @@ def check_existing_file_status(validation_statusdf, error_trackerdf, entities):
 
     statuses = []
     errors = []
+
+    validation_statusdf = validation_status_table.asDataFrame()
+    error_trackerdf = error_tracker_table.asDataFrame()
 
     for ent in entities:
         to_validate = False
@@ -214,12 +217,12 @@ def _get_status_and_error_list(valid, message, filetype, entities):
              ent.name, entity_date_to_timestamp(ent.properties.modifiedOn), filetype]
             for ent in entities]
         invalid_errors_list = [
-            [ent.id, message, ent.name]
+            [ent.id, message, ent.name, filetype]
             for ent in entities]
     return(input_status_list, invalid_errors_list)
 
 
-def validatefile(syn, entities, validation_statusdf, error_trackerdf,
+def validatefile(syn, entities, validation_status_table, error_tracker_table,
                  center, threads, testing, oncotree_link,
                  format_registry=PROCESS_FILES):
     '''Validate a list of entities.
@@ -250,7 +253,7 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
     file_users = [entities[0].modifiedBy, entities[0].createdBy]
 
     check_file_status = check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities)
+        validation_status_table, error_tracker_table, entities)
 
     status_list = check_file_status['status_list']
     error_list = check_file_status['error_list']
@@ -278,7 +281,7 @@ def validatefile(syn, entities, validation_statusdf, error_trackerdf,
             for ent, path, status, filename in
             zip(entities, filepaths, status_list, filenames)]
         invalid_errors_list = [
-            [entity.id, error, filename]
+            [entity.id, error, filename, filetype]
             for entity, error, filename in
             zip(entities, error_list, filenames)]
     return(input_status_list, invalid_errors_list)
@@ -464,7 +467,7 @@ def get_duplicated_files(validation_statusdf, duplicated_error_message):
         duplicated_error_message: Error message for duplicated files
 
     Returns:
-        dataframe with 'id', 'name' and 'errors' of duplicated files
+        dataframe with 'id', 'name', 'errors', and 'fileType' of duplicated files
     '''
     logger.info("CHECK FOR DUPLICATED FILES")
     duplicated_filesdf = validation_statusdf[
@@ -508,10 +511,12 @@ def update_status_and_error_tables(syn,
     Returns:
         input validation status dataframe
     '''
+
+    error_table_columns = ["id", 'errors', 'name', 'fileType']
+    status_table_columns = ["id", 'path', 'md5', 'status',
+                            'name', 'modifiedOn', 'fileType']
     input_valid_statusdf = pd.DataFrame(input_valid_statuses,
-                                        columns=["id", 'path', 'md5', 'status',
-                                                 'name', 'modifiedOn',
-                                                 'fileType'])
+                                        columns=status_table_columns)
 
     duplicated_file_error = (
         "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS "
@@ -526,7 +531,7 @@ def update_status_and_error_tables(syn,
     # Create invalid error synapse table
     logger.info("UPDATE INVALID FILE REASON DATABASE")
     invalid_errorsdf = pd.DataFrame(invalid_errors,
-                                    columns=["id", 'errors', 'name'])
+                                    columns=error_table_columns)
     # Remove fixed duplicated files
     # This makes sure that the files removed actually had duplicated file
     # errors and not some other error
@@ -536,7 +541,7 @@ def update_status_and_error_tables(syn,
     invalid_errorsdf = invalid_errorsdf[~invalid_errorsdf['id'].isin(remove_ids)]
     # Append duplicated file errors
     invalid_errorsdf = invalid_errorsdf.append(
-        duplicated_filesdf[['id', 'errors', 'name']])
+        duplicated_filesdf[error_table_columns])
     invalid_errorsdf['center'] = center
     invalidIds = input_valid_statusdf['id'][input_valid_statusdf['status'] == "INVALID"]
     invalid_errorsdf = invalid_errorsdf[invalid_errorsdf['id'].isin(invalidIds)]
@@ -553,7 +558,7 @@ def update_status_and_error_tables(syn,
 
     process_functions.updateDatabase(syn,
                                      validation_status_table.asDataFrame(),
-                                     input_valid_statusdf[["id", 'md5', 'status', 'name', 'center', 'modifiedOn', 'fileType']],
+                                     input_valid_statusdf[status_table_columns],
                                      validation_status_table.tableId,
                                      ["id"],
                                      to_delete=True)
@@ -602,27 +607,26 @@ def validation(syn, center, process,
         add_query_str = "and name not like '%.vcf'" if process != "vcf" else ''
 
         validation_status_table = syn.tableQuery(
-            "SELECT id,md5,status,name,center,modifiedOn FROM {synid} "
+            "SELECT id,md5,status,name,center,modifiedOn,fileType FROM {synid} "
             "where center = '{center}' {add}".format(
                 synid=validation_status_synid,
                 center=center,
                 add=add_query_str))
-        validation_statusdf = validation_status_table.asDataFrame()
+
         error_tracker_table = syn.tableQuery(
             "SELECT id,center,errors,name FROM {synid} "
             "where center = '{center}' {add}".format(
                 synid=error_tracker_synid,
                 center=center,
                 add=add_query_str))
-        error_trackerdf = error_tracker_table.asDataFrame()
 
         input_valid_statuses = []
         invalid_errors = []
 
         for ents in center_files:
             status, errors = validatefile(syn, ents,
-                                          validation_statusdf,
-                                          error_trackerdf,
+                                          validation_status_table,
+                                          error_tracker_table,
                                           center=center, threads=1,
                                           testing=testing,
                                           oncotree_link=oncotree_link)
