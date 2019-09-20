@@ -225,7 +225,7 @@ def collect_format_types(package_names):
         importlib.import_module(package_name)
 
     for cls in config.get_subclasses(example_filetype_format.FileTypeFormat):
-        logger.debug(f"checking {cls}.")
+        logger.debug("checking {}.".format(cls))
         cls_module_name = cls.__module__
         cls_pkg = cls_module_name.split('.')[0]
         if cls_pkg in package_names:
@@ -256,7 +256,7 @@ def _perform_validate(syn, args):
                                            oncotree_link=args.oncotree_link)
 
     format_registry = collect_format_types(args.format_registry_packages)
-    logger.debug(f"Using {format_registry} file formats.")
+    logger.debug("Using {} file formats.".format(format_registry))
     
     validator = GenieValidationHelper(syn=syn, center=args.center,
                                       filepathlist=args.filepath,
