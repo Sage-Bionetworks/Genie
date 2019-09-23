@@ -289,15 +289,19 @@ def test_90percentboundary_failure__validate():
 
 
 def test_overlapping__validate():
-    # Test overlapping boundary with correct gene names
-    bedDf = pd.DataFrame(dict(
-        a=['2', '9'],
-        b=[1111, 4345],
-        c=[69880186, 99417590],
-        d=['AAK1', 'AAED1'],
-        e=[True, False]))
-
-    error, warning = bedsp_class._validate(bedDf)
+    """
+    Check if genes that overlap have no errors
+    - Submitted bed start position in a gene
+    - Submitted bed end position in a gene
+    - Submitted bed region surrounds a gene
+    """
+    beddf = pd.DataFrame(dict(
+        a=['2', '9', '2'],
+        b=[1111, 4345, 69901281],
+        c=[69880186, 99417590, 70000000],
+        d=['AAK1', 'AAED1', 'AAK1'],
+        e=[True, False, True]))
+    error, warning = bedsp_class._validate(beddf)
     assert error == ""
     assert warning == ""
 

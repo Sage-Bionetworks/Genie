@@ -188,34 +188,35 @@ def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
     return genie_combineddf
 
 
-def _check_to_map(row, gene_positiondf):
+def _check_region_overlap(row, gene_positiondf):
     '''
-    Make sure there are no overlaps in the submitted gene symbol and the gene
-    position database
+    Check if the submitted bed symbol + region overlaps with
+    the actual gene's positions
 
     Args:
-        x: start and end position
+        row: row in bed file (genomic region)
         gene_positiondf: Actual gene position dataframe
 
     Return:
-        bool:  Whether mapping needs to happen
+        True if the region does overlap.
     '''
     matching_symbol_ind = gene_positiondf['hgnc_symbol'] == row['Hugo_Symbol']
     match_with_genedb = gene_positiondf[matching_symbol_ind]
-
+    
     if not match_with_genedb.empty:
+        # We are assuming that there is only one matching gene, but
+        # there are actually duplicated gene symbols
         start_position = match_with_genedb['start_position'].values[0]
         end_position = match_with_genedb['end_position'].values[0]
-        if (start_position >= row['Start_Position'] and
-                end_position <= row['End_Position']) or \
-           (start_position <= row['End_Position'] and
-                end_position >= row['Start_Position']):
-            to_map = False
-        else:
-            to_map = True
-    else:
-        to_map = True
-    return to_map
+        # Submitted bed start position in a gene
+        start_in_gene = start_position <= row['Start_Position'] <= end_position
+        # Submitted bed end position in a gene
+        end_in_gene = start_position <= row['End_Position'] <= end_position
+        # Submitted bed region surrounds a gene
+        gene_in_region = end_position <= row['End_Position'] and \
+                         start_position >= row['Start_Position']
+        return start_in_gene or end_in_gene or gene_in_region
+    return False
 
 
 def _get_max_overlap_index(overlap, bed_length, boundary):
@@ -306,8 +307,8 @@ def validate_symbol(row, gene_positiondf, return_mappeddf=False):
                         the remapped gene
     """
     valid = True
-    to_map = _check_to_map(row, gene_positiondf)
-    if to_map:
+    region_overlap = _check_region_overlap(row, gene_positiondf)
+    if not region_overlap:
         end_rows = _map_gene_within_boundary(row, gene_positiondf)
         if len(end_rows) == 0:
             LOGGER.warning("{} cannot be remapped. "
@@ -542,7 +543,7 @@ class bed(FileTypeFormat):
         bed.to_csv(newPath, sep="\t", index=False)
         return(newPath)
 
-    def _validate(self, bed):
+    def _validate(self, beddf):
         '''
         Validate bed file
 
@@ -558,23 +559,23 @@ class bed(FileTypeFormat):
         newCols = ["Chromosome", "Start_Position",
                    "End_Position", "Hugo_Symbol",
                    "includeInPanel"]
-        if len(bed.columns) < len(newCols):
+        if len(beddf.columns) < len(newCols):
             total_error += (
                 "BED file: Must at least have five columns in this "
                 "order: {}. Make sure there are "
                 "no headers.\n".format(", ".join(newCols)))
         else:
-            newCols.extend(range(0, len(bed.columns) - len(newCols)))
-            bed.columns = newCols
+            newCols.extend(range(0, len(beddf.columns) - len(newCols)))
+            beddf.columns = newCols
             toValidateSymbol = True
-            if not all(bed['Start_Position'].apply(
+            if not all(beddf['Start_Position'].apply(
                     lambda x: isinstance(x, int))):
                 total_error += (
                     "BED file: "
                     "The Start_Position column must only be integers. "
                     "Make sure there are no headers.\n")
                 toValidateSymbol = False
-            if not all(bed['End_Position'].apply(
+            if not all(beddf['End_Position'].apply(
                     lambda x: isinstance(x, int))):
                 total_error += (
                     "BED file: "
@@ -583,21 +584,21 @@ class bed(FileTypeFormat):
                 toValidateSymbol = False
 
             LOGGER.info("VALIDATING GENE SYMBOLS")
-            if any(bed['Hugo_Symbol'].isnull()):
+            if any(beddf['Hugo_Symbol'].isnull()):
                 total_error += \
                     "BED file: You cannot submit any null symbols.\n"
-            bed = bed[~bed['Hugo_Symbol'].isnull()]
-            bed["Hugo_Symbol"] = [
+            beddf = beddf[~beddf['Hugo_Symbol'].isnull()]
+            beddf["Hugo_Symbol"] = [
                 str(hugo).split(";")[0].split("_")[0].split(":")[0]
-                for hugo in bed["Hugo_Symbol"]]
-            if sum(bed['Hugo_Symbol'] == "+") != 0 or \
-               sum(bed['Hugo_Symbol'] == "-") != 0:
+                for hugo in beddf["Hugo_Symbol"]]
+            if sum(beddf['Hugo_Symbol'] == "+") != 0 or \
+               sum(beddf['Hugo_Symbol'] == "-") != 0:
                 total_error += (
                     "BED file: Fourth column must be the Hugo_Symbol column, "
                     "not the strand column\n")
 
             warn, error = process_functions.check_col_and_values(
-                bed,
+                beddf,
                 'includeInPanel',
                 [True, False],
                 filename="BED file",
@@ -608,16 +609,16 @@ class bed(FileTypeFormat):
             if toValidateSymbol:
                 genePosition = self.syn.tableQuery('SELECT * FROM syn11806563')
                 genePositionDf = genePosition.asDataFrame()
-                bed = bed.apply(
+                beddf = beddf.apply(
                     lambda x: validate_symbol(
                         x, genePositionDf, return_mappeddf=True), axis=1)
 
-                if any(bed['Hugo_Symbol'].isnull()):
+                if any(beddf['Hugo_Symbol'].isnull()):
                     warning += (
                         "BED file: "
                         "Any gene names that can't be "
                         "remapped will be null.\n")
-                if all(bed['Hugo_Symbol'].isnull()):
+                if all(beddf['Hugo_Symbol'].isnull()):
                     total_error += (
                         "BED file: "
                         "You have no correct gene symbols. "
