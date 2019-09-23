@@ -174,7 +174,7 @@ def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
     genie_exondf = _add_feature_type_tobeddf(genie_exon_path, "exon")
     genie_introndf = _add_feature_type_tobeddf(genie_intron_path, "intron")
     genie_intergenicdf = _add_feature_type_tobeddf(genie_intergenic_path,
-                                                "intergenic")
+                                                   "intergenic")
     # Specify the combined df in case there no bed hits at all
     genie_combineddf = pd.DataFrame(columns=["Chromosome", "Start_Position",
                                              "End_Position", "Hugo_Symbol",
