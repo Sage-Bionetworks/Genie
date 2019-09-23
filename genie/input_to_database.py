@@ -270,7 +270,7 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             valid, message, entities)
         # Send email the first time the file is invalid
-        if not invalid_errors_list:
+        if invalid_errors_list:
             _send_validation_error_email(syn, filenames, message, file_users)
     else:
         input_status_list = [
