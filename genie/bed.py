@@ -93,7 +93,7 @@ def create_gtf(dirname):
     return(exon_gtf_path, gene_gtf_path)
 
 
-def _add_feature_type_todf(filepath, featuretype):
+def _add_feature_type_tobeddf(filepath, featuretype):
     """
     Add Feature_Type to dataframe
 
@@ -171,9 +171,9 @@ def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
                genie_intergenic_path]
     subprocess.check_call(" ".join(command), shell=True)
 
-    genie_exondf = _add_feature_type_todf(genie_exon_path, "exon")
-    genie_introndf = _add_feature_type_todf(genie_intron_path, "intron")
-    genie_intergenicdf = _add_feature_type_todf(genie_intergenic_path,
+    genie_exondf = _add_feature_type_tobeddf(genie_exon_path, "exon")
+    genie_introndf = _add_feature_type_tobeddf(genie_intron_path, "intron")
+    genie_intergenicdf = _add_feature_type_tobeddf(genie_intergenic_path,
                                                 "intergenic")
     # Specify the combined df in case there no bed hits at all
     genie_combineddf = pd.DataFrame(columns=["Chromosome", "Start_Position",
