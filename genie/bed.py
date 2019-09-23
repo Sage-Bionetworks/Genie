@@ -189,7 +189,7 @@ def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
 
 
 def _check_region_overlap(row, gene_positiondf):
-    '''
+    """
     Check if the submitted bed symbol + region overlaps with
     the actual gene's positions
 
@@ -199,10 +199,10 @@ def _check_region_overlap(row, gene_positiondf):
 
     Return:
         True if the region does overlap.
-    '''
+    """
     matching_symbol_ind = gene_positiondf['hgnc_symbol'] == row['Hugo_Symbol']
     match_with_genedb = gene_positiondf[matching_symbol_ind]
-    
+
     if not match_with_genedb.empty:
         # We are assuming that there is only one matching gene, but
         # there are actually duplicated gene symbols
@@ -229,7 +229,7 @@ def _get_max_overlap_index(overlap, bed_length, boundary):
         overlap: Possible overlapping region
         bed_length: Length of submitted region
         boundary: specified ratio overlap
-    
+
     Returns:
         Index of regions with maximum overlap or None
     """
@@ -247,7 +247,7 @@ def _map_gene_within_boundary(row, gene_positiondf, boundary=0.9):
     of the start goes over start boundary, but end is contained in gene
 
     Args:
-        row: start and end position
+        row: row in bed file (genomic region)
         genePositionDf: Actual gene position dataframe
         boundary: Percent boundary defined
 
@@ -265,7 +265,7 @@ def _map_gene_within_boundary(row, gene_positiondf, boundary=0.9):
     bed_length = row['End_Position'] - row['Start_Position']
     # as long as the strand is 90% within the boundary of the
     # Start goes over start boundary, but end is contained in gene
-    if len(end_rows) == 0:
+    if end_rows.empty:
         if sum(chrom_rows['end_position'] >= row['End_Position']) > 0:
             overlap = row['End_Position'] - chrom_rows['start_position']
             # difference =  difference * -1.0
