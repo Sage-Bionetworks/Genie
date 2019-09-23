@@ -26,6 +26,13 @@ genie validate -h
 genie validate clinical data_clinical_supp_SAGE.txt SAGE
 ```
 
+# Development
+
+## Versioning
+1. Update the version in [genie/__version__.py](genie/__version__.py) based on semantic versioning. Use the suffix `-dev` for development branch versions.
+2. When releasing, remove the `-dev` from the version.
+3. Add a tag and release named the same as the version.
+
 # SAGE BIONETWORKS USE ONLY
 ## Batch Processing instructions
 1. Check docker hub builds to see if theres any failures
