@@ -543,6 +543,7 @@ def update_status_and_error_tables(syn,
     invalid_errorsdf = invalid_errorsdf.append(
         duplicated_filesdf[error_table_columns])
     invalid_errorsdf['center'] = center
+    error_table_columns.append('center')
     invalidIds = input_valid_statusdf['id'][input_valid_statusdf['status'] == "INVALID"]
     invalid_errorsdf = invalid_errorsdf[invalid_errorsdf['id'].isin(invalidIds)]
     process_functions.updateDatabase(syn, error_tracker_table.asDataFrame(),
@@ -552,6 +553,7 @@ def update_status_and_error_tables(syn,
 
     logger.info("UPDATE VALIDATION STATUS DATABASE")
     input_valid_statusdf['center'] = center
+    status_table_columns.append('center')
     # Remove fixed duplicated files
     input_valid_statusdf = input_valid_statusdf[
         ~input_valid_statusdf['id'].isin(remove_ids)]
