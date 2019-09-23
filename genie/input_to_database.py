@@ -284,7 +284,8 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
     # add in static filetype and center information
     for input_status in input_status_list:
         input_status.extend([filetype, center])
-    # If there are actually invalid errors
+    # An empty list is returned if there are no errors,
+    # so nothing will be appended
     for invalid_errors in invalid_errors_list:
         invalid_errors.extend([filetype, center])
     return(input_status_list, invalid_errors_list)
