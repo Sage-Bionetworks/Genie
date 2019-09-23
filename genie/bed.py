@@ -137,23 +137,35 @@ def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
     intron_intergenic_path = os.path.join(process_functions.SCRIPT_DIR,
                                           'intron_intergenic.bed')
     gene_path = os.path.join(process_functions.SCRIPT_DIR, 'gene.bed')
-
+    # GET EXON REGIONS
+    # Get intersection between true exon regions and submitted bed regions
     command = ['bedtools', 'intersect', '-a',
                temp_bed_path, '-b', exon_gtf_path, '-wa',
                '|', 'sort', '|', 'uniq', '>', genie_exon_path]
     subprocess.check_call(" ".join(command), shell=True)
+    # get intergenic/intron regions
+    # Get opposite of intersection between true exon regions and submitted
+    # bed regions
     command = ['bedtools', 'intersect', '-a',
                temp_bed_path, '-b', exon_gtf_path, '-wa', '-v'
                '|', 'sort', '|', 'uniq', '>', intron_intergenic_path]
     subprocess.check_call(" ".join(command), shell=True)
+    # get gene regions
+    # Get intersection between true gene regions and submitted bed regions
     command = ['bedtools', 'intersect', '-a',
                temp_bed_path, '-b', gene_gtf_path, '-wa',
                '|', 'sort', '|', 'uniq', '>', gene_path]
     subprocess.check_call(" ".join(command), shell=True)
+    # GET INTRON REGSIONS
+    # Difference between the gene regions and exon regions will give
+    # intron regions
     command = ['diff', gene_path, genie_exon_path, '|',
                'grep', "'<'", '|', 'sed', "'s/< //'", '>',
                genie_intron_path]
     subprocess.check_call(" ".join(command), shell=True)
+    # GET INTERGENIC REGIONS
+    # Difference between the intron/intergenic and intron regions will
+    # give intergenic regions
     command = ['diff', intron_intergenic_path, genie_intron_path, '|',
                'grep', "'<'", '|', 'sed', "'s/< //'", '>',
                genie_intergenic_path]
