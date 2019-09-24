@@ -359,7 +359,7 @@ class bed(FileTypeFormat):
             raise ValueError(
                 "Please make sure your bed file does not "
                 "contain a comment/header line")
-        return(beddf)
+        return beddf
 
     def _validateFilename(self, filepath):
         """
