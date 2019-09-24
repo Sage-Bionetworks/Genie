@@ -19,8 +19,6 @@ class mutationsInCis(FileTypeFormat):
 
     _fileType = "mutationsInCis"
 
-    _validation_kwargs = ["testing"]
-
     def _get_dataframe(self, filePathList):
         '''
         Mutation In Cis is a csv file
@@ -39,8 +37,8 @@ class mutationsInCis(FileTypeFormat):
         mutationInCis.to_csv(newPath, sep="\t",index=False)
         return(newPath)
 
-    def _validate(self, mutationInCisDf, testing=False):
-        mutationInCisSynId = process_functions.getDatabaseSynId(self.syn, "mutationsInCis", test=testing)
+    def _validate(self, mutationInCisDf):
+        mutationInCisSynId = process_functions.getDatabaseSynId(self.syn, "mutationsInCis", test=self.testing)
         #Pull down the correct database
         existingMergeCheck = self.syn.tableQuery("select * from %s where Center = '%s'" % (mutationInCisSynId,self.center))
         existingMergeCheckDf = existingMergeCheck.asDataFrame()
