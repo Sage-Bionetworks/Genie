@@ -512,7 +512,7 @@ class bed(FileTypeFormat):
             string: Path to new bed file
         """
         final_beddf = self._process(beddf, seq_assay_id, newPath, parentId)
-        process_functions.updateData(self.syn, databaseSynId, bed,
+        process_functions.updateData(self.syn, databaseSynId, beddf,
                                      seq_assay_id,
                                      filterByColumn="SEQ_ASSAY_ID",
                                      toDelete=True)
