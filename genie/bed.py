@@ -371,44 +371,23 @@ class bed(FileTypeFormat):
         assert os.path.basename(filepath[0]).startswith("%s-" % self.center)\
             and os.path.basename(filepath[0]).endswith(".bed")
 
-    def create_gene_panel(self, temp_bed_path, seq_assay_id,
-                          gene_panel_path, parentId,
-                          exon_gtf_path,
-                          create_panel=True):
+    def create_gene_panel(self, beddf, seq_assay_id,
+                          gene_panel_path, parentid):
         """
         Create bed file and gene panel files from the bed file
 
         Args:
-            temp_bed_path: Temporary bed file
+            beddf: bed dataframe
             seq_assay_id: GENIE SEQ_ASSAY_ID
-            genePanelPath: Gene panel folder path
-            parentId: Synapse id of gene panel folder
-            exon_gtf_path: Exon GTF path, created by create_gtf()
-            createGenePanel: To create data gene panel files. Default is True
+            gene_panel_path: Gene panel folder path
+            parentid: Synapse id of gene panel folder
 
         Returns:
             pd.DataFrame: configured bed dataframe
         """
         LOGGER.info("CREATING GENE PANEL")
-        command = ['bedtools', 'intersect', '-a',
-                   temp_bed_path,
-                   '-b', exon_gtf_path,
-                   '-u']
-        # Create GENIE genie_exons.bed for gene panel file
-        genie_exon_text = subprocess.check_output(command,
-                                                  universal_newlines=True)
-        genie_exon_path = os.path.join(process_functions.SCRIPT_DIR,
-                                       'genie_exons.bed')
-        with open(genie_exon_path, "w") as genie_exon:
-            genie_exon.write(genie_exon_text)
-
-        genie_exon_stat = os.stat(genie_exon_path)
-        if genie_exon_stat.st_size > 0 and create_panel:
-            exonsdf = pd.read_csv(genie_exon_path, sep="\t", header=None)
-            exonsdf.columns = ["Chromosome", "Start_Position", "End_Position",
-                               "Hugo_Symbol", "includeInPanel",
-                               "clinicalReported",
-                               "ID", "SEQ_ASSAY_ID"]
+        if not beddf.empty:
+            exonsdf = beddf[beddf['Feature_Type'] == "exon"]
             # Only include genes that should be included in the panels
             include_exonsdf = exonsdf[exonsdf['includeInPanel']]
             # Write gene panel
@@ -423,12 +402,12 @@ class bed(FileTypeFormat):
                                     genelist="\t".join(unique_genes)))
             gene_panel_name = "data_gene_panel_" + seq_assay_id + ".txt"
 
-            with open(os.path.join(genePanelPath, gene_panel_name), "w+") as f:
+            with open(os.path.join(gene_panel_path, gene_panel_name), "w+") as f:
                 f.write(gene_panel_text)
             process_functions.storeFile(self.syn,
                                         os.path.join(gene_panel_path,
                                                      gene_panel_name),
-                                        parentId=parentId,
+                                        parentId=parentid,
                                         center=self.center,
                                         fileFormat="bed",
                                         dataSubType="metadata",
@@ -444,7 +423,7 @@ class bed(FileTypeFormat):
             seq_assay_id: GENIE SEQ_ASSAY_ID
             newpath: new GENIE path
             parentid: Synapse id to store the gene panel
-            createPanel: Create gene panel
+            create_panel: Create gene panel
 
         Returns:
             pd.DataFrame: Conigured bed dataframe
@@ -492,14 +471,13 @@ class bed(FileTypeFormat):
         beddf['SEQ_ASSAY_ID'] = seq_assay_id
         temp_bed_path = os.path.join(process_functions.SCRIPT_DIR, "temp.bed")
         beddf.to_csv(temp_bed_path, sep="\t", index=False, header=None)
-        self.create_gene_panel(temp_bed_path, seq_assay_id,
-                               gene_panel_path, parentid, exon_gtf_path,
-                               create_panel=create_panel)
         final_bed = add_feature_type(temp_bed_path, exon_gtf_path,
                                      gene_gtf_path)
-
         final_bed['CENTER'] = self.center
         final_bed['Chromosome'] = final_bed['Chromosome'].astype(str)
+        if create_panel:
+            self.create_gene_panel(final_bed, seq_assay_id,
+                                   gene_panel_path, parentid)
         return final_bed
 
     def preprocess(self, filepath):
