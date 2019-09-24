@@ -423,7 +423,7 @@ class bed(FileTypeFormat):
             seq_assay_id: GENIE SEQ_ASSAY_ID
             newpath: new GENIE path
             parentid: Synapse id to store the gene panel
-            createPanel: Create gene panel
+            create_panel: Create gene panel
 
         Returns:
             pd.DataFrame: Conigured bed dataframe
@@ -470,14 +470,14 @@ class bed(FileTypeFormat):
                             axis=1)
         beddf['SEQ_ASSAY_ID'] = seq_assay_id
         temp_bed_path = os.path.join(process_functions.SCRIPT_DIR, "temp.bed")
-        bed.to_csv(temp_bed_path, sep="\t", index=False, header=None)
+        beddf.to_csv(temp_bed_path, sep="\t", index=False, header=None)
         final_bed = add_feature_type(temp_bed_path, exon_gtf_path,
                                      gene_gtf_path)
         final_bed['CENTER'] = self.center
         final_bed['Chromosome'] = final_bed['Chromosome'].astype(str)
-        if createPanel:
+        if create_panel:
             self.create_gene_panel(final_bed, seq_assay_id,
-                                   genePanelPath, parentId)
+                                   gene_panel_path, parentid)
         return final_bed
 
     def preprocess(self, filepath):
