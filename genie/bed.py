@@ -337,16 +337,16 @@ class bed(FileTypeFormat):
 
     _process_kwargs = ["newPath", "parentId", "databaseSynId", 'seq_assay_id']
 
-    def _get_dataframe(self, filePathList):
-        '''
+    def _get_dataframe(self, filepathlist):
+        """
         Bed files don't have a header
 
         Args:
             filePathList: List of files
-        '''
-        filePath = filePathList[0]
+        """
+        filepath = filepathlist[0]
         try:
-            beddf = pd.read_csv(filePath, sep="\t", header=None)
+            beddf = pd.read_csv(filepath, sep="\t", header=None)
         except Exception:
             raise ValueError(
                 "Can't read in your bed file. "
@@ -359,23 +359,23 @@ class bed(FileTypeFormat):
                 "contain a comment/header line")
         return(beddf)
 
-    def _validateFilename(self, filePath):
-        '''
+    def _validateFilename(self, filepath):
+        """
         Validates filename
         CENTER-11.bed
 
         Args:
             filePath: Path to bedfile
-        '''
+        """
 
-        assert os.path.basename(filePath[0]).startswith("%s-" % self.center)\
-            and os.path.basename(filePath[0]).endswith(".bed")
+        assert os.path.basename(filepath[0]).startswith("%s-" % self.center)\
+            and os.path.basename(filepath[0]).endswith(".bed")
 
     def create_gene_panel(self, temp_bed_path, seq_assay_id,
-                          genePanelPath, parentId,
+                          gene_panel_path, parentId,
                           exon_gtf_path,
-                          createGenePanel=True):
-        '''
+                          create_panel=True):
+        """
         Create bed file and gene panel files from the bed file
 
         Args:
@@ -388,7 +388,7 @@ class bed(FileTypeFormat):
 
         Returns:
             pd.DataFrame: configured bed dataframe
-        '''
+        """
         LOGGER.info("CREATING GENE PANEL")
         command = ['bedtools', 'intersect', '-a',
                    temp_bed_path,
@@ -403,7 +403,7 @@ class bed(FileTypeFormat):
             genie_exon.write(genie_exon_text)
 
         genie_exon_stat = os.stat(genie_exon_path)
-        if genie_exon_stat.st_size > 0 and createGenePanel:
+        if genie_exon_stat.st_size > 0 and create_panel:
             exonsdf = pd.read_csv(genie_exon_path, sep="\t", header=None)
             exonsdf.columns = ["Chromosome", "Start_Position", "End_Position",
                                "Hugo_Symbol", "includeInPanel",
@@ -421,79 +421,80 @@ class bed(FileTypeFormat):
                                     seq_assay_id=seq_assay_id,
                                     num_genes=len(unique_genes),
                                     genelist="\t".join(unique_genes)))
-            genepanelname = "data_gene_panel_" + seq_assay_id + ".txt"
+            gene_panel_name = "data_gene_panel_" + seq_assay_id + ".txt"
 
-            with open(os.path.join(genePanelPath, genepanelname), "w+") as f:
+            with open(os.path.join(genePanelPath, gene_panel_name), "w+") as f:
                 f.write(gene_panel_text)
             process_functions.storeFile(self.syn,
-                                        os.path.join(genePanelPath,
-                                                     genepanelname),
+                                        os.path.join(gene_panel_path,
+                                                     gene_panel_name),
                                         parentId=parentId,
                                         center=self.center,
                                         fileFormat="bed",
                                         dataSubType="metadata",
                                         cBioFileFormat="genePanel")
 
-    def _process(self, gene, seq_assay_id, newPath,
-                 parentId, createPanel=True):
-        '''
+    def _process(self, beddf, seq_assay_id, newpath,
+                 parentid, create_panel=True):
+        """
         Process bed file, add feature type
 
         Args:
             gene: bed dataframe
             seq_assay_id: GENIE SEQ_ASSAY_ID
-            newPath: new GENIE path
-            parentId: Synapse id to store the gene panel
+            newpath: new GENIE path
+            parentid: Synapse id to store the gene panel
             createPanel: Create gene panel
 
         Returns:
             pd.DataFrame: Conigured bed dataframe
-        '''
+        """
         seq_assay_id = seq_assay_id.upper()
         seq_assay_id = seq_assay_id.replace('_', '-')
 
         # Add in 6th column which is the clinicalReported
-        if len(gene.columns) > 5:
-            if all(gene[5].apply(lambda x: x in [True, False])):
-                gene[5] = gene[5].astype(bool)
+        if len(beddf.columns) > 5:
+            if all(beddf[5].apply(lambda x: x in [True, False])):
+                beddf[5] = beddf[5].astype(bool)
             else:
-                gene[5] = pd.np.nan
+                beddf[5] = pd.np.nan
         else:
-            gene[5] = pd.np.nan
-        bed = gene[[0, 1, 2, 3, 4, 5]]
-        genePanelPath = os.path.dirname(newPath)
+            beddf[5] = pd.np.nan
+        beddf = beddf[[0, 1, 2, 3, 4, 5]]
+        gene_panel_path = os.path.dirname(newpath)
         # Must be .astype(bool) because `1, 0 in [True, False]`
-        bed[4] = bed[4].astype(bool)
+        beddf[4] = beddf[4].astype(bool)
 
         exon_gtf_path, gene_gtf_path = create_gtf(process_functions.SCRIPT_DIR)
-        LOGGER.info("REMAPPING %s" % seq_assay_id)
+        LOGGER.info("REMAPPING {}".format(seq_assay_id))
         # bedname = seq_assay_id + ".bed"
-        bed.columns = ["Chromosome", "Start_Position", "End_Position",
+        beddf.columns = ["Chromosome", "Start_Position", "End_Position",
                        "Hugo_Symbol", "includeInPanel", "clinicalReported"]
         # Validate gene symbols
         # Gene symbols can be split by ; and _ and : and .
-        bed['Hugo_Symbol'] = [
+        beddf['Hugo_Symbol'] = [
             i.split(";")[0].split("_")[0].split(":")[0].split(".")[0]
-            for i in bed['Hugo_Symbol']]
+            for i in beddf['Hugo_Symbol']]
         # Replace all chr with blank
-        bed['Chromosome'] = [
-            str(i).replace("chr", "") for i in bed['Chromosome']]
+        beddf['Chromosome'] = [
+            str(i).replace("chr", "") for i in beddf['Chromosome']]
         # Change all start and end to int
-        bed['Start_Position'] = bed['Start_Position'].apply(int)
-        bed['End_Position'] = bed['End_Position'].apply(int)
+        beddf['Start_Position'] = beddf['Start_Position'].apply(int)
+        beddf['End_Position'] = beddf['End_Position'].apply(int)
 
-        genePosition = self.syn.tableQuery('SELECT * FROM syn11806563')
-        genePositionDf = genePosition.asDataFrame()
-        bed['ID'] = bed['Hugo_Symbol']
-        # The apply function of a DataFrame is called twice on the first row (known
-        # pandas behavior)
-        bed = bed.apply(lambda x: remap_symbols(x, genePositionDf), axis=1)
-        bed['SEQ_ASSAY_ID'] = seq_assay_id
+        gene_position_table = self.syn.tableQuery('SELECT * FROM syn11806563')
+        gene_positiondf = gene_position_table.asDataFrame()
+        beddf['ID'] = beddf['Hugo_Symbol']
+        # The apply function of a DataFrame is called twice on the first
+        # row (known pandas behavior)
+        beddf = beddf.apply(lambda x: remap_symbols(x, gene_positiondf),
+                            axis=1)
+        beddf['SEQ_ASSAY_ID'] = seq_assay_id
         temp_bed_path = os.path.join(process_functions.SCRIPT_DIR, "temp.bed")
-        bed.to_csv(temp_bed_path, sep="\t", index=False, header=None)
+        beddf.to_csv(temp_bed_path, sep="\t", index=False, header=None)
         self.create_gene_panel(temp_bed_path, seq_assay_id,
-                               genePanelPath, parentId, exon_gtf_path,
-                               createGenePanel=createPanel)
+                               gene_panel_path, parentid, exon_gtf_path,
+                               create_panel=create_panel)
         final_bed = add_feature_type(temp_bed_path, exon_gtf_path,
                                      gene_gtf_path)
 
@@ -501,8 +502,8 @@ class bed(FileTypeFormat):
         final_bed['Chromosome'] = final_bed['Chromosome'].astype(str)
         return final_bed
 
-    def preprocess(self, filePath):
-        '''
+    def preprocess(self, filepath):
+        """
         Standardize and grab seq assay id from the bed file path
 
         Args:
@@ -510,14 +511,14 @@ class bed(FileTypeFormat):
 
         Returns:
             dict: GENIE seq assay id
-        '''
-        seq_assay_id = os.path.basename(filePath).replace(".bed", "")
+        """
+        seq_assay_id = os.path.basename(filepath).replace(".bed", "")
         seq_assay_id = seq_assay_id.upper().replace("_", "-")
         return {'seq_assay_id': seq_assay_id}
 
-    def process_steps(self, gene, newPath, parentId, databaseSynId,
+    def process_steps(self, gene, newpath, parentid, database_synid,
                       seq_assay_id):
-        '''
+        """
         Process bed file, update bed database, write bed file to path
 
         Args:
@@ -529,17 +530,17 @@ class bed(FileTypeFormat):
 
         Returns:
             string: Path to new bed file
-        '''
-        bed = self._process(gene, seq_assay_id, newPath, parentId)
-        process_functions.updateData(self.syn, databaseSynId, bed,
+        """
+        bed = self._process(gene, seq_assay_id, newpath, parentid)
+        process_functions.updateData(self.syn, database_synid, bed,
                                      seq_assay_id,
                                      filterByColumn="SEQ_ASSAY_ID",
                                      toDelete=True)
-        bed.to_csv(newPath, sep="\t", index=False)
-        return(newPath)
+        bed.to_csv(newpath, sep="\t", index=False)
+        return newpath
 
     def _validate(self, beddf):
-        '''
+        """
         Validate bed file
 
         Args:
@@ -548,49 +549,46 @@ class bed(FileTypeFormat):
         Returns:
             total_error: all the errors
             warning: all the warnings
-        '''
+        """
         total_error = ""
         warning = ""
-        newCols = ["Chromosome", "Start_Position",
+        newcols = ["Chromosome", "Start_Position",
                    "End_Position", "Hugo_Symbol",
                    "includeInPanel"]
-        if len(beddf.columns) < len(newCols):
+        if len(beddf.columns) < len(newcols):
             total_error += (
                 "BED file: Must at least have five columns in this "
                 "order: {}. Make sure there are "
-                "no headers.\n".format(", ".join(newCols)))
+                "no headers.\n".format(", ".join(newcols)))
         else:
-            newCols.extend(range(0, len(beddf.columns) - len(newCols)))
-            beddf.columns = newCols
-            toValidateSymbol = True
+            newcols.extend(range(0, len(beddf.columns) - len(newcols)))
+            beddf.columns = newcols
+            to_validate_symbol = True
             if not all(beddf['Start_Position'].apply(
                     lambda x: isinstance(x, int))):
-                total_error += (
-                    "BED file: "
-                    "The Start_Position column must only be integers. "
-                    "Make sure there are no headers.\n")
-                toValidateSymbol = False
+                total_error += ("BED file: "
+                                "The Start_Position column must only be "
+                                "integers. Make sure there are no headers.\n")
+                to_validate_symbol = False
             if not all(beddf['End_Position'].apply(
                     lambda x: isinstance(x, int))):
-                total_error += (
-                    "BED file: "
-                    "The End_Position column must only be integers. "
-                    "Make sure there are no headers.\n")
-                toValidateSymbol = False
+                total_error += ("BED file: "
+                                "The End_Position column must only be "
+                                "integers. Make sure there are no headers.\n")
+                to_validate_symbol = False
 
             LOGGER.info("VALIDATING GENE SYMBOLS")
             if any(beddf['Hugo_Symbol'].isnull()):
                 total_error += \
                     "BED file: You cannot submit any null symbols.\n"
             beddf = beddf[~beddf['Hugo_Symbol'].isnull()]
-            beddf["Hugo_Symbol"] = [
-                str(hugo).split(";")[0].split("_")[0].split(":")[0]
-                for hugo in beddf["Hugo_Symbol"]]
+            beddf["Hugo_Symbol"] = [str(hugo).split(";")[0]
+                                    .split("_")[0].split(":")[0]
+                                    for hugo in beddf["Hugo_Symbol"]]
             if sum(beddf['Hugo_Symbol'] == "+") != 0 or \
                sum(beddf['Hugo_Symbol'] == "-") != 0:
-                total_error += (
-                    "BED file: Fourth column must be the Hugo_Symbol column, "
-                    "not the strand column\n")
+                total_error += ("BED file: Fourth column must be the "
+                                "Hugo_Symbol column, not the strand column\n")
 
             warn, error = process_functions.check_col_and_values(
                 beddf,
@@ -601,23 +599,22 @@ class bed(FileTypeFormat):
             warning += warn
             total_error += error
 
-            if toValidateSymbol:
-                genePosition = self.syn.tableQuery('SELECT * FROM syn11806563')
-                genePositionDf = genePosition.asDataFrame()
+            if to_validate_symbol:
+                gene_position_table = self.syn.tableQuery('SELECT * FROM syn11806563')
+                gene_positiondf = gene_position_table.asDataFrame()
                 # The apply function of a DataFrame is called twice on the first row (known
                 # pandas behavior)
-                beddf = beddf.apply(lambda x: remap_symbols(x, genePositionDf), axis=1)
+                beddf = beddf.apply(lambda x: remap_symbols(x, gene_positiondf), axis=1)
 
                 if any(beddf['Hugo_Symbol'].isnull()):
-                    warning += (
-                        "BED file: "
-                        "Any gene names that can't be "
-                        "remapped will be null.\n")
+                    warning += ("BED file: "
+                                "Any gene names that can't be "
+                                "remapped will be null.\n")
                 if all(beddf['Hugo_Symbol'].isnull()):
-                    total_error += (
-                        "BED file: "
-                        "You have no correct gene symbols. "
-                        "Make sure your gene symbol column (4th column) "
-                        "is formatted like so: SYMBOL(;optionaltext).  "
-                        "Optional text can be semi-colon separated.\n")
+                    total_error += ("BED file: "
+                                    "You have no correct gene symbols. "
+                                    "Make sure your gene symbol column (4th "
+                                    "column) is formatted like so: SYMBOL"
+                                    "(;optionaltext).  Optional text can be "
+                                    "semi-colon separated.\n")
         return(total_error, warning)
