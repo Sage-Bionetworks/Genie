@@ -243,8 +243,8 @@ def _get_max_overlap_index(overlap, bed_length, boundary):
 
 def _map_position_within_boundary(row, positiondf, boundary=0.9):
     """
-    Map positions and is contained within the boundary
-    of the start goes over start boundary, but end is contained in gene
+    Map positions and checks if posision is contained within the
+    specified percentage boundary
 
     Args:
         row: Row in bed file (genomic region)
