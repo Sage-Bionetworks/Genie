@@ -195,7 +195,7 @@ def _check_region_overlap(row, gene_positiondf):
 
     Args:
         row: row in bed file (genomic region)
-        gene_positiondf: Actual gene position dataframe
+        gene_positiondf: Reference gene position dataframe
 
     Return:
         True if the region does overlap.
@@ -241,30 +241,30 @@ def _get_max_overlap_index(overlap, bed_length, boundary):
     return None
 
 
-def _map_gene_within_boundary(row, gene_positiondf, boundary=0.9):
+def _map_position_within_boundary(row, positiondf, boundary=0.9):
     """
-    Map gene as long as the strand is a percent within the boundary
+    Map positions and is contained within the boundary
     of the start goes over start boundary, but end is contained in gene
 
     Args:
-        row: row in bed file (genomic region)
-        genePositionDf: Actual gene position dataframe
+        row: Row in bed file (genomic region)
+        positiondf: Reference bed position dataframe
         boundary: Percent boundary defined
 
     Return:
-        pd.Series: mapped gene
+        pd.Series: mapped position
     """
     # First filter just based on whether or not region is within the gene
     # position dataframe
-    match_chr = gene_positiondf['chromosome_name'] == str(row['Chromosome'])
-    chrom_rows = gene_positiondf[match_chr]
+    match_chr = positiondf['chromosome_name'] == str(row['Chromosome'])
+    chrom_rows = positiondf[match_chr]
     match_start = chrom_rows['start_position'] <= row['Start_Position']
     start_rows = chrom_rows[match_start]
     end_rows = start_rows[start_rows['end_position'] >= row['End_Position']]
 
     bed_length = row['End_Position'] - row['Start_Position']
-    # as long as the strand is 90% within the boundary of the
-    # Start goes over start boundary, but end is contained in gene
+    # as long as the strand is within the boundary % defined
+    # Start goes over start boundary, but end is contained in position
     if end_rows.empty:
         if sum(chrom_rows['end_position'] >= row['End_Position']) > 0:
             overlap = row['End_Position'] - chrom_rows['start_position']
@@ -273,14 +273,14 @@ def _map_gene_within_boundary(row, gene_positiondf, boundary=0.9):
                                                  boundary)
             if max_overlap is not None:
                 end_rows = end_rows.append(chrom_rows.loc[[max_overlap]])
-        # End goes over end boundary, but start is contained in gene
+        # End goes over end boundary, but start is contained in position
         if sum(chrom_rows['start_position'] <= row['Start_Position']) > 0:
             overlap = chrom_rows['end_position'] - row['Start_Position']
             max_overlap = _get_max_overlap_index(overlap, bed_length,
                                                  boundary)
             if max_overlap is not None:
                 end_rows = end_rows.append(chrom_rows.loc[[max_overlap]])
-        # Start and end go over gene boundary
+        # Start and end go over position boundary
         check = chrom_rows[chrom_rows['start_position'] >= row['Start_Position']]
         check = check[check['end_position'] <= row['End_Position']]
         if not check.empty:
@@ -307,7 +307,7 @@ def remap_symbols(row, gene_positiondf):
     """
     region_overlap = _check_region_overlap(row, gene_positiondf)
     if not region_overlap:
-        overlap_genes = _map_gene_within_boundary(row, gene_positiondf)
+        overlap_genes = _map_position_within_boundary(row, gene_positiondf)
         if overlap_genes.empty:
             LOGGER.warning("{} cannot be remapped. "
                            "These rows will have an empty gene symbol".format(
