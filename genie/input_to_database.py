@@ -510,7 +510,6 @@ def update_status_and_error_tables(syn,
     status_table_columns = ["id", 'path', 'md5', 'status', 'name',
                             'modifiedOn', 'fileType', 'center']
 
-
     input_status_rows = []
     for input_status in input_valid_statuses:
         entity = input_status['entity']
@@ -520,7 +519,7 @@ def update_status_and_error_tables(syn,
                'status': input_status['status'],
                'name': entity.name,
                'modifiedOn': entity_date_to_timestamp(entity.properties.modifiedOn),
-               'fileType': input_status['filetype'],
+               'fileType': input_status['fileType'],
                'center': input_status['center']}
         input_status_rows.append(row)
 
@@ -530,12 +529,14 @@ def update_status_and_error_tables(syn,
         row = {'id': entity.id,
                'errors': invalid_error['errors'],
                'name': entity.name,
-               'fileType': invalid_error['filetype'],
+               'fileType': invalid_error['fileType'],
                'center': invalid_error['center']}
         invalid_error_rows.append(row)
-
-    input_valid_statusdf = pd.DataFrame(input_status_rows)
-
+    if input_status_rows:
+        input_valid_statusdf = pd.DataFrame(input_status_rows)
+    else:
+        input_valid_statusdf = pd.DataFrame(input_status_rows,
+                                            columns=status_table_columns)
     duplicated_file_error = (
         "DUPLICATED FILENAME! FILES SHOULD BE UPLOADED AS NEW VERSIONS "
         "AND THE ENTIRE DATASET SHOULD BE UPLOADED EVERYTIME")
@@ -548,7 +549,11 @@ def update_status_and_error_tables(syn,
     input_valid_statusdf['status'][duplicated_idx] = "INVALID"
     # Create invalid error synapse table
     logger.info("UPDATE INVALID FILE REASON DATABASE")
-    invalid_errorsdf = pd.DataFrame(invalid_error_rows)
+    if invalid_error_rows:
+        invalid_errorsdf = pd.DataFrame(invalid_error_rows)
+    else:
+        invalid_errorsdf = pd.DataFrame(invalid_error_rows,
+                                        columns=error_table_columns)
     # Remove fixed duplicated files
     # This makes sure that the files removed actually had duplicated file
     # errors and not some other error
