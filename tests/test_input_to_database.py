@@ -391,7 +391,7 @@ def test_valid_validatefile():
                         [])
     with patch.object(GenieValidationHelper, "determine_filetype",
                       return_value=filetype) as patch_determine_filetype,\
-         patch.object(input_to_database,"check_existing_file_status",
+         patch.object(input_to_database, "check_existing_file_status",
                       return_value={'status_list': [],
                                     'error_list': [],
                                     'to_validate': True}) as patch_check, \
