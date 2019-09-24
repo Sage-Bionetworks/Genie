@@ -496,7 +496,7 @@ class bed(FileTypeFormat):
         seq_assay_id = seq_assay_id.upper().replace("_", "-")
         return {'seq_assay_id': seq_assay_id}
 
-    def process_steps(self, gene, newpath, parentid, database_synid,
+    def process_steps(self, gene, newPath, parentId, databaseSynId,
                       seq_assay_id):
         """
         Process bed file, update bed database, write bed file to path
@@ -511,13 +511,13 @@ class bed(FileTypeFormat):
         Returns:
             string: Path to new bed file
         """
-        bed = self._process(gene, seq_assay_id, newpath, parentid)
-        process_functions.updateData(self.syn, database_synid, bed,
+        bed = self._process(gene, seq_assay_id, newPath, parentId)
+        process_functions.updateData(self.syn, databaseSynId, bed,
                                      seq_assay_id,
                                      filterByColumn="SEQ_ASSAY_ID",
                                      toDelete=True)
-        bed.to_csv(newpath, sep="\t", index=False)
-        return newpath
+        bed.to_csv(newPath, sep="\t", index=False)
+        return newPath
 
     def _validate(self, beddf):
         """
