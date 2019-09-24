@@ -307,26 +307,28 @@ def remap_symbols(row, gene_positiondf):
     """
     region_overlap = _check_region_overlap(row, gene_positiondf)
     if not region_overlap:
-        overlap_genes = _map_position_within_boundary(row, gene_positiondf)
-        if overlap_genes.empty:
+        overlap_positions = _map_position_within_boundary(row,
+                                                          gene_positiondf)
+        if overlap_positions.empty:
             LOGGER.warning("{} cannot be remapped. "
                            "These rows will have an empty gene symbol".format(
                                row['Hugo_Symbol']))
             row['Hugo_Symbol'] = pd.np.nan
-        elif len(overlap_genes) > 1:
-            if row['Hugo_Symbol'] not in overlap_genes['hgnc_symbol'].tolist():
+        elif len(overlap_positions) > 1:
+            symbol_list = overlap_positions['hgnc_symbol'].tolist()
+            if row['Hugo_Symbol'] not in symbol_list:
                 # if "MLL4", then the HUGO symbol should be KMT2D and KMT2B
                 LOGGER.warning("{} can be mapped to different symbols: {}. "
                                "Please correct or it will be removed.".format(
                                    row['Hugo_Symbol'],
-                                   ", ".join(overlap_genes['hgnc_symbol'])))
+                                   ", ".join(symbol_list)))
                 row['Hugo_Symbol'] = pd.np.nan
         else:
-            if row['Hugo_Symbol'] != overlap_genes['hgnc_symbol'].values[0]:
+            symbol = overlap_positions['hgnc_symbol'].values[0]
+            if row['Hugo_Symbol'] != symbol:
                 LOGGER.info("{} will be remapped to {}".format(
-                    row['Hugo_Symbol'],
-                    overlap_genes['hgnc_symbol'].values[0]))
-                row['Hugo_Symbol'] = overlap_genes['hgnc_symbol'].values[0]
+                    row['Hugo_Symbol'], symbol))
+                row['Hugo_Symbol'] = symbol
     return row
 
 
