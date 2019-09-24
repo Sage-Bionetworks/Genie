@@ -84,7 +84,7 @@ def test_perfect___process():
     with patch.object(genie.bed, "create_gtf",
                       return_value=(EXON_TEMP.name, GENE_TEMP.name)):
         new_beddf = bed_class._process(
-            beddf, seq_assay_id, new_path, parentid, createPanel=False)
+            beddf, seq_assay_id, new_path, parentid, create_panel=False)
         new_beddf.sort_values("ID", inplace=True)
         new_beddf.reset_index(drop=True, inplace=True)
         assert_frame_equal(expected_beddf,
@@ -124,7 +124,7 @@ def test_includeinpanel___process():
     with patch.object(genie.bed, "create_gtf",
                       return_value=(EXON_TEMP.name, GENE_TEMP.name)):
         new_beddf = bedsp_class._process(
-            beddf, seq_assay_id, new_path, parentid, createPanel=False)
+            beddf, seq_assay_id, new_path, parentid, create_panel=False)
         new_beddf.sort_values("Chromosome", inplace=True)
         new_beddf.reset_index(drop=True, inplace=True)
         assert_frame_equal(expected_beddf,
@@ -160,7 +160,7 @@ def test_clinicalreport___process():
     with patch.object(genie.bed, "create_gtf",
                       return_value=(EXON_TEMP.name, GENE_TEMP.name)):
         new_beddf = bedsp_class._process(
-            beddf, seq_assay_id, new_path, parentid, createPanel=False)
+            beddf, seq_assay_id, new_path, parentid, create_panel=False)
         new_beddf.sort_values("Chromosome", inplace=True)
         new_beddf.reset_index(drop=True, inplace=True)
         assert_frame_equal(expected_beddf,
