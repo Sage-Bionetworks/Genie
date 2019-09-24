@@ -462,7 +462,8 @@ def get_duplicated_files(validation_statusdf, duplicated_error_message):
         duplicated_error_message: Error message for duplicated files
 
     Returns:
-        dataframe with 'id', 'name', 'errors', and 'fileType' of duplicated files
+        dataframe with 'id', 'name', 'errors', 'center', 'fileType' of
+        duplicated files
     '''
     logger.info("CHECK FOR DUPLICATED FILES")
     duplicated_filesdf = validation_statusdf[
@@ -564,8 +565,8 @@ def update_status_and_error_tables(syn,
     # Append duplicated file errors
     invalid_errorsdf = invalid_errorsdf.append(
         duplicated_filesdf[invalid_errorsdf.columns])
-    invalidIds = input_valid_statusdf['id'][input_valid_statusdf['status'] == "INVALID"]
-    invalid_errorsdf = invalid_errorsdf[invalid_errorsdf['id'].isin(invalidIds)]
+    invalid_ids = input_valid_statusdf['id'][input_valid_statusdf['status'] == "INVALID"]
+    invalid_errorsdf = invalid_errorsdf[invalid_errorsdf['id'].isin(invalid_ids)]
     process_functions.updateDatabase(syn, error_tracker_table.asDataFrame(),
                                      invalid_errorsdf,
                                      error_tracker_table.tableId,
