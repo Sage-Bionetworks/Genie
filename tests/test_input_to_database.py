@@ -1,4 +1,5 @@
 import mock
+from mock import patch
 import os
 import pytest
 
@@ -6,12 +7,12 @@ import pandas as pd
 import synapseclient
 import synapseutils
 
-from genie import input_to_database
+from genie import input_to_database, process_functions
 from genie.clinical import clinical
 from genie.mafSP import mafSP
 from genie.maf import maf
 from genie.vcf import vcf
-
+from genie.validate import GenieValidationHelper
 
 
 syn = mock.create_autospec(synapseclient.Synapse)
@@ -20,7 +21,9 @@ sample_clinical_synid = 'syn2222'
 sample_clinical_entity = synapseclient.File(path='data_clinical_supp_sample_SAGE.txt',
                                             id=sample_clinical_synid,
                                             parentId='syn45678',
-                                            name='data_clinical_supp_sample_SAGE.txt')
+                                            name='data_clinical_supp_sample_SAGE.txt',
+                                            modifiedOn = '2019-03-24T12:00:00.Z',
+                                            md5='44444')
 
 patient_clinical_synid = 'syn11111'
 patient_clinical_entity = synapseclient.File(path='data_clinical_supp_patient_SAGE.txt',
@@ -60,11 +63,20 @@ validation_statusdf = pd.DataFrame({
     'id': ['syn1234', 'syn2345'],
     'status': ['VALID', 'INVALID'],
     'md5': ['3333', '44444'],
-    'name': ['first.txt', 'second.txt']})
+    'name': ['first.txt', 'second.txt'],
+    'fileType': ['filetype1', 'filetype2']})
 error_trackerdf = pd.DataFrame({
     'id': ['syn2345'],
-    'errors': ['Invalid file format']})
+    'errors': ['Invalid file format'],
+    'fileType': ['filetype1']})
 emptydf = pd.DataFrame(columns=['id'], dtype=str)
+
+class mock_csv_query_result(object):
+    def __init__(self, df):
+        self.df = df
+    def asDataFrame(self):
+        return self.df
+
 # def test_samename_rename_file():
 #     '''Test that the file path is not renamed.
 #     '''
@@ -120,10 +132,10 @@ def test_main_get_center_input_files():
     calls = [mock.call(sample_clinical_synid),
              mock.call(patient_clinical_synid)]
 
-    with mock.patch.object(synapseutils, "walk",
-                           return_value=walk_return()) as patch_synapseutils_walk,\
-        mock.patch.object(syn, "get",
-                          side_effect=syn_get_effects) as patch_syn_get:
+    with patch.object(synapseutils, "walk",
+                      return_value=walk_return()) as patch_synapseutils_walk,\
+         patch.object(syn, "get",
+                      side_effect=syn_get_effects) as patch_syn_get:
         center_file_list = input_to_database.get_center_input_files(syn,
                                                                     "syn12345",
                                                                     center)
@@ -151,10 +163,10 @@ def test_vcf_get_center_input_files():
         mock.call(vcf1synid),
         mock.call(vcf2synid)]
 
-    with mock.patch.object(synapseutils, "walk",
-                           return_value=walk_return()) as patch_synapseutils_walk,\
-        mock.patch.object(syn, "get",
-                          side_effect=syn_get_effects) as patch_syn_get:
+    with patch.object(synapseutils, "walk",
+                      return_value=walk_return()) as patch_synapseutils_walk,\
+         patch.object(syn, "get",
+                      side_effect=syn_get_effects) as patch_syn_get:
         center_file_list = input_to_database.get_center_input_files(syn,
                                                                     "syn12345",
                                                                     center,
@@ -171,8 +183,8 @@ def test_empty_get_center_input_files():
     Test that center input files is empty if directory
     pass in is empty
     '''
-    with mock.patch.object(synapseutils, "walk",
-                           return_value=walk_return_empty()) as patch_synapseutils_walk:
+    with patch.object(synapseutils, "walk",
+                      return_value=walk_return_empty()) as patch_synapseutils_walk:
         center_file_list = input_to_database.get_center_input_files(
             syn, "syn12345", center, process="vcf")
         assert center_file_list == []
@@ -205,8 +217,9 @@ def test_unvalidatedinput_check_existing_file_status():
     '''
     entity = synapseclient.Entity(id='syn1234')
     entities = [entity]
+
     file_status = input_to_database.check_existing_file_status(
-        emptydf, emptydf, entities)
+        mock_csv_query_result(emptydf), mock_csv_query_result(emptydf), entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == []
     assert file_status['error_list'] == []
@@ -219,7 +232,7 @@ def test_valid_check_existing_file_status():
     entity = synapseclient.Entity(name='first.txt', id='syn1234', md5='3333')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities)
+        mock_csv_query_result(validation_statusdf), mock_csv_query_result(error_trackerdf), entities)
     assert not file_status['to_validate']
     assert file_status['status_list'] == ['VALID']
     assert file_status['error_list'] == []
@@ -232,7 +245,7 @@ def test_invalid_check_existing_file_status():
     entity = synapseclient.Entity(name='second.txt', id='syn2345', md5='44444')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities)
+        mock_csv_query_result(validation_statusdf), mock_csv_query_result(error_trackerdf), entities)
     assert not file_status['to_validate']
     assert file_status['status_list'] == ['INVALID']
     assert file_status['error_list'] == ['Invalid file format']
@@ -245,7 +258,7 @@ def test_nostorederrors_check_existing_file_status():
     entity = synapseclient.Entity(name='second.txt', id='syn2345', md5='44444')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, emptydf, entities)
+        mock_csv_query_result(validation_statusdf), mock_csv_query_result(emptydf), entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == ['INVALID']
     assert file_status['error_list'] == []
@@ -258,7 +271,7 @@ def test_diffmd5validate_check_existing_file_status():
     entity = synapseclient.Entity(name='first.txt', id='syn1234', md5='44444')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, emptydf, entities)
+        mock_csv_query_result(validation_statusdf), mock_csv_query_result(emptydf), entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == ['VALID']
     assert file_status['error_list'] == []
@@ -271,7 +284,7 @@ def test_diffnametovalidate_check_existing_file_status():
     entity = synapseclient.Entity(name='second.txt', id='syn1234', md5='3333')
     entities = [entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, emptydf, entities)
+        mock_csv_query_result(validation_statusdf), mock_csv_query_result(emptydf), entities)
     assert file_status['to_validate']
     assert file_status['status_list'] == ['VALID']
     assert file_status['error_list'] == []
@@ -293,7 +306,7 @@ def test_twoinvalid_check_existing_file_status():
     second_entity = synapseclient.Entity(name='second.txt', id='syn2345', md5='44444')
     entities = [first_entity, second_entity]
     file_status = input_to_database.check_existing_file_status(
-        validation_statusdf, error_trackerdf, entities)
+        mock_csv_query_result(validation_statusdf), mock_csv_query_result(error_trackerdf), entities)
     assert not file_status['to_validate']
     assert file_status['status_list'] == [
         'INVALID', 'INVALID']
@@ -325,22 +338,14 @@ def test_create_and_archive_maf_database():
         'Database': ['vcf2maf', 'main'],
         'Id': ['syn12345', 'syn23455']})
 
-    with mock.patch.object(
-            syn,
-            "store",
-            return_value=new_maf_ent) as patch_syn_store,\
-        mock.patch.object(
-            syn,
-            "setPermissions",
-            return_value=None) as patch_syn_set_permissions,\
-        mock.patch.object(
-            syn,
-            "get",
-            return_value=table_ent) as patch_syn_get,\
-        mock.patch.object(
-            syn,
-            "getTableColumns",
-            return_value=['foo', 'ddooo']) as patch_syn_get_table_columns:
+    with patch.object(syn, "store",
+                      return_value=new_maf_ent) as patch_syn_store,\
+         patch.object(syn, "setPermissions",
+                      return_value=None) as patch_syn_set_permissions,\
+         patch.object(syn, "get",
+                      return_value=table_ent) as patch_syn_get,\
+         patch.object(syn, "getTableColumns",
+                      return_value=['foo', 'ddooo']) as patch_syn_get_table_columns:
 
         database_mappingdf = input_to_database.create_and_archive_maf_database(
             syn, database_synid_mappingdf)
@@ -377,52 +382,39 @@ def test_valid_validatefile():
     valid = True
     message = "Is valid"
     filetype = "clinical"
-
-    expected_validate_results = ([[
-        entity.id,
-        entity.path,
-        '44444',
-        'VALIDATED',
-        'data_clinical_supp_SAGE.txt',
-        1553428800000,
-        'clinical']], None)
-    with mock.patch(
-            "genie.validate.determine_filetype",
-            return_value=filetype) as patch_determine_filetype,\
-        mock.patch(
-            "genie.input_to_database.check_existing_file_status",
-            return_value={
-                'status_list': [],
-                'error_list': [],
-                'to_validate': True}) as patch_check, \
-        mock.patch(
-            "genie.validate.validate_single_file",
-            return_value=(valid, message, filetype)) as patch_validate,\
-        mock.patch(
-            "genie.input_to_database._get_status_and_error_list",
-            return_value=expected_validate_results) as patch_get_staterror_list,\
-        mock.patch("genie.input_to_database._send_validation_error_email") as patch_send_email:
+    # Only a list is returned as opposed a list of lists when there are
+    # invalid errors
+    status_error_list_results = ([{'entity': entity, 'status': 'VALIDATED'}],
+                                 [])
+    expected_results = ([{'entity': entity, 'status': 'VALIDATED',
+                          'fileType': filetype, 'center': center}],
+                        [])
+    with patch.object(GenieValidationHelper, "determine_filetype",
+                      return_value=filetype) as patch_determine_filetype,\
+         patch.object(input_to_database, "check_existing_file_status",
+                      return_value={'status_list': [],
+                                    'error_list': [],
+                                    'to_validate': True}) as patch_check, \
+         patch.object(GenieValidationHelper,"validate_single_file",
+                      return_value=(valid, message,
+                                    filetype)) as patch_validate,\
+         patch.object(input_to_database, "_get_status_and_error_list",
+                      return_value=status_error_list_results) as patch_get_staterror_list,\
+         patch.object(input_to_database,
+                      "_send_validation_error_email") as patch_send_email:
 
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
             error_trackerdf, center, threads, testing, oncotree_link)
 
-        assert expected_validate_results == validate_results
+        assert expected_results == validate_results
         patch_validate.assert_called_once_with(
-            syn,
-            [entity.path],
-            center,
-            filetype=filetype,
-            oncotreelink=oncotree_link,
-            testing=testing
-        )
+            oncotree_link=oncotree_link, nosymbol_check=False)
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            syn, [entity.name], center)
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_called_once_with(
-            syn, valid, message, filetype,
-            entities)
+            valid, message, entities)
         patch_send_email.assert_not_called()
 
 
@@ -446,50 +438,38 @@ def test_invalid_validatefile():
     valid = False
     message = "Is invalid"
     filetype = "clinical"
-    # fileinfo = {'filePaths': ['/path/to/data_clinical_supp_SAGE.txt'],
-    #             'synId': ['syn1234']}
-    expected_validate_results = ([[
-        entity.id, entity.path,
-        '44444', 'INVALID',
-        entity.name, 1553428800000, 'clinical']],
-        [entity.id, message, entity.name])
-    with mock.patch(
-            "genie.validate.determine_filetype",
-            return_value=filetype) as patch_determine_filetype,\
-        mock.patch(
-            "genie.input_to_database.check_existing_file_status",
-            return_value={
-                'status_list': [],
-                'error_list': [],
-                'to_validate': True}) as patch_check, \
-        mock.patch(
-            "genie.validate.validate_single_file",
-            return_value=(valid, message, filetype)) as patch_validate,\
-        mock.patch(
-            "genie.input_to_database._get_status_and_error_list",
-            return_value=expected_validate_results) as patch_get_staterror_list,\
-        mock.patch("genie.input_to_database._send_validation_error_email") as patch_send_email:
+    status_error_list_results = ([{'entity': entity, 'status': 'INVALID'}],
+                                 [{'entity': entity, 'errors': message}])
+    expected_results = ([{'entity': entity, 'status': 'INVALID',
+                          'fileType': filetype, 'center': center}],
+                        [{'entity': entity, 'errors': message,
+                          'fileType': filetype, 'center': center}])
 
+    with patch.object(GenieValidationHelper, "determine_filetype",
+                      return_value=filetype) as patch_determine_filetype,\
+         patch.object(input_to_database, "check_existing_file_status",
+                      return_value={'status_list': [],
+                                    'error_list': [],
+                                    'to_validate': True}) as patch_check, \
+         patch.object(GenieValidationHelper, "validate_single_file",
+                      return_value=(valid, message,
+                                    filetype)) as patch_validate,\
+         patch.object(input_to_database, "_get_status_and_error_list",
+                      return_value=status_error_list_results) as patch_get_staterror_list,\
+         patch.object(input_to_database,
+                      "_send_validation_error_email") as patch_send_email:
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
             error_trackerdf, center, threads, testing, oncotree_link)
 
-        assert expected_validate_results == validate_results
+        assert expected_results == validate_results
         patch_validate.assert_called_once_with(
-            syn,
-            [entity.path],
-            center,
-            filetype=filetype,
-            oncotreelink=oncotree_link,
-            testing=testing
-        )
+            oncotree_link=oncotree_link, nosymbol_check=False)
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            syn, [entity.name], center)
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_called_once_with(
-            syn, valid, message, filetype,
-            entities)
+            valid, message, entities)
         patch_send_email.assert_called_once_with(
             syn, [entity.name], message, [entity.modifiedBy, entity.createdBy])
 
@@ -510,49 +490,42 @@ def test_already_validated_validatefile():
     entities = [entity]
     threads = 0
     testing = False
-    valid = True
-    message = "Is valid"
+    valid = False
+    errors = "Invalid file"
     filetype = "markdown"
-
+    status = "INVALID"
     check_file_status_dict = {
-        'status_list': ["INVALID"],
-        'error_list': ["invalid file"],
+        'status_list': [status],
+        'error_list': [errors],
         'to_validate': False}
-    expected_validate_results = (
-        [[entity.id,
-            entity.path,
-            entity.md5,
-            check_file_status_dict['status_list'][0],
-            entity.name,
-            1553428800000,
-            filetype]],
-        [[entity.id,
-            check_file_status_dict['error_list'][0],
-            entity.name]])
-    with mock.patch(
-            "genie.validate.determine_filetype",
-            return_value=filetype) as patch_determine_filetype,\
-        mock.patch(
-            "genie.input_to_database.check_existing_file_status",
-            return_value=check_file_status_dict) as patch_check, \
-        mock.patch(
-            "genie.validate.validate_single_file",
-            return_value=(valid, message, filetype)) as patch_validate,\
-        mock.patch(
-            "genie.input_to_database._get_status_and_error_list",
-            return_value=expected_validate_results) as patch_get_staterror_list,\
-        mock.patch("genie.input_to_database._send_validation_error_email") as patch_send_email:
+
+    status_error_list_results = ([{'entity': entity, 'status': status}],
+                                 [{'entity': entity, 'errors': errors}])
+    expected_results = ([{'entity': entity, 'status': status,
+                          'fileType': filetype, 'center': center}],
+                        [{'entity': entity, 'errors': errors,
+                          'fileType': filetype, 'center': center}])
+
+    with patch.object(GenieValidationHelper, "determine_filetype",
+                      return_value=filetype) as patch_determine_filetype,\
+         patch.object(input_to_database, "check_existing_file_status",
+                      return_value=check_file_status_dict) as patch_check, \
+         patch.object(GenieValidationHelper, "validate_single_file",
+                      return_value=(valid, errors, filetype)) as patch_validate,\
+         patch.object(input_to_database, "_get_status_and_error_list",
+                      return_value=status_error_list_results) as patch_get_staterror_list,\
+         patch.object(input_to_database,
+                      "_send_validation_error_email") as patch_send_email:
 
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
             error_trackerdf, center, threads, testing, oncotree_link)
 
-        assert expected_validate_results == validate_results
+        assert expected_results == validate_results
         patch_validate.assert_not_called()
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities)
-        patch_determine_filetype.assert_called_once_with(
-            syn, [entity.name], center)
+        patch_determine_filetype.assert_called_once()
         patch_get_staterror_list.assert_not_called()
         patch_send_email.assert_not_called()
 
@@ -600,13 +573,11 @@ def test_dups_email_duplication_error():
         "Your files ({}) are duplicated!  FILES SHOULD BE UPLOADED AS "
         "NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE "
         "UPLOADED EVERYTIME".format("trial", "first.cbs"))
-    with mock.patch.object(
-            syn, "get", return_value=entity) as patch_syn_get,\
-        mock.patch.object(
-            syn, "getUserProfile",
-            return_value={'userName': 'trial'}) as patch_syn_profile,\
-        mock.patch.object(
-            syn, "sendMessage") as patch_send:
+    with patch.object(syn, "get", return_value=entity) as patch_syn_get,\
+         patch.object(syn, "getUserProfile",
+                      return_value={'userName':
+                                    'trial'}) as patch_syn_profile,\
+         patch.object(syn, "sendMessage") as patch_send:
         input_to_database.email_duplication_error(syn, duplicated_filesdf)
         patch_syn_get.assert_called_once_with('syn1234')
         patch_syn_profile.assert_called_once_with('333')
@@ -619,9 +590,9 @@ def test_nodups_email_duplication_error():
     Test no email sent
     '''
     duplicated_filesdf = pd.DataFrame()
-    with mock.patch.object(syn, "get") as patch_syn_get,\
-            mock.patch.object(syn, "getUserProfile") as patch_syn_profile,\
-            mock.patch.object(syn, "sendMessage") as patch_send:
+    with patch.object(syn, "get") as patch_syn_get,\
+         patch.object(syn, "getUserProfile") as patch_syn_profile,\
+         patch.object(syn, "sendMessage") as patch_send:
         input_to_database.email_duplication_error(syn, duplicated_filesdf)
         patch_syn_get.assert_not_called()
         patch_syn_profile.assert_not_called()
@@ -649,13 +620,9 @@ def test_valid__get_status_and_error_list():
 
     input_status_list, invalid_errors_list = \
         input_to_database._get_status_and_error_list(
-           syn, valid, message, filetype,
-           entities)
-    assert input_status_list == [
-        [entity.id, entity.path, entity.md5,
-         'VALIDATED', entity.name, modified_on,
-         filetype]]
-    assert invalid_errors_list is None
+           valid, message, entities)
+    assert input_status_list == [{'entity': entity, 'status': 'VALIDATED'}]
+    assert not invalid_errors_list
 
 
 def test_invalid__get_status_and_error_list():
@@ -674,29 +641,23 @@ def test_invalid__get_status_and_error_list():
     filetype = "clinical"
     # This valid variable control the validation status
     valid = False
-    message = 'invalid file content'
+    errors = 'invalid file content'
 
     input_status_list, invalid_errors_list = \
         input_to_database._get_status_and_error_list(
-            syn, valid, message, filetype,
-            entities)
-    assert input_status_list == [
-        [entity.id, entity.path, entity.md5,
-            'INVALID', entity.name, modified_on,
-            filetype]]
-    assert invalid_errors_list == [
-        ['syn1234', message, 'data_clinical_supp_SAGE.txt']]
+            valid, errors, entities)
+    assert input_status_list == [{'entity': entity, 'status': 'INVALID'}]
+    assert invalid_errors_list == [{'entity': entity, 'errors': errors}]
 
 
 def test__send_validation_error_email():
     message = 'invalid error message here'
     filenames = ['data_clinical_supp_SAGE.txt']
     file_users = ['333', '444']
-    with mock.patch.object(
-        syn, "getUserProfile",
-        return_value={'userName': 'trial'}) as patch_syn_getuserprofile,\
-        mock.patch.object(
-            syn, "sendMessage") as patch_syn_sendmessage:
+    with patch.object(syn, "getUserProfile",
+                      return_value={'userName':
+                                    'trial'}) as patch_syn_getuserprofile,\
+         patch.object(syn, "sendMessage") as patch_syn_sendmessage:
         input_to_database._send_validation_error_email(
             syn, filenames, message, file_users)
         error_message = (
@@ -727,30 +688,31 @@ def test_update_status_and_error_tables():
     '''
     validation_status_table = emptytable_mock()
     error_tracker_table = emptytable_mock()
-    input_valid_statuses = [[
-        sample_clinical_entity.id,
-        sample_clinical_entity.path,
-        '44444',
-        'VALIDATED',
-        'data_clinical_supp_SAGE.txt',
-        1553428800000,
-        'clinical']]
+
+    input_valid_statuses = [{'entity': sample_clinical_entity,
+                             'status': 'VALIDATED',
+                             'fileType': 'clinical',
+                             'center': center}]
+
+    expected = [[sample_clinical_entity.id, sample_clinical_entity.path,
+                 sample_clinical_entity.md5, 'VALIDATED',
+                 sample_clinical_entity.name,
+                 1553428800000, 'clinical', center]]
     invalid_errors = []
-    input_valid_statusdf = pd.DataFrame(input_valid_statuses,
-                                        columns=["id", 'path', 'md5', 'status',
-                                                 'name', 'modifiedOn',
-                                                 'fileType'])
-    input_valid_statusdf['center'] = center
-    with mock.patch(
-            "genie.input_to_database.get_duplicated_files",
-            return_value=pd.DataFrame(columns=['id', 'errors', 'name'], dtype=str)) as mock_get_duplicated,\
-        mock.patch(
-            "genie.input_to_database.email_duplication_error") as mock_email,\
-        mock.patch(
-            "genie.process_functions.updateDatabase") as mock_update:
+    expected_statusdf = pd.DataFrame(expected,
+                                     columns=["id", 'path', 'md5', 'status',
+                                              'name', 'modifiedOn',
+                                              'fileType', 'center'])
+    #input_valid_statusdf['center'] = center
+    empty_errorsdf = pd.DataFrame(columns=['id', 'errors', 'name',
+                                           'fileType', 'center'], dtype=str)
+    with patch.object(input_to_database, "get_duplicated_files",
+                      return_value=empty_errorsdf) as mock_get_duplicated,\
+         patch.object(input_to_database,
+                      "email_duplication_error") as mock_email,\
+         patch.object(process_functions, "updateDatabase") as mock_update:
         input_validdf = input_to_database.update_status_and_error_tables(
             syn,
-            center,
             input_valid_statuses,
             invalid_errors,
             validation_status_table,
@@ -758,7 +720,8 @@ def test_update_status_and_error_tables():
         mock_get_duplicated.assert_called_once()
         mock_email.assert_not_called()
         assert mock_update.call_count == 2
-        assert input_validdf.equals(input_valid_statusdf)
+        assert input_validdf.equals(expected_statusdf[input_validdf.columns])
+        assert expected_statusdf.equals(input_validdf[expected_statusdf.columns])
 
 
 def test_validation():
@@ -786,23 +749,20 @@ def test_validation():
     input_status_list = [
         [entity.id, entity.path, entity.md5,
          'VALIDATED', entity.name, modified_on,
-         filetype]]
-    invalid_errors_list = None
+         filetype, center]]
+    invalid_errors_list = []
     validationstatus_mock = emptytable_mock()
     errortracking_mock = emptytable_mock()
-    with mock.patch(
-            "genie.input_to_database.get_center_input_files",
-            return_value=entities) as patch_get_center,\
-        mock.patch.object(
-            syn, "tableQuery",
-            side_effect=[validationstatus_mock,
-                         errortracking_mock]) as patch_tablequery,\
-        mock.patch(
-            "genie.input_to_database.validatefile",
-            return_value=(input_status_list, invalid_errors_list)) as patch_validatefile,\
-        mock.patch(
-            "genie.input_to_database.update_status_and_error_tables",
-            return_value=validation_statusdf) as patch_update_status:
+    with patch.object(input_to_database, "get_center_input_files",
+                      return_value=entities) as patch_get_center,\
+         patch.object(syn, "tableQuery",
+                      side_effect=[validationstatus_mock,
+                                   errortracking_mock]) as patch_tablequery,\
+         patch.object(input_to_database, "validatefile",
+                      return_value=(input_status_list,
+                                    invalid_errors_list)) as patch_validatefile,\
+         patch.object(input_to_database, "update_status_and_error_tables",
+                      return_value=validation_statusdf) as patch_update_status:
         valid_filedf = input_to_database.validation(
             syn, center, process,
             center_mapping_df, databaseToSynIdMappingDf,
@@ -812,14 +772,13 @@ def test_validation():
         assert patch_tablequery.call_count == 2
         patch_validatefile.assert_called_once_with(
             syn, entity,
-            validationstatus_mock.asDataFrame(),
-            errortracking_mock.asDataFrame(),
+            validationstatus_mock,
+            errortracking_mock,
             center='SAGE', threads=1,
             testing=False,
             oncotree_link=oncotree_link)
         patch_update_status.assert_called_once_with(
             syn,
-            center,
             input_status_list,
             [],
             validationstatus_mock,
@@ -843,7 +802,7 @@ def test_main_processfile(process, genieclass, filetype):
     center = "SAGE"
     path_to_genie = "./"
     threads = 2
-    oncotreeLink = "www.google.com"
+    oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
     center_mapping_df = pd.DataFrame(center_mapping)
@@ -851,10 +810,10 @@ def test_main_processfile(process, genieclass, filetype):
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
 
-    with mock.patch.object(genieclass, "process") as patch_class:
+    with patch.object(genieclass, "process") as patch_class:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie, threads,
-            center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
             processing=process, test=False, reference=None)
@@ -872,7 +831,7 @@ def test_mainnone_processfile():
     center = "SAGE"
     path_to_genie = "./"
     threads = 2
-    oncotreeLink = "www.google.com"
+    oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
     center_mapping_df = pd.DataFrame(center_mapping)
@@ -880,10 +839,10 @@ def test_mainnone_processfile():
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
 
-    with mock.patch.object(clinical, "process") as patch_clin:
+    with patch.object(clinical, "process") as patch_clin:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie, threads,
-            center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
             processing="main", test=False, reference=None)
@@ -901,7 +860,7 @@ def test_notvcf_processfile():
     center = "SAGE"
     path_to_genie = "./"
     threads = 2
-    oncotreeLink = "www.google.com"
+    oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
     center_mapping_df = pd.DataFrame(center_mapping)
@@ -909,10 +868,10 @@ def test_notvcf_processfile():
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
 
-    with mock.patch.object(vcf, "process") as patch_process:
+    with patch.object(vcf, "process") as patch_process:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie, threads,
-            center_mapping_df, oncotreeLink, databaseToSynIdMappingDf,
+            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
             processing='vcf', test=False, reference=None)

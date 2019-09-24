@@ -10,7 +10,6 @@ from genie import validate
 center = "SAGE"
 syn = mock.create_autospec(synapseclient.Synapse)
 
-
 @pytest.fixture(params=[
     # tuple with (input, expectedOutput)
     (["data_CNA_SAGE.txt"], "cna"),
@@ -27,8 +26,9 @@ def test_perfect_determine_filetype(filename_fileformat_map):
     Parameters are passed in from filename_fileformat_map
     '''
     (filepath_list, fileformat) = filename_fileformat_map
-    assert validate.determine_filetype(
-        syn, filepath_list, center) == fileformat
+    validator = validate.GenieValidationHelper(syn, center, filepath_list)
+
+    assert validator.determine_filetype() == fileformat
 
 
 def test_wrongfilename_noerror_determine_filetype():
@@ -36,9 +36,10 @@ def test_wrongfilename_noerror_determine_filetype():
     Tests None is passed back when wrong filename is passed
     when raise_error flag is False
     '''
-    filetype = validate.determine_filetype(
-        syn, ['wrong.txt'], center)
-    assert filetype is None
+    filepathlist = ['wrong.txt']
+    validator = validate.GenieValidationHelper(syn, center=center, filepathlist=filepathlist)
+
+    assert validator.file_type is None
 
 
 def test_valid_collect_errors_and_warnings():
@@ -88,8 +89,10 @@ def test_valid_validate_single_file():
     expected_valid = True
     expected_message = "valid message here!"
     expected_filetype = "clinical"
+
+
     with mock.patch(
-            "genie.validate.determine_filetype",
+            "genie.validate.GenieValidationHelper.determine_filetype",
             return_value=expected_filetype) as mock_determine_filetype,\
         mock.patch(
             "genie.clinical.clinical.validate",
@@ -98,23 +101,20 @@ def test_valid_validate_single_file():
             "genie.validate.collect_errors_and_warnings",
             return_value=expected_message) as mock_determine:
 
-        valid, message, filetype = validate.validate_single_file(
-            syn,
-            filepathlist,
-            center)
+        validator = validate.GenieValidationHelper(syn, center=center, filepathlist=filepathlist)
+
+        valid, message, filetype = validator.validate_single_file(oncotree_link=None, nosymbol_check=False)
 
         assert valid == expected_valid
         assert message == expected_message
         assert filetype == expected_filetype
 
-        mock_determine_filetype.assert_called_once_with(
-            syn, filepathlist, center)
+        mock_determine_filetype.assert_called_once_with()
 
         mock_genie_class.assert_called_once_with(
             filePathList=filepathlist,
-            oncotreeLink=None,
-            testing=False,
-            noSymbolCheck=False)
+            oncotree_link=None,
+            nosymbol_check=False)
 
         mock_determine.assert_called_once_with(error_string, warning_string)
 
@@ -127,10 +127,9 @@ def test_filetype_validate_single_file():
     filepathlist = ['clinical.txt']
     center = "SAGE"
     expected_error = "----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
-    valid, message, filetype = validate.validate_single_file(syn,
-                                                             filepathlist,
-                                                             center,
-                                                             filetype="foobar")
+    validator = validate.GenieValidationHelper(syn, center, filepathlist)
+
+    valid, message, filetype = validator.validate_single_file()
     assert message == expected_error
 
 
@@ -144,15 +143,14 @@ def test_wrongfiletype_validate_single_file():
     expected_error = '----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally'
 
     with mock.patch(
-            "genie.validate.determine_filetype",
+            "genie.validate.GenieValidationHelper.determine_filetype",
             return_value=None) as mock_determine_filetype:
-        valid, message, filetype = validate.validate_single_file(syn,
-                                                                 filepathlist,
-                                                                 center)
+        validator = validate.GenieValidationHelper(syn=syn, center=center, 
+                                                   filepathlist=filepathlist)
+        valid, message, filetype = validator.validate_single_file()
         
         assert message == expected_error
-        mock_determine_filetype.assert_called_once_with(
-            syn, filepathlist, center)
+        mock_determine_filetype.assert_called_once_with()
 
 
 def test_nopermission__check_parentid_permission_container():
@@ -212,13 +210,14 @@ ONCOTREE_ENT = 'syn222'
 
 
 class argparser:
-    oncotreelink = "link"
+    oncotree_link = "link"
     parentid = None
     filetype = None
     testing = False
     center = "try"
     filepath = "path.csv"
     nosymbol_check = False
+    format_registry_packages = ["genie"]
 
     def asDataFrame(self):
         database_dict = {"Database": ["centerMapping", 'oncotreeLink'],
@@ -228,13 +227,13 @@ class argparser:
         return(databasetosynid_mappingdf)
 
 
-def test_notnone_get_oncotreelink():
+def test_notnone_get_oncotree_link():
     '''
     Test link passed in by user is used
     '''
     arg = argparser()
     url = "https://www.synapse.org"
-    link = validate._get_oncotreelink(syn, arg.asDataFrame(), oncotreelink=url)
+    link = validate._get_oncotreelink(syn, arg.asDataFrame(), oncotree_link=url)
     assert link == url
 
 
@@ -270,7 +269,7 @@ def test_perform_validate():
     check_perm_call = "genie.validate._check_parentid_permission_container"
     check_get_db_call = "genie.process_functions.get_synid_database_mappingdf"
     check_center_call = "genie.validate._check_center_input"
-    validate_file_call = "genie.validate.validate_single_file"
+    validate_file_call = "genie.validate.GenieValidationHelper.validate_single_file"
     get_oncotree_call = "genie.validate._get_oncotreelink"
     upload_to_syn_call = "genie.validate._upload_to_synapse"
     valid = True
@@ -295,9 +294,7 @@ def test_perform_validate():
         patch_syn_tablequery.assert_called_once_with('select * from syn123')
         patch_check_center.assert_called_once_with(arg.center, ["try", "foo"])
         patch_get_onco.assert_called_once()
-        patch_validate.assert_called_once_with(syn, arg.filepath,
-                                               arg.center, arg.filetype,
-                                               arg.oncotreelink, arg.testing,
-                                               arg.nosymbol_check)
+        patch_validate.assert_called_once_with(oncotree_link=arg.oncotree_link,
+                                               nosymbol_check=arg.nosymbol_check)
         patch_syn_upload.assert_called_once_with(
             syn, arg.filepath, valid, parentid=arg.parentid)

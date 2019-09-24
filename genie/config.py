@@ -1,37 +1,23 @@
-from .bed import bed
-from .bedSP import bedSP
-from .workflow import workflow
-from .clinical import clinical
-from .seg import seg
-from .cbs import cbs
-from .maf import maf
-from .mafSP import mafSP
-from .clinicalSP import clinicalSP
-from .vcf import vcf
-from .cna import cna
-from .fusions import fusions
-from .sampleRetraction import sampleRetraction
-from .patientRetraction import patientRetraction
-# from .patientCounts import patientCounts
-from .mutationsInCis import mutationsInCis
-# from .vitalStatus import vitalStatus
-from .assay import Assayinfo
+from . import example_filetype_format
 
-PROCESS_FILES = {'bed': bed,
-                 'bedSP': bedSP,
-                 'maf': maf,
-                 'mafSP': mafSP,
-                 'clinical': clinical,
-                 'clinicalSP': clinicalSP,
-                 'vcf': vcf,
-                 'cbs': cbs,
-                 'cna': cna,
-                 'fusions': fusions,
-                 'md': workflow,
-                 'seg': seg,
-                 'patientRetraction': patientRetraction,
-                 'sampleRetraction': sampleRetraction,
-                 # 'patientCounts': patientCounts,
-                 'mutationsInCis': mutationsInCis,
-                 # 'vitalStatus': vitalStatus,
-                 'assayinfo': Assayinfo}
+BASE_CLASS = example_filetype_format.FileTypeFormat
+
+def make_format_registry_dict(cls_list):
+    """Use an object's _fileType attribute to make a class lookup dictionary.
+    
+    Args:
+        cls_list: A list of Python classes.
+    Returns:
+        A dictionary mapping the class._fileType to the class.
+    """
+
+    return {cls._fileType: cls for cls in cls_list}
+
+def get_subclasses(cls):
+    for subclass in cls.__subclasses__():
+        yield from get_subclasses(subclass)
+        yield subclass
+
+PROCESS_FILES_LIST = [x for x in get_subclasses(BASE_CLASS)]
+
+PROCESS_FILES = make_format_registry_dict(cls_list=PROCESS_FILES_LIST)
