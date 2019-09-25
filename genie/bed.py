@@ -359,7 +359,7 @@ class bed(FileTypeFormat):
             raise ValueError(
                 "Please make sure your bed file does not "
                 "contain a comment/header line")
-        return(beddf)
+        return beddf
 
     def _validateFilename(self, filepath):
         """
@@ -496,13 +496,13 @@ class bed(FileTypeFormat):
         seq_assay_id = seq_assay_id.upper().replace("_", "-")
         return {'seq_assay_id': seq_assay_id}
 
-    def process_steps(self, gene, newpath, parentid, database_synid,
+    def process_steps(self, beddf, newPath, parentId, databaseSynId,
                       seq_assay_id):
         """
         Process bed file, update bed database, write bed file to path
 
         Args:
-            gene: Bed dataframe
+            beddf: Bed dataframe
             newPath: Path to new bed file
             parentId: Synapse id to store gene panel file
             databaseSynId: Synapse id of bed database
@@ -511,13 +511,13 @@ class bed(FileTypeFormat):
         Returns:
             string: Path to new bed file
         """
-        bed = self._process(gene, seq_assay_id, newpath, parentid)
-        process_functions.updateData(self.syn, database_synid, bed,
+        final_beddf = self._process(beddf, seq_assay_id, newPath, parentId)
+        process_functions.updateData(self.syn, databaseSynId, final_beddf,
                                      seq_assay_id,
                                      filterByColumn="SEQ_ASSAY_ID",
                                      toDelete=True)
-        bed.to_csv(newpath, sep="\t", index=False)
-        return newpath
+        final_beddf.to_csv(newPath, sep="\t", index=False)
+        return newPath
 
     def _validate(self, beddf):
         """
