@@ -142,7 +142,6 @@ class Assayinfo(FileTypeFormat):
         read_group_dict = process_functions.get_gdc_data_dictionary(
             "read_group")
         read_group_headers = read_group_dict['properties']
-
         warn, error = process_functions.check_col_and_values(
             assay_info_df,
             'is_paired_end',
@@ -157,25 +156,24 @@ class Assayinfo(FileTypeFormat):
             read_group_headers['library_selection']['enum'],
             filename="Assay_information.yaml",
             required=True)
-
         warning += warn
         total_error += error
+
         warn, error = process_functions.check_col_and_values(
             assay_info_df,
             'library_strategy',
             read_group_headers['library_strategy']['enum'],
             filename="Assay_information.yaml",
             required=True)
-
         warning += warn
         total_error += error
+
         warn, error = process_functions.check_col_and_values(
             assay_info_df,
             'platform',
             read_group_headers['platform']['enum'],
             filename="Assay_information.yaml",
             required=True)
-
         warning += warn
         total_error += error
 
@@ -187,9 +185,19 @@ class Assayinfo(FileTypeFormat):
             instrument_model,
             filename="Assay_information.yaml",
             required=True)
-
         warning += warn
         total_error += error
+
+        target_capture_kit = read_group_headers['target_capture_kit']['enum']
+        warn, error = process_functions.check_col_and_values(
+            assay_info_df,
+            'target_capture_kit',
+            target_capture_kit,
+            filename="Assay_information.yaml",
+            required=True)
+        warning += warn
+        total_error += error
+
         variant_classes = ['Splice_Site', 'Nonsense_Mutation',
                            'Frame_Shift_Del', 'Frame_Shift_Ins',
                            'Nonstop_Mutation', 'Translation_Start_Site',
@@ -203,14 +211,8 @@ class Assayinfo(FileTypeFormat):
             variant_classes,
             filename="Assay_information.yaml",
             na_allowed=True)
-
         warning += warn
         total_error += error
-
-        # if not process_functions.checkColExist(
-        #         assay_info_df, "target_capture_kit"):
-        #     total_error += ("Assay_information.yaml: "
-        #                     "Must have target_capture_kit column.\n")
 
         if process_functions.checkColExist(assay_info_df, "read_length"):
             if not all([process_functions.checkInt(i)
