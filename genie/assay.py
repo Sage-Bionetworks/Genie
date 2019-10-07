@@ -1,14 +1,11 @@
+"""Assay information class"""
 import os
-import logging
-import subprocess
 import yaml
 
 import pandas as pd
 
 from .example_filetype_format import FileTypeFormat
 from . import process_functions
-
-logger = logging.getLogger(__name__)
 
 
 class Assayinfo(FileTypeFormat):
@@ -193,13 +190,13 @@ class Assayinfo(FileTypeFormat):
 
         warning += warn
         total_error += error
-
-        variant_classes = ['Splice_Site', 'Nonsense_Mutation', 'IGR',
+        variant_classes = ['Splice_Site', 'Nonsense_Mutation',
                            'Frame_Shift_Del', 'Frame_Shift_Ins',
                            'Nonstop_Mutation', 'Translation_Start_Site',
-                           'In_Frame_Ins', 'In_Frame_Del', "5'UTR", None,
-                           'Missense_Mutation', "5'Flank", "3'Flank", "3'UTR",
-                           'Intron', 'Splice_Region', 'Silent', 'RNA']
+                           'In_Frame_Ins', 'In_Frame_Del',
+                           'Missense_Mutation', 'Intron', 'Splice_Region',
+                           'Silent', 'RNA', "5'UTR", "3'UTR", 'IGR',
+                           "5'Flank", "3'Flank", None]
         warn, error = process_functions.check_col_and_values(
             assay_info_df,
             'variant_classifications',
@@ -230,7 +227,7 @@ class Assayinfo(FileTypeFormat):
 
         if process_functions.checkColExist(assay_info_df, "number_of_genes"):
             if not all([process_functions.checkInt(i)
-                       for i in assay_info_df["number_of_genes"]]):
+                        for i in assay_info_df["number_of_genes"]]):
                 total_error += \
                     ("Assay_information.yaml: "
                      "Please double check your number_of_genes. "
