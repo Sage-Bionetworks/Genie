@@ -45,7 +45,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
     MUTATIONS_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_mutations_extended_%s.txt' % genie_version)
     FUSIONS_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_fusions_%s.txt' % genie_version)
     SEG_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'genie_public_data_cna_hg19_%s.seg' % genie_version)
-    COMBINED_BED_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'genie_combined_%s.bed' % genie_version)
+    COMBINED_BED_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'genomic_information_%s.txt' % genie_version)
 
     if not os.path.exists(dbTostaging.GENIE_RELEASE_DIR):
         os.mkdir(dbTostaging.GENIE_RELEASE_DIR)
@@ -186,12 +186,12 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
             # panelDf = panelDf[panelDf['SAMPLE_ID'].isin(publicReleaseSamples)]
             # panelDf.to_csv(DATA_GENE_PANEL_PATH,sep="\t",index=False)
             # storeFile(syn, DATA_GENE_PANEL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_gene_matrix.txt")
-        elif entName == "genie_combined.bed":
+        elif entName == "genomic_information.txt":
             bed = syn.get(entId, followLink=True)
             bedDf = pd.read_csv(bed.path, sep="\t")
             bedDf = bedDf[bedDf.SEQ_ASSAY_ID.isin(allClin.SEQ_ASSAY_ID)]
             bedDf.to_csv(COMBINED_BED_PATH,sep="\t",index=False)
-            storeFile(syn, COMBINED_BED_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="genie_combined.bed")
+            storeFile(syn, COMBINED_BED_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="genomic_information.txt")
         elif entName in ["data_clinical_sample.txt", "data_clinical_patient.txt"] or entName.endswith(".html"):
             continue
         elif entName.startswith("data_gene_panel"):
