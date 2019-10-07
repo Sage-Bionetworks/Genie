@@ -1,13 +1,15 @@
-import mock
+"""Test assay information validation and processing"""
+import copy
+from mock import patch, create_autospec
 import pytest
 
 import synapseclient
 import pandas as pd
 
 from genie.assay import Assayinfo
+from genie import process_functions
 
-
-TEST_GDC_DATA_DICT = {
+GDC_DATA_DICT = {
     'properties': {
         'library_strategy': {
             'enum': ['value1', 'value2']
@@ -20,25 +22,28 @@ TEST_GDC_DATA_DICT = {
         },
         'instrument_model': {
             'enum': ['value1', 'value2']
+        },
+        'target_capture_kit': {
+            'enum': ['value1', 'value2']
         }
     }
 }
 
-syn = synapseclient.Synapse()
-assay_info = Assayinfo(syn, "SAGE")
+SYN = create_autospec(synapseclient.Synapse)
+ASSAY_INFO = Assayinfo(SYN, "SAGE")
 
 
 def test_filetype():
-    assert assay_info._fileType == "assayinfo"
+    assert ASSAY_INFO._fileType == "assayinfo"
 
 
 def test_incorrect_validatefilename():
     with pytest.raises(AssertionError):
-        assay_info.validateFilename(['foo'])
+        ASSAY_INFO.validateFilename(['foo'])
 
 
 def test_correct_validatefilename():
-    assert assay_info.validateFilename(
+    assert ASSAY_INFO.validateFilename(
         ["assay_information.yaml"]) == "assayinfo"
 
 
@@ -46,23 +51,30 @@ def test_valid__validate():
     assay_info_dict = {
         'SEQ_ASSAY_ID': ['SAGE-1', 'SAGE-3'],
         'is_paired_end': [True, False],
-        'library_strategy': ['ChIP-Seq', 'ChIP-Seq'],
-        'library_selection': ['PCR', 'PCR'],
-        'platform': ['Illumina', 'Illumina'],
-        'instrument_model': ['Illumina HiSeq 4000', 'Illumina HiSeq 4000'],
+        'library_strategy': ['value1', 'value2'],
+        'library_selection': ['value1', 'value2'],
+        'platform': ['value1', 'value2'],
+        'instrument_model': ['value1', 'value2'],
+        'target_capture_kit': ['value1', 'value2'],
         'variant_classifications': ['Frame_Shift_Ins', 'Frame_Shift_Ins'],
         'read_length': [22, float('nan')],
         'number_of_genes': [5, 20],
         'gene_padding': [10, None]}
     assay_info_df = pd.DataFrame(assay_info_dict)
-    error, warning = assay_info._validate(assay_info_df)
-    assert error == ''
-    assert warning == ''
+    test_dict = copy.deepcopy(GDC_DATA_DICT)
+    with patch.object(process_functions, "get_gdc_data_dictionary",
+                      return_value=test_dict) as patch_get_gdc:
+        error, warning = ASSAY_INFO._validate(assay_info_df)
+        assert error == ''
+        assert warning == ''
 
 
 def test_missingcols__validate():
     assay_info_df = pd.DataFrame()
-    error, warning = assay_info._validate(assay_info_df)
+    test_dict = copy.deepcopy(GDC_DATA_DICT)
+    with patch.object(process_functions, "get_gdc_data_dictionary",
+                      return_value=test_dict) as patch_get_gdc:
+        error, warning = ASSAY_INFO._validate(assay_info_df)
     expected_errors = (
         'Assay_information.yaml: Must have SEQ_ASSAY_ID column.\n'
         'Assay_information.yaml: Must have is_paired_end column.\n'
@@ -70,7 +82,7 @@ def test_missingcols__validate():
         'Assay_information.yaml: Must have library_strategy column.\n'
         'Assay_information.yaml: Must have platform column.\n'
         'Assay_information.yaml: Must have instrument_model column.\n'
-        # 'Assay_information.yaml: Must have target_capture_kit column.\n'
+        'Assay_information.yaml: Must have target_capture_kit column.\n'
         'Assay_information.yaml: Must have read_length column.\n'
         'Assay_information.yaml: Must have number_of_genes column.\n')
     assert error == expected_errors
@@ -90,7 +102,7 @@ def test_fillcols__process():
 
     assay_info_dict = {'SEQ_ASSAY_ID': ['SAGE-Foo_1']}
     assay_info_df = pd.DataFrame(assay_info_dict)
-    processed_assay_df = assay_info._process(assay_info_df)
+    processed_assay_df = ASSAY_INFO._process(assay_info_df)
     expected_assay_df = pd.DataFrame(
         {'SEQ_ASSAY_ID': ['SAGE-FOO-1'],
          'gene_padding': [10],
@@ -110,7 +122,7 @@ def test_default10__process():
                        'gene_padding': [20, float('nan')],
                        'variant_classifications': ['test', 'test']}
     assay_info_df = pd.DataFrame(assay_info_dict)
-    processed_assay_df = assay_info._process(assay_info_df)
+    processed_assay_df = ASSAY_INFO._process(assay_info_df)
     expected_assay_df = pd.DataFrame(
         {'SEQ_ASSAY_ID': ['SAGE-1', 'SAGE-2'],
          'gene_padding': [20, 10],
@@ -134,11 +146,12 @@ def test_invalid__validate():
         'number_of_genes': [5, 'foo'],
         'gene_padding': [10, 'foo']}
     assay_info_df = pd.DataFrame(assay_info_dict)
-
-    with mock.patch(
-            "genie.process_functions.get_gdc_data_dictionary",
-            return_value=TEST_GDC_DATA_DICT) as patch_get_gdc:
-        error, warning = assay_info._validate(assay_info_df)
+    # Must use deepcopy because a dict.copy is a shallow copy
+    # Which just points to reference keys
+    test_dict = copy.deepcopy(GDC_DATA_DICT)
+    with patch.object(process_functions, "get_gdc_data_dictionary",
+                      return_value=test_dict) as patch_get_gdc:
+        error, warning = ASSAY_INFO._validate(assay_info_df)
         expected_errors = (
             "Assay_information.yaml: "
             "Please double check your is_paired_end column.  "
@@ -155,6 +168,9 @@ def test_invalid__validate():
             "Assay_information.yaml: "
             "Please double check your instrument_model column.  "
             "This column must only be these values: value1, value2, None\n"
+            "Assay_information.yaml: "
+            "Please double check your target_capture_kit column.  "
+            "This column must only be these values: value1, value2\n"
             "Assay_information.yaml: "
             "Please double check your variant_classifications column.  "
             "This column must only be these values: Splice_Site, "
