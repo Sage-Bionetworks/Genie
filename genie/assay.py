@@ -12,50 +12,54 @@ logger = logging.getLogger(__name__)
 
 
 class Assayinfo(FileTypeFormat):
-    '''
-    Assay information file type
-    '''
+    """Assay information file type"""
+
     _fileType = "assayinfo"
 
     _process_kwargs = ["newPath", "databaseSynId"]
 
     def _validateFilename(self, filepath_list):
+        """Validate assay information filename"""
         assert os.path.basename(filepath_list[0]) == "assay_information.yaml"
 
     def process_steps(self, assay_info_df, newPath, databaseSynId):
-        # databaseSynId = kwargs['databaseSynId']
+        """
+        Process bed input and update bed database
+
+        Args:
+            assay_info_df: Assay information dataframe
+            newPath: Path to processed assay information
+            databaseSynId: assay information database synapse id
+
+        Returns:
+            path to assay information dataframe
+        """
         # Must pass in a list
         process_assay_info_df = self._process(assay_info_df)
         col = ['SEQ_ASSAY_ID', 'is_paired_end', 'library_selection',
                'library_strategy', 'platform', 'read_length',
                'instrument_model', 'gene_padding', 'number_of_genes',
                'variant_classifications', 'CENTER']
-        process_functions.updateData(
-            self.syn,
-            databaseSynId,
-            process_assay_info_df,
-            self.center,
-            col=col,
-            filterByColumn="CENTER",
-            toDelete=True)
+        process_functions.updateData(self.syn, databaseSynId,
+                                     process_assay_info_df, self.center,
+                                     col=col, filterByColumn="CENTER",
+                                     toDelete=True)
         process_assay_info_df.to_csv(newPath, sep="\t", index=False)
-        return(newPath)
+        return newPath
 
     def _process(self, df):
-        '''
-        Processing function for Assay information
-        - Standardizes SEQ_ASSAY_ID
-        - Default 10 for gene_padding
-        - Fills in variant_classifications
+        """
+        Process assay_information.yaml. Standardizes SEQ_ASSAY_ID,
+        default 10 for gene_padding, and fills in variant_classifications
 
         Args:
             df: Assay information dataframe
 
         Returns:
             dataframe: Processed dataframe
-        '''
-        seq_assay_ids = [
-            assay.upper().replace('_', '-') for assay in df['SEQ_ASSAY_ID']]
+        """
+        seq_assay_ids = [assay.upper().replace('_', '-')
+                         for assay in df['SEQ_ASSAY_ID']]
         df['SEQ_ASSAY_ID'] = seq_assay_ids
         if process_functions.checkColExist(df, "gene_padding"):
             df['gene_padding'] = df['gene_padding'].fillna(10)
@@ -67,12 +71,10 @@ class Assayinfo(FileTypeFormat):
             df['variant_classifications'] = pd.np.nan
 
         df['CENTER'] = self.center
-        return(df)
+        return df
 
     def _get_dataframe(self, filepath_list):
-        '''
-        Takes in yaml file, returns dataframe
-        '''
+        """Take in yaml file, returns dataframe"""
         filepath = filepath_list[0]
         try:
             with open(filepath, 'r') as yamlfile:
@@ -105,17 +107,18 @@ class Assayinfo(FileTypeFormat):
                 [assay_specific_infodf, seq_assay_id_infodf], axis=1)
             del assay_finaldf['assay_specific_info']
 
-            columns_containing_lists = [
-                'variant_classifications', 'alteration_types',
-                'specimen_type', 'coverage']
+            columns_containing_lists = ['variant_classifications',
+                                        'alteration_types',
+                                        'specimen_type', 'coverage']
 
             for col in columns_containing_lists:
-                assay_finaldf[col] = [";".join(row) for row in assay_finaldf[col]]
+                assay_finaldf[col] = [";".join(row)
+                                      for row in assay_finaldf[col]]
             all_panel_info = all_panel_info.append(assay_finaldf)
-        return(all_panel_info)
+        return all_panel_info
 
     def _validate(self, assay_info_df):
-        '''
+        """
         Validates the values of assay information file
 
         Args:
@@ -123,7 +126,7 @@ class Assayinfo(FileTypeFormat):
 
         Returns:
             tuple: error and warning
-        '''
+        """
 
         total_error = ""
         warning = ""
@@ -133,8 +136,8 @@ class Assayinfo(FileTypeFormat):
             if not all([assay.startswith(self.center)
                         for assay in all_seq_assays]):
                 total_error += \
-                    "Assay_information.yaml: Please make sure your all your" +\
-                    " SEQ_ASSAY_IDs start with your center abbreviation.\n"
+                    ("Assay_information.yaml: Please make sure your all your "
+                     "SEQ_ASSAY_IDs start with your center abbreviation.\n")
         else:
             total_error += \
                 "Assay_information.yaml: Must have SEQ_ASSAY_ID column.\n"
@@ -191,12 +194,12 @@ class Assayinfo(FileTypeFormat):
         warning += warn
         total_error += error
 
-        variant_classes = \
-            ['Splice_Site', 'Nonsense_Mutation', 'Frame_Shift_Del',
-             'Frame_Shift_Ins', 'Nonstop_Mutation', 'Translation_Start_Site',
-             'In_Frame_Ins', 'In_Frame_Del', 'Missense_Mutation',
-             'Intron', 'Splice_Region', 'Silent', 'RNA', "5'UTR", "3'UTR",
-             'IGR', "5'Flank", "3'Flank", None]
+        variant_classes = ['Splice_Site', 'Nonsense_Mutation', 'IGR',
+                           'Frame_Shift_Del', 'Frame_Shift_Ins',
+                           'Nonstop_Mutation', 'Translation_Start_Site',
+                           'In_Frame_Ins', 'In_Frame_Del', "5'UTR", None,
+                           'Missense_Mutation', "5'Flank", "3'Flank", "3'UTR",
+                           'Intron', 'Splice_Region', 'Silent', 'RNA']
         warn, error = process_functions.check_col_and_values(
             assay_info_df,
             'variant_classifications',
@@ -214,8 +217,8 @@ class Assayinfo(FileTypeFormat):
 
         if process_functions.checkColExist(assay_info_df, "read_length"):
             if not all([process_functions.checkInt(i)
-                       for i in assay_info_df["read_length"]
-                       if i is not None and not pd.isnull(i)]):
+                        for i in assay_info_df["read_length"]
+                        if i is not None and not pd.isnull(i)]):
                 total_error += \
                     ("Assay_information.yaml: "
                      "Please double check your read_length.  "
@@ -250,4 +253,4 @@ class Assayinfo(FileTypeFormat):
                 ("Assay_information.yaml: "
                  "gene_padding is by default 10 if not specified.\n")
 
-        return(total_error, warning)
+        return total_error, warning
