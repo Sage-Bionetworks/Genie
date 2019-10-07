@@ -473,7 +473,7 @@ def stagingToCbio(
     SEG_PATH = os.path.join(
         GENIE_RELEASE_DIR, 'genie_private_data_cna_hg19_%s.seg' % genieVersion)
     COMBINED_BED_PATH = os.path.join(
-        GENIE_RELEASE_DIR, 'genie_combined_%s.bed' % genieVersion)
+        GENIE_RELEASE_DIR, 'genomic_information_%s.txt' % genieVersion)
     consortiumReleaseSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == "consortium"][0]
     variant_filtering_synId = databaseSynIdMappingDf['Id'][
@@ -1110,7 +1110,7 @@ def stagingToCbio(
         syn, COMBINED_BED_PATH,
         parent=consortiumReleaseSynId,
         genieVersion=genieVersion,
-        name="genie_combined.bed",
+        name="genomic_information.txt",
         staging=current_release_staging)
 
     return(genePanelEntities)
