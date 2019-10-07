@@ -809,8 +809,8 @@ def checkInt(element):
         return(False)
 
 
-def check_col_and_values(
-        df, col, possible_values, filename, na_allowed=False, required=False):
+def check_col_and_values(df, col, possible_values, filename, na_allowed=False,
+                         required=False, sep=None):
     '''
     This function checks if the column exists then checks if the values in the
     column have the correct values
@@ -842,6 +842,11 @@ def check_col_and_values(
             check_values = df[col].dropna()
         else:
             check_values = df[col]
+        if sep:
+            final = []
+            for value in check_values:
+                final.extend(value.split(sep))
+            check_values = pd.Series(final)
         if not check_values.isin(possible_values).all():
             error = (
                 "{filename}: Please double check your {col} column.  "

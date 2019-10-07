@@ -210,7 +210,8 @@ class Assayinfo(FileTypeFormat):
             'variant_classifications',
             variant_classes,
             filename="Assay_information.yaml",
-            na_allowed=True)
+            na_allowed=True,
+            sep=";")
         warning += warn
         total_error += error
 
@@ -251,5 +252,51 @@ class Assayinfo(FileTypeFormat):
             warning += \
                 ("Assay_information.yaml: "
                  "gene_padding is by default 10 if not specified.\n")
+
+        warn, error = process_functions.check_col_and_values(
+            assay_info_df, 'calling_strategy', ['tumor_only', 'tumor_normal'],
+            filename="Assay_information.yaml", required=True)
+        warning += warn
+        total_error += error
+
+        if process_functions.checkColExist(assay_info_df, "specimen_tumor_cellularity"):
+            if not all([i.startswith(">") and i.endswith("%")
+                        for i in assay_info_df["specimen_tumor_cellularity"]]):
+                total_error += \
+                    ("Assay_information.yaml: "
+                     "Please double check your specimen_tumor_cellularity. "
+                     "It must in this format >(num)%. ie. >10%\n")
+        else:
+            total_error += \
+                ("Assay_information.yaml: "
+                 "Must have specimen_tumor_cellularity column.\n")
+
+        alteration_types = ["snv", "small_indels", "gene_level_cna",
+                            "intragenic_cna", "structural_variants"]
+        warn, error = process_functions.check_col_and_values(
+            assay_info_df, 'alteration_types', alteration_types,
+            filename="Assay_information.yaml", na_allowed=True,
+            sep=";")
+        warning += warn
+        total_error += error
+
+        specimen_type = ["formalin_fixed", "FFPE", 'fresh_frozen']
+        warn, error = process_functions.check_col_and_values(
+            assay_info_df, 'specimen_type', specimen_type,
+            filename="Assay_information.yaml", na_allowed=True,
+            sep=";")
+        warning += warn
+        total_error += error
+
+        coverage = ['hotspot_regions', 'coding_exons', 'introns', 'promoters']
+        warn, error = process_functions.check_col_and_values(
+            assay_info_df,
+            'coverage',
+            coverage,
+            filename="Assay_information.yaml",
+            na_allowed=True,
+            sep=";")
+        warning += warn
+        total_error += error
 
         return total_error, warning
