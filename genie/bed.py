@@ -1,3 +1,4 @@
+"""GENIE bed class and functions"""
 import os
 import logging
 import subprocess
@@ -7,7 +8,7 @@ import pandas as pd
 from .example_filetype_format import FileTypeFormat
 from . import process_functions
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 # def createGenePositionsTables():
@@ -56,7 +57,7 @@ logger = logging.getLogger(__name__)
 #     return(genes)
 
 def create_gtf(dirname):
-    '''
+    """
     Create exon.gtf and gene.gtf from GRCh37 gtf
 
     Args:
@@ -65,15 +66,14 @@ def create_gtf(dirname):
     Returns:
         exon_gtf_path: exon GTF
         gene_gtf_path: gene GTF
-    '''
+    """
     exon_gtf_path = os.path.join(dirname, "exon.gtf")
     gene_gtf_path = os.path.join(dirname, "gene.gtf")
 
     if not os.path.exists(exon_gtf_path) or not os.path.exists(gene_gtf_path):
-        download_cmd = [
-            'wget',
-            'http://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz',
-            '-P', dirname]
+        download_cmd = ['wget',
+                        'http://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz',
+                        '-P', dirname]
         subprocess.check_call(download_cmd)
         gtfgz_path = os.path.join(dirname, "Homo_sapiens.GRCh37.75.gtf.gz")
         gunzip_cmd = ['gunzip', '-f', gtfgz_path]
@@ -93,8 +93,8 @@ def create_gtf(dirname):
     return(exon_gtf_path, gene_gtf_path)
 
 
-def _add_feature_type_todf(filepath, featuretype):
-    '''
+def _add_feature_type_tobeddf(filepath, featuretype):
+    """
     Add Feature_Type to dataframe
 
     Args:
@@ -103,22 +103,21 @@ def _add_feature_type_todf(filepath, featuretype):
 
     Returns:
         df: empty dataframe or dataframe with appended feature type
-    '''
+    """
     # No need to add anything if the dataframe is empty
     if os.stat(filepath).st_size != 0:
-        df = pd.read_csv(filepath, sep="\t", header=None)
-        df.columns = [
-            "Chromosome", "Start_Position", "End_Position",
-            "Hugo_Symbol", "includeInPanel", "clinicalReported",
-            "ID", "SEQ_ASSAY_ID"]
-        df['Feature_Type'] = featuretype
+        beddf = pd.read_csv(filepath, sep="\t", header=None)
+        beddf.columns = ["Chromosome", "Start_Position", "End_Position",
+                         "Hugo_Symbol", "includeInPanel", "clinicalReported",
+                         "ID", "SEQ_ASSAY_ID"]
+        beddf['Feature_Type'] = featuretype
     else:
-        df = pd.DataFrame()
-    return(df)
+        beddf = pd.DataFrame()
+    return beddf
 
 
 def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
-    '''
+    """
     Add Feature_Type to bed file (exon, intron, intergenic)
 
     Args:
@@ -128,214 +127,228 @@ def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
 
     Returns:
         genie_combined_path: Path to final bed file
-    '''
-    genie_exon_path = \
-        os.path.join(process_functions.SCRIPT_DIR, 'genie_exons.bed')
-    genie_intron_path = \
-        os.path.join(process_functions.SCRIPT_DIR, 'genie_introns.bed')
-    genie_intergenic_path = \
-        os.path.join(process_functions.SCRIPT_DIR, 'genie_intergenic.bed')
-    intron_intergenic_path = \
-        os.path.join(process_functions.SCRIPT_DIR, 'intron_intergenic.bed')
-    gene_path = \
-        os.path.join(process_functions.SCRIPT_DIR, 'gene.bed')
+    """
+    genie_exon_path = os.path.join(process_functions.SCRIPT_DIR,
+                                   'genie_exons.bed')
+    genie_intron_path = os.path.join(process_functions.SCRIPT_DIR,
+                                     'genie_introns.bed')
+    genie_intergenic_path = os.path.join(process_functions.SCRIPT_DIR,
+                                         'genie_intergenic.bed')
+    intron_intergenic_path = os.path.join(process_functions.SCRIPT_DIR,
+                                          'intron_intergenic.bed')
+    gene_path = os.path.join(process_functions.SCRIPT_DIR, 'gene.bed')
+    # GET EXON REGIONS
+    # Get intersection between true exon regions and submitted bed regions
+    command = ['bedtools', 'intersect', '-a',
+               temp_bed_path, '-b', exon_gtf_path, '-wa',
+               '|', 'sort', '|', 'uniq', '>', genie_exon_path]
+    subprocess.check_call(" ".join(command), shell=True)
+    # get intergenic/intron regions
+    # Get opposite of intersection between true exon regions and submitted
+    # bed regions
+    command = ['bedtools', 'intersect', '-a',
+               temp_bed_path, '-b', exon_gtf_path, '-wa', '-v'
+               '|', 'sort', '|', 'uniq', '>', intron_intergenic_path]
+    subprocess.check_call(" ".join(command), shell=True)
+    # get gene regions
+    # Get intersection between true gene regions and submitted bed regions
+    command = ['bedtools', 'intersect', '-a',
+               temp_bed_path, '-b', gene_gtf_path, '-wa',
+               '|', 'sort', '|', 'uniq', '>', gene_path]
+    subprocess.check_call(" ".join(command), shell=True)
+    # GET INTRON REGSIONS
+    # Difference between the gene regions and exon regions will give
+    # intron regions
+    command = ['diff', gene_path, genie_exon_path, '|',
+               'grep', "'<'", '|', 'sed', "'s/< //'", '>',
+               genie_intron_path]
+    subprocess.check_call(" ".join(command), shell=True)
+    # GET INTERGENIC REGIONS
+    # Difference between the intron/intergenic and intron regions will
+    # give intergenic regions
+    command = ['diff', intron_intergenic_path, genie_intron_path, '|',
+               'grep', "'<'", '|', 'sed', "'s/< //'", '>',
+               genie_intergenic_path]
+    subprocess.check_call(" ".join(command), shell=True)
 
-    command = [
-        'bedtools', 'intersect', '-a',
-        temp_bed_path, '-b', exon_gtf_path, '-wa',
-        '|', 'sort', '|', 'uniq', '>', genie_exon_path]
-    subprocess.check_call(" ".join(command), shell=True)
-    command = [
-        'bedtools', 'intersect', '-a',
-        temp_bed_path, '-b', exon_gtf_path, '-wa', '-v'
-        '|', 'sort', '|', 'uniq', '>', intron_intergenic_path]
-    subprocess.check_call(" ".join(command), shell=True)
-    command = [
-        'bedtools', 'intersect', '-a',
-        temp_bed_path, '-b', gene_gtf_path, '-wa',
-        '|', 'sort', '|', 'uniq', '>', gene_path]
-    subprocess.check_call(" ".join(command), shell=True)
-    command = [
-        'diff', gene_path, genie_exon_path, '|',
-        'grep', "'<'", '|', 'sed', "'s/< //'", '>',
-        genie_intron_path]
-    subprocess.check_call(" ".join(command), shell=True)
-    command = [
-        'diff', intron_intergenic_path, genie_intron_path, '|',
-        'grep', "'<'", '|', 'sed', "'s/< //'", '>',
-        genie_intergenic_path]
-    subprocess.check_call(" ".join(command), shell=True)
-
-    genie_exondf = _add_feature_type_todf(genie_exon_path, "exon")
-    genie_introndf = _add_feature_type_todf(genie_intron_path, "intron")
-    genie_intergenicdf = _add_feature_type_todf(
-        genie_intergenic_path, "intergenic")
+    genie_exondf = _add_feature_type_tobeddf(genie_exon_path, "exon")
+    genie_introndf = _add_feature_type_tobeddf(genie_intron_path, "intron")
+    genie_intergenicdf = _add_feature_type_tobeddf(genie_intergenic_path,
+                                                   "intergenic")
     # Specify the combined df in case there no bed hits at all
-    genie_combineddf = pd.DataFrame(columns=[
-        "Chromosome", "Start_Position", "End_Position",
-        "Hugo_Symbol", "includeInPanel", "clinicalReported",
-        "ID", "SEQ_ASSAY_ID", "Feature_Type"])
+    genie_combineddf = pd.DataFrame(columns=["Chromosome", "Start_Position",
+                                             "End_Position", "Hugo_Symbol",
+                                             "includeInPanel",
+                                             "clinicalReported",
+                                             "ID", "SEQ_ASSAY_ID",
+                                             "Feature_Type"])
     genie_combineddf = genie_combineddf.append(genie_exondf)
     genie_combineddf = genie_combineddf.append(genie_introndf)
     genie_combineddf = genie_combineddf.append(genie_intergenicdf)
-    # genie_combineddf.sort_values()
-    genie_combined_path = \
-        os.path.join(process_functions.SCRIPT_DIR, "genie_combined.bed")
-    genie_combineddf.to_csv(genie_combined_path, sep="\t", index=False)
-    return(genie_combined_path)
+    return genie_combineddf
 
 
-def _check_to_map(x, gene_positiondf):
-    '''
-    Make sure there are no overlaps in the submitted gene symbol and the gene
-    position database
+def _check_region_overlap(row, gene_positiondf):
+    """
+    Check if the submitted bed symbol + region overlaps with
+    the actual gene's positions
 
     Args:
-        x: start and end position
-        gene_positiondf: Actual gene position dataframe
+        row: row in bed file (genomic region)
+        gene_positiondf: Reference gene position dataframe
 
     Return:
-        bool:  Whether mapping needs to happen
-    '''
-    match_with_genedb = \
-        gene_positiondf[gene_positiondf['hgnc_symbol'] == x['Hugo_Symbol']]
+        True if the region does overlap.
+    """
+    matching_symbol_ind = gene_positiondf['hgnc_symbol'] == row['Hugo_Symbol']
+    match_with_genedb = gene_positiondf[matching_symbol_ind]
 
     if not match_with_genedb.empty:
+        # We are assuming that there is only one matching gene, but
+        # there are actually duplicated gene symbols
         start_position = match_with_genedb['start_position'].values[0]
         end_position = match_with_genedb['end_position'].values[0]
-        if (start_position >= x['Start_Position'] and
-                end_position <= x['End_Position']) or \
-            (start_position <= x['End_Position'] and
-                end_position >= x['Start_Position']):
-            to_map = False
-        else:
-            to_map = True
-    else:
-        to_map = True
-    return(to_map)
+        # Submitted bed start position in a gene
+        start_in_gene = start_position <= row['Start_Position'] <= end_position
+        # Submitted bed end position in a gene
+        end_in_gene = start_position <= row['End_Position'] <= end_position
+        # Submitted bed region surrounds a gene
+        gene_in_region = end_position <= row['End_Position'] and \
+                         start_position >= row['Start_Position']
+        return start_in_gene or end_in_gene or gene_in_region
+    return False
 
 
-def _map_gene_within_boundary(x, genePositionDf, boundary=0.9):
-    '''
-    As long as the strand is a percent within the boundary of the
-    start goes over start boundary, but end is contained in gene
+def _get_max_overlap_index(overlap, bed_length, boundary):
+    """
+    Calculate the ratio of overlap between the submitted bed
+    region and gene position dataframe and return the index of
+    the max overlapping region
 
     Args:
-        x: start and end position
-        genePositionDf: Actual gene position dataframe
+        overlap: Possible overlapping region
+        bed_length: Length of submitted region
+        boundary: specified ratio overlap
+
+    Returns:
+        Index of regions with maximum overlap or None
+    """
+    ratio_overlap = overlap / bed_length
+    ratio_overlap = ratio_overlap[ratio_overlap > boundary]
+    ratio_overlap = ratio_overlap[ratio_overlap <= 1]
+    if not ratio_overlap.empty:
+        return ratio_overlap.idxmax()
+    return None
+
+
+def _map_position_within_boundary(row, positiondf, boundary=0.9):
+    """
+    Map positions and checks if posision is contained within the
+    specified percentage boundary
+
+    Args:
+        row: Row in bed file (genomic region)
+        positiondf: Reference bed position dataframe
         boundary: Percent boundary defined
 
     Return:
-        pd.Series: mapped gene
-    '''
-    chromRows = genePositionDf[
-        genePositionDf['chromosome_name'] == str(x['Chromosome'])]
-    startRows = \
-        chromRows[chromRows['start_position'] <= x['Start_Position']]
+        pd.Series: mapped position
+    """
+    # First filter just based on whether or not region is within the gene
+    # position dataframe
+    match_chr = positiondf['chromosome_name'] == str(row['Chromosome'])
+    chrom_rows = positiondf[match_chr]
+    match_start = chrom_rows['start_position'] <= row['Start_Position']
+    start_rows = chrom_rows[match_start]
+    end_rows = start_rows[start_rows['end_position'] >= row['End_Position']]
 
-    endRows = startRows[startRows['end_position'] >= x['End_Position']]
-    # geneDiff = chromRows['end_position'] - chromRows['start_position']
-    bedLength = x['End_Position'] - x['Start_Position']
-    # as long as the strand is 90% within the boundary of the
-    # Start goes over start boundary, but end is contained in gene
-    if len(endRows) == 0:
-        if sum(chromRows['end_position'] >= x['End_Position']) > 0:
-            overlap = x['End_Position'] - chromRows['start_position']
+    bed_length = row['End_Position'] - row['Start_Position']
+    # as long as the strand is within the boundary % defined
+    # Start goes over start boundary, but end is contained in position
+    if end_rows.empty:
+        if sum(chrom_rows['end_position'] >= row['End_Position']) > 0:
+            overlap = row['End_Position'] - chrom_rows['start_position']
             # difference =  difference * -1.0
-            ratioOverlap = overlap / bedLength
-            ratioOverlap = ratioOverlap[ratioOverlap > boundary]
-            ratioOverlap = ratioOverlap[ratioOverlap <= 1]
-            if not ratioOverlap.empty:
-                endRows = endRows.append(
-                    chromRows.loc[[ratioOverlap.idxmax()]])
-        # End goes over end boundary, but start is contained in gene
-        if sum(chromRows['start_position'] <= x['Start_Position']) > 0:
-            overlap = chromRows['end_position'] - x['Start_Position']
-            ratioOverlap = overlap / bedLength
-            ratioOverlap = ratioOverlap[ratioOverlap > boundary]
-            ratioOverlap = ratioOverlap[ratioOverlap <= 1]
-            if not ratioOverlap.empty:
-                endRows = endRows.append(
-                    chromRows.loc[[ratioOverlap.idxmax()]])
-        # Start and end go over gene boundary
-        check = chromRows[chromRows['start_position'] >= x['Start_Position']]
-        check = check[check['end_position'] <= x['End_Position']]
+            max_overlap = _get_max_overlap_index(overlap, bed_length,
+                                                 boundary)
+            if max_overlap is not None:
+                end_rows = end_rows.append(chrom_rows.loc[[max_overlap]])
+        # End goes over end boundary, but start is contained in position
+        if sum(chrom_rows['start_position'] <= row['Start_Position']) > 0:
+            overlap = chrom_rows['end_position'] - row['Start_Position']
+            max_overlap = _get_max_overlap_index(overlap, bed_length,
+                                                 boundary)
+            if max_overlap is not None:
+                end_rows = end_rows.append(chrom_rows.loc[[max_overlap]])
+        # Start and end go over position boundary
+        check = chrom_rows[chrom_rows['start_position'] >= row['Start_Position']]
+        check = check[check['end_position'] <= row['End_Position']]
         if not check.empty:
-            overlap = chromRows['end_position'] - chromRows['start_position']
-            ratioOverlap = overlap / bedLength
-            ratioOverlap = ratioOverlap[ratioOverlap > boundary]
-            ratioOverlap = ratioOverlap[ratioOverlap <= 1]
-            if not ratioOverlap.empty:
-                endRows = endRows.append(
-                    chromRows.loc[[ratioOverlap.idxmax()]])
-    return(endRows)
+            overlap = chrom_rows['end_position'] - chrom_rows['start_position']
+            max_overlap = _get_max_overlap_index(overlap, bed_length,
+                                                 boundary)
+            if max_overlap is not None:
+                end_rows = end_rows.append(chrom_rows.loc[[max_overlap]])
+    return end_rows
 
 
-def validateSymbol(x, genePositionDf, returnMappedDf=False):
-    '''
-    The apply function of a DataFrame is called twice on the first row (known
-    pandas behavior)
+def remap_symbols(row, gene_positiondf):
+    """
+    Remap hugo symbols if there is no overlap between submitted bed region and
+    gene positions.
 
     Args:
-        x: start and end position
-        genePositionDf: Actual gene position dataframe
-        returnMappedDf: Return mapped dataframe. Default is False.
+        row: start and end position
+        gene_positiondf: Actual gene position dataframe
 
     Return:
         bool or Series: if the gene passed in need to be remapped or
                         the remapped gene
-    '''
-    valid = True
-    to_map = _check_to_map(x, genePositionDf)
-    if to_map:
-        endRows = _map_gene_within_boundary(x, genePositionDf)
-        if len(endRows) == 0:
-            logger.warning(
-                "{} cannot be remapped. "
-                "These rows will have an empty gene symbol".format(
-                    x['Hugo_Symbol']))
-            x['Hugo_Symbol'] = pd.np.nan
-            valid = False
-        elif len(endRows) > 1:
-            if x['Hugo_Symbol'] not in endRows['hgnc_symbol'].tolist():
+    """
+    region_overlap = _check_region_overlap(row, gene_positiondf)
+    if not region_overlap:
+        overlap_positions = _map_position_within_boundary(row,
+                                                          gene_positiondf)
+        if overlap_positions.empty:
+            LOGGER.warning("{} cannot be remapped. "
+                           "These rows will have an empty gene symbol".format(
+                               row['Hugo_Symbol']))
+            row['Hugo_Symbol'] = pd.np.nan
+        elif len(overlap_positions) > 1:
+            symbol_list = overlap_positions['hgnc_symbol'].tolist()
+            if row['Hugo_Symbol'] not in symbol_list:
                 # if "MLL4", then the HUGO symbol should be KMT2D and KMT2B
-                logger.warning(
-                    "{} can be mapped to different symbols: {}. "
-                    "Please correct or it will be removed.".format(
-                        x['Hugo_Symbol'], ", ".join(endRows['hgnc_symbol'])))
-                x['Hugo_Symbol'] = pd.np.nan
-                valid = False
+                LOGGER.warning("{} can be mapped to different symbols: {}. "
+                               "Please correct or it will be removed.".format(
+                                   row['Hugo_Symbol'],
+                                   ", ".join(symbol_list)))
+                row['Hugo_Symbol'] = pd.np.nan
         else:
-            if x['Hugo_Symbol'] != endRows['hgnc_symbol'].values[0]:
-                logger.info(
-                    "{} will be remapped to {}".format(
-                        x['Hugo_Symbol'], endRows['hgnc_symbol'].values[0]))
-                x['Hugo_Symbol'] = endRows['hgnc_symbol'].values[0]
+            symbol = overlap_positions['hgnc_symbol'].values[0]
+            if row['Hugo_Symbol'] != symbol:
+                LOGGER.info("{} will be remapped to {}".format(
+                    row['Hugo_Symbol'], symbol))
+                row['Hugo_Symbol'] = symbol
+    return row
 
-    if returnMappedDf:
-        return(x)
-    else:
-        return(valid)
 
 
 class bed(FileTypeFormat):
-    '''
-    GENIE bed format
-    '''
+    """GENIE bed format"""
     _fileType = "bed"
 
     _process_kwargs = ["newPath", "parentId", "databaseSynId", 'seq_assay_id']
 
-    def _get_dataframe(self, filePathList):
-        '''
+    def _get_dataframe(self, filepathlist):
+        """
         Bed files don't have a header
 
         Args:
             filePathList: List of files
-        '''
-        filePath = filePathList[0]
+        """
+        filepath = filepathlist[0]
         try:
-            beddf = pd.read_csv(filePath, sep="\t", header=None)
+            beddf = pd.read_csv(filepath, sep="\t", header=None)
         except Exception:
             raise ValueError(
                 "Can't read in your bed file. "
@@ -346,156 +359,131 @@ class bed(FileTypeFormat):
             raise ValueError(
                 "Please make sure your bed file does not "
                 "contain a comment/header line")
-        return(beddf)
+        return beddf
 
-    def _validateFilename(self, filePath):
-        '''
+    def _validateFilename(self, filepath):
+        """
         Validates filename
         CENTER-11.bed
 
         Args:
             filePath: Path to bedfile
-        '''
+        """
 
-        assert os.path.basename(filePath[0]).startswith("%s-" % self.center)\
-            and os.path.basename(filePath[0]).endswith(".bed")
+        assert os.path.basename(filepath[0]).startswith("%s-" % self.center)\
+            and os.path.basename(filepath[0]).endswith(".bed")
 
-    def createdBEDandGenePanel(
-            self, bed, seq_assay_id,
-            genePanelPath, parentId,
-            exon_gtf_path,
-            createGenePanel=True):
-        '''
+    def create_gene_panel(self, beddf, seq_assay_id,
+                          gene_panel_path, parentid):
+        """
         Create bed file and gene panel files from the bed file
 
         Args:
-            bed: Bed dataframe
+            beddf: bed dataframe
             seq_assay_id: GENIE SEQ_ASSAY_ID
-            genePanelPath: Gene panel folder path
-            parentId: Synapse id of gene panel folder
-            exon_gtf_path: Exon GTF path, created by create_gtf()
-            createGenePanel: To create data gene panel files. Default is True
+            gene_panel_path: Gene panel folder path
+            parentid: Synapse id of gene panel folder
 
         Returns:
             pd.DataFrame: configured bed dataframe
-        '''
-        logger.info("REMAPPING %s" % seq_assay_id)
-        # bedname = seq_assay_id + ".bed"
-        bed.columns = ["Chromosome", "Start_Position", "End_Position",
-                       "Hugo_Symbol", "includeInPanel", "clinicalReported"]
-        # Validate gene symbols
-        # Gene symbols can be split by ; and _ and : and .
-        bed['Hugo_Symbol'] = [
-            i.split(";")[0].split("_")[0].split(":")[0].split(".")[0]
-            for i in bed['Hugo_Symbol']]
-        bed['Chromosome'] = [
-            str(i).replace("chr", "") for i in bed['Chromosome']]
-        bed['Start_Position'] = bed['Start_Position'].apply(int)
-        bed['End_Position'] = bed['End_Position'].apply(int)
-
-        genePosition = self.syn.tableQuery('SELECT * FROM syn11806563')
-        genePositionDf = genePosition.asDataFrame()
-        bed['ID'] = bed['Hugo_Symbol']
-        bed = bed.apply(lambda x: validateSymbol(
-            x, genePositionDf, returnMappedDf=True), axis=1)
-
-        temp_bed_path = \
-            os.path.join(process_functions.SCRIPT_DIR, "temp.bed")
-        bed['SEQ_ASSAY_ID'] = seq_assay_id
-        bed.to_csv(temp_bed_path, sep="\t", index=False, header=None)
-        command = [
-            'bedtools', 'intersect', '-a',
-            temp_bed_path,
-            '-b', exon_gtf_path,
-            '-u']
-        # Create GENIE genie_exons.bed for gene panel file
-        genie_exon_path = \
-            os.path.join(process_functions.SCRIPT_DIR, 'genie_exons.bed')
-        genie_exon_text = subprocess.check_output(
-            command, universal_newlines=True)
-        with open(genie_exon_path, "w") as genie_exon:
-            genie_exon.write(genie_exon_text)
-
-        genie_exon_stat = os.stat(genie_exon_path)
-        if genie_exon_stat.st_size > 0 and createGenePanel:
-            temp = pd.read_csv(genie_exon_path, sep="\t", header=None)
-            temp.columns = [
-                "Chromosome", "Start_Position", "End_Position",
-                "Hugo_Symbol", "includeInPanel", "clinicalReported",
-                "ID", "SEQ_ASSAY_ID"]
+        """
+        LOGGER.info("CREATING GENE PANEL")
+        if not beddf.empty:
+            exonsdf = beddf[beddf['Feature_Type'] == "exon"]
             # Only include genes that should be included in the panels
-            temp = temp[temp['includeInPanel']]
+            include_exonsdf = exonsdf[exonsdf['includeInPanel']]
             # Write gene panel
-            allgenes = set(temp['Hugo_Symbol'][~temp['Hugo_Symbol'].isnull()])
-            gene_panel_text = (
-                "stable_id: {seq_assay_id}\n"
-                "description: {seq_assay_id}, "
-                "Number of Genes - {num_genes}\n"
-                "gene_list:\t{genelist}".format(
-                    seq_assay_id=seq_assay_id,
-                    num_genes=len(allgenes),
-                    genelist="\t".join(allgenes)))
-            genepanelname = "data_gene_panel_" + seq_assay_id + ".txt"
+            null_genes = include_exonsdf['Hugo_Symbol'].isnull()
+            unique_genes = set(include_exonsdf['Hugo_Symbol'][~null_genes])
+            gene_panel_text = ("stable_id: {seq_assay_id}\n"
+                               "description: {seq_assay_id}, "
+                               "Number of Genes - {num_genes}\n"
+                               "gene_list:\t{genelist}".format(
+                                    seq_assay_id=seq_assay_id,
+                                    num_genes=len(unique_genes),
+                                    genelist="\t".join(unique_genes)))
+            gene_panel_name = "data_gene_panel_" + seq_assay_id + ".txt"
 
-            with open(os.path.join(genePanelPath, genepanelname), "w+") as f:
+            with open(os.path.join(gene_panel_path, gene_panel_name), "w+") as f:
                 f.write(gene_panel_text)
-            process_functions.storeFile(
-                self.syn,
-                os.path.join(genePanelPath, genepanelname),
-                parentId=parentId,
-                center=self.center,
-                fileFormat="bed",
-                dataSubType="metadata",
-                cBioFileFormat="genePanel")
-        return(bed, temp_bed_path)
+            process_functions.storeFile(self.syn,
+                                        os.path.join(gene_panel_path,
+                                                     gene_panel_name),
+                                        parentId=parentid,
+                                        center=self.center,
+                                        fileFormat="bed",
+                                        dataSubType="metadata",
+                                        cBioFileFormat="genePanel")
 
-    def _process(
-            self, gene, seq_assay_id, newPath, parentId, createPanel=True):
-        '''
+    def _process(self, beddf, seq_assay_id, newpath,
+                 parentid, create_panel=True):
+        """
         Process bed file, add feature type
 
         Args:
             gene: bed dataframe
             seq_assay_id: GENIE SEQ_ASSAY_ID
-            newPath: new GENIE path
-            parentId: Synapse id to store the gene panel
-            createPanel: Create gene panel
+            newpath: new GENIE path
+            parentid: Synapse id to store the gene panel
+            create_panel: Create gene panel
 
         Returns:
             pd.DataFrame: Conigured bed dataframe
-        '''
+        """
         seq_assay_id = seq_assay_id.upper()
         seq_assay_id = seq_assay_id.replace('_', '-')
 
         # Add in 6th column which is the clinicalReported
-        if len(gene.columns) > 5:
-            if all(gene[5].apply(lambda x: x in [True, False])):
-                gene[5] = gene[5].astype(bool)
+        if len(beddf.columns) > 5:
+            if all(beddf[5].apply(lambda x: x in [True, False])):
+                beddf[5] = beddf[5].astype(bool)
             else:
-                gene[5] = pd.np.nan
+                beddf[5] = pd.np.nan
         else:
-            gene[5] = pd.np.nan
-        bed = gene[[0, 1, 2, 3, 4, 5]]
-        genePanelPath = os.path.dirname(newPath)
+            beddf[5] = pd.np.nan
+        beddf = beddf[[0, 1, 2, 3, 4, 5]]
+        gene_panel_path = os.path.dirname(newpath)
         # Must be .astype(bool) because `1, 0 in [True, False]`
-        bed[4] = bed[4].astype(bool)
+        beddf[4] = beddf[4].astype(bool)
 
-        exon_gtf_path, gene_gtf_path = \
-            create_gtf(process_functions.SCRIPT_DIR)
+        exon_gtf_path, gene_gtf_path = create_gtf(process_functions.SCRIPT_DIR)
+        LOGGER.info("REMAPPING {}".format(seq_assay_id))
+        # bedname = seq_assay_id + ".bed"
+        beddf.columns = ["Chromosome", "Start_Position", "End_Position",
+                       "Hugo_Symbol", "includeInPanel", "clinicalReported"]
+        # Validate gene symbols
+        # Gene symbols can be split by ; and _ and : and .
+        beddf['Hugo_Symbol'] = [
+            i.split(";")[0].split("_")[0].split(":")[0].split(".")[0]
+            for i in beddf['Hugo_Symbol']]
+        # Replace all chr with blank
+        beddf['Chromosome'] = [
+            str(i).replace("chr", "") for i in beddf['Chromosome']]
+        # Change all start and end to int
+        beddf['Start_Position'] = beddf['Start_Position'].apply(int)
+        beddf['End_Position'] = beddf['End_Position'].apply(int)
 
-        bed, temp_bed_path = self.createdBEDandGenePanel(
-            bed, seq_assay_id, genePanelPath, parentId, exon_gtf_path,
-            createGenePanel=createPanel)
-        genie_combined_path = \
-            add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path)
+        gene_position_table = self.syn.tableQuery('SELECT * FROM syn11806563')
+        gene_positiondf = gene_position_table.asDataFrame()
+        beddf['ID'] = beddf['Hugo_Symbol']
+        # The apply function of a DataFrame is called twice on the first
+        # row (known pandas behavior)
+        beddf = beddf.apply(lambda x: remap_symbols(x, gene_positiondf),
+                            axis=1)
+        beddf['SEQ_ASSAY_ID'] = seq_assay_id
+        temp_bed_path = os.path.join(process_functions.SCRIPT_DIR, "temp.bed")
+        beddf.to_csv(temp_bed_path, sep="\t", index=False, header=None)
+        final_bed = add_feature_type(temp_bed_path, exon_gtf_path,
+                                     gene_gtf_path)
+        final_bed['CENTER'] = self.center
+        final_bed['Chromosome'] = final_bed['Chromosome'].astype(str)
+        if create_panel:
+            self.create_gene_panel(final_bed, seq_assay_id,
+                                   gene_panel_path, parentid)
+        return final_bed
 
-        bed = pd.read_csv(genie_combined_path, sep="\t")
-        bed['CENTER'] = self.center
-        bed['Chromosome'] = bed['Chromosome'].astype(str)
-        return(bed)
-
-    def preprocess(self, filePath):
-        '''
+    def preprocess(self, filepath):
+        """
         Standardize and grab seq assay id from the bed file path
 
         Args:
@@ -503,18 +491,18 @@ class bed(FileTypeFormat):
 
         Returns:
             dict: GENIE seq assay id
-        '''
-        seq_assay_id = os.path.basename(filePath).replace(".bed", "")
+        """
+        seq_assay_id = os.path.basename(filepath).replace(".bed", "")
         seq_assay_id = seq_assay_id.upper().replace("_", "-")
-        return({'seq_assay_id': seq_assay_id})
+        return {'seq_assay_id': seq_assay_id}
 
-    def process_steps(
-            self, gene, newPath, parentId, databaseSynId, seq_assay_id):
-        '''
+    def process_steps(self, beddf, newPath, parentId, databaseSynId,
+                      seq_assay_id):
+        """
         Process bed file, update bed database, write bed file to path
 
         Args:
-            gene: Bed dataframe
+            beddf: Bed dataframe
             newPath: Path to new bed file
             parentId: Synapse id to store gene panel file
             databaseSynId: Synapse id of bed database
@@ -522,16 +510,17 @@ class bed(FileTypeFormat):
 
         Returns:
             string: Path to new bed file
-        '''
-        bed = self._process(gene, seq_assay_id, newPath, parentId)
-        process_functions.updateData(
-            self.syn, databaseSynId, bed, seq_assay_id,
-            filterByColumn="SEQ_ASSAY_ID", toDelete=True)
-        bed.to_csv(newPath, sep="\t", index=False)
-        return(newPath)
+        """
+        final_beddf = self._process(beddf, seq_assay_id, newPath, parentId)
+        process_functions.updateData(self.syn, databaseSynId, final_beddf,
+                                     seq_assay_id,
+                                     filterByColumn="SEQ_ASSAY_ID",
+                                     toDelete=True)
+        final_beddf.to_csv(newPath, sep="\t", index=False)
+        return newPath
 
-    def _validate(self, bed):
-        '''
+    def _validate(self, beddf):
+        """
         Validate bed file
 
         Args:
@@ -540,53 +529,49 @@ class bed(FileTypeFormat):
         Returns:
             total_error: all the errors
             warning: all the warnings
-        '''
+        """
         total_error = ""
         warning = ""
-        newCols = [
-            "Chromosome", "Start_Position",
-            "End_Position", "Hugo_Symbol",
-            "includeInPanel"]
-        if len(bed.columns) < len(newCols):
+        newcols = ["Chromosome", "Start_Position",
+                   "End_Position", "Hugo_Symbol",
+                   "includeInPanel"]
+        if len(beddf.columns) < len(newcols):
             total_error += (
                 "BED file: Must at least have five columns in this "
                 "order: {}. Make sure there are "
-                "no headers.\n".format(", ".join(newCols)))
+                "no headers.\n".format(", ".join(newcols)))
         else:
-            newCols.extend(range(0, len(bed.columns) - len(newCols)))
-            bed.columns = newCols
-            toValidateSymbol = True
-            if not all(bed['Start_Position'].apply(
+            newcols.extend(range(0, len(beddf.columns) - len(newcols)))
+            beddf.columns = newcols
+            to_validate_symbol = True
+            if not all(beddf['Start_Position'].apply(
                     lambda x: isinstance(x, int))):
-                total_error += (
-                    "BED file: "
-                    "The Start_Position column must only be integers. "
-                    "Make sure there are no headers.\n")
-                toValidateSymbol = False
-            if not all(bed['End_Position'].apply(
+                total_error += ("BED file: "
+                                "The Start_Position column must only be "
+                                "integers. Make sure there are no headers.\n")
+                to_validate_symbol = False
+            if not all(beddf['End_Position'].apply(
                     lambda x: isinstance(x, int))):
-                total_error += (
-                    "BED file: "
-                    "The End_Position column must only be integers. "
-                    "Make sure there are no headers.\n")
-                toValidateSymbol = False
+                total_error += ("BED file: "
+                                "The End_Position column must only be "
+                                "integers. Make sure there are no headers.\n")
+                to_validate_symbol = False
 
-            logger.info("VALIDATING GENE SYMBOLS")
-            if any(bed['Hugo_Symbol'].isnull()):
+            LOGGER.info("VALIDATING GENE SYMBOLS")
+            if any(beddf['Hugo_Symbol'].isnull()):
                 total_error += \
                     "BED file: You cannot submit any null symbols.\n"
-            bed = bed[~bed['Hugo_Symbol'].isnull()]
-            bed["Hugo_Symbol"] = [
-                str(hugo).split(";")[0].split("_")[0].split(":")[0]
-                for hugo in bed["Hugo_Symbol"]]
-            if sum(bed['Hugo_Symbol'] == "+") != 0 or \
-               sum(bed['Hugo_Symbol'] == "-") != 0:
-                total_error += (
-                    "BED file: Fourth column must be the Hugo_Symbol column, "
-                    "not the strand column\n")
+            beddf = beddf[~beddf['Hugo_Symbol'].isnull()]
+            beddf["Hugo_Symbol"] = [str(hugo).split(";")[0]
+                                    .split("_")[0].split(":")[0]
+                                    for hugo in beddf["Hugo_Symbol"]]
+            if sum(beddf['Hugo_Symbol'] == "+") != 0 or \
+               sum(beddf['Hugo_Symbol'] == "-") != 0:
+                total_error += ("BED file: Fourth column must be the "
+                                "Hugo_Symbol column, not the strand column\n")
 
             warn, error = process_functions.check_col_and_values(
-                bed,
+                beddf,
                 'includeInPanel',
                 [True, False],
                 filename="BED file",
@@ -594,23 +579,22 @@ class bed(FileTypeFormat):
             warning += warn
             total_error += error
 
-            if toValidateSymbol:
-                genePosition = self.syn.tableQuery('SELECT * FROM syn11806563')
-                genePositionDf = genePosition.asDataFrame()
-                bed = bed.apply(
-                    lambda x: validateSymbol(
-                        x, genePositionDf, returnMappedDf=True), axis=1)
+            if to_validate_symbol:
+                gene_position_table = self.syn.tableQuery('SELECT * FROM syn11806563')
+                gene_positiondf = gene_position_table.asDataFrame()
+                # The apply function of a DataFrame is called twice on the first row (known
+                # pandas behavior)
+                beddf = beddf.apply(lambda x: remap_symbols(x, gene_positiondf), axis=1)
 
-                if any(bed['Hugo_Symbol'].isnull()):
-                    warning += (
-                        "BED file: "
-                        "Any gene names that can't be "
-                        "remapped will be null.\n")
-                if all(bed['Hugo_Symbol'].isnull()):
-                    total_error += (
-                        "BED file: "
-                        "You have no correct gene symbols. "
-                        "Make sure your gene symbol column (4th column) "
-                        "is formatted like so: SYMBOL(;optionaltext).  "
-                        "Optional text can be semi-colon separated.\n")
+                if any(beddf['Hugo_Symbol'].isnull()):
+                    warning += ("BED file: "
+                                "Any gene names that can't be "
+                                "remapped will be null.\n")
+                if all(beddf['Hugo_Symbol'].isnull()):
+                    total_error += ("BED file: "
+                                    "You have no correct gene symbols. "
+                                    "Make sure your gene symbol column (4th "
+                                    "column) is formatted like so: SYMBOL"
+                                    "(;optionaltext).  Optional text can be "
+                                    "semi-colon separated.\n")
         return(total_error, warning)
