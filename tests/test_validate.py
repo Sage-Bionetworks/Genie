@@ -217,6 +217,7 @@ class argparser:
     center = "try"
     filepath = "path.csv"
     nosymbol_check = False
+    format_registry_packages = ["genie"]
 
     def asDataFrame(self):
         database_dict = {"Database": ["centerMapping", 'oncotreeLink'],
