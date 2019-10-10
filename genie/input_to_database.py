@@ -13,8 +13,10 @@ from . import process_functions
 from . import validate
 from . import toRetract
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 '''
 TODO:
@@ -76,11 +78,6 @@ def get_center_input_files(syn, synid, center, process="main"):
 
     for _, _, entities in center_files:
         for name, ent_synid in entities:
-            # This is to remove vcfs from being validated during main
-            # processing. Often there are too many vcf files, and it is
-            # not necessary for them to be run everytime.
-            if name.endswith(".vcf") and process != "vcf":
-                continue
 
             ent = syn.get(ent_synid)
             logger.debug(ent)
@@ -131,9 +128,12 @@ def check_existing_file_status(validation_status_table, error_tracker_table, ent
 
     for ent in entities:
         to_validate = False
+        versionNumber = str(ent.properties.versionNumber)
+
         # Get the current status and errors from the tables.
-        current_status = validation_statusdf[validation_statusdf['id'] == ent.id]
-        current_error = error_trackerdf[error_trackerdf['id'] == ent.id]
+        current_status = \
+            validation_statusdf[(validation_statusdf['id'] == ent.id)]
+        current_error = error_trackerdf[(error_trackerdf['id'] == ent.id)]
 
         if current_status.empty:
             to_validate = True
@@ -159,6 +159,30 @@ def check_existing_file_status(validation_status_table, error_tracker_table, ent
         'status_list': statuses,
         'error_list': errors,
         'to_validate': to_validate})
+
+
+def _check_valid(syn, filepaths, center, filetype, oncotree_link, testing):
+    '''
+    Function to validate a file
+    '''
+    # If no filetype set, means the file was named incorrectly
+    try:
+        valid, message, filetype = validate.validate_single_file(
+            syn,
+            filepaths,
+            center,
+            filetype=filetype,
+            oncotreelink=oncotree_link,
+            testing=testing)
+        logger.info("VALIDATION COMPLETE")
+    except ValueError as e:
+        # Specify this as None for the single case where filename
+        # validation fails
+        filetype = None
+        message = str(e)
+        logger.error(message)
+        valid = False
+    return(valid, filetype, message)
 
 
 def _send_validation_error_email(syn, filenames, message, file_users):
@@ -240,8 +264,7 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
     filepaths = [entity.path for entity in entities]
     filenames = [entity.name for entity in entities]
 
-    logger.info(
-        "VALIDATING {filenames}".format(filenames=", ".join(filenames)))
+    logger.info("VALIDATING {filenames}".format(filenames=", ".join(filenames)))
 
     file_users = [entities[0].modifiedBy, entities[0].createdBy]
 
@@ -286,7 +309,8 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
                  center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
                  validVCF=None, vcf2mafPath=None,
                  veppath=None, vepdata=None,
-                 processing="main", test=False, reference=None):
+                 processing="main", test=False, reference=None,
+                 format_registry=PROCESS_FILES):
     '''
     Processing validated files
 
@@ -330,7 +354,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
             else:
                 synId = synId[0]
             if fileType is not None and (processing == "main" or processing == fileType):
-                processor = PROCESS_FILES[fileType](syn, center, threads)
+                processor = format_registry[fileType](syn, center, threads)
                 processor.process(
                     filePath=filePath, newPath=newPath,
                     parentId=center_staging_synid, databaseSynId=synId,
@@ -341,6 +365,8 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
                     processing=processing,
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf,
                     reference=reference, test=test)
+            else:
+                logger.debug("Missing a file type, skipping {}".format(filePath))
 
     else:
         filePath = None
@@ -349,7 +375,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
         synId = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == processing][0]
         fileSynId = None
-        processor = PROCESS_FILES[processing](syn, center, threads)
+        processor = format_registry[processing](syn, center, threads)
         processor.process(
             filePath=filePath, newPath=newPath,
             parentId=center_staging_synid, databaseSynId=synId,
@@ -589,7 +615,7 @@ def update_status_and_error_tables(syn,
 
 def validation(syn, center, process,
                center_mapping_df, database_synid_mappingdf,
-               thread, testing, oncotree_link):
+               thread, testing, oncotree_link, format_registry):
     '''
     Validation of all center files
 
@@ -616,6 +642,8 @@ def validation(syn, center, process,
         logger.info("{} has not uploaded any files".format(center))
         return([])
     else:
+        logger.info(f"{center} has uploaded {len(center_files)} files.")
+
         validation_status_synid = process_functions.getDatabaseSynId(
             syn, "validationStatus",
             databaseToSynIdMappingDf=database_synid_mappingdf)
@@ -650,7 +678,8 @@ def validation(syn, center, process,
                                           error_tracker_table,
                                           center=center, threads=1,
                                           testing=testing,
-                                          oncotree_link=oncotree_link)
+                                          oncotree_link=oncotree_link,
+                                          format_registry=format_registry)
             input_valid_statuses.extend(status)
             if errors is not None:
                 invalid_errors.extend(errors)
@@ -672,7 +701,8 @@ def center_input_to_database(
         only_validate, vcf2maf_path, vep_path,
         vep_data, database_to_synid_mappingdf,
         center_mapping_df, reference=None,
-        delete_old=False, oncotree_link=None, thread=1):
+        delete_old=False, oncotree_link=None, thread=1, 
+        format_registry=PROCESS_FILES):
     if only_validate:
         log_path = os.path.join(
             process_functions.SCRIPT_DIR,
@@ -716,7 +746,7 @@ def center_input_to_database(
     validFiles = validation(
         syn, center, process, center_mapping_df,
         database_to_synid_mappingdf, thread,
-        testing, oncotree_link)
+        testing, oncotree_link, format_registry)
 
     if len(validFiles) > 0 and not only_validate:
         # Reorganize so BED file are always validated and processed first
@@ -761,7 +791,8 @@ def center_input_to_database(
                      validVCF=validVCF,
                      vcf2mafPath=vcf2maf_path,
                      veppath=vep_path, vepdata=vep_data,
-                     test=testing, processing=process, reference=reference)
+                     test=testing, processing=process, reference=reference,
+                     format_registry=format_registry)
 
         # Should add in this process end tracking
         # before the deletion of samples
@@ -775,8 +806,9 @@ def center_input_to_database(
         processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
-        logger.info("SAMPLE/PATIENT RETRACTION")
-        toRetract.retract(syn, testing)
+        # Resolve with https://github.com/Sage-Bionetworks/Genie/issues/94
+        # logger.info("SAMPLE/PATIENT RETRACTION")
+        # toRetract.retract(syn, testing)
 
     else:
         messageOut = \
@@ -787,6 +819,9 @@ def center_input_to_database(
     # Store log file
     log_folder_synid = process_functions.getDatabaseSynId(
         syn, "logs", databaseToSynIdMappingDf=database_to_synid_mappingdf)
-    syn.store(synapseclient.File(log_path, parentId=log_folder_synid))
+    try:
+        syn.store(synapseclient.File(log_path, parentId=log_folder_synid))
+    except synapseclient.exceptions.SynapseHTTPError as e:
+        logger.warn("Unable to store log file to Synapse.")
     os.remove(log_path)
     logger.info("ALL PROCESSES COMPLETE")

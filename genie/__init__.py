@@ -1,6 +1,7 @@
 # Import logging last to not take in synapseclient logging
 import logging
 
+from . import process_functions
 from . import bed
 from . import vcf
 from . import bedSP
