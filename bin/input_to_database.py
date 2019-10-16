@@ -5,6 +5,7 @@ import json
 import argparse
 import logging
 
+from genie import config
 from genie import input_to_database
 from genie import write_invalid_reasons
 from genie import process_functions
@@ -43,11 +44,11 @@ def set_processing_status(syn, center_mapping_id, status):
 
     return status
 
-def main(process, config=None, center=None, pemfile=None,
-         delete_old=False, only_validate=False, oncotreelink=None,
+def main(process, project_config=None, center=None, pemfile=None,
+         delete_old=False, only_validate=False, oncotree_link=None,
          create_new_maf_database=False, testing=False, debug=False,
          reference=None, vcf2maf_path=None, vep_path=None,
-         vep_data=None, thread=1):
+         vep_data=None, thread=1, format_registry=config.PROCESS_FILES):
 
     syn = process_functions.synLogin(pemfile, debug=debug)
 
@@ -65,7 +66,7 @@ def main(process, config=None, center=None, pemfile=None,
                 "Path to VEP data (--vepData) must be specified "
                 "if `--process {vcf,maf,mafSP}` is used")
 
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM {}'.format(config.get('database_to_synid_mapping')))
+        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM {}'.format(project_config.get('database_to_synid_mapping')))
         databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
 
         center_mapping_id = process_functions.getDatabaseSynId(
@@ -87,14 +88,14 @@ def main(process, config=None, center=None, pemfile=None,
             center_mapping_df = center_mapping_df[center_mapping_df['release']]
             centers = center_mapping_df.center
 
-        if oncotreelink is None:
+        if oncotree_link is None:
             onco_link = databaseToSynIdMappingDf['Id'][
                 databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
             onco_link_ent = syn.get(onco_link)
-            oncotreelink = onco_link_ent.externalURL
+            oncotree_link = onco_link_ent.externalURL
         # Check if you can connect to oncotree link,
         # if not then don't run validation / processing
-        process_functions.checkUrl(oncotreelink)
+        process_functions.checkUrl(oncotree_link)
 
         currently_processing = get_processing_status(syn, center_mapping_id)
         
@@ -114,6 +115,9 @@ def main(process, config=None, center=None, pemfile=None,
             databaseToSynIdMappingDf = \
                 input_to_database.create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
 
+        format_registry = config.collect_format_types(args.format_registry_packages)
+        logger.debug(f"Using {format_registry} file formats.")
+
         for center in centers:
             input_to_database.center_input_to_database(
                 syn, center, process,
@@ -122,8 +126,8 @@ def main(process, config=None, center=None, pemfile=None,
                 vep_data, databaseToSynIdMappingDf,
                 center_mapping_df, reference=reference,
                 delete_old=delete_old,
-                oncotree_link=oncotreelink,
-                thread=thread)
+                oncotree_link=oncotree_link,
+                thread=thread, format_registry=format_registry)
 
         # To ensure that this is the new entity
         center_mapping_ent = syn.get(center_mapping_id)
@@ -192,6 +196,9 @@ if __name__ == "__main__":
         "--reference",
         type=str,
         help="Path to VCF reference file")
+    parser.add_argument("--format_registry_packages", type=str, nargs="+",
+                         default="genie",
+                         help="Python package name(s) to get valid file formats from (default: %(default)s).")
 
     # DEFAULT PARAMS
     parser.add_argument(
@@ -219,10 +226,10 @@ if __name__ == "__main__":
         default=1)
 
     args = parser.parse_args()
-    config = get_config(args.config)
+    project_config = get_config(args.config)
 
     main(args.process,
-         config=config,
+         project_config=project_config,
          center=args.center,
          pemfile=args.pemFile,
          delete_old=args.deleteOld,

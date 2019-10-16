@@ -117,11 +117,7 @@ class FileTypeFormat(object):
                 "%s not in parameter list" % required_parameter
             mykwargs[required_parameter] = kwargs[required_parameter]
         
-        # If file type is vcf or maf file, processing requires a filepath
-        if self._fileType not in ['vcf', 'maf', 'mafSP', 'md', 'clinical', 'veoibd_workflow']:
-            path_or_df = self.read_file([filePath])
-        else:
-            path_or_df = filePath
+        path_or_df = filePath
         
         path = self.process_steps(path_or_df, **mykwargs)
         return(path)
