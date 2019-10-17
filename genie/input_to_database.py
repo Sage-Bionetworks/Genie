@@ -80,7 +80,6 @@ def get_center_input_files(syn, synid, center, process="main"):
         for name, ent_synid in entities:
 
             ent = syn.get(ent_synid)
-            logger.debug(ent)
 
             # Clinical file can come as two files.
             # The two files need to be merged together which is
