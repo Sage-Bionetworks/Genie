@@ -116,7 +116,8 @@ def main(process, project_config=None, center=None, pemfile=None,
                 input_to_database.create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
 
         format_registry = config.collect_format_types(args.format_registry_packages)
-        logger.debug(f"Using {format_registry} file formats.")
+        logger.debug("Using {format_registry} file formats.".format(
+            format_registry=format_registry))
 
         for center in centers:
             input_to_database.center_input_to_database(

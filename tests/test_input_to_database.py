@@ -7,6 +7,7 @@ import pandas as pd
 import synapseclient
 import synapseutils
 
+import genie.config
 from genie import input_to_database, process_functions
 from genie.clinical import clinical
 from genie.mafSP import mafSP
@@ -122,36 +123,9 @@ def walk_return_empty():
 
 
 def test_main_get_center_input_files():
+    '''Test to make sure center input files are retrieved.
     '''
-    Test to make sure center input files are gotten
-    excluding the vcf files since process main is specified
-    '''
-    syn_get_effects = [sample_clinical_entity, patient_clinical_entity]
-    expected_center_file_list = [syn_get_effects]
 
-    calls = [mock.call(sample_clinical_synid),
-             mock.call(patient_clinical_synid)]
-
-    with patch.object(synapseutils, "walk",
-                      return_value=walk_return()) as patch_synapseutils_walk,\
-         patch.object(syn, "get",
-                      side_effect=syn_get_effects) as patch_syn_get:
-        center_file_list = input_to_database.get_center_input_files(syn,
-                                                                    "syn12345",
-                                                                    center)
-
-        assert len(center_file_list) == len(expected_center_file_list)
-        assert len(center_file_list[0]) == 2
-        assert center_file_list == expected_center_file_list
-        patch_synapseutils_walk.assert_called_once_with(syn, 'syn12345')
-        patch_syn_get.assert_has_calls(calls)
-
-
-def test_vcf_get_center_input_files():
-    '''
-    Test to make sure center input files are gotten
-    including the vcf files since process vcf is specified
-    '''
     syn_get_effects = [sample_clinical_entity, patient_clinical_entity,
                        vcf1_entity, vcf2_entity]
     expected_center_file_list = [
@@ -789,7 +763,8 @@ def test_validation():
         valid_filedf = input_to_database.validation(
             syn, center, process,
             center_mapping_df, databaseToSynIdMappingDf,
-            thread, testing, oncotree_link)
+            thread, testing, oncotree_link,
+            format_registry=genie.config.PROCESS_FILES)
         patch_get_center.assert_called_once_with(
             syn, center_input_synid, center, process)
         assert patch_tablequery.call_count == 2
@@ -799,7 +774,8 @@ def test_validation():
             errortracking_mock,
             center='SAGE', threads=1,
             testing=False,
-            oncotree_link=oncotree_link)
+            oncotree_link=oncotree_link,
+            format_registry=genie.config.PROCESS_FILES)
         patch_update_status.assert_called_once_with(
             syn,
             input_status_list,
