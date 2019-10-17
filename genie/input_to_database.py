@@ -641,7 +641,10 @@ def validation(syn, center, process,
         logger.info("{} has not uploaded any files".format(center))
         return([])
     else:
-        logger.info(f"{center} has uploaded {len(center_files)} files.")
+        logger.info("{center} has uploaded {len_center_files} files.".format(
+            center=center,
+            len_center_files=len(center_files)
+        ))
 
         validation_status_synid = process_functions.getDatabaseSynId(
             syn, "validationStatus",
