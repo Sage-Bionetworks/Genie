@@ -1,4 +1,9 @@
-![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/veoibd/genie)
+
+CI | Branch | Build Status | Coverage
+--- | --- | --- | ---
+Docker | master | ![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/veoibd/genie)
+Travis | master | ![Travis (.org) branch](https://img.shields.io/travis/veo-ibd/Genie/master) |
+Travis | develop | ![Travis (.org) branch](https://img.shields.io/travis/veo-ibd/Genie/develop) |
 
 # VEO-IBD Consortium Data Processing
 
