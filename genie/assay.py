@@ -275,27 +275,21 @@ class Assayinfo(FileTypeFormat):
                             "intragenic_cna", "structural_variants"]
         warn, error = process_functions.check_col_and_values(
             assay_info_df, 'alteration_types', alteration_types,
-            filename="Assay_information.yaml", na_allowed=True,
-            sep=";")
+            filename="Assay_information.yaml", required=True, sep=";")
         warning += warn
         total_error += error
 
         specimen_type = ["formalin_fixed", "FFPE", 'fresh_frozen']
         warn, error = process_functions.check_col_and_values(
             assay_info_df, 'specimen_type', specimen_type,
-            filename="Assay_information.yaml", na_allowed=True,
-            sep=";")
+            filename="Assay_information.yaml", required=True, sep=";")
         warning += warn
         total_error += error
 
         coverage = ['hotspot_regions', 'coding_exons', 'introns', 'promoters']
         warn, error = process_functions.check_col_and_values(
-            assay_info_df,
-            'coverage',
-            coverage,
-            filename="Assay_information.yaml",
-            na_allowed=True,
-            sep=";")
+            assay_info_df, 'coverage', coverage,
+            filename="Assay_information.yaml", required=True, sep=";")
         warning += warn
         total_error += error
 

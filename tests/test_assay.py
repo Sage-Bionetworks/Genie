@@ -37,17 +37,20 @@ def test_filetype():
     assert ASSAY_INFO._fileType == "assayinfo"
 
 
-def test_incorrect_validatefilename():
+def test_validatefilename__invalidname():
+    """Assertion error thrown for wrong filename"""
     with pytest.raises(AssertionError):
         ASSAY_INFO.validateFilename(['foo'])
 
 
-def test_correct_validatefilename():
+def test_validatefilename__correct():
+    """Filetype returned when filename valid"""
     assert ASSAY_INFO.validateFilename(
         ["assay_information.yaml"]) == "assayinfo"
 
 
-def test_valid__validate():
+def test__validate__validinput():
+    """Valid input should have no errors or warnings"""
     assay_info_dict = {
         'SEQ_ASSAY_ID': ['SAGE-1', 'SAGE-3'],
         'is_paired_end': [True, False],
@@ -59,7 +62,13 @@ def test_valid__validate():
         'variant_classifications': ['Frame_Shift_Ins', 'Frame_Shift_Ins'],
         'read_length': [22, float('nan')],
         'number_of_genes': [5, 20],
-        'gene_padding': [10, None]}
+        'gene_padding': [10, None],
+        'calling_strategy': ['tumor_only', 'tumor_normal'],
+        'specimen_tumor_cellularity': ['>10%', '>20%'],
+        'alteration_types': ['snv;small_indels', 'intragenic_cna'],
+        'specimen_type': ['FFPE', 'formalin_fixed;FFPE'],
+        'coverage': ['hotspot_regions;introns', 'introns']}
+
     assay_info_df = pd.DataFrame(assay_info_dict)
     test_dict = copy.deepcopy(GDC_DATA_DICT)
     with patch.object(process_functions, "get_gdc_data_dictionary",
@@ -69,7 +78,8 @@ def test_valid__validate():
         assert warning == ''
 
 
-def test_missingcols__validate():
+def test__validate__missingcols():
+    """Test missing columns"""
     assay_info_df = pd.DataFrame()
     test_dict = copy.deepcopy(GDC_DATA_DICT)
     with patch.object(process_functions, "get_gdc_data_dictionary",
@@ -84,8 +94,15 @@ def test_missingcols__validate():
         'Assay_information.yaml: Must have instrument_model column.\n'
         'Assay_information.yaml: Must have target_capture_kit column.\n'
         'Assay_information.yaml: Must have read_length column.\n'
-        'Assay_information.yaml: Must have number_of_genes column.\n')
+        'Assay_information.yaml: Must have number_of_genes column.\n'
+        'Assay_information.yaml: Must have calling_strategy column.\n'
+        'Assay_information.yaml: '
+        'Must have specimen_tumor_cellularity column.\n'
+        'Assay_information.yaml: Must have alteration_types column.\n'
+        'Assay_information.yaml: Must have specimen_type column.\n'
+        'Assay_information.yaml: Must have coverage column.\n')
     assert error == expected_errors
+
     expected_warnings = (
         "Assay_information.yaml: Doesn't have variant_classifications column. "
         "This column will be added\n"
@@ -94,7 +111,7 @@ def test_missingcols__validate():
     assert warning == expected_warnings
 
 
-def test_fillcols__process():
+def test__process__fillcols():
     '''
     Standardization of SEQ_ASSAY_ID
     Add in CENTER, gene_padding, and variant_classifications if missing
