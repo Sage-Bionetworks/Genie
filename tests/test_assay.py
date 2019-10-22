@@ -37,19 +37,19 @@ def test_filetype():
     assert ASSAY_INFO._fileType == "assayinfo"
 
 
-def test_validatefilename__invalidname():
+def test_invalidname__validatefilename():
     """Assertion error thrown for wrong filename"""
     with pytest.raises(AssertionError):
         ASSAY_INFO.validateFilename(['foo'])
 
 
-def test_validatefilename__correct():
+def test_correct__validatefilename():
     """Filetype returned when filename valid"""
     assert ASSAY_INFO.validateFilename(
         ["assay_information.yaml"]) == "assayinfo"
 
 
-def test__validate__validinput():
+def test_validinput__validate():
     """Valid input should have no errors or warnings"""
     assay_info_dict = {
         'SEQ_ASSAY_ID': ['SAGE-1', 'SAGE-3'],
@@ -78,7 +78,7 @@ def test__validate__validinput():
         assert warning == ''
 
 
-def test__validate__missingcols():
+def test__missingcols__validate():
     """Test missing columns"""
     assay_info_df = pd.DataFrame()
     test_dict = copy.deepcopy(GDC_DATA_DICT)
@@ -111,7 +111,7 @@ def test__validate__missingcols():
     assert warning == expected_warnings
 
 
-def test__process__fillcols():
+def test_fillcols__process():
     '''
     Standardization of SEQ_ASSAY_ID
     Add in CENTER, gene_padding, and variant_classifications if missing
@@ -161,7 +161,13 @@ def test_invalid__validate():
         'target_capture_kit': ['foo', 'doo'],
         'read_length': [22, 'foo'],
         'number_of_genes': [5, 'foo'],
-        'gene_padding': [10, 'foo']}
+        'gene_padding': [10, 'foo'],
+        'calling_strategy': ['tumor_ony', 'tumor_normal'],
+        'specimen_tumor_cellularity': ['>10', '>20%'],
+        'alteration_types': ['snv;small_indel', 'intragenic_cna'],
+        'specimen_type': ['FPE', 'formalin_fixed;FFPE'],
+        'coverage': ['hotsot_regions;introns', 'introns']}
+
     assay_info_df = pd.DataFrame(assay_info_dict)
     # Must use deepcopy because a dict.copy is a shallow copy
     # Which just points to reference keys
@@ -203,7 +209,25 @@ def test_invalid__validate():
             "It must be an integer.\n"
             "Assay_information.yaml: "
             "Please double check your gene_padding. "
-            "It must be an integer or blank.\n")
+            "It must be an integer or blank.\n"
+            "Assay_information.yaml: "
+            "Please double check your calling_strategy column.  This "
+            "column must only be these values: tumor_only, tumor_normal\n"
+            "Assay_information.yaml: "
+            "Please double check your specimen_tumor_cellularity. "
+            "It must in this format >(num)%. ie. >10%\n"
+            "Assay_information.yaml: "
+            "Please double check your alteration_types column.  "
+            "This column must only be these values: snv, small_indels, "
+            "gene_level_cna, intragenic_cna, structural_variants\n"
+            "Assay_information.yaml: "
+            "Please double check your specimen_type column.  "
+            "This column must only be these values: "
+            "formalin_fixed, FFPE, fresh_frozen\n"
+            "Assay_information.yaml: "
+            "Please double check your coverage column.  "
+            "This column must only be these values: "
+            "hotspot_regions, coding_exons, introns, promoters\n")
 
         patch_get_gdc.called_once_with("read_group")
         assert error == expected_errors
