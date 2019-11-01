@@ -7,6 +7,7 @@ import os
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+import tempfile
 
 import pandas as pd
 import synapseclient
@@ -763,8 +764,9 @@ def updateDatabase(
     allupdates = allupdates.append(to_update_rows, sort=False)
 
     storedatabase = False
-    update_all_file = os.path.join(SCRIPT_DIR, "toUpdateAll.csv")
-    with open(update_all_file, "w") as updatefile:
+    update_all_file = tempfile.NamedTemporaryFile(dir=SCRIPT_DIR)
+
+    with open(update_all_file.name, "w") as updatefile:
         # Must write out the headers in case there are no appends or updates
         updatefile.write(",".join(col_order) + "\n")
         if not allupdates.empty:
