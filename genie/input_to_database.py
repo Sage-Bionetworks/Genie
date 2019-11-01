@@ -161,32 +161,38 @@ def check_existing_file_status(validation_status_table, error_tracker_table, ent
         'to_validate': to_validate})
 
 
-def _send_validation_error_email(syn, filenames, message, file_users):
+def _send_validation_error_email(syn, user, message_objs):
     '''
     Sends validation error email
 
     Args:
         syn: Synapse object
-        filenames: invalid filenames
-        message: error message
-        file_users: List of unique synapse user profiles of
-                    users that created and most recently
-                    modified the file
+        user: username to send message to
+        message_objs: list of dicts with 'filenames' and 'messages' to send
     '''
-    # Send email the first time the file is invalid
-    incorrect_files = ", ".join(filenames)
-    usernames = ", ".join([
-        syn.getUserProfile(user)['userName']
-        for user in file_users])
+
+    username = syn.getUserProfile(user)['userName']
+
+    errors = ""
+    for message_obj in message_objs:
+        incorrect_files = ", ".join(message_obj['filenames'])
+        message = message_obj['messages']
+        errors += "Filenames: {filenames}, Errors: {error_message}\n".format(
+            filenames=incorrect_files, error_message=message)
+
     email_message = (
         "Dear {username},\n\n"
-        "Your files ({filenames}) are invalid! "
+        "You have invalid files! "
         "Here are the reasons why:\n\n{error_message}".format(
-            username=usernames,
-            filenames=incorrect_files,
-            error_message=message))
-    syn.sendMessage(
-        file_users, "GENIE Validation Error", email_message)
+            username=username,
+            error_message=errors)
+    )
+
+    date_now = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+
+    syn.sendMessage(userIds=[user], 
+                    messageSubject="GENIE Validation Error - {date}".format(date=date_now),
+                    messageBody=email_message)
 
 
 def _get_status_and_error_list(valid, message, entities):
@@ -234,14 +240,14 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
     Returns:
         tuple: input_status_list - status of input files,
                invalid_errors_list - error list
+               messages_to_send - list of tuples with (filenames, message, file_users)
 
     '''
 
     filepaths = [entity.path for entity in entities]
     filenames = [entity.name for entity in entities]
 
-    logger.info(
-        "VALIDATING {filenames}".format(filenames=", ".join(filenames)))
+    logger.info("VALIDATING {filenames}".format(filenames=", ".join(filenames)))
 
     file_users = [entities[0].modifiedBy, entities[0].createdBy]
 
@@ -250,6 +256,9 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
 
     status_list = check_file_status['status_list']
     error_list = check_file_status['error_list']
+
+    messages_to_send = []
+
     # Need to figure out to how to remove this
     # This must pass in filenames, because filetype is determined by entity
     # name Not by actual path of file
@@ -266,7 +275,7 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
             valid, message, entities)
         # Send email the first time the file is invalid
         if invalid_errors_list:
-            _send_validation_error_email(syn, filenames, message, file_users)
+            messages_to_send.append((filenames, message, file_users))
     else:
         input_status_list = [{'entity': entity, 'status': status}
                              for entity, status in zip(entities, status_list)]
@@ -279,7 +288,7 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
     # so nothing will be appended
     for invalid_errors in invalid_errors_list:
         invalid_errors.update({'fileType': filetype, 'center': center})
-    return input_status_list, invalid_errors_list
+    return input_status_list, invalid_errors_list, messages_to_send
 
 
 def processfiles(syn, validfiles, center, path_to_genie, threads,
@@ -589,7 +598,7 @@ def update_status_and_error_tables(syn,
 
 def validation(syn, center, process,
                center_mapping_df, database_synid_mappingdf,
-               thread, testing, oncotree_link):
+               thread, testing, oncotree_link, format_registry):
     '''
     Validation of all center files
 
@@ -616,6 +625,11 @@ def validation(syn, center, process,
         logger.info("{} has not uploaded any files".format(center))
         return([])
     else:
+        logger.info("{center} has uploaded {len_center_files} files.".format(
+            center=center,
+            len_center_files=len(center_files)
+        ))
+
         validation_status_synid = process_functions.getDatabaseSynId(
             syn, "validationStatus",
             databaseToSynIdMappingDf=database_synid_mappingdf)
@@ -644,16 +658,35 @@ def validation(syn, center, process,
         input_valid_statuses = []
         invalid_errors = []
 
+        user_message_dict = defaultdict(list)
+
         for ents in center_files:
-            status, errors = validatefile(syn, ents,
-                                          validation_status_table,
-                                          error_tracker_table,
-                                          center=center, threads=1,
-                                          testing=testing,
-                                          oncotree_link=oncotree_link)
+            status, errors, messages_to_send = validatefile(
+                syn, ents,
+                validation_status_table,
+                error_tracker_table,
+                center=center, threads=1,
+                testing=testing,
+                oncotree_link=oncotree_link,
+                format_registry=format_registry)
+
             input_valid_statuses.extend(status)
             if errors is not None:
                 invalid_errors.extend(errors)
+            
+            if messages_to_send:
+                logger.debug("Collating messages to send to users.")
+                for filenames, messages, users in messages_to_send:
+                    file_messages = dict(filenames=filenames, messages=messages)
+                    for user in users:
+                        user_message_dict[user].append(file_messages)
+                
+        for user, message_objs in user_message_dict.items():
+            logger.debug("Sending messages to user {user}.".format(user=user))
+
+            _send_validation_error_email(syn=syn, 
+                                            user=user,
+                                            message_objs=message_objs)
 
         input_valid_statusdf = update_status_and_error_tables(
             syn,
