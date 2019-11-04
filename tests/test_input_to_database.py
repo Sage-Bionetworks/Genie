@@ -785,7 +785,8 @@ def test_validation():
             errortracking_mock,
             center='SAGE', threads=1,
             testing=False,
-            oncotree_link=oncotree_link)
+            oncotree_link=oncotree_link,
+            format_registry=genie.config.PROCESS_FILES)
         patch_update_status.assert_called_once_with(
             syn,
             input_status_list,
