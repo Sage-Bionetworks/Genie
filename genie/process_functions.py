@@ -764,7 +764,8 @@ def updateDatabase(
     allupdates = allupdates.append(to_update_rows, sort=False)
 
     storedatabase = False
-    update_all_file = tempfile.NamedTemporaryFile(dir=SCRIPT_DIR)
+    update_all_file = tempfile.NamedTemporaryFile(dir=SCRIPT_DIR,
+                                                  delete=False)
 
     with open(update_all_file.name, "w") as updatefile:
         # Must write out the headers in case there are no appends or updates
@@ -789,9 +790,9 @@ def updateDatabase(
                 .replace(".0\n", "\n"))
             storedatabase = True
     if storedatabase:
-        syn.store(synapseclient.Table(database_synid, update_all_file))
+        syn.store(synapseclient.Table(database_synid, update_all_file.name))
     # Delete the update file
-    os.unlink(update_all_file)
+    os.unlink(update_all_file.name)
 
 
 def checkInt(element):

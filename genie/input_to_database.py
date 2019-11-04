@@ -750,7 +750,7 @@ def center_input_to_database(
     validFiles = validation(
         syn, center, process, center_mapping_df,
         database_to_synid_mappingdf, thread,
-        testing, oncotree_link)
+        testing, oncotree_link, PROCESS_FILES)
 
     if len(validFiles) > 0 and not only_validate:
         # Reorganize so BED file are always validated and processed first
