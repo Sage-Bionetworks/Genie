@@ -51,7 +51,7 @@ def entity_date_to_timestamp(entity_date_time):
     return synapseclient.utils.to_unix_epoch_time(date_time_obj)
 
 
-def get_center_input_files(syn, synid, center, process="main"):
+def get_center_input_files(syn, synid, center, process="main", downloadFile=True):
     '''
     This function walks through each center's input directory
     to get a list of tuples of center files
@@ -83,8 +83,7 @@ def get_center_input_files(syn, synid, center, process="main"):
             if name.endswith(".vcf") and process != "vcf":
                 continue
 
-            ent = syn.get(ent_synid)
-            logger.debug(ent)
+            ent = syn.get(ent_synid, downloadFile=downloadFile)
 
             # Clinical file can come as two files.
             # The two files need to be merged together which is
