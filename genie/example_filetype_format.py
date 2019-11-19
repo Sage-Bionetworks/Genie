@@ -14,10 +14,10 @@ class FileTypeFormat(object):
 
     _validation_kwargs = []
 
-    def __init__(self, syn, center, poolSize=1, testing=False):
+    def __init__(self, syn, center, poolSize=1):
         self.syn = syn
         self.center = center
-        self.testing = testing
+
         # self.pool = multiprocessing.Pool(poolSize)
 
     def _get_dataframe(self, filePathList):
