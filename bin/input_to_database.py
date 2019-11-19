@@ -1,8 +1,11 @@
 #! /usr/bin/env python3
 import os
+import sys
+import json
 import argparse
 import logging
 
+from genie import config
 from genie import input_to_database
 from genie import write_invalid_reasons
 from genie import process_functions
@@ -10,6 +13,36 @@ from genie import process_functions
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def get_config(config_obj):
+    """Utility to get configuration from different sources.
+
+    Args:
+        config_obj: An object holding a configuration.
+        
+    Currently allows a path to a JSON file.
+    """
+
+    if os.path.exists(config_obj) and config_obj.endswith('json'):
+        config = json.load(open(config_obj))
+    
+    return config
+
+def get_processing_status(syn, center_mapping_id):
+    """Determine if processing is in progress.
+    
+    """
+    center_mapping_ent = syn.get(center_mapping_id, downloadFile=False)
+    return center_mapping_ent.get('isProcessing', ['True'])[0] == 'True'
+
+def set_processing_status(syn, center_mapping_id, status):
+    """Set processing status.
+    
+    """
+    center_mapping_ent = syn.get(center_mapping_id, downloadFile=False)
+    center_mapping_ent.isProcessing = str(status)
+    center_mapping_ent = syn.store(center_mapping_ent)
+
+    return status
 
 def main(process,
          project_id,
@@ -110,6 +143,7 @@ def main(process,
     center_mapping_ent.isProcessing = "False"
     center_mapping_ent = syn.store(center_mapping_ent)
 
+
     error_tracker_synid = process_functions.getDatabaseSynId(
         syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
     # Only write out invalid reasons if the center
@@ -119,7 +153,6 @@ def main(process,
         write_invalid_reasons.write_invalid_reasons(
             syn, center_mapping_df, error_tracker_synid)
 
-
 if __name__ == "__main__":
     '''
     Argument parsers
@@ -127,6 +160,9 @@ if __name__ == "__main__":
     '''
     parser = argparse.ArgumentParser(
         description='GENIE center ')
+
+    parser.add_argument('--config', help='JSON config file.')
+
     parser.add_argument(
         "process",
         choices=['vcf', 'maf', 'main', 'mafSP'],
@@ -166,6 +202,9 @@ if __name__ == "__main__":
         "--reference",
         type=str,
         help="Path to VCF reference file")
+    parser.add_argument("--format_registry_packages", type=str, nargs="+",
+                         default="genie",
+                         help="Python package name(s) to get valid file formats from (default: %(default)s).")
 
     # DEFAULT PARAMS
     parser.add_argument(

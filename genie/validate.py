@@ -15,7 +15,10 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
+_DEFAULT_CONFIG = {
+    "database_to_synid_mapping": "syn18582675",
+    "center_mapping_id": "syn18582666"
+}
 class ValidationHelper(object):
 
     # Used for the kwargs in validate_single_file
@@ -232,15 +235,19 @@ def collect_format_types(package_names):
     return file_format_dict
 
 
-def _perform_validate(syn, args):
+def _perform_validate(syn, args, config):
     """This is the main entry point to the genie command line tool.
     """
 
     # Check parentid argparse
     _check_parentid_permission_container(syn, args.parentid)
  
-    databasetosynid_mappingdf = process_functions.get_synid_database_mappingdf(
-        syn, project_id=args.project_id)
+    if args.project_id is not None:
+        databasetosynid_mappingdf = process_functions.get_synid_database_mappingdf(
+            syn, project_id=args.project_id)
+    else:
+        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM {}'.format(config.get('database_to_synid_mapping')))
+        databasetosynid_mappingdf = databaseToSynIdMapping.asDataFrame()
 
     synid = databasetosynid_mappingdf.query('Database == "centerMapping"').Id
 

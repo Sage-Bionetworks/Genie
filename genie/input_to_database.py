@@ -14,8 +14,10 @@ from . import process_functions
 from . import validate
 from . import toRetract
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 '''
 TODO:
@@ -77,11 +79,6 @@ def get_center_input_files(syn, synid, center, process="main", downloadFile=True
 
     for _, _, entities in center_files:
         for name, ent_synid in entities:
-            # This is to remove vcfs from being validated during main
-            # processing. Often there are too many vcf files, and it is
-            # not necessary for them to be run everytime.
-            if name.endswith(".vcf") and process != "vcf":
-                continue
 
             ent = syn.get(ent_synid, downloadFile=downloadFile)
 
@@ -131,9 +128,12 @@ def check_existing_file_status(validation_status_table, error_tracker_table, ent
 
     for ent in entities:
         to_validate = False
+        versionNumber = str(ent.properties.versionNumber)
+
         # Get the current status and errors from the tables.
-        current_status = validation_statusdf[validation_statusdf['id'] == ent.id]
-        current_error = error_trackerdf[error_trackerdf['id'] == ent.id]
+        current_status = \
+            validation_statusdf[(validation_statusdf['id'] == ent.id)]
+        current_error = error_trackerdf[(error_trackerdf['id'] == ent.id)]
 
         if current_status.empty:
             to_validate = True
@@ -294,7 +294,8 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
                  center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
                  validVCF=None, vcf2mafPath=None,
                  veppath=None, vepdata=None,
-                 processing="main", reference=None):
+                 processing="main", reference=None,
+                 format_registry=PROCESS_FILES):
     '''
     Processing validated files
 
@@ -337,7 +338,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
             else:
                 synId = synId[0]
             if fileType is not None and (processing == "main" or processing == fileType):
-                processor = PROCESS_FILES[fileType](syn, center, threads)
+                processor = format_registry[fileType](syn, center, threads)
                 processor.process(
                     filePath=filePath, newPath=newPath,
                     parentId=center_staging_synid, databaseSynId=synId,
@@ -356,7 +357,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
         synId = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == processing][0]
         fileSynId = None
-        processor = PROCESS_FILES[processing](syn, center, threads)
+        processor = format_registry[processing](syn, center, threads)
         processor.process(
             filePath=filePath, newPath=newPath,
             parentId=center_staging_synid, databaseSynId=synId,
@@ -701,7 +702,8 @@ def center_input_to_database(
         only_validate, vcf2maf_path, vep_path,
         vep_data, database_to_synid_mappingdf,
         center_mapping_df, reference=None,
-        delete_old=False, oncotree_link=None, thread=1):
+        delete_old=False, oncotree_link=None, thread=1, 
+        format_registry=PROCESS_FILES):
     if only_validate:
         log_path = os.path.join(
             process_functions.SCRIPT_DIR,
@@ -740,7 +742,7 @@ def center_input_to_database(
     validFiles = validation(
         syn, project_id, center, process, center_mapping_df,
         database_to_synid_mappingdf, thread,
-        oncotree_link, PROCESS_FILES)
+        oncotree_link, format_registry)
 
     if len(validFiles) > 0 and not only_validate:
         # Reorganize so BED file are always validated and processed first
@@ -785,7 +787,8 @@ def center_input_to_database(
                      validVCF=validVCF,
                      vcf2mafPath=vcf2maf_path,
                      veppath=vep_path, vepdata=vep_data,
-                     processing=process, reference=reference)
+                     processing=process, reference=reference,
+                     format_registry=format_registry)
 
         # Should add in this process end tracking
         # before the deletion of samples
@@ -799,8 +802,9 @@ def center_input_to_database(
         processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
-        logger.info("SAMPLE/PATIENT RETRACTION")
-        toRetract.retract(syn, project_id=project_id)
+        # Resolve with https://github.com/Sage-Bionetworks/Genie/issues/94
+        # logger.info("SAMPLE/PATIENT RETRACTION")
+        # toRetract.retract(syn, testing)
 
     else:
         messageOut = \
@@ -811,6 +815,9 @@ def center_input_to_database(
     # Store log file
     log_folder_synid = process_functions.getDatabaseSynId(
         syn, "logs", databaseToSynIdMappingDf=database_to_synid_mappingdf)
-    syn.store(synapseclient.File(log_path, parentId=log_folder_synid))
+    try:
+        syn.store(synapseclient.File(log_path, parentId=log_folder_synid))
+    except synapseclient.exceptions.SynapseHTTPError as e:
+        logger.warn("Unable to store log file to Synapse.")
     os.remove(log_path)
     logger.info("ALL PROCESSES COMPLETE")
