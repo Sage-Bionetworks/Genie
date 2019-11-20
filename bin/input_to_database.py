@@ -76,7 +76,7 @@ def main(process,
     # Get the Synapse Project where data is stored
     # Should have annotations to find the table lookup
     project = syn.get(project_id)
-    database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
+    database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")[0]
     
     databaseToSynIdMapping = syn.tableQuery(
         'SELECT * FROM {}'.format(database_to_synid_mapping_synid))
@@ -102,25 +102,20 @@ def main(process,
         centers = center_mapping_df.center
 
     if oncotree_link is None:
-        onco_link = databaseToSynIdMappingDf['Id'][
-            databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
-        onco_link_ent = syn.get(onco_link)
-        oncotree_link = onco_link_ent.externalURL
-    # Check if you can connect to oncotree link,
-    # if not then don't run validation / processing
-    process_functions.checkUrl(oncotree_link)
+        try:
+            onco_link = databaseToSynIdMappingDf['Id'][
+                databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
+            onco_link_ent = syn.get(onco_link)
+            oncotree_link = onco_link_ent.externalURL
+            # Check if you can connect to oncotree link,
+            # if not then don't run validation / processing
+            process_functions.checkUrl(oncotree_link)
+        except:
+            oncotree_link = None
 
     center_mapping_ent = syn.get(center_mapping_id)
-    if center_mapping_ent.get('isProcessing', ['True'])[0] == 'True':
-        raise Exception(
-            "Processing/validation is currently happening.  "
-            "Please change/add the 'isProcessing' annotation on {} "
-            "to False to enable processing".format(center_mapping_id))
-    else:
-        center_mapping_ent.isProcessing = "True"
-        center_mapping_ent = syn.store(center_mapping_ent)
     # remove this query timeout and see what happens
-    # syn.table_query_timeout = 50000
+    syn.table_query_timeout = 50000
 
     # Create new maf database, should only happen once if its specified
     if create_new_maf_database:
@@ -129,7 +124,7 @@ def main(process,
 
     for center in centers:
         input_to_database.center_input_to_database(
-            syn, center, process,
+            syn, project_id, center, process,
             only_validate,
             vcf2maf_path, vep_path,
             vep_data, databaseToSynIdMappingDf,
@@ -139,10 +134,6 @@ def main(process,
             thread=thread)
 
     # To ensure that this is the new entity
-    center_mapping_ent = syn.get(center_mapping_id)
-    center_mapping_ent.isProcessing = "False"
-    center_mapping_ent = syn.store(center_mapping_ent)
-
 
     error_tracker_synid = process_functions.getDatabaseSynId(
         syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
@@ -192,7 +183,7 @@ if __name__ == "__main__":
         help="Creates a new maf database")
     parser.add_argument(
         "--project_id",
-        action='store_true',
+        type=str,
         help="Synapse Project ID where data is stored.")
     parser.add_argument(
         "--debug",
