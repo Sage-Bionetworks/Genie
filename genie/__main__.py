@@ -79,8 +79,8 @@ def build_parser():
                                     'If specified, your valid files will be uploaded '
                                     'to this directory.')
 
-    parser_validate.add_argument("--testing", action='store_true', 
-                                 help='Put in testing mode')
+    parser_validate.add_argument("--project_id", type=str,
+                                 help='Synapse Project ID where data is stored.')
 
     parser_validate.add_argument("--nosymbol-check", action='store_true',
                                  help='Do not check hugo symbols of fusion and cna file')

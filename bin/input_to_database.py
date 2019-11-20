@@ -44,109 +44,105 @@ def set_processing_status(syn, center_mapping_id, status):
 
     return status
 
-def main(process, project_config=None, center=None, pemfile=None,
-         delete_old=False, only_validate=False, oncotree_link=None,
-         create_new_maf_database=False, testing=False, debug=False,
-         reference=None, vcf2maf_path=None, vep_path=None,
-         vep_data=None, thread=1, format_registry=config.PROCESS_FILES):
+def main(process,
+         project_id,
+         center=None,
+         pemfile=None,
+         delete_old=False,
+         only_validate=False,
+         oncotree_link=None,
+         create_new_maf_database=False,
+         debug=False,
+         reference=None,
+         vcf2maf_path=None,
+         vep_path=None,
+         vep_data=None,
+         thread=1):
 
     syn = process_functions.synLogin(pemfile, debug=debug)
+    # Must specify correct paths to vcf2maf, VEP and VEP data
+    # if trying to process vcf, maf and mafSP
+    if process in ['vcf', 'maf', 'mafSP'] and not only_validate:
+        assert os.path.exists(vcf2maf_path), (
+            "Path to vcf2maf (--vcf2mafPath) must be specified "
+            "if `--process {vcf,maf,mafSP}` is used")
+        assert os.path.exists(vep_path), (
+            "Path to VEP (--vepPath) must be specified "
+            "if `--process {vcf,maf,mafSP}` is used")
+        assert os.path.exists(vep_data), (
+            "Path to VEP data (--vepData) must be specified "
+            "if `--process {vcf,maf,mafSP}` is used")
 
-    try:
-        # Must specify correct paths to vcf2maf, VEP and VEP data
-        # if trying to process vcf, maf and mafSP
-        if process in ['vcf', 'maf', 'mafSP'] and not only_validate:
-            assert os.path.exists(vcf2maf_path), (
-                "Path to vcf2maf (--vcf2mafPath) must be specified "
-                "if `--process {vcf,maf,mafSP}` is used")
-            assert os.path.exists(vep_path), (
-                "Path to VEP (--vepPath) must be specified "
-                "if `--process {vcf,maf,mafSP}` is used")
-            assert os.path.exists(vep_data), (
-                "Path to VEP data (--vepData) must be specified "
-                "if `--process {vcf,maf,mafSP}` is used")
+    # Get the Synapse Project where data is stored
+    # Should have annotations to find the table lookup
+    project = syn.get(project_id)
+    database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")[0]
+    
+    databaseToSynIdMapping = syn.tableQuery(
+        'SELECT * FROM {}'.format(database_to_synid_mapping_synid))
+    databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
 
-        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM {}'.format(project_config.get('database_to_synid_mapping')))
-        databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
+    center_mapping_id = process_functions.getDatabaseSynId(
+        syn, "centerMapping",
+        databaseToSynIdMappingDf=databaseToSynIdMappingDf)
 
-        center_mapping_id = process_functions.getDatabaseSynId(
-            syn, "centerMapping",
-            databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+    center_mapping = syn.tableQuery('SELECT * FROM %s' % center_mapping_id)
+    center_mapping_df = center_mapping.asDataFrame()
 
-        center_mapping = syn.tableQuery('SELECT * FROM %s' % center_mapping_id)
-        center_mapping_df = center_mapping.asDataFrame()
+    if center is not None:
+        assert center in center_mapping_df.center.tolist(), (
+            "Must specify one of these centers: {}".format(
+                ", ".join(center_mapping_df.center)))
+        centers = [center]
+    else:
+        center_mapping_df = \
+            center_mapping_df[~center_mapping_df['inputSynId'].isnull()]
+        # release is a bool column
+        center_mapping_df = center_mapping_df[center_mapping_df['release']]
+        centers = center_mapping_df.center
 
-        if center is not None:
-            assert center in center_mapping_df.center.tolist(), (
-                "Must specify one of these centers: {}".format(
-                    ", ".join(center_mapping_df.center)))
-            centers = [center]
-        else:
-            center_mapping_df = \
-                center_mapping_df[~center_mapping_df['inputSynId'].isnull()]
-            # release is a bool column
-            center_mapping_df = center_mapping_df[center_mapping_df['release']]
-            centers = center_mapping_df.center
-
-        if oncotree_link is None:
+    if oncotree_link is None:
+        try:
             onco_link = databaseToSynIdMappingDf['Id'][
                 databaseToSynIdMappingDf['Database'] == 'oncotreeLink'].values[0]
             onco_link_ent = syn.get(onco_link)
             oncotree_link = onco_link_ent.externalURL
-        # Check if you can connect to oncotree link,
-        # if not then don't run validation / processing
-        process_functions.checkUrl(oncotree_link)
+            # Check if you can connect to oncotree link,
+            # if not then don't run validation / processing
+            process_functions.checkUrl(oncotree_link)
+        except:
+            oncotree_link = None
 
-        currently_processing = get_processing_status(syn, center_mapping_id)
-        
-        if currently_processing:
-            logger.error(
-                "Processing/validation is currently happening.  "
-                "Please change/add the 'isProcessing' annotation on {} "
-                "to False to enable processing".format(center_mapping_id))
-            sys.exit(1)
-        else:
-            status = set_processing_status(syn, center_mapping_id, status=True)
-        # remove this query timeout and see what happens
-        # syn.table_query_timeout = 50000
+    center_mapping_ent = syn.get(center_mapping_id)
+    # remove this query timeout and see what happens
+    syn.table_query_timeout = 50000
 
-        # Create new maf database, should only happen once if its specified
-        if create_new_maf_database:
-            databaseToSynIdMappingDf = \
-                input_to_database.create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
+    # Create new maf database, should only happen once if its specified
+    if create_new_maf_database:
+        databaseToSynIdMappingDf = \
+            input_to_database.create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
 
-        format_registry = config.collect_format_types(args.format_registry_packages)
-        logger.debug("Using {format_registry} file formats.".format(
-            format_registry=format_registry))
+    for center in centers:
+        input_to_database.center_input_to_database(
+            syn, project_id, center, process,
+            only_validate,
+            vcf2maf_path, vep_path,
+            vep_data, databaseToSynIdMappingDf,
+            center_mapping_df, reference=reference,
+            delete_old=delete_old,
+            oncotree_link=oncotree_link,
+            thread=thread)
 
-        for center in centers:
-            input_to_database.center_input_to_database(
-                syn, center, process,
-                testing, only_validate,
-                vcf2maf_path, vep_path,
-                vep_data, databaseToSynIdMappingDf,
-                center_mapping_df, reference=reference,
-                delete_old=delete_old,
-                oncotree_link=oncotree_link,
-                thread=thread, format_registry=format_registry)
+    # To ensure that this is the new entity
 
-        # To ensure that this is the new entity
-        center_mapping_ent = syn.get(center_mapping_id)
-        center_mapping_ent.isProcessing = "False"
-        center_mapping_ent = syn.store(center_mapping_ent)
-
-        error_tracker_synid = process_functions.getDatabaseSynId(
-            syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
-        # Only write out invalid reasons if the center
-        # isnt specified and if only validate
-        if center is None and only_validate:
-            logger.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
-            write_invalid_reasons.write_invalid_reasons(
-                syn, center_mapping_df, error_tracker_synid)
-    except Exception as e:
-        raise e
-    finally:
-        _ = set_processing_status(syn, center_mapping_id, status=False)
+    error_tracker_synid = process_functions.getDatabaseSynId(
+        syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+    # Only write out invalid reasons if the center
+    # isnt specified and if only validate
+    if center is None and only_validate:
+        logger.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
+        write_invalid_reasons.write_invalid_reasons(
+            syn, center_mapping_df, error_tracker_synid)
 
 if __name__ == "__main__":
     '''
@@ -186,9 +182,9 @@ if __name__ == "__main__":
         action='store_true',
         help="Creates a new maf database")
     parser.add_argument(
-        "--testing",
-        action='store_true',
-        help="Testing the infrastructure!")
+        "--project_id",
+        type=str,
+        help="Synapse Project ID where data is stored.")
     parser.add_argument(
         "--debug",
         action='store_true',
@@ -227,17 +223,15 @@ if __name__ == "__main__":
         default=1)
 
     args = parser.parse_args()
-    project_config = get_config(args.config)
 
     main(args.process,
-         project_config=project_config,
+         project_id=args.project_id,
          center=args.center,
          pemfile=args.pemFile,
          delete_old=args.deleteOld,
          only_validate=args.onlyValidate,
          oncotree_link=args.oncotree_link,
          create_new_maf_database=args.createNewMafDatabase,
-         testing=args.testing,
          debug=args.debug,
          reference=args.reference,
          vcf2maf_path=args.vcf2mafPath,
