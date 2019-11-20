@@ -296,7 +296,7 @@ def test_get_synid_database_mappingdf(database_map):
             "genie.process_functions.get_syntabledf",
             return_value=arg.asDataFrame()) as patch_gettabledf:
         df = genie.process_functions.get_synid_database_mappingdf(
-            syn, test=test, staging=staging)
+            syn, project_id=None)
         patch_gettabledf.assert_called_once_with(
             syn, "SELECT * FROM {}".format(synid))
         assert df.equals(arg.asDataFrame())

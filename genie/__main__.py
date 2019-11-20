@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import logging
+import json
 
 import genie.config
 import genie.validate
@@ -31,11 +32,14 @@ def synapse_login(username=None, password=None):
                 silent=True)
     return(syn)
 
+    return result
+
 
 def build_parser():
     import argparse
     parser = argparse.ArgumentParser(description='GENIE processing')
 
+    parser.add_argument('--config', help='JSON config file.')
     parser.add_argument("--syn_user", type=str, help='Synapse username')
 
     parser.add_argument("--syn_pass", type=str, help='Synapse password')
@@ -75,8 +79,8 @@ def build_parser():
                                     'If specified, your valid files will be uploaded '
                                     'to this directory.')
 
-    parser_validate.add_argument("--testing", action='store_true', 
-                                 help='Put in testing mode')
+    parser_validate.add_argument("--project_id", type=str,
+                                 help='Synapse Project ID where data is stored.')
 
     parser_validate.add_argument("--nosymbol-check", action='store_true',
                                  help='Do not check hugo symbols of fusion and cna file')
@@ -87,10 +91,17 @@ def build_parser():
 
 def main():
     args = build_parser().parse_args()
+
+    if args.config:
+        config = json.load(open(args.config))
+    else:
+        config = genie.validate._DEFAULT_CONFIG
+
     syn = synapse_login(args.syn_user, args.syn_pass)
+
     if 'func' in args:
         try:
-            args.func(syn, args)
+            args.func(syn, args, config)
         except Exception:
             raise
 

@@ -3,7 +3,9 @@ import os
 
 import pandas as pd
 
+logging.basicConfig()
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class FileTypeFormat(object):
@@ -14,10 +16,10 @@ class FileTypeFormat(object):
 
     _validation_kwargs = []
 
-    def __init__(self, syn, center, poolSize=1, testing=False):
+    def __init__(self, syn, center, poolSize=1):
         self.syn = syn
         self.center = center
-        self.testing = testing
+
         # self.pool = multiprocessing.Pool(poolSize)
 
     def _get_dataframe(self, filePathList):
@@ -104,19 +106,19 @@ class FileTypeFormat(object):
         Returns:
             str: file path of processed file
         '''
+        logger.info('PROCESSING %s' % filePath)
+
         preprocess_args = self.preprocess(filePath)
         kwargs.update(preprocess_args)
+
         mykwargs = {}
         for required_parameter in self._process_kwargs:
             assert required_parameter in kwargs.keys(), \
                 "%s not in parameter list" % required_parameter
             mykwargs[required_parameter] = kwargs[required_parameter]
-        logger.info('PROCESSING %s' % filePath)
-        # If file type is vcf or maf file, processing requires a filepath
-        if self._fileType not in ['vcf', 'maf', 'mafSP', 'md']:
-            path_or_df = self.read_file([filePath])
-        else:
-            path_or_df = filePath
+        
+        path_or_df = filePath
+        
         path = self.process_steps(path_or_df, **mykwargs)
         return(path)
 

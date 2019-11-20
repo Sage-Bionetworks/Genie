@@ -15,32 +15,35 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
+_DEFAULT_CONFIG = {
+    "database_to_synid_mapping": "syn18582675",
+    "center_mapping_id": "syn18582666"
+}
 class ValidationHelper(object):
 
     # Used for the kwargs in validate_single_file
     # Overload this per class
     _validate_kwargs = []
 
-    def __init__(self, syn, center, filepathlist,
-                 format_registry=config.PROCESS_FILES,
-                 testing=False):
+    def __init__(self, syn, project_id, center, filepathlist,
+                 format_registry=config.PROCESS_FILES):
 
         """A validator helper class for a center's files.
 
         Args:
             syn: a synapseclient.Synapse object
+            project_id: Synapse Project ID where files are stored and configured.
             center: The participating center name.
             filepathlist: a list of file paths.
             format_registry: A dictionary mapping file format name to the format class.
-            testing: Run in testing mode.
         """
 
         self._synapse_client = syn
+
+        self._project = syn.get(project_id)
         self.filepathlist = filepathlist
         self.center = center
         self._format_registry = format_registry
-        self.testing = testing
         self.file_type = self.determine_filetype()
 
     def determine_filetype(self):
@@ -57,8 +60,7 @@ class ValidationHelper(object):
         filetype = None
         # Loop through file formats
         for file_format in self._format_registry:
-            validator = self._format_registry[file_format](self._synapse_client, self.center,
-                                                           testing=self.testing)
+            validator = self._format_registry[file_format](self._synapse_client, self.center)
             try:
                 filetype = validator.validateFilename(self.filepathlist)
             except AssertionError:
@@ -89,8 +91,7 @@ class ValidationHelper(object):
                 mykwargs[required_parameter] = kwargs[required_parameter]
 
             validator_cls = self._format_registry[self.file_type]
-            validator = validator_cls(self._synapse_client, self.center,
-                                      testing=self.testing)
+            validator = validator_cls(self._synapse_client, self.center)
             valid, errors, warnings = validator.validate(filePathList=self.filepathlist,
                                                          **mykwargs)
 
@@ -234,15 +235,19 @@ def collect_format_types(package_names):
     return file_format_dict
 
 
-def _perform_validate(syn, args):
+def _perform_validate(syn, args, config):
     """This is the main entry point to the genie command line tool.
     """
 
     # Check parentid argparse
     _check_parentid_permission_container(syn, args.parentid)
-
-    databasetosynid_mappingdf = process_functions.get_synid_database_mappingdf(
-        syn, test=args.testing)
+ 
+    if args.project_id is not None:
+        databasetosynid_mappingdf = process_functions.get_synid_database_mappingdf(
+            syn, project_id=args.project_id)
+    else:
+        databaseToSynIdMapping = syn.tableQuery('SELECT * FROM {}'.format(config.get('database_to_synid_mapping')))
+        databasetosynid_mappingdf = databaseToSynIdMapping.asDataFrame()
 
     synid = databasetosynid_mappingdf.query('Database == "centerMapping"').Id
 
@@ -258,7 +263,8 @@ def _perform_validate(syn, args):
     format_registry = collect_format_types(args.format_registry_packages)
     logger.debug("Using {} file formats.".format(format_registry))
     
-    validator = GenieValidationHelper(syn=syn, center=args.center,
+    validator = GenieValidationHelper(syn=syn, project_id=args.project_id,
+                                      center=args.center,
                                       filepathlist=args.filepath,
                                       format_registry=format_registry)
     mykwargs = dict(oncotree_link=args.oncotree_link,
