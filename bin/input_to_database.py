@@ -17,7 +17,6 @@ def main(process,
          delete_old=False,
          only_validate=False,
          oncotree_link=None,
-         create_new_maf_database=False,
          testing=False,
          debug=False,
          reference=None,
@@ -89,11 +88,6 @@ def main(process,
     # remove this query timeout and see what happens
     # syn.table_query_timeout = 50000
 
-    # Create new maf database, should only happen once if its specified
-    if create_new_maf_database:
-        databaseToSynIdMappingDf = \
-            input_to_database.create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
-
     for center in centers:
         input_to_database.center_input_to_database(
             syn, center, process,
@@ -150,10 +144,6 @@ if __name__ == "__main__":
         "--oncotree_link",
         type=str,
         help="Link to oncotree code")
-    parser.add_argument(
-        "--createNewMafDatabase",
-        action='store_true',
-        help="Creates a new maf database")
     parser.add_argument(
         "--testing",
         action='store_true',
