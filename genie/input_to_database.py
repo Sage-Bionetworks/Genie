@@ -221,8 +221,8 @@ def _get_status_and_error_list(valid, message, entities):
     return input_status_list, invalid_errors_list
 
 
-def validatefile(syn, entities, validation_status_table, error_tracker_table,
-                 center, threads, testing, oncotree_link,
+def validatefile(syn, project_id, entities, validation_status_table, error_tracker_table,
+                 center, threads, oncotree_link,
                  format_registry=PROCESS_FILES):
     '''Validate a list of entities.
 
@@ -234,7 +234,6 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
         validation_statusdf: Validation status dataframe
         error_trackerdf: Invalid files error tracking dataframe
         center: Center of interest
-        testing: Boolean determining whether using testing parameter
         oncotree_link: Oncotree url
 
     Returns:
@@ -262,10 +261,10 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
     # Need to figure out to how to remove this
     # This must pass in filenames, because filetype is determined by entity
     # name Not by actual path of file
-    validator = validate.GenieValidationHelper(syn=syn, center=center,
+    validator = validate.GenieValidationHelper(syn=syn, project_id=project_id,
+                                               center=center,
                                                filepathlist=filepaths,
-                                               format_registry=format_registry,
-                                               testing=testing)
+                                               format_registry=format_registry)
     filetype = validator.file_type
     if check_file_status['to_validate']:
         valid, message, filetype = validator.validate_single_file(
@@ -295,7 +294,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
                  center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
                  validVCF=None, vcf2mafPath=None,
                  veppath=None, vepdata=None,
-                 processing="main", test=False, reference=None):
+                 processing="main", reference=None):
     '''
     Processing validated files
 
@@ -314,7 +313,6 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
         veppath: Path to vep
         vepdata: Path to vep index files
         processing: Processing type. Defaults to main
-        test: Test flag
         reference: Reference file for vcf2maf
     '''
     logger.info("PROCESSING {} FILES: {}".format(center, len(validfiles)))
@@ -349,7 +347,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
                     veppath=veppath, vepdata=vepdata,
                     processing=processing,
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf,
-                    reference=reference, test=test)
+                    reference=reference)
 
     else:
         filePath = None
@@ -402,7 +400,7 @@ def create_and_archive_maf_database(syn, database_synid_mappingdf):
         Editted database to synapse id mapping dataframe
     '''
     maf_database_synid = process_functions.getDatabaseSynId(
-        syn, "vcf2maf", databaseToSynIdMappingDf=database_synid_mappingdf)
+        syn, "vcf2maf", project_id=None, databaseToSynIdMappingDf=database_synid_mappingdf)
     maf_database_ent = syn.get(maf_database_synid)
     maf_columns = list(syn.getTableColumns(maf_database_synid))
     schema = synapseclient.Schema(
@@ -596,9 +594,9 @@ def update_status_and_error_tables(syn,
     return(input_valid_statusdf)
 
 
-def validation(syn, center, process,
+def validation(syn, project_id, center, process,
                center_mapping_df, database_synid_mappingdf,
-               thread, testing, oncotree_link, format_registry):
+               thread, oncotree_link, format_registry):
     '''
     Validation of all center files
 
@@ -608,7 +606,6 @@ def validation(syn, center, process,
         process: main, vcf, maf
         center_mapping_df: center mapping dataframe
         thread: Unused parameter for now
-        testing: True if testing
         oncotree_link: Link to oncotree
 
     Returns:
@@ -631,10 +628,10 @@ def validation(syn, center, process,
         ))
 
         validation_status_synid = process_functions.getDatabaseSynId(
-            syn, "validationStatus",
+            syn, project_id=None, tableName="validationStatus",
             databaseToSynIdMappingDf=database_synid_mappingdf)
         error_tracker_synid = process_functions.getDatabaseSynId(
-            syn, "errorTracker",
+            syn, project_id=None, tableName="errorTracker",
             databaseToSynIdMappingDf=database_synid_mappingdf)
 
         # Make sure the vcf validation statuses don't get wiped away
@@ -662,11 +659,10 @@ def validation(syn, center, process,
 
         for ents in center_files:
             status, errors, messages_to_send = validatefile(
-                syn, ents,
+                syn, project_id, ents,
                 validation_status_table,
                 error_tracker_table,
                 center=center, threads=1,
-                testing=testing,
                 oncotree_link=oncotree_link,
                 format_registry=format_registry)
 
@@ -701,7 +697,7 @@ def validation(syn, center, process,
 
 
 def center_input_to_database(
-        syn, center, process, testing,
+        syn, project_id, center, process,
         only_validate, vcf2maf_path, vep_path,
         vep_data, database_to_synid_mappingdf,
         center_mapping_df, reference=None,
@@ -720,11 +716,6 @@ def center_input_to_database(
     fileHandler = logging.FileHandler(log_path, mode='w')
     fileHandler.setFormatter(logFormatter)
     logger.addHandler(fileHandler)
-
-    if testing:
-        logger.info("###########################################")
-        logger.info("############NOW IN TESTING MODE############")
-        logger.info("###########################################")
 
     # ----------------------------------------
     # Start input to staging process
@@ -747,9 +738,9 @@ def center_input_to_database(
         process_functions.rmFiles(os.path.join(path_to_genie, center))
 
     validFiles = validation(
-        syn, center, process, center_mapping_df,
+        syn, project_id, center, process, center_mapping_df,
         database_to_synid_mappingdf, thread,
-        testing, oncotree_link, PROCESS_FILES)
+        oncotree_link, PROCESS_FILES)
 
     if len(validFiles) > 0 and not only_validate:
         # Reorganize so BED file are always validated and processed first
@@ -794,7 +785,7 @@ def center_input_to_database(
                      validVCF=validVCF,
                      vcf2mafPath=vcf2maf_path,
                      veppath=vep_path, vepdata=vep_data,
-                     test=testing, processing=process, reference=reference)
+                     processing=process, reference=reference)
 
         # Should add in this process end tracking
         # before the deletion of samples
@@ -809,7 +800,7 @@ def center_input_to_database(
         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
         logger.info("SAMPLE/PATIENT RETRACTION")
-        toRetract.retract(syn, testing)
+        toRetract.retract(syn, project_id=project_id)
 
     else:
         messageOut = \
