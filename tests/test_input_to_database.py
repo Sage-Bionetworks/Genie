@@ -396,8 +396,7 @@ def test_valid_validatefile():
                                     'error_list': [],
                                     'to_validate': True}) as patch_check, \
          patch.object(GenieValidationHelper,"validate_single_file",
-                      return_value=(valid, message,
-                                    filetype)) as patch_validate,\
+                      return_value=(valid, message)) as patch_validate,\
          patch.object(input_to_database, "_get_status_and_error_list",
                       return_value=status_error_list_results) as patch_get_staterror_list,\
          patch.object(input_to_database,
@@ -452,8 +451,7 @@ def test_invalid_validatefile():
                                     'error_list': [],
                                     'to_validate': True}) as patch_check, \
          patch.object(GenieValidationHelper, "validate_single_file",
-                      return_value=(valid, message,
-                                    filetype)) as patch_validate,\
+                      return_value=(valid, message)) as patch_validate,\
          patch.object(input_to_database, "_get_status_and_error_list",
                       return_value=status_error_list_results) as patch_get_staterror_list:
 
@@ -507,7 +505,7 @@ def test_already_validated_validatefile():
          patch.object(input_to_database, "check_existing_file_status",
                       return_value=check_file_status_dict) as patch_check, \
          patch.object(GenieValidationHelper, "validate_single_file",
-                      return_value=(valid, errors, filetype)) as patch_validate,\
+                      return_value=(valid, errors)) as patch_validate,\
          patch.object(input_to_database, "_get_status_and_error_list",
                       return_value=status_error_list_results) as patch_get_staterror_list,\
          patch.object(input_to_database,

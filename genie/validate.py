@@ -74,7 +74,6 @@ class ValidationHelper(object):
         Returns:
             message: errors and warnings
             valid: Boolean value of validation status
-            filetype: String of the type of the file
         """
 
         if self.file_type not in self._format_registry:
@@ -97,7 +96,7 @@ class ValidationHelper(object):
         # Complete error message
         message = collect_errors_and_warnings(errors, warnings)
 
-        return(valid, message, self.file_type)
+        return (valid, message)
 
 
 class GenieValidationHelper(ValidationHelper):
@@ -263,7 +262,7 @@ def _perform_validate(syn, args):
                                       format_registry=format_registry)
     mykwargs = dict(oncotree_link=args.oncotree_link,
                     nosymbol_check=args.nosymbol_check)
-    valid, message, filetype = validator.validate_single_file(**mykwargs)
+    valid, message = validator.validate_single_file(**mykwargs)
 
     # Upload to synapse if parentid is specified and valid
     _upload_to_synapse(syn, args.filepath, valid, parentid=args.parentid)
