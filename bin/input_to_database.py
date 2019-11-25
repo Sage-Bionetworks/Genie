@@ -22,8 +22,7 @@ def main(process,
          reference=None,
          vcf2maf_path=None,
          vep_path=None,
-         vep_data=None,
-         thread=1):
+         vep_data=None):
 
     syn = process_functions.synLogin(pemfile, debug=debug)
     # Must specify correct paths to vcf2maf, VEP and VEP data
@@ -96,8 +95,7 @@ def main(process,
             vep_data, databaseToSynIdMappingDf,
             center_mapping_df, reference=reference,
             delete_old=delete_old,
-            oncotree_link=oncotree_link,
-            thread=thread)
+            oncotree_link=oncotree_link)
 
     # To ensure that this is the new entity
     center_mapping_ent = syn.get(center_mapping_id)
@@ -173,14 +171,6 @@ if __name__ == "__main__":
         type=str,
         help="Path to VEP data",
         default=os.path.expanduser("~/.vep"))
-    '''
-    TODO: Remove thread
-    '''
-    parser.add_argument(
-        '--thread',
-        type=int,
-        help="Number of threads to use for validation",
-        default=1)
 
     args = parser.parse_args()
 
@@ -196,5 +186,4 @@ if __name__ == "__main__":
          reference=args.reference,
          vcf2maf_path=args.vcf2mafPath,
          vep_path=args.vepPath,
-         vep_data=args.vepData,
-         thread=args.thread)
+         vep_data=args.vepData)
