@@ -1,4 +1,8 @@
 #! /usr/bin/env python3
+"""Script to crawl Synapse folder for a center, validate, and update database tables.
+
+"""
+
 import os
 import argparse
 import logging
