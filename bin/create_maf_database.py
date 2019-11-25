@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def main(db_mapping_id, pemfile):
+def main(db_mapping_id, pemfile, debug):
 
     syn = process_functions.synLogin(pemfile, debug=debug)
 
@@ -26,7 +26,10 @@ if __name__ == "__main__":
                         help='Database to ID mapping table Synapse ID.')
     parser.add_argument("--pemFile", type=str,
                         help="Path to PEM file (genie.pem)")
-                     
+    parser.add_argument("--debug", action='store_true',
+                        help="Add debug mode to synapse")
+
     args = parser.parse_args()
 
-    main(db_mapping_id=args.db_mapping_id, pemfile=args.pemFile)
+    main(db_mapping_id=args.db_mapping_id, pemfile=args.pemFile,
+         debug=args.debug)
