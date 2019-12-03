@@ -93,7 +93,7 @@ class cna(FileTypeFormat):
         assert os.path.basename(filePath[0]) == \
             "data_CNA_{}.txt".format(self.center)
 
-    def _process(self, cnaDf):
+    def _process(self, cnaDf, databaseToSynIdMappingDf):
         cnaDf.rename(columns={
             cnaDf.columns[0]: cnaDf.columns[0].upper()}, inplace=True)
         cnaDf.rename(columns={
@@ -103,8 +103,9 @@ class cna(FileTypeFormat):
                  if col.upper() == "ENTREZ_GENE_ID"]
         if len(index) > 0:
             del cnaDf[cnaDf.columns[index][0]]
-        bedSynId = process_functions.getDatabaseSynId(
-            self.syn, "bed", test=self.testing)
+
+        bedSynId = databaseToSynIdMappingDf.Id[
+            databaseToSynIdMappingDf['Database'] == "bed"][0]
         bed = self.syn.tableQuery(
             "select Hugo_Symbol, ID from {} where CENTER = '{}'" .format(
                 bedSynId, self.center))
@@ -135,7 +136,7 @@ class cna(FileTypeFormat):
 
     def process_steps(self, cnaDf, newPath, databaseToSynIdMappingDf):
 
-        newCNA = self._process(cnaDf)
+        newCNA = self._process(cnaDf, databaseToSynIdMappingDf)
 
         centerMafSynId = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
