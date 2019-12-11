@@ -223,7 +223,7 @@ def _get_status_and_error_list(valid, message, entities):
 
 
 def validatefile(syn, entities, validation_status_table, error_tracker_table,
-                 center, threads, testing, oncotree_link,
+                 center, testing, oncotree_link,
                  format_registry=PROCESS_FILES):
     '''Validate a list of entities.
 
@@ -269,7 +269,7 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
                                                testing=testing)
     filetype = validator.file_type
     if check_file_status['to_validate']:
-        valid, message, filetype = validator.validate_single_file(
+        valid, message = validator.validate_single_file(
             oncotree_link=oncotree_link, nosymbol_check=False)
         logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
@@ -292,7 +292,7 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
     return input_status_list, invalid_errors_list, messages_to_send
 
 
-def processfiles(syn, validfiles, center, path_to_genie, threads,
+def processfiles(syn, validfiles, center, path_to_genie,
                  center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
                  validVCF=None, vcf2mafPath=None,
                  veppath=None, vepdata=None,
@@ -306,7 +306,6 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
                     has 'id', 'path', and 'fileType' column
         center: GENIE center name
         path_to_genie: Path to GENIE workdir
-        threads: Threads used
         center_mapping_df: Center mapping dataframe
         oncotree_link: Link to oncotree
         databaseToSynIdMappingDf: Database to synapse id mapping dataframe
@@ -340,7 +339,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
             else:
                 synId = synId[0]
             if fileType is not None and (processing == "main" or processing == fileType):
-                processor = PROCESS_FILES[fileType](syn, center, threads)
+                processor = PROCESS_FILES[fileType](syn, center)
                 processor.process(
                     filePath=filePath, newPath=newPath,
                     parentId=center_staging_synid, databaseSynId=synId,
@@ -359,7 +358,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
         synId = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == processing][0]
         fileSynId = None
-        processor = PROCESS_FILES[processing](syn, center, threads)
+        processor = PROCESS_FILES[processing](syn, center)
         processor.process(
             filePath=filePath, newPath=newPath,
             parentId=center_staging_synid, databaseSynId=synId,
@@ -599,7 +598,7 @@ def update_status_and_error_tables(syn,
 
 def validation(syn, center, process,
                center_mapping_df, database_synid_mappingdf,
-               thread, testing, oncotree_link, format_registry):
+               testing, oncotree_link, format_registry):
     '''
     Validation of all center files
 
@@ -608,7 +607,6 @@ def validation(syn, center, process,
         center: Center name
         process: main, vcf, maf
         center_mapping_df: center mapping dataframe
-        thread: Unused parameter for now
         testing: True if testing
         oncotree_link: Link to oncotree
 
@@ -666,7 +664,7 @@ def validation(syn, center, process,
                 syn, ents,
                 validation_status_table,
                 error_tracker_table,
-                center=center, threads=1,
+                center=center,
                 testing=testing,
                 oncotree_link=oncotree_link,
                 format_registry=format_registry)
@@ -706,7 +704,7 @@ def center_input_to_database(
         only_validate, vcf2maf_path, vep_path,
         vep_data, database_to_synid_mappingdf,
         center_mapping_df, reference=None,
-        delete_old=False, oncotree_link=None, thread=1):
+        delete_old=False, oncotree_link=None):
     if only_validate:
         log_path = os.path.join(
             process_functions.SCRIPT_DIR,
@@ -749,7 +747,7 @@ def center_input_to_database(
 
     validFiles = validation(
         syn, center, process, center_mapping_df,
-        database_to_synid_mappingdf, thread,
+        database_to_synid_mappingdf,
         testing, oncotree_link, PROCESS_FILES)
 
     if len(validFiles) > 0 and not only_validate:
@@ -789,7 +787,7 @@ def center_input_to_database(
             syn.store(synapseclient.Table(
                 processTrackerSynId, processTrackerDf))
 
-        processfiles(syn, validFiles, center, path_to_genie, thread,
+        processfiles(syn, validFiles, center, path_to_genie,
                      center_mapping_df, oncotree_link,
                      database_to_synid_mappingdf,
                      validVCF=validVCF,

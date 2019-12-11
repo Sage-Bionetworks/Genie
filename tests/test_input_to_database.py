@@ -378,7 +378,6 @@ def test_valid_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    threads = 0
     testing = False
     valid = True
     message = "Is valid"
@@ -397,8 +396,7 @@ def test_valid_validatefile():
                                     'error_list': [],
                                     'to_validate': True}) as patch_check, \
          patch.object(GenieValidationHelper,"validate_single_file",
-                      return_value=(valid, message,
-                                    filetype)) as patch_validate,\
+                      return_value=(valid, message)) as patch_validate,\
          patch.object(input_to_database, "_get_status_and_error_list",
                       return_value=status_error_list_results) as patch_get_staterror_list,\
          patch.object(input_to_database,
@@ -406,7 +404,7 @@ def test_valid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
-            error_trackerdf, center, threads, testing, oncotree_link)
+            error_trackerdf, center, testing, oncotree_link)
 
         assert expected_results == validate_results
         patch_validate.assert_called_once_with(
@@ -434,7 +432,6 @@ def test_invalid_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    threads = 0
     testing = False
     valid = False
     message = "Is invalid"
@@ -454,14 +451,13 @@ def test_invalid_validatefile():
                                     'error_list': [],
                                     'to_validate': True}) as patch_check, \
          patch.object(GenieValidationHelper, "validate_single_file",
-                      return_value=(valid, message,
-                                    filetype)) as patch_validate,\
+                      return_value=(valid, message)) as patch_validate,\
          patch.object(input_to_database, "_get_status_and_error_list",
                       return_value=status_error_list_results) as patch_get_staterror_list:
 
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
-            error_trackerdf, center, threads, testing, oncotree_link)
+            error_trackerdf, center, testing, oncotree_link)
 
         assert expected_results == validate_results
         patch_validate.assert_called_once_with(
@@ -487,7 +483,6 @@ def test_already_validated_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    threads = 0
     testing = False
     valid = False
     errors = "Invalid file"
@@ -510,7 +505,7 @@ def test_already_validated_validatefile():
          patch.object(input_to_database, "check_existing_file_status",
                       return_value=check_file_status_dict) as patch_check, \
          patch.object(GenieValidationHelper, "validate_single_file",
-                      return_value=(valid, errors, filetype)) as patch_validate,\
+                      return_value=(valid, errors)) as patch_validate,\
          patch.object(input_to_database, "_get_status_and_error_list",
                       return_value=status_error_list_results) as patch_get_staterror_list,\
          patch.object(input_to_database,
@@ -518,7 +513,7 @@ def test_already_validated_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
-            error_trackerdf, center, threads, testing, oncotree_link)
+            error_trackerdf, center, testing, oncotree_link)
 
         assert expected_results == validate_results
         patch_validate.assert_not_called()
@@ -741,7 +736,6 @@ def test_validation():
         'path': ["/path/to/file"],
         'fileType': ['clinical']})
 
-    thread = 2
     testing = False
     modified_on = 1561143558000
     process = "main"
@@ -775,7 +769,7 @@ def test_validation():
         valid_filedf = input_to_database.validation(
             syn, center, process,
             center_mapping_df, databaseToSynIdMappingDf,
-            thread, testing, oncotree_link, genie.config.PROCESS_FILES)
+            testing, oncotree_link, genie.config.PROCESS_FILES)
         patch_get_center.assert_called_once_with(
             syn, center_input_synid, center, process)
         assert patch_tablequery.call_count == 2
@@ -783,7 +777,7 @@ def test_validation():
             syn, entity,
             validationstatus_mock,
             errortracking_mock,
-            center='SAGE', threads=1,
+            center='SAGE',
             testing=False,
             oncotree_link=oncotree_link,
             format_registry=genie.config.PROCESS_FILES)
@@ -811,7 +805,6 @@ def test_main_processfile(process, genieclass, filetype):
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    threads = 2
     oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
@@ -822,7 +815,7 @@ def test_main_processfile(process, genieclass, filetype):
 
     with patch.object(genieclass, "process") as patch_class:
         input_to_database.processfiles(
-            syn, validfilesdf, center, path_to_genie, threads,
+            syn, validfilesdf, center, path_to_genie,
             center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
@@ -840,7 +833,6 @@ def test_mainnone_processfile():
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    threads = 2
     oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
@@ -851,7 +843,7 @@ def test_mainnone_processfile():
 
     with patch.object(clinical, "process") as patch_clin:
         input_to_database.processfiles(
-            syn, validfilesdf, center, path_to_genie, threads,
+            syn, validfilesdf, center, path_to_genie,
             center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
@@ -869,7 +861,6 @@ def test_notvcf_processfile():
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    threads = 2
     oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
@@ -880,7 +871,7 @@ def test_notvcf_processfile():
 
     with patch.object(vcf, "process") as patch_process:
         input_to_database.processfiles(
-            syn, validfilesdf, center, path_to_genie, threads,
+            syn, validfilesdf, center, path_to_genie,
             center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
