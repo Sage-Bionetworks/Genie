@@ -1108,7 +1108,7 @@ def store_bed_files(syn, genie_version, beddf, seq_assay_ids,
     '''
     logger.info("STORING COMBINED BED FILE")
     combined_bed_path = os.path.join(
-        GENIE_RELEASE_DIR, 'genie_combined_%s.bed' % genie_version)
+        GENIE_RELEASE_DIR, 'genomic_information_%s.txt' % genie_version)
     if not current_release_staging:
         for seq_assay in beddf['SEQ_ASSAY_ID'].unique():
             bed_seq_df = beddf[beddf['SEQ_ASSAY_ID'] == seq_assay]
@@ -1128,7 +1128,7 @@ def store_bed_files(syn, genie_version, beddf, seq_assay_ids,
     beddf = beddf[beddf['SEQ_ASSAY_ID'].isin(seq_assay_ids)]
     beddf.to_csv(combined_bed_path, sep="\t", index=False)
     store_file(syn, combined_bed_path, parent=release_synid,
-               genieVersion=genie_version, name="genie_combined.bed")
+               genieVersion=genie_version, name="genomic_information.txt")
 
 
 def stagingToCbio(syn, processingDate, genieVersion,
