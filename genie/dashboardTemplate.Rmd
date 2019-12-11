@@ -337,7 +337,7 @@ if (is.null(this_samples)) {
   this_patient <- this_samples
   this_patient <- this_patient[!duplicated(this_patient$PATIENT_ID),]
 }
-this_bed <- getFileDf("genie_combined.bed", releaseFiles)
+this_bed <- getFileDf("genomic_information.txt", releaseFiles)
 this_assays = as.character(unique(this_samples$SEQ_ASSAY_ID))
 this_mut <- getFileDf("data_mutations_extended.txt", releaseFiles)
 black_list_variants <- synTableQuery("select * from syn18459663",

@@ -78,10 +78,10 @@ class maf(FileTypeFormat):
                 mafset = mafDf.to_csv(sep="\t", index=False)
             else:
                 mafset = mafDf.to_csv(sep="\t", index=False, header=None)
-            write_or_append = "w" if maf else "a"
+            write_or_append = "wb" if maf else "ab"
             with open(filePath, write_or_append) as maffile:
                 mafSet = process_functions.removeStringFloat(mafset)
-                maffile.write(mafSet)
+                maffile.write(mafSet.encode("utf-8"))
 
     def storeProcessedMaf(
             self, filePath, mafSynId, centerMafSynId, isNarrow=False):
