@@ -223,14 +223,13 @@ def configureMafRow(
         return(None)
 
 
-def runMAFinBED(
-        syn,
-        center_mappingdf,
-        databaseSynIdMappingDf,
-        test=False,
-        genieVersion="test",
-        genie_user=None,
-        genie_pass=None):
+def runMAFinBED(syn,
+                center_mappingdf,
+                databaseSynIdMappingDf,
+                test=False,
+                genieVersion="test",
+                genie_user=None,
+                genie_pass=None):
     '''
     Run MAF in BED script, filter data and update MAFinBED database
 
@@ -246,14 +245,13 @@ def runMAFinBED(
     Returns:
         pd.Series: Variants to remove
     '''
-    MAFinBED_script = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        '../analyses/genomicData/MAFinBED.R')
-    notinbed_variant_file = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        '../analyses/genomicData/notinbed.csv')
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    mafinbed_script = os.path.join(script_dir,
+                                   '../analyses/genomicData/MAFinBED.R')
+    notinbed_file = os.path.join(script_dir,
+                                 '../analyses/genomicData/notinbed.csv')
 
-    command = ['Rscript', MAFinBED_script, notinbed_variant_file]
+    command = ['Rscript', mafinbed_script, notinbed_file]
     if genie_user is not None and genie_pass is not None:
         command.extend(['--syn_user', genie_user, '--syn_pass', genie_pass])
     if test:
@@ -268,31 +266,30 @@ def runMAFinBED(
     #     " is False and Center in ('{}')".format(
     #         mutationSynId, "','".join(center_mappingdf.center)))
     # removedVariantsDf = removedVariants.asDataFrame()
-    removedVariantsDf = pd.read_csv(notinbed_variant_file)
-    removedVariantsDf['removeVariants'] = \
-        removedVariantsDf['Chromosome'].astype(str) + ' ' + \
-        removedVariantsDf['Start_Position'].astype(str) + ' ' + \
-        removedVariantsDf['End_Position'].astype(str) + ' ' + \
-        removedVariantsDf['Reference_Allele'].astype(str) + ' ' + \
-        removedVariantsDf['Tumor_Seq_Allele2'].astype(str) + ' ' + \
-        removedVariantsDf['Tumor_Sample_Barcode'].astype(str)
+    removed_variantsdf = pd.read_csv(notinbed_file)
+    removed_variantsdf['removeVariants'] = \
+        removed_variantsdf['Chromosome'].astype(str) + ' ' + \
+        removed_variantsdf['Start_Position'].astype(str) + ' ' + \
+        removed_variantsdf['End_Position'].astype(str) + ' ' + \
+        removed_variantsdf['Reference_Allele'].astype(str) + ' ' + \
+        removed_variantsdf['Tumor_Seq_Allele2'].astype(str) + ' ' + \
+        removed_variantsdf['Tumor_Sample_Barcode'].astype(str)
     # Store filtered vairants
-    for center in removedVariantsDf['Center'].unique():
-        center_mutation = removedVariantsDf[
-            removedVariantsDf['Center'] == center]
-
-        # mafText = process.removePandasDfFloat(center_mutation)
-        center_mutation.to_csv("mafinbed_filtered_variants.csv", index=False)
-
-        storeFile(
-            syn,
-            "mafinbed_filtered_variants.csv",
-            parent=center_mappingdf['stagingSynId'][
-                center_mappingdf['center'] == center][0],
-            centerStaging=True,
-            genieVersion=genieVersion)
-        os.unlink("mafinbed_filtered_variants.csv")
-    return(removedVariantsDf['removeVariants'])
+    for center in removed_variantsdf['Center'].unique():
+        if any(center_mappingdf['center'] == center):
+            center_mutation = removed_variantsdf[
+                removed_variantsdf['Center'] == center]
+            # mafText = process.removePandasDfFloat(center_mutation)
+            center_mutation.to_csv("mafinbed_filtered_variants.csv",
+                                   index=False)
+            storeFile(syn,
+                      "mafinbed_filtered_variants.csv",
+                      parent=center_mappingdf['stagingSynId'][
+                          center_mappingdf['center'] == center][0],
+                      centerStaging=True,
+                      genieVersion=genieVersion)
+            os.unlink("mafinbed_filtered_variants.csv")
+    return removed_variantsdf['removeVariants']
 
 
 def seq_date_filter(clinicalDf, processingDate, consortiumReleaseCutOff):
