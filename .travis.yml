@@ -5,7 +5,7 @@ script:
   - pytest -vs tests
 
 before_install:
-  - sudo apt-get install -y bedtools gzip
+  - sudo apt-get install -y bedtools
   - pip install pandas synapseclient pycrypto
 
 matrix:

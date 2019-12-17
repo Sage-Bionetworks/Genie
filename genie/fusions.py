@@ -120,10 +120,10 @@ class fusions(FileTypeFormat):
             bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))
             bedDf = bed.asDataFrame()
             #invalidated_genes = self.pool.map(process_functions.validateSymbol, fusionDF["HUGO_SYMBOL"].drop_duplicates())
-            fusionDF = fusionDF.drop_duplicates("HUGO_SYMBOL").apply(lambda x: validateSymbol(x, bedDf), axis=1)
             if fusionDF["HUGO_SYMBOL"].isnull().any():
                 total_error += "Your fusion file should not have any NA/blank Hugo Symbols.\n"
-        
+            # fusionDF = fusionDF.drop_duplicates("HUGO_SYMBOL").apply(lambda x: validateSymbol(x, bedDf), axis=1)
+
         # if process_functions.checkColExist(fusionDF, "DNA_SUPPORT"):
         #     if not fusionDF.DNA_SUPPORT.isin(["yes","no","unknown"]).all():
         #         total_error += "Your fusion file's DNA_SUPPORT column must be 'yes', 'no', or 'unknown'"
