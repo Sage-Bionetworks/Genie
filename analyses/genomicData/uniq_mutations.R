@@ -1,10 +1,32 @@
+library(argparse)
+parser <- ArgumentParser()
+parser$add_argument("release",
+                    help = "Release version (ie. 5.3-consortium)")
+parser$add_argument("--testing",
+                    action = "store_true",
+                    help = "Use testing files")
+parser$add_argument("--syn_user",
+                    help = "Synapse username")
+parser$add_argument("--syn_pass",
+                    help = "Synapse password")
+args <- parser$parse_args()
+genie_user <- args$syn_user
+genie_pass <- args$syn_pass
+testing <- args$testing
+
 library(synapser)
 library(VariantAnnotation)
 library(knitr)
 library(glue)
 library(readr)
 
-synLogin()
+tryCatch({
+  synLogin()
+}, error = function(err) {
+  #genieUser = Sys.getenv("GENIE_USER")
+  #geniePass = Sys.getenv("GENIE_PASS")
+  synLogin(genie_user, genie_pass)
+})
 
 get_file_mapping = function(release_folder_synid) {
   release_ent = synGet(release_folder_synid)
@@ -88,8 +110,33 @@ find_unique_mutations_panel <- function(clinicaldf, codes_above_threshold,
   unique_mutation_files
 }
 
+if (testing) {
+  database_synid_mappingid = 'syn11600968'
+} else{
+  database_synid_mappingid = 'syn10967259'
+}
 
-RELEASE_FILES_MAPPING = get_file_mapping("syn11638406")
+database_synid_mapping = synTableQuery(sprintf('select * from %s',
+                                               database_synid_mappingid))
+database_synid_mappingdf = synapser::as.data.frame(database_synid_mapping)
+release_folder_fileview_synid = database_synid_mappingdf$Id[database_synid_mappingdf$Database == "releaseFolder"]
+
+choose_from_release = synTableQuery(paste(sprintf("select distinct(name) as releases from %s",
+                                                  release_folder_fileview_synid),
+                                          "where name not like 'Release%' and name <> 'case_lists'"))
+releases = synapser::as.data.frame(choose_from_release)
+if (!any(releases$releases %in% release)) {
+  stop(sprintf("Must choose correct release: %s",
+               paste0(releases$releases, collapse=", ")))
+}
+
+release_folder = synTableQuery(sprintf("select id from %s where name = '%s'",
+                                       release_folder_fileview_synid, release))
+release_folder_synid = release_folder$asDataFrame()$id
+
+# Get release files mapping
+RELEASE_FILES_MAPPING = get_file_mapping(release_folder_synid)
+NUMBER_PANELS_COVER_REGION = 5
 
 BED_SYNID = RELEASE_FILES_MAPPING[['genomic_information.txt']]
 MAF_SYNID = RELEASE_FILES_MAPPING[['data_mutations_extended.txt']]
@@ -110,7 +157,7 @@ MAFDF = MAFDF[,c("Hugo_Symbol", "Chromosome", "Start_Position",
 BEDDF = readr::read_tsv(bed_ent$path, comment="#")
 BEDDF$CENTER = sapply(strsplit(BEDDF$SEQ_ASSAY_ID, "-"), function(x) x[1])
 
-
+# Get number of oncotree codes per seq assay id
 codes_per_panel = table(CLINICALDF$ONCOTREE_CODE, CLINICALDF$SEQ_ASSAY_ID)
 # Gets the number of centers with a certain codes
 codes_count_across_panels = apply(codes_per_panel, 1, function(x) {
@@ -120,13 +167,14 @@ hist(codes_count_across_panels,
      main="Distribution of codes seen across panels",
      xlab = "Codes seen across x panels")
 # Based on the histogram, choose 15 as the threshold
-number_center_with_panels = 15
+# number_center_with_panels = 15
+number_panels_with_code =  floor(0.75*length(unique( CLINICALDF$SEQ_ASSAY_ID)))
 
 CODES_ABOVE_THRESHOLD_PANEL = codes_count_across_panels[
-  codes_count_across_panels >= number_center_with_panels]
+  codes_count_across_panels >= number_panels_with_code]
 
 
-unique_mutation_folder = "~/Genie/analyses/unique_muts_panel300/"
+unique_mutation_folder = "~/Genie/analyses/genomicData/unique_muts_panel300/"
 dir.create(unique_mutation_folder)
 unique_mutation_files = list.files(unique_mutation_folder,
                                    full.names = T)
@@ -136,11 +184,9 @@ if (length(unique_mutation_files) == 0) {
                                                       CODES_ABOVE_THRESHOLD_PANEL,
                                                       MAFDF,
                                                       BEDDF,
-                                                      threshold=5,
+                                                      threshold=NUMBER_PANELS_COVER_REGION,
                                                       dir = unique_mutation_folder)
 } 
-
-
 
 
 panel_unique_mutation_counts = 
