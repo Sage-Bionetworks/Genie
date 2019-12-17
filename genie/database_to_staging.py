@@ -274,21 +274,23 @@ def runMAFinBED(syn,
         removed_variantsdf['Reference_Allele'].astype(str) + ' ' + \
         removed_variantsdf['Tumor_Seq_Allele2'].astype(str) + ' ' + \
         removed_variantsdf['Tumor_Sample_Barcode'].astype(str)
-    # Store filtered vairants
+    # Must only select variants from centers that are being processed
+    to_remove = removed_variantsdf['Center'].isin(center_mappingdf['center'])
+    removed_variantsdf = removed_variantsdf[to_remove]
+    # Store filtered variants
     for center in removed_variantsdf['Center'].unique():
-        if any(center_mappingdf['center'] == center):
-            center_mutation = removed_variantsdf[
-                removed_variantsdf['Center'] == center]
-            # mafText = process.removePandasDfFloat(center_mutation)
-            center_mutation.to_csv("mafinbed_filtered_variants.csv",
-                                   index=False)
-            storeFile(syn,
-                      "mafinbed_filtered_variants.csv",
-                      parent=center_mappingdf['stagingSynId'][
-                          center_mappingdf['center'] == center][0],
-                      centerStaging=True,
-                      genieVersion=genieVersion)
-            os.unlink("mafinbed_filtered_variants.csv")
+        center_mutation = removed_variantsdf[
+            removed_variantsdf['Center'] == center]
+        # mafText = process.removePandasDfFloat(center_mutation)
+        center_mutation.to_csv("mafinbed_filtered_variants.csv",
+                               index=False)
+        storeFile(syn,
+                  "mafinbed_filtered_variants.csv",
+                  parent=center_mappingdf['stagingSynId'][
+                      center_mappingdf['center'] == center][0],
+                  centerStaging=True,
+                  genieVersion=genieVersion)
+        os.unlink("mafinbed_filtered_variants.csv")
     return removed_variantsdf['removeVariants']
 
 
