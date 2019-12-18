@@ -33,13 +33,9 @@ class Assayinfo(FileTypeFormat):
         """
         # Must pass in a list
         process_assay_info_df = self._process(assay_info_df)
-        col = ['SEQ_ASSAY_ID', 'is_paired_end', 'library_selection',
-               'library_strategy', 'platform', 'read_length',
-               'instrument_model', 'gene_padding', 'number_of_genes',
-               'variant_classifications', 'CENTER']
         process_functions.updateData(self.syn, databaseSynId,
                                      process_assay_info_df, self.center,
-                                     col=col, filterByColumn="CENTER",
+                                     filterByColumn="CENTER",
                                      toDelete=True)
         process_assay_info_df.to_csv(newPath, sep="\t", index=False)
         return newPath
