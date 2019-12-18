@@ -275,8 +275,8 @@ def runMAFinBED(syn,
         removed_variantsdf['Tumor_Seq_Allele2'].astype(str) + ' ' + \
         removed_variantsdf['Tumor_Sample_Barcode'].astype(str)
     # Must only select variants from centers that are being processed
-    to_remove = removed_variantsdf['Center'].isin(center_mappingdf['center'])
-    removed_variantsdf = removed_variantsdf[to_remove]
+    to_keep = removed_variantsdf['Center'].isin(center_mappingdf['center'])
+    removed_variantsdf = removed_variantsdf[to_keep]
     # Store filtered variants
     for center in removed_variantsdf['Center'].unique():
         center_mutation = removed_variantsdf[
