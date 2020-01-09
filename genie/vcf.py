@@ -208,21 +208,18 @@ class vcf(maf):
             total_error - error messages
             warning - warning messages
         '''
-        REQUIRED_HEADERS = pd.Series([
-            "#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"])
-
+        REQUIRED_HEADERS = pd.Series(["#CHROM", "POS", "ID", "REF", "ALT",
+                                      "QUAL", "FILTER", "INFO"])
         total_error = ""
         warning = ""
         if not all(REQUIRED_HEADERS.isin(vcf.columns)):
-            total_error += (
-                "Your vcf file must have these headers: "
-                "CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO.\n")
+            total_error += ("Your vcf file must have these headers: "
+                            "CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO.\n")
 
         if len(vcf.columns) > 8:
             if "FORMAT" not in vcf.columns:
-                total_error += (
-                    "Your vcf file must have FORMAT header "
-                    "if genotype columns exist.\n")
+                total_error += ("Your vcf file must have FORMAT header "
+                                "if genotype columns exist.\n")
 
         # Require that they report variants mapped to
         # either GRCh37 or hg19 without
@@ -231,20 +228,21 @@ class vcf(maf):
         if haveColumn:
             nochr = ["chr" in i for i in vcf['#CHROM'] if isinstance(i, str)]
             if sum(nochr) > 0:
-                warning += (
-                    "Your vcf file should not have the chr prefix "
-                    "in front of chromosomes.\n")
+                warning += ("Your vcf file should not have the chr prefix "
+                            "in front of chromosomes.\n")
             if sum(vcf['#CHROM'].isin(["chrM"])) > 0:
-                total_error += \
-                    "Your vcf file must not have variants on chrM.\n"
+                total_error += "Your vcf file must not have variants on chrM.\n"
 
         # No white spaces
         temp = vcf.apply(lambda x: contains_whitespace(x), axis=1)
         if sum(temp) > 0:
-            warning += (
-                "Your vcf file should not have any "
-                "white spaces in any of the columns.\n")
+            warning += ("Your vcf file should not have any "
+                        "white spaces in any of the columns.\n")
+
+        # No duplicated values
+        if vcf.duplicated().any():
+            total_error += "Your vcf file should not have duplicate rows\n"
         # I can also recommend a `bcftools query` command that
         # will parse a VCF in a detailed way,
         # and output with warnings or errors if the format is not adhered too
-        return(total_error, warning)
+        return total_error, warning

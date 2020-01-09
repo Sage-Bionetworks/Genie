@@ -293,6 +293,10 @@ class maf(FileTypeFormat):
                     "CHROMOSOME column cannot have any values that "
                     "start with 'chr' or any 'WT' values.\n")
 
+        # No duplicated values
+        if mutationDF.duplicated().any():
+            total_error += "Mutation File: Should not have duplicate rows\n"
+
         return(total_error, warning)
 
     def _get_dataframe(self, filePathList):
