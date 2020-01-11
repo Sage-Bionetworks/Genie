@@ -160,6 +160,7 @@ class maf(FileTypeFormat):
             if os.path.exists(newMafPath):
                 # This needs to switch to streaming at some point
                 mafDf = pd.read_csv(newMafPath, sep="\t", comment="#")
+                mafDf.drop_duplicates(inplace=True)
                 mafDf = self.formatMAF(mafDf)
                 self.createFinalMaf(mafDf, newMafPath, maf=True)
                 narrowMafDf = mafDf[narrowMafColumns]
@@ -295,7 +296,7 @@ class maf(FileTypeFormat):
 
         # No duplicated values
         if mutationDF.duplicated().any():
-            total_error += "Mutation File: Should not have duplicate rows\n"
+            warning += "Mutation File: Should not have duplicate rows\n"
 
         return(total_error, warning)
 

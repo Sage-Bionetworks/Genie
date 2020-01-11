@@ -148,6 +148,7 @@ class vcf(maf):
         narrowMafPaths = [narrowMafPath]
         for mafFile in mafFiles:
             mafDf = pd.read_csv(mafFile, sep="\t", comment="#")
+            mafDf.drop_duplicates(inplace=True)
             mafDf = self.formatMAF(mafDf)
             self.createFinalMaf(mafDf, newMafPath)
             narrowMafDf = mafDf[narrowMafColumns]
@@ -241,7 +242,7 @@ class vcf(maf):
 
         # No duplicated values
         if vcf.duplicated().any():
-            total_error += "Your vcf file should not have duplicate rows\n"
+            warning += "Your vcf file should not have duplicate rows\n"
         # I can also recommend a `bcftools query` command that
         # will parse a VCF in a detailed way,
         # and output with warnings or errors if the format is not adhered too
