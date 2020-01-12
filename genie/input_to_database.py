@@ -183,7 +183,7 @@ def _send_validation_error_email(syn, user, message_objs):
 
     email_message = (
         "Dear {username},\n\n"
-        "You have invalid files! "
+        "You have invalid files or files that are valid but have warnings! "
         "Here are the reasons why:\n\n{error_message}".format(
             username=username,
             error_message=errors)
@@ -192,7 +192,7 @@ def _send_validation_error_email(syn, user, message_objs):
     date_now = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
 
     syn.sendMessage(userIds=[user], 
-                    messageSubject="GENIE Validation Error - {date}".format(date=date_now),
+                    messageSubject="GENIE Validation Error/Warning - {date}".format(date=date_now),
                     messageBody=email_message)
 
 
@@ -275,7 +275,7 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             valid, message, entities)
         # Send email the first time the file is invalid
-        if invalid_errors_list:
+        if invalid_errors_list or "-WARNINGS-" in message:
             messages_to_send.append((filenames, message, file_users))
     else:
         input_status_list = [{'entity': entity, 'status': status}
