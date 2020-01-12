@@ -46,11 +46,11 @@ class vcf(maf):
                     headers = \
                         row.replace("\n", "").replace("\r", "").split("\t")
         if headers is not None:
-            vcf = pd.read_csv(
-                filepath, sep="\t", comment="#", header=None, names=headers)
+            vcf = pd.read_csv(filepath, sep="\t", comment="#", header=None,
+                              names=headers)
         else:
             raise ValueError("Your vcf must start with the header #CHROM")
-        return(vcf)
+        return vcf
 
     def process_helper(self, vcffiles, path_to_GENIE, mafSynId, centerMafSynId,
                        vcf2mafPath, veppath, vepdata,
@@ -128,7 +128,7 @@ class vcf(maf):
                 if reference is not None:
                     command.extend(["--ref-fasta", reference])
                 subprocess.check_call(command)
-                if (os.path.isfile(newMAFPath)):
+                if os.path.isfile(newMAFPath):
                     mafFiles.append(newMAFPath)
 
         logger.info("MERGING MAFS")
@@ -173,7 +173,7 @@ class vcf(maf):
                 self.storeProcessedMaf(
                     narrow_path, mafSynId, centerMafSynId, isNarrow=True)
 
-        return(newMafPath)
+        return newMafPath
 
     def process_steps(self, filePath, processing, databaseToSynIdMappingDf,
                       vcf2mafPath, veppath, vepdata, validVCF, path_to_GENIE,
@@ -196,7 +196,7 @@ class vcf(maf):
                 "Please run with `--process {filetype}` parameter "
                 "if you want to reannotate the {filetype} files".format(
                     filetype=self._fileType))
-        return(mutationFiles)
+        return mutationFiles
 
     def _validate(self, vcf):
         '''
@@ -209,11 +209,11 @@ class vcf(maf):
             total_error - error messages
             warning - warning messages
         '''
-        REQUIRED_HEADERS = pd.Series(["#CHROM", "POS", "ID", "REF", "ALT",
+        required_headers = pd.Series(["#CHROM", "POS", "ID", "REF", "ALT",
                                       "QUAL", "FILTER", "INFO"])
         total_error = ""
         warning = ""
-        if not all(REQUIRED_HEADERS.isin(vcf.columns)):
+        if not all(required_headers.isin(vcf.columns)):
             total_error += ("Your vcf file must have these headers: "
                             "CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO.\n")
 
