@@ -46,11 +46,11 @@ class vcf(maf):
                     headers = \
                         row.replace("\n", "").replace("\r", "").split("\t")
         if headers is not None:
-            vcf = pd.read_csv(filepath, sep="\t", comment="#", header=None,
-                              names=headers)
+            vcfdf = pd.read_csv(filepath, sep="\t", comment="#", header=None,
+                                names=headers)
         else:
             raise ValueError("Your vcf must start with the header #CHROM")
-        return vcf
+        return vcfdf
 
     def process_helper(self, vcffiles, path_to_GENIE, mafSynId, centerMafSynId,
                        vcf2mafPath, veppath, vepdata,
@@ -198,12 +198,12 @@ class vcf(maf):
                     filetype=self._fileType))
         return mutationFiles
 
-    def _validate(self, vcf):
+    def _validate(self, vcfdf):
         '''
         Validates the content of a vcf file
 
         Args:
-            vcf: pandas dataframe containing vcf content
+            vcfdf: pandas dataframe containing vcf content
 
         Returns:
             total_error - error messages
@@ -213,35 +213,35 @@ class vcf(maf):
                                       "QUAL", "FILTER", "INFO"])
         total_error = ""
         warning = ""
-        if not all(required_headers.isin(vcf.columns)):
+        if not all(required_headers.isin(vcfdf.columns)):
             total_error += ("Your vcf file must have these headers: "
                             "CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO.\n")
 
-        if len(vcf.columns) > 8:
-            if "FORMAT" not in vcf.columns:
+        if len(vcfdf.columns) > 8:
+            if "FORMAT" not in vcfdf.columns:
                 total_error += ("Your vcf file must have FORMAT header "
                                 "if genotype columns exist.\n")
 
         # Require that they report variants mapped to
         # either GRCh37 or hg19 without
         # the chr-prefix. variants on chrM are not supported
-        haveColumn = process_functions.checkColExist(vcf, "#CHROM")
+        haveColumn = process_functions.checkColExist(vcfdf, "#CHROM")
         if haveColumn:
-            nochr = ["chr" in i for i in vcf['#CHROM'] if isinstance(i, str)]
+            nochr = ["chr" in i for i in vcfdf['#CHROM'] if isinstance(i, str)]
             if sum(nochr) > 0:
                 warning += ("Your vcf file should not have the chr prefix "
                             "in front of chromosomes.\n")
-            if sum(vcf['#CHROM'].isin(["chrM"])) > 0:
+            if sum(vcfdf['#CHROM'].isin(["chrM"])) > 0:
                 total_error += "Your vcf file must not have variants on chrM.\n"
 
         # No white spaces
-        temp = vcf.apply(lambda x: contains_whitespace(x), axis=1)
+        temp = vcfdf.apply(lambda x: contains_whitespace(x), axis=1)
         if sum(temp) > 0:
             warning += ("Your vcf file should not have any "
                         "white spaces in any of the columns.\n")
 
         # No duplicated values
-        if vcf.duplicated().any():
+        if vcfdf.duplicated().any():
             warning += "Your vcf file should not have duplicate rows\n"
         # I can also recommend a `bcftools query` command that
         # will parse a VCF in a detailed way,
