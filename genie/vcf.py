@@ -48,8 +48,8 @@ class vcf(maf):
                        reference=None):
         logger.info('VCF2MAF %s' % self.center)
         centerInputFolder = os.path.join(path_to_GENIE, self.center, "input")
-        centerStagingFolder = \
-            os.path.join(path_to_GENIE, self.center, "staging")
+        centerStagingFolder = os.path.join(path_to_GENIE, self.center,
+                                           "staging")
         mafFiles = []
         for path in vcffiles:
             vcfName = os.path.basename(path)
