@@ -18,9 +18,9 @@ def contains_whitespace(row):
 class vcf(maf):
     _fileType = "vcf"
 
-    _process_kwargs = [
-        "validVCF", "processing", "path_to_GENIE", "databaseToSynIdMappingDf",
-        "vcf2mafPath", "veppath", "vepdata", "reference"]
+    _process_kwargs = ["validVCF", "processing", "path_to_GENIE",
+                       "databaseToSynIdMappingDf", "vcf2mafPath",
+                       "veppath", "vepdata", "reference"]
 
     def _validateFilename(self, filePath):
         basename = os.path.basename(filePath[0])
