@@ -656,18 +656,18 @@ def test__send_validation_error_email():
          patch.object(syn, "sendMessage") as patch_syn_sendmessage,\
          patch('genie.input_to_database.datetime') as mock_datetime:
         mock_datetime.datetime.today.return_value = datetime(2019, 11, 1, 00, 00, 00, 0)
-        mock_datetime.side_effect = lambda *args, **kw: date(*args, **kw)        
+        mock_datetime.side_effect = lambda *args, **kw: date(*args, **kw)     
 
         input_to_database._send_validation_error_email(
             syn, file_user, message_objs)
         error_message = (
             "Dear trial,\n\n"
-            "You have invalid files! "
+            "You have invalid files or files that are valid but have warnings! "
             "Here are the reasons why:\n\n"
             "Filenames: data_clinical_supp_SAGE.txt, Errors: %s\n" % message)
         patch_syn_sendmessage.assert_called_once_with(
             userIds=[file_user], messageBody=error_message,
-            messageSubject='GENIE Validation Error - 2019-11-01 00:00:00')
+            messageSubject='GENIE Validation Error/Warning - 2019-11-01 00:00:00')
         patch_syn_getuserprofile.call_count == 2
 
 
