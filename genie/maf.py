@@ -231,9 +231,8 @@ class maf(FileTypeFormat):
                     "If you are missing T_DEPTH, you must have T_REF_COUNT!\n")
 
         # CHECK: Everything in correct_column_headers must be in mutation file
-        if not all([
-                process_functions.checkColExist(mutationDF, i)
-                for i in correct_column_headers]):
+        if not all([process_functions.checkColExist(mutationDF, i)
+                    for i in correct_column_headers]):
             total_error += (
                 "Mutation File: "
                 "Must at least have these headers: {}.\n".format(
