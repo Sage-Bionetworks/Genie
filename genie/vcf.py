@@ -11,17 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 def contains_whitespace(row):
-    """
-    Helper function for validateVCF.
-    No whitespace is allowed in VCF files
-
-    Args:
-        row: Each pandas dataframe row of a vcf
-
-    Returns:
-        Sum of the the amount of whitespace in a string
-    """
-    return(sum([" " in i for i in row if isinstance(i, str)]))
+    """Gets the total number of whitespaces from each column of a row"""
+    return sum([" " in i for i in row if isinstance(i, str)])
 
 
 class vcf(maf):
@@ -225,8 +216,8 @@ class vcf(maf):
         # Require that they report variants mapped to
         # either GRCh37 or hg19 without
         # the chr-prefix. variants on chrM are not supported
-        haveColumn = process_functions.checkColExist(vcfdf, "#CHROM")
-        if haveColumn:
+        have_column = process_functions.checkColExist(vcfdf, "#CHROM")
+        if have_column:
             nochr = ["chr" in i for i in vcfdf['#CHROM'] if isinstance(i, str)]
             if sum(nochr) > 0:
                 warning += ("Your vcf file should not have the chr prefix "
@@ -235,8 +226,8 @@ class vcf(maf):
                 total_error += "Your vcf file must not have variants on chrM.\n"
 
         # No white spaces
-        temp = vcfdf.apply(lambda x: contains_whitespace(x), axis=1)
-        if sum(temp) > 0:
+        white_space = vcfdf.apply(lambda x: contains_whitespace(x), axis=1)
+        if sum(white_space) > 0:
             warning += ("Your vcf file should not have any "
                         "white spaces in any of the columns.\n")
 
