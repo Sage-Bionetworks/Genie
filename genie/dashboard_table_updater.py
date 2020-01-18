@@ -524,9 +524,9 @@ def update_wiki(syn, database_mappingdf):
             "%2C Total FROM " + primary_code_synId +
             " ORDER BY Total DESC&limit=15}\n\n"]
 
-    wikiPage = syn.getWiki("syn3380222", 235803)
-    wikiPage.markdown = "".join(markdown)
-    syn.store(wikiPage)
+    wikipage = syn.getWiki("syn3380222", 235803)
+    wikipage.markdown = "".join(markdown)
+    syn.store(wikipage)
 
 
 def string_to_unix_epoch_time_milliseconds(string_time):
