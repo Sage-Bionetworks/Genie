@@ -272,9 +272,9 @@ def update_database_numbers(syn, database_mappingdf):
     db_counts = db_counts.applymap(int)
     db_counts['Center'] = db_counts.index
     db_counts['Release'] = "Database"
-    genie.process_functions.updateDatabase(
-        syn, database_countdf, db_counts,
-        cumulative_sample_count_synid, ["Center", "Release"])
+    process_functions.updateDatabase(syn, database_countdf, db_counts,
+                                     cumulative_sample_count_synid,
+                                     ["Center", "Release"])
     today = datetime.date.today()
     if today.month in [1, 4, 8, 12]:
         db_count_tracker = db_counts[['Clinical', 'Center', 'Release']]
