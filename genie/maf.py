@@ -1,13 +1,15 @@
-from __future__ import absolute_import
-from genie import FileTypeFormat, process_functions
 import os
 import logging
 import subprocess
+
 import pandas as pd
 import synapseclient
 from synapseclient.exceptions import SynapseTimeoutError
-logger = logging.getLogger(__name__)
 
+from .example_filetype_format import FileTypeFormat
+from . import process_functions
+
+logger = logging.getLogger(__name__)
 
 class maf(FileTypeFormat):
     '''

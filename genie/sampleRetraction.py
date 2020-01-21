@@ -1,10 +1,13 @@
-from __future__ import absolute_import
-from genie import FileTypeFormat, process_functions
+import datetime
 import logging
 import os
+
 import pandas as pd
 import synapseclient
-import datetime
+
+from .example_filetype_format import FileTypeFormat
+from . import process_functions
+
 logger = logging.getLogger(__name__)
 
 

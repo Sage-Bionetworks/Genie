@@ -10,9 +10,8 @@ This repository documents code used to gather, QC, standardize, and analyze data
 ## Dependencies
 
 These are tools or packages you will need, to be able to reproduce these results:
-- A Linux machine or a cluster of compute nodes with a job scheduler like LSF (`bsub`) or SGE (`qsub`)
-- Python 2.7.10 or higher
-- Sage Synapse's [command-line client](http://python-docs.synapse.org/CommandLineClient.html) (`pip install synapseclient`)
+- Python 3.5 or higher
+- Synapse [command-line client](http://python-docs.synapse.org/CommandLineClient.html) (`pip install synapseclient`)
 - Python [pandas](http://pandas.pydata.org/) (`pip install pandas`)
 - [bedtools](https://bedtools.readthedocs.io/en/latest/content/installation.html)
 
@@ -24,8 +23,15 @@ pip install git+https://github.com/Sage-Bionetworks/Genie.git
 This will install all the necessary components for you to run the validator locally on all of your files, including the Synapse client.  Please view the help to see how to run to validator.  
 ```
 genie validate -h
-genie validate clinical data_clincal_supp_SAGE.txt SAGE
+genie validate clinical data_clinical_supp_SAGE.txt SAGE
 ```
+
+# Development
+
+## Versioning
+1. Update the version in [genie/__version__.py](genie/__version__.py) based on semantic versioning. Use the suffix `-dev` for development branch versions.
+2. When releasing, remove the `-dev` from the version.
+3. Add a tag and release named the same as the version.
 
 # SAGE BIONETWORKS USE ONLY
 ## Batch Processing instructions
