@@ -250,7 +250,7 @@ def runMAFinBED(syn,
                                    '../analyses/genomicData/MAFinBED.R')
     notinbed_file = os.path.join(script_dir,
                                  '../analyses/genomicData/notinbed.csv')
-
+    # The MAFinBED script filters out the centers that aren't being processed
     command = ['Rscript', mafinbed_script, notinbed_file]
     if genie_user is not None and genie_pass is not None:
         command.extend(['--syn_user', genie_user, '--syn_pass', genie_pass])
@@ -274,9 +274,6 @@ def runMAFinBED(syn,
         removed_variantsdf['Reference_Allele'].astype(str) + ' ' + \
         removed_variantsdf['Tumor_Seq_Allele2'].astype(str) + ' ' + \
         removed_variantsdf['Tumor_Sample_Barcode'].astype(str)
-    # Must only select variants from centers that are being processed
-    to_keep = removed_variantsdf['Center'].isin(center_mappingdf['center'])
-    removed_variantsdf = removed_variantsdf[to_keep]
     # Store filtered variants
     for center in removed_variantsdf['Center'].unique():
         center_mutation = removed_variantsdf[
