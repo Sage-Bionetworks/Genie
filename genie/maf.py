@@ -236,10 +236,16 @@ class maf(FileTypeFormat):
             total_error += (
                 "Mutation File: "
                 "Must at least have these headers: {}.\n".format(
-                    ",".join([
-                        i for i in correct_column_headers
-                        if i not in mutationDF.columns.values])))
-
+                    ",".join([i for i in correct_column_headers
+                              if i not in mutationDF.columns.values])))
+        else:
+            # No duplicated values
+            primary_cols = ['CHROMOSOME', 'START_POSITION',
+                            'REFERENCE_ALLELE', 'TUMOR_SAMPLE_BARCODE',
+                            'TUMOR_SEQ_ALLELE2']
+            if mutationDF.duplicated(primary_cols).any():
+                total_error += ("Mutation File: "
+                                "Should not have duplicate rows\n")
         # CHECK: Must have either TUMOR_SEQ_ALLELE2 column
         if process_functions.checkColExist(mutationDF, "TUMOR_SEQ_ALLELE2"):
             # CHECK: The value "NA" can't be used as a placeholder
@@ -292,13 +298,6 @@ class maf(FileTypeFormat):
                     "Mutation File: "
                     "CHROMOSOME column cannot have any values that "
                     "start with 'chr' or any 'WT' values.\n")
-
-        # No duplicated values
-        primary_cols = ['CHROMOSOME', 'HUGO_SYMBOL', 'START_POSITION',
-                        'REFERENCE_ALLELE', 'TUMOR_SAMPLE_BARCODE',
-                        'TUMOR_SEQ_ALLELE2']
-        if mutationDF.duplicated(primary_cols).any():
-            total_error += "Mutation File: Should not have duplicate rows\n"
 
         return(total_error, warning)
 

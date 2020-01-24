@@ -207,6 +207,11 @@ class vcf(maf):
         if not all(required_headers.isin(vcfdf.columns)):
             total_error += ("Your vcf file must have these headers: "
                             "CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO.\n")
+        else:
+            # No duplicated values
+            primary_cols = ["#CHROM", "POS", "ID", "REF", "ALT"]
+            if vcfdf.duplicated(primary_cols).any():
+                total_error += "Your vcf file should not have duplicate rows\n"
 
         if len(vcfdf.columns) > 8:
             if "FORMAT" not in vcfdf.columns:
@@ -231,10 +236,6 @@ class vcf(maf):
             warning += ("Your vcf file should not have any "
                         "white spaces in any of the columns.\n")
 
-        # No duplicated values
-        primary_cols = ["#CHROM", "POS", "ID", "REF", "ALT"]
-        if vcfdf.duplicated(primary_cols).any():
-            total_error += "Your vcf file should not have duplicate rows\n"
         # I can also recommend a `bcftools query` command that
         # will parse a VCF in a detailed way,
         # and output with warnings or errors if the format is not adhered too
