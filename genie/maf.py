@@ -214,14 +214,30 @@ class maf(FileTypeFormat):
 
         total_error = ""
         warning = ""
-        # CHECK: First column must be in the first_header list
-        if mutationDF.columns[0] not in first_header:
+
+        # CHECK: Everything in correct_column_headers must be in mutation file
+        if not all([process_functions.checkColExist(mutationDF, i)
+                    for i in correct_column_headers]):
             total_error += (
                 "Mutation File: "
-                "First column header must be one of these: {}."
+                "Must at least have these headers: {}. "
                 "If you are writing your maf file with R, please make"
                 "sure to specify the 'quote=FALSE' parameter.\n".format(
-                    ", ".join(first_header)))
+                    ",".join([i for i in correct_column_headers
+                              if i not in mutationDF.columns.values])))
+        else:
+            # CHECK: First column must be in the first_header list
+            if mutationDF.columns[0] not in first_header:
+                total_error += ("Mutation File: First column header must be "
+                                "one of these: {}.\n".format(
+                                    ", ".join(first_header)))
+            # No duplicated values
+            primary_cols = ['CHROMOSOME', 'START_POSITION',
+                            'REFERENCE_ALLELE', 'TUMOR_SAMPLE_BARCODE',
+                            'TUMOR_SEQ_ALLELE2']
+            if mutationDF.duplicated(primary_cols).any():
+                total_error += ("Mutation File: "
+                                "Should not have duplicate rows\n")
 
         check_col = process_functions.checkColExist(mutationDF, "T_DEPTH")
         if not check_col and not SP:
@@ -230,22 +246,6 @@ class maf(FileTypeFormat):
                     "Mutation File: "
                     "If you are missing T_DEPTH, you must have T_REF_COUNT!\n")
 
-        # CHECK: Everything in correct_column_headers must be in mutation file
-        if not all([process_functions.checkColExist(mutationDF, i)
-                    for i in correct_column_headers]):
-            total_error += (
-                "Mutation File: "
-                "Must at least have these headers: {}.\n".format(
-                    ",".join([i for i in correct_column_headers
-                              if i not in mutationDF.columns.values])))
-        else:
-            # No duplicated values
-            primary_cols = ['CHROMOSOME', 'START_POSITION',
-                            'REFERENCE_ALLELE', 'TUMOR_SAMPLE_BARCODE',
-                            'TUMOR_SEQ_ALLELE2']
-            if mutationDF.duplicated(primary_cols).any():
-                total_error += ("Mutation File: "
-                                "Should not have duplicate rows\n")
         # CHECK: Must have either TUMOR_SEQ_ALLELE2 column
         if process_functions.checkColExist(mutationDF, "TUMOR_SEQ_ALLELE2"):
             # CHECK: The value "NA" can't be used as a placeholder
