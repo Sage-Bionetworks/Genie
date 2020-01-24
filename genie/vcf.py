@@ -232,8 +232,9 @@ class vcf(maf):
                         "white spaces in any of the columns.\n")
 
         # No duplicated values
-        if vcfdf.duplicated().any():
-            warning += "Your vcf file should not have duplicate rows\n"
+        primary_cols = ["#CHROM", "POS", "ID", "REF", "ALT"]
+        if vcfdf.duplicated(primary_cols).any():
+            total_error += "Your vcf file should not have duplicate rows\n"
         # I can also recommend a `bcftools query` command that
         # will parse a VCF in a detailed way,
         # and output with warnings or errors if the format is not adhered too

@@ -294,8 +294,11 @@ class maf(FileTypeFormat):
                     "start with 'chr' or any 'WT' values.\n")
 
         # No duplicated values
-        if mutationDF.duplicated().any():
-            warning += "Mutation File: Should not have duplicate rows\n"
+        primary_cols = ['CHROMOSOME', 'HUGO_SYMBOL', 'START_POSITION',
+                        'REFERENCE_ALLELE', 'TUMOR_SAMPLE_BARCODE',
+                        'TUMOR_SEQ_ALLELE2']
+        if mutationDF.duplicated(primary_cols).any():
+            total_error += "Mutation File: Should not have duplicate rows\n"
 
         return(total_error, warning)
 
@@ -303,15 +306,15 @@ class maf(FileTypeFormat):
         '''
         Get mutation dataframe
         '''
-        mutationDF = pd.read_csv(
-            filePathList[0],
-            sep="\t",
-            comment="#",
-            na_values=[
-                '-1.#IND', '1.#QNAN', '1.#IND', '-1.#QNAN', '#N/A N/A',
-                '#N/A', 'N/A', '#NA', 'NULL', 'NaN',
-                '-NaN', 'nan', '-nan', ''],
-            keep_default_na=False,
-            # This is to check if people write files with R, quote=T
-            quoting=3)
-        return(mutationDF)
+        mutationdf = pd.read_csv(filePathList[0],
+                                 sep="\t",
+                                 comment="#",
+                                 na_values=['-1.#IND', '1.#QNAN', '1.#IND',
+                                            '-1.#QNAN', '#N/A N/A', 'NaN',
+                                            '#N/A', 'N/A', '#NA', 'NULL',
+                                            '-NaN', 'nan', '-nan', ''],
+                                 keep_default_na=False,
+                                 # This is to check if people write files
+                                 # with R, quote=T
+                                 quoting=3)
+        return mutationdf
