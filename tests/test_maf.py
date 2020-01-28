@@ -100,7 +100,11 @@ def test_firstcolumn_validation():
         "N_REF_COUNT": [1, 2, 3, 4, 3],
         "N_ALT_COUNT": [1, 2, 3, 4, 3],
         "TUMOR_SEQ_ALLELE2": ["A", "A", "A", "A", "A"]})
-    error, warning = maf_class._validate(mafDf)
+    order = ['REFERENCE_ALLELE', 'START_POSITION', 'CHROMOSOME',
+             'TUMOR_SAMPLE_BARCODE', 'T_ALT_COUNT', 'T_DEPTH',
+             'T_REF_COUNT', 'N_DEPTH', 'N_REF_COUNT', 'N_ALT_COUNT',
+             'TUMOR_SEQ_ALLELE2']
+    error, warning = maf_class._validate(mafDf[order])
     expectedErrors = ("Mutation File: First column header must be "
                       "one of these: CHROMOSOME, HUGO_SYMBOL, "
                       "TUMOR_SAMPLE_BARCODE.\n")
@@ -162,8 +166,8 @@ def test_errors_validation():
 
 def test_invalid_validation():
     mafDf = pd.DataFrame(dict(
-        T_ALT_COUNT=[1, 2, 3, 4, 3, 4],
         CHROMOSOME=[1, 2, 3, 4, 2, 4],
+        T_ALT_COUNT=[1, 2, 3, 4, 3, 4],
         START_POSITION=[1, 2, 3, 4, 2, 4],
         REFERENCE_ALLELE=["A", "A", "A", "A", "A", "A"],
         TUMOR_SAMPLE_BARCODE=["ID1-1", "ID1-1", "ID1-1", "ID1-1", "ID1-1", "ID1-1"],
@@ -175,8 +179,6 @@ def test_invalid_validation():
     error, warning = maf_class._validate(mafDf)
 
     expectedErrors = (
-        "Mutation File: First column header must be "
-        "one of these: CHROMOSOME, HUGO_SYMBOL, TUMOR_SAMPLE_BARCODE.\n"
         "Mutation File: Should not have duplicate rows\n"
         "Mutation File: "
         "If you are missing T_DEPTH, you must have T_REF_COUNT!\n"
