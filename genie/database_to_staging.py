@@ -286,7 +286,6 @@ def runMAFinBED(syn,
                    "mafinbed_filtered_variants.csv",
                    parent=center_mappingdf['stagingSynId'][
                        center_mappingdf['center'] == center][0],
-                   centerStaging=True,
                    genieVersion=genieVersion)
         os.unlink("mafinbed_filtered_variants.csv")
     return removed_variantsdf['removeVariants']

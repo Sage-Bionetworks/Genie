@@ -51,7 +51,7 @@ centerMappingDf = synapser::as.data.frame(centerMapping)
 process_centers = paste(centerMappingDf$center, collapse="','")
 # read aggregated clinical data from tables
 patient = synTableQuery(sprintf("SELECT * FROM %s where CENTER in ('%s')",
-                                patientSynId, process_centers,
+                                patientSynId, process_centers),
                         includeRowIdAndRowVersion = F)
 sample = synTableQuery(sprintf("SELECT * FROM %s where CENTER in ('%s')",
                                sampleSynId, process_centers),
@@ -94,7 +94,7 @@ for (seq_assay in unique(genieBedData$SEQ_ASSAY_ID)) {
 # read aggregated MAF file
 # FILTERED OUT COMMON VARIANTS HERE
 #genieMut = synTableQuery(sprintf('SELECT * FROM %s where FILTER <> "common_variant"', mafSynId))
-genieMut = synTableQuery(sprintf("SELECT * FROM %s where Center in ('')",
+genieMut = synTableQuery(sprintf("SELECT * FROM %s where Center in ('%s')",
                                  mafSynId, process_centers))
 genieMutData = synapser::as.data.frame(genieMut)
 #Only use samples that exist in the clinical sample data pool
