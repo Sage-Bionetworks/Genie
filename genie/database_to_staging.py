@@ -733,6 +733,36 @@ def run_genie_filters(syn,
            flagged_mutationincis_variants)
 
 
+def store_assay_info_files(syn, genie_version, assay_info_synid,
+                           clinicaldf, release_synid):
+    """Creates, stores assay information and gets WES panel list
+
+    Args:
+        syn: Synapse object
+        genie_version: GENIE version (ie. v6.1-consortium)
+        assay_info_synid: Assay information database synid
+        clinicaldf: Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID
+        release_synid: Synapse id to store release file
+
+    Returns:
+        List of whole exome sequencing SEQ_ASSAY_IDs
+    """
+    logger.info("Creates assay information file")
+    assay_info_path = os.path.join(GENIE_RELEASE_DIR,
+                                   'assay_information_%s.txt' % genie_version)
+    seq_assay_str = "','".join(clinicaldf['SEQ_ASSAY_ID'])
+    assay_info = syn.tableQuery("select * from {} where SEQ_ASSAY_ID "
+                                "in ('{}')".format(assay_info_synid,
+                                                   seq_assay_str))
+    assay_infodf = assay_info.asDataFrame()
+    assay_infodf.to_csv(assay_info_path, sep="\t", index=False)
+    store_file(syn, assay_info_path, parent=release_synid,
+               genieVersion=genie_version, name="assay_information.txt")
+    wes_index = assay_infodf['library_strategy'] == 'WXS'
+    wes_panels = assay_infodf['SEQ_ASSAY_ID'][wes_index]
+    return wes_panels.tolist()
+
+
 def store_clinical_files(syn,
                          genie_version,
                          clinicaldf,
@@ -1281,7 +1311,13 @@ def stagingToCbio(syn, processingDate, genieVersion,
         consortiumReleaseSynId,
         current_release_staging)
 
-    wes_panelids = _get_wes_panels(syn, assay_info_synid)
+    wes_panelids = store_assay_info_files(syn,
+                                          genieVersion,
+                                          assay_info_synid,
+                                          clinicalDf,
+                                          consortiumReleaseSynId)
+
+    # wes_panelids = _get_wes_panels(syn, assay_info_synid)
 
     data_gene_matrix = store_data_gene_matrix(
         syn,
