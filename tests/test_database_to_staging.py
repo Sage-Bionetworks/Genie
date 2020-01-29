@@ -14,19 +14,24 @@ GENIE_VERSION = "vTEST"
 CONSORTIUM_SYNID = "syn2222"
 
 
+class Tablequerydf():
+    """tableQuery.asDataFrame() class"""
+    def __init__(self, df):
+        self.df = df
+
+    def asDataFrame(self):
+        return self.df
+
+
 def test_store_gene_panel_files():
     current_release_staging = False
 
     data_gene_panel = pd.DataFrame({'mutations': ['PANEL1']})
-
-    class gene_panel():
-        def asDataFrame(self):
-            gene_paneldf = pd.DataFrame({'id': ['syn3333']})
-            return gene_paneldf
+    gene_paneldf = pd.DataFrame({'id': ['syn3333']})
 
     with mock.patch.object(
             SYN, "tableQuery",
-            return_value=gene_panel()) as patch_syn_table_query,\
+            return_value=Tablequerydf(gene_paneldf)) as patch_syn_table_query,\
          mock.patch.object(
              database_to_staging, "store_file",
              return_value=synapseclient.Entity()) as patch_storefile,\
@@ -63,12 +68,7 @@ def test_store_gene_panel_files():
             os.path.join(database_to_staging.GENIE_RELEASE_DIR,
                          "PANEL1_vTEST.txt"))
 
-class tablequerydf():
-    def __init__(self, df):
-        self.df = df
 
-    def asDataFrame(self):
-        return self.df
 
 
 def test_store_assay_info_files():
@@ -78,7 +78,7 @@ def test_store_assay_info_files():
     path = os.path.join(database_to_staging.GENIE_RELEASE_DIR,
                         "assay_information_vTEST.txt")
     with patch.object(SYN, "tableQuery",
-                      return_value=tablequerydf(assay_infodf)) as patch_table_query,\
+                      return_value=Tablequerydf(assay_infodf)) as patch_table_query,\
          patch.object(database_to_staging, "store_file",
                       return_value=synapseclient.Entity()) as patch_storefile:
         wes_ids = database_to_staging.store_assay_info_files(SYN,
