@@ -69,9 +69,8 @@ def test_store_gene_panel_files():
                          "PANEL1_vTEST.txt"))
 
 
-
-
 def test_store_assay_info_files():
+    """Tests storing of assay information file"""
     assay_infodf = pd.DataFrame({'library_strategy': ['WXS'],
                                  'SEQ_ASSAY_ID': ['A']})
     clinicaldf = pd.DataFrame({'SEQ_ASSAY_ID': ['A']})
