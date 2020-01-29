@@ -403,12 +403,12 @@ plotCenterXSex(this_patient)
 plotCenterXAge(this_samples)
 ```
 
-#```{r cancer_type_plot, fig.width=14}
-#if (!is.null(this_samples$CANCER_TYPE)) {
-#  #Samples, by cancer type and institution
-#  plotCancerType(this_samples)
-#}
-#```
+<!-- ```{r cancer_type_plot, fig.width=14} -->
+<!-- if (!is.null(this_samples$CANCER_TYPE)) { -->
+<!--   #Samples, by cancer type and institution -->
+<!--   plotCancerType(this_samples) -->
+<!-- } -->
+<!-- ``` -->
 
 ```{r bed_process, include=F}
 if (!is.null(this_bed)) {
