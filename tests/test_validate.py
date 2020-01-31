@@ -157,6 +157,7 @@ def test_wrongfiletype_validate_single_file():
         valid, message = validator.validate_single_file()
         
         assert message == expected_error
+        assert not valid
         mock_determine_filetype.assert_called_once_with()
 
 
