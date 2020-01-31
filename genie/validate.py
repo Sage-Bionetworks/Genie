@@ -258,9 +258,11 @@ def _perform_validate(syn, args):
 
     format_registry = collect_format_types(args.format_registry_packages)
     logger.debug("Using {} file formats.".format(format_registry))
-    
+    fake_entity_list = [synapseclient.File(name=filepath,
+                                           path=filepath, parentId="FAKE")
+                        for filepath in args.filepath]
     validator = GenieValidationHelper(syn=syn, center=args.center,
-                                      filepathlist=args.filepath,
+                                      entitylist=fake_entity_list,
                                       format_registry=format_registry)
     mykwargs = dict(oncotree_link=args.oncotree_link,
                     nosymbol_check=args.nosymbol_check)
