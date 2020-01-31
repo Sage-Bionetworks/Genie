@@ -1,8 +1,10 @@
-from __future__ import absolute_import
-from genie import FileTypeFormat
-import os
 import logging
+import os
+
 import synapseclient
+
+from .example_filetype_format import FileTypeFormat
+
 logger = logging.getLogger(__name__)
 
 

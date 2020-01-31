@@ -1,8 +1,10 @@
-import synapseclient
-import pandas as pd
 import mock
 import pytest
-from genie import vcf
+
+import pandas as pd
+import synapseclient
+
+from genie.vcf import vcf
 
 syn = mock.create_autospec(synapseclient.Synapse)
 
@@ -13,16 +15,8 @@ def test_processing():
     pass
 
 
-@pytest.fixture(params=[
-    (["foo"]),
-    (["GENIE-SAGE-ID1.bed"])
-    ])
-def filename_fileformat_map(request):
-    return request.param
-
-
-def test_incorrect_validatefilename(filename_fileformat_map):
-    filepath_list = filename_fileformat_map
+@pytest.mark.parametrize("filepath_list", [["foo"], ["GENIE-SAGE-ID1.bed"]])
+def test_incorrect_validatefilename(filepath_list):
     with pytest.raises(AssertionError):
         vcfClass.validateFilename(filepath_list)
 
@@ -66,20 +60,19 @@ def test_validation():
     assert error == expectedError
     assert warning == expectedWarning
 
-    vcfDf = pd.DataFrame({
-        "#CHROM": ['chr2', 'chrM', '12'],
-        "POS": [69688533, 99401860, 53701241],
-        "ID": ['AAK1', 'AAED1', 'AAAS'],
-        "REF": ['AAK1', 'AAED1', 'AAAS'],
-        "ALT": ['AAK1', 'AAED1', 'AAAS'],
-        "QUAL": ['AAK1', 'AAED1', 'AAAS'],
-        "FILTER": ['AAK1', 'AAED1', 'AAAS'],
-        "INFO": ['AAK1', 'AAED1', 'AAAS']})
+    vcfDf = pd.DataFrame({"#CHROM": ['chr2', 'chrM', '12', 'chr2'],
+                          "POS": [69688533, 99401860, 53701241, 69688533],
+                          "ID": ['AAK1', 'AAED1', 'AAAS', 'AAK1'],
+                          "REF": ['AAK1', 'AAED1', 'AAAS', 'AAK1'],
+                          "ALT": ['AAK1', 'AAED1', 'AAAS', 'AAK1'],
+                          "QUAL": ['AAK1', 'AAED1', 'AAAS', 'AAK1'],
+                          "FILTER": ['AAK1', 'AAED1', 'AAAS', 'AAK1'],
+                          "INFO": ['AAK1', 'AAED1', 'AAAS', 'AAK1']})
 
     error, warning = vcfClass._validate(vcfDf)
-    expectedError = ("Your vcf file must not have variants on chrM.\n")
-    expectedWarning = (
-        "Your vcf file should not have the chr prefix "
-        "in front of chromosomes.\n")
+    expectedError = ("Your vcf file should not have duplicate rows\n"
+                     "Your vcf file must not have variants on chrM.\n")
+    expectedWarning = ("Your vcf file should not have the chr prefix "
+                       "in front of chromosomes.\n")
     assert error == expectedError
     assert warning == expectedWarning
