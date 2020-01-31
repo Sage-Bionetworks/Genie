@@ -37,15 +37,15 @@ WRONG_NAME_ENT = synapseclient.File(name="wrong.txt",
                                     parentId="syn12345")
 
 @pytest.mark.parametrize("ent_list,fileformat",
-                         [# tuple with (input, expectedOutput)
-                          ([CNA_ENT], "cna"),
+                         # tuple with (input, expectedOutput)
+                         [([CNA_ENT], "cna"),
                           ([CLIN_ENT], "clinical"),
                           ([SAMPLE_ENT, PATIENT_ENT], "clinical")])
 def test_perfect_determine_filetype(ent_list, fileformat):
-    '''
+    """
     Tests determining of file type through filenames
     Parameters are passed in from filename_fileformat_map
-    '''
+    """
     validator = validate.GenieValidationHelper(syn, CENTER, ent_list)
     assert validator.determine_filetype() == fileformat
 
@@ -71,10 +71,10 @@ def test_valid_collect_errors_and_warnings():
 
 
 def test_invalid_collect_errors_and_warnings():
-    '''
+    """
     Tests if error and warnings strings are passed that
     returned valid and message is correct
-    '''
+    """
     message = validate.collect_errors_and_warnings("error\nnow", 'warning\nnow')
     assert message == (
         "----------------ERRORS----------------\n"
@@ -84,10 +84,10 @@ def test_invalid_collect_errors_and_warnings():
 
 
 def test_warning_collect_errors_and_warnings():
-    '''
+    """
     Tests if no error but warnings strings are passed that
     returned valid and message is correct
-    '''
+    """
     message = \
         validate.collect_errors_and_warnings('', 'warning\nnow')
     assert message == (
@@ -97,10 +97,10 @@ def test_warning_collect_errors_and_warnings():
 
 
 def test_valid_validate_single_file():
-    '''
+    """
     Tests that all the functions are run in validate single
     file workflow and all the right things are returned
-    '''
+    """
     entitylist = [CLIN_ENT]
     error_string = ''
     warning_string = ''
@@ -135,10 +135,10 @@ def test_valid_validate_single_file():
 
 
 def test_filetype_validate_single_file():
-    '''
+    """
     Tests that if filetype is passed in that an error is thrown
     if it is an incorrect filetype
-    '''
+    """
     entitylist = [WRONG_NAME_ENT]
     expected_error = "----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
     validator = validate.GenieValidationHelper(syn, CENTER, entitylist)
@@ -148,10 +148,10 @@ def test_filetype_validate_single_file():
 
 
 def test_wrongfiletype_validate_single_file():
-    '''
+    """
     Tests that if there is no filetype for the filename passed
     in, an error is thrown
-    '''
+    """
     entitylist = [WRONG_NAME_ENT]
     expected_error = '----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally'
 
@@ -167,9 +167,7 @@ def test_wrongfiletype_validate_single_file():
 
 
 def test_nopermission__check_parentid_permission_container():
-    '''
-    Error thrown if no permissions to access
-    '''
+    """Throws error if no permissions to access"""
     parentid = "syn123"
     with patch.object(syn, "get", side_effect=SynapseHTTPError),\
          pytest.raises(ValueError,
@@ -180,9 +178,7 @@ def test_nopermission__check_parentid_permission_container():
 
 
 def test_notcontainer__check_parentid_permission_container():
-    '''
-    If input if synid of file, throw error
-    '''
+    """Throws error if input if synid of file"""
     parentid = "syn123"
     file_ent = synapseclient.File("foo", parentId=parentid)
     with patch.object(syn, "get", return_value=file_ent),\
@@ -194,9 +190,9 @@ def test_notcontainer__check_parentid_permission_container():
 
 
 def test_valid__check_parentid_permission_container():
-    '''
+    """
     Test that parentid specified is a container and have permissions to access
-    '''
+    """
     parentid = "syn123"
     folder_ent = synapseclient.Folder("foo", parentId=parentid)
     with patch.object(syn, "get", return_value=folder_ent):
@@ -240,9 +236,7 @@ class argparser:
 
 
 def test_notnone_get_oncotree_link():
-    '''
-    Test link passed in by user is used
-    '''
+    """Test link passed in by user is used"""
     arg = argparser()
     url = "https://www.synapse.org"
     link = validate._get_oncotreelink(syn, arg.asDataFrame(), oncotree_link=url)
@@ -250,9 +244,7 @@ def test_notnone_get_oncotree_link():
 
 
 def test_none__getoncotreelink():
-    '''
-    Test oncotree link is gotten
-    '''
+    """Test oncotree link is gotten"""
     arg = argparser()
     url = "https://www.synapse.org"
     link = synapseclient.File("foo", parentId="foo", externalURL=url)
@@ -263,9 +255,9 @@ def test_none__getoncotreelink():
 
 
 def test_valid__upload_to_synapse():
-    '''
+    """
     Test upload of file to synapse under right conditions
-    '''
+    """
     ent = synapseclient.File(id="syn123", parentId="syn222")
     with patch.object(syn, "store", return_value=ent) as patch_synstore:
         validate._upload_to_synapse(syn, ['foo'], True, parentid="syn123")
@@ -274,9 +266,7 @@ def test_valid__upload_to_synapse():
 
 
 def test_perform_validate():
-    '''
-    Make sure all functions are called
-    '''
+    """Make sure all functions are called"""
     arg = argparser()
     valid = True
     with patch.object(validate,
