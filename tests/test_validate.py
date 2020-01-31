@@ -278,12 +278,6 @@ def test_perform_validate():
     Make sure all functions are called
     '''
     arg = argparser()
-    check_perm_call = "genie.validate._check_parentid_permission_container"
-    check_get_db_call = "genie.process_functions.get_synid_database_mappingdf"
-    check_center_call = "genie.validate._check_center_input"
-    validate_file_call = "genie.validate.GenieValidationHelper.validate_single_file"
-    get_oncotree_call = "genie.validate._get_oncotreelink"
-    upload_to_syn_call = "genie.validate._upload_to_synapse"
     valid = True
     with patch.object(validate,
                       "_check_parentid_permission_container",
