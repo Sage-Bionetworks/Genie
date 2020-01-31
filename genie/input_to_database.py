@@ -264,7 +264,7 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
     # This must pass in filenames, because filetype is determined by entity
     # name Not by actual path of file
     validator = validate.GenieValidationHelper(syn=syn, center=center,
-                                               filepathlist=filepaths,
+                                               entitylist=entities,
                                                format_registry=format_registry,
                                                testing=testing)
     filetype = validator.file_type
