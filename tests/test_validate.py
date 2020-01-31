@@ -1,5 +1,4 @@
 """Tests validate.py"""
-
 import mock
 from mock import patch
 import pandas as pd
