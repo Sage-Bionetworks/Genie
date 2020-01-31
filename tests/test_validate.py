@@ -75,7 +75,8 @@ def test_invalid_collect_errors_and_warnings():
     Tests if error and warnings strings are passed that
     returned valid and message is correct
     """
-    message = validate.collect_errors_and_warnings("error\nnow", 'warning\nnow')
+    message = validate.collect_errors_and_warnings("error\nnow",
+                                                   'warning\nnow')
     assert message == (
         "----------------ERRORS----------------\n"
         "error\nnow"
@@ -145,6 +146,7 @@ def test_filetype_validate_single_file():
 
     valid, message = validator.validate_single_file()
     assert message == expected_error
+    assert not valid
 
 
 def test_wrongfiletype_validate_single_file():
