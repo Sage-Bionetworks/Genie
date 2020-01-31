@@ -11,14 +11,6 @@ from genie import validate, clinical, process_functions
 CENTER = "SAGE"
 syn = mock.create_autospec(synapseclient.Synapse)
 
-# @pytest.fixture(params=[
-#     # tuple with (input, expectedOutput)
-#     (["data_CNA_SAGE.txt"], "cna"),
-#     (["data_clinical_supp_SAGE.txt"], "clinical"),
-#     (["data_clinical_supp_sample_SAGE.txt",
-#       "data_clinical_supp_patient_SAGE.txt"], "clinical")])
-# def filename_fileformat_map(request):
-#     return request.param
 CNA_ENT = synapseclient.File(name="data_CNA_SAGE.txt",
                              path="data_CNA_SAGE.txt",
                              parentId="syn12345")
@@ -34,6 +26,7 @@ PATIENT_ENT = synapseclient.File(name="data_clinical_supp_patient_SAGE.txt",
 WRONG_NAME_ENT = synapseclient.File(name="wrong.txt",
                                     path="data_clinical_supp_SAGE.txt",
                                     parentId="syn12345")
+
 
 @pytest.mark.parametrize("ent_list,fileformat",
                          # tuple with (input, expectedOutput)
