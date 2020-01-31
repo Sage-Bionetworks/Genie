@@ -155,7 +155,7 @@ def test_wrongfiletype_validate_single_file():
         validator = validate.GenieValidationHelper(syn=syn, center=CENTER,
                                                    entitylist=entitylist)
         valid, message = validator.validate_single_file()
-        
+
         assert message == expected_error
         assert not valid
         mock_determine_filetype.assert_called_once_with()
@@ -227,14 +227,15 @@ class argparser:
                          "Id": ["syn123", ONCOTREE_ENT],
                          "center": ["try", 'foo']}
         databasetosynid_mappingdf = pd.DataFrame(database_dict)
-        return(databasetosynid_mappingdf)
+        return databasetosynid_mappingdf
 
 
 def test_notnone_get_oncotree_link():
     """Test link passed in by user is used"""
     arg = argparser()
     url = "https://www.synapse.org"
-    link = validate._get_oncotreelink(syn, arg.asDataFrame(), oncotree_link=url)
+    link = validate._get_oncotreelink(syn, arg.asDataFrame(),
+                                      oncotree_link=url)
     assert link == url
 
 
