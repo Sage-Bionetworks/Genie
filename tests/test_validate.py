@@ -48,8 +48,8 @@ def test_wrongfilename_noerror_determine_filetype():
     when raise_error flag is False
     '''
     ent_list = [WRONG_NAME_ENT]
-    validator = validate.GenieValidationHelper(syn, center=CENTER, entitylist=ent_list)
-
+    validator = validate.GenieValidationHelper(syn, center=CENTER,
+                                               entitylist=ent_list)
     assert validator.file_type is None
 
 
