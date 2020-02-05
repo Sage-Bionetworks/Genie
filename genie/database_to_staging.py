@@ -258,14 +258,13 @@ def runMAFinBED(syn,
     Returns:
         pd.Series: Variants to remove
     '''
-    MAFinBED_script = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        '../analyses/genomicData/MAFinBED.R')
-    notinbed_variant_file = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        '../analyses/genomicData/notinbed.csv')
-
-    command = ['Rscript', MAFinBED_script, notinbed_variant_file]
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    mafinbed_script = os.path.join(script_dir,
+                                   '../analyses/genomicData/MAFinBED.R')
+    notinbed_file = os.path.join(script_dir,
+                                 '../analyses/genomicData/notinbed.csv')
+    # The MAFinBED script filters out the centers that aren't being processed
+    command = ['Rscript', mafinbed_script, notinbed_file]
     if genie_user is not None and genie_pass is not None:
         command.extend(['--syn_user', genie_user, '--syn_pass', genie_pass])
     if test:
@@ -280,30 +279,28 @@ def runMAFinBED(syn,
     #     " is False and Center in ('{}')".format(
     #         mutationSynId, "','".join(center_mappingdf.center)))
     # removedVariantsDf = removedVariants.asDataFrame()
-    removedVariantsDf = pd.read_csv(notinbed_variant_file)
-    removedVariantsDf['removeVariants'] = \
-        removedVariantsDf['Chromosome'].astype(str) + ' ' + \
-        removedVariantsDf['Start_Position'].astype(str) + ' ' + \
-        removedVariantsDf['End_Position'].astype(str) + ' ' + \
-        removedVariantsDf['Reference_Allele'].astype(str) + ' ' + \
-        removedVariantsDf['Tumor_Seq_Allele2'].astype(str) + ' ' + \
-        removedVariantsDf['Tumor_Sample_Barcode'].astype(str)
-    # Store filtered vairants
-    for center in removedVariantsDf['Center'].unique():
-        center_mutation = removedVariantsDf[
-            removedVariantsDf['Center'] == center]
-
-        # mafText = process_functions.removePandasDfFloat(center_mutation)
-        center_mutation.to_csv("mafinbed_filtered_variants.csv", index=False)
-
-        store_file(
-            syn,
-            "mafinbed_filtered_variants.csv",
-            parent=center_mappingdf['stagingSynId'][
-                center_mappingdf['center'] == center][0],
-            genieVersion=genieVersion)
+    removed_variantsdf = pd.read_csv(notinbed_file)
+    removed_variantsdf['removeVariants'] = \
+        removed_variantsdf['Chromosome'].astype(str) + ' ' + \
+        removed_variantsdf['Start_Position'].astype(str) + ' ' + \
+        removed_variantsdf['End_Position'].astype(str) + ' ' + \
+        removed_variantsdf['Reference_Allele'].astype(str) + ' ' + \
+        removed_variantsdf['Tumor_Seq_Allele2'].astype(str) + ' ' + \
+        removed_variantsdf['Tumor_Sample_Barcode'].astype(str)
+    # Store filtered variants
+    for center in removed_variantsdf['Center'].unique():
+        center_mutation = removed_variantsdf[
+            removed_variantsdf['Center'] == center]
+        # mafText = process.removePandasDfFloat(center_mutation)
+        center_mutation.to_csv("mafinbed_filtered_variants.csv",
+                               index=False)
+        store_file(syn,
+                   "mafinbed_filtered_variants.csv",
+                   parent=center_mappingdf['stagingSynId'][
+                       center_mappingdf['center'] == center][0],
+                   genieVersion=genieVersion)
         os.unlink("mafinbed_filtered_variants.csv")
-    return(removedVariantsDf['removeVariants'])
+    return removed_variantsdf['removeVariants']
 
 
 def seq_date_filter(clinicalDf, processingDate, consortiumReleaseCutOff):
@@ -745,6 +742,36 @@ def run_genie_filters(syn,
            remove_merged_consortium_samples,
            remove_center_consortium_samples,
            flagged_mutationincis_variants)
+
+
+def store_assay_info_files(syn, genie_version, assay_info_synid,
+                           clinicaldf, release_synid):
+    """Creates, stores assay information and gets WES panel list
+
+    Args:
+        syn: Synapse object
+        genie_version: GENIE version (ie. v6.1-consortium)
+        assay_info_synid: Assay information database synid
+        clinicaldf: Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID
+        release_synid: Synapse id to store release file
+
+    Returns:
+        List of whole exome sequencing SEQ_ASSAY_IDs
+    """
+    logger.info("Creates assay information file")
+    assay_info_path = os.path.join(GENIE_RELEASE_DIR,
+                                   'assay_information_%s.txt' % genie_version)
+    seq_assay_str = "','".join(clinicaldf['SEQ_ASSAY_ID'])
+    assay_info = syn.tableQuery("select * from {} where SEQ_ASSAY_ID "
+                                "in ('{}')".format(assay_info_synid,
+                                                   seq_assay_str))
+    assay_infodf = assay_info.asDataFrame()
+    assay_infodf.to_csv(assay_info_path, sep="\t", index=False)
+    store_file(syn, assay_info_path, parent=release_synid,
+               genieVersion=genie_version, name="assay_information.txt")
+    wes_index = assay_infodf['library_strategy'] == 'WXS'
+    wes_panels = assay_infodf['SEQ_ASSAY_ID'][wes_index]
+    return wes_panels.tolist()
 
 
 def store_clinical_files(syn,
@@ -1295,7 +1322,13 @@ def stagingToCbio(syn, processingDate, genieVersion,
         consortiumReleaseSynId,
         current_release_staging)
 
-    wes_panelids = _get_wes_panels(syn, assay_info_synid)
+    wes_panelids = store_assay_info_files(syn,
+                                          genieVersion,
+                                          assay_info_synid,
+                                          clinicalDf,
+                                          consortiumReleaseSynId)
+
+    # wes_panelids = _get_wes_panels(syn, assay_info_synid)
 
     data_gene_matrix = store_data_gene_matrix(
         syn,
