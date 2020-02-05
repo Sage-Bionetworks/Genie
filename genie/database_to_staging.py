@@ -178,50 +178,62 @@ def redact_phi(clinicaldf):
     return clinicaldf
 
 
-def configureMafRow(rowArray, headers, keepSamples, remove_variants,
-                    flagged_variants):
-    '''
-    Configure each maf row
-    '''
-    chrom = str(rowArray[headers.index('Chromosome')])
-    start = str(rowArray[headers.index('Start_Position')])
-    end = str(rowArray[headers.index('End_Position')])
-    ref = str(rowArray[headers.index('Reference_Allele')])
-    seq = str(rowArray[headers.index('Tumor_Seq_Allele2')])
-    sampleid = str(rowArray[headers.index('Tumor_Sample_Barcode')])
-    hgvsp = str(rowArray[headers.index('HGVSp_Short')])
-    variant = chrom+' '+start+' '+end+' '+ref+' '+seq+' '+sampleid
+def configure_maf_row(row_array, headers, keep_samples, remove_variants,
+                      flagged_variants):
+    """Configures each maf row, does germline filtering
+
+    Args:
+        rowArray: Each maf row
+        headers: maf Headers
+        keepSamples: Samples to keep
+        remove_variants: Variants to remove
+        flagged_variants: Variants to flag
+
+    Returns:
+        configured maf row
+    """
+    chrom = str(row_array[headers.index('Chromosome')])
+    start = str(row_array[headers.index('Start_Position')])
+    end = str(row_array[headers.index('End_Position')])
+    ref = str(row_array[headers.index('Reference_Allele')])
+    seq = str(row_array[headers.index('Tumor_Seq_Allele2')])
+    sampleid = str(row_array[headers.index('Tumor_Sample_Barcode')])
+    hgvsp = str(row_array[headers.index('HGVSp_Short')])
+    filter_info = str(row_array[headers.index('FILTER')])
+    variant = '{} {} {} {} {} {}'.format(chrom, start, end,
+                                         ref, seq, sampleid)
     # Add this line for now because merge check uses
     # different primary key from maf
-    mergecheck_variant = \
-        chrom+' '+start+' '+hgvsp+' '+ref+' '+seq+' '+sampleid
+    mergecheck_variant = '{} {} {} {} {} {}'.format(chrom, start, hgvsp,
+                                                    ref, seq, sampleid)
     # if pd.Series(sampleId).isin(keepSamples).any() and \
     # not pd.Series(variant).isin(remove_variants).any():
-    if sampleid in keepSamples.tolist() \
-            and variant not in remove_variants.tolist():
+    if sampleid in keep_samples.tolist() \
+            and variant not in remove_variants.tolist() \
+            and "common_variant" not in filter_info: # germline filtering
         fillnas = ['t_depth', 't_ref_count', 't_alt_count',
                    'n_depth', 'n_ref_count', 'n_alt_count']
         for i in fillnas:
             # mutationsDf[i] = mutationsDf[i].fillna("NA")
             # mutationsDf[i] = ["NA" if str(each) == "." else each
             #                    for each in  mutationsDf[i]]
-            value = rowArray[headers.index(i)]
-            rowArray[headers.index(i)] = "" if str(value) == "." else value
+            value = row_array[headers.index(i)]
+            row_array[headers.index(i)] = "" if str(value) == "." else value
 
-        nDepth = rowArray[headers.index("n_depth")]
-        rowArray[headers.index("Match_Norm_Seq_Allele2")] = \
-            '' if str(nDepth) in ["NA", "0.0"] else nDepth
-        rowArray[headers.index("Match_Norm_Seq_Allele1")] = \
-            '' if str(nDepth) in ["NA", "0.0"] else nDepth
-        # rowArray.pop(headers.index('inBED'))
+        n_depth = row_array[headers.index("n_depth")]
+        row_array[headers.index("Match_Norm_Seq_Allele2")] = \
+            '' if str(n_depth) in ["NA", "0.0"] else n_depth
+        row_array[headers.index("Match_Norm_Seq_Allele1")] = \
+            '' if str(n_depth) in ["NA", "0.0"] else n_depth
+        # row_array.pop(headers.index('inBED'))
         if mergecheck_variant in flagged_variants.tolist():
-            rowArray.append('True')
+            row_array.append('True')
         else:
-            rowArray.append('')
-        newRow = "\t".join(rowArray)
-        newRow += "\n"
-        newRow = process_functions.removeStringFloat(newRow)
-        return newRow
+            row_array.append('')
+        new_row = "\t".join(row_array)
+        new_row += "\n"
+        new_row = process_functions.removeStringFloat(new_row)
+        return new_row
     else:
         return None
 
@@ -625,7 +637,7 @@ def store_maf_files(syn,
                 for row in mafFile:
                     rowArray = row.replace("\n", "").split("\t")
                     center = rowArray[headers.index('Center')]
-                    newMergedRow = configureMafRow(
+                    newMergedRow = configure_maf_row(
                         rowArray, headers,
                         keep_for_merged_consortium_samples,
                         remove_mafinbed_variants,
@@ -633,7 +645,7 @@ def store_maf_files(syn,
                     if newMergedRow is not None:
                         with open(mutations_path, 'a') as f:
                             f.write(newMergedRow)
-                    newCenterRow = configureMafRow(
+                    newCenterRow = configure_maf_row(
                         rowArray, headers,
                         keep_for_center_consortium_samples,
                         remove_mafinbed_variants,
