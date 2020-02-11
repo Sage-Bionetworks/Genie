@@ -320,7 +320,7 @@ def processfiles(syn, validfiles, center, path_to_genie,
     logger.info("PROCESSING {} FILES: {}".format(center, len(validfiles)))
     center_staging_folder = os.path.join(path_to_genie, center)
     center_staging_synid = center_mapping_df.query(
-        "center == 'SAGE'").stagingSynId.iloc[0]
+        "center == '{}'".format(center)).stagingSynId.iloc[0]
 
     if not os.path.exists(center_staging_folder):
         os.makedirs(center_staging_folder)
