@@ -264,7 +264,7 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
     # This must pass in filenames, because filetype is determined by entity
     # name Not by actual path of file
     validator = validate.GenieValidationHelper(syn=syn, center=center,
-                                               filepathlist=filepaths,
+                                               entitylist=entities,
                                                format_registry=format_registry,
                                                testing=testing)
     filetype = validator.file_type
@@ -320,7 +320,7 @@ def processfiles(syn, validfiles, center, path_to_genie,
     logger.info("PROCESSING {} FILES: {}".format(center, len(validfiles)))
     center_staging_folder = os.path.join(path_to_genie, center)
     center_staging_synid = center_mapping_df.query(
-        "center == 'SAGE'").stagingSynId.iloc[0]
+        "center == '{}'".format(center)).stagingSynId.iloc[0]
 
     if not os.path.exists(center_staging_folder):
         os.makedirs(center_staging_folder)
