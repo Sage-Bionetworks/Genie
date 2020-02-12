@@ -1041,3 +1041,112 @@ def get_gdc_data_dictionary(filetype):
         .format(filetype=filetype))
     gdc_response = json.loads(gdc_dict.text)
     return(gdc_response)
+
+
+def _create_schema(syn, table_name, parentid, columns=None, annotations=None):
+    """Creates Table Schema
+
+    Args:
+        syn: Synapse object
+        table_name: Name of table
+        parentid: Project synapse id
+        columns: Columns of Table
+        annotations: Dictionary of annotations to add
+
+    Returns:
+        Schema
+    """
+    schema = synapseclient.Schema(name=table_name,
+                                  columns=columns,
+                                  parent=parentid)
+    schema.annotations = annotations
+    new_schema = syn.store(schema)
+    return new_schema
+
+
+def _update_database_mapping(syn, database_synid_mappingdf,
+                             database_mapping_synid,
+                             fileformat, new_tableid):
+    """Updates database to synapse id mapping table
+
+    Args:
+        syn: Synapse object
+        database_synid_mappingdf: Database to synapse id mapping dataframe
+        database_mapping_synid: Database to synapse id table id
+        fileformat: File format updated
+        new_tableid: New file format table id
+
+    Returns:
+        Updated Table object
+    """
+    fileformat_ind = database_synid_mappingdf['Database'] == fileformat
+    # Store in the new database synid
+    database_synid_mappingdf['Id'][fileformat_ind] = new_tableid
+    # Only get the vcf2maf row so that only this row is updated in the
+    # mapping table
+    to_update_row = database_synid_mappingdf[fileformat_ind]
+
+    # Update this synid later (This synid needs to not be hardcoded)
+    updated_table = syn.store(synapseclient.Table(database_mapping_synid,
+                                                  to_update_row))
+    return updated_table
+
+
+def _move_entity(syn, ent, parentid, name=None):
+    """Archives an older table
+
+    Args:
+        syn: Synapse object
+        ent: Synapse Entity
+        parentid: Synapse Project id
+        name: New Entity name if a new name is desired
+
+    Returns:
+        Moved Entity
+    """
+    ent.parentId = parentid
+    if name is not None:
+        ent.name = name
+    moved_ent = syn.store(ent)
+    return moved_ent
+
+
+def create_new_fileformat_table(syn, database_synid_mapping,
+                                file_format,
+                                newdb_name,
+                                projectid,
+                                archive_projectid):
+    """Creates new database table based on old database table and archives
+    old database table
+
+    Args:
+        syn: Synapse object
+        database_synid_mapping: Synapse table query of database synid mapping
+        file_format: File format to update
+        newdb_name: Name of new database table
+        projectid: Project id where new database should live
+        archive_projectid: Project id where old database should be moved
+    """
+    database_synid_mappingdf = database_synid_mapping.asDataFrame()
+    olddb_synid = getDatabaseSynId(syn, file_format,
+                                   databaseToSynIdMappingDf=database_synid_mappingdf)
+    olddb_ent = syn.get(olddb_synid)
+    olddb_columns = list(syn.getTableColumns(olddb_synid))
+
+    newdb_ent = _create_schema(syn, table_name=newdb_name,
+                               columns=olddb_columns,
+                               parentid=projectid,
+                               annotations=olddb_ent.annotations)
+
+    updated_table = _update_database_mapping(syn, database_synid_mappingdf,
+                                             database_synid_mapping.tableId,
+                                             file_format, newdb_ent.id)
+    # Automatically rename the archived entity with ARCHIVED
+    # This will attempt to resolve any issues if the table already exists at
+    # location
+    new_table_name = "ARCHIVED {}".format(newdb_ent.name)
+    moved_ent = _move_entity(syn, olddb_ent, archive_projectid,
+                             name=new_table_name)
+    return {"newdb_ent": newdb_ent,
+            "updated_table": updated_table,
+            "moved_ent": moved_ent}
