@@ -1058,8 +1058,8 @@ def _create_schema(syn, table_name, parentid, columns=None, annotations=None):
     """
     schema = synapseclient.Schema(name=table_name,
                                   columns=columns,
-                                  parent=parentid)
-    schema.annotations = annotations
+                                  parent=parentid,
+                                  annotations=annotations)
     new_schema = syn.store(schema)
     return new_schema
 
