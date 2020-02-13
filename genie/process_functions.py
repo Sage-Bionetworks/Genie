@@ -1092,8 +1092,10 @@ def _update_database_mapping(syn, database_synid_mappingdf,
     return updated_table
 
 
+# TODO: deprecate once move function is out of the cli into the
+# client master branch
 def _move_entity(syn, ent, parentid, name=None):
-    """Archives an older table
+    """Moves an entity (works like linux mv)
 
     Args:
         syn: Synapse object
