@@ -31,6 +31,8 @@ def main(db_mapping_id, pemfile, debug):
                                                                "syn7208886")
 
     # Remove can download permissions from project GENIE team
+    # this wouldn't be necessary if the database is just moved to a project
+    # that isn't viewable by GENIE peeps.
     syn.setPermissions(new_tables['newdb_ent'].id, 3326313, [])
 
 

@@ -1111,7 +1111,7 @@ def _move_entity(syn, ent, parentid, name=None):
     return moved_ent
 
 
-def create_new_fileformat_table(syn, database_synid_mapping,
+def create_new_fileformat_table(syn, database_mapping,
                                 file_format,
                                 newdb_name,
                                 projectid,
@@ -1127,9 +1127,9 @@ def create_new_fileformat_table(syn, database_synid_mapping,
         projectid: Project id where new database should live
         archive_projectid: Project id where old database should be moved
     """
-    database_synid_mappingdf = database_synid_mapping.asDataFrame()
+    database_mappingdf = database_mapping.asDataFrame()
     olddb_synid = getDatabaseSynId(syn, file_format,
-                                   databaseToSynIdMappingDf=database_synid_mappingdf)
+                                   databaseToSynIdMappingDf=database_mappingdf)
     olddb_ent = syn.get(olddb_synid)
     olddb_columns = list(syn.getTableColumns(olddb_synid))
 
@@ -1138,8 +1138,8 @@ def create_new_fileformat_table(syn, database_synid_mapping,
                                parentid=projectid,
                                annotations=olddb_ent.annotations)
 
-    updated_table = _update_database_mapping(syn, database_synid_mappingdf,
-                                             database_synid_mapping.tableId,
+    updated_table = _update_database_mapping(syn, database_mappingdf,
+                                             database_mapping.tableId,
                                              file_format, newdb_ent.id)
     # Automatically rename the archived entity with ARCHIVED
     # This will attempt to resolve any issues if the table already exists at
