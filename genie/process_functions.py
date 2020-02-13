@@ -1,5 +1,4 @@
-import ast
-from Crypto.PublicKey import RSA
+"""Processing functions that are used in the GENIE pipeline"""
 import datetime
 import json
 import logging
@@ -8,7 +7,10 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 import tempfile
+import time
 
+import ast
+from Crypto.PublicKey import RSA
 import pandas as pd
 import synapseclient
 
@@ -1146,7 +1148,7 @@ def create_new_fileformat_table(syn, database_mapping,
     # Automatically rename the archived entity with ARCHIVED
     # This will attempt to resolve any issues if the table already exists at
     # location
-    new_table_name = "ARCHIVED {}".format(newdb_ent.name)
+    new_table_name = "ARCHIVED {}-{}".format(time.time(), newdb_ent.name)
     moved_ent = _move_entity(syn, olddb_ent, archive_projectid,
                              name=new_table_name)
     return {"newdb_ent": newdb_ent,
