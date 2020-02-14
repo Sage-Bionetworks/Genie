@@ -322,7 +322,25 @@ def test__create_schema():
         new_schema = process_functions._create_schema(syn, table_name, parentid,
                                                       columns=columns,
                                                       annotations=annotations)
+        patch_syn_store.assert_called_once_with(schema)
         assert new_schema == schema
+
+
+def test__update_database_mapping():
+    """Tests updates database mapping"""
+    fileformat = str(uuid.uuid1())
+    database_mappingdf = pd.DataFrame({'Database': [fileformat, "foo"],
+                                       "Id": ['11111', "bar"]})
+    database_mapping_synid = str(uuid.uuid1())
+    new_tableid = str(uuid.uuid1())
+    expected_mapdf = pd.DataFrame({'Database': [fileformat, "foo"],
+                                   "Id": [new_tableid, "bar"]})
+    with patch.object(syn, "store") as patch_syn_store:
+        newdb = process_functions._update_database_mapping(syn, database_mappingdf,
+                                                           database_mapping_synid,
+                                                           fileformat, new_tableid)
+        assert newdb.equals(expected_mapdf)
+        patch_syn_store.assert_called_once()
 
 
 # def test_create_and_archive_maf_database():

@@ -1084,14 +1084,12 @@ def _update_database_mapping(syn, database_synid_mappingdf,
     fileformat_ind = database_synid_mappingdf['Database'] == fileformat
     # Store in the new database synid
     database_synid_mappingdf['Id'][fileformat_ind] = new_tableid
-    # Only get the vcf2maf row so that only this row is updated in the
-    # mapping table
+    # Only update the one row
     to_update_row = database_synid_mappingdf[fileformat_ind]
 
-    # Update this synid later (This synid needs to not be hardcoded)
     updated_table = syn.store(synapseclient.Table(database_mapping_synid,
                                                   to_update_row))
-    return updated_table
+    return database_synid_mappingdf
 
 
 # TODO: deprecate once move function is out of the cli into the
@@ -1142,9 +1140,9 @@ def create_new_fileformat_table(syn, database_mapping,
                                parentid=projectid,
                                annotations=olddb_ent.annotations)
 
-    updated_table = _update_database_mapping(syn, database_mappingdf,
-                                             database_mapping.tableId,
-                                             file_format, newdb_ent.id)
+    newdb_mappingdf = _update_database_mapping(syn, database_mappingdf,
+                                               database_mapping.tableId,
+                                               file_format, newdb_ent.id)
     # Automatically rename the archived entity with ARCHIVED
     # This will attempt to resolve any issues if the table already exists at
     # location
@@ -1152,5 +1150,5 @@ def create_new_fileformat_table(syn, database_mapping,
     moved_ent = _move_entity(syn, olddb_ent, archive_projectid,
                              name=new_table_name)
     return {"newdb_ent": newdb_ent,
-            "updated_table": updated_table,
+            "newdb_mappingdf": newdb_mappingdf,
             "moved_ent": moved_ent}
