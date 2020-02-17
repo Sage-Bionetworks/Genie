@@ -1,0 +1,89 @@
+\documentclass{article}
+\usepackage{tocloft}
+\usepackage{blindtext}
+ \cftpagenumbersoff{section}
+ \cftpagenumbersoff{subsection}
+\usepackage{color}   %May be necessary if you want to color links
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true, %set true if you want colored links
+    linktoc=all,     %set to all if you want both sections and subsections linked
+    linkcolor=blue,  %choose some color if you want links to stand out
+}
+\usepackage{graphicx}
+
+
+\title{AACR GENIE Data Guide}
+\author{AACR}
+
+
+% Definition of \maketitle
+\makeatletter         
+\def\@maketitle{
+\begin{center}
+\includegraphics[width=1.0\textwidth]{genie_banner.png}\\[8ex]
+{\Huge \@title }\\[4ex] 
+{\Large  \@author}\\[4ex] 
+\@date\\[8ex]
+\end{center}}
+\makeatother
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+
+\maketitle
+
+\tableofcontents
+
+\newpage
+
+\addcontentsline{toc}{section}{About this Document}
+\section*{About this Document}
+
+foobar
+
+\addcontentsline{toc}{section}{Version of Data}
+\section*{Version of Data}
+
+
+\addcontentsline{toc}{section}{Data Access}
+\section*{Data Access}
+
+
+\addcontentsline{toc}{section}{Terms Of Access}
+\section*{Terms Of Access}
+
+
+\addcontentsline{toc}{section}{Introduction to AACR GENIE}
+\section*{Introduction to AACR GENIE}
+
+\addcontentsline{toc}{section}{Human Subjects Protection and Privacy}
+\section*{Human Subjects Protection and Privacy}
+
+
+\addcontentsline{toc}{section}{Summary of Data by Center}
+\section*{Summary of Data by Center}
+
+
+\addcontentsline{toc}{section}{Genomic Profiling at Each Center}
+\subsection*{Genomic Profiling at Each Center}
+
+
+\addcontentsline{toc}{section}{Description of Data Files}
+\section*{Description of Data Files}
+
+\addcontentsline{toc}{section}{Clinical Data}
+\section*{Clinical Data}
+
+\addcontentsline{toc}{section}{Abbreviations and Acronym Glossary}
+\section*{Abbreviations and Acronym Glossary}
+
+
+
+
+
+
+
+
+\end{document}
