@@ -41,11 +41,15 @@
 \addcontentsline{toc}{section}{About this Document}
 \section*{About this Document}
 
-foobar
+This document provides an overview of the {{release}}\textsuperscript{th} public release of American Association for Cancer Research (AACR) GENIE data.
 
 \addcontentsline{toc}{section}{Version of Data}
 \section*{Version of Data}
 
+AACR GENIE Project Data: Version {{release}}.0-pubic.
+\newline
+
+\noindent AACR Project GENIE data versions follow a numbering scheme derived from \href{https://semver.org/}{semantic versioning}, where the digits in the version correspond to: major.patch-release-type.  “Major” releases are public releases of new sample data.  “Patch” releases are corrections to major releases, including data retractions.  “Release-type” refers to whether the release is a public AACR Project GENIE release or a private/consortium-only release.  Public releases will be denoted with the nomenclature “X.X-public” and consortium-only private releases will be denoted with the nomenclature “X.X-consortium".
 
 \addcontentsline{toc}{section}{Data Access}
 \section*{Data Access}
