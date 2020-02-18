@@ -107,8 +107,10 @@ The data within GENIE is being shared with the global research community.  The d
 <<results=tex, echo=F>>=
 xtab = xtable(centers$asDataFrame(),
               caption = 'Participating Centers')
+#cat("\\makebox[\\textwidth]{")
 print(xtab, include.rownames = F, floating = F,
-      caption.placement = "top", tabular.environment="longtable")
+      caption.placement = "top", tabular.environment = "longtable")
+#cat("}")
 @
 
 
@@ -124,11 +126,19 @@ Protection of patient privacy is paramount, and the AACR GENIE Project therefore
 \section*{Summary of Data by Center}
 
 <<results=tex, echo=F>>=
-info_tab = xtable(assayinfo$asDataFrame(),
-                  caption = 'Table 2')
-print(info_tab, include.rownames = F, floating = F, size="\\tiny",
-      caption.placement = "top", tabular.environment="longtable")
+info_tab = xtable(assayinfo$asDataFrame()[,c("SEQ_ASSAY_ID", "platform", 
+                                             "library_strategy", "library_selection",
+                                             "instrument_model",
+                                             "specimen_type", "specimen_tumor_cellularity")],
+                  caption = 'Genomic Data Characterization')
+cat("\\makebox[\\textwidth]{")
+print(info_tab, include.rownames = F, floating = F, size = "\\tiny",
+      caption.placement = "top", tabular.environment = "longtable")
+cat("}")
+cat("\\endgroup")
+
 @
+
 
 
 \addcontentsline{toc}{subsection}{Genomic Profiling at Each Center}
