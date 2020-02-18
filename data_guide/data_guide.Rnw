@@ -106,7 +106,7 @@ The data within GENIE is being shared with the global research community.  The d
 
 <<results=tex, echo=F>>=
 xtab = xtable(centers$asDataFrame(),
-              caption = 'Table 1')
+              caption = 'Participating Centers')
 print(xtab, include.rownames = F, floating = F,
       caption.placement = "top", tabular.environment="longtable")
 @
@@ -126,7 +126,7 @@ Protection of patient privacy is paramount, and the AACR GENIE Project therefore
 <<results=tex, echo=F>>=
 info_tab = xtable(assayinfo$asDataFrame(),
                   caption = 'Table 2')
-print(info_tab, include.rownames = F, floating = F,
+print(info_tab, include.rownames = F, floating = F, size="\\tiny",
       caption.placement = "top", tabular.environment="longtable")
 @
 
