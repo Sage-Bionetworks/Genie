@@ -1,5 +1,6 @@
 \documentclass{article}
 
+\usepackage{longtable}
 \usepackage{tocloft}
 \usepackage{blindtext}
  \cftpagenumbersoff{section}
@@ -44,6 +45,8 @@ library(synapser)
 synLogin()
 centers = suppressMessages(synTableQuery('select "Center Abbreviation", "Center" from syn16982837',
                                          includeRowIdAndRowVersion = F))
+assayinfo = suppressMessages(synTableQuery('SELECT * FROM syn17009222',
+                                           includeRowIdAndRowVersion = F))
 @
 
 \maketitle
@@ -102,8 +105,10 @@ The AACR Project Genomics, Evidence, Neoplasia, Information, Exchange (GENIE) is
 The data within GENIE is being shared with the global research community.  The database currently contains CLIA-/ISO-certified genomic data obtained during the course of routine practice at multiple international institutions (Table 1), and will continue to grow as more patients are treated at additional participating centers.
 
 <<results=tex, echo=F>>=
-xtab = xtable(centers$asDataFrame())
-print(xtab, include.rownames = F, floating = F)
+xtab = xtable(centers$asDataFrame(),
+              caption = 'Table 1')
+print(xtab, include.rownames = F, floating = F,
+      caption.placement = "top", tabular.environment="longtable")
 @
 
 
@@ -113,9 +118,17 @@ print(xtab, include.rownames = F, floating = F)
 \addcontentsline{toc}{section}{Human Subjects Protection and Privacy}
 \section*{Human Subjects Protection and Privacy}
 
+Protection of patient privacy is paramount, and the AACR GENIE Project therefore requires that each participating center share data in a manner consistent with patient consent and center-specific Institutional Review Board (IRB) policies. The exact approach varies by center, but largely falls into one of three categories: IRB-approved patient-consent to sharing of de-identified data, captured at time of molecular testing; IRB waivers and; and IRB approvals of GENIE-specific research proposals.  Additionally, all data has been de-identified via the HIPAA Safe Harbor Method.  Full details regarding the HIPAA Safe Harbor Method are available online at:  https://www.hhs.gov/hipaa/for-professionals/privacy/special-topics/de-identification/.
 
 \addcontentsline{toc}{section}{Summary of Data by Center}
 \section*{Summary of Data by Center}
+
+<<results=tex, echo=F>>=
+info_tab = xtable(assayinfo$asDataFrame(),
+                  caption = 'Table 2')
+print(info_tab, include.rownames = F, floating = F,
+      caption.placement = "top", tabular.environment="longtable")
+@
 
 
 \addcontentsline{toc}{subsection}{Genomic Profiling at Each Center}
