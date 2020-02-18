@@ -38,8 +38,12 @@
 \SweaveOpts{concordance=TRUE}
 
 
-<<echo=F>>=
+<<echo=F, include=F, results=hide>>=
 library(xtable)
+library(synapser)
+synLogin()
+centers = suppressMessages(synTableQuery('select "Center Abbreviation", "Center" from syn16982837',
+                                         includeRowIdAndRowVersion = F))
 @
 
 \maketitle
@@ -57,9 +61,8 @@ This document provides an overview of the {{release}}\textsuperscript{th} public
 \section*{Version of Data}
 
 AACR GENIE Project Data: Version {{release}}.0-pubic.
-\newline
-
-\noindent AACR Project GENIE data versions follow a numbering scheme derived from \href{https://semver.org/}{semantic versioning}, where the digits in the version correspond to: major.patch-release-type.  “Major” releases are public releases of new sample data.  “Patch” releases are corrections to major releases, including data retractions.  “Release-type” refers to whether the release is a public AACR Project GENIE release or a private/consortium-only release.  Public releases will be denoted with the nomenclature “X.X-public” and consortium-only private releases will be denoted with the nomenclature “X.X-consortium".
+\\*
+AACR Project GENIE data versions follow a numbering scheme derived from \href{https://semver.org/}{semantic versioning}, where the digits in the version correspond to: major.patch-release-type.  “Major” releases are public releases of new sample data.  “Patch” releases are corrections to major releases, including data retractions.  “Release-type” refers to whether the release is a public AACR Project GENIE release or a private/consortium-only release.  Public releases will be denoted with the nomenclature “X.X-public” and consortium-only private releases will be denoted with the nomenclature “X.X-consortium".
 
 
 \addcontentsline{toc}{section}{Data Access}
@@ -73,18 +76,38 @@ AACR GENIE Data is currently available via two mechanisms:
 
 \addcontentsline{toc}{section}{Terms Of Access}
 \section*{Terms Of Access}
+All users of the AACR Project GENIE data must agree to the following terms of use; failure to abide by any term herein will result in revocation of access.
+
+\begin{itemize}
+    \item{Users will not attempt to identify or contact individual participants from whom these data were collected by any means.}
+    \item{Users will not redistribute the data without express written permission from the AACR Project GENIE Coordinating Center (send email to:  info@aacrgenie.org).}
+\end{itemize}
+
+When publishing or presenting work using or referencing the AACR Project GENIE dataset please include the following attributions:
+
+\begin{itemize}
+\item{Please cite: \emph{The AACR Project GENIE Consortium. AACR Project GENIE: Powering Precision Medicine Through An International Consortium, Cancer Discov. 2017 Aug;7(8):818-831} and include the version of the dataset used.}
+\item{The authors would like to acknowledge the American Association for Cancer Research and its financial and material support in the development of the AACR Project GENIE registry, as well as members of the consortium for their commitment to data sharing. Interpretations are the responsibility of study authors.}
+\end{itemize}
+
+Posters and presentations should include the AACR Project GENIE logo.
+
 
 
 \addcontentsline{toc}{section}{Introduction to AACR GENIE}
 \section*{Introduction to AACR GENIE}
 
-<<results=tex, echo=F>>=
-df <- data.frame("Observations" = c(a = "1%", b = "2%", c = "3%", d = "4%"),
-                 "Event rate" = c(1:4)
-)
+The AACR Project Genomics, Evidence, Neoplasia, Information, Exchange (GENIE) is a multi-phase, multi-year, international data-sharing project that aims to catalyze precision cancer medicine.  The GENIE platform will integrate and link clinical-grade cancer genomic data with clinical outcome data for tens of thousands of cancer patients treated at multiple international institutions. The project fulfills an unmet need in oncology by providing the statistical power necessary to improve clinical decision-making, to identify novel therapeutic targets, to understand of patient response to therapy, and to design new biomarker-driven clinical trials.  The project will also serve as a prototype for aggregating, harmonizing, and sharing clinical-grade, next-generation sequencing (NGS) data obtained during routine medical practice.
 
-xtable(df)
+The data within GENIE is being shared with the global research community.  The database currently contains CLIA-/ISO-certified genomic data obtained during the course of routine practice at multiple international institutions (Table 1), and will continue to grow as more patients are treated at additional participating centers.
+
+<<results=tex, echo=F>>=
+xtab = xtable(centers$asDataFrame())
+print(xtab, include.rownames = F, floating = F)
 @
+
+
+
 
 
 \addcontentsline{toc}{section}{Human Subjects Protection and Privacy}
