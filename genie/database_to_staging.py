@@ -1147,7 +1147,7 @@ def store_bed_files(syn, genie_version, beddf, seq_assay_ids,
     """
     logger.info("STORING COMBINED BED FILE")
     combined_bed_path = os.path.join(GENIE_RELEASE_DIR,
-                                     f'genomic_information_{genie_version}.txt') #pylint: disable=line-too-long
+                                     'genomic_information_{}.txt'.format(genie_version)) #pylint: disable=line-too-long
     if not current_release_staging:
         for seq_assay in beddf['SEQ_ASSAY_ID'].unique():
             bed_seq_df = beddf[beddf['SEQ_ASSAY_ID'] == seq_assay]
