@@ -1132,8 +1132,8 @@ def store_data_gene_matrix(syn, genie_version, clinicaldf,
 def store_bed_files(syn, genie_version, beddf, seq_assay_ids,
                     center_mappingdf, current_release_staging,
                     release_synid):
-    """
-    Stores bed files, store the bed regions that had symbols remapped
+    '''
+    Store bed files, store the bed regions that had symbols remapped
     Filters bed file by clinical dataframe seq assays
 
     Args:
@@ -1144,24 +1144,26 @@ def store_bed_files(syn, genie_version, beddf, seq_assay_ids,
         center_mappingdf: Center mapping dataframe
         current_release_staging: Staging flag
         release_synid: Synapse id to store release file
-    """
+    '''
     logger.info("STORING COMBINED BED FILE")
-    combined_bed_path = os.path.join(GENIE_RELEASE_DIR,
-                                     f'genomic_information_{genie_version}.txt') #pylint: disable=line-too-long
+    combined_bed_path = os.path.join(
+        GENIE_RELEASE_DIR, 'genomic_information_%s.txt' % genie_version)
     if not current_release_staging:
         for seq_assay in beddf['SEQ_ASSAY_ID'].unique():
             bed_seq_df = beddf[beddf['SEQ_ASSAY_ID'] == seq_assay]
             center = seq_assay.split("-")[0]
-            bed_seq_df = bed_seq_df[bed_seq_df['Hugo_Symbol'] != bed_seq_df['ID']] #pylint: disable=line-too-long
-            center_ind = center_mappingdf['center'] == center
-            if center_ind.any() and not bed_seq_df.empty:
-                staging_synid = center_mappingdf['stagingSynId'][center_ind][0]
-                bed_seq_df.to_csv(BED_DIFFS_SEQASSAY_PATH % seq_assay,
-                                  index=False)
-                store_file(syn, BED_DIFFS_SEQASSAY_PATH % seq_assay,
-                           genieVersion=genie_version,
-                           parent=staging_synid)
-    # This clinical dataframe is already filtered through most of the filters
+            bed_seq_df = \
+                bed_seq_df[bed_seq_df['Hugo_Symbol'] != bed_seq_df['ID']]
+            if not bed_seq_df.empty:
+                bed_seq_df.to_csv(
+                    BED_DIFFS_SEQASSAY_PATH % seq_assay,
+                    index=False)
+                store_file(
+                    syn, BED_DIFFS_SEQASSAY_PATH % seq_assay,
+                    genieVersion=genie_version,
+                    parent=center_mappingdf['stagingSynId'][
+                        center_mappingdf['center'] == center][0])
+    # This clinicalDf is already filtered through most of the filters
     beddf = beddf[beddf['SEQ_ASSAY_ID'].isin(seq_assay_ids)]
     beddf.to_csv(combined_bed_path, sep="\t", index=False)
     store_file(syn, combined_bed_path, parent=release_synid,
