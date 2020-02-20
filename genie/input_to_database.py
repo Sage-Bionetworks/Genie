@@ -326,12 +326,11 @@ def processfiles(syn, validfiles, center, path_to_genie,
         os.makedirs(center_staging_folder)
 
     if processing != 'vcf':
-        for fileSynId, filePath, name, fileType in zip(validfiles['id'],
-                                                       validfiles['path'],
-                                                       validfiles['name'],
-                                                       validfiles['fileType']):
-            # filename = os.path.basename(filePath)
-            newPath = os.path.join(center_staging_folder, name)
+        for fileSynId, filePath, fileType in zip(validfiles['id'],
+                                                 validfiles['path'],
+                                                 validfiles['fileType']):
+            filename = os.path.basename(filePath)
+            newPath = os.path.join(center_staging_folder, filename)
             # store = True
             synId = databaseToSynIdMappingDf.Id[
                 databaseToSynIdMappingDf['Database'] == fileType]
@@ -697,7 +696,7 @@ def validation(syn, center, process,
 
         valid_filesdf = input_valid_statusdf.query('status == "VALIDATED"')
 
-        return(valid_filesdf[['id', 'path', 'fileType', 'name']])
+        return(valid_filesdf[['id', 'path', 'fileType']])
 
 
 def center_input_to_database(
