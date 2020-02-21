@@ -83,17 +83,17 @@ class FileTypeFormat(object):
         '''
         pass
 
-    def preprocess(self, filePath):
+    def preprocess(self, entity_name):
         '''
-        This is for any preprocessing that has to occur to the filepath name
+        This is for any preprocessing that has to occur to the entity name
         to add to kwargs for processing.
 
         Args:
-            filePath: Path to file
+            entity_name: The Synapse Entity name
         '''
-        return(dict())
+        return dict()
 
-    def process(self, filePath, **kwargs):
+    def process(self, filePath, newPath, **kwargs):
         '''
         This is the main processing function.
 
@@ -104,7 +104,8 @@ class FileTypeFormat(object):
         Returns:
             str: file path of processed file
         '''
-        preprocess_args = self.preprocess(filePath)
+        entity_name = os.path.basename(newPath)
+        preprocess_args = self.preprocess(entity_name)
         kwargs.update(preprocess_args)
         mykwargs = {}
         for required_parameter in self._process_kwargs:

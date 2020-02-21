@@ -196,7 +196,7 @@ class clinical(FileTypeFormat):
 
         return(clinicalRemapped)
 
-    def preprocess(self, filepath):
+    def preprocess(self, entity_name):
         '''
         Gather preprocess parameters
 
@@ -218,11 +218,11 @@ class clinical(FileTypeFormat):
             'and inClinicalDb is True')
         sampleCols = sampleColsTable.asDataFrame()['fieldName'].tolist()
 
-        if "patient" in filepath.lower():
+        if "patient" in entity_name.lower():
             clinicalTemplate = pd.DataFrame(columns=patientCols)
             sample = False
             patient = True
-        elif "sample" in filepath.lower():
+        elif "sample" in entity_name.lower():
             clinicalTemplate = pd.DataFrame(columns=sampleCols)
             sample = True
             patient = False
