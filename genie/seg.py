@@ -13,7 +13,7 @@ class seg(FileTypeFormat):
 
     _fileType = "seg"
 
-    _process_kwargs = ["databaseSynId"]
+    _process_kwargs = ["newPath", "databaseSynId"]
 
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "genie_data_cna_hg19_%s.%s" % (self.center, self._fileType)

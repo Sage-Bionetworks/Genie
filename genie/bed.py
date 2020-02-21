@@ -337,7 +337,7 @@ class bed(FileTypeFormat):
     """GENIE bed format"""
     _fileType = "bed"
 
-    _process_kwargs = ["parentId", "databaseSynId", 'seq_assay_id']
+    _process_kwargs = ["newPath", "parentId", "databaseSynId", 'seq_assay_id']
 
     def _get_dataframe(self, filepathlist):
         """

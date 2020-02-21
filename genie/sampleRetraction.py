@@ -15,7 +15,7 @@ class sampleRetraction(FileTypeFormat):
 
     _fileType = "sampleRetraction"
 
-    _process_kwargs = ["databaseSynId", "fileSynId"]
+    _process_kwargs = ["newPath", "databaseSynId","fileSynId"]
 
     def _get_dataframe(self, filePathList):
         '''
