@@ -60,7 +60,7 @@ def test_validation():
     assert error == expectedError
     assert warning == expectedWarning
 
-    vcfDf = pd.DataFrame({"#CHROM": ['chr2', 'chrM', '12', 'chr2'],
+    vcfDf = pd.DataFrame({"#CHROM": ['chr2', 'chrM', float('nan'), 'chr2'],
                           "POS": [69688533, 99401860, 53701241, 69688533],
                           "ID": ['AAK1', 'AAED1', 'AAAS', 'AAK1'],
                           "REF": ['AAK1', 'AAED1', 'AAAS', 'AAK1'],
@@ -71,6 +71,8 @@ def test_validation():
 
     error, warning = vcfClass._validate(vcfDf)
     expectedError = ("Your vcf file should not have duplicate rows\n"
+                     "Your vcf file may contain rows that are "
+                     "space delimited instead of tab delimited.\n"
                      "Your vcf file must not have variants on chrM.\n")
     expectedWarning = ("Your vcf file should not have the chr prefix "
                        "in front of chromosomes.\n")
