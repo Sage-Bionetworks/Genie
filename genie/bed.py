@@ -482,17 +482,17 @@ class bed(FileTypeFormat):
                                    gene_panel_path, parentid)
         return final_bed
 
-    def preprocess(self, entity_name):
+    def preprocess(self, newpath):
         """
         Standardize and grab seq assay id from the bed file path
 
         Args:
-            filePath: bed file path
+            newpath: bed file path
 
         Returns:
             dict: GENIE seq assay id
         """
-        seq_assay_id = entity_name.replace(".bed", "")
+        seq_assay_id = os.path.basename(newpath).replace(".bed", "")
         seq_assay_id = seq_assay_id.upper().replace("_", "-")
         return {'seq_assay_id': seq_assay_id}
 
