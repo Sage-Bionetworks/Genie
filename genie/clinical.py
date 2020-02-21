@@ -39,7 +39,7 @@ class clinical(FileTypeFormat):
     #     "newPath", "patientSynId", "sampleSynId",
     #     "parentId", "retractedSampleSynId", "retractedPatientSynId"]
     _process_kwargs = [
-        "newPath", "parentId", "databaseToSynIdMappingDf", "oncotree_link",
+        "parentId", "databaseToSynIdMappingDf", "oncotree_link",
         'clinicalTemplate', 'sample', 'patient', 'patientCols', 'sampleCols']
 
     _validation_kwargs = ["oncotree_link"]

@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class FileTypeFormat(object):
 
-    _process_kwargs = ["newPath", "databaseSynId"]
+    _process_kwargs = ["databaseSynId"]
 
     _fileType = "fileType"
 

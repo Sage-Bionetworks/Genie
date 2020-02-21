@@ -13,7 +13,7 @@ class Assayinfo(FileTypeFormat):
 
     _fileType = "assayinfo"
 
-    _process_kwargs = ["newPath", "databaseSynId"]
+    _process_kwargs = ["databaseSynId"]
 
     def _validateFilename(self, filepath_list):
         """Validate assay information filename"""

@@ -15,7 +15,7 @@ class patientCounts(FileTypeFormat):
     '''
     _fileType = "patientCounts"
 
-    _process_kwargs = ["newPath", "oncotree_link", "databaseSynId"]
+    _process_kwargs = ["oncotree_link", "databaseSynId"]
 
     _validation_kwargs = ["oncotree_link"]
 

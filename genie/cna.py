@@ -84,7 +84,7 @@ class cna(FileTypeFormat):
 
     _fileType = "cna"
 
-    _process_kwargs = ["newPath", 'databaseToSynIdMappingDf']
+    _process_kwargs = ['databaseToSynIdMappingDf']
 
     _validation_kwargs = ['nosymbol_check']
 
