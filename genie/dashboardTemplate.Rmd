@@ -248,7 +248,7 @@ plotCenterXEthnicity <- function(genieClinData) {
   
   # Center vs Ethnicity BARCHARTS
   t$Center = rownames(t)
-  l = c("Non.Spanish.non.Hispanic", "Spanish.Hispanic", "Unknown")
+  l = c("Non-Spanish/non-Hispanic", "Spanish/Hispanic", "Unknown")
   t = reshape(t,
               direction = "long",
               idvar = ("Center"),
