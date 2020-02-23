@@ -198,23 +198,25 @@ plotPanelOverlap <- function(samples, bed, assays) {
 plotCenterXRace <- function(genieClinData) {
   t = as.data.frame.matrix(table(genieClinData$CENTER,genieClinData$PRIMARY_RACE))
   t = data.frame(n = rowSums(t),t)
-  kable(t)
+  # kable(t)
   
-  kable(data.frame("Percent.Unknown" = (t[,"Unknown"]/rowSums(t[,colnames(t) != "n"]))*100), digits = 2)
+  # kable(data.frame("Percent.Unknown" = (t[,"Unknown"]/rowSums(t[,colnames(t) != "n"]))*100), digits = 2)
   
   # reduce table to none "Unknown" data
-  t$n = t$n - t$Unknown
-  t = t[,!(colnames(t) == "Unknown")]
+  # t$n = t$n - t$Unknown
+  # t = t[,!(colnames(t) == "Unknown")]
   # find sites with greater than 100 nono "Unknown" patients wrt race
-  k = which(t$n > 100)
-  t = t[,c("n", "White","Black","Asian","Native.American","Other")]
-  t[k,colnames(t) != "n"] = t[k,colnames(t) != "n"]/rowSums(t[k,colnames(t) != "n"])
-  kable(t[k,],digits = 3)
+  # k = which(t$n > 100)
+  t = t[,c("n", "White", "Black", "Asian", "Native.American",
+           "Other", "Unknown")]
+  # t[,colnames(t) != "n"] = t[,colnames(t) != "n"]/rowSums(t[,colnames(t) != "n"])
+  # kable(t[k,],digits = 3)
   
   # Center vs Race BARCHARTS
   t$Center = rownames(t)
-  l = c("White","Black","Asian","Native.American","Other")
-  t = reshape(t[k,],
+  l = c("White", "Black", "Asian", "Native.American",
+        "Other", "Unknown")
+  t = reshape(t[,],
               direction = "long",
               idvar = ("Center"),
               varying = l,
@@ -233,21 +235,21 @@ plotCenterXRace <- function(genieClinData) {
 
 plotCenterXEthnicity <- function(genieClinData) {
   t = as.data.frame.matrix(table(genieClinData$CENTER,genieClinData$ETHNICITY))
-  t = data.frame(n = rowSums(t),t)
-  kable(t)
+  # t = data.frame(n = rowSums(t),t)
+  # kable(t)
   
-  kable(data.frame("Percent.Unknown" = (t[,"Unknown"]/rowSums(t[,colnames(t) != "n"]))*100), digits = 2)
+  # kable(data.frame("Percent.Unknown" = (t[,"Unknown"]/rowSums(t[,colnames(t) != "n"]))*100), digits = 2)
   
-  t$n = t$n - t$Unknown
-  t = t[,!(colnames(t) == "Unknown")]
-  k = which(t$n > 100)
-  t[k,colnames(t) != "n"] = t[k,colnames(t) != "n"]/rowSums(t[k,colnames(t) != "n"])
-  kable(t[k,],digits = 3)
+  # t$n = t$n - t$Unknown
+  # t = t[,!(colnames(t) == "Unknown")]
+  # k = which(t$n > 100)
+  t[,colnames(t) != "n"] = t[,colnames(t) != "n"]/rowSums(t[,colnames(t) != "n"])
+  # kable(t[k,],digits = 3)
   
   # Center vs Ethnicity BARCHARTS
   t$Center = rownames(t)
-  l = c("Non.Spanish.non.Hispanic","Spanish.Hispanic")
-  t = reshape(t[k,],
+  l = c("Non.Spanish.non.Hispanic", "Spanish.Hispanic", "Unknown")
+  t = reshape(t[,],
               direction = "long",
               idvar = ("Center"),
               varying = l,
