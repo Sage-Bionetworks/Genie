@@ -209,14 +209,14 @@ plotCenterXRace <- function(genieClinData) {
   # k = which(t$n > 100)
   t = t[,c("n", "White", "Black", "Asian", "Native.American",
            "Other", "Unknown")]
-  # t[,colnames(t) != "n"] = t[,colnames(t) != "n"]/rowSums(t[,colnames(t) != "n"])
+  t[,colnames(t) != "n"] = t[,colnames(t) != "n"]/rowSums(t[,colnames(t) != "n"])
   # kable(t[k,],digits = 3)
   
   # Center vs Race BARCHARTS
   t$Center = rownames(t)
   l = c("White", "Black", "Asian", "Native.American",
         "Other", "Unknown")
-  t = reshape(t[,],
+  t = reshape(t,
               direction = "long",
               idvar = ("Center"),
               varying = l,
@@ -249,7 +249,7 @@ plotCenterXEthnicity <- function(genieClinData) {
   # Center vs Ethnicity BARCHARTS
   t$Center = rownames(t)
   l = c("Non.Spanish.non.Hispanic", "Spanish.Hispanic", "Unknown")
-  t = reshape(t[,],
+  t = reshape(t,
               direction = "long",
               idvar = ("Center"),
               varying = l,
