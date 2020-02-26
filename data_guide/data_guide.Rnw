@@ -47,6 +47,10 @@ centers = suppressMessages(synTableQuery('select "Center Abbreviation", "Center"
                                          includeRowIdAndRowVersion = F))
 assayinfo = suppressMessages(synTableQuery('SELECT * FROM syn17009222',
                                            includeRowIdAndRowVersion = F))
+
+genomic_profile = suppressMessages(synTableQuery('SELECT * FROM syn21642088',
+                                                 includeRowIdAndRowVersion = F))
+
 @
 
 \maketitle
@@ -131,19 +135,31 @@ info_tab = xtable(assayinfo$asDataFrame()[,c("SEQ_ASSAY_ID", "platform",
                                              "instrument_model",
                                              "specimen_type", "specimen_tumor_cellularity")],
                   caption = 'Genomic Data Characterization')
-cat("\\makebox[\\textwidth]{")
+#cat("\\makebox[\\textwidth]{")
 print(info_tab, include.rownames = F, floating = F, size = "\\tiny",
       caption.placement = "top", tabular.environment = "longtable")
-cat("}")
-cat("\\endgroup")
+# cat("}")
+#cat("\\endgroup")
 
 @
-
 
 
 \addcontentsline{toc}{subsection}{Genomic Profiling at Each Center}
 \subsection*{Genomic Profiling at Each Center}
 
+<<results=tex, echo=F>>=
+genomic_profiledf = genomic_profile$asDataFrame()
+genomic_profiledf$genomic_profile = gsub("%", "\\%", 
+                                         genomic_profiledf$genomic_profile)
+#cat("\\makebox[\\textwidth]{")
+for (profile in genomic_profiledf$genomic_profile) {
+  
+  cat(profile)
+}
+#cat("}")
+#cat("\\endgroup")
+
+@
 
 \addcontentsline{toc}{section}{Description of Data Files}
 \section*{Description of Data Files}
