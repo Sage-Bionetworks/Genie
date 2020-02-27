@@ -1,5 +1,5 @@
 \documentclass{article}
-
+\usepackage{a4wide}
 \usepackage{longtable}
 \usepackage{tocloft}
 \usepackage{blindtext}
@@ -148,21 +148,59 @@ print(info_tab, include.rownames = F, floating = F, size = "\\tiny",
 \subsection*{Genomic Profiling at Each Center}
 
 <<results=tex, echo=F>>=
-genomic_profiledf = genomic_profile$asDataFrame()
-genomic_profiledf$genomic_profile = gsub("%", "\\%", 
-                                         genomic_profiledf$genomic_profile)
-#cat("\\makebox[\\textwidth]{")
-for (profile in genomic_profiledf$genomic_profile) {
-  
-  cat(profile)
+sanitize <- function(str) {
+    # gsub('([#$%&~_\\^\\\\{}])', '\\\\\\\\\\1', str, perl = TRUE);
+    str <- gsub("%", "\\\\%", str, fixed = TRUE)
+    str <- gsub("_", "\\\\_", str, fixed = TRUE)
+    str
 }
+genomic_profiledf = genomic_profile$asDataFrame()
+#genomic_profiledf$genomic_profile = gsub("\\%", "\\%",
+#                                         genomic_profiledf$genomic_profile)
+#cat("\\makebox[\\textwidth]{")
+all_profiles = ''
+for (profile in genomic_profiledf$genomic_profile) {
+  # new_profile = sanitizeLatexS(profile)
+  all_profiles = paste(all_profiles, profile, sep = " ")
+  #cat(new_profile)
+}
+
 #cat("}")
 #cat("\\endgroup")
-
 @
+
+\Sexpr{sanitize(all_profiles)}
+
 
 \addcontentsline{toc}{section}{Description of Data Files}
 \section*{Description of Data Files}
+
+
+Description on most of the data files can be found under the "Data files" section for \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats}{cBioPortal file formats}.
+
+
+\begin{center}
+\begin{tabular}{ |c|p{75mm}|c| }
+  \hline
+File Name & Description & Details \\ 
+  \hline
+data\_mutations\_extended.txt & Mutation data & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#mutation-data}{MAF format} \\
+   \hline
+data\_CNA.txt & Discritized copy number data.  \newline Note: Not all centers contributed copy number data to GENIE. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#discrete-copy-number-data}{CNA format} \\
+   \hline
+data\_fusions.txt & Structural variant data. \newline Note: not all centers contributed structural rearrangement data to GENIE. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#fusion-data}{Fusion format} \\
+   \hline
+genomic\_information.txt &  File describing genomic coordinates covered by all platforms for GENIE data.  \newline Note: Not all centers contributed copy number data to GENIE. & This is not a cBioPortal file format.  Chromosome, Start\_Position, End\_Position: Gene positions.  Hugo\_Symbol: Re-mapped gene symbol based on gene positions. ID: Center submitted gene symbols. SEQ\_ASSAY\_ID: The institutional assay identifier for genomic testing platform. Feature_Type: "exon", "intron", or "intergenic". includeInPanel: Used to define gene panel files for cBioPortal.  clinicalReported: These are the genes that were clinically Reported. Blank means information not provided.\\
+   \hline
+genie\_data\_cna\_hg19.seg  & Segmented copy number data.  \newline Note: Not all centers contributed copy number data to GENIE. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#segmented-data}{SEG format} \\
+   \hline
+data\_clinical.txt & De-identified tier 1 clinical data. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#clinical-data}{clinical format}. See Clinical Data section below for more details. \\
+   \hline
+\end{tabular}
+\end{center}
+
+
+
 
 \addcontentsline{toc}{section}{Clinical Data}
 \section*{Clinical Data}
