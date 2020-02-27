@@ -180,7 +180,7 @@ Description on most of the data files can be found under the "Data files" sectio
 
 
 \begin{center}
-\begin{tabular}{ |c|p{75mm}|c| }
+\begin{longtable}{ |p{40mm}|p{40mm}|p{50mm}| }
   \hline
 File Name & Description & Details \\ 
   \hline
@@ -190,20 +190,69 @@ data\_CNA.txt & Discritized copy number data.  \newline Note: Not all centers co
    \hline
 data\_fusions.txt & Structural variant data. \newline Note: not all centers contributed structural rearrangement data to GENIE. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#fusion-data}{Fusion format} \\
    \hline
-genomic\_information.txt &  File describing genomic coordinates covered by all platforms for GENIE data.  \newline Note: Not all centers contributed copy number data to GENIE. & This is not a cBioPortal file format.  Chromosome, Start\_Position, End\_Position: Gene positions.  Hugo\_Symbol: Re-mapped gene symbol based on gene positions. ID: Center submitted gene symbols. SEQ\_ASSAY\_ID: The institutional assay identifier for genomic testing platform. Feature_Type: "exon", "intron", or "intergenic". includeInPanel: Used to define gene panel files for cBioPortal.  clinicalReported: These are the genes that were clinically Reported. Blank means information not provided.\\
+genomic\_information.txt &  File describing genomic coordinates covered by all platforms for GENIE data.  \newline Note: Not all centers contributed copy number data to GENIE. & This is not a cBioPortal file format.  Chromosome, Start\_Position, End\_Position: Gene positions.  Hugo\_Symbol: Re-mapped gene symbol based on gene positions. ID: Center submitted gene symbols. SEQ\_ASSAY\_ID: The institutional assay identifier for genomic testing platform. Feature\_Type: "exon", "intron", or "intergenic". includeInPanel: Used to define gene panel files for cBioPortal.  clinicalReported: These are the genes that were clinically Reported. Blank means information not provided.\\
    \hline
 genie\_data\_cna\_hg19.seg  & Segmented copy number data.  \newline Note: Not all centers contributed copy number data to GENIE. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#segmented-data}{SEG format} \\
    \hline
 data\_clinical.txt & De-identified tier 1 clinical data. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#clinical-data}{clinical format}. See Clinical Data section below for more details. \\
    \hline
-\end{tabular}
+\end{longtable}
 \end{center}
-
 
 
 
 \addcontentsline{toc}{section}{Clinical Data}
 \section*{Clinical Data}
+
+\begin{center}
+\begin{longtable}{ |p{45mm}|p{40mm}|p{50mm}| }
+  \hline
+Data Element & Example Values & Data Description \\ 
+  \hline
+AGE\_AT\_SEQ\_REPORT & Integer values, <18 or >89.  &  The age of the patient at the time that the sequencing results were reported. Age is masked for patients aged 90 years and greater and for patients under 18 years. \\
+   \hline
+CENTER & MSK & The center submitting the clinical and genomic data   \\
+   \hline
+ETHNICITY & Non-Spanish/non-Hispanic \newline Spanish/Hispanic \newline Unknown & Indication of Spanish/Hispanic origin of the patient; this data element maps to the NAACCR v16, Element \#190. Institutions not collecting Spanish/Hispanic origin have set this column to Unknown. \\
+   \hline
+ONCOTREE\_CODE & LUAD & The primary cancer diagnosis “main type”, based on the \href{http://oncotree.mskcc.org}{OncoTree ontology}. The version of Oncotree ontology that was used for GENIE 8.0 series is \href{http://oncotree.mskcc.org/#/home?vers
+ion=oncotree_2018_06_01}{oncotree 2018\_06\_01} \\
+   \hline
+PATIENT\_ID & GENIE-JHU-1234 & The unique, anonymized patient identifier for the GENIE project. Conforms to the following the convention: GENIE-CENTER-1234. The first component is the string, "GENIE"; the second component is the Center abbreviation. The third component is an anonymized unique identifier for the patient.\\
+   \hline
+PRIMARY\_RACE & Asian, Black, Native American Other, Unknown, White & The primary race recorded for the patient; this data element maps to the NAACCR v16, Element \#160. For institutions collecting more than one race category, this race code is the primary race for the patient. Institutions not collecting race have set this field to Unknown. \\
+   \hline
+SAMPLE\_ID & GENIE-JHU-1234-9876 & The unique, anonymized sample identifier for the GENIE project. Conforms to the following the convention: GENIE-CENTER-1234-9876. The first component is the string, "GENIE"; the second component is the Center abbreviation. The third component is an anonymized, unique patient identifier. The fourth component is a unique identifier for the sample that will distinguish between two or more specimens from a single patient. \\
+   \hline
+SAMPLE\_TYPE &  Primary, Metastasis, Unspecified & Sample type, e.g. Primary or Metastasis. \\
+   \hline
+SEQ\_ASSAY\_ID & DFCI-ONCOPANEL-1 & The institutional assay identifier for genomic testing platform. Components are separated by hyphens, with the first component corresponding to the Center's abbreviation. All specimens tested by the same platform should have the same identifier. \\
+   \hline
+SEX & Female, Male & The patient’s sex code; this data element maps to the NAACCR v16, Element \#220. \\
+   \hline
+CANCER\_TYPE & Non-Small Cell Lung Cancer & The primary cancer diagnosis "main type", based on the \href{http://oncotree.mskcc.org}{OncoTree ontology}. For example, the OncoTree code of LUAD maps to: "Non-Small Cell Lung Cancer".  The version of Oncotree ontology that was used for GENIE 8.0 series is \href{http://oncotree.mskcc.org/#/home?vers
+ion=oncotree_2018_06_01}{oncotree 2018\_06\_01} \\
+   \hline
+CANCER\_TYPE\_DETAILED & Lung Adenocarcinoma & The primary cancer diagnosis label, based on the \href{http://oncotree.mskcc.org}{OncoTree ontology}. For example, the OncoTree code of LUAD maps to the label: "Lung Adenocarcinoma (LUAD)". The version of Oncotree ontology that was used for GENIE 8.0 series is \href{http://oncotree.mskcc.org/#/home?vers
+ion=oncotree_2018_06_01}{oncotree 2018\_06\_01}  \\
+   \hline
+BIRTH\_YEAR & 1965 & The four-digit year associated with the patient's date of birth.  \\
+   \hline
+YEAR\_CONTACT & 1990  & Record the year that the patient is last known to be alive - data to be derived from information including and EHR, tumor registry, or other system. \\
+   \hline
+YEAR\_DEATH & 2010 & Year of death  \\
+   \hline
+INT\_CONTACT & 15000  &  Interval in days from DOB to date of last contact. \\
+   \hline
+INT\_DOD & 15000 & Interval in days from DOB to DOD.  \\
+   \hline
+DEAD & Yes, No  & Is this patient known to be deceased? \\
+   \hline
+\end{longtable}
+\end{center}
+
+Cancer types are reported using the \href{http://oncotree.mskcc.org}{OncoTree ontology} originally developed at Memorial Sloan Kettering Cancer Center. The GENIE 8.0 data release series uses the OncoTree specification from June 1, 2018, containing diagnosis codes for 686 tumor types from 32 tissues. The centers participating in GENIE applied the OncoTree cancer types to the tested specimens in a variety of methods depending on center-specific workflows. A brief description of how the cancer type assignment process for each center is specified in Table 6.
+
 
 \addcontentsline{toc}{section}{Abbreviations and Acronym Glossary}
 \section*{Abbreviations and Acronym Glossary}
