@@ -254,9 +254,51 @@ DEAD & Yes, No  & Is this patient known to be deceased? \\
 Cancer types are reported using the \href{http://oncotree.mskcc.org}{OncoTree ontology} originally developed at Memorial Sloan Kettering Cancer Center. The GENIE 8.0 data release series uses the OncoTree specification from June 1, 2018, containing diagnosis codes for 686 tumor types from 32 tissues. The centers participating in GENIE applied the OncoTree cancer types to the tested specimens in a variety of methods depending on center-specific workflows. A brief description of how the cancer type assignment process for each center is specified in Table 6.
 
 
+
+\begin{center}
+\begin{longtable}{ |p{10mm}|p{100mm}| }
+  \hline
+Center & OncoTree Cancer Type Assignments \\ 
+  \hline
+COLU &  Original diagnosis from pathologist was mapped to OncoTree diagnosis by medical oncologist and research manager.\\
+   \hline
+CRUK & Molecular pathologists assigned diagnosis and mapped to OncoTree cancer type.  \\
+   \hline
+DFCI &  Molecular pathologists assigned diagnosis and mapped to OncoTree cancer type.  \\
+   \hline
+DUKE & Anatomic and molecular pathologists assigned diagnosis and mapped to OncoTree cancer type.  \\
+   \hline
+GRCC &  OncoTree cancer types were mapped from ICD-O codes. If no ICD-O code was available, a staff scientist and an oncologist mapped the diagnosis made by the pathologist to Onco Tree cancer type. \\
+   \hline
+JHU &  Molecular pathologists assigned diagnosis and mapped to OncoTree cancer type. \\
+   \hline
+MDA &  OncoTree cancer types were mapped from ICD-O codes. \\
+   \hline
+MSK &  Molecular pathologists assigned diagnosis and mapped to OncoTree cancer type. \\
+   \hline
+NKI &  Molecular pathologists assigned diagnosis and mapped to OncoTree cancer type. \\
+   \hline
+PHS &  Molecular pathologists assigned diagnosis and mapped to OncoTree cancer type. \\
+   \hline
+SCI &  Original diagnosis from the pathology report was mapped to OncoTree diagnosis by a research coordinator and molecular pathologist. \\
+   \hline
+UHN & The original diagnosis was mapped to OncoTree by a medical oncologist and research manager.  \\
+   \hline
+VHIO & Original diagnosis from pathologist or medical oncologist was mapped to OncoTree diagnosis by research data curator.  \\
+   \hline
+VICC & OncoTree cancer types were mapped from ICD-O codes. If no ICD-O code was available, a research manager mapped the diagnosis to an OncoTree cancer type.  \\
+   \hline
+WAKE &  Diagnoses from Foundation Medicine and Caris Diagnostics to ICD-O-3, then mapped from ICD-O-3 to Oncotree. \\
+   \hline
+YALE &  Molecular pathologists assigned diagnosis and mapped to OncoTree cancer type. \\
+   \hline
+\end{longtable}
+\end{center}
+
+
+
 \addcontentsline{toc}{section}{Abbreviations and Acronym Glossary}
 \section*{Abbreviations and Acronym Glossary}
-
 
 
 
