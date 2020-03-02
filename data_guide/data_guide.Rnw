@@ -181,6 +181,7 @@ Description on most of the data files can be found under the "Data files" sectio
 
 \begin{center}
 \begin{longtable}{ |p{40mm}|p{40mm}|p{50mm}| }
+\caption{GENIE Data Files} \\
   \hline
 File Name & Description & Details \\ 
   \hline
@@ -206,6 +207,7 @@ data\_clinical.txt & De-identified tier 1 clinical data. & \href{https://docs.cb
 
 \begin{center}
 \begin{longtable}{ |p{45mm}|p{40mm}|p{50mm}| }
+\caption{GENIE Clinical Data Fields} \\
   \hline
 Data Element & Example Values & Data Description \\ 
   \hline
@@ -257,6 +259,7 @@ Cancer types are reported using the \href{http://oncotree.mskcc.org}{OncoTree on
 
 \begin{center}
 \begin{longtable}{ |p{10mm}|p{100mm}| }
+\caption{Center Strategies for OncoTree Assignment} \\
   \hline
 Center & OncoTree Cancer Type Assignments \\ 
   \hline
@@ -301,8 +304,75 @@ YALE &  Molecular pathologists assigned diagnosis and mapped to OncoTree cancer 
 \section*{Abbreviations and Acronym Glossary}
 
 
-
-
+\begin{center}
+\begin{longtable}{ |p{20mm}|p{100mm}| }
+  \hline
+Abbreviation & Full Term \\
+  \hline
+AACR & American Association for Cancer Research, Philadelphia, PA, USA \\
+   \hline
+CNA & Copy number alterations \\
+   \hline
+CNV & Copy number variants \\
+   \hline
+COLU & The Herbert Irving Comprehensive Cancer Center, Columbia University, New York, NY, USA \\
+   \hline
+CRUK & Cancer Research UK Cambridge Centre, University of Cambridge, Cambridge, England \\
+   \hline
+DFCI & Dana-Farber Cancer Institute, Boston, MA, USA \\
+   \hline
+DUKE & Duke Cancer Institute, Duke University Health System, Durham, NC, USA \\
+   \hline
+FFPE & Formalin-fixed, paraffin-embedded \\
+   \hline
+GENIE & Genomics, Evidence, Neoplasia, Information, Exchange \\
+   \hline
+GRCC & Institut Gustave Roussy, Paris, France \\
+   \hline
+HIPAA & Health Insurance Portability and Accountability Act \\
+   \hline
+IRB & Institutional Review Board \\
+   \hline
+JHU & Johns Hopkins Sidney Kimmel Comprehensive Cancer Center, Baltimore, MD, USA \\
+   \hline
+MAF & Mutation annotation format \\
+   \hline
+MDA & The University of Texas MD Anderson Cancer Center, Houston, TX, USA \\
+   \hline
+MSK & Memorial Sloan Kettering Cancer Center, New York, NY, USA \\
+   \hline
+NAACCR & North American Association of Central Cancer Registries \\
+   \hline
+NGS & Next-generation sequencing \\
+   \hline
+NKI & Netherlands Cancer Institute, Amsterdam, Netherlands \\
+   \hline
+PCR & Polymerase chain reaction \\
+   \hline
+PHS & Providence Health \& Services Cancer Institute, Portland, OR, USA \\
+   \hline
+SCI & Swedish Cancer Institute, Seattle, WA, USA \\
+   \hline
+SNP & Single-nucleotide polymorphism \\
+   \hline
+SNV & Single-nucleotide variants \\
+   \hline
+UCHI & University of Chicago Comprehensive Cancer Center, Chicago, IL, USA \\
+   \hline
+UHN & Princess Margaret Cancer Centre, University Health Network, Toronto, Ontario, Canada \\
+   \hline
+VCF & Variant Call Format \\
+   \hline
+VHIO & Vall d' Hebron Institute of Oncology, Barcelona, Spain \\
+   \hline
+VICC & Vanderbilt-Ingram Cancer Center, Nashville, TN, USA \\
+   \hline
+WAKE & Wake Forest University Health Sciences (Wake Forest Baptist Medical Center), Winston-Salem, NC, USA \\
+   \hline
+YALE & Yale University (Yale Cancer Center), New Haven, Connecticut, USA \\
+   \hline
+\end{longtable}
+\end{center}
 
 
 
