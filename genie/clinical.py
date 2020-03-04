@@ -9,6 +9,7 @@ import synapseclient
 
 from .example_filetype_format import FileTypeFormat
 from . import process_functions
+from .database_to_staging import redact_phi
 
 logger = logging.getLogger(__name__)
 
@@ -247,7 +248,7 @@ class clinical(FileTypeFormat):
             databaseToSynIdMappingDf['Database'] == "sample"][0]
 
         newClinicalDf = self._process(clinicalDf, clinicalTemplate)
-
+        newClinicalDf = redact_phi(newClinicalDf)
         if patient:
             patientClinical = newClinicalDf[
                 patientCols].drop_duplicates("PATIENT_ID")
