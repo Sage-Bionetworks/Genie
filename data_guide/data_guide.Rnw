@@ -147,29 +147,85 @@ print(info_tab, include.rownames = F, floating = F, size = "\\tiny",
 \addcontentsline{toc}{subsection}{Genomic Profiling at Each Center}
 \subsection*{Genomic Profiling at Each Center}
 
-<<results=tex, echo=F>>=
-sanitize <- function(str) {
-    # gsub('([#$%&~_\\^\\\\{}])', '\\\\\\\\\\1', str, perl = TRUE);
-    str <- gsub("%", "\\\\%", str, fixed = TRUE)
-    str <- gsub("_", "\\\\_", str, fixed = TRUE)
-    str
-}
-genomic_profiledf = genomic_profile$asDataFrame()
-#genomic_profiledf$genomic_profile = gsub("\\%", "\\%",
-#                                         genomic_profiledf$genomic_profile)
-#cat("\\makebox[\\textwidth]{")
-all_profiles = ''
-for (profile in genomic_profiledf$genomic_profile) {
-  # new_profile = sanitizeLatexS(profile)
-  all_profiles = paste(all_profiles, profile, sep = " ")
-  #cat(new_profile)
-}
+\textbf{\href{https://www.cruk.cam.ac.uk/}{Cancer Research UK Cambridge Centre}, University of Cambridge (CRUK)}\\
 
-#cat("}")
-#cat("\\endgroup")
-@
 
-\Sexpr{sanitize(all_profiles)}
+Sequencing data (SNVs/Indels):\\\\
+DNA was quantified using Qubit HS dsDNA assay (Life Technologies, CA) and libraries were prepared from a total of 50 ng of DNA using Illumina's Nextera Custom Target Enrichment kit (Illumina, CA). In brief, a modified Tn5 transposase was used to simultaneously fragment DNA and attach a transposon sequence to both end of the fragments generated. This was followed by a limited cycle PCR amplification (11 cycles) using barcoded oligonucleotides that have primer sites on the transposon sequence generating 96 uniquely barcoded libraries per run. The libraries were then diluted and quantified using Qubit HS dsDNA assay.\\\\
+Five hundred nanograms from each library were pooled into a capture pool of 12 samples. Enrichment probes (80-mer) were designed and synthesized by Illumina; these probes were designed to enrich for all exons of the target genes, as well for 500 bp up- and downstream of the gene. The capture was performed twice to increase the specificity of the enrichment. Enriched libraries were amplified using universal primers in a limited cycle PCR (11 cycles). The quality of the libraries was assessed using Bioanalyser (Agilent Technologies, CA) and quantified using KAPA Library Quantification Kits (Kapa Biosystems, MA).\\\\
+Products from four capture reactions (that is, 48 samples) were pooled for sequencing in a lane of Illumina HiSeq 2,000. Sequencing (paired-end, 100 bp) of samples and demultiplexing of libraries was performed by Illumina (Great Chesterford, UK).\\\\
+The sequenced reads were aligned with Novoalign, and the resulting BAM files were preprocessed using the GATK Toolkit. Sequencing quality statistics were obtained using the GATK's DepthOfCoverage tool and Picard's CalculateHsMetrics. Coverage metrics are presented in Supplementary Fig. 1. Samples were excluded if <25\% of the targeted bases were covered at a minimum coverage of 50 x.\\\\
+The identities of those samples with copy number array data available were confirmed by analyzing the samples' genotypes at loci covered by the Affymetrix SNP6 array. Genotype calls from the sequencing data were compared with those from the SNP6 data that was generated for the original studies. This was to identify possible contamination and sample mix-ups, as this would affect associations with other data sets and clinical parameters.\\
+To identify all variants in the samples, we used MuTect (without any filtering) for SNVs and the Haplotype Caller for indels. All reads with a mapping quality <70 were removed prior to calling. Variants were annotated with ANNOVAR using the genes' canonical transcripts as defined by Ensembl. Custom scripts were written to identify variants affecting splice sites using exon coordinates provided by Ensembl. Indels were referenced by the first codon they affected irrespective of length; for example, insertions of two bases and five bases at the same codon were classed together
+\\\\ To obtain the final set of mutation calls, we used a two-step approach, first removing any spurious variant calls arising as a consequence of sequencing artefacts (generic filtering) and then making use of our normal samples and the existing data to identify somatic mutations (somatic filtering). For both levels of filtering, we used hard thresholds that were obtained, wherever possible, from the data itself. For example, some of our filtering parameters were derived from considering mutations in technical replicates (15 samples sequenced in triplicate). We compared the distributions of key parameters (including quality scores, depth, VAF) for concordant (present in all three replicates) and discordant (present in only one out of three replicates) variants to obtain thresholds, and used ROC analysis to select the parameters that best identified concordant variants.
+\\\\ SNV filtering\\
+- Based on our analysis of replicates, SNVs with MuTect quality scores <6.95 were removed.\\
+- We removed those variants that overlapped with repetitive regions of MUC16 (chromosome 19: 8,955,441–9,044,530). This segment contains multiple tandem repeats (mucin repeats) that are highly susceptible to misalignment due to sequence similarity.\\
+- Variants that failed MuTect's internal filters due to 'nearby\_gap\_events' and 'poor\_mapping\_regional\_alternate\_allele\_mapq' were removed.\\
+- Fisher's exact test was used to identify variants exhibiting read direction bias (variants occurring significantly more frequently in one read direction than in the other; FDR=0.0001). These were filtered out from the variant calls.\\
+- SNVs present at VAFs smaller than 0.1 or at loci covered by fewer than 10 reads were removed, unless they were also present and confirmed somatic in the Catalogue of Somatic Mutations in Cancer (COSMIC). The presence of well-known PIK3CA mutations present at low VAFs was confirmed by digital PCR (see below), and supported the use of COSMIC when filtering SNVs.\\
+- We removed all SNVs that were present in any of the three populations (AMR, ASN, AFR) in the 1,000 Genomes study (Phase 1, release 3) with a population alternate allele frequency of >1\%. \\\\\\
+Microarray data (Copy number):\\\\
+- We used the normal samples in our data set (normal pool) to control for both sequencing noise and germline variants, and removed any SNV observed in the normal pool (at a VAF of at least 0.1). However, for SNVs present in more than two breast cancer samples in COSMIC, we used more stringent thresholds, removing only those that were observed in >5\% of normal breast tissue or in >1\% of blood samples. The different thresholds were used to avoid the possibility of contamination in the normal pool affecting filtering of known somatic mutations. This is analogous to the optional 'panel of normals' filtering step used by MuTect in paired mode, in which mutations present in normal samples are removed unless present in a list of known mutations61.\\
+Indel filtering\\
+- As for SNVs, we removed all indels falling within tandem repeats of MUC16 (coordinates given above).\\
+- We removed all indels deemed to be of 'LowQual' by the Haplotype Caller with default parameters (Phred-scaled confidence threshold=30).\\
+- As for SNVs, we removed indels displaying read direction bias. Indels with strand bias Phred-scaled scores >40 were removed.\\
+- We downloaded the Simple Repeats and Microsatellites tracks from the UCSC Table Browser, and removed all indels overlapping these regions. We also removed all indels that overlapped homopolymer stretches of six or more bases.\\
+- As for SNVs, indels were removed if present in the 1,000 Genomes database at an allele frequency >1\%, or if they were present in normal samples in our data set. Thresholds were adjusted as for SNVs if the indel was present in COSMIC. The same thresholds for depth and VAF were used.\\\\
+DNA was hybridized to Affymetrix SNP 6.0 arrays per the manufacturer's instructions. ASCAT was used to obtain segmented copy number calls and estimates of tumour ploidy and purity. Somatic CNAs were obtained by removing germline CNVs as defined in the original METABRIC study3. We defined regions of LOH as those in which there were no copies present of either the major or minor allele, irrespective of total copy number. Recurrent CNAs were identified with GISTIC2, with log2 ratios obtained by dividing the total number of copies by tumour ploidy for each ASCAT segment. Thresholds for identifying gains and losses were set to 0.4 and (-)0.5, respectively; these values were obtained by examining the distribution of log2 ratios to identify peaks associated with copy number states. A broad length cut-off of 0.98 was used, and peaks were assessed to rule out probe artefacts and CNVs that may have been originally missed.\\
+
+\textbf{\href{https://cancer.columbia.edu/}{Herbert Irving Comprehensive Cancer Center}, Columbia University (COLU)}\\
+
+
+\textbf{\href{https://www.dana-farber.org/}{Dana-Farber Cancer Institute} (DFCI)}\\
+
+\textbf{\href{https://www.cruk.cam.ac.uk/}{Duke Cancer Institute} (DUKE)}\\
+
+\textbf{\href{https://www.cruk.cam.ac.uk/}{Institut Gustave Roussy} (GRCC)}\\
+
+\textbf{\href{https://www.cruk.cam.ac.uk/}{The University of Texas MD Anderson Cancer Center} (MDA)}\\
+
+\textbf{\href{https://www.cruk.cam.ac.uk/}{Memorial Sloan Kettering Cancer Center} (MSK)}\\
+
+\textbf{\href{https://www.cruk.cam.ac.uk/}{Johns Hopkins Sidney Kimmel Comprehensive Cancer Center} (JHU)}\\
+
+\textbf{\href{https://www.cruk.cam.ac.uk/}{Netherlands Cancer Center}, The Netherlands (NKI)}\\
+
+
+\textbf{\href{https://www.cruk.cam.ac.uk/}{Providence Health \& Services Cancer Institute} (PHS)}\\
+
+
+\textbf{\href{https://www.cruk.cam.ac.uk/}{Swedish Cancer Institute} (SCI)}\\
+
+
+\textbf{\href{https://www.cruk.cam.ac.uk/}{Princess Margaret Cancer Centre}, University Health Network (UHN)}\\
+
+
+\textbf{\href{https://www.cruk.cam.ac.uk/}{Vall d'Hebron Institute of Oncology} (VHIO)}\\
+
+\textbf{\href{https://www.cruk.cam.ac.uk/}{Vanderbilt-Ingram Cancer Center} (VICC)}\\
+
+
+\textbf{\href{https://www.cruk.cam.ac.uk/}{Wake Forest University Health Sciences}  (Wake Forest Baptist Medical Center) (WAKE)}\\
+
+
+
+
+\addcontentsline{toc}{section}{Pipeline for Annotating Mutations and Filtering Putative Germline SNPs}
+\section*{Pipeline for Annotating Mutations and Filtering Putative Germline SNPs}
+
+Contributing GENIE centers provided mutation data in Variant Call Format (VCF vcf2maf v1.6.17, samtools.github.io/hts-specs) or Mutation Annotation Format (GDC MAF v1.0.0, https://docs.gdc.cancer.gov/Data/File\_Formats/MAF\_Format/) with additional fields for read counts supporting variant alleles, reference alleles, and total depth. Some “MAF-like” text files with minimal required columns (https://github.com/mskcc/vcf2maf/blob/v1.6.17/data/minimalist\_test\_maf.tsv) were also received from the participating centers. These various input formats were converted into a complete tab-separated MAF format, with a standardized set of additional columns (https://github.com/mskcc/vcf2maf/blob/v1.6.17/docs/vep\_maf\_readme.txt) using either vcf2maf or maf2maf v1.6.17 (https://github.com/mskcc/vcf2maf/tree/v1.6.17) wrappers around the Variant Effect Predictor (VEPv86, https://github.com/mskcc/vcf2maf/blob/v1.6.17/docs/vep\_maf\_readme.txt). The vcf2maf “custom-enst” option overrode VEP’s canonical isoform for most genes, with Uniprot’s canonical isoform (https://github.com/mskcc/vcf2maf/blob/v1.6.17/data/isoform\_overrides\_uniprot).\\\\
+While the GENIE data available from Sage contains all mutation data, the following mutation types are automatically filtered upon import into the cBioPortal (http://www.cbioportal.org/genie): Silent, Intronic, 3' UTR, 3' Flank, 5' UTR, 5' Flank and Intergenic region (IGR).\\\\
+Seventeen of the nineteen GENIE participating centers performed tumor-only sequencing i.e. without also sequencing a patient-matched control sample like blood, to isolate somatic events. These centers minimized artifacts and germline events using pooled controls from unrelated individuals, or using databases of known artifacts, common germline variants, and recurrent somatic mutations. However, there remains a risk that such centers may inadvertently release germline variants that can theoretically be used for patient re-identification. To minimize this risk, the GENIE consortium developed a stringent germline filtering pipeline, and applied it uniformly to all variants across all centers. This pipeline flags sufficiently recurrent artifacts and germline events reported by the Exome Aggregation Consortium (ExAC, http://exac.broadinstitute.org). Specifically, the non-TCGA subset VCF of ExAC 0.3.1 was used after excluding known somatic events in https://github.com/mskcc/vcf2maf/blob/v1.6.17/data/known\_somatic\_sites.bed, based on:\\\\
+
+\begin{itemize}
+    \item{Hotspots from Chang et al. minus some likely artifacts (dx.doi.org/10.1038/nbt.3391).}
+    \item{Somatic mutations associated with clonal hematopoietic expansion from Xie et al.(dx.doi.org/10.1038/nm.3733)}
+    \item{Somatically mutable germline sites at MSH6:F1088, TP53:R290, TERT:E280, ASXL1:G645\_G646.}
+\end{itemize}
+
+The resulting VCF was used with vcf2maf’s "filter-vcf" option, to match each variant position and allele to per-subpopulation allele counts. If a variant was seen more than 10 times in any of the 7 ExAC subpopulations, it was tagged as a "common\_variant" (vcf2maf’s "max-filter-ac" option), and subsequently removed. This >10 allele count (AC) cutoff was selected because it tagged no more than 1\% of the somatic calls across all MSK-IMPACT samples with patient-matched controls.\\\\
 
 
 \addcontentsline{toc}{section}{Description of Data Files}
