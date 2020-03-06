@@ -42,12 +42,30 @@
 <<echo=F, include=F, results=hide>>=
 library(xtable)
 library(synapser)
+library(ggplot2)
+library(ggpubr)
+
+get_list_assay_info_table <- function(allowed_values, assayinfodf, col) {
+  na_ind = is.na(assayinfodf[,col])
+  seq_assays = assayinfodf$SEQ_ASSAY_ID[!na_ind]
+  col_per_panel = matrix(nrow = length(seq_assays),
+                         ncol = length(allowed_values),
+                         dimnames = list(seq_assays, allowed_values))
+  for (panel in seq_assays) {
+    str_value = assayinfodf[,col][assayinfodf$SEQ_ASSAY_ID == panel]
+    str_value_vector = unlist(strsplit(str_value, ";"))
+    col_per_panel[panel, ] = FALSE
+    col_per_panel[panel, str_value_vector] = TRUE
+  }
+  col_per_panel
+}
+
 synLogin()
 centers = suppressMessages(synTableQuery('select "Center Abbreviation", "Center" from syn16982837',
                                          includeRowIdAndRowVersion = F))
 assayinfo = suppressMessages(synTableQuery('SELECT * FROM syn17009222',
                                            includeRowIdAndRowVersion = F))
-
+assayinfodf = assayinfo$asDataFrame()
 genomic_profile = suppressMessages(synTableQuery('SELECT * FROM syn21642088',
                                                  includeRowIdAndRowVersion = F))
 
@@ -129,19 +147,89 @@ Protection of patient privacy is paramount, and the AACR GENIE Project therefore
 \addcontentsline{toc}{section}{Summary of Data by Center}
 \section*{Summary of Data by Center}
 
+This section shows the summary of data
+
+\begin{figure}
+\begin{center}
+<<echo = F, fig=TRUE, fig.width = 4, fig.height = 4>>=
+library_selection <- ggplot(assayinfodf, aes(library_selection)) + geom_bar() + theme_bw()
+library_strategy <- ggplot(assayinfodf, aes(library_strategy)) + geom_bar() + theme_bw()
+
+platform <- ggplot(assayinfodf, aes(platform)) + geom_bar() + theme_bw()
+calling_strategy <- ggplot(assayinfodf, aes(calling_strategy)) + geom_bar() + theme_bw()
+specimen_tumor_cellularity <- ggplot(assayinfodf,
+                                     aes(specimen_tumor_cellularity)) + geom_bar() + theme_bw()
+
+h = ggarrange(library_selection, library_strategy,
+          platform, calling_strategy,
+          specimen_tumor_cellularity,
+          labels = c("A", "B", "C", "D", "E"),
+          ncol = 2, nrow = 3)
+print(h)
+@
+\end{center}
+\caption{Assay information}
+\end{figure}
+
+
 <<results=tex, echo=F>>=
-info_tab = xtable(assayinfo$asDataFrame()[,c("SEQ_ASSAY_ID", "platform", 
-                                             "library_strategy", "library_selection",
-                                             "instrument_model",
-                                             "specimen_type", "specimen_tumor_cellularity")],
-                  caption = 'Genomic Data Characterization')
-#cat("\\makebox[\\textwidth]{")
-print(info_tab, include.rownames = F, floating = F, size = "\\tiny",
-      caption.placement = "top", tabular.environment = "longtable")
-# cat("}")
-#cat("\\endgroup")
+allowed_coverage = c('hotspot_regions', 'coding_exons',
+                     'introns', 'promoters')
+
+coverage_per_panel = get_list_assay_info_table(allowed_coverage,
+                                               assayinfodf,
+                                               "coverage")
+info_tab = xtable(coverage_per_panel,
+                  caption = 'Coverage per Panel')
+print(info_tab, floating = F, caption.placement = "top",
+      tabular.environment = "longtable")
 
 @
+
+<<results=tex, echo=F>>=
+allowed_alterations = c("snv", "small_indels", "gene_level_cna",
+                        "intragenic_cna", "structural_variants")
+
+alterations_per_panel = get_list_assay_info_table(allowed_alterations,
+                                                  assayinfodf,
+                                                  "alteration_types")
+
+info_tab = xtable(alterations_per_panel,
+                  caption = 'Alteration Types per Panel')
+print(info_tab, floating = F, caption.placement = "top",
+      tabular.environment = "longtable")
+
+
+@
+
+
+
+<<results=tex, echo=F>>=
+allowed_specimen_types = c("formalin_fixed", "FFPE", 'fresh_frozen')
+
+specimen_per_panel = get_list_assay_info_table(allowed_specimen_types,
+                                               assayinfodf,
+                                               "specimen_type")
+
+info_tab = xtable(specimen_per_panel,
+                  caption = 'Specimen Types per Panel')
+print(info_tab, floating = F, caption.placement = "top",
+      tabular.environment = "longtable")
+@
+
+
+<<results=tex, echo=F>>=
+gene_number_info = assayinfodf[, c("SEQ_ASSAY_ID", "gene_padding", "number_of_genes")]
+
+info_tab = xtable(gene_number_info[order(gene_number_info$SEQ_ASSAY_ID), ],
+                  caption = 'Sequence Assay genomic information')
+
+print(info_tab, include.rownames = F, floating = F,
+      caption.placement = "top", tabular.environment = "longtable")
+@
+
+
+
 
 
 \addcontentsline{toc}{subsection}{Genomic Profiling at Each Center}
