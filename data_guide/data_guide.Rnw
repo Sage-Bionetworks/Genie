@@ -7,6 +7,7 @@
  \cftpagenumbersoff{subsection}
 \usepackage{color}   %May be necessary if you want to color links
 \usepackage{hyperref}
+\usepackage{float}
 \hypersetup{
     colorlinks=true, %set true if you want colored links
     linktoc=all,     %set to all if you want both sections and subsections linked
@@ -162,7 +163,7 @@ print(number_of_panels, floating = F,
 @
 
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
 <<echo = F, fig=TRUE, fig.width = 4, fig.height = 4>>=
 library_selection <- ggplot(assayinfodf, aes(library_selection)) + geom_bar() + theme_bw()
