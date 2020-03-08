@@ -149,6 +149,19 @@ Protection of patient privacy is paramount, and the AACR GENIE Project therefore
 
 This section shows the summary of data
 
+
+<<results=tex, echo=F>>=
+number_of_panels = xtable(table(assayinfodf$CENTER),
+                          col.names = c("center", "number of panels"),
+                          caption = 'Number of Panels per Center')
+names(number_of_panels) = "Number of panels"
+print(number_of_panels, floating = F,
+      caption.placement = "top",
+      tabular.environment = "longtable")
+
+@
+
+
 \begin{figure}
 \begin{center}
 <<echo = F, fig=TRUE, fig.width = 4, fig.height = 4>>=
@@ -235,7 +248,7 @@ print(info_tab, include.rownames = F, floating = F,
 \addcontentsline{toc}{subsection}{Genomic Profiling at Each Center}
 \subsection*{Genomic Profiling at Each Center}
 
-\textbf{\href{https://www.cruk.cam.ac.uk/}{Cancer Research UK Cambridge Centre}, University of Cambridge (CRUK)}\\
+\textbf{\href{https://www.cruk.cam.ac.uk/}{Cancer Research UK Cambridge Centre, University of Cambridge} (CRUK)}\\
 
 
 Sequencing data (SNVs/Indels):\\\\
@@ -263,39 +276,39 @@ Indel filtering\\
 - As for SNVs, indels were removed if present in the 1,000 Genomes database at an allele frequency >1\%, or if they were present in normal samples in our data set. Thresholds were adjusted as for SNVs if the indel was present in COSMIC. The same thresholds for depth and VAF were used.\\\\
 DNA was hybridized to Affymetrix SNP 6.0 arrays per the manufacturer's instructions. ASCAT was used to obtain segmented copy number calls and estimates of tumour ploidy and purity. Somatic CNAs were obtained by removing germline CNVs as defined in the original METABRIC study3. We defined regions of LOH as those in which there were no copies present of either the major or minor allele, irrespective of total copy number. Recurrent CNAs were identified with GISTIC2, with log2 ratios obtained by dividing the total number of copies by tumour ploidy for each ASCAT segment. Thresholds for identifying gains and losses were set to 0.4 and (-)0.5, respectively; these values were obtained by examining the distribution of log2 ratios to identify peaks associated with copy number states. A broad length cut-off of 0.98 was used, and peaks were assessed to rule out probe artefacts and CNVs that may have been originally missed.\\
 
-\textbf{\href{https://cancer.columbia.edu/}{Herbert Irving Comprehensive Cancer Center}, Columbia University (COLU)}\\
+\textbf{\href{https://cancer.columbia.edu/}{Herbert Irving Comprehensive Cancer Center, Columbia University} (COLU)}\\
 
 
 \textbf{\href{https://www.dana-farber.org/}{Dana-Farber Cancer Institute} (DFCI)}\\
 
-\textbf{\href{https://www.cruk.cam.ac.uk/}{Duke Cancer Institute} (DUKE)}\\
+\textbf{\href{http://www.dukecancerinstitute.org/}{Duke Cancer Institute} (DUKE)}\\
 
-\textbf{\href{https://www.cruk.cam.ac.uk/}{Institut Gustave Roussy} (GRCC)}\\
+\textbf{\href{https://www.gustaveroussy.fr/en}{Institut Gustave Roussy} (GRCC)}\\
 
-\textbf{\href{https://www.cruk.cam.ac.uk/}{The University of Texas MD Anderson Cancer Center} (MDA)}\\
+\textbf{\href{https://www.mdanderson.org/}{The University of Texas MD Anderson Cancer Center} (MDA)}\\
 
-\textbf{\href{https://www.cruk.cam.ac.uk/}{Memorial Sloan Kettering Cancer Center} (MSK)}\\
+\textbf{\href{https://www.mskcc.org/}{Memorial Sloan Kettering Cancer Center} (MSK)}\\
 
-\textbf{\href{https://www.cruk.cam.ac.uk/}{Johns Hopkins Sidney Kimmel Comprehensive Cancer Center} (JHU)}\\
+\textbf{\href{https://www.jhu.edu/}{Johns Hopkins Sidney Kimmel Comprehensive Cancer Center} (JHU)}\\
 
-\textbf{\href{https://www.cruk.cam.ac.uk/}{Netherlands Cancer Center}, The Netherlands (NKI)}\\
-
-
-\textbf{\href{https://www.cruk.cam.ac.uk/}{Providence Health \& Services Cancer Institute} (PHS)}\\
+\textbf{\href{https://www.nki.nl/}{Netherlands Cancer Center, The Netherlands} (NKI)}\\
 
 
-\textbf{\href{https://www.cruk.cam.ac.uk/}{Swedish Cancer Institute} (SCI)}\\
+\textbf{\href{https://oregon.providence.org/our-services/p/providence-cancer-center/}{Providence Health \& Services Cancer Institute} (PHS)}\\
 
 
-\textbf{\href{https://www.cruk.cam.ac.uk/}{Princess Margaret Cancer Centre}, University Health Network (UHN)}\\
+\textbf{\href{https://www.swedish.org/services/cancer-institute}{Swedish Cancer Institute} (SCI)}\\
 
 
-\textbf{\href{https://www.cruk.cam.ac.uk/}{Vall d'Hebron Institute of Oncology} (VHIO)}\\
-
-\textbf{\href{https://www.cruk.cam.ac.uk/}{Vanderbilt-Ingram Cancer Center} (VICC)}\\
+\textbf{\href{https://www.uhn.ca/PrincessMargaret}{Princess Margaret Cancer Centre, University Health Network} (UHN)}\\
 
 
-\textbf{\href{https://www.cruk.cam.ac.uk/}{Wake Forest University Health Sciences}  (Wake Forest Baptist Medical Center) (WAKE)}\\
+\textbf{\href{https://www.vhio.net/en/}{Vall d'Hebron Institute of Oncology} (VHIO)}\\
+
+\textbf{\href{https://www.vicc.org/}{Vanderbilt-Ingram Cancer Center} (VICC)}\\
+
+
+\textbf{\href{https://www.wakehealth.edu/}{Wake Forest University Health Sciences, Wake Forest Baptist Medical Center} (WAKE)}\\
 
 
 
