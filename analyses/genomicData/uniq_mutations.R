@@ -10,6 +10,7 @@ parser$add_argument("--syn_user",
 parser$add_argument("--syn_pass",
                     help = "Synapse password")
 args <- parser$parse_args()
+release <- args$release
 genie_user <- args$syn_user
 genie_pass <- args$syn_pass
 testing <- args$testing
@@ -18,7 +19,7 @@ library(synapser)
 library(VariantAnnotation)
 library(knitr)
 library(glue)
-library(readr)
+library(data.table)
 
 tryCatch({
   synLogin()
@@ -116,6 +117,7 @@ if (testing) {
   database_synid_mappingid = 'syn10967259'
 }
 
+
 database_synid_mapping = synTableQuery(sprintf('select * from %s',
                                                database_synid_mappingid))
 database_synid_mappingdf = synapser::as.data.frame(database_synid_mapping)
@@ -136,7 +138,18 @@ release_folder_synid = release_folder$asDataFrame()$id
 
 # Get release files mapping
 RELEASE_FILES_MAPPING = get_file_mapping(release_folder_synid)
+
+# Does this number have to be 5 panels from different sites?
 NUMBER_PANELS_COVER_REGION = 5
+
+UNIQUE_MUTATIONS_FOLDER_SYNID = "syn18455620"
+
+release_uniq_mutations_ent = synStore(Folder(release,
+                                             parentId = UNIQUE_MUTATIONS_FOLDER_SYNID))
+uniq_mutation_folder_ent = synStore(Folder(sprintf("regions_covered_by_%s_panels",
+                                                   NUMBER_PANELS_COVER_REGION),
+                                           parentId = release_uniq_mutations_ent$properties$id))
+
 
 BED_SYNID = RELEASE_FILES_MAPPING[['genomic_information.txt']]
 MAF_SYNID = RELEASE_FILES_MAPPING[['data_mutations_extended.txt']]
@@ -145,36 +158,41 @@ bed_ent = synGet(BED_SYNID, followLink=T)
 maf_ent = synGet(MAF_SYNID, followLink=T)
 clinical_ent = synGet(CLINICAL_SAMPLE_SYNID, followLink=T)
 
-CLINICALDF = readr::read_tsv(clinical_ent$path, comment="#")
+CLINICALDF = fread(clinical_ent$path, skip=4)
 CLINICALDF$CENTER = sapply(strsplit(CLINICALDF$SEQ_ASSAY_ID, "-"), function(x) x[1])
 CLINICALDF = CLINICALDF[,c("SAMPLE_ID", "CENTER", "SEQ_ASSAY_ID", "ONCOTREE_CODE")]
 
-MAFDF = readr::read_tsv(maf_ent$path, comment="#")
+MAFDF = fread(maf_ent$path)
 MAFDF = MAFDF[,c("Hugo_Symbol", "Chromosome", "Start_Position",
                  "End_Position", "Center", "Tumor_Sample_Barcode",
                  "HGVSp_Short")]
 
-BEDDF = readr::read_tsv(bed_ent$path, comment="#")
+BEDDF = fread(bed_ent$path)
 BEDDF$CENTER = sapply(strsplit(BEDDF$SEQ_ASSAY_ID, "-"), function(x) x[1])
 
-# Get number of oncotree codes per seq assay id
-codes_per_panel = table(CLINICALDF$ONCOTREE_CODE, CLINICALDF$SEQ_ASSAY_ID)
+# Get number of oncotree codes per center
+# It doesn't make sense to check if a specific code is seen across a n number of panels
+# because a center could have 5 panels... So the thresholding should be done on
+# a specific code seen across n number of centers
+codes_per_center = table(CLINICALDF$ONCOTREE_CODE, CLINICALDF$CENTER)
 # Gets the number of centers with a certain codes
-codes_count_across_panels = apply(codes_per_panel, 1, function(x) {
+codes_count_across_centers = apply(codes_per_center, 1, function(x) {
   sum(x > 0)
 })
-hist(codes_count_across_panels,
-     main="Distribution of codes seen across panels",
-     xlab = "Codes seen across x panels")
-# Based on the histogram, choose 15 as the threshold
-# number_center_with_panels = 15
-number_panels_with_code =  floor(0.75*length(unique( CLINICALDF$SEQ_ASSAY_ID)))
 
+length(unique(CLINICALDF$CENTER))
+# Number of panels that has a specific oncotree code
+# number_centers_with_code =  floor(0.75*length(unique(CLINICALDF$SEQ_ASSAY_ID)))
+
+for (number_centers_with_code in c(2:max(codes_count_across_centers))) {
+  
+}
+print(number_panels_with_code)
 CODES_ABOVE_THRESHOLD_PANEL = codes_count_across_panels[
   codes_count_across_panels >= number_panels_with_code]
 
 
-unique_mutation_folder = "~/Genie/analyses/genomicData/unique_muts_panel300/"
+unique_mutation_folder = sprintf("unique_muts_panel_%s_%s/", release, NUMBER_PANELS_COVER_REGION)
 dir.create(unique_mutation_folder)
 unique_mutation_files = list.files(unique_mutation_folder,
                                    full.names = T)
@@ -186,8 +204,7 @@ if (length(unique_mutation_files) == 0) {
                                                       BEDDF,
                                                       threshold=NUMBER_PANELS_COVER_REGION,
                                                       dir = unique_mutation_folder)
-} 
-
+}
 
 panel_unique_mutation_counts = 
   matrix(nrow = length(unique(CLINICALDF$ONCOTREE_CODE)),
@@ -196,20 +213,16 @@ panel_unique_mutation_counts =
                          unique(CLINICALDF$SEQ_ASSAY_ID)))
 # Need to write out the panel id
 for (mut_file in unique_mutation_files) {
-  mutdf = read.csv(mut_file)
+  mutdf = fread(mut_file)
   code = sub(".*/(.*)_unique_mutations.csv","\\1", mut_file)
   code_count = table(mutdf$SEQ_ASSAY_ID)
   panel_unique_mutation_counts[code, names(code_count)] = code_count
+  synStore(File(mut_file, parentId = uniq_mutation_folder_ent$properties$id))
 }
 panel_unique_mutation_counts[is.na(panel_unique_mutation_counts)] = 0
 
 
 row_sum = apply(panel_unique_mutation_counts, 1, sum)
-# barplot(sort(row_sum), las = 2)
-
-# row_above_0 = row_sum[row_sum > 0]
-# barplot(sort(row_above_0), las = 2)
-# barplot(sort(log(row_above_0)), las = 2)
 
 #Plot codes above average of counts
 row_sum_avg = row_sum[row_sum > mean(row_sum)]
