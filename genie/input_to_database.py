@@ -767,6 +767,7 @@ def center_input_to_database(
         # The [] implies the values in the dict as a list
         merged_clinical = pd.DataFrame([clinical_files])
         merged_clinical['fileType'] = 'clinical'
+        merged_clinical['name'] = "data_clinical_supp_{}.txt".format(center)
         validFiles = validFiles[~clinical_ind].append(merged_clinical)
 
         processTrackerSynId = process_functions.getDatabaseSynId(

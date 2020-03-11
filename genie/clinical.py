@@ -219,19 +219,18 @@ class clinical(FileTypeFormat):
             'and inClinicalDb is True')
         sampleCols = sampleColsTable.asDataFrame()['fieldName'].tolist()
 
-        if "patient" in filepath.lower():
-            clinicalTemplate = pd.DataFrame(columns=patientCols)
-            sample = False
-            patient = True
-        elif "sample" in filepath.lower():
-            clinicalTemplate = pd.DataFrame(columns=sampleCols)
-            sample = True
-            patient = False
-        else:
-            clinicalTemplate = pd.DataFrame(
-                columns=set(patientCols + sampleCols))
-            sample = True
-            patient = True
+        # if "patient" in filepath.lower():
+        #     clinicalTemplate = pd.DataFrame(columns=patientCols)
+        #     sample = False
+        #     patient = True
+        # elif "sample" in filepath.lower():
+        #     clinicalTemplate = pd.DataFrame(columns=sampleCols)
+        #     sample = True
+        #     patient = False
+        # else:
+        clinicalTemplate = pd.DataFrame(columns=set(patientCols + sampleCols))
+        sample = True
+        patient = True
         return({'clinicalTemplate': clinicalTemplate,
                 'sample': sample,
                 'patient': patient,
