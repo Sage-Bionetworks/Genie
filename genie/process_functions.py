@@ -7,6 +7,7 @@ import os
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+import tempfile
 
 import pandas as pd
 import synapseclient
@@ -763,8 +764,10 @@ def updateDatabase(
     allupdates = allupdates.append(to_update_rows, sort=False)
 
     storedatabase = False
-    update_all_file = os.path.join(SCRIPT_DIR, "toUpdateAll.csv")
-    with open(update_all_file, "w") as updatefile:
+    update_all_file = tempfile.NamedTemporaryFile(dir=SCRIPT_DIR,
+                                                  delete=False)
+
+    with open(update_all_file.name, "w") as updatefile:
         # Must write out the headers in case there are no appends or updates
         updatefile.write(",".join(col_order) + "\n")
         if not allupdates.empty:
@@ -787,9 +790,9 @@ def updateDatabase(
                 .replace(".0\n", "\n"))
             storedatabase = True
     if storedatabase:
-        syn.store(synapseclient.Table(database_synid, update_all_file))
+        syn.store(synapseclient.Table(database_synid, update_all_file.name))
     # Delete the update file
-    os.unlink(update_all_file)
+    os.unlink(update_all_file.name)
 
 
 def checkInt(element):
@@ -809,8 +812,8 @@ def checkInt(element):
         return(False)
 
 
-def check_col_and_values(
-        df, col, possible_values, filename, na_allowed=False, required=False):
+def check_col_and_values(df, col, possible_values, filename, na_allowed=False,
+                         required=False, sep=None):
     '''
     This function checks if the column exists then checks if the values in the
     column have the correct values
@@ -842,6 +845,11 @@ def check_col_and_values(
             check_values = df[col].dropna()
         else:
             check_values = df[col]
+        if sep:
+            final = []
+            for value in check_values:
+                final.extend(value.split(sep))
+            check_values = pd.Series(final)
         if not check_values.isin(possible_values).all():
             error = (
                 "{filename}: Please double check your {col} column.  "

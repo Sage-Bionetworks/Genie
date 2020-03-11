@@ -11,25 +11,16 @@ logger = logging.getLogger(__name__)
 
 
 def contains_whitespace(row):
-    """
-    Helper function for validateVCF.
-    No whitespace is allowed in VCF files
-
-    Args:
-        row: Each pandas dataframe row of a vcf
-
-    Returns:
-        Sum of the the amount of whitespace in a string
-    """
-    return(sum([" " in i for i in row if isinstance(i, str)]))
+    """Gets the total number of whitespaces from each column of a row"""
+    return sum([" " in i for i in row if isinstance(i, str)])
 
 
 class vcf(maf):
     _fileType = "vcf"
 
-    _process_kwargs = [
-        "validVCF", "processing", "path_to_GENIE", "databaseToSynIdMappingDf",
-        "vcf2mafPath", "veppath", "vepdata", "reference"]
+    _process_kwargs = ["validVCF", "processing", "path_to_GENIE",
+                       "databaseToSynIdMappingDf", "vcf2mafPath",
+                       "veppath", "vepdata", "reference"]
 
     def _validateFilename(self, filePath):
         basename = os.path.basename(filePath[0])
@@ -46,19 +37,19 @@ class vcf(maf):
                     headers = \
                         row.replace("\n", "").replace("\r", "").split("\t")
         if headers is not None:
-            vcf = pd.read_csv(
-                filepath, sep="\t", comment="#", header=None, names=headers)
+            vcfdf = pd.read_csv(filepath, sep="\t", comment="#", header=None,
+                                names=headers)
         else:
             raise ValueError("Your vcf must start with the header #CHROM")
-        return(vcf)
+        return vcfdf
 
     def process_helper(self, vcffiles, path_to_GENIE, mafSynId, centerMafSynId,
                        vcf2mafPath, veppath, vepdata,
                        reference=None):
         logger.info('VCF2MAF %s' % self.center)
         centerInputFolder = os.path.join(path_to_GENIE, self.center, "input")
-        centerStagingFolder = \
-            os.path.join(path_to_GENIE, self.center, "staging")
+        centerStagingFolder = os.path.join(path_to_GENIE, self.center,
+                                           "staging")
         mafFiles = []
         for path in vcffiles:
             vcfName = os.path.basename(path)
@@ -128,7 +119,7 @@ class vcf(maf):
                 if reference is not None:
                     command.extend(["--ref-fasta", reference])
                 subprocess.check_call(command)
-                if (os.path.isfile(newMAFPath)):
+                if os.path.isfile(newMAFPath):
                     mafFiles.append(newMAFPath)
 
         logger.info("MERGING MAFS")
@@ -148,6 +139,7 @@ class vcf(maf):
         narrowMafPaths = [narrowMafPath]
         for mafFile in mafFiles:
             mafDf = pd.read_csv(mafFile, sep="\t", comment="#")
+            mafDf.drop_duplicates(inplace=True)
             mafDf = self.formatMAF(mafDf)
             self.createFinalMaf(mafDf, newMafPath)
             narrowMafDf = mafDf[narrowMafColumns]
@@ -172,7 +164,7 @@ class vcf(maf):
                 self.storeProcessedMaf(
                     narrow_path, mafSynId, centerMafSynId, isNarrow=True)
 
-        return(newMafPath)
+        return newMafPath
 
     def process_steps(self, filePath, processing, databaseToSynIdMappingDf,
                       vcf2mafPath, veppath, vepdata, validVCF, path_to_GENIE,
@@ -195,56 +187,60 @@ class vcf(maf):
                 "Please run with `--process {filetype}` parameter "
                 "if you want to reannotate the {filetype} files".format(
                     filetype=self._fileType))
-        return(mutationFiles)
+        return mutationFiles
 
-    def _validate(self, vcf):
+    def _validate(self, vcfdf):
         '''
         Validates the content of a vcf file
 
         Args:
-            vcf: pandas dataframe containing vcf content
+            vcfdf: pandas dataframe containing vcf content
 
         Returns:
             total_error - error messages
             warning - warning messages
         '''
-        REQUIRED_HEADERS = pd.Series([
-            "#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"])
-
+        required_headers = pd.Series(["#CHROM", "POS", "ID", "REF", "ALT",
+                                      "QUAL", "FILTER", "INFO"])
         total_error = ""
         warning = ""
-        if not all(REQUIRED_HEADERS.isin(vcf.columns)):
-            total_error += (
-                "Your vcf file must have these headers: "
-                "CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO.\n")
+        if not all(required_headers.isin(vcfdf.columns)):
+            total_error += ("Your vcf file must have these headers: "
+                            "CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO.\n")
+        else:
+            # No duplicated values
+            primary_cols = ["#CHROM", "POS", "ID", "REF", "ALT"]
+            if vcfdf.duplicated(primary_cols).any():
+                total_error += "Your vcf file should not have duplicate rows\n"
 
-        if len(vcf.columns) > 8:
-            if "FORMAT" not in vcf.columns:
-                total_error += (
-                    "Your vcf file must have FORMAT header "
-                    "if genotype columns exist.\n")
+            if vcfdf[['#CHROM', 'POS']].isnull().values.any():
+                total_error += ("Your vcf file may contain rows that are "
+                                "space delimited instead of tab delimited.\n")
+
+        if len(vcfdf.columns) > 8:
+            if "FORMAT" not in vcfdf.columns:
+                total_error += ("Your vcf file must have FORMAT header "
+                                "if genotype columns exist.\n")
 
         # Require that they report variants mapped to
         # either GRCh37 or hg19 without
         # the chr-prefix. variants on chrM are not supported
-        haveColumn = process_functions.checkColExist(vcf, "#CHROM")
-        if haveColumn:
-            nochr = ["chr" in i for i in vcf['#CHROM'] if isinstance(i, str)]
+        have_column = process_functions.checkColExist(vcfdf, "#CHROM")
+        if have_column:
+            nochr = ["chr" in i for i in vcfdf['#CHROM'] if isinstance(i, str)]
             if sum(nochr) > 0:
-                warning += (
-                    "Your vcf file should not have the chr prefix "
-                    "in front of chromosomes.\n")
-            if sum(vcf['#CHROM'].isin(["chrM"])) > 0:
-                total_error += \
-                    "Your vcf file must not have variants on chrM.\n"
+                warning += ("Your vcf file should not have the chr prefix "
+                            "in front of chromosomes.\n")
+            if sum(vcfdf['#CHROM'].isin(["chrM"])) > 0:
+                total_error += "Your vcf file must not have variants on chrM.\n"
 
         # No white spaces
-        temp = vcf.apply(lambda x: contains_whitespace(x), axis=1)
-        if sum(temp) > 0:
-            warning += (
-                "Your vcf file should not have any "
-                "white spaces in any of the columns.\n")
+        white_space = vcfdf.apply(lambda x: contains_whitespace(x), axis=1)
+        if sum(white_space) > 0:
+            warning += ("Your vcf file should not have any "
+                        "white spaces in any of the columns.\n")
+
         # I can also recommend a `bcftools query` command that
         # will parse a VCF in a detailed way,
         # and output with warnings or errors if the format is not adhered too
-        return(total_error, warning)
+        return total_error, warning

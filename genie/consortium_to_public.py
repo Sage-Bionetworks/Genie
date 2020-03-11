@@ -257,15 +257,18 @@ def consortiumToPublic(syn, processingDate, genie_version,
                 name="genie_public_data_cna_hg19.seg")
         elif entName == "data_gene_matrix.txt":
             pass
-            # This file was processed above because it had to be used
-            # for generating caselists
-        elif entName == "genie_combined.bed":
+            # This file was processed above because it had to be used for generating caselists
+            # panel = syn.get(entId, followLink=True)
+            # panelDf = pd.read_csv(panel.path, sep="\t")
+            # panelDf = panelDf[panelDf['SAMPLE_ID'].isin(publicReleaseSamples)]
+            # panelDf.to_csv(DATA_GENE_PANEL_PATH,sep="\t",index=False)
+            # storeFile(syn, DATA_GENE_PANEL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_gene_matrix.txt")
+        elif entName == "genomic_information.txt":
             bed = syn.get(entId, followLink=True)
             bedDf = pd.read_csv(bed.path, sep="\t")
             bedDf = bedDf[bedDf.SEQ_ASSAY_ID.isin(allClin.SEQ_ASSAY_ID)]
-            bedDf.to_csv(COMBINED_BED_PATH, sep="\t", index=False)
-            storeFile(syn, COMBINED_BED_PATH, PUBLIC_RELEASE_PREVIEW,
-                      genie_version, name="genie_combined.bed")
+            bedDf.to_csv(COMBINED_BED_PATH,sep="\t",index=False)
+            storeFile(syn, COMBINED_BED_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="genomic_information.txt")
         elif entName in ["data_clinical_sample.txt", "data_clinical_patient.txt"] or entName.endswith(".html"):
             continue
         elif entName.startswith("data_gene_panel"):
@@ -392,160 +395,4 @@ def get_public_to_consortium_synid_mapping(syn, releaseSynId, test=False):
                         public_release_name = \
                             str(int(checkRelease[0]))+".0-public"
                     officialPublic[public_release_name] = dirpath[1]
-    return(officialPublic)
-
-
-# if __name__ == "__main__":
-
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument("processingDate",
-#                         type=str,
-#                         metavar="Jan-2017",
-#                         help="The process date of GENIE in Month-Year format "
-#                              "(ie. Apr-2017)")
-
-#     parser.add_argument("cbioportalPath",
-#                         type=str,
-#                         metavar="/path/to/cbioportal",
-#                         help="Make sure you clone the cbioportal github: "
-#                              "git clone https://github.com/cBioPortal/cbioportal.git")
-
-#     parser.add_argument("genieVersion",
-#                         type=str,
-#                         help="GENIE public release version")
-
-#     parser.add_argument("--publicReleaseCutOff",
-#                         type=int,
-#                         default=366,
-#                         help="Public release cut off time in days (Must "
-#                              "account for leap year, 366)")
-
-#     parser.add_argument("--staging",
-#                         action='store_true',
-#                         help="Store into staging folder")
-
-#     parser.add_argument("--test",
-#                         action='store_true',
-#                         help="Store into staging folder")
-
-#     parser.add_argument("--pemFile",
-#                         type=str,
-#                         help="Path to PEM file (genie.pem)")
-
-#     parser.add_argument("--debug",
-#                         action='store_true',
-#                         help="Synapse debug feature")
-#     args = parser.parse_args()
-#     cbioValidatorPath = os.path.join(
-#         args.cbioportalPath,
-#         "core/src/main/scripts/importer/validateData.py")
-#     assert os.path.exists(cbioValidatorPath), \
-#         "Please specify correct cbioportalPath"
-#     assert not (args.test and args.staging), \
-#         "You can only specify --test or --staging, not both"
-#     try:
-#         processingDate = datetime.datetime.strptime(
-#             args.processingDate, '%b-%Y')
-#     except ValueError:
-#         raise ValueError(
-#             "Process date must be in the format "
-#             "abbreviated_month-YEAR ie. Oct-2017")
-
-#     syn = process_functions.synLogin(args.pemFile, debug=args.debug)
-#     # Get all the possible public releases
-#     # Get configuration
-#     if args.test:
-#         databaseSynIdMappingId = 'syn11600968'
-#         args.genieVersion = "TESTpublic"
-#     elif args.staging:
-#         databaseSynIdMappingId = 'syn12094210'
-#     else:
-#         databaseSynIdMappingId = 'syn10967259'
-#     databaseSynIdMapping = syn.tableQuery(
-#         'select * from %s' % databaseSynIdMappingId)
-#     databaseSynIdMappingDf = databaseSynIdMapping.asDataFrame()
-#     releaseSynId = databaseSynIdMappingDf['Id'][
-#         databaseSynIdMappingDf['Database'] == 'release'].values[0]
-
-#     officialPublic = get_public_to_consortium_synid_mapping(releaseSynId)
-
-#     assert args.genieVersion in officialPublic.keys(), \
-#         "genieVersion must be one of these: {}.".format(
-#             ", ".join(officialPublic.keys()))
-
-#     args.releaseId = officialPublic[args.genieVersion]
-#     if not args.test and not args.staging:
-#         processTrackerSynId = databaseSynIdMappingDf['Id'][
-#             databaseSynIdMappingDf['Database'] == 'processTracker'].values[0]
-#         processTracker = syn.tableQuery(
-#             "SELECT timeStartProcessing FROM %s where center = 'SAGE' "
-#             "and processingType = 'public'" % processTrackerSynId)
-#         processTrackerDf = processTracker.asDataFrame()
-#         processTrackerDf['timeStartProcessing'][0] = str(int(time.time()*1000))
-#         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
-
-#     caseListEntities, genePanelEntities = consortiumToPublic(
-#         syn, processingDate, args.genieVersion,
-#         args.releaseId, databaseSynIdMappingDf,
-#         publicReleaseCutOff=args.publicReleaseCutOff,
-#         staging=args.staging)
-
-#     database_to_staging.reviseMetadataFiles(syn,
-#                                             args.staging,
-#                                             databaseSynIdMappingDf,
-#                                             args.genieVersion)
-
-#     logger.info("CBIO VALIDATION")
-#     # Must be exit 0 because the validator sometimes fails,
-#     # but we still want to capture the output
-#     command = ['python', cbioValidatorPath, '-s',
-#                database_to_staging.GENIE_RELEASE_DIR, '-n', '; exit 0']
-#     cbio_output = subprocess.check_output(" ".join(command), shell=True)
-#     cbio_decoded_output = cbio_output.decode("utf-8")
-#     logger.info(cbio_decoded_output)
-#     if not args.test and not args.staging:
-#         log_folder_synid = databaseSynIdMappingDf['Id'][
-#             databaseSynIdMappingDf['Database'] == 'logs'].values[0]
-#         # Use tempfiles
-#         cbio_log_file = "cbioValidatorLogsPublic_{}.txt".format(
-#             args.genieVersion)
-#         with open(cbio_log_file, "w") as cbioLog:
-#             cbioLog.write(cbio_decoded_output)
-#         syn.store(synapseclient.File(cbio_log_file, parentId=log_folder_synid))
-#         os.remove(cbio_log_file)
-#     logger.info("REMOVING OLD FILES")
-#     process_functions.rmFiles(database_to_staging.CASE_LIST_PATH)
-#     seg_meta_file = '{}/genie_public_meta_cna_hg19_seg.txt'.format(
-#         database_to_staging.GENIE_RELEASE_DIR)
-#     if os.path.exists(seg_meta_file):
-#         os.unlink(seg_meta_file)
-
-#     logger.info("CREATING LINK VERSION")
-#     createLinkVersion(syn, args.genieVersion, caseListEntities,
-#                       genePanelEntities, databaseSynIdMappingDf)
-#     # Don't update process tracker is testing or staging
-#     if not args.test and not args.staging:
-#         processTracker = syn.tableQuery(
-#             "SELECT timeEndProcessing FROM %s where center = 'SAGE' and "
-#             "processingType = 'public'" % processTrackerSynId)
-#         processTrackerDf = processTracker.asDataFrame()
-#         processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
-#         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
-
-#     if not args.test:
-#         logger.info("DASHBOARD UPDATE")
-#         dashboard_table_updater.run_dashboard(
-#             syn, databaseSynIdMappingDf,
-#             args.genieVersion, staging=args.staging, public=True)
-#         dashboard_markdown_gen_path = os.path.join(
-#             os.path.dirname(os.path.abspath(__file__)),
-#             'dashboard_markdown_generator.R')
-#         dashboard_markdown_html_commands = ['Rscript',
-#                                             dashboard_markdown_gen_path,
-#                                             args.genieVersion]
-#         if args.staging:
-#             dashboard_markdown_html_commands.append('--staging')
-#         subprocess.check_call(dashboard_markdown_html_commands)
-#         logger.info("DASHBOARD UPDATE COMPLETE")
-
-#     logger.info("COMPLETED CONSORTIUM TO PUBLIC")
+    return officialPublic
