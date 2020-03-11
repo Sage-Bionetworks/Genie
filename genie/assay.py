@@ -105,8 +105,9 @@ class Assayinfo(FileTypeFormat):
                                         'specimen_type', 'coverage']
 
             for col in columns_containing_lists:
-                assay_finaldf[col] = [";".join(row)
-                                      for row in assay_finaldf[col]]
+                if assay_finaldf.get(col) is not None:
+                    assay_finaldf[col] = [";".join(row)
+                                          for row in assay_finaldf[col]]
             all_panel_info = all_panel_info.append(assay_finaldf)
         return all_panel_info
 

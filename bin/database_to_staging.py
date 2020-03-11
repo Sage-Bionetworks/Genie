@@ -218,7 +218,7 @@ def main(genie_version,
         dashboard_markdown_html_commands = [
             'Rscript',
             os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'dashboard_markdown_generator.R'),
+                         '../genie/dashboard_markdown_generator.R'),
             genie_version]
 
         if genie_user is not None and genie_pass is not None:

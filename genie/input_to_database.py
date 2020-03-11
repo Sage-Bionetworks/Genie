@@ -320,17 +320,18 @@ def processfiles(syn, validfiles, center, path_to_genie,
     logger.info("PROCESSING {} FILES: {}".format(center, len(validfiles)))
     center_staging_folder = os.path.join(path_to_genie, center)
     center_staging_synid = center_mapping_df.query(
-        "center == 'SAGE'").stagingSynId.iloc[0]
+        "center == '{}'".format(center)).stagingSynId.iloc[0]
 
     if not os.path.exists(center_staging_folder):
         os.makedirs(center_staging_folder)
 
     if processing != 'vcf':
-        for fileSynId, filePath, fileType in zip(validfiles['id'],
-                                                 validfiles['path'],
-                                                 validfiles['fileType']):
-            filename = os.path.basename(filePath)
-            newPath = os.path.join(center_staging_folder, filename)
+        for fileSynId, filePath, name, fileType in zip(validfiles['id'],
+                                                       validfiles['path'],
+                                                       validfiles['name'],
+                                                       validfiles['fileType']):
+            # filename = os.path.basename(filePath)
+            newPath = os.path.join(center_staging_folder, name)
             # store = True
             synId = databaseToSynIdMappingDf.Id[
                 databaseToSynIdMappingDf['Database'] == fileType]
@@ -696,7 +697,7 @@ def validation(syn, center, process,
 
         valid_filesdf = input_valid_statusdf.query('status == "VALIDATED"')
 
-        return(valid_filesdf[['id', 'path', 'fileType']])
+        return(valid_filesdf[['id', 'path', 'fileType', 'name']])
 
 
 def center_input_to_database(
