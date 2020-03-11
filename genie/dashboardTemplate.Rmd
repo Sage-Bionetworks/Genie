@@ -530,9 +530,9 @@ if (!is.null(this_bed)) {
 
 Each panel's bed file is used to generate a gene panel file used in cBioPortal. All bed files undergo gene symbol remapping during processing.
 
-* `num_genes_remapped`: number of unique genes a panel has after submitted genes are remapped
-* `num_genes_submitted`: number of unique genes a panel has prior to remapping
-* `num_genes_expected`: number of unique genes a panel should have submitted by each center 
+* `num_genes_remapped`:  number of unique genes a panel has after submitted genes are remapped
+* `num_genes_submitted`: number of unique genes found in site's submitted BED file prior to remapping
+* `num_genes_expected`: size of panel as defined in site's submitted assay_information.yaml file
 
 Ideally, `num_genes_remapped` and `num_genes_expected` should match. Panels that have differences between the two values are shown below.  `NA` means that the panel has an invalid assay information file.
 
