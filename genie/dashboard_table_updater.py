@@ -1,11 +1,13 @@
-import argparse
+"""Updates dashboard tables"""
 import datetime
 import logging
 import os
 
-import synapseclient
-import genie
+import argparse
 import pandas as pd
+import synapseclient
+
+from genie import process_functions
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -13,8 +15,8 @@ logger.setLevel(logging.INFO)
 
 
 def get_center_data_completion(center, df):
-    '''
-    Get center data completion.  Calulates the percentile of
+    """
+    Gets center data completion.  Calulates the percentile of
     how complete a clinical data element is:
     Number of not blank/Unknown/NA divded by
     total number of patients or samples
@@ -25,7 +27,7 @@ def get_center_data_completion(center, df):
 
     Returns:
         Dataframe: Center data
-    '''
+    """
     centerdf = df[df['CENTER'] == center]
     total = len(centerdf)
     center_data = pd.DataFrame()
@@ -38,13 +40,13 @@ def get_center_data_completion(center, df):
             completeness = float(sum(not_missing)) / int(total)
             returned = pd.DataFrame([[col, center, total, completeness]])
             center_data = center_data.append(returned)
-    return(center_data)
+    return center_data
 
 
 def update_samples_in_release_table(syn, file_mapping, release,
                                     samples_in_release_synid):
     '''
-    Convenience function that updates the sample in release table
+    Updates the sample in release table
     This tracks the samples of each release.  1 means it exists, and 0
     means it doesn't
 
@@ -61,14 +63,15 @@ def update_samples_in_release_table(syn, file_mapping, release,
 
     if release not in cols:
         schema = syn.get(samples_in_release_synid)
-        syn_col = synapseclient.Column(
-            name=release, columnType='INTEGER', defaultValue=0)
+        syn_col = synapseclient.Column(name=release, columnType='INTEGER',
+                                       defaultValue=0)
         new_column = syn.store(syn_col)
         schema.addColumn(new_column)
         schema = syn.store(schema)
     # Columns of samples in release
     samples_per_release = syn.tableQuery(
-        'SELECT SAMPLE_ID, "%s" FROM %s' % (release, samples_in_release_synid))
+        'SELECT SAMPLE_ID, "{}" FROM {}'.format(release,
+                                                samples_in_release_synid))
 
     samples_per_releasedf = samples_per_release.asDataFrame()
     new_samples = clinicaldf[['SAMPLE_ID']][
@@ -80,9 +83,9 @@ def update_samples_in_release_table(syn, file_mapping, release,
 
     old_samples[release] = 1
     samples_in_releasedf = new_samples.append(old_samples)
-    genie.process_functions.updateDatabase(
-        syn, samples_per_releasedf,
-        samples_in_releasedf, samples_in_release_synid, ["SAMPLE_ID"])
+    process_functions.updateDatabase(syn, samples_per_releasedf,
+                                     samples_in_releasedf,
+                                     samples_in_release_synid, ["SAMPLE_ID"])
 
 
 def update_cumulative_sample_table(syn, file_mapping, release,
@@ -100,7 +103,8 @@ def update_cumulative_sample_table(syn, file_mapping, release,
     '''
 
     sample_count_per_round = syn.tableQuery(
-        'SELECT * FROM %s' % cumulative_sample_count_synid)
+        "SELECT * FROM {} where Release = '{}'".format(cumulative_sample_count_synid,
+                                                       release))
     sample_count_per_rounddf = sample_count_per_round.asDataFrame()
 
     clinical_ent = syn.get(file_mapping['clinical'], followLink=True)
@@ -143,9 +147,11 @@ def update_cumulative_sample_table(syn, file_mapping, release,
     total_counts = total_counts.applymap(int)
     total_counts['Center'] = total_counts.index
     total_counts['Release'] = release
-    genie.process_functions.updateDatabase(
-        syn, sample_count_per_rounddf, total_counts,
-        cumulative_sample_count_synid, ["Center", "Release"])
+    process_functions.updateDatabase(syn, sample_count_per_rounddf,
+                                     total_counts,
+                                     cumulative_sample_count_synid,
+                                     ["Center", "Release"],
+                                     to_delete=True)
 
 
 def get_file_mapping(syn, release_folder_synid):
@@ -172,19 +178,18 @@ def get_file_mapping(syn, release_folder_synid):
                 file_mapping['cna'] = synid
             elif filename.endswith(".seg"):
                 file_mapping['seg'] = synid
-    return(file_mapping)
+    return file_mapping
 
 
 def update_release_numbers(syn, database_mappingdf, release=None):
-    '''
-    Function that updates all release dashboard numbers or
-    specific release number
+    """
+    Updates all release dashboard numbers or specific release number
 
     Args:
         syn: synapse object
         database_mappingdf: mapping between synapse ids and database
         release: GENIE release (ie. 5.3-consortium).  Defaults to None
-    '''
+    """
     # Update release table with current release or all releases
     samples_in_release_synid = database_mappingdf['Id'][
         database_mappingdf['Database'] == 'samplesInRelease'].values[0]
@@ -213,13 +218,13 @@ def update_release_numbers(syn, database_mappingdf, release=None):
 
 
 def update_database_numbers(syn, database_mappingdf):
-    '''
+    """
     Updates database cumulative numbers (Only called when not staging)
 
     Args:
         syn: synapse object
         database_mappingdf: mapping between synapse ids and database
-    '''
+    """
     cumulative_sample_count_synid = database_mappingdf['Id'][
         database_mappingdf['Database'] == 'cumulativeSampleCount'].values[0]
     # Database
@@ -267,9 +272,9 @@ def update_database_numbers(syn, database_mappingdf):
     db_counts = db_counts.applymap(int)
     db_counts['Center'] = db_counts.index
     db_counts['Release'] = "Database"
-    genie.process_functions.updateDatabase(
-        syn, database_countdf, db_counts,
-        cumulative_sample_count_synid, ["Center", "Release"])
+    process_functions.updateDatabase(syn, database_countdf, db_counts,
+                                     cumulative_sample_count_synid,
+                                     ["Center", "Release"])
     today = datetime.date.today()
     if today.month in [1, 4, 8, 12]:
         db_count_tracker = db_counts[['Clinical', 'Center', 'Release']]
@@ -284,14 +289,14 @@ def update_database_numbers(syn, database_mappingdf):
 
 
 def update_oncotree_code_tables(syn, database_mappingdf):
-    '''
-    Function that updates database statistics of oncotree codes
+    """
+    Updates database statistics of oncotree codes
     and primary onocotree codes
 
     Args:
         syn: synapse object
         database_mappingdf: mapping between synapse ids and database
-    '''
+    """
     oncotree_distribution_synid = database_mappingdf['Id'][
         database_mappingdf['Database'] == 'oncotree'].values[0]
 
@@ -319,23 +324,23 @@ def update_oncotree_code_tables(syn, database_mappingdf):
          ",Total", oncotree_distribution_synid))
 
     oncotree_distribution_dbdf = oncotree_distribution_db.asDataFrame()
-    genie.process_functions.updateDatabase(
-        syn, oncotree_distribution_dbdf, oncotree_code_distributiondf,
-        oncotree_distribution_synid, ["Oncotree_Code"], to_delete=True)
+    process_functions.updateDatabase(syn, oncotree_distribution_dbdf,
+                                     oncotree_code_distributiondf,
+                                     oncotree_distribution_synid,
+                                     ["Oncotree_Code"], to_delete=True)
 
     # DISTRIBUTION OF PRIMARY CODE TABLE UPDATE
     oncotree_link_synid = database_mappingdf['Id'][
         database_mappingdf['Database'] == 'oncotreeLink'].values[0]
     primary_code_synId = database_mappingdf['Id'][
         database_mappingdf['Database'] == 'primaryCode'].values[0]
-    '''
-    Can also use most up to date oncotree code,
-    because these tables are updated from the database
-    '''
+
+    # Can also use most up to date oncotree code,
+    # because these tables are updated from the database
     oncotree_link_ent = syn.get(oncotree_link_synid)
     oncotree_link = oncotree_link_ent.externalURL
     oncotree_mapping = \
-        genie.process_functions.get_oncotree_code_mappings(oncotree_link)
+        process_functions.get_oncotree_code_mappings(oncotree_link)
 
     clinicaldf['PRIMARY_CODES'] = \
         [oncotree_mapping[i.upper()]['ONCOTREE_PRIMARY_NODE']
@@ -364,20 +369,21 @@ def update_oncotree_code_tables(syn, database_mappingdf):
          ",Total", primary_code_synId))
 
     primary_code_dist_dbdf = primary_code_dist_db.asDataFrame()
-    genie.process_functions.updateDatabase(
-        syn, primary_code_dist_dbdf, primary_code_distributiondf,
-        primary_code_synId, ["Oncotree_Code"], to_delete=True)
+    process_functions.updateDatabase(syn, primary_code_dist_dbdf,
+                                     primary_code_distributiondf,
+                                     primary_code_synId, ["Oncotree_Code"],
+                                     to_delete=True)
 
 
 def update_sample_difference_table(syn, database_mappingdf):
-    '''
-    Function that updates sample difference table between
+    """
+    Updates sample difference table between
     consortium releases
 
     Args:
         syn: synapse object
         database_mappingdf: mapping between synapse ids and database
-    '''
+    """
     cumulative_sample_count_synid = database_mappingdf['Id'][
         database_mappingdf['Database'] == 'cumulativeSampleCount'].values[0]
 
@@ -438,19 +444,21 @@ def update_sample_difference_table(syn, database_mappingdf):
     diff_between_releasesdf[
         ['Clinical', 'Mutation', 'CNV', 'SEG', 'Fusions']] = new_values
 
-    genie.process_functions.updateDatabase(
-        syn, difftable_dbdf, diff_between_releasesdf,
-        sample_diff_count_synid, ["Center", "Release"], to_delete=True)
+    process_functions.updateDatabase(syn, difftable_dbdf,
+                                     diff_between_releasesdf,
+                                     sample_diff_count_synid,
+                                     ["Center", "Release"],
+                                     to_delete=True)
 
 
 def update_data_completeness_table(syn, database_mappingdf):
-    '''
-    Function that updates the data completeness of the database
+    """
+    Updates the data completeness of the database
 
     Args:
         syn: synapse object
         database_mappingdf: mapping between synapse ids and database
-    '''
+    """
     data_completion_synid = database_mappingdf['Id'][
         database_mappingdf['Database'] == 'dataCompletion'].values[0]
 
@@ -474,24 +482,22 @@ def update_data_completeness_table(syn, database_mappingdf):
         'select * from %s' % data_completion_synid)
     data_completeness_dbdf = data_completeness_db.asDataFrame()
     data_completenessdf.columns = data_completeness_dbdf.columns
-    genie.process_functions.updateDatabase(
-        syn,
-        data_completeness_dbdf,
-        data_completenessdf,
-        data_completion_synid,
-        ["FIELD", "CENTER"],
-        to_delete=True)
+    process_functions.updateDatabase(syn, data_completeness_dbdf,
+                                     data_completenessdf,
+                                     data_completion_synid,
+                                     ["FIELD", "CENTER"],
+                                     to_delete=True)
 
 
 def update_wiki(syn, database_mappingdf):
-    '''
+    """
     Updates the GENIE project dashboard wiki timestamp
 
     Args:
         syn: synapse object
         database_mappingdf: mapping between synapse ids and database
 
-    '''
+    """
     # Updates to query and date dashboard was updated
     cumulative_sample_count_synid = database_mappingdf['Id'][
         database_mappingdf['Database'] == 'cumulativeSampleCount'].values[0]
@@ -518,25 +524,35 @@ def update_wiki(syn, database_mappingdf):
             "%2C Total FROM " + primary_code_synId +
             " ORDER BY Total DESC&limit=15}\n\n"]
 
-    wikiPage = syn.getWiki("syn3380222", 235803)
-    wikiPage.markdown = "".join(markdown)
-    syn.store(wikiPage)
+    wikipage = syn.getWiki("syn3380222", 235803)
+    wikipage.markdown = "".join(markdown)
+    syn.store(wikipage)
 
 
 def string_to_unix_epoch_time_milliseconds(string_time):
-    '''
-    This function takes dates in this format: 2018-10-25T20:16:07.959Z
+    """
+    Takes dates in this format: 2018-10-25T20:16:07.959Z
     and turns it into unix epoch time in milliseconds
 
     Args:
         string_time: string in this format: 2018-10-25T20:16:07.959Z
-    '''
+
+    Returns:
+        unix epoch time in milliseconds
+    """
     datetime_obj = datetime.datetime.strptime(
         string_time.split(".")[0], "%Y-%m-%dT%H:%M:%S")
-    return(synapseclient.utils.to_unix_epoch_time(datetime_obj))
+    return synapseclient.utils.to_unix_epoch_time(datetime_obj)
 
 
 def update_data_release_file_table(syn, database_mappingdf):
+    """
+    Updates data release file table
+
+    Args:
+        syn: synapse object
+        database_mappingdf: mapping between synapse ids and database
+    """
     release_folder_fileview_synid = database_mappingdf['Id'][
         database_mappingdf['Database'] == 'releaseFolder'].values[0]
     release_folder = syn.tableQuery(
@@ -553,8 +569,8 @@ def update_data_release_file_table(syn, database_mappingdf):
     not_in_release_tabledf = release_folderdf[
         ~release_folderdf.name.isin(data_release_tabledf.release)]
 
-    for synid, name in \
-            zip(not_in_release_tabledf.id, not_in_release_tabledf.name):
+    for synid, name in zip(not_in_release_tabledf.id,
+                           not_in_release_tabledf.name):
         release_files = syn.getChildren(synid)
 
         append_rows = [
@@ -571,11 +587,14 @@ def update_data_release_file_table(syn, database_mappingdf):
 
 def check_column_decreases(currentdf, olderdf):
     """
-    Check entity decreases
+    Checks entity decreases
 
     Args:
         current_ent: Current entity dataframe
         old_ent: Older entity dataframe
+
+    Returns:
+        Differences in values
     """
     diff_map = dict()
     for col in currentdf:
@@ -603,18 +622,18 @@ def check_column_decreases(currentdf, olderdf):
                 diff_map[col] = True
             else:
                 diff_map[col] = False
-    return(diff_map)
+    return diff_map
 
 
 def print_clinical_values_difference_table(syn, database_mappingdf):
-    '''
-    Function that checks for a decrease in values in the clinical file
+    """
+    Checks for a decrease in values in the clinical file
     from last consortium release to most recent consortium release
 
     Args:
         syn: synapse object
         database_mappingdf: mapping between synapse ids and database
-    '''
+    """
     release_folder_fileview_synid = database_mappingdf['Id'][
         database_mappingdf['Database'] == 'releaseFolder'].values[0]
 
@@ -713,22 +732,23 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
     clinical_key_decrease = syn.tableQuery("select * from {0}".format(
         clinical_key_decrease_synid))
     clinical_key_decreasedbdf = clinical_key_decrease.asDataFrame()
-    genie.process_functions.updateDatabase(
-        syn, clinical_key_decreasedbdf, center_decrease_mapping,
-        clinical_key_decrease_synid, ["CENTER"], to_delete=True)
+    process_functions.updateDatabase(syn, clinical_key_decreasedbdf,
+                                     center_decrease_mapping,
+                                     clinical_key_decrease_synid, ["CENTER"],
+                                     to_delete=True)
 
 
-def run_dashboard(
-        syn, database_mappingdf, release, staging=False, public=False):
-    '''
-    Function that runs the dashboard scripts
+def run_dashboard(syn, database_mappingdf, release, staging=False,
+                  public=False):
+    """
+    Runs the dashboard scripts
 
     Args:
         syn: synapse object
         database_mappingdf: mapping between synapse ids and database
         release: GENIE release (ie. 5.3-consortium)
 
-    '''
+    """
     update_release_numbers(syn, database_mappingdf, release=release)
 
     if not staging:
@@ -771,7 +791,7 @@ def main():
         help="Set true if releasing public release")
 
     args = parser.parse_args()
-    syn = genie.process_functions.synLogin(args)
+    syn = process_functions.synLogin(args)
     if args.staging:
         # Database to Synapse Id mapping Table
         database_mapping_synid = 'syn12094210'
@@ -782,12 +802,8 @@ def main():
         'select * from %s' % database_mapping_synid)
     database_mappingdf = database_mapping.asDataFrame()
 
-    run_dashboard(
-        syn,
-        database_mappingdf,
-        args.release,
-        staging=args.staging,
-        public=args.public)
+    run_dashboard(syn, database_mappingdf, args.release,
+                  staging=args.staging, public=args.public)
 
 
 if __name__ == "__main__":
