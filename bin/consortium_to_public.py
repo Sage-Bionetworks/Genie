@@ -45,6 +45,9 @@ def main(args):
     databaseSynIdMapping = syn.tableQuery(
         'select * from %s' % databaseSynIdMappingId)
     databaseSynIdMappingDf = databaseSynIdMapping.asDataFrame()
+    public_synid = databaseSynIdMappingDf['Id'][
+        databaseSynIdMappingDf['Database'] == 'public'].values[0]
+
     releaseSynId = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == 'release'].values[0]
 
@@ -71,13 +74,12 @@ def main(args):
         consortium_to_public.consortiumToPublic(
             syn, processingDate, args.genieVersion,
             args.releaseId, databaseSynIdMappingDf,
-            publicReleaseCutOff=args.publicReleaseCutOff,
-            staging=args.staging)
+            publicReleaseCutOff=args.publicReleaseCutOff)
 
-    database_to_staging.reviseMetadataFiles(syn,
-                                            args.staging,
-                                            databaseSynIdMappingDf,
-                                            args.genieVersion)
+    database_to_staging.revise_metadata_files(syn,
+                                              args.staging,
+                                              public_synid,
+                                              args.genieVersion)
 
     logger.info("CBIO VALIDATION")
     # Must be exit 0 because the validator sometimes fails,

@@ -1,11 +1,9 @@
+"""Converts consortium release files to public release files"""
 #! /usr/bin/env python3
-# import argparse
-# import datetime
+
 import logging
 import os
 import shutil
-# import subprocess
-# import time
 
 import synapseclient
 import synapseutils
@@ -14,30 +12,29 @@ import pandas as pd
 from . import process_functions
 from . import database_to_staging
 from . import create_case_lists
-# from . import dashboard_table_updater
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def storeFile(syn, filePath, parentId, genie_version,
-              name=None):
-    '''
-    Stores file with genie version as comment
+def storeFile(syn, filePath, parentId, genie_version, name=None):
+    """Stores file with genie version as comment
 
     Args:
         syn: Synapse object
         filePath: Path to file
         parentId: Synapse id of folder
 
-    '''
+    Returns:
+        Stored Entity
+    """
     if name is None:
         name = os.path.basename(filePath)
     file_ent = synapseclient.File(filePath, name=name, parent=parentId,
                                   versionComment=genie_version)
     file_ent = syn.store(file_ent)
-    return(file_ent)
+    return file_ent
 
 
 def commonVariantFilter(mafDf):
@@ -48,15 +45,14 @@ def commonVariantFilter(mafDf):
         mafDf: Maf dataframe
     '''
     mafDf['FILTER'] = mafDf['FILTER'].fillna("")
-    print(mafDf['FILTER'])
-    toKeep = ["common_variant" not in i for i in mafDf['FILTER']]
-    mafDf = mafDf[toKeep]
-    return(mafDf)
+    to_keep = ["common_variant" not in i for i in mafDf['FILTER']]
+    mafDf = mafDf[to_keep]
+    return mafDf
 
 
 def consortiumToPublic(syn, processingDate, genie_version,
                        releaseId, databaseSynIdMappingDf,
-                       publicReleaseCutOff=365, staging=False):
+                       publicReleaseCutOff=365):
     CNA_PATH = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
         "data_CNA_%s.txt" % genie_version)
@@ -94,7 +90,7 @@ def consortiumToPublic(syn, processingDate, genie_version,
     PUBLIC_RELEASE_PREVIEW = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == 'public'].values[0]
     PUBLIC_RELEASE_PREVIEW_CASELIST = \
-        database_to_staging.findCaseListId(syn, PUBLIC_RELEASE_PREVIEW)
+        database_to_staging.find_caselistid(syn, PUBLIC_RELEASE_PREVIEW)
 
     #######################################################################
     # Sponsored projects filter
@@ -120,14 +116,12 @@ def consortiumToPublic(syn, processingDate, genie_version,
     consortiumReleaseWalk = synapseutils.walk(syn, releaseId)
 
     consortiumRelease = next(consortiumReleaseWalk)
-    clinical = [
-        syn.get(synid, followLink=True)
-        for filename, synid in consortiumRelease[2]
-        if filename == "data_clinical.txt"][0]
-    gene_matrix = [
-        syn.get(synid, followLink=True)
-        for filename, synid in consortiumRelease[2]
-        if filename == "data_gene_matrix.txt"][0]
+    clinical = [syn.get(synid, followLink=True)
+                for filename, synid in consortiumRelease[2]
+                if filename == "data_clinical.txt"][0]
+    gene_matrix = [syn.get(synid, followLink=True)
+                   for filename, synid in consortiumRelease[2]
+                   if filename == "data_gene_matrix.txt"][0]
 
     clinicalDf = pd.read_csv(clinical.path, sep="\t", comment="#")
     gene_matrixdf = pd.read_csv(gene_matrix.path, sep="\t")
@@ -144,9 +138,8 @@ def consortiumToPublic(syn, processingDate, genie_version,
     existing_seq_dates = \
         clinicalDf.SEQ_DATE[clinicalDf.SAMPLE_ID.isin(publicReleaseSamples)]
 
-    logger.info(
-        "SEQ_DATES for public release: "
-        ", ".join(set(existing_seq_dates.astype(str))))
+    logger.info("SEQ_DATES for public release: " +
+                ", ".join(set(existing_seq_dates.astype(str))))
 
     # Clinical release scope filter
     # If consortium -> Don't release to public
@@ -181,9 +174,17 @@ def consortiumToPublic(syn, processingDate, genie_version,
     mapping = mapping_table.asDataFrame()
     genePanelEntities = []
     for entName, entId in consortiumRelease[2]:
-        if "data_linear" in entName or "meta_" in entName:
+        # skip files to convert
+        if (entName.startswith("data_linear")
+                or "meta_" in entName
+                or entName.endswith(".html")
+                or entName in ["data_clinical_sample.txt",
+                               "data_gene_matrix.txt",
+                               "data_clinical_patient.txt"]):
+            # data_gene_matrix was processed above because it had to be
+            # used for generating caselists
             continue
-        elif entName == "data_clinical.txt":
+        if entName == "data_clinical.txt":
             patientCols = publicRelease['fieldName'][
                 publicRelease['level'] == "patient"].tolist()
             sampleCols = ["PATIENT_ID"]
@@ -196,16 +197,15 @@ def consortiumToPublic(syn, processingDate, genie_version,
             # Delete columns that are private scope
             # for private in privateRelease:
             #   del clinicalDf[private]
-            process_functions.addClinicalHeaders(
-                clinicalDf, mapping, patientCols, sampleCols,
-                CLINICAL_SAMPLE_PATH, CLINICAL_PATIENT_PATH)
+            process_functions.addClinicalHeaders(clinicalDf, mapping,
+                                                 patientCols, sampleCols,
+                                                 CLINICAL_SAMPLE_PATH,
+                                                 CLINICAL_PATIENT_PATH)
 
-            storeFile(
-                syn, CLINICAL_SAMPLE_PATH, PUBLIC_RELEASE_PREVIEW,
-                genie_version, name="data_clinical_sample.txt")
-            storeFile(
-                syn, CLINICAL_PATIENT_PATH, PUBLIC_RELEASE_PREVIEW,
-                genie_version, name="data_clinical_patient.txt")
+            storeFile(syn, CLINICAL_SAMPLE_PATH, PUBLIC_RELEASE_PREVIEW,
+                      genie_version, name="data_clinical_sample.txt")
+            storeFile(syn, CLINICAL_PATIENT_PATH, PUBLIC_RELEASE_PREVIEW,
+                      genie_version, name="data_clinical_patient.txt")
 
         elif "mutation" in entName:
             mutation = syn.get(entId, followLink=True)
@@ -252,25 +252,15 @@ def consortiumToPublic(syn, processingDate, genie_version,
             text = process_functions.removeFloat(segDf)
             with open(SEG_PATH, "w") as segFile:
                 segFile.write(text)
-            storeFile(
-                syn, SEG_PATH, PUBLIC_RELEASE_PREVIEW, genie_version,
-                name="genie_public_data_cna_hg19.seg")
-        elif entName == "data_gene_matrix.txt":
-            pass
-            # This file was processed above because it had to be used for generating caselists
-            # panel = syn.get(entId, followLink=True)
-            # panelDf = pd.read_csv(panel.path, sep="\t")
-            # panelDf = panelDf[panelDf['SAMPLE_ID'].isin(publicReleaseSamples)]
-            # panelDf.to_csv(DATA_GENE_PANEL_PATH,sep="\t",index=False)
-            # storeFile(syn, DATA_GENE_PANEL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_gene_matrix.txt")
+            storeFile(syn, SEG_PATH, PUBLIC_RELEASE_PREVIEW, genie_version,
+                      name="genie_public_data_cna_hg19.seg")
         elif entName == "genomic_information.txt":
             bed = syn.get(entId, followLink=True)
             bedDf = pd.read_csv(bed.path, sep="\t")
             bedDf = bedDf[bedDf.SEQ_ASSAY_ID.isin(allClin.SEQ_ASSAY_ID)]
             bedDf.to_csv(COMBINED_BED_PATH,sep="\t",index=False)
-            storeFile(syn, COMBINED_BED_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="genomic_information.txt")
-        elif entName in ["data_clinical_sample.txt", "data_clinical_patient.txt"] or entName.endswith(".html"):
-            continue
+            storeFile(syn, COMBINED_BED_PATH, PUBLIC_RELEASE_PREVIEW,
+                      genie_version, name="genomic_information.txt")
         elif entName.startswith("data_gene_panel"):
             genePanel = syn.get(entId, followLink=True)
             # Create new gene panel naming and store
@@ -299,7 +289,7 @@ def consortiumToPublic(syn, processingDate, genie_version,
             # Set version comment
             copiedEnt.versionComment = genie_version
             syn.store(copiedEnt, forceVersion=False)
-    return((caseListEntities, genePanelEntities))
+    return caseListEntities, genePanelEntities
 
 
 # Check to see if can use createLinkVersion from db_to_stage
@@ -339,8 +329,8 @@ def createLinkVersion(syn, genie_version, caseListEntities,
         secondReleaseFolderSynId = syn.store(
             synapseclient.Folder(genie_version, parent=mainReleaseFolderId)).id
 
-    caselistId = database_to_staging.findCaseListId(
-        syn, secondReleaseFolderSynId)
+    caselistId = database_to_staging.find_caselistid(syn,
+                                                     secondReleaseFolderSynId)
 
     publicRelease = syn.getChildren(publicSynId)
     # Link public release files
