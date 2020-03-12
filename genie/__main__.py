@@ -93,11 +93,9 @@ def main():
     """Invoke"""
     args = build_parser().parse_args()
     syn = synapse_login(args.syn_user, args.syn_pass)
-    if 'func' in args:
-        try:
-            args.func(syn, args)
-        except Exception:
-            raise
+    # func has to match the set_defaults
+    args.func(syn, args)
+
 
 
 if __name__ == "__main__":
