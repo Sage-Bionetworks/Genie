@@ -395,9 +395,9 @@ kable(table(subset_mut$Center, subset_mut$blacklist),
 par(mar = c(10,3,3,1))
 barplot(sort(log(table(this_mut$FILTER)),decreasing = T),
         main = "Log Distribution of Mutation FILTERs", las = 2)
-#plotPrimarySites(this_samples,
-#                 "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2018_06_01",
-#                 "%s")
+# plotPrimarySites(this_samples,
+#                  "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2018_06_01",
+#                  "%s")
 #Center X Race
 plotCenterXRace(this_patient)
 #Center X Ethnicity
