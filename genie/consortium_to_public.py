@@ -53,31 +53,31 @@ def commonVariantFilter(mafDf):
 def consortiumToPublic(syn, processingDate, genie_version,
                        releaseId, databaseSynIdMappingDf,
                        publicReleaseCutOff=365):
-    CNA_PATH = os.path.join(
+    cna_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
         "data_CNA_%s.txt" % genie_version)
-    CLINICAL_PATH = os.path.join(
+    clinical_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
         'data_clinical_%s.txt' % genie_version)
-    CLINICAL_SAMPLE_PATH = os.path.join(
+    clinical_sample_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
         'data_clinical_sample_%s.txt' % genie_version)
-    CLINICAL_PATIENT_PATH = os.path.join(
+    clinicl_patient_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
         'data_clinical_patient_%s.txt' % genie_version)
-    DATA_GENE_PANEL_PATH = os.path.join(
+    data_gene_panel_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
         'data_gene_matrix_%s.txt' % genie_version)
-    MUTATIONS_PATH = os.path.join(
+    mutations_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
         'data_mutations_extended_%s.txt' % genie_version)
-    FUSIONS_PATH = os.path.join(
+    fusions_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
         'data_fusions_%s.txt' % genie_version)
-    SEG_PATH = os.path.join(
+    seg_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
         'genie_public_data_cna_hg19_%s.seg' % genie_version)
-    COMBINED_BED_PATH = os.path.join(
+    combined_bed_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
         'genie_combined_%s.bed' % genie_version)
 
@@ -87,10 +87,10 @@ def consortiumToPublic(syn, processingDate, genie_version,
         os.mkdir(database_to_staging.CASE_LIST_PATH)
 
     # public release preview
-    PUBLIC_RELEASE_PREVIEW = databaseSynIdMappingDf['Id'][
+    public_release_preview = databaseSynIdMappingDf['Id'][
         databaseSynIdMappingDf['Database'] == 'public'].values[0]
-    PUBLIC_RELEASE_PREVIEW_CASELIST = \
-        database_to_staging.find_caselistid(syn, PUBLIC_RELEASE_PREVIEW)
+    public_release_preview_caselist = \
+        database_to_staging.find_caselistid(syn, public_release_preview)
 
     #######################################################################
     # Sponsored projects filter
@@ -148,17 +148,17 @@ def consortiumToPublic(syn, processingDate, genie_version,
     publicRelease = clinicalReleaseScope.asDataFrame()
 
     allClin = clinicalDf[clinicalDf['SAMPLE_ID'].isin(publicReleaseSamples)]
-    allClin.to_csv(CLINICAL_PATH, sep="\t", index=False)
+    allClin.to_csv(clinical_path, sep="\t", index=False)
 
     gene_matrixdf = \
         gene_matrixdf[gene_matrixdf['SAMPLE_ID'].isin(publicReleaseSamples)]
-    gene_matrixdf.to_csv(DATA_GENE_PANEL_PATH, sep="\t", index=False)
-    storeFile(syn, DATA_GENE_PANEL_PATH, PUBLIC_RELEASE_PREVIEW, genie_version,
+    gene_matrixdf.to_csv(data_gene_panel_path, sep="\t", index=False)
+    storeFile(syn, data_gene_panel_path, public_release_preview, genie_version,
               name="data_gene_matrix.txt")
-    storeFile(syn, CLINICAL_PATH, PUBLIC_RELEASE_PREVIEW, genie_version,
+    storeFile(syn, clinical_path, public_release_preview, genie_version,
               name="data_clinical.txt")
 
-    create_case_lists.main(CLINICAL_PATH, DATA_GENE_PANEL_PATH,
+    create_case_lists.main(clinical_path, data_gene_panel_path,
                            database_to_staging.CASE_LIST_PATH, "genie_public")
 
     caseListFiles = os.listdir(database_to_staging.CASE_LIST_PATH)
@@ -166,7 +166,7 @@ def consortiumToPublic(syn, processingDate, genie_version,
     for casePath in caseListFiles:
         casePath = os.path.join(database_to_staging.CASE_LIST_PATH, casePath)
         caseListEntities.append(
-            storeFile(syn, casePath, PUBLIC_RELEASE_PREVIEW_CASELIST,
+            storeFile(syn, casePath, public_release_preview_caselist,
                       genie_version))
 
     # Grab mapping table to fill in clinical headers
@@ -199,12 +199,12 @@ def consortiumToPublic(syn, processingDate, genie_version,
             #   del clinicalDf[private]
             process_functions.addClinicalHeaders(clinicalDf, mapping,
                                                  patientCols, sampleCols,
-                                                 CLINICAL_SAMPLE_PATH,
-                                                 CLINICAL_PATIENT_PATH)
+                                                 clinical_sample_path,
+                                                 clinicl_patient_path)
 
-            storeFile(syn, CLINICAL_SAMPLE_PATH, PUBLIC_RELEASE_PREVIEW,
+            storeFile(syn, clinical_sample_path, public_release_preview,
                       genie_version, name="data_clinical_sample.txt")
-            storeFile(syn, CLINICAL_PATIENT_PATH, PUBLIC_RELEASE_PREVIEW,
+            storeFile(syn, clinicl_patient_path, public_release_preview,
                       genie_version, name="data_clinical_patient.txt")
 
         elif "mutation" in entName:
@@ -215,9 +215,9 @@ def consortiumToPublic(syn, processingDate, genie_version,
             mutationDf = mutationDf[
                 mutationDf['Tumor_Sample_Barcode'].isin(publicReleaseSamples)]
             text = process_functions.removeFloat(mutationDf)
-            with open(MUTATIONS_PATH, 'w') as f:
+            with open(mutations_path, 'w') as f:
                 f.write(text)
-            storeFile(syn, MUTATIONS_PATH, PUBLIC_RELEASE_PREVIEW,
+            storeFile(syn, mutations_path, public_release_preview,
                       genie_version, name="data_mutations_extended.txt")
 
         elif "fusion" in entName:
@@ -225,9 +225,9 @@ def consortiumToPublic(syn, processingDate, genie_version,
             fusionDf = pd.read_csv(fusion.path, sep="\t")
             fusionDf = fusionDf[
                 fusionDf['Tumor_Sample_Barcode'].isin(publicReleaseSamples)]
-            fusionDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
+            fusionDf.to_csv(fusions_path, sep="\t", index=False)
             storeFile(
-                syn, FUSIONS_PATH, PUBLIC_RELEASE_PREVIEW,
+                syn, fusions_path, public_release_preview,
                 genie_version, name="data_fusions.txt")
         elif "CNA" in entName:
             cna = syn.get(entId, followLink=True)
@@ -240,26 +240,26 @@ def consortiumToPublic(syn, processingDate, genie_version,
                 "\t\t", "\tNA\t").replace(
                 "\t\t", "\tNA\t").replace(
                 '\t\n', "\tNA\n")
-            with open(CNA_PATH, "w") as cnaFile:
+            with open(cna_path, "w") as cnaFile:
                 cnaFile.write(text)
             storeFile(
-                syn, CNA_PATH, PUBLIC_RELEASE_PREVIEW,
+                syn, cna_path, public_release_preview,
                 genie_version, name="data_CNA.txt")
         elif entName.endswith(".seg"):
             seg = syn.get(entId, followLink=True)
             segDf = pd.read_csv(seg.path, sep="\t")
             segDf = segDf[segDf['ID'].isin(publicReleaseSamples)]
             text = process_functions.removeFloat(segDf)
-            with open(SEG_PATH, "w") as segFile:
+            with open(seg_path, "w") as segFile:
                 segFile.write(text)
-            storeFile(syn, SEG_PATH, PUBLIC_RELEASE_PREVIEW, genie_version,
+            storeFile(syn, seg_path, public_release_preview, genie_version,
                       name="genie_public_data_cna_hg19.seg")
         elif entName == "genomic_information.txt":
             bed = syn.get(entId, followLink=True)
             bedDf = pd.read_csv(bed.path, sep="\t")
             bedDf = bedDf[bedDf.SEQ_ASSAY_ID.isin(allClin.SEQ_ASSAY_ID)]
-            bedDf.to_csv(COMBINED_BED_PATH,sep="\t",index=False)
-            storeFile(syn, COMBINED_BED_PATH, PUBLIC_RELEASE_PREVIEW,
+            bedDf.to_csv(combined_bed_path,sep="\t",index=False)
+            storeFile(syn, combined_bed_path, public_release_preview,
                       genie_version, name="genomic_information.txt")
         elif entName.startswith("data_gene_panel"):
             genePanel = syn.get(entId, followLink=True)
@@ -275,13 +275,13 @@ def consortiumToPublic(syn, processingDate, genie_version,
             entName = "_".join(newFileList)
             entName = entName + ".txt"
             genepanel_ent = storeFile(
-                syn, genePanelPath, PUBLIC_RELEASE_PREVIEW,
+                syn, genePanelPath, public_release_preview,
                 genie_version, name=entName)
             genePanelEntities.append(genepanel_ent)
         else:
             ent = syn.get(entId, followLink=True, downloadFile=False)
             copiedId = synapseutils.copy(
-                syn, ent, PUBLIC_RELEASE_PREVIEW,
+                syn, ent, public_release_preview,
                 version=ent.versionNumber,
                 updateExisting=True, setProvenance=None,
                 skipCopyAnnotations=True)
