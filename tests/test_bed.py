@@ -1,10 +1,31 @@
+"""Test GENIE Bed class"""
+import tempfile
+import shutil
+import mock
+from mock import patch
+import pytest
+
 import synapseclient
 import pandas as pd
-import mock
-import pytest
-from genie import bed
-from genie import bedSP
+from pandas.testing import assert_frame_equal
 
+import genie.bed
+from genie.bed import bed
+from genie.bedSP import bedSP
+
+if not shutil.which('bedtools'):
+    pytest.skip("bedtools is not found, skipping bed tests", 
+                allow_module_level=True)
+
+GENE_GTF_TEXT = '2\tprotein_coding\tgene\t69688532\t69901481\t.\t-\t.\tgene_id "ENSG00000115977"; gene_name "AAK1"; gene_source "ensembl_havana"; gene_biotype "protein_coding";\n9\tprotein_coding\tgene\t99401859\t99417585\t.\t-\t.\tgene_id "ENSG00000158122"; gene_name "AAED1"; gene_source "ensembl_havana"; gene_biotype "protein_coding";\n12\tprotein_coding\tgene\t53701240\t53718648\t.\t-\t.\tgene_id "ENSG00000094914"; gene_name "AAAS"; gene_source "ensembl_havana"; gene_biotype "protein_coding";\n19\tprotein_coding\tgene\t44047192\t44084625\t.\t-\t.\tgene_id "ENSG00000073050"; gene_name "XRCC1"; gene_source "ensembl_havana"; gene_biotype "protein_coding";\n19\tprotein_coding\tgene\t44080952\t44088116\t.\t+\t.\tgene_id "ENSG00000234465"; gene_name "PINLYP"; gene_source "ensembl_havana"; gene_biotype "protein_coding";'
+EXON_GTF_TEXT = '2\tprocessed_transcript\texon\t69688432\t69689532\t.\t-\t.\tgene_id "ENSG00000115977"; transcript_id "ENST00000492192"; exon_number "2"; gene_name "AAK1"; gene_source "ensembl_havana"; gene_biotype "protein_coding"; transcript_name "AAK1-009"; transcript_source "havana"; exon_id "ENSE00001882560";\n9\tprotein_coding\texon\t99416987\t99417030\t.\t-\t.\tgene_id "ENSG00000158122"; transcript_id "ENST00000411939"; exon_number "1"; gene_name "AAED1"; gene_source "ensembl_havana"; gene_biotype "protein_coding"; transcript_name "AAED1-003"; transcript_source "havana"; exon_id "ENSE00001768346"; tag "cds_start_NF"; tag "mRNA_start_NF";\n12\tretained_intron\texon\t53702509\t53702599\t.\t-\t.\tgene_id "ENSG00000094914"; transcript_id "ENST00000550033"; exon_number "4"; gene_name "AAAS"; gene_source "ensembl_havana"; gene_biotype "protein_coding"; transcript_name "AAAS-019"; transcript_source "havana"; exon_id "ENSE00003694270";\n19\tprotein_coding\texon\t44084517\t44084625\t.\t-\t.\tgene_id "ENSG00000073050"; transcript_id "ENST00000598165"; exon_number "1"; gene_name "XRCC1"; gene_source "ensembl_havana"; gene_biotype "protein_coding"; transcript_name "XRCC1-008"; transcript_source "havana"; exon_id "ENSE00003137784"; tag "cds_end_NF"; tag "mRNA_end_NF";\n19\tprotein_coding\texon\t44084696\t44084739\t.\t+\t.\tgene_id "ENSG00000234465"; transcript_id "ENST00000562255"; exon_number "1"; gene_name "PINLYP"; gene_source "ensembl_havana"; gene_biotype "protein_coding"; transcript_name "PINLYP-001"; transcript_source "havana"; tag "CCDS"; ccds_id "CCDS58667"; exon_id "ENSE00002599477";'
+GENE_TEMP = tempfile.NamedTemporaryFile()
+EXON_TEMP = tempfile.NamedTemporaryFile()
+
+with open(GENE_TEMP.name, "w") as gene:
+    gene.write(GENE_GTF_TEXT)
+with open(EXON_TEMP.name, "w") as exon:
+    exon.write(EXON_GTF_TEXT)
 
 def create_mock_table(dataframe):
     table = mock.create_autospec(synapseclient.table.CsvFileTable)
@@ -37,7 +58,7 @@ bedsp_class = bedSP(syn, "SAGE")
 
 
 def test_perfect___process():
-
+    """Process perfect bed file"""
     expected_beddf = pd.DataFrame(dict(
         Chromosome=['2', '9', '12', '19', '19'],
         Start_Position=[69688533, 99401860, 53701241, 44084466, 44084466],
@@ -60,15 +81,23 @@ def test_perfect___process():
         3: ['AAK1', 'AAED1', 'AAAS', 'XRCC1', 'foo'],
         4: [True, True, True, 1, 1],
         5: [True, True, False, 0, 1]})
-
-    new_beddf = bed_class._process(
-        beddf, seq_assay_id, new_path, parentid, createPanel=False)
-    new_beddf.sort_values("ID", inplace=True)
-    new_beddf.reset_index(drop=True, inplace=True)
-    assert expected_beddf.equals(new_beddf[expected_beddf.columns])
+    with patch.object(genie.bed, "create_gtf",
+                      return_value=(EXON_TEMP.name, GENE_TEMP.name)):
+        new_beddf = bed_class._process(
+            beddf, seq_assay_id, new_path, parentid, create_panel=False)
+        new_beddf.sort_values("ID", inplace=True)
+        new_beddf.reset_index(drop=True, inplace=True)
+        assert_frame_equal(expected_beddf,
+                           new_beddf[expected_beddf.columns],
+                           check_dtype=False)
 
 
 def test_includeinpanel___process():
+    """
+    Make sure includeInPanel column is propogated and
+    intergenic region is captured
+    """
+
     expected_beddf = pd.DataFrame(dict(
         Chromosome=['2', '9', '12', '19'],
         Start_Position=[69688432, 1111, 53700240, 44080953],
@@ -92,12 +121,15 @@ def test_includeinpanel___process():
         2: [69689532, 1111, 53719548, 44084624],
         3: ['foo', 'bar', 'baz', 'boo'],
         4: [True, True, 0, 1]})
-
-    new_beddf = bedsp_class._process(
-        beddf, seq_assay_id, new_path, parentid, createPanel=False)
-    new_beddf.sort_values("Chromosome", inplace=True)
-    new_beddf.reset_index(drop=True, inplace=True)
-    assert expected_beddf.equals(new_beddf[expected_beddf.columns])
+    with patch.object(genie.bed, "create_gtf",
+                      return_value=(EXON_TEMP.name, GENE_TEMP.name)):
+        new_beddf = bedsp_class._process(
+            beddf, seq_assay_id, new_path, parentid, create_panel=False)
+        new_beddf.sort_values("Chromosome", inplace=True)
+        new_beddf.reset_index(drop=True, inplace=True)
+        assert_frame_equal(expected_beddf,
+                        new_beddf[expected_beddf.columns],
+                        check_dtype=False)
 
 
 def test_clinicalreport___process():
@@ -125,12 +157,15 @@ def test_clinicalreport___process():
         3: ['foo', 'bar', 'baz', 'boo'],
         4: [True, True, False, True],
         5: [True, float('nan'), False, True]})
-
-    new_beddf = bedsp_class._process(
-        beddf, seq_assay_id, new_path, parentid, createPanel=False)
-    new_beddf.sort_values("Chromosome", inplace=True)
-    new_beddf.reset_index(drop=True, inplace=True)
-    assert expected_beddf.equals(new_beddf[expected_beddf.columns])
+    with patch.object(genie.bed, "create_gtf",
+                      return_value=(EXON_TEMP.name, GENE_TEMP.name)):
+        new_beddf = bedsp_class._process(
+            beddf, seq_assay_id, new_path, parentid, create_panel=False)
+        new_beddf.sort_values("Chromosome", inplace=True)
+        new_beddf.reset_index(drop=True, inplace=True)
+        assert_frame_equal(expected_beddf,
+                        new_beddf[expected_beddf.columns],
+                        check_dtype=False)
 
 
 def test_filetype():
@@ -254,15 +289,19 @@ def test_90percentboundary_failure__validate():
 
 
 def test_overlapping__validate():
-    # Test overlapping boundary with correct gene names
-    bedDf = pd.DataFrame(dict(
-        a=['2', '9'],
-        b=[1111, 4345],
-        c=[69880186, 99417590],
-        d=['AAK1', 'AAED1'],
-        e=[True, False]))
-
-    error, warning = bedsp_class._validate(bedDf)
+    """
+    Check if genes that overlap have no errors
+    - Submitted bed start position in a gene
+    - Submitted bed end position in a gene
+    - Submitted bed region surrounds a gene
+    """
+    beddf = pd.DataFrame(dict(
+        a=['2', '9', '2'],
+        b=[1111, 4345, 69901281],
+        c=[69880186, 99417590, 70000000],
+        d=['AAK1', 'AAED1', 'AAK1'],
+        e=[True, False, True]))
+    error, warning = bedsp_class._validate(beddf)
     assert error == ""
     assert warning == ""
 

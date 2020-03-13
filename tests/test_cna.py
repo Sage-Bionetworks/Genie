@@ -1,8 +1,10 @@
-import synapseclient
-import pandas as pd
 import mock
 import pytest
-from genie import cna
+
+import pandas as pd
+import synapseclient
+
+from genie.cna import cna
 
 
 def createMockTable(dataframe):

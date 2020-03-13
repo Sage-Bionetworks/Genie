@@ -1,6 +1,4 @@
-from __future__ import absolute_import
-from genie import seg
-
+from .seg import seg
 
 class cbs(seg):
     '''

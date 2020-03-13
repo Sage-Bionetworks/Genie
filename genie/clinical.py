@@ -1,10 +1,15 @@
-from __future__ import absolute_import
-from genie import FileTypeFormat, process_functions
+import datetime
 import os
 import logging
+import subprocess
+import yaml
+
 import pandas as pd
 import synapseclient
-import datetime
+
+from .example_filetype_format import FileTypeFormat
+from . import process_functions
+
 logger = logging.getLogger(__name__)
 
 
@@ -33,11 +38,11 @@ class clinical(FileTypeFormat):
     # _process_kwargs = [
     #     "newPath", "patientSynId", "sampleSynId",
     #     "parentId", "retractedSampleSynId", "retractedPatientSynId"]
-
     _process_kwargs = [
-        "newPath", "parentId", "databaseToSynIdMappingDf", "oncotreeLink"]
+        "newPath", "parentId", "databaseToSynIdMappingDf", "oncotree_link",
+        'clinicalTemplate', 'sample', 'patient', 'patientCols', 'sampleCols']
 
-    _validation_kwargs = ["oncotreeLink"]
+    _validation_kwargs = ["oncotree_link"]
 
     # VALIDATE FILE NAME
     def _validateFilename(self, filePath):
@@ -191,18 +196,18 @@ class clinical(FileTypeFormat):
 
         return(clinicalRemapped)
 
-    def process_steps(self, filePath,
-                      databaseToSynIdMappingDf, newPath,
-                      parentId, oncotreeLink):
-        patientSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == "patient"][0]
-        sampleSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == "sample"][0]
+    def preprocess(self, newpath):
+        '''
+        Gather preprocess parameters
 
-        clinicalDf = pd.read_csv(filePath, sep="\t", comment="#")
+        Args:
+            filePath: Path to file
 
-        patient = False
-        sample = False
+        Returns:
+            dict with keys - 'clinicalTemplate', 'sample', 'patient',
+                             'patientCols', 'sampleCols'
+        '''
+        entity_name = os.path.basename(newpath)
         # These synapse ids for the clinical tier release scope is
         # hardcoded because it never changes
         patientColsTable = self.syn.tableQuery(
@@ -214,17 +219,33 @@ class clinical(FileTypeFormat):
             'and inClinicalDb is True')
         sampleCols = sampleColsTable.asDataFrame()['fieldName'].tolist()
 
-        if "patient" in filePath.lower():
+        if "patient" in entity_name.lower():
             clinicalTemplate = pd.DataFrame(columns=patientCols)
+            sample = False
             patient = True
-        elif "sample" in filePath.lower():
+        elif "sample" in entity_name.lower():
             clinicalTemplate = pd.DataFrame(columns=sampleCols)
             sample = True
+            patient = False
         else:
             clinicalTemplate = pd.DataFrame(
                 columns=set(patientCols + sampleCols))
             sample = True
             patient = True
+        return({'clinicalTemplate': clinicalTemplate,
+                'sample': sample,
+                'patient': patient,
+                'patientCols': patientCols,
+                'sampleCols': sampleCols})
+
+    def process_steps(self, clinicalDf,
+                      databaseToSynIdMappingDf, newPath,
+                      parentId, oncotree_link, clinicalTemplate,
+                      sample, patient, patientCols, sampleCols):
+        patientSynId = databaseToSynIdMappingDf.Id[
+            databaseToSynIdMappingDf['Database'] == "patient"][0]
+        sampleSynId = databaseToSynIdMappingDf.Id[
+            databaseToSynIdMappingDf['Database'] == "sample"][0]
 
         newClinicalDf = self._process(clinicalDf, clinicalTemplate)
 
@@ -248,7 +269,7 @@ class clinical(FileTypeFormat):
             # Exclude all clinical samples with wrong oncotree codes
             oncotree_mapping = pd.DataFrame()
             oncotree_mapping_dict = \
-                process_functions.get_oncotree_code_mappings(oncotreeLink)
+                process_functions.get_oncotree_code_mappings(oncotree_link)
             # Add in unknown key for oncotree code
             oncotree_mapping_dict['UNKNOWN'] = {}
             oncotree_mapping['ONCOTREE_CODE'] = oncotree_mapping_dict.keys()
@@ -268,7 +289,7 @@ class clinical(FileTypeFormat):
         return(newPath)
 
     # VALIDATION
-    def _validate(self, clinicalDF, oncotreeLink):
+    def _validate(self, clinicalDF, oncotree_link):
         """
         This function validates the clinical file to make sure it adhere
         to the clinical SOP.
@@ -276,7 +297,7 @@ class clinical(FileTypeFormat):
         Args:
             clinicalDF: Merged clinical file with patient and sample
                         information
-            oncotreeLink: Link to oncotree
+            oncotree_link: Link to oncotree
 
         Returns:
             Error message
@@ -287,11 +308,11 @@ class clinical(FileTypeFormat):
         clinicalDF.columns = [col.upper() for col in clinicalDF.columns]
         clinicalDF = clinicalDF.fillna("")
 
-        # oncotree_mapping = process_functions.get_oncotree_codes(oncotreeLink)
+        # oncotree_mapping = process_functions.get_oncotree_codes(oncotree_link)
         # if oncotree_mapping.empty:
         oncotree_mapping = pd.DataFrame()
         oncotree_mapping_dict = \
-            process_functions.get_oncotree_code_mappings(oncotreeLink)
+            process_functions.get_oncotree_code_mappings(oncotree_link)
         oncotree_mapping['ONCOTREE_CODE'] = oncotree_mapping_dict.keys()
 
         sampleType_mapping = \
