@@ -19,6 +19,8 @@ class mutationsInCis(FileTypeFormat):
 
     _fileType = "mutationsInCis"
 
+    _validation_kwargs = ['project_id']
+
     def _get_dataframe(self, filePathList):
         '''
         Mutation In Cis is a csv file
@@ -37,24 +39,43 @@ class mutationsInCis(FileTypeFormat):
         mutationInCis.to_csv(newPath, sep="\t",index=False)
         return(newPath)
 
-    def _validate(self, mutationInCisDf):
-        mutationInCisSynId = process_functions.getDatabaseSynId(self.syn, "mutationsInCis", test=self.testing)
+    def _validate(self, mutationInCisDf, project_id):
+        project = self.syn.get(project_id)
+        database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
+        databaseToSynIdMapping = self.syn.tableQuery('SELECT * FROM {}'.format(database_to_synid_mapping_synid))
+        databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
+        mutationInCisSynId = process_functions.getDatabaseSynId(self.syn, "mutationsInCis",
+                                                                databaseToSynIdMappingDf=databaseToSynIdMappingDf)
         #Pull down the correct database
-        existingMergeCheck = self.syn.tableQuery("select * from %s where Center = '%s'" % (mutationInCisSynId,self.center))
+        existingMergeCheck = self.syn.tableQuery("select * from {} where Center = '{}'".format(mutationInCisSynId,
+                                                                                               self.center))
         existingMergeCheckDf = existingMergeCheck.asDataFrame()
 
         total_error = ""
         warning = ""
-        REQUIRED_HEADERS = pd.Series(['Flag','Center','Tumor_Sample_Barcode','Hugo_Symbol','HGVSp_Short','Variant_Classification','Chromosome','Start_Position','Reference_Allele','Tumor_Seq_Allele2','t_alt_count_num','t_depth'])
-        primaryKeys = ['Tumor_Sample_Barcode', 'HGVSp_Short', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2']
-        if not all(REQUIRED_HEADERS.isin(mutationInCisDf.columns)):
-            total_error += "Mutations In Cis Filter File: Must at least have these headers: %s.\n" % ",".join(REQUIRED_HEADERS[~REQUIRED_HEADERS.isin(mutationInCisDf.columns)])
+        required_headers = pd.Series(['Flag', 'Center', 'Tumor_Sample_Barcode',
+                                      'Hugo_Symbol', 'HGVSp_Short',
+                                      'Variant_Classification', 'Chromosome',
+                                      'Start_Position', 'Reference_Allele',
+                                      'Tumor_Seq_Allele2', 't_alt_count_num',
+                                      't_depth'])
+        primaryKeys = ['Tumor_Sample_Barcode', 'HGVSp_Short', 'Start_Position',
+                       'Reference_Allele', 'Tumor_Seq_Allele2']
+        if not all(required_headers.isin(mutationInCisDf.columns)):
+            missing_headers = required_headers[~required_headers.isin(mutationInCisDf.columns)]
+            total_error += ("Mutations In Cis Filter File: "
+                            "Must at least have these headers: %s.\n" % ",".join(missing_headers))
         else:
             new = mutationInCisDf[primaryKeys].fillna("")
             existing = existingMergeCheckDf[primaryKeys].fillna("")
 
-            existing['primaryAll'] = [" ".join(values.astype(str)) for i, values in existing.iterrows()]
-            new['primaryAll'] = [" ".join(values.astype(str)) for i, values in new.iterrows()]
+            existing['primaryAll'] = [" ".join(values.astype(str))
+                                      for i, values in existing.iterrows()]
+            new['primaryAll'] = [" ".join(values.astype(str))
+                                 for i, values in new.iterrows()]
             if not all(new.primaryAll.isin(existing.primaryAll)):
-                total_error += "Mutations In Cis Filter File: All variants must come from the original mutationInCis_filtered_samples.csv file in each institution's staging folder.\n"
-        return(total_error, warning)
+                total_error += ("Mutations In Cis Filter File: "
+                                "All variants must come from the original "
+                                "mutationInCis_filtered_samples.csv file in "
+                                "each institution's staging folder.\n")
+        return total_error, warning
