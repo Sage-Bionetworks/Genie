@@ -213,6 +213,10 @@ class vcf(maf):
             if vcfdf.duplicated(primary_cols).any():
                 total_error += "Your vcf file should not have duplicate rows\n"
 
+            if vcfdf[['#CHROM', 'POS']].isnull().values.any():
+                total_error += ("Your vcf file may contain rows that are "
+                                "space delimited instead of tab delimited.\n")
+
         if len(vcfdf.columns) > 8:
             if "FORMAT" not in vcfdf.columns:
                 total_error += ("Your vcf file must have FORMAT header "
