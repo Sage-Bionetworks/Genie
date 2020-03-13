@@ -224,6 +224,7 @@ class argparser:
     filepath = "path.csv"
     nosymbol_check = False
     format_registry_packages = ["genie"]
+    project_id = "syn1234"
 
     def asDataFrame(self):
         database_dict = {"Database": ["centerMapping", 'oncotreeLink'],
@@ -288,6 +289,7 @@ def test_perform_validate():
         patch_check_center.assert_called_once_with(arg.center, ["try", "foo"])
         patch_get_onco.assert_called_once()
         patch_validate.assert_called_once_with(oncotree_link=arg.oncotree_link,
-                                               nosymbol_check=arg.nosymbol_check)
+                                               nosymbol_check=arg.nosymbol_check,
+                                               project_id=arg.project_id)
         patch_syn_upload.assert_called_once_with(
             syn, arg.filepath, valid, parentid=arg.parentid)
