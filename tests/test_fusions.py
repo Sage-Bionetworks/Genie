@@ -30,7 +30,7 @@ table_query_results_map = {
         createMockTable(symbols),
 }
 ENTITY = synapseclient.Project("testing",
-                               annotations={'dbMapping': "syn10967259"})
+                               annotations={'dbMapping': ["syn10967259"]})
 
 syn = mock.create_autospec(synapseclient.Synapse)
 syn.tableQuery.side_effect = table_query_results

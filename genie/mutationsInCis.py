@@ -40,10 +40,7 @@ class mutationsInCis(FileTypeFormat):
         return(newPath)
 
     def _validate(self, mutationInCisDf, project_id):
-        project = self.syn.get(project_id)
-        database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
-        databaseToSynIdMapping = self.syn.tableQuery('SELECT * FROM {}'.format(database_to_synid_mapping_synid))
-        databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
+        databaseToSynIdMappingDf = process_functions.get_synid_database_mappingdf(self.syn, project_id)
         mutationInCisSynId = process_functions.getDatabaseSynId(self.syn, "mutationsInCis",
                                                                 databaseToSynIdMappingDf=databaseToSynIdMappingDf)
         #Pull down the correct database

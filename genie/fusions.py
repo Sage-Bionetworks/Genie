@@ -117,11 +117,7 @@ class fusions(FileTypeFormat):
         if process_functions.checkColExist(fusionDF, "HUGO_SYMBOL") and not nosymbol_check:
            # logger.info("VALIDATING %s GENE SYMBOLS" % os.path.basename(filePath))
             #invalidated_genes = fusionDF["HUGO_SYMBOL"].drop_duplicates().apply(validateSymbol)
-            project = self.syn.get(project_id)
-            database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
-            databaseToSynIdMapping = self.syn.tableQuery(
-                'SELECT * FROM {}'.format(database_to_synid_mapping_synid))
-            databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
+            databaseToSynIdMappingDf = process_functions.get_synid_database_mappingdf(self.syn, project_id)
             bedSynId = process_functions.getDatabaseSynId(self.syn, "bed",
                                                           databaseToSynIdMappingDf=databaseToSynIdMappingDf)
             bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))

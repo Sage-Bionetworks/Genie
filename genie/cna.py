@@ -180,11 +180,7 @@ class cna(FileTypeFormat):
         else:
             cnvDF['HUGO_SYMBOL'] = keepSymbols
             if haveColumn and not nosymbol_check:
-                project = self.syn.get(project_id)
-                database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
-                databaseToSynIdMapping = self.syn.tableQuery(
-                    'SELECT * FROM {}'.format(database_to_synid_mapping_synid))
-                databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
+                databaseToSynIdMappingDf = process_functions.get_synid_database_mappingdf(self.syn, project_id)
                 bedSynId = process_functions.getDatabaseSynId(self.syn, "bed",
                                                               databaseToSynIdMappingDf=databaseToSynIdMappingDf)
                 bed = self.syn.tableQuery(
