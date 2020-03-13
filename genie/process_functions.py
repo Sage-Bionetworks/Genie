@@ -260,10 +260,9 @@ def get_synid_database_mappingdf(syn, project_id):
 
     project = syn.get(project_id)
     database_mapping_synid = project.annotations['dbMapping'][0]
-    
     database_map_query = "SELECT * FROM {}".format(database_mapping_synid)
     mappingdf = get_syntabledf(syn, database_map_query)
-    return(mappingdf)
+    return mappingdf
 
 
 def getDatabaseSynId(syn, tableName, project_id=None, databaseToSynIdMappingDf=None):
