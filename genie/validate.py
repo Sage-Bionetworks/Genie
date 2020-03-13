@@ -22,9 +22,8 @@ class ValidationHelper(object):
     # Overload this per class
     _validate_kwargs = []
 
-    def __init__(self, syn, project_id, center, filepathlist,
+    def __init__(self, syn, project_id, center, entitylist,
                  format_registry=config.PROCESS_FILES):
-
         """A validator helper class for a center's files.
 
         Args:
@@ -34,11 +33,9 @@ class ValidationHelper(object):
             filepathlist: a list of file paths.
             format_registry: A dictionary mapping file format name to the format class.
         """
-
         self._synapse_client = syn
-
         self._project = syn.get(project_id)
-        self.filepathlist = filepathlist
+        self.entitylist = entitylist
         self.center = center
         self._format_registry = format_registry
         self.file_type = self.determine_filetype()
@@ -59,7 +56,8 @@ class ValidationHelper(object):
         for file_format in self._format_registry:
             validator = self._format_registry[file_format](self._synapse_client, self.center)
             try:
-                filetype = validator.validateFilename(self.filepathlist)
+                filenames = [entity.name for entity in self.entitylist]
+                filetype = validator.validateFilename(filenames)
             except AssertionError:
                 continue
             # If valid filename, return file type.
@@ -73,7 +71,6 @@ class ValidationHelper(object):
         Returns:
             message: errors and warnings
             valid: Boolean value of validation status
-            filetype: String of the type of the file
         """
 
         if self.file_type not in self._format_registry:
@@ -89,13 +86,14 @@ class ValidationHelper(object):
 
             validator_cls = self._format_registry[self.file_type]
             validator = validator_cls(self._synapse_client, self.center)
-            valid, errors, warnings = validator.validate(filePathList=self.filepathlist,
+            filepathlist = [entity.path for entity in self.entitylist]
+            valid, errors, warnings = validator.validate(filePathList=filepathlist,
                                                          **mykwargs)
 
         # Complete error message
         message = collect_errors_and_warnings(errors, warnings)
 
-        return(valid, message, self.file_type)
+        return (valid, message)
 
 
 class GenieValidationHelper(ValidationHelper):
@@ -255,14 +253,16 @@ def _perform_validate(syn, args):
 
     format_registry = collect_format_types(args.format_registry_packages)
     logger.debug("Using {} file formats.".format(format_registry))
-    
+    entity_list = [synapseclient.File(name=filepath, path=filepath,
+                                      parentId=None)
+                   for filepath in args.filepath]
     validator = GenieValidationHelper(syn=syn, project_id=args.project_id,
                                       center=args.center,
-                                      filepathlist=args.filepath,
+                                      entitylist=entity_list,
                                       format_registry=format_registry)
     mykwargs = dict(oncotree_link=args.oncotree_link,
                     nosymbol_check=args.nosymbol_check)
-    valid, message, filetype = validator.validate_single_file(**mykwargs)
+    valid, message = validator.validate_single_file(**mykwargs)
 
     # Upload to synapse if parentid is specified and valid
     _upload_to_synapse(syn, args.filepath, valid, parentid=args.parentid)

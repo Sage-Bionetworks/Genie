@@ -396,8 +396,7 @@ def test_valid_validatefile():
                                     'error_list': [],
                                     'to_validate': True}) as patch_check, \
          patch.object(GenieValidationHelper,"validate_single_file",
-                      return_value=(valid, message,
-                                    filetype)) as patch_validate,\
+                      return_value=(valid, message)) as patch_validate,\
          patch.object(input_to_database, "_get_status_and_error_list",
                       return_value=status_error_list_results) as patch_get_staterror_list,\
          patch.object(input_to_database,
@@ -453,8 +452,7 @@ def test_invalid_validatefile():
                                     'error_list': [],
                                     'to_validate': True}) as patch_check, \
          patch.object(GenieValidationHelper, "validate_single_file",
-                      return_value=(valid, message,
-                                    filetype)) as patch_validate,\
+                      return_value=(valid, message)) as patch_validate,\
          patch.object(input_to_database, "_get_status_and_error_list",
                       return_value=status_error_list_results) as patch_get_staterror_list:
 
@@ -509,7 +507,7 @@ def test_already_validated_validatefile():
          patch.object(input_to_database, "check_existing_file_status",
                       return_value=check_file_status_dict) as patch_check, \
          patch.object(GenieValidationHelper, "validate_single_file",
-                      return_value=(valid, errors, filetype)) as patch_validate,\
+                      return_value=(valid, errors)) as patch_validate,\
          patch.object(input_to_database, "_get_status_and_error_list",
                       return_value=status_error_list_results) as patch_get_staterror_list,\
          patch.object(input_to_database,
@@ -739,6 +737,7 @@ def test_validation():
         'id': ['syn1234'],
         'status': ['VALIDATED'],
         'path': ["/path/to/file"],
+        'name': ['filename'],
         'fileType': ['clinical']})
 
     thread = 2
@@ -792,7 +791,7 @@ def test_validation():
             validationstatus_mock,
             errortracking_mock)
 
-        assert valid_filedf.equals(validation_statusdf[['id', 'path', 'fileType']])
+        assert valid_filedf.equals(validation_statusdf[['id', 'path', 'fileType', 'name']])
 
 
 @pytest.mark.parametrize(
@@ -804,12 +803,12 @@ def test_validation():
 )
 def test_main_processfile(process, genieclass, filetype):
     validfiles = {'id': ['syn1'],
-                  'path': ['/path/to/data_clinical_supp_SAGE.txt'],
-                  'fileType': [filetype]}
+                  'path': ['/path/to/data_clinical_supp.txt'],
+                  'fileType': [filetype],
+                  'name': ['data_clinical_supp_SAGE.txt']}
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    threads = 2
     oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
@@ -820,7 +819,7 @@ def test_main_processfile(process, genieclass, filetype):
 
     with patch.object(genieclass, "process") as patch_class:
         input_to_database.processfiles(
-            syn, validfilesdf, center, path_to_genie, threads,
+            syn, validfilesdf, center, path_to_genie,
             center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
@@ -834,11 +833,11 @@ def test_mainnone_processfile():
     '''
     validfiles = {'id': ['syn1'],
                   'path': ['/path/to/data_clinical_supp_SAGE.txt'],
-                  'fileType': [None]}
+                  'fileType': [None],
+                  'name': ['data_clinical_supp_SAGE.txt']}
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    threads = 2
     oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
@@ -849,7 +848,7 @@ def test_mainnone_processfile():
 
     with patch.object(clinical, "process") as patch_clin:
         input_to_database.processfiles(
-            syn, validfilesdf, center, path_to_genie, threads,
+            syn, validfilesdf, center, path_to_genie,
             center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
@@ -867,7 +866,6 @@ def test_notvcf_processfile():
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    threads = 2
     oncotree_link = "www.google.com"
     center_mapping = {'stagingSynId': ["syn123"],
                       'center': [center]}
@@ -878,7 +876,7 @@ def test_notvcf_processfile():
 
     with patch.object(vcf, "process") as patch_process:
         input_to_database.processfiles(
-            syn, validfilesdf, center, path_to_genie, threads,
+            syn, validfilesdf, center, path_to_genie,
             center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,

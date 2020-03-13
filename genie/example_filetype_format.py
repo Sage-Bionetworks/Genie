@@ -83,15 +83,16 @@ class FileTypeFormat(object):
         '''
         pass
 
-    def preprocess(self, filePath):
+    def preprocess(self, newpath):
         '''
-        This is for any preprocessing that has to occur to the filepath name
-        to add to kwargs for processing.
+        This is for any preprocessing that has to occur to the entity name
+        to add to kwargs for processing.  entity name is included in
+        the new path
 
         Args:
-            filePath: Path to file
+            newpath: Path to file
         '''
-        return(dict())
+        return dict()
 
     def process(self, filePath, **kwargs):
         '''
@@ -104,7 +105,7 @@ class FileTypeFormat(object):
         Returns:
             str: file path of processed file
         '''
-        preprocess_args = self.preprocess(filePath)
+        preprocess_args = self.preprocess(kwargs.get('newPath'))
         kwargs.update(preprocess_args)
         mykwargs = {}
         for required_parameter in self._process_kwargs:

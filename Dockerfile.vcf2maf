@@ -29,8 +29,11 @@ RUN apt-get install -y --allow-unauthenticated \
 	samtools \
 	tabix 
 
+# Must set libmysqlclient version because of
+# "Can't link/include C library 'ssl', 'crypto', aborting." Error
 RUN apt install -y --allow-unauthenticated \
-	libmysqlclient-dev \
+	libmysqlclient-dev=5.7.21-1ubuntu1 \
+    libmysqlclient20=5.7.21-1ubuntu1 \
 	libncurses5-dev \
 	zlib1g-dev \
 	libgsl0-dev \
@@ -38,16 +41,16 @@ RUN apt install -y --allow-unauthenticated \
 	libgd-dev
 
 RUN pip3 install --upgrade pip
-RUN pip install synapseclient httplib2 pycrypto PyYAML
+RUN pip install synapseclient==1.9.3 httplib2==0.14.0 pycrypto PyYAML==5.1.2
 RUN pip install pandas numexpr --upgrade
 
 RUN rm /usr/bin/python 
 RUN ln -s /usr/bin/python3 /usr/bin/python 
 
-RUN cpanm --notest LWP::Simple DBI DBD::mysql Archive::Zip Archive::Extract HTTP::Tiny Test::Simple
-RUN cpanm --notest File::Copy::Recursive Perl::OSType Module::Metadata version TAP::Harness CGI Encode
-RUN cpanm --notest CPAN::Meta JSON DBD::SQLite Set::IntervalTree Archive::Tar Time::HiRes Module::Build
-RUN cpanm --notest Bio::Root::Version
+RUN cpanm --notest LWP::Simple@6.41 DBI@1.642 DBD::mysql@4.050 Archive::Zip@1.67 Archive::Extract@0.80 HTTP::Tiny@0.076 Test::Simple@1.302168
+RUN cpanm --notest File::Copy::Recursive@0.45 Perl::OSType@1.010 Module::Metadata@1.000037 version@0.9924 TAP::Harness@3.42 CGI@4.44 Encode@3.01
+RUN cpanm --notest CPAN::Meta@2.150010 JSON@4.02 DBD::SQLite@1.64 Set::IntervalTree@0.12 Archive::Tar@2.32 Time::HiRes@1.9760 Module::Build@0.4229
+RUN cpanm --notest Bio::Root::Version@1.007007
 
 WORKDIR /root
 RUN wget https://github.com/mskcc/vcf2maf/archive/v1.6.17.zip

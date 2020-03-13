@@ -128,9 +128,10 @@ def check_existing_file_status(validation_status_table, error_tracker_table, ent
 
     validation_statusdf = validation_status_table.asDataFrame()
     error_trackerdf = error_tracker_table.asDataFrame()
-
+    # This should be outside fo the forloop so that it doesn't
+    # get reset
+    to_validate = False
     for ent in entities:
-        to_validate = False
         # Get the current status and errors from the tables.
         current_status = validation_statusdf[validation_statusdf['id'] == ent.id]
         current_error = error_trackerdf[error_trackerdf['id'] == ent.id]
@@ -263,11 +264,11 @@ def validatefile(syn, project_id, entities, validation_status_table, error_track
     # name Not by actual path of file
     validator = validate.GenieValidationHelper(syn=syn, project_id=project_id,
                                                center=center,
-                                               filepathlist=filepaths,
+                                               entitylist=entities,
                                                format_registry=format_registry)
     filetype = validator.file_type
     if check_file_status['to_validate']:
-        valid, message, filetype = validator.validate_single_file(
+        valid, message = validator.validate_single_file(
             oncotree_link=oncotree_link, nosymbol_check=False)
         logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
@@ -290,7 +291,7 @@ def validatefile(syn, project_id, entities, validation_status_table, error_track
     return input_status_list, invalid_errors_list, messages_to_send
 
 
-def processfiles(syn, validfiles, center, path_to_genie, threads,
+def processfiles(syn, validfiles, center, path_to_genie,
                  center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
                  validVCF=None, vcf2mafPath=None,
                  veppath=None, vepdata=None,
@@ -304,7 +305,6 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
                     has 'id', 'path', and 'fileType' column
         center: GENIE center name
         path_to_genie: Path to GENIE workdir
-        threads: Threads used
         center_mapping_df: Center mapping dataframe
         oncotree_link: Link to oncotree
         databaseToSynIdMappingDf: Database to synapse id mapping dataframe
@@ -318,17 +318,18 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
     logger.info("PROCESSING {} FILES: {}".format(center, len(validfiles)))
     center_staging_folder = os.path.join(path_to_genie, center)
     center_staging_synid = center_mapping_df.query(
-        "center == 'SAGE'").stagingSynId.iloc[0]
+        "center == '{}'".format(center)).stagingSynId.iloc[0]
 
     if not os.path.exists(center_staging_folder):
         os.makedirs(center_staging_folder)
 
     if processing != 'vcf':
-        for fileSynId, filePath, fileType in zip(validfiles['id'],
-                                                 validfiles['path'],
-                                                 validfiles['fileType']):
-            filename = os.path.basename(filePath)
-            newPath = os.path.join(center_staging_folder, filename)
+        for fileSynId, filePath, name, fileType in zip(validfiles['id'],
+                                                       validfiles['path'],
+                                                       validfiles['name'],
+                                                       validfiles['fileType']):
+            # filename = os.path.basename(filePath)
+            newPath = os.path.join(center_staging_folder, name)
             # store = True
             synId = databaseToSynIdMappingDf.Id[
                 databaseToSynIdMappingDf['Database'] == fileType]
@@ -337,7 +338,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
             else:
                 synId = synId[0]
             if fileType is not None and (processing == "main" or processing == fileType):
-                processor = PROCESS_FILES[fileType](syn, center, threads)
+                processor = PROCESS_FILES[fileType](syn, center)
                 processor.process(
                     filePath=filePath, newPath=newPath,
                     parentId=center_staging_synid, databaseSynId=synId,
@@ -356,7 +357,7 @@ def processfiles(syn, validfiles, center, path_to_genie, threads,
         synId = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == processing][0]
         fileSynId = None
-        processor = PROCESS_FILES[processing](syn, center, threads)
+        processor = PROCESS_FILES[processing](syn, center)
         processor.process(
             filePath=filePath, newPath=newPath,
             parentId=center_staging_synid, databaseSynId=synId,
@@ -693,7 +694,7 @@ def validation(syn, project_id, center, process,
 
         valid_filesdf = input_valid_statusdf.query('status == "VALIDATED"')
 
-        return(valid_filesdf[['id', 'path', 'fileType']])
+        return(valid_filesdf[['id', 'path', 'fileType', 'name']])
 
 
 def center_input_to_database(
@@ -701,7 +702,7 @@ def center_input_to_database(
         only_validate, vcf2maf_path, vep_path,
         vep_data, database_to_synid_mappingdf,
         center_mapping_df, reference=None,
-        delete_old=False, oncotree_link=None, thread=1):
+        delete_old=False, oncotree_link=None):
     if only_validate:
         log_path = os.path.join(
             process_functions.SCRIPT_DIR,
@@ -779,7 +780,7 @@ def center_input_to_database(
             syn.store(synapseclient.Table(
                 processTrackerSynId, processTrackerDf))
 
-        processfiles(syn, validFiles, center, path_to_genie, thread,
+        processfiles(syn, validFiles, center, path_to_genie,
                      center_mapping_df, oncotree_link,
                      database_to_synid_mappingdf,
                      validVCF=validVCF,
