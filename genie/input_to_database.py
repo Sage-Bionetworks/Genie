@@ -129,9 +129,10 @@ def check_existing_file_status(validation_status_table, error_tracker_table, ent
 
     validation_statusdf = validation_status_table.asDataFrame()
     error_trackerdf = error_tracker_table.asDataFrame()
-
+    # This should be outside fo the forloop so that it doesn't
+    # get reset
+    to_validate = False
     for ent in entities:
-        to_validate = False
         # Get the current status and errors from the tables.
         current_status = validation_statusdf[validation_statusdf['id'] == ent.id]
         current_error = error_trackerdf[error_trackerdf['id'] == ent.id]
