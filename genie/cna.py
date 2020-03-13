@@ -36,7 +36,7 @@ def validateSymbol(gene, bedDf, returnMappedDf=True):
             "{} cannot be remapped and will not be released. The symbol "
             "must exist in your seq assay ids (bed files) and must be "
             "mappable to a gene.".format(gene))
-        gene = pd.np.nan
+        gene = float('nan')
     if returnMappedDf:
         return(gene)
     else:
@@ -86,7 +86,7 @@ class cna(FileTypeFormat):
 
     _process_kwargs = ["newPath", 'databaseToSynIdMappingDf']
 
-    _validation_kwargs = ['nosymbol_check']
+    _validation_kwargs = ['nosymbol_check', 'project_id']
 
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
@@ -152,7 +152,7 @@ class cna(FileTypeFormat):
             self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
         return(newPath)
 
-    def _validate(self, cnvDF, nosymbol_check):
+    def _validate(self, cnvDF, nosymbol_check, project_id):
         total_error = ""
         warning = ""
         cnvDF.columns = [col.upper() for col in cnvDF.columns]
@@ -181,8 +181,13 @@ class cna(FileTypeFormat):
         else:
             cnvDF['HUGO_SYMBOL'] = keepSymbols
             if haveColumn and not nosymbol_check:
-                bedSynId = process_functions.getDatabaseSynId(
-                    self.syn, "bed", test=self.testing)
+                project = self.syn.get(project_id)
+                database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
+                databaseToSynIdMapping = self.syn.tableQuery(
+                    'SELECT * FROM {}'.format(database_to_synid_mapping_synid))
+                databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
+                bedSynId = process_functions.getDatabaseSynId(self.syn, "bed",
+                                                              databaseToSynIdMappingDf=databaseToSynIdMappingDf)
                 bed = self.syn.tableQuery(
                     "select Hugo_Symbol, ID from {} where "
                     "CENTER = '{}'".format(bedSynId, self.center))

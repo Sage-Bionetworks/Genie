@@ -1,4 +1,5 @@
 import mock
+from mock import patch
 import pytest
 
 import pandas as pd
@@ -32,6 +33,8 @@ table_query_results_map = {
 syn = mock.create_autospec(synapseclient.Synapse)
 syn.tableQuery.side_effect = table_query_results
 
+ENTITY = synapseclient.Project("testing",
+                               annotations={'dbMapping': "syn10967259"})
 cna_class = cna(syn, "SAGE")
 
 
@@ -50,7 +53,7 @@ def test_processing():
         "Id1-1": [-0.5, 2, 0.5],
         "Id2-1": [1, 1.5, -1.5]})
     cnadf = cnadf[order]
-    new_cnadf = cna_class._process(cnadf)
+    new_cnadf = cna_class._process(cnadf, database_mapping)
     assert expected_cnadf.equals(new_cnadf[expected_cnadf.columns])
 
     order = ["Hugo_Symbol", "Entrez_gene_id", "GENIE-SAGE-Id1-1",
@@ -67,9 +70,9 @@ def test_processing():
         "GENIE-SAGE-Id1-1": [1, 1, 0, float('nan'), 1],
         "GENIE-SAGE-Id2-1": [2, 0, -1, float('nan'), float('nan')]})
     cnaDf = cnaDf[order]
-    newCnaDf = cna_class._process(cnaDf)
+    newCnaDf = cna_class._process(cnaDf, database_mapping)
     newCnaDf.reset_index(inplace=True, drop=True)
-    pd.util.testing.assert_frame_equal(
+    pd.testing.assert_frame_equal(
         expectedCnaDf, newCnaDf[expectedCnaDf.columns])
 
 
@@ -87,9 +90,10 @@ def test_validation():
         "GENIE-SAGE-ID2-1": [0.5, 1.5, -1.5],
         "GENIE-SAGE-ID3-1": [float('nan'), 2, 'NA']})
     cnaDf = cnaDf[order]
-    error, warning = cna_class._validate(cnaDf, False)
-    assert error == ""
-    assert warning == ""
+    with patch.object(syn, "get", return_value=ENTITY):
+        error, warning = cna_class._validate(cnaDf, False, "syn1234")
+        assert error == ""
+        assert warning == ""
 
     cnaDf = pd.DataFrame(
         {"Hugo_Symbol": ['foo', 'AAED', 'AAED1', 'AAD'],
@@ -98,11 +102,12 @@ def test_validation():
     cnaDf.sort_values("Hugo_Symbol", inplace=True)
     cnaDf = cnaDf[["GENIE-SAGE-ID1-1", "Hugo_Symbol", "GENIE-SAGE-ID2-1"]]
 
-    error, warning = cna_class._validate(cnaDf, False)
-    expectedErrors = (
-        "Your cnv file's first column must be Hugo_Symbol\n"
-        "Your CNA file has duplicated Hugo_Symbols (After "
-        "remapping of genes): AAD,AAED,AAED1 -> AAED1,AAED1,AAED1.\n")
+    with patch.object(syn, "get", return_value=ENTITY):
+        error, warning = cna_class._validate(cnaDf, False, "syn1234")
+        expectedErrors = (
+            "Your cnv file's first column must be Hugo_Symbol\n"
+            "Your CNA file has duplicated Hugo_Symbols (After "
+            "remapping of genes): AAD,AAED,AAED1 -> AAED1,AAED1,AAED1.\n")
 
     assert error == expectedErrors
     assert warning == ""
@@ -113,9 +118,10 @@ def test_validation():
         "GENIE-SAGE-ID1-1": [1, 2, 1],
         "GENIE-SAGE-ID2-1": [2, 1, 3]})
     cnaDf = cnaDf[order]
-    error, warning = cna_class._validate(cnaDf, False)
-    expectedErrors = (
-        "All values must be NA/blank, -2, -1.5, -1, -0.5, 0, "
-        "0.5, 1, 1.5, or 2.\n")
-    assert error == expectedErrors
-    assert warning == ""
+    with patch.object(syn, "get", return_value=ENTITY):
+        error, warning = cna_class._validate(cnaDf, False, "syn1234")
+        expectedErrors = (
+            "All values must be NA/blank, -2, -1.5, -1, -0.5, 0, "
+            "0.5, 1, 1.5, or 2.\n")
+        assert error == expectedErrors
+        assert warning == ""

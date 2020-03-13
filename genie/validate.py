@@ -236,7 +236,7 @@ def _perform_validate(syn, args):
 
     # Check parentid argparse
     _check_parentid_permission_container(syn, args.parentid)
- 
+
     databasetosynid_mappingdf = process_functions.get_synid_database_mappingdf(
         syn, project_id=args.project_id)
 
@@ -261,7 +261,8 @@ def _perform_validate(syn, args):
                                       entitylist=entity_list,
                                       format_registry=format_registry)
     mykwargs = dict(oncotree_link=args.oncotree_link,
-                    nosymbol_check=args.nosymbol_check)
+                    nosymbol_check=args.nosymbol_check,
+                    project_id=args.project_id)
     valid, message = validator.validate_single_file(**mykwargs)
 
     # Upload to synapse if parentid is specified and valid
