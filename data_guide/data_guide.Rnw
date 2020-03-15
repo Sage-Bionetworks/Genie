@@ -322,9 +322,9 @@ While the GENIE data available from Sage contains all mutation data, the followi
 Seventeen of the nineteen GENIE participating centers performed tumor-only sequencing i.e. without also sequencing a patient-matched control sample like blood, to isolate somatic events. These centers minimized artifacts and germline events using pooled controls from unrelated individuals, or using databases of known artifacts, common germline variants, and recurrent somatic mutations. However, there remains a risk that such centers may inadvertently release germline variants that can theoretically be used for patient re-identification. To minimize this risk, the GENIE consortium developed a stringent germline filtering pipeline, and applied it uniformly to all variants across all centers. This pipeline flags sufficiently recurrent artifacts and germline events reported by the Exome Aggregation Consortium (\href{http://exac.broadinstitute.org}{ExAC}). Specifically, the non-TCGA subset VCF of ExAC 0.3.1 was used after excluding known somatic events in this \href{https://github.com/mskcc/vcf2maf/blob/v1.6.17/data/known\_somatic\_sites.bed}{bed file}:\\\\
 
 \begin{itemize}
-    \item{Hotspots from Chang et al. minus some likely artifacts (dx.doi.org/10.1038/nbt.3391).}
-    \item{Somatic mutations associated with clonal hematopoietic expansion from Xie et al.(dx.doi.org/10.1038/nm.3733)}
-    \item{Somatically mutable germline sites at MSH6:F1088, TP53:R290, TERT:E280, ASXL1:G645\_G646.}
+    \item{Hotspots from Chang et al. minus some likely artifacts.\\(dx.doi.org/10.1038/nbt.3391)}
+    \item{Somatic mutations associated with clonal hematopoietic expansion from Xie et al.\\(dx.doi.org/10.1038/nm.3733)}
+    \item{Somatically mutable germline sites at MSH6:F1088, TP53:R290, TERT:E280,\\ ASXL1:G645\_G646.}
 \end{itemize}
 
 The resulting VCF was used with vcf2maf’s "filter-vcf" option, to match each variant position and allele to per-subpopulation allele counts. If a variant was seen more than 10 times in any of the 7 ExAC subpopulations, it was tagged as a "common\_variant" (vcf2maf’s "max-filter-ac" option), and subsequently removed. This >10 allele count (AC) cutoff was selected because it tagged no more than 1\% of the somatic calls across all MSK-IMPACT samples with patient-matched controls.\\\\
@@ -338,7 +338,7 @@ Description on most of the data files can be found under the "Data files" sectio
 
 
 \begin{center}
-\begin{longtable}{ |p{40mm}|p{40mm}|p{50mm}| }
+\begin{longtable}{ |p{45mm}|p{40mm}|p{55mm}| }
 \caption{GENIE Data Files} \\
   \hline
 File Name & Description & Details \\ 
@@ -349,7 +349,9 @@ data\_CNA.txt & Discritized copy number data.  \newline Note: Not all centers co
    \hline
 data\_fusions.txt & Structural variant data. \newline Note: not all centers contributed structural rearrangement data to GENIE. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#fusion-data}{Fusion format} \\
    \hline
-genomic\_information.txt &  File describing genomic coordinates covered by all platforms for GENIE data.  \newline Note: Not all centers contributed copy number data to GENIE. & This is not a cBioPortal file format. \newline Chromosome, Start\_Position, End\_Position: Gene positions. \newline Hugo\_Symbol: Re-mapped gene symbol based on gene positions. ID: Center submitted gene symbols. \newline SEQ\_ASSAY\_ID: The institutional assay identifier for genomic testing platform. \newline Feature\_Type: "exon", "intron", or "intergenic". \newline includeInPanel: Used to define gene panel files for cBioPortal. \newline clinicalReported: These are the genes that were clinically Reported. Blank means information not provided.\\
+genomic\_information.txt &  File describing genomic coordinates covered by all platforms for GENIE data.  \newline Note: Not all centers contributed copy number data to GENIE. & This is not a cBioPortal file format. \newline \textbf{Chromosome}, \textbf{Start\_Position}, \textbf{End\_Position}: Gene positions. \newline \textbf{Hugo\_Symbol}: Re-mapped gene symbol based on gene positions. \textbf{ID}: Center submitted gene symbols. \newline \textbf{SEQ\_ASSAY\_ID}: The institutional assay identifier for genomic testing platform. \newline \textbf{Feature\_Type}: "exon", "intron", or "intergenic". \newline \textbf{includeInPanel}: Used to define gene panel files for cBioPortal. \newline \textbf{clinicalReported}: These are the genes that were clinically Reported. Blank means information not provided.\\
+   \hline
+assay\_information.txt & Assay information & This is not a cBioPortal file format. \newline \textbf{is\_paried\_end}, \textbf{library\_selection}, , \textbf{library\_strategy}, \textbf{platform}, \textbf{read\_length}, \textbf{target\_capture\_kit}, \textbf{instrument\_model}: defined by \href{https://docs.gdc.cancer.gov/Data\_Dictionary/viewer/#?view=table-definition-view&id=read\_group}{GDC read group} \newline \textbf{number\_of\_genes}: Number of genes from which variants are called \newline \textbf{variant\_classifications}: List of types of variants that are reported for this assay. \newline \textbf{gene\_padding}: Number of basepairs to add to exon endpoints for the inBED filter.  \newline \textbf{alteration\_types}: List of alteration types. \newline \textbf{specimen\_type}: List of specimen types \newline \textbf{specimen\_tumor\_cellularity}: Tumor Cellularity Cutoff \newline \textbf{calling\_strategy}: Yumor only or tumor normal \newline \textbf{coverage}: List of coverage \\
    \hline
 genie\_data\_cna\_hg19.seg  & Segmented copy number data.  \newline Note: Not all centers contributed copy number data to GENIE. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#segmented-data}{SEG format} \\
    \hline
