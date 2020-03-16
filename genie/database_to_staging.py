@@ -529,7 +529,7 @@ def store_fusion_files(syn,
         'select HUGO_SYMBOL,ENTREZ_GENE_ID,CENTER,TUMOR_SAMPLE_BARCODE,FUSION,'
         'DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME from {}'.format(fusion_synid))
     # FusionsDf = Fusions.asDataFrame()
-    FusionsDf['ENTREZ_GENE_ID'][FusionsDf['ENTREZ_GENE_ID'] == 0] = pd.np.nan
+    FusionsDf['ENTREZ_GENE_ID'][FusionsDf['ENTREZ_GENE_ID'] == 0] = float('nan')
 
     if not current_release_staging:
         FusionsStagingDf = FusionsDf[FusionsDf['TUMOR_SAMPLE_BARCODE'].isin(

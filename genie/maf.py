@@ -57,8 +57,8 @@ class maf(FileTypeFormat):
         mafDf['Tumor_Sample_Barcode'] = [
             process_functions.checkGenieId(i, self.center)
             for i in mafDf['Tumor_Sample_Barcode']]
-        mafDf['Sequence_Source'] = pd.np.nan
-        mafDf['Sequencer'] = pd.np.nan
+        mafDf['Sequence_Source'] = float('nan')
+        mafDf['Sequencer'] = float('nan')
         mafDf['Validation_Status'][
             mafDf['Validation_Status'].isin(["Unknown", "unknown"])] = ''
         return(mafDf)

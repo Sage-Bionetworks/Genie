@@ -124,7 +124,7 @@ class clinical(FileTypeFormat):
             x['SEQ_DATE'] = x['SEQ_DATE'].title()
             x['SEQ_YEAR'] = \
                 int(str(x['SEQ_DATE']).split("-")[1]) \
-                if str(x['SEQ_DATE']) != "Release" else pd.np.nan
+                if str(x['SEQ_DATE']) != "Release" else float('nan')
 
         if x.get('YEAR_CONTACT') is None:
             x['YEAR_CONTACT'] = 'Not Collected'
@@ -406,7 +406,7 @@ class clinical(FileTypeFormat):
                     "AGE_AT_SEQ_REPORT. It must be an integer or 'Unknown'.\n")
             else:
                 age_seq_report_df[age] = age_seq_report_df[age].astype(int)
-                median_age = pd.np.median(age_seq_report_df[age])
+                median_age = age_seq_report_df[age].median()
                 if median_age < 100:
                     total_error += (
                         "Sample Clinical File: Please double check your "
