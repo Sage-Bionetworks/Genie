@@ -281,7 +281,8 @@ class Assayinfo(FileTypeFormat):
         warning += warn
         total_error += error
 
-        specimen_type = ["formalin_fixed", "FFPE", 'fresh_frozen']
+        specimen_type = ["formalin_fixed", "FFPE", 'fresh_frozen', 'blood',
+                         'bone_marrow']
         warn, error = process_functions.check_col_and_values(
             assay_info_df, 'specimen_type', specimen_type,
             filename="Assay_information.yaml", required=True, sep=";")
