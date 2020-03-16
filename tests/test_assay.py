@@ -220,7 +220,7 @@ def test_invalid__validate():
             "Assay_information.yaml: "
             "Please double check your specimen_type column.  "
             "This column must only be these values: "
-            "formalin_fixed, FFPE, fresh_frozen\n"
+            "formalin_fixed, FFPE, fresh_frozen, blood, bone_marrow\n"
             "Assay_information.yaml: "
             "Please double check your coverage column.  "
             "This column must only be these values: "
