@@ -186,7 +186,7 @@ coverage_per_panel = get_list_assay_info_table(allowed_coverage,
                                                "coverage")
 info_tab = xtable(coverage_per_panel,
                   caption = 'Coverage per Panel')
-# align(info_tab) <- "r|c|c|c|c"
+align(info_tab) <- "|r|c|c|c|c|"
 print(info_tab, floating = F, caption.placement = "top",
       tabular.environment = "longtable",
       sanitize.text.function = function(x) {gsub("_", "\\_", x, fixed = TRUE)})
