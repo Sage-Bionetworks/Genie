@@ -563,6 +563,4 @@ if (!is.null(assay_infodf) & !is.null(this_bed)) {
   kable(different_from_expected,
         caption = "Number of submitted vs expected genes in a bed file")
 }
-
-
 ```
