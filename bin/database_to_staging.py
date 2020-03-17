@@ -221,7 +221,8 @@ def main(genie_version,
                          '../genie/dashboard_markdown_generator.R'),
             genie_version,
             '--template_path',
-            '../genie/dashboardTemplate.Rmd']
+            os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         '../genie/dashboardTemplate.Rmd')]
 
         if genie_user is not None and genie_pass is not None:
             dashboard_markdown_html_commands.extend(
