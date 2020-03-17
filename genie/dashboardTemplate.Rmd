@@ -345,6 +345,7 @@ if (is.null(this_bed)) {
 }
 this_assays = as.character(unique(this_samples$SEQ_ASSAY_ID))
 this_mut <- getFileDf("data_mutations_extended.txt", releaseFiles)
+assay_infodf = getFileDf("assay_information.txt", releaseFiles)
 black_list_variants <- synTableQuery("select * from syn18459663",
                                      includeRowIdAndRowVersion = F)
 black_list_variantsdf = black_list_variants$asDataFrame()
