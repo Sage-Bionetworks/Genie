@@ -17,6 +17,8 @@ def find_release(syn, release):
                                    "release = '{}'".format(RELEASE_TABLE,
                                                            release))
     releasedf = release_synid.asDataFrame()
+    if releasedf.empty:
+        raise ValueError("Please specify correct release value")
     return releasedf.iloc[0,0]
 
 
