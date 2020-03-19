@@ -1,10 +1,23 @@
 """Most current consortium release cBioPortal files to BPC Synapse Project"""
+"""Consortium releases to internal BPC page"""
+import argparse
+
 import synapseclient
+from synapseclient import Folder
 import synapseutils as synu
 
 
-DATA_FOLDER_SYNID = "syn21241322"
-# release_synid = "syn21446275"
+DATA_FOLDER_SYNID = "syn21574209"
+RELEASE_TABLE = "syn16804261"
+
+
+def find_release(syn, release):
+    """Finds the Synapse id of a private consortium release folder"""
+    release_synid = syn.tableQuery("select distinct(parentId) from {} where "
+                                   "release = '{}'".format(RELEASE_TABLE,
+                                                           release))
+    releasedf = release_synid.asDataFrame()
+    return releasedf.iloc[0,0]
 
 
 def remove_gene_panels(syn, file_mapping, remove_seqassays, remove_centers):
@@ -17,22 +30,29 @@ def remove_gene_panels(syn, file_mapping, remove_seqassays, remove_centers):
             syn.delete(file_mapping[name])
 
 
-def main(release_synid):
+def main(release):
     """Updates BPC project"""
+    if release.endswith("1-consortium"):
+        raise ValueError("First consortium release are not released")
+
     syn = synapseclient.login()
+    # Finds the synid of the release
+    release_synid = find_release(syn, release)
 
     # Get existing BPC cBioPortal release files
-    existing_files = syn.getChildren(DATA_FOLDER_SYNID)
-    existing_map = {exist['name']: exist['id']
-                    for exist in existing_files}
+    bpc_folder_ent = syn.store(Folder(release,
+                                      parent=DATA_FOLDER_SYNID))
+    caselist_folder_ent = syn.store(Folder("case_lists",
+                                             parent=bpc_folder_ent))
+    genepanel_folder_ent = syn.store(Folder("gene_panels",
+                                              parent=bpc_folder_ent))
+
     # Get existing gene panels
-    genepanel_folder_synid = existing_map['gene_panels']
-    existing_gene_panels = syn.getChildren(genepanel_folder_synid)
+    existing_gene_panels = syn.getChildren(genepanel_folder_ent)
     genepanel_map = {exist['name']: exist['id']
                     for exist in existing_gene_panels}
     # Get existing case lists
-    caselist_folder_synid = existing_map['case_lists']
-    case_list = syn.getChildren(caselist_folder_synid)
+    case_list = syn.getChildren(caselist_folder_ent)
     caselist_map = {case['name']: case['id'] for case in case_list}
     
     # Get release files
@@ -44,7 +64,7 @@ def main(release_synid):
         if name.startswith("data_gene_panel_"):
             ent = syn.get(synid_map[name], followLink=True,
                           downloadFile=False)
-            synu.copy(syn, ent, genepanel_folder_synid,
+            synu.copy(syn, ent, genepanel_folder_ent.id,
                       setProvnance=None,
                       updateExisting=True)
     # Remove gene panels
@@ -60,7 +80,7 @@ def main(release_synid):
     for name in new_caselist_map:
         ent = syn.get(new_caselist_map[name], followLink=True,
                       downloadFile=False)
-        synu.copy(syn, ent, caselist_folder_synid,
+        synu.copy(syn, ent, caselist_folder_ent.id,
                   setProvnance=None,
                   updateExisting=True)
 
@@ -73,15 +93,22 @@ def main(release_synid):
     # Copy rest of the files
     for name in synid_map:
         # Do not copy over files with these patterns
-        exclude = name.startswith(("data_gene_panel_", "data_clinical.txt",
-                                   "case_lists")) or name.endswith(".html")
-        if not exclude:
+        # exclude = name.startswith(("data_gene_panel_", "data_clinical.txt",
+        #                            "case_lists")) or name.endswith(".html")
+        if not name.startswith(("data_gene_panel_", "data_clinical.txt",
+                                "case_lists")):
             ent = syn.get(synid_map[name], followLink=True,
                           downloadFile=False)
-            synu.copy(syn, ent, DATA_FOLDER_SYNID,
+            synu.copy(syn, ent, bpc_folder_ent,
                       setProvnance=None,
                       updateExisting=True)
     
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='Consortium to BPC')
+    parser.add_argument("release",
+                        type=str,
+                        metavar="8.2-consortium",
+                        help="GENIE release version")
+    args = parser.parse_args()
+    main(args.release)
