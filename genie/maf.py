@@ -1,13 +1,15 @@
-from __future__ import absolute_import
-from genie import FileTypeFormat, process_functions
 import os
 import logging
 import subprocess
+
 import pandas as pd
 import synapseclient
 from synapseclient.exceptions import SynapseTimeoutError
-logger = logging.getLogger(__name__)
 
+from .example_filetype_format import FileTypeFormat
+from . import process_functions
+
+logger = logging.getLogger(__name__)
 
 class maf(FileTypeFormat):
     '''
@@ -158,6 +160,7 @@ class maf(FileTypeFormat):
             if os.path.exists(newMafPath):
                 # This needs to switch to streaming at some point
                 mafDf = pd.read_csv(newMafPath, sep="\t", comment="#")
+                mafDf.drop_duplicates(inplace=True)
                 mafDf = self.formatMAF(mafDf)
                 self.createFinalMaf(mafDf, newMafPath, maf=True)
                 narrowMafDf = mafDf[narrowMafColumns]
@@ -211,14 +214,30 @@ class maf(FileTypeFormat):
 
         total_error = ""
         warning = ""
-        # CHECK: First column must be in the first_header list
-        if mutationDF.columns[0] not in first_header:
+
+        # CHECK: Everything in correct_column_headers must be in mutation file
+        if not all([process_functions.checkColExist(mutationDF, i)
+                    for i in correct_column_headers]):
             total_error += (
                 "Mutation File: "
-                "First column header must be one of these: {}."
+                "Must at least have these headers: {}. "
                 "If you are writing your maf file with R, please make"
                 "sure to specify the 'quote=FALSE' parameter.\n".format(
-                    ", ".join(first_header)))
+                    ",".join([i for i in correct_column_headers
+                              if i not in mutationDF.columns.values])))
+        else:
+            # CHECK: First column must be in the first_header list
+            if mutationDF.columns[0] not in first_header:
+                total_error += ("Mutation File: First column header must be "
+                                "one of these: {}.\n".format(
+                                    ", ".join(first_header)))
+            # No duplicated values
+            primary_cols = ['CHROMOSOME', 'START_POSITION',
+                            'REFERENCE_ALLELE', 'TUMOR_SAMPLE_BARCODE',
+                            'TUMOR_SEQ_ALLELE2']
+            if mutationDF.duplicated(primary_cols).any():
+                total_error += ("Mutation File: "
+                                "Should not have duplicate rows\n")
 
         check_col = process_functions.checkColExist(mutationDF, "T_DEPTH")
         if not check_col and not SP:
@@ -226,17 +245,6 @@ class maf(FileTypeFormat):
                 total_error += (
                     "Mutation File: "
                     "If you are missing T_DEPTH, you must have T_REF_COUNT!\n")
-
-        # CHECK: Everything in correct_column_headers must be in mutation file
-        if not all([
-                process_functions.checkColExist(mutationDF, i)
-                for i in correct_column_headers]):
-            total_error += (
-                "Mutation File: "
-                "Must at least have these headers: {}.\n".format(
-                    ",".join([
-                        i for i in correct_column_headers
-                        if i not in mutationDF.columns.values])))
 
         # CHECK: Must have either TUMOR_SEQ_ALLELE2 column
         if process_functions.checkColExist(mutationDF, "TUMOR_SEQ_ALLELE2"):
@@ -297,15 +305,15 @@ class maf(FileTypeFormat):
         '''
         Get mutation dataframe
         '''
-        mutationDF = pd.read_csv(
-            filePathList[0],
-            sep="\t",
-            comment="#",
-            na_values=[
-                '-1.#IND', '1.#QNAN', '1.#IND', '-1.#QNAN', '#N/A N/A',
-                '#N/A', 'N/A', '#NA', 'NULL', 'NaN',
-                '-NaN', 'nan', '-nan', ''],
-            keep_default_na=False,
-            # This is to check if people write files with R, quote=T
-            quoting=3)
-        return(mutationDF)
+        mutationdf = pd.read_csv(filePathList[0],
+                                 sep="\t",
+                                 comment="#",
+                                 na_values=['-1.#IND', '1.#QNAN', '1.#IND',
+                                            '-1.#QNAN', '#N/A N/A', 'NaN',
+                                            '#N/A', 'N/A', '#NA', 'NULL',
+                                            '-NaN', 'nan', '-nan', ''],
+                                 keep_default_na=False,
+                                 # This is to check if people write files
+                                 # with R, quote=T
+                                 quoting=3)
+        return mutationdf

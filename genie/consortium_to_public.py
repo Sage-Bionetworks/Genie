@@ -1,25 +1,27 @@
+import argparse
+import datetime
+import logging
+import os
+import re
+import shutil
+import subprocess
+import time
+
 import synapseclient
 import synapseutils
 import pandas as pd
-import math
-import os
-import re
-import argparse
-import datetime
-import process_functions as process
-import database_to_staging as dbTostaging
-import subprocess
-import time
-import shutil
-import logging
-import create_case_lists
-import dashboard_table_updater
+
+from . import process_functions
+from . import database_to_staging
+from . import create_case_lists
+from . import dashboard_table_updater
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-def storeFile(syn, filePath, parentId, anonymizeCenterDf, genie_version, name=None):
+def storeFile(syn, filePath, parentId, anonymizeCenterDf,
+              genie_version, name=None):
     #process.center_anon(filePath, anonymizeCenterDf)
     if name is None:
         name = os.path.basename(filePath)
@@ -37,20 +39,20 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
 
     ANONYMIZE_CENTER = syn.tableQuery('SELECT * FROM syn10170510')
     ANONYMIZE_CENTER_DF = ANONYMIZE_CENTER.asDataFrame()
-    CNA_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,"data_CNA_%s.txt" % genie_version)
-    CLINICAL_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_clinical_%s.txt' % genie_version)
-    CLINICAL_SAMPLE_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_clinical_sample_%s.txt' % genie_version)
-    CLINICAL_PATIENT_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_clinical_patient_%s.txt' % genie_version)
-    DATA_GENE_PANEL_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_gene_matrix_%s.txt' % genie_version)
-    MUTATIONS_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_mutations_extended_%s.txt' % genie_version)
-    FUSIONS_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'data_fusions_%s.txt' % genie_version)
-    SEG_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'genie_public_data_cna_hg19_%s.seg' % genie_version)
-    COMBINED_BED_PATH = os.path.join(dbTostaging.GENIE_RELEASE_DIR,'genomic_information_%s.txt' % genie_version)
+    CNA_PATH = os.path.join(database_to_staging.GENIE_RELEASE_DIR,"data_CNA_%s.txt" % genie_version)
+    CLINICAL_PATH = os.path.join(database_to_staging.GENIE_RELEASE_DIR,'data_clinical_%s.txt' % genie_version)
+    CLINICAL_SAMPLE_PATH = os.path.join(database_to_staging.GENIE_RELEASE_DIR,'data_clinical_sample_%s.txt' % genie_version)
+    CLINICAL_PATIENT_PATH = os.path.join(database_to_staging.GENIE_RELEASE_DIR,'data_clinical_patient_%s.txt' % genie_version)
+    DATA_GENE_PANEL_PATH = os.path.join(dbTodatabase_to_stagingstaging.GENIE_RELEASE_DIR,'data_gene_matrix_%s.txt' % genie_version)
+    MUTATIONS_PATH = os.path.join(database_to_staging.GENIE_RELEASE_DIR,'data_mutations_extended_%s.txt' % genie_version)
+    FUSIONS_PATH = os.path.join(database_to_staging.GENIE_RELEASE_DIR,'data_fusions_%s.txt' % genie_version)
+    SEG_PATH = os.path.join(database_to_staging.GENIE_RELEASE_DIR,'genie_public_data_cna_hg19_%s.seg' % genie_version)
+    COMBINED_BED_PATH = os.path.join(database_to_staging.GENIE_RELEASE_DIR,'genomic_information_%s.txt' % genie_version)
 
-    if not os.path.exists(dbTostaging.GENIE_RELEASE_DIR):
-        os.mkdir(dbTostaging.GENIE_RELEASE_DIR)
-    if not os.path.exists(dbTostaging.CASE_LIST_PATH):
-        os.mkdir(dbTostaging.CASE_LIST_PATH)
+    if not os.path.exists(database_to_staging.GENIE_RELEASE_DIR):
+        os.mkdir(database_to_staging.GENIE_RELEASE_DIR)
+    if not os.path.exists(database_to_staging.CASE_LIST_PATH):
+        os.mkdir(database_to_staging.CASE_LIST_PATH)
 
     # if staging:
     #   #public release staging
@@ -59,7 +61,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
     # else:
     #public release preview
     PUBLIC_RELEASE_PREVIEW =  databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'public'].values[0]
-    PUBLIC_RELEASE_PREVIEW_CASELIST = dbTostaging.findCaseListId(syn, PUBLIC_RELEASE_PREVIEW)
+    PUBLIC_RELEASE_PREVIEW_CASELIST = database_to_staging.find_caselistid(syn, PUBLIC_RELEASE_PREVIEW)
 
     ##############################################################################################################################
     ## Sponsored projects filter
@@ -86,7 +88,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
     clinicalDf = pd.read_csv(clinical.path, sep="\t", comment="#")
     gene_matrixdf = pd.read_csv(gene_matrix.path, sep="\t")
 
-    removeForPublicSamples = process.seqDateFilter(clinicalDf,processingDate,publicReleaseCutOff)
+    removeForPublicSamples = process_functions.seqDateFilter(clinicalDf,processingDate,publicReleaseCutOff)
     #comment back in when public release filter back on
     #publicReleaseSamples = publicReleaseSamples.append(keepForPublicSamples)
     #Make sure all null oncotree codes are removed
@@ -108,12 +110,12 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
     storeFile(syn, DATA_GENE_PANEL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_gene_matrix.txt")
     storeFile(syn, CLINICAL_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_clinical.txt")
     
-    create_case_lists.main(CLINICAL_PATH, DATA_GENE_PANEL_PATH, dbTostaging.CASE_LIST_PATH, "genie_public")
+    create_case_lists.main(CLINICAL_PATH, DATA_GENE_PANEL_PATH, database_to_staging.CASE_LIST_PATH, "genie_public")
 
-    caseListFiles = os.listdir(dbTostaging.CASE_LIST_PATH)
+    caseListFiles = os.listdir(database_to_staging.CASE_LIST_PATH)
     caseListEntities = []
     for casePath in caseListFiles:
-        casePath = os.path.join(dbTostaging.CASE_LIST_PATH, casePath)
+        casePath = os.path.join(database_to_staging.CASE_LIST_PATH, casePath)
         caseListEntities.append(storeFile(syn, casePath, PUBLIC_RELEASE_PREVIEW_CASELIST, ANONYMIZE_CENTER_DF, genie_version))
 
     #Grab mapping table to fill in clinical headers
@@ -137,7 +139,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
             #Delete columns that are private scope
             # for private in privateRelease:
             #   del clinicalDf[private]
-            process.addClinicalHeaders(clinicalDf, mapping, patientCols, sampleCols, CLINICAL_SAMPLE_PATH, CLINICAL_PATIENT_PATH)
+            process_functions.addClinicalHeaders(clinicalDf, mapping, patientCols, sampleCols, CLINICAL_SAMPLE_PATH, CLINICAL_PATIENT_PATH)
 
             storeFile(syn, CLINICAL_SAMPLE_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_clinical_sample.txt")
             storeFile(syn, CLINICAL_PATIENT_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_clinical_patient.txt")
@@ -148,7 +150,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
             mutationDf = commonVariantFilter(mutationDf)
             mutationDf['FILTER'] = "PASS"
             mutationDf = mutationDf[mutationDf['Tumor_Sample_Barcode'].isin(publicReleaseSamples)]
-            text = process.removeFloat(mutationDf)
+            text = process_functions.removeFloat(mutationDf)
             with open(MUTATIONS_PATH, 'w') as f:
                 f.write(text)
             storeFile(syn, MUTATIONS_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="data_mutations_extended.txt")
@@ -165,7 +167,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
             cna = syn.get(entId, followLink=True)
             cnaDf = pd.read_csv(cna.path, sep="\t")
             cnaDf = cnaDf[cnaDf.columns[cnaDf.columns.isin(publicReleaseSamples.append(pd.Series("Hugo_Symbol")))]]
-            text = process.removeFloat(cnaDf)
+            text = process_functions.removeFloat(cnaDf)
             text = text.replace("\t\t","\tNA\t").replace("\t\t","\tNA\t").replace('\t\n',"\tNA\n")
             with open(CNA_PATH, "w") as cnaFile:
                 cnaFile.write(text)
@@ -174,7 +176,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
             seg = syn.get(entId, followLink=True)
             segDf = pd.read_csv(seg.path, sep="\t")
             segDf = segDf[segDf['ID'].isin(publicReleaseSamples)]
-            text = process.removeFloat(segDf)
+            text = process_functions.removeFloat(segDf)
             with open(SEG_PATH, "w") as segFile:
                 segFile.write(text)
             storeFile(syn, SEG_PATH, PUBLIC_RELEASE_PREVIEW, ANONYMIZE_CENTER_DF, genie_version, name="genie_public_data_cna_hg19.seg")
@@ -201,7 +203,7 @@ def consortiumToPublic(syn, processingDate, genie_version, releaseId, databaseSy
             newFileList = fileName.split("_")
             newFileList[-1] = genie_version + ".txt"
             newFileName = "_".join(newFileList)
-            genePanelPath = os.path.join(dbTostaging.GENIE_RELEASE_DIR, newFileName)
+            genePanelPath = os.path.join(database_to_staging.GENIE_RELEASE_DIR, newFileName)
             shutil.copy(genePanel.path, genePanelPath)
             del newFileList[-1]
             entName = "_".join(newFileList)
@@ -234,7 +236,7 @@ def reviseMetadataFiles(syn, staging, databaseSynIdMappingDf, genieVersion=None)
     # else:
     parent =  databaseSynIdMappingDf['Id'][databaseSynIdMappingDf['Database'] == 'public'].values[0]
     allFiles = syn.getChildren(parent)
-    metadataEnts = [syn.get(i['id'], downloadLocation=dbTostaging.GENIE_RELEASE_DIR, ifcollision="overwrite.local") for i in allFiles if 'meta' in i['name']]
+    metadataEnts = [syn.get(i['id'], downloadLocation=database_to_staging.GENIE_RELEASE_DIR, ifcollision="overwrite.local") for i in allFiles if 'meta' in i['name']]
     for metaEnt in metadataEnts:
         with open(metaEnt.path, "r+") as meta:
             metaText = meta.read()
@@ -285,7 +287,7 @@ def createLinkVersion(syn, genie_version, caseListEntities, genePanelEntities, d
         mainReleaseFolderId = syn.store(synapseclient.Folder("Release %s" % main, parent = releaseSynId)).id
         secondReleaseFolderSynId = syn.store(synapseclient.Folder(genie_version, parent = mainReleaseFolderId)).id
 
-    caselistId = dbTostaging.findCaseListId(syn, secondReleaseFolderSynId)
+    caselistId = database_to_staging.find_caselistid(syn, secondReleaseFolderSynId)
 
     publicRelease = syn.getChildren(publicSynId)
     [syn.store(synapseclient.Link(ents['id'], parent=secondReleaseFolderSynId, targetVersion=ents['versionNumber'])) for ents in publicRelease if ents['type'] != "org.sagebionetworks.repo.model.Folder" and ents['name'] != "data_clinical.txt"  and not ents['name'].startswith("data_gene_panel")]
@@ -318,7 +320,7 @@ if __name__ == "__main__":
     assert os.path.exists(cbioValidatorPath), "Please specify correct cbioportalPath"
     assert not (args.test and args.staging), "You can only specify --test or --staging, not both"
         
-    syn = process.synLogin(args.pemFile, debug=args.debug)
+    syn = process_functions.synLogin(args.pemFile, debug=args.debug)
     #Get all the possible public releases
     if args.test:
         databaseSynIdMappingId = 'syn11600968'
@@ -362,7 +364,7 @@ if __name__ == "__main__":
     command_reviseMetadataFiles(syn, args, databaseSynIdMappingDf)
     logger.info("CBIO VALIDATION")
     #Must be exit 0 because the validator sometimes fails, but we still want to capture the output
-    command = ['python',cbioValidatorPath, '-s', dbTostaging.GENIE_RELEASE_DIR, '-n','; exit 0']
+    command = ['python',cbioValidatorPath, '-s', database_to_staging.GENIE_RELEASE_DIR, '-n','; exit 0']
     cbioOutput = subprocess.check_output(" ".join(command), shell=True)
     logger.info(cbioOutput.decode("utf-8"))
     if not args.test and not args.staging:
@@ -372,9 +374,9 @@ if __name__ == "__main__":
         syn.store(synapseclient.File("cbioValidatorLogsPublic_%s.txt" % args.genieVersion, parentId=log_folder_synid))
         os.remove("cbioValidatorLogsPublic_%s.txt" % args.genieVersion)
     logger.info("REMOVING OLD FILES")
-    process.rmFiles(dbTostaging.CASE_LIST_PATH)
-    if os.path.exists('%s/genie_public_meta_cna_hg19_seg.txt' % dbTostaging.GENIE_RELEASE_DIR):
-        os.unlink('%s/genie_public_meta_cna_hg19_seg.txt' % dbTostaging.GENIE_RELEASE_DIR)
+    process_functions.rmFiles(database_to_staging.CASE_LIST_PATH)
+    if os.path.exists('%s/genie_public_meta_cna_hg19_seg.txt' % database_to_staging.GENIE_RELEASE_DIR):
+        os.unlink('%s/genie_public_meta_cna_hg19_seg.txt' % database_to_staging.GENIE_RELEASE_DIR)
 
     logger.info("CREATING LINK VERSION")
     createLinkVersion(syn, args.genieVersion, caseListEntities, genePanelEntities, databaseSynIdMappingDf)

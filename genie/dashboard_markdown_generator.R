@@ -3,6 +3,9 @@ suppressPackageStartupMessages(library(argparse))
 parser <- ArgumentParser()
 parser$add_argument("release",
                     help = "Release version (ie. 5.3-consortium)")
+parser$add_argument("--template_path",
+                    help = "Path to dashboardTemplate.Rmd",
+                    default="dashboardTemplate.Rmd")
 parser$add_argument("--staging",
                     action = "store_true",
                     help = "Use staging files")
@@ -18,6 +21,7 @@ args <- parser$parse_args()
 genie_user <- args$syn_user
 genie_pass <- args$syn_pass
 release <- args$release
+template_path <- args$template_path
 suppressPackageStartupMessages(library(synapser))
 suppressPackageStartupMessages(library(rmarkdown))
 
@@ -85,7 +89,7 @@ if (!any(releases$releases %in% release)) {
 #release_folder_fileview_synid = "syn17019650"
 release_folder = synTableQuery(sprintf("select id from %s where name = '%s'", release_folder_fileview_synid, release))
 release_folder_synid = release_folder$asDataFrame()$id
-template = readLines("dashboardTemplate.Rmd")
+template = readLines(template_path)
 
 rmarkdown_path = create_markdown(release, release_folder_synid, template)
 rmarkdown::render(rmarkdown_path,params = list("genieUser"=genie_user, "geniePass"=genie_pass))

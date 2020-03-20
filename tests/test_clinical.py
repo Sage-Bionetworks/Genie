@@ -1,9 +1,11 @@
-import synapseclient
-import pandas as pd
-import mock
-from genie import clinical
-import pytest
 import datetime
+import mock
+import pytest
+
+import pandas as pd
+import synapseclient
+
+from genie.clinical import clinical
 
 
 def createMockTable(dataframe):
@@ -398,7 +400,7 @@ def test_nonull__validate():
             "Sample Clinical File: Please double check your SAMPLE_TYPE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your BIRTH_YEAR "
-            "column, it must be an integer in YYYY format > 2019 or "
+            "column, it must be an integer in YYYY format > {year} or "
             "'Unknown'.\n"
             "Patient Clinical File: Please double check your YEAR_DEATH "
             "column, it must be an integer in YYYY format, 'Unknown', "
@@ -424,7 +426,7 @@ def test_nonull__validate():
             "This column must only be these values: 1, 2, 99\n"
             "Patient Clinical File: Please double check your ETHNICITY "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n")
-        assert error == expected_errors
+        assert error == expected_errors.format(year=datetime.datetime.utcnow().year)
         assert warning == ""
 
 

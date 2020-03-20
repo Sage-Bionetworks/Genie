@@ -42,11 +42,19 @@ sampleSynId = databaseSynIdMappingDf$Id[databaseSynIdMappingDf$Database == "samp
 bedSynId = databaseSynIdMappingDf$Id[databaseSynIdMappingDf$Database == "bed"]
 mafSynId = databaseSynIdMappingDf$Id[databaseSynIdMappingDf$Database == "vcf2maf"]
 assayInfoSynId = databaseSynIdMappingDf$Id[databaseSynIdMappingDf$Database == "assayinfo"]
+centerMappingSynId = databaseSynIdMappingDf$Id[databaseSynIdMappingDf$Database == "centerMapping"]
 
+centerMapping = synTableQuery(sprintf('select * from %s where release is true',
+                                      centerMappingSynId),
+                              includeRowIdAndRowVersion = F)
+centerMappingDf = synapser::as.data.frame(centerMapping)
+process_centers = paste(centerMappingDf$center, collapse="','")
 # read aggregated clinical data from tables
-patient = synTableQuery(sprintf('SELECT * FROM %s', patientSynId),
+patient = synTableQuery(sprintf("SELECT * FROM %s where CENTER in ('%s')",
+                                patientSynId, process_centers),
                         includeRowIdAndRowVersion = F)
-sample = synTableQuery(sprintf('SELECT * FROM %s', sampleSynId),
+sample = synTableQuery(sprintf("SELECT * FROM %s where CENTER in ('%s')",
+                               sampleSynId, process_centers),
                        includeRowIdAndRowVersion = F)
 
 patientData = synapser::as.data.frame(patient)
@@ -62,12 +70,14 @@ genieClinData <- merge.data.frame(patientData,
 # genieClinData <- genieClinData[genieClinData$SEQ_ASSAY_ID != "PHS-TRISEQ-V1",]
 
 # read aggregated BED file data
-genieBed = synTableQuery(sprintf('SELECT * FROM %s', bedSynId),
+genieBed = synTableQuery(sprintf("SELECT * FROM %s where CENTER in ('%s')",
+                                 bedSynId, process_centers),
                          includeRowIdAndRowVersion = F)
 genieBedData = synapser::as.data.frame(genieBed)
 
 #Pad the bed file with the assay information
-assayInfo = synTableQuery(sprintf('SELECT * FROM %s', assayInfoSynId),
+assayInfo = synTableQuery(sprintf("SELECT * FROM %s where CENTER in ('%s')",
+                                  assayInfoSynId, process_centers),
                           includeRowIdAndRowVersion = F)
 assayInfoData = synapser::as.data.frame(assayInfo)
 for (seq_assay in unique(genieBedData$SEQ_ASSAY_ID)) {
@@ -84,7 +94,8 @@ for (seq_assay in unique(genieBedData$SEQ_ASSAY_ID)) {
 # read aggregated MAF file
 # FILTERED OUT COMMON VARIANTS HERE
 #genieMut = synTableQuery(sprintf('SELECT * FROM %s where FILTER <> "common_variant"', mafSynId))
-genieMut = synTableQuery(sprintf('SELECT * FROM %s', mafSynId))
+genieMut = synTableQuery(sprintf("SELECT * FROM %s where Center in ('%s')",
+                                 mafSynId, process_centers))
 genieMutData = synapser::as.data.frame(genieMut)
 #Only use samples that exist in the clinical sample data pool
 genieMutData <- genieMutData[genieMutData$Tumor_Sample_Barcode %in% genieClinData$SAMPLE_ID,]
