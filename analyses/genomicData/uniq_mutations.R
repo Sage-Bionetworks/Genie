@@ -24,11 +24,15 @@ library(data.table)
 tryCatch({
   synLogin()
 }, error = function(err) {
-  #genieUser = Sys.getenv("GENIE_USER")
-  #geniePass = Sys.getenv("GENIE_PASS")
   synLogin(genie_user, genie_pass)
 })
 
+#' Gets the filename to synapse id mapping of a releease
+#' 
+#' @param release_folder_synid A synapse id
+#' @return A named vector \code{c("filename"= "synapseid")}
+#' @examples
+#' get_file_mapping("syn12345")
 get_file_mapping = function(release_folder_synid) {
   release_ent = synGet(release_folder_synid)
   print(release_ent$properties$name)
@@ -44,50 +48,58 @@ get_file_mapping = function(release_folder_synid) {
   })
 }
 
-check_mutation_overlap <- function(beddf, mutdf, threshold=NA, threshold_key="CENTER") {
+check_mutation_overlap <- function(beddf_temp, mutdf_temp,
+                                   threshold=NA,
+                                   threshold_key="CENTER") {
   # Must check on this overlap.....
   # Must actually check if the unique mutation is actually unique and seen by other sites
   # parametrize,  2 of the regions cover... or 5 of the regions cover....
-  maf_vr = GRanges(seqnames = Rle(paste0("chr", mutdf$Chromosome)),
-                   ranges = IRanges(start = mutdf$Start_Position,
-                                    end = mutdf$End_Position))
+  maf_vr = GRanges(seqnames = Rle(paste0("chr", mutdf_temp$Chromosome)),
+                   ranges = IRanges(start = mutdf_temp$Start_Position,
+                                    end = mutdf_temp$End_Position))
   seqlevels(maf_vr) = sort(seqlevels(maf_vr))
   
-  bed_gr = GRanges(seqnames = Rle(paste0("chr",beddf$Chromosome)),
-                   ranges = IRanges(start = beddf$Start_Position,
-                                    end = beddf$End_Position))
+  bed_gr = GRanges(seqnames = Rle(paste0("chr",beddf_temp$Chromosome)),
+                   ranges = IRanges(start = beddf_temp$Start_Position,
+                                    end = beddf_temp$End_Position))
   seqlevels(bed_gr) = sort(seqlevels(bed_gr))
   # Number of other centers that must at least have this overlap
   if (!is.na(threshold)) {
-    overlap_with_threshold = sapply(c(1:nrow(mutdf)), function(numrow) {
-      overlap = bed_gr %over% maf_vr[numrow]
+    overlap_with_threshold = sapply(c(1:nrow(mutdf_temp)), function(numrow) {
+      # This is the suppress the 'Found more than one class "DataFrame" in cache; using the first'
+      # Error
+      overlap = suppressMessages(bed_gr %over% maf_vr[numrow])
       
-      if (length(unique(beddf[[threshold_key]][overlap])) >= threshold) {
+      if (length(unique(beddf_temp[[threshold_key]][overlap])) >= threshold) {
         return(T)
       } else{
         return(F)
       } 
     })
-    mutdf[overlap_with_threshold, ]
+    mutdf_temp[overlap_with_threshold, ]
   } else {
-    mutdf[maf_vr %over% bed_gr,]
+    mutdf_temp[maf_vr %over% bed_gr,]
   }
 }
 
-find_unique_mutations_panel <- function(clinicaldf, codes_above_threshold,
-                                        mafdf, beddf, dir, threshold=NA) {
+find_unique_mutations_panel <- function(clinicaldf_panel, codes_above_threshold,
+                                        mafdf_panel, beddf_panel, directory, threshold=NA) {
   unique_mutation_files = c()
   for (code in names(codes_above_threshold)) {
     print(code)
     uniq_muts_df = data.frame()
     
     # Get oncotree code
-    samples = clinicaldf$SAMPLE_ID[clinicaldf$ONCOTREE_CODE == code]
-    mutationdf = mafdf[mafdf$Tumor_Sample_Barcode %in% samples, ]
+    samples = clinicaldf_panel$SAMPLE_ID[clinicaldf_panel$ONCOTREE_CODE == code]
+    mutationdf = mafdf_panel[mafdf_panel$Tumor_Sample_Barcode %in% samples, ]
     mutationdf$mutation = paste(mutationdf$Hugo_Symbol, mutationdf$HGVSp_Short)
-    merged_mafdf = merge.data.frame(mutationdf, clinicaldf,
+    merged_mafdf = merge.data.frame(mutationdf, clinicaldf_panel,
                                     by.x = "Tumor_Sample_Barcode",
                                     by.y = "SAMPLE_ID")
+    # Need to check unique mutation across panels
+    # The issue with this is what if a center has 2 panels and each of those panels
+    # has one mutation
+    
     mutation_per_panel = table(merged_mafdf$mutation, merged_mafdf$SEQ_ASSAY_ID)
     
     unique_mutation_check = apply(mutation_per_panel, 1, function(x) {
@@ -96,17 +108,21 @@ find_unique_mutations_panel <- function(clinicaldf, codes_above_threshold,
     unique_mutation = unique_mutation_check[unique_mutation_check == 1]
     merged_mafdf = merged_mafdf[merged_mafdf$mutation %in% names(unique_mutation), ]
     # Grab bed regions for the panels involved with this mutation
-    newbeddf = beddf[beddf$SEQ_ASSAY_ID %in% unique(merged_mafdf$SEQ_ASSAY_ID), ]
+    newbeddf = beddf_panel[beddf_panel$SEQ_ASSAY_ID %in% unique(merged_mafdf$SEQ_ASSAY_ID), ]
     # Ensures the maf in bed
-    uniq_muts_df = check_mutation_overlap(newbeddf,
-                                          merged_mafdf,
-                                          threshold = threshold,
-                                          threshold_key = "SEQ_ASSAY_ID")
-    write.csv(uniq_muts_df,
-              paste0(dir, code, "_unique_mutations.csv"),
-              row.names = F)
-    unique_mutation_files = c(unique_mutation_files,
-                              paste0(dir, code, "_unique_mutations.csv"))
+    if (nrow(merged_mafdf) > 0) {
+      uniq_muts_df = check_mutation_overlap(newbeddf,
+                                            merged_mafdf,
+                                            threshold = threshold)
+      if (nrow(uniq_muts_df) > 0) {
+        new_code = sub("/", '_', code)
+        write.csv(uniq_muts_df,
+                  paste0(directory, new_code, "_unique_mutations.csv"),
+                  row.names = F)
+        unique_mutation_files = c(unique_mutation_files,
+                                  paste0(directory, new_code, "_unique_mutations.csv"))
+      }
+    }
   }
   unique_mutation_files
 }
@@ -133,22 +149,27 @@ if (!any(releases$releases %in% release)) {
 }
 
 release_folder = synTableQuery(sprintf("select id from %s where name = '%s'",
-                                       release_folder_fileview_synid, release))
+                                       release_folder_fileview_synid, release),
+                               includeRowIdAndRowVersion=F)
 release_folder_synid = release_folder$asDataFrame()$id
 
 # Get release files mapping
 RELEASE_FILES_MAPPING = get_file_mapping(release_folder_synid)
 
 # Does this number have to be 5 panels from different sites?
-NUMBER_PANELS_COVER_REGION = 5
-
+NUMBER_CENTERS_COVER_REGION = 5
+NUMBER_CENTERS_WITH_CODE = 5
 UNIQUE_MUTATIONS_FOLDER_SYNID = "syn18455620"
+
 
 release_uniq_mutations_ent = synStore(Folder(release,
                                              parentId = UNIQUE_MUTATIONS_FOLDER_SYNID))
-uniq_mutation_folder_ent = synStore(Folder(sprintf("regions_covered_by_%s_panels",
-                                                   NUMBER_PANELS_COVER_REGION),
-                                           parentId = release_uniq_mutations_ent$properties$id))
+center_with_code_folder_ent = synStore(Folder(sprintf("%s_centers_with_code",
+                                                      NUMBER_CENTERS_WITH_CODE),
+                                              parentId = release_uniq_mutations_ent$properties$id))
+uniq_mutation_folder_ent = synStore(Folder(sprintf("regions_covered_by_%s_centers",
+                                                   NUMBER_CENTERS_COVER_REGION),
+                                           parentId = center_with_code_folder_ent$properties$id))
 
 
 BED_SYNID = RELEASE_FILES_MAPPING[['genomic_information.txt']]
@@ -184,25 +205,24 @@ length(unique(CLINICALDF$CENTER))
 # Number of panels that has a specific oncotree code
 # number_centers_with_code =  floor(0.75*length(unique(CLINICALDF$SEQ_ASSAY_ID)))
 
-for (number_centers_with_code in c(2:max(codes_count_across_centers))) {
-  
-}
-print(number_panels_with_code)
-CODES_ABOVE_THRESHOLD_PANEL = codes_count_across_panels[
-  codes_count_across_panels >= number_panels_with_code]
 
+CODES_ABOVE_THRESHOLD_CENTER = codes_count_across_centers[
+  codes_count_across_centers >= NUMBER_CENTERS_WITH_CODE]
 
-unique_mutation_folder = sprintf("unique_muts_panel_%s_%s/", release, NUMBER_PANELS_COVER_REGION)
-dir.create(unique_mutation_folder)
+unique_mutation_folder = sprintf("%s/%s_centers_with_code/%s_centers_cover_region/",
+                                 release,
+                                 NUMBER_CENTERS_WITH_CODE,
+                                 NUMBER_CENTERS_COVER_REGION)
+dir.create(unique_mutation_folder, recursive = T)
 unique_mutation_files = list.files(unique_mutation_folder,
                                    full.names = T)
 
 if (length(unique_mutation_files) == 0) {
   unique_mutation_files = find_unique_mutations_panel(CLINICALDF,
-                                                      CODES_ABOVE_THRESHOLD_PANEL,
+                                                      CODES_ABOVE_THRESHOLD_CENTER,
                                                       MAFDF,
                                                       BEDDF,
-                                                      threshold=NUMBER_PANELS_COVER_REGION,
+                                                      threshold=NUMBER_CENTERS_COVER_REGION,
                                                       dir = unique_mutation_folder)
 }
 
