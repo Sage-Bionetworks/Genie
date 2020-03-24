@@ -345,6 +345,7 @@ if (is.null(this_bed)) {
 }
 this_assays = as.character(unique(this_samples$SEQ_ASSAY_ID))
 this_mut <- getFileDf("data_mutations_extended.txt", releaseFiles)
+assay_infodf = getFileDf("assay_information.txt", releaseFiles)
 black_list_variants <- synTableQuery("select * from syn18459663",
                                      includeRowIdAndRowVersion = F)
 black_list_variantsdf = black_list_variants$asDataFrame()
@@ -526,5 +527,40 @@ if (!is.null(this_bed)) {
   colnames(final_matrix) = c(1, 2, 3, 4, 5, "Total Variants")
   kable(final_matrix,
         caption = "Distribution of top 5 most frequently mutated genes per SEQ_ASSAY_ID")
+}
+```
+
+
+Each panel's bed file is used to generate a gene panel file used in cBioPortal. All bed files undergo gene symbol remapping during processing.
+
+* `num_genes_remapped`:  number of unique genes a panel has after submitted genes are remapped
+* `num_genes_submitted`: number of unique genes found in site's submitted BED file prior to remapping
+* `num_genes_expected`: size of panel as defined in site's submitted assay_information.yaml file
+
+Ideally, `num_genes_remapped` and `num_genes_expected` should match. Panels that have differences between the two values are shown below.  `NA` means that the panel has an invalid assay information file.
+
+```{r genepanel_diff, echo=F}
+if (!is.null(assay_infodf) & !is.null(this_bed)) {
+  gene_panel_bed = this_bed[this_bed$Feature_Type == "exon" & this_bed$includeInPanel == "True" & this_bed$Hugo_Symbol != "", ]
+  # Get count of symbols per panel
+  symbol_count_per_panel = table(gene_panel_bed$Hugo_Symbol, gene_panel_bed$SEQ_ASSAY_ID)
+  # Get whether or not a panel contains a certain symbol
+  symbol_bool_per_panel = symbol_count_per_panel > 0
+  # Sum of the columns gets number of unique genes per panel
+  number_of_genes = data.frame(colSums(symbol_bool_per_panel))
+
+  submitted_count = table(gene_panel_bed$ID, gene_panel_bed$SEQ_ASSAY_ID)
+  submitted_bool_per_panel = submitted_count > 0
+  num_submitted_genes = colSums(submitted_bool_per_panel)
+  colnames(number_of_genes) = "num_genes_remapped"
+  number_of_genes$num_genes_submitted = NA
+  number_of_genes$num_expected_genes = NA
+  number_of_genes[names(num_submitted_genes), "num_genes_submitted"] = num_submitted_genes
+  number_of_genes[assay_infodf$SEQ_ASSAY_ID, "num_expected_genes"] = assay_infodf$number_of_genes
+
+  different_from_expected = number_of_genes[c(which(number_of_genes$num_genes_remapped != number_of_genes$num_expected_genes),
+                                              which(is.na(number_of_genes$num_expected_genes))),]
+  kable(different_from_expected,
+        caption = "Number of submitted vs expected genes in a bed file")
 }
 ```

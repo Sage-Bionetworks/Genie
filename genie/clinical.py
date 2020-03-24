@@ -197,7 +197,7 @@ class clinical(FileTypeFormat):
 
         return(clinicalRemapped)
 
-    def preprocess(self, filepath):
+    def preprocess(self, newpath):
         '''
         Gather preprocess parameters
 
@@ -208,6 +208,7 @@ class clinical(FileTypeFormat):
             dict with keys - 'clinicalTemplate', 'sample', 'patient',
                              'patientCols', 'sampleCols'
         '''
+        entity_name = os.path.basename(newpath)
         # These synapse ids for the clinical tier release scope is
         # hardcoded because it never changes
         patientColsTable = self.syn.tableQuery(
@@ -231,6 +232,7 @@ class clinical(FileTypeFormat):
         clinicalTemplate = pd.DataFrame(columns=set(patientCols + sampleCols))
         sample = True
         patient = True
+
         return({'clinicalTemplate': clinicalTemplate,
                 'sample': sample,
                 'patient': patient,
