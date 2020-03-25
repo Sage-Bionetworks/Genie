@@ -6,6 +6,10 @@ import os
 import argparse
 import pandas as pd
 import synapseclient
+try:
+    from synapseclient.core.utils import to_unix_epoch_time
+except ModuleNotFoundError:
+    from synapseclient.utils import to_unix_epoch_time
 
 from genie import process_functions
 
@@ -542,7 +546,7 @@ def string_to_unix_epoch_time_milliseconds(string_time):
     """
     datetime_obj = datetime.datetime.strptime(
         string_time.split(".")[0], "%Y-%m-%dT%H:%M:%S")
-    return synapseclient.utils.to_unix_epoch_time(datetime_obj)
+    return to_unix_epoch_time(datetime_obj)
 
 
 def update_data_release_file_table(syn, database_mappingdf):

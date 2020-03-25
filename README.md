@@ -10,7 +10,7 @@ This repository documents code used to gather, QC, standardize, and analyze data
 ## Dependencies
 
 These are tools or packages you will need, to be able to reproduce these results:
-- Python 3.5 or higher
+- Python 3.6 or higher
 - Synapse [command-line client](http://python-docs.synapse.org/CommandLineClient.html) (`pip install synapseclient`)
 - Python [pandas](http://pandas.pydata.org/) (`pip install pandas`)
 - [bedtools](https://bedtools.readthedocs.io/en/latest/content/installation.html)

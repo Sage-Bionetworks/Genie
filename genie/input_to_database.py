@@ -6,6 +6,10 @@ import os
 import time
 
 import synapseclient
+try:
+    from synapseclient.core.utils import to_unix_epoch_time
+except ModuleNotFoundError:
+    from synapseclient.utils import to_unix_epoch_time
 import synapseutils
 import pandas as pd
 
@@ -48,7 +52,7 @@ def entity_date_to_timestamp(entity_date_time):
 
     date_and_time = entity_date_time.split(".")[0]
     date_time_obj = datetime.datetime.strptime(date_and_time, "%Y-%m-%dT%H:%M:%S")
-    return synapseclient.utils.to_unix_epoch_time(date_time_obj)
+    return to_unix_epoch_time(date_time_obj)
 
 
 def get_center_input_files(syn, synid, center, process="main"):
