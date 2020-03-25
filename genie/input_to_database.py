@@ -758,15 +758,22 @@ def center_input_to_database(
 
     if len(validFiles) > 0 and not only_validate:
         # Reorganize so BED file are always validated and processed first
-        validBED = [
-            os.path.basename(i).endswith('.bed') for i in validFiles['path']]
-        beds = validFiles[validBED]
+        bed_files = validFiles['fileType'] == "bed"
+        beds = validFiles[bed_files]
         validFiles = beds.append(validFiles)
         validFiles.drop_duplicates(inplace=True)
         # Valid vcf files
-        validVCF = [
-            i for i in validFiles['path']
-            if os.path.basename(i).endswith('.vcf')]
+        vcf_files = validFiles['fileType'] == "vcf"
+        validVCF = validFiles['path'][vcf_files].tolist()
+
+        # merge clinical files into one row
+        clinical_ind = validFiles['fileType'] == "clinical"
+        clinical_files = validFiles[clinical_ind].to_dict(orient='list')
+        # The [] implies the values in the dict as a list
+        merged_clinical = pd.DataFrame([clinical_files])
+        merged_clinical['fileType'] = 'clinical'
+        merged_clinical['name'] = "data_clinical_supp_{}.txt".format(center)
+        validFiles = validFiles[~clinical_ind].append(merged_clinical)
 
         processTrackerSynId = process_functions.getDatabaseSynId(
             syn, "processTracker",
