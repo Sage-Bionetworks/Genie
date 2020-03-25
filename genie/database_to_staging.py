@@ -102,22 +102,20 @@ def _redaction_phi(values):
     phi_cutoff = 365*89
     pediatric_cutoff = 365*18
     # Some sites submit redacted values already
-    values = [
-        pediatric_cutoff - 1
-        if "<" in str(value) else value
-        for value in values]
-    values = [
-        phi_cutoff + 1
-        if ">" in str(value) else value
-        for value in values]
-    to_redact = [
-        int(float(value)) > phi_cutoff
-        if value not in ['', 'Unknown', 'Not Applicable', 'Not Collected']
-        else False for value in values]
-    to_redact_pediatric = [
-        int(float(value)) < pediatric_cutoff
-        if value not in ['', 'Unknown', 'Not Applicable', 'Not Collected']
-        else False for value in values]
+    values = [pediatric_cutoff - 1
+              if "<" in str(value) else value
+              for value in values]
+    values = [phi_cutoff + 1
+              if ">" in str(value) else value
+              for value in values]
+    to_redact = [int(float(value)) > phi_cutoff
+                 if value not in ['', 'Unknown', 'Not Applicable',
+                                  'Not Collected']
+                 else False for value in values]
+    to_redact_pediatric = [int(float(value)) < pediatric_cutoff
+                           if value not in ['', 'Unknown', 'Not Applicable',
+                                            'Not Collected']
+                           else False for value in values]
     return to_redact, to_redact_pediatric
 
 
@@ -809,7 +807,7 @@ def store_clinical_files(syn,
 
     logger.info("CONFIGURING CLINICAL FILES")
     logger.info("REMOVING PHI")
-    clinicaldf = redact_phi(clinicaldf)
+    # clinicaldf = redact_phi(clinicaldf)
     logger.info("ADD CANCER TYPES")
     # This removes support for both oncotree urls (only support json)
     oncotree_dict = process_functions.get_oncotree_code_mappings(oncotree_url)

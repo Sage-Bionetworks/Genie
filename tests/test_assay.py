@@ -66,7 +66,7 @@ def test_validinput__validate():
         'calling_strategy': ['tumor_only', 'tumor_normal'],
         'specimen_tumor_cellularity': ['>10%', '>20%'],
         'alteration_types': ['snv;small_indels', 'intragenic_cna'],
-        'specimen_type': ['FFPE', 'formalin_fixed;FFPE'],
+        'preservation_technique': ['FFPE', 'FFPE;fresh_frozen'],
         'coverage': ['hotspot_regions;introns', 'introns']}
 
     assay_info_df = pd.DataFrame(assay_info_dict)
@@ -99,7 +99,7 @@ def test__missingcols__validate():
         'Assay_information.yaml: '
         'Must have specimen_tumor_cellularity column.\n'
         'Assay_information.yaml: Must have alteration_types column.\n'
-        'Assay_information.yaml: Must have specimen_type column.\n'
+        'Assay_information.yaml: Must have preservation_technique column.\n'
         'Assay_information.yaml: Must have coverage column.\n')
     assert error == expected_errors
 
@@ -165,7 +165,7 @@ def test_invalid__validate():
         'calling_strategy': ['tumor_ony', 'tumor_normal'],
         'specimen_tumor_cellularity': ['>10', '>20%'],
         'alteration_types': ['snv;small_indel', 'intragenic_cna'],
-        'specimen_type': ['FPE', 'formalin_fixed;FFPE'],
+        'preservation_technique': ['FPE', 'FFPE;fresh_frozen'],
         'coverage': ['hotsot_regions;introns', 'introns']}
 
     assay_info_df = pd.DataFrame(assay_info_dict)
@@ -218,9 +218,8 @@ def test_invalid__validate():
             "This column must only be these values: snv, small_indels, "
             "gene_level_cna, intragenic_cna, structural_variants\n"
             "Assay_information.yaml: "
-            "Please double check your specimen_type column.  "
-            "This column must only be these values: "
-            "formalin_fixed, FFPE, fresh_frozen\n"
+            "Please double check your preservation_technique column.  "
+            "This column must only be these values: FFPE, fresh_frozen\n"
             "Assay_information.yaml: "
             "Please double check your coverage column.  "
             "This column must only be these values: "
