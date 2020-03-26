@@ -10,10 +10,6 @@ parser$add_argument("--syn_user",
 parser$add_argument("--syn_pass",
                     help = "Synapse password")
 args <- parser$parse_args()
-release <- args$release
-genie_user <- args$syn_user
-genie_pass <- args$syn_pass
-testing <- args$testing
 
 library(synapser)
 library(VariantAnnotation)
@@ -21,11 +17,6 @@ library(knitr)
 library(glue)
 library(data.table)
 
-tryCatch({
-  synLogin()
-}, error = function(err) {
-  synLogin(genie_user, genie_pass)
-})
 
 #' Gets the filename to synapse id mapping of a releease
 #' 
@@ -46,8 +37,19 @@ get_file_mapping = function(release_folder_synid) {
     mapping[release_file$name] = release_file$id
     mapping
   })
+  file_mapping
 }
 
+
+#' Checks mutation overlap with GRanges
+#'
+#' @param beddf_temp A bed dataframe
+#' @param mutdf_temp A mutation dataframe
+#' @param threshold Threshold
+#' @param threshold_key Column to check thresholds, CENTER or SEQ_ASSAY_ID
+#' @return A mutation dataframe that overlaps with specified threshold and part of the bed file
+#' @examples
+#' check_mutation_overlap(beddf, mutdf, threshold=3, threshold_key="CENTER)
 check_mutation_overlap <- function(beddf_temp, mutdf_temp,
                                    threshold=NA,
                                    threshold_key="CENTER") {
@@ -66,10 +68,10 @@ check_mutation_overlap <- function(beddf_temp, mutdf_temp,
   # Number of other centers that must at least have this overlap
   if (!is.na(threshold)) {
     overlap_with_threshold = sapply(c(1:nrow(mutdf_temp)), function(numrow) {
-      # This is the suppress the 'Found more than one class "DataFrame" in cache; using the first'
-      # Error
+      # suppressMessages 'Found more than one class "DataFrame" in cache; using the first' Error
       overlap = suppressMessages(bed_gr %over% maf_vr[numrow])
-      
+      # Only if a region is covered by `threshold` number of CENTERs or SEQ_ASSAY_IDs
+      # return T
       if (length(unique(beddf_temp[[threshold_key]][overlap])) >= threshold) {
         return(T)
       } else{
@@ -82,8 +84,20 @@ check_mutation_overlap <- function(beddf_temp, mutdf_temp,
   }
 }
 
-find_unique_mutations_panel <- function(clinicaldf_panel, codes_above_threshold,
-                                        mafdf_panel, beddf_panel, directory, threshold=NA) {
+
+#' Finds unique mutations on a per code basis
+#'
+#' @param clinicaldf_panel A clinical dataframe
+#' @param codes_above_threshold Oncotree codes that are present in X number of centers
+#' @param mafdf_panel A mutation dataframe dataframe
+#' @param beddf_panel A bed dataframe
+#' @param directory Directory to store results to
+#' @param threshold X number of centers that must cover a bed region
+#' @return A list of unique mutation files per oncotree code
+#' @examples
+#' find_unique_mutations(clindf, codes, mafdf, beddf, "/my/dir/, threshold=3)
+find_unique_mutations <- function(clinicaldf_panel, codes_above_threshold,
+                                  mafdf_panel, beddf_panel, directory, threshold=NA) {
   unique_mutation_files = c()
   for (code in names(codes_above_threshold)) {
     print(code)
@@ -127,40 +141,99 @@ find_unique_mutations_panel <- function(clinicaldf_panel, codes_above_threshold,
   unique_mutation_files
 }
 
+
+#' Gets release folder synapse id given a release name
+#'
+#' @param database_synid_mappingid Synapse id of the database synid mapping table
+#' @param release GENIE release name (ie. 7.2-public)
+#' @return Synapse id of release folder
+#' @examples
+#' get_release_folder_synid("syn10967259", "7.0-public")
+get_release_folder_synid <- function(database_synid_mappingid, release) {
+  database_synid_mapping = synTableQuery(glue('select * from {synid}',
+                                              synid = database_synid_mappingid))
+  database_synid_mappingdf = synapser::as.data.frame(database_synid_mapping)
+  release_folder_ind = database_synid_mappingdf$Database == "releaseFolder"
+  release_folder_fileview_synid = database_synid_mappingdf$Id[release_folder_ind]
+
+  choose_from_release = synTableQuery(glue("select distinct(name) as releases from {synid} where ",
+                                           "name not like 'Release%' and name <> 'case_lists'",
+                                           synid = release_folder_fileview_synid))
+  releases = synapser::as.data.frame(choose_from_release)
+  if (!any(releases$releases %in% release)) {
+    stop(glue("Must choose correct release: {releases}",
+              releases = paste0(releases$releases, collapse=", ")))
+  }
+
+  release_folder = synTableQuery(glue("select id from {synid} where name = '{release}'",
+                                      synid = release_folder_fileview_synid,
+                                      release = release),
+                                 includeRowIdAndRowVersion=F)
+  release_folder$asDataFrame()$id
+}
+
+
+#' Writes a centers unique mutations and store them into their staging directory
+#'
+#' @param df Unique mutation dataframe
+#' @param database_synid_mapping Synapse id of the database synid mapping table
+#' @param center GENIE center (ie. DUKE)
+#' @param release GENIE release (ie. 7.0-public)
+
+#' @return Synapse id of stored file
+#' @examples
+#' write_and_store_mutations(df, "syn10967259", "DUKE", "7.0-public")
+write_and_store_mutations <- function(df, database_synid_mappingid, center, release) {
+  print(center)
+  print(database_synid_mappingid)
+  filename = paste0(release, "/", center, "_unique_mutations.tsv")
+  write.table(df, filename, quote=F, sep="\t", row.names=F)
+
+  database_synid_mapping = synTableQuery(glue('select * from {synid}',
+                                              synid = database_synid_mappingid))
+  database_synid_mappingdf = synapser::as.data.frame(database_synid_mapping)
+
+  center_mapping_ind = database_synid_mappingdf$Database == "centerMapping"
+  center_mapping_synid = database_synid_mappingdf$Id[center_mapping_ind]
+
+  staging_folders = synTableQuery(glue("select stagingSynId from {synid} where center = '{center}'",
+                                       synid = center_mapping_synid,
+                                       center = center),
+                                  includeRowIdAndRowVersion=F)
+  ent = synStore(File(filename, parentId = staging_folders$asDataFrame()$stagingSynId))
+  ent$id
+}
+
+
+# Start of module
+release <- args$release
+genie_user <- args$syn_user
+genie_pass <- args$syn_pass
+testing <- args$testing
+
+# Login to Synapse
+tryCatch({
+  synLogin()
+}, error = function(err) {
+  synLogin(genie_user, genie_pass)
+})
+
+# Determine database synid mapping
 if (testing) {
   database_synid_mappingid = 'syn11600968'
 } else{
   database_synid_mappingid = 'syn10967259'
 }
 
-
-database_synid_mapping = synTableQuery(sprintf('select * from %s',
-                                               database_synid_mappingid))
-database_synid_mappingdf = synapser::as.data.frame(database_synid_mapping)
-release_folder_fileview_synid = database_synid_mappingdf$Id[database_synid_mappingdf$Database == "releaseFolder"]
-
-choose_from_release = synTableQuery(paste(sprintf("select distinct(name) as releases from %s",
-                                                  release_folder_fileview_synid),
-                                          "where name not like 'Release%' and name <> 'case_lists'"))
-releases = synapser::as.data.frame(choose_from_release)
-if (!any(releases$releases %in% release)) {
-  stop(sprintf("Must choose correct release: %s",
-               paste0(releases$releases, collapse=", ")))
-}
-
-release_folder = synTableQuery(sprintf("select id from %s where name = '%s'",
-                                       release_folder_fileview_synid, release),
-                               includeRowIdAndRowVersion=F)
-release_folder_synid = release_folder$asDataFrame()$id
-
+# Get release folder synapse id
+release_folder_synid <- get_release_folder_synid(database_synid_mappingid, release)
 # Get release files mapping
-RELEASE_FILES_MAPPING = get_file_mapping(release_folder_synid)
+release_files_mapping = get_file_mapping(release_folder_synid)
 
 # Does this number have to be 5 panels from different sites?
-NUMBER_CENTERS_COVER_REGION = 5
-NUMBER_CENTERS_WITH_CODE = 5
+NUMBER_CENTERS_COVER_REGION = 6
+NUMBER_CENTERS_WITH_CODE = 10
 UNIQUE_MUTATIONS_FOLDER_SYNID = "syn18455620"
-
 
 release_uniq_mutations_ent = synStore(Folder(release,
                                              parentId = UNIQUE_MUTATIONS_FOLDER_SYNID))
@@ -172,41 +245,43 @@ uniq_mutation_folder_ent = synStore(Folder(sprintf("regions_covered_by_%s_center
                                            parentId = center_with_code_folder_ent$properties$id))
 
 
-BED_SYNID = RELEASE_FILES_MAPPING[['genomic_information.txt']]
-MAF_SYNID = RELEASE_FILES_MAPPING[['data_mutations_extended.txt']]
-CLINICAL_SAMPLE_SYNID = RELEASE_FILES_MAPPING[['data_clinical_sample.txt']]
-bed_ent = synGet(BED_SYNID, followLink=T)
-maf_ent = synGet(MAF_SYNID, followLink=T)
-clinical_ent = synGet(CLINICAL_SAMPLE_SYNID, followLink=T)
+bed_synid = release_files_mapping[['genomic_information.txt']]
+maf_synid = release_files_mapping[['data_mutations_extended.txt']]
+sample_synid = release_files_mapping[['data_clinical_sample.txt']]
 
-CLINICALDF = fread(clinical_ent$path, skip=4)
-CLINICALDF$CENTER = sapply(strsplit(CLINICALDF$SEQ_ASSAY_ID, "-"), function(x) x[1])
-CLINICALDF = CLINICALDF[,c("SAMPLE_ID", "CENTER", "SEQ_ASSAY_ID", "ONCOTREE_CODE")]
+bed_ent = synGet(bed_synid, followLink=T)
+maf_ent = synGet(maf_synid, followLink=T)
+sample_ent = synGet(sample_synid, followLink=T)
 
-MAFDF = fread(maf_ent$path)
-MAFDF = MAFDF[,c("Hugo_Symbol", "Chromosome", "Start_Position",
+clinicaldf = fread(sample_ent$path, skip=4)
+clinicaldf$CENTER = sapply(strsplit(clinicaldf$SEQ_ASSAY_ID, "-"), function(x) x[1])
+clinicaldf = clinicaldf[,c("SAMPLE_ID", "CENTER", "SEQ_ASSAY_ID", "ONCOTREE_CODE")]
+
+mafdf = fread(maf_ent$path)
+mafdf = mafdf[,c("Hugo_Symbol", "Chromosome", "Start_Position",
                  "End_Position", "Center", "Tumor_Sample_Barcode",
                  "HGVSp_Short")]
 
-BEDDF = fread(bed_ent$path)
-BEDDF$CENTER = sapply(strsplit(BEDDF$SEQ_ASSAY_ID, "-"), function(x) x[1])
+beddf = fread(bed_ent$path)
+beddf$CENTER = sapply(strsplit(beddf$SEQ_ASSAY_ID, "-"),
+                      function(x) x[1])
 
 # Get number of oncotree codes per center
 # It doesn't make sense to check if a specific code is seen across a n number of panels
 # because a center could have 5 panels... So the thresholding should be done on
 # a specific code seen across n number of centers
-codes_per_center = table(CLINICALDF$ONCOTREE_CODE, CLINICALDF$CENTER)
+codes_per_center = table(clinicaldf$ONCOTREE_CODE, clinicaldf$CENTER)
 # Gets the number of centers with a certain codes
 codes_count_across_centers = apply(codes_per_center, 1, function(x) {
   sum(x > 0)
 })
 
-length(unique(CLINICALDF$CENTER))
+print(length(unique(clinicaldf$CENTER)))
 # Number of panels that has a specific oncotree code
-# number_centers_with_code =  floor(0.75*length(unique(CLINICALDF$SEQ_ASSAY_ID)))
+# number_centers_with_code =  floor(0.75*length(unique(clinicaldf$CENTER)))
 
 
-CODES_ABOVE_THRESHOLD_CENTER = codes_count_across_centers[
+codes_above_threshold_center = codes_count_across_centers[
   codes_count_across_centers >= NUMBER_CENTERS_WITH_CODE]
 
 unique_mutation_folder = sprintf("%s/%s_centers_with_code/%s_centers_cover_region/",
@@ -218,40 +293,21 @@ unique_mutation_files = list.files(unique_mutation_folder,
                                    full.names = T)
 
 if (length(unique_mutation_files) == 0) {
-  unique_mutation_files = find_unique_mutations_panel(CLINICALDF,
-                                                      CODES_ABOVE_THRESHOLD_CENTER,
-                                                      MAFDF,
-                                                      BEDDF,
-                                                      threshold=NUMBER_CENTERS_COVER_REGION,
-                                                      dir = unique_mutation_folder)
+  unique_mutation_files = find_unique_mutations(clinicaldf,
+                                                codes_above_threshold_center,
+                                                mafdf,
+                                                beddf,
+                                                threshold=NUMBER_CENTERS_COVER_REGION,
+                                                dir = unique_mutation_folder)
 }
-
-panel_unique_mutation_counts = 
-  matrix(nrow = length(unique(CLINICALDF$ONCOTREE_CODE)),
-         ncol = length(unique(CLINICALDF$SEQ_ASSAY_ID)),
-         dimnames = list(unique(CLINICALDF$ONCOTREE_CODE),
-                         unique(CLINICALDF$SEQ_ASSAY_ID)))
-# Need to write out the panel id
+all_unique_mutationsdf = data.frame()
 for (mut_file in unique_mutation_files) {
   mutdf = fread(mut_file)
-  code = sub(".*/(.*)_unique_mutations.csv","\\1", mut_file)
-  code_count = table(mutdf$SEQ_ASSAY_ID)
-  panel_unique_mutation_counts[code, names(code_count)] = code_count
-  synStore(File(mut_file, parentId = uniq_mutation_folder_ent$properties$id))
+  all_unique_mutationsdf = rbind(all_unique_mutationsdf, mutdf)
 }
-panel_unique_mutation_counts[is.na(panel_unique_mutation_counts)] = 0
 
-
-row_sum = apply(panel_unique_mutation_counts, 1, sum)
-
-#Plot codes above average of counts
-row_sum_avg = row_sum[row_sum > mean(row_sum)]
-barplot(sort(row_sum_avg, decreasing = T),
-        main = "Unique number of mutations per code",
-        las = 2,
-        cex.names = 0.8)
-
-barplot(sort(log(row_sum_avg), decreasing = T),
-        main = "Unique number of mutations per code (log)",
-        las = 2,
-        cex.names = 0.8)
+# Write out each centers unique mutations into center staging folder
+all_unique_mutationsdf %>%
+  group_by(CENTER) %>%
+  group_walk(~ write_and_store_mutations(.x, database_synid_mappingid,
+                                         .y$CENTER, release))
