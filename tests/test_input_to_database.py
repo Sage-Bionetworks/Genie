@@ -669,7 +669,7 @@ def test__send_validation_error_email():
         patch_syn_sendmessage.assert_called_once_with(
             userIds=[file_user], messageBody=error_message,
             messageSubject='GENIE Validation Error - 2019-11-01 00:00:00')
-        patch_syn_getuserprofile.call_count == 2
+        patch_syn_getuserprofile.assert_called_once_with(file_user)
 
 
 class emptytable_mock:
