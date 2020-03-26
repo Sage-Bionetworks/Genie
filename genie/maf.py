@@ -4,7 +4,10 @@ import subprocess
 
 import pandas as pd
 import synapseclient
-from synapseclient.exceptions import SynapseTimeoutError
+try:
+    from synapseclient.core.exceptions import SynapseHTTPError
+except ModuleNotFoundError:
+    from synapseclient.exceptions import SynapseHTTPError
 
 from .example_filetype_format import FileTypeFormat
 from . import process_functions

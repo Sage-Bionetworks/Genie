@@ -6,6 +6,10 @@ import os
 import time
 
 import synapseclient
+try:
+    from synapseclient.core.utils import to_unix_epoch_time
+except ModuleNotFoundError:
+    from synapseclient.utils import to_unix_epoch_time
 import synapseutils
 import pandas as pd
 
@@ -48,7 +52,7 @@ def entity_date_to_timestamp(entity_date_time):
 
     date_and_time = entity_date_time.split(".")[0]
     date_time_obj = datetime.datetime.strptime(date_and_time, "%Y-%m-%dT%H:%M:%S")
-    return synapseclient.utils.to_unix_epoch_time(date_time_obj)
+    return to_unix_epoch_time(date_time_obj)
 
 
 def get_center_input_files(syn, synid, center, process="main"):
@@ -129,9 +133,10 @@ def check_existing_file_status(validation_status_table, error_tracker_table, ent
 
     validation_statusdf = validation_status_table.asDataFrame()
     error_trackerdf = error_tracker_table.asDataFrame()
-
+    # This should be outside fo the forloop so that it doesn't
+    # get reset
+    to_validate = False
     for ent in entities:
-        to_validate = False
         # Get the current status and errors from the tables.
         current_status = validation_statusdf[validation_statusdf['id'] == ent.id]
         current_error = error_trackerdf[error_trackerdf['id'] == ent.id]
@@ -320,17 +325,18 @@ def processfiles(syn, validfiles, center, path_to_genie,
     logger.info("PROCESSING {} FILES: {}".format(center, len(validfiles)))
     center_staging_folder = os.path.join(path_to_genie, center)
     center_staging_synid = center_mapping_df.query(
-        "center == 'SAGE'").stagingSynId.iloc[0]
+        "center == '{}'".format(center)).stagingSynId.iloc[0]
 
     if not os.path.exists(center_staging_folder):
         os.makedirs(center_staging_folder)
 
     if processing != 'vcf':
-        for fileSynId, filePath, fileType in zip(validfiles['id'],
-                                                 validfiles['path'],
-                                                 validfiles['fileType']):
-            filename = os.path.basename(filePath)
-            newPath = os.path.join(center_staging_folder, filename)
+        for fileSynId, filePath, name, fileType in zip(validfiles['id'],
+                                                       validfiles['path'],
+                                                       validfiles['name'],
+                                                       validfiles['fileType']):
+            # filename = os.path.basename(filePath)
+            newPath = os.path.join(center_staging_folder, name)
             # store = True
             synId = databaseToSynIdMappingDf.Id[
                 databaseToSynIdMappingDf['Database'] == fileType]
@@ -696,7 +702,7 @@ def validation(syn, center, process,
 
         valid_filesdf = input_valid_statusdf.query('status == "VALIDATED"')
 
-        return(valid_filesdf[['id', 'path', 'fileType']])
+        return(valid_filesdf[['id', 'path', 'fileType', 'name']])
 
 
 def center_input_to_database(
@@ -752,15 +758,22 @@ def center_input_to_database(
 
     if len(validFiles) > 0 and not only_validate:
         # Reorganize so BED file are always validated and processed first
-        validBED = [
-            os.path.basename(i).endswith('.bed') for i in validFiles['path']]
-        beds = validFiles[validBED]
+        bed_files = validFiles['fileType'] == "bed"
+        beds = validFiles[bed_files]
         validFiles = beds.append(validFiles)
         validFiles.drop_duplicates(inplace=True)
         # Valid vcf files
-        validVCF = [
-            i for i in validFiles['path']
-            if os.path.basename(i).endswith('.vcf')]
+        vcf_files = validFiles['fileType'] == "vcf"
+        validVCF = validFiles['path'][vcf_files].tolist()
+
+        # merge clinical files into one row
+        clinical_ind = validFiles['fileType'] == "clinical"
+        clinical_files = validFiles[clinical_ind].to_dict(orient='list')
+        # The [] implies the values in the dict as a list
+        merged_clinical = pd.DataFrame([clinical_files])
+        merged_clinical['fileType'] = 'clinical'
+        merged_clinical['name'] = "data_clinical_supp_{}.txt".format(center)
+        validFiles = validFiles[~clinical_ind].append(merged_clinical)
 
         processTrackerSynId = process_functions.getDatabaseSynId(
             syn, "processTracker",

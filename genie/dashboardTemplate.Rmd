@@ -198,23 +198,25 @@ plotPanelOverlap <- function(samples, bed, assays) {
 plotCenterXRace <- function(genieClinData) {
   t = as.data.frame.matrix(table(genieClinData$CENTER,genieClinData$PRIMARY_RACE))
   t = data.frame(n = rowSums(t),t)
-  kable(t)
+  # kable(t)
   
-  kable(data.frame("Percent.Unknown" = (t[,"Unknown"]/rowSums(t[,colnames(t) != "n"]))*100), digits = 2)
+  # kable(data.frame("Percent.Unknown" = (t[,"Unknown"]/rowSums(t[,colnames(t) != "n"]))*100), digits = 2)
   
   # reduce table to none "Unknown" data
-  t$n = t$n - t$Unknown
-  t = t[,!(colnames(t) == "Unknown")]
+  # t$n = t$n - t$Unknown
+  # t = t[,!(colnames(t) == "Unknown")]
   # find sites with greater than 100 nono "Unknown" patients wrt race
-  k = which(t$n > 100)
-  t = t[,c("n", "White","Black","Asian","Native.American","Other")]
-  t[k,colnames(t) != "n"] = t[k,colnames(t) != "n"]/rowSums(t[k,colnames(t) != "n"])
-  kable(t[k,],digits = 3)
+  # k = which(t$n > 100)
+  t = t[,c("n", "White", "Black", "Asian", "Native.American",
+           "Other", "Unknown")]
+  t[,colnames(t) != "n"] = t[,colnames(t) != "n"]/rowSums(t[,colnames(t) != "n"])
+  # kable(t[k,],digits = 3)
   
   # Center vs Race BARCHARTS
   t$Center = rownames(t)
-  l = c("White","Black","Asian","Native.American","Other")
-  t = reshape(t[k,],
+  l = c("White", "Black", "Asian", "Native.American",
+        "Other", "Unknown")
+  t = reshape(t,
               direction = "long",
               idvar = ("Center"),
               varying = l,
@@ -233,21 +235,21 @@ plotCenterXRace <- function(genieClinData) {
 
 plotCenterXEthnicity <- function(genieClinData) {
   t = as.data.frame.matrix(table(genieClinData$CENTER,genieClinData$ETHNICITY))
-  t = data.frame(n = rowSums(t),t)
-  kable(t)
+  # t = data.frame(n = rowSums(t),t)
+  # kable(t)
   
-  kable(data.frame("Percent.Unknown" = (t[,"Unknown"]/rowSums(t[,colnames(t) != "n"]))*100), digits = 2)
+  # kable(data.frame("Percent.Unknown" = (t[,"Unknown"]/rowSums(t[,colnames(t) != "n"]))*100), digits = 2)
   
-  t$n = t$n - t$Unknown
-  t = t[,!(colnames(t) == "Unknown")]
-  k = which(t$n > 100)
-  t[k,colnames(t) != "n"] = t[k,colnames(t) != "n"]/rowSums(t[k,colnames(t) != "n"])
-  kable(t[k,],digits = 3)
+  # t$n = t$n - t$Unknown
+  # t = t[,!(colnames(t) == "Unknown")]
+  # k = which(t$n > 100)
+  t[,colnames(t) != "n"] = t[,colnames(t) != "n"]/rowSums(t[,colnames(t) != "n"])
+  # kable(t[k,],digits = 3)
   
   # Center vs Ethnicity BARCHARTS
   t$Center = rownames(t)
-  l = c("Non.Spanish.non.Hispanic","Spanish.Hispanic")
-  t = reshape(t[k,],
+  l = c("Non-Spanish/non-Hispanic", "Spanish/Hispanic", "Unknown")
+  t = reshape(t,
               direction = "long",
               idvar = ("Center"),
               varying = l,
@@ -338,8 +340,12 @@ if (is.null(this_samples)) {
   this_patient <- this_patient[!duplicated(this_patient$PATIENT_ID),]
 }
 this_bed <- getFileDf("genomic_information.txt", releaseFiles)
+if (is.null(this_bed)) {
+  this_bed <- getFileDf("genie_combined.bed", releaseFiles)
+}
 this_assays = as.character(unique(this_samples$SEQ_ASSAY_ID))
 this_mut <- getFileDf("data_mutations_extended.txt", releaseFiles)
+assay_infodf = getFileDf("assay_information.txt", releaseFiles)
 black_list_variants <- synTableQuery("select * from syn18459663",
                                      includeRowIdAndRowVersion = F)
 black_list_variantsdf = black_list_variants$asDataFrame()
@@ -390,9 +396,9 @@ kable(table(subset_mut$Center, subset_mut$blacklist),
 par(mar = c(10,3,3,1))
 barplot(sort(log(table(this_mut$FILTER)),decreasing = T),
         main = "Log Distribution of Mutation FILTERs", las = 2)
-#plotPrimarySites(this_samples,
-#                 "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2018_06_01",
-#                 "%s")
+# plotPrimarySites(this_samples,
+#                  "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2018_06_01",
+#                  "%s")
 #Center X Race
 plotCenterXRace(this_patient)
 #Center X Ethnicity
@@ -464,5 +470,97 @@ if (length(smallPanels) > 1) {
 if (length(largePanels) > 1) {
   print("Overlap of large (>100) gene panels")
   plotPanelOverlap(this_samples, this_bed, largePanels)
+}
+```
+
+To assist with discovering artifacts in a center's data, this will summarize the top 5 most frequently mutated genes per panel.  One of the easiest questions to answer is:
+
+
+**Has the frequently mutated gene list changed significantly? Is TP53 still #1?**
+
+Top 5 most frequently mutated genes per panel for all panels
+
+```{r top_5_mutated, echo=FALSE}
+mergeddf = merge.data.frame(this_mut[,c("Tumor_Sample_Barcode", "Hugo_Symbol")],
+                            this_samples[,c("SAMPLE_ID", "SEQ_ASSAY_ID")],
+                            by.x = "Tumor_Sample_Barcode",
+                            by.y = "SAMPLE_ID")
+mutated_genes = table(mergeddf$Hugo_Symbol, mergeddf$SEQ_ASSAY_ID)
+# Top 5 mutated genes per panel
+top_5_mutated_genes = apply(mutated_genes, 2, function(x) {
+  list(sort(x, decreasing = T)[1:5])
+})
+top_5_mutated_genes_string = apply(mutated_genes, 2, function(x) {
+  top_5 = sort(x, decreasing = T)[1:5]
+  paste(names(top_5), top_5, sep = ": ")
+})
+transposed_matrix = t(top_5_mutated_genes_string)
+final_matrix = cbind(transposed_matrix, table(mergeddf$SEQ_ASSAY_ID)[row.names(transposed_matrix)])
+colnames(final_matrix) = c(1, 2, 3, 4, 5, "Total Variants")
+kable(final_matrix,
+      caption = "Distribution of top 5 most frequently mutated genes per SEQ_ASSAY_ID")
+
+```
+
+
+These are all the panels that cover TP53 that don't have TP53 as the top mutated genes.  Please review if data is correct.
+
+
+```{r highlight_panels, echo=FALSE}
+
+if (!is.null(this_bed)) {
+  panels_covering_tp53 = unique(this_bed$SEQ_ASSAY_ID[this_bed$Hugo_Symbol == "TP53"])
+  # Exclude panels if TP53 is top mutated
+  tp53_not_top = sapply(names(top_5_mutated_genes), function(seq_assay) {
+    if (names(top_5_mutated_genes[[seq_assay]][[1]][1]) != "TP53") {
+      return(seq_assay)
+    }
+  })
+  relevant_panels = mutated_genes[, panels_covering_tp53]
+  relevant_panels = relevant_panels[, colnames(relevant_panels) %in% unlist(tp53_not_top)]
+  top_5_mutated_genes_string = apply(relevant_panels, 2, function(x) {
+    top_5 = sort(x, decreasing = T)[1:5]
+    paste(names(top_5), top_5, sep = ": ")
+  })
+  transposed_matrix = t(top_5_mutated_genes_string)
+  final_matrix = cbind(transposed_matrix, table(mergeddf$SEQ_ASSAY_ID)[row.names(transposed_matrix)])
+  colnames(final_matrix) = c(1, 2, 3, 4, 5, "Total Variants")
+  kable(final_matrix,
+        caption = "Distribution of top 5 most frequently mutated genes per SEQ_ASSAY_ID")
+}
+```
+
+
+Each panel's bed file is used to generate a gene panel file used in cBioPortal. All bed files undergo gene symbol remapping during processing.
+
+* `num_genes_remapped`:  number of unique genes a panel has after submitted genes are remapped
+* `num_genes_submitted`: number of unique genes found in site's submitted BED file prior to remapping
+* `num_genes_expected`: size of panel as defined in site's submitted assay_information.yaml file
+
+Ideally, `num_genes_remapped` and `num_genes_expected` should match. Panels that have differences between the two values are shown below.  `NA` means that the panel has an invalid assay information file.
+
+```{r genepanel_diff, echo=F}
+if (!is.null(assay_infodf) & !is.null(this_bed)) {
+  gene_panel_bed = this_bed[this_bed$Feature_Type == "exon" & this_bed$includeInPanel == "True" & this_bed$Hugo_Symbol != "", ]
+  # Get count of symbols per panel
+  symbol_count_per_panel = table(gene_panel_bed$Hugo_Symbol, gene_panel_bed$SEQ_ASSAY_ID)
+  # Get whether or not a panel contains a certain symbol
+  symbol_bool_per_panel = symbol_count_per_panel > 0
+  # Sum of the columns gets number of unique genes per panel
+  number_of_genes = data.frame(colSums(symbol_bool_per_panel))
+
+  submitted_count = table(gene_panel_bed$ID, gene_panel_bed$SEQ_ASSAY_ID)
+  submitted_bool_per_panel = submitted_count > 0
+  num_submitted_genes = colSums(submitted_bool_per_panel)
+  colnames(number_of_genes) = "num_genes_remapped"
+  number_of_genes$num_genes_submitted = NA
+  number_of_genes$num_expected_genes = NA
+  number_of_genes[names(num_submitted_genes), "num_genes_submitted"] = num_submitted_genes
+  number_of_genes[assay_infodf$SEQ_ASSAY_ID, "num_expected_genes"] = assay_infodf$number_of_genes
+
+  different_from_expected = number_of_genes[c(which(number_of_genes$num_genes_remapped != number_of_genes$num_expected_genes),
+                                              which(is.na(number_of_genes$num_expected_genes))),]
+  kable(different_from_expected,
+        caption = "Number of submitted vs expected genes in a bed file")
 }
 ```
