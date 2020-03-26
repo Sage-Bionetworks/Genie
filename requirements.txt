@@ -1,0 +1,1 @@
+synapseclient==1.9.4
