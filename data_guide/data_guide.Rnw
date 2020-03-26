@@ -46,6 +46,49 @@ library(xtable)
 library(synapser)
 library(ggplot2)
 library(ggpubr)
+library(glue)
+
+
+get_release_folder_synid <- function(database_synid_mappingid, release) {
+  database_synid_mapping = synTableQuery(glue('select * from {synid}',
+                                              synid = database_synid_mappingid))
+  database_synid_mappingdf = synapser::as.data.frame(database_synid_mapping)
+  release_folder_ind = database_synid_mappingdf$Database == "releaseFolder"
+  release_folder_fileview_synid = database_synid_mappingdf$Id[release_folder_ind]
+
+  choose_from_release = synTableQuery(glue("select distinct(name) as releases from {synid} where ",
+                                           "name not like 'Release%' and name <> 'case_lists'",
+                                           synid = release_folder_fileview_synid))
+  releases = synapser::as.data.frame(choose_from_release)
+  if (!any(releases$releases %in% release)) {
+    stop(glue("Must choose correct release: {releases}",
+              releases = paste0(releases$releases, collapse = ", ")))
+  }
+
+  release_folder = synTableQuery(glue("select id from {synid} where name = '{release}'",
+                                      synid = release_folder_fileview_synid,
+                                      release = release),
+                                 includeRowIdAndRowVersion = F)
+  release_folder$asDataFrame()$id
+}
+
+
+get_file_mapping = function(release_folder_synid) {
+  release_ent = synGet(release_folder_synid)
+  print(release_ent$properties$name)
+  release_files = synGetChildren(release_folder_synid)
+  release_files_list = as.list(release_files)
+  file_mapping = sapply(release_files_list, function(release_file) {
+    mapping = c()
+    if (release_file$name == "genie_combined.bed") {
+      release_file$name = "genomic_information.txt"
+    }
+    mapping[release_file$name] = release_file$id
+    mapping
+  })
+  file_mapping
+}
+
 
 get_list_assay_info_table <- function(allowed_values, assayinfodf, col) {
   na_ind = is.na(assayinfodf[,col])
@@ -63,11 +106,28 @@ get_list_assay_info_table <- function(allowed_values, assayinfodf, col) {
 }
 
 synLogin()
-centers = suppressMessages(synTableQuery('select "Center Abbreviation", "Center" from syn16982837',
+database_synid_mappingid = 'syn10967259'
+release = "8.2-consortium"
+release_folder_synid <- get_release_folder_synid(database_synid_mappingid, release)
+
+# Get release files mapping
+release_files_mapping = get_file_mapping(release_folder_synid)
+
+# bed_synid = release_files_mapping[['genomic_information.txt']]
+# maf_synid = release_files_mapping[['data_mutations_extended.txt']]
+# sample_synid = release_files_mapping[['data_clinical_patient.txt']]
+assay_synid = release_files_mapping[['assay_information.txt']]
+
+
+assayinfo = suppressMessages(synGet(assay_synid, followLink = T))
+assayinfodf = read.csv(assayinfo$path, sep = "\t", stringsAsFactors = F)
+
+processed_centers = unique(assayinfodf$CENTER)
+
+centers = suppressMessages(synTableQuery(glue('select "Center Abbreviation", "Center" from syn16982837 ',
+                                              "where \"Center Abbreviation\" in ('{centers}')",
+                                              centers = paste(processed_centers, collapse = "','")),
                                          includeRowIdAndRowVersion = F))
-assayinfo = suppressMessages(synTableQuery('SELECT * FROM syn17009222',
-                                           includeRowIdAndRowVersion = F))
-assayinfodf = assayinfo$asDataFrame()
 
 @
 
