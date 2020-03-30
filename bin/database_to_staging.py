@@ -45,7 +45,8 @@ def generate_dashboard_html(genie_version, staging=False,
     subprocess.check_call(markdown_render_cmd)
 
 
-def generate_data_guide(genie_version, genie_user=None, genie_pass=None):
+def generate_data_guide(genie_version, oncotree_version=None,
+                        genie_user=None, genie_pass=None):
     """Generates the GENIE data guide"""
 
     template_path = os.path.join(PWD, '../data_guide/data_guide_template.Rnw')
@@ -53,9 +54,10 @@ def generate_data_guide(genie_version, genie_user=None, genie_pass=None):
         template_str = template_file.read()
 
     replacements = {"{{release}}": genie_version,
-                    "{{oncotree}}": "oncotree\\_2018\\_06\\_01",
+                    "{{oncotree}}": oncotree_version.replace("_", "\\_"),
                     "{{username}}": genie_user,
                     "{{password}}": genie_pass}
+
     for search in replacements:
         replacement = replacements[search]
         template_str = template_str.replace(search, replacement)
@@ -265,12 +267,14 @@ def main(genie_version,
         dashboard_table_updater.run_dashboard(syn, databaseSynIdMappingDf,
                                               genie_version,
                                               staging=staging)
-        generate_dashboard_html(syn, genie_version, staging=staging,
+        generate_dashboard_html(genie_version, staging=staging,
                                 genie_user=genie_user,
                                 genie_pass=genie_pass)
         logger.info("DASHBOARD UPDATE COMPLETE")
         logger.info("AUTO GENERATE DATA GUIDE")
-        generate_data_guide(genie_version, genie_user=genie_user,
+        oncotree_version = oncotree_link.split("=")[1]
+        generate_data_guide(genie_version, oncotree_version=oncotree_version,
+                            genie_user=genie_user,
                             genie_pass=genie_pass)
 
 

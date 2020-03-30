@@ -29,7 +29,7 @@
 \makeatletter         
 \def\@maketitle{
 \begin{center}
-\includegraphics[width=1.0\textwidth]{genie_banner.png}\\[8ex]
+\includegraphics[width=1.0\textwidth]{../genie_banner.png}\\[8ex]
 {\Huge \@title }\\[4ex] 
 {\Large  \@author}\\[4ex] 
 \@date\\[8ex]
