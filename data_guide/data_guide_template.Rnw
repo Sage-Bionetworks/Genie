@@ -104,14 +104,17 @@ get_list_assay_info_table <- function(allowed_values, assayinfodf, col) {
   }
   col_per_panel
 }
+#tryCatch({
+#  text = capture.output(synLogin())
+#}, error = function(err) {
+genie_user = "{{username}}"
+genie_pass = "{{password}}"
+text = capture.output(synLogin(genie_user, genie_pass))
+#})
 
-synLogin()
 database_synid_mappingid = 'syn10967259'
 release = "{{release}}"
-# For testing purposes only
-if (release == "{{release}}") {
-  release = "8.2-consortium"
-}
+
 release_folder_synid <- get_release_folder_synid(database_synid_mappingid, release)
 
 # Get release files mapping

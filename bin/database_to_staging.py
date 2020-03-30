@@ -14,6 +14,58 @@ from genie import dashboard_table_updater
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+PWD = os.path.dirname(os.path.abspath(__file__))
+
+
+def generate_dashboard_html(genie_version, staging=False,
+                            genie_user=None,
+                            genie_pass=None):
+    """Generates dashboard html writeout that gets uploaded to the
+    release folder
+
+    Args:
+        syn: Synapse connection
+        genie_version: GENIE release
+        staging: Use staging files. Default is False
+        genie_user: GENIE synapse username
+        genie_pass: GENIE synapse password
+
+    """
+    markdown_render_cmd = ['Rscript',
+                           os.path.join(PWD, '../genie/dashboard_markdown_generator.R'),
+                           genie_version,
+                           '--template_path',
+                           os.path.join(PWD, '../genie/dashboardTemplate.Rmd')]
+
+    if genie_user is not None and genie_pass is not None:
+        markdown_render_cmd.extend(['--syn_user', genie_user,
+                                    '--syn_pass', genie_pass])
+    if staging:
+        markdown_render_cmd.append('--staging')
+    subprocess.check_call(markdown_render_cmd)
+
+
+def generate_data_guide(genie_version, genie_user=None, genie_pass=None):
+    """Generates the GENIE data guide"""
+
+    template_path = os.path.join(PWD, '../data_guide/data_guide_template.Rnw')
+    with open(template_path, 'r') as template_file:
+        template_str = template_file.read()
+
+    replacements = {"{{release}}": genie_version,
+                    "{{oncotree}}": "oncotree\\_2018\\_06\\_01",
+                    "{{username}}": genie_user,
+                    "{{password}}": genie_pass}
+    for search in replacements:
+        replacement = replacements[search]
+        template_str = template_str.replace(search, replacement)
+
+    with open(os.path.join(PWD, "data_guide.Rnw"), "w") as data_guide_file:
+        data_guide_file.write(template_str)
+
+    subprocess.check_call(['R', 'CMD', 'Sweave', '--pdf',
+                           os.path.join(PWD, "data_guide.Rnw")])
+
 
 def main(genie_version,
          processing_date,
@@ -210,27 +262,16 @@ def main(genie_version,
 
     if not test:
         logger.info("DASHBOARD UPDATE")
-        dashboard_table_updater.run_dashboard(
-            syn,
-            databaseSynIdMappingDf,
-            genie_version,
-            staging=staging)
-        dashboard_markdown_html_commands = [
-            'Rscript',
-            os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         '../genie/dashboard_markdown_generator.R'),
-            genie_version,
-            '--template_path',
-            os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         '../genie/dashboardTemplate.Rmd')]
-
-        if genie_user is not None and genie_pass is not None:
-            dashboard_markdown_html_commands.extend(
-                ['--syn_user', genie_user, '--syn_pass', genie_pass])
-        if staging:
-            dashboard_markdown_html_commands.append('--staging')
-        subprocess.check_call(dashboard_markdown_html_commands)
+        dashboard_table_updater.run_dashboard(syn, databaseSynIdMappingDf,
+                                              genie_version,
+                                              staging=staging)
+        generate_dashboard_html(syn, genie_version, staging=staging,
+                                genie_user=genie_user,
+                                genie_pass=genie_pass)
         logger.info("DASHBOARD UPDATE COMPLETE")
+        logger.info("AUTO GENERATE DATA GUIDE")
+        generate_data_guide(genie_version, genie_user=genie_user,
+                            genie_pass=genie_pass)
 
 
 if __name__ == "__main__":
