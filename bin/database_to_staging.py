@@ -46,7 +46,8 @@ def generate_dashboard_html(genie_version, staging=False,
 
 
 def generate_data_guide(genie_version, oncotree_version=None,
-                        genie_user=None, genie_pass=None):
+                        database_mapping=None, genie_user=None,
+                        genie_pass=None):
     """Generates the GENIE data guide"""
 
     template_path = os.path.join(PWD, '../data_guide/data_guide_template.Rnw')
@@ -54,6 +55,7 @@ def generate_data_guide(genie_version, oncotree_version=None,
         template_str = template_file.read()
 
     replacements = {"{{release}}": genie_version,
+                    "{{database_synid}}": database_mapping,
                     "{{oncotree}}": oncotree_version.replace("_", "\\_"),
                     "{{username}}": genie_user,
                     "{{password}}": genie_pass}
@@ -274,6 +276,7 @@ def main(genie_version,
         oncotree_version = oncotree_link.split("=")[1]
         data_guide_pdf = generate_data_guide(genie_version,
                                              oncotree_version=oncotree_version,
+                                             database_mapping=databaseSynIdMappingId,
                                              genie_user=genie_user,
                                              genie_pass=genie_pass)
         data_guide_ent = synapseclient.File(data_guide_pdf,

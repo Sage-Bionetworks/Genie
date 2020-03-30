@@ -112,7 +112,8 @@ genie_pass = "{{password}}"
 text = capture.output(synLogin(genie_user, genie_pass))
 #})
 
-database_synid_mappingid = 'syn10967259'
+#database_synid_mappingid = 'syn10967259'
+database_synid_mappingid = "{{database_synid}}"
 release = "{{release}}"
 
 release_folder_synid <- get_release_folder_synid(database_synid_mappingid, release)
