@@ -231,6 +231,15 @@ def main(genie_version,
             dashboard_markdown_html_commands.append('--staging')
         subprocess.check_call(dashboard_markdown_html_commands)
         logger.info("DASHBOARD UPDATE COMPLETE")
+        # Unique mutations in database to staging
+        unique_mutation_cmd = ['Rscript',
+                               os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                            '../analysis/unique_mutations.R'),
+                               genie_version]
+        if genie_user is not None and genie_pass is not None:
+            unique_mutation_cmd.extend(['--syn_user', genie_user,
+                                        '--syn_pass', genie_pass])
+        subprocess.check_call(unique_mutation_cmd)
 
 
 if __name__ == "__main__":
