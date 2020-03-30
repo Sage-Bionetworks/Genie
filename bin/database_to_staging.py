@@ -224,24 +224,23 @@ def main(genie_version,
                                               genie_version)
 
     logger.info("CBIO VALIDATION")
-    '''
-    Must be exit 0 because the validator sometimes fails,
-    but we still want to capture the output
-    '''
+
+    # Must be exit 0 because the validator sometimes fails,
+    # but we still want to capture the output
+
     command = [cbioValidatorPath, '-s', database_to_staging.GENIE_RELEASE_DIR,
                '-n', '; exit 0']
     cbioOutput = subprocess.check_output(" ".join(command), shell=True)
     logger.info(cbioOutput.decode("utf-8"))
 
-    cbio_validator_log = \
-        "cbioValidatorLogsConsortium_{}.txt".format(genie_version)
+    cbio_validator_log = f"cbioValidatorLogsConsortium_{genie_version}.txt"
     if not test and not staging:
         log_folder_synid = databaseSynIdMappingDf['Id'][
             databaseSynIdMappingDf['Database'] == 'logs'].values[0]
-        with open(cbio_validator_log, "w") as cbioLog:
-            cbioLog.write(cbioOutput.decode("utf-8"))
-        syn.store(synapseclient.File(
-            cbio_validator_log, parentId=log_folder_synid))
+        with open(cbio_validator_log, "w") as cbio_log:
+            cbio_log.write(cbioOutput.decode("utf-8"))
+        syn.store(synapseclient.File(cbio_validator_log,
+                                     parentId=log_folder_synid))
         os.remove(cbio_validator_log)
     logger.info("REMOVING OLD FILES")
 
@@ -253,8 +252,7 @@ def main(genie_version,
 
     logger.info("CREATING LINK VERSION")
     # Returns release and case list folder
-    folders = database_to_staging.create_link_version(syn,
-                                                      genie_version,
+    folders = database_to_staging.create_link_version(syn, genie_version,
                                                       caseListEntities,
                                                       genePanelEntities,
                                                       databaseSynIdMappingDf)

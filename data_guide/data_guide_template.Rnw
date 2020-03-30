@@ -197,7 +197,7 @@ The data within GENIE is being shared with the global research community.  The d
 <<results=tex, echo=F>>=
 xtab = xtable(centers$asDataFrame(),
               caption = 'Participating Centers')
-align(xtab) <- "r|l|l|"
+align(xtab) <- "r|l|p{90mm}|"
 
 print(xtab, include.rownames = F,
       floating = F, caption.placement = "top",
