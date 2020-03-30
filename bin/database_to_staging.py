@@ -67,6 +67,7 @@ def generate_data_guide(genie_version, oncotree_version=None,
 
     subprocess.check_call(['R', 'CMD', 'Sweave', '--pdf',
                            os.path.join(PWD, "data_guide.Rnw")])
+    return os.path.join(PWD, "data_guide.pdf")
 
 
 def main(genie_version,
@@ -251,16 +252,16 @@ def main(genie_version,
         os.unlink(private_cna_meta_path)
 
     logger.info("CREATING LINK VERSION")
-    database_to_staging.create_link_version(syn, genie_version,
-                                            caseListEntities,
-                                            genePanelEntities,
-                                            databaseSynIdMappingDf)
+    # Returns release and case list folder
+    folders = database_to_staging.create_link_version(syn,
+                                                      genie_version,
+                                                      caseListEntities,
+                                                      genePanelEntities,
+                                                      databaseSynIdMappingDf)
 
     if not staging:
         database_to_staging.update_process_trackingdf(
             syn, processTrackerSynId, 'SAGE', 'dbToStage', start=False)
-
-    logger.info("COMPLETED DATABASE TO STAGING")
 
     if not test:
         logger.info("DASHBOARD UPDATE")
@@ -273,9 +274,14 @@ def main(genie_version,
         logger.info("DASHBOARD UPDATE COMPLETE")
         logger.info("AUTO GENERATE DATA GUIDE")
         oncotree_version = oncotree_link.split("=")[1]
-        generate_data_guide(genie_version, oncotree_version=oncotree_version,
-                            genie_user=genie_user,
-                            genie_pass=genie_pass)
+        data_guide_pdf = generate_data_guide(genie_version,
+                                             oncotree_version=oncotree_version,
+                                             genie_user=genie_user,
+                                             genie_pass=genie_pass)
+        data_guide_ent = synapseclient.File(data_guide_pdf,
+                                            parent=folders['release_folder'])
+        syn.store(data_guide_ent)
+    logger.info("COMPLETED DATABASE TO STAGING")
 
 
 if __name__ == "__main__":
