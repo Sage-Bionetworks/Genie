@@ -352,12 +352,10 @@ black_list_variantsdf = black_list_variants$asDataFrame()
 # this_cna <- getFileDf("data_CNA.txt", releaseFiles)
 #this_fus <- getFileDf("data_fusions.txt", releaseFiles)
 ```
+## Sample and Variant Count per center
+Please confirm that the the number of samples and variants in this release is what you expect.
 
 ```{r sampleTable}
-#Put table of counts
-#samplesPerReleaseTable = synTableQuery("select Center, Clinical as Samples from syn8105940 where Release = '{Release}'",includeRowIdAndRowVersion=F)
-#samplesPerReleaseDf = as.data.frame(samplesPerReleaseTable)
-#sampleCountNoTotalDf <- sampleCountNoTotalDf[sampleCountNoTotalDf$Center!="Total",]
 sampleCounts = table(this_samples$CENTER)
 samplesPerReleaseDf = as.data.frame(sampleCounts)
 colnames(samplesPerReleaseDf) = c("Center", "Samples")
@@ -372,12 +370,9 @@ samplesPerReleaseDf = rbind(release_infodf,
                                        "Variants" = sum(variant_counts)))
 kable(samplesPerReleaseDf, row.names = F,
       caption = "Number of samples and variants per center")
-# row.names(sampleCountNoTotalDf) <- sampleCountNoTotalDf$Center
-# sampleCountNoTotalDf$Center <- NULL
-# sampleCountNoTotalDf <- t(sampleCountNoTotalDf)
-# barplot(sampleCountNoTotalDf, main="Release {Release} Sample Counts per File", col=c("light blue","dark green","coral","blue","red"), width=2, beside=TRUE,ylim=c(0,ceiling(max(sampleCountNoTotalDf) * 1.0 / 1000) * 1000))
-# legend("topright",fill=c("light blue","dark green","coral","blue","red"), legend=rownames(sampleCountNoTotalDf))
 ```
+
+## Blacklisted Variants
 
 ```{r blacklist}
 blacklist_variants = paste(black_list_variantsdf$Hugo_Symbol,
