@@ -2,9 +2,9 @@ library(argparse)
 parser <- ArgumentParser()
 parser$add_argument("release",
                     help = "Release version (ie. 5.3-consortium)")
-parser$add_argument("--testing",
-                    action = "store_true",
-                    help = "Use testing files")
+parser$add_argument("--database_synid_mappingid",
+                    default = "syn10967259",
+                    help = "Database configuration mapping Synapse id")
 parser$add_argument("--syn_user",
                     help = "Synapse username")
 parser$add_argument("--syn_pass",
@@ -16,6 +16,7 @@ library(VariantAnnotation)
 library(knitr)
 library(glue)
 library(data.table)
+library(dplyr)
 
 
 #' Gets the filename to synapse id mapping of a releease
@@ -183,10 +184,8 @@ get_release_folder_synid <- function(database_synid_mappingid, release) {
 #' @return Synapse id of stored file
 #' @examples
 #' write_and_store_mutations(df, "syn10967259", "DUKE", "7.0-public")
-write_and_store_mutations <- function(df, database_synid_mappingid, center, release) {
-  print(center)
-  print(database_synid_mappingid)
-  filename = paste0(release, "/", center, "_unique_mutations.tsv")
+write_and_store_mutations <- function(df, database_synid_mappingid, center) {
+  filename = paste0(tempdir(), "/", center, "_unique_mutations.tsv")
   write.table(df, filename, quote=F, sep="\t", row.names=F)
 
   database_synid_mapping = synTableQuery(glue('select * from {synid}',
@@ -209,7 +208,7 @@ write_and_store_mutations <- function(df, database_synid_mappingid, center, rele
 release <- args$release
 genie_user <- args$syn_user
 genie_pass <- args$syn_pass
-testing <- args$testing
+database_synid_mappingid <- args$database_synid_mappingid
 
 # Login to Synapse
 tryCatch({
@@ -217,13 +216,6 @@ tryCatch({
 }, error = function(err) {
   synLogin(genie_user, genie_pass)
 })
-
-# Determine database synid mapping
-if (testing) {
-  database_synid_mappingid = 'syn11600968'
-} else{
-  database_synid_mappingid = 'syn10967259'
-}
 
 # Get release folder synapse id
 release_folder_synid <- get_release_folder_synid(database_synid_mappingid, release)
@@ -276,30 +268,20 @@ codes_count_across_centers = apply(codes_per_center, 1, function(x) {
   sum(x > 0)
 })
 
-print(length(unique(clinicaldf$CENTER)))
 # Number of panels that has a specific oncotree code
 # number_centers_with_code =  floor(0.75*length(unique(clinicaldf$CENTER)))
-
 
 codes_above_threshold_center = codes_count_across_centers[
   codes_count_across_centers >= NUMBER_CENTERS_WITH_CODE]
 
-unique_mutation_folder = sprintf("%s/%s_centers_with_code/%s_centers_cover_region/",
-                                 release,
-                                 NUMBER_CENTERS_WITH_CODE,
-                                 NUMBER_CENTERS_COVER_REGION)
-dir.create(unique_mutation_folder, recursive = T)
-unique_mutation_files = list.files(unique_mutation_folder,
-                                   full.names = T)
+unique_mutation_folder = tempdir()
 
-if (length(unique_mutation_files) == 0) {
-  unique_mutation_files = find_unique_mutations(clinicaldf,
-                                                codes_above_threshold_center,
-                                                mafdf,
-                                                beddf,
-                                                threshold=NUMBER_CENTERS_COVER_REGION,
-                                                dir = unique_mutation_folder)
-}
+unique_mutation_files = find_unique_mutations(clinicaldf,
+                                              codes_above_threshold_center,
+                                              mafdf, beddf,
+                                              threshold=NUMBER_CENTERS_COVER_REGION,
+                                              dir = unique_mutation_folder)
+
 all_unique_mutationsdf = data.frame()
 for (mut_file in unique_mutation_files) {
   mutdf = fread(mut_file)
@@ -307,7 +289,7 @@ for (mut_file in unique_mutation_files) {
 }
 
 # Write out each centers unique mutations into center staging folder
-all_unique_mutationsdf %>%
+processing = all_unique_mutationsdf %>%
   group_by(CENTER) %>%
   group_walk(~ write_and_store_mutations(.x, database_synid_mappingid,
-                                         .y$CENTER, release))
+                                         .y$CENTER))
