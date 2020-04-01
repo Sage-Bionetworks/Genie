@@ -62,7 +62,9 @@ def generate_data_guide(genie_version, oncotree_version=None,
 
     for search in replacements:
         replacement = replacements[search]
-        template_str = template_str.replace(search, replacement)
+        # If no replacement value is passed in, don't replace
+        if replacement is not None:
+            template_str = template_str.replace(search, replacement)
 
     with open(os.path.join(PWD, "data_guide.Rnw"), "w") as data_guide_file:
         data_guide_file.write(template_str)
