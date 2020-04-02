@@ -275,15 +275,16 @@ def main(genie_version,
                                 genie_pass=genie_pass)
         logger.info("DASHBOARD UPDATE COMPLETE")
         logger.info("AUTO GENERATE DATA GUIDE")
-        oncotree_version = oncotree_link.split("=")[1]
-        data_guide_pdf = generate_data_guide(genie_version,
-                                             oncotree_version=oncotree_version,
-                                             database_mapping=databaseSynIdMappingId,
-                                             genie_user=genie_user,
-                                             genie_pass=genie_pass)
-        data_guide_ent = synapseclient.File(data_guide_pdf,
-                                            parent=folders['release_folder'])
-        syn.store(data_guide_ent)
+
+    oncotree_version = oncotree_link.split("=")[1]
+    data_guide_pdf = generate_data_guide(genie_version,
+                                         oncotree_version=oncotree_version,
+                                         database_mapping=databaseSynIdMappingId,
+                                         genie_user=genie_user,
+                                         genie_pass=genie_pass)
+    data_guide_ent = synapseclient.File(data_guide_pdf,
+                                        parent=folders['release_folder'])
+    syn.store(data_guide_ent)
     logger.info("COMPLETED DATABASE TO STAGING")
 
 

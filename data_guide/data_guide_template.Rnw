@@ -311,13 +311,11 @@ print(info_tab, floating = F, caption.placement = "top",
 
 
 <<results=tex, echo=F>>=
-allowed_specimen_types = c("FFPE", 'fresh_frozen', "formalin_fixed")
+allowed_specimen_types = c("FFPE", 'fresh_frozen')
 
 specimen_per_panel = get_list_assay_info_table(allowed_specimen_types,
                                                assayinfodf,
-                                               "specimen_type")
-# TODO: Remove this line later
-specimen_per_panel <- specimen_per_panel[,c('FFPE', 'fresh_frozen')]
+                                               "preservation_technique")
 
 info_tab = xtable(specimen_per_panel,
                   caption = 'Specimen Types per Panel')
