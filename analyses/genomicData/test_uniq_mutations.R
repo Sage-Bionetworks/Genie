@@ -39,18 +39,18 @@ mafdf$End_Position <- as.numeric(mafdf$End_Position)
 
 test_that("Check overlapping mutations, no threshold", {
   overlap_mafdf = check_mutation_overlap(beddf, mafdf)
-  expect_equal(mafdf, overlap_mafdf)
+  expect_equal(overlap_mafdf, mafdf)
 })
 
 test_that("Check threshold_key works", {
   overlap_mafdf = check_mutation_overlap(beddf, mafdf, threshold_key = "threshold_key")
-  expect_equal(mafdf, overlap_mafdf)
+  expect_equal(overlap_mafdf, mafdf)
 })
 
 
 test_that("Threshold check, at least 2 centers cover a bed region so no overlap returned", {
   overlap_mafdf = check_mutation_overlap(beddf, mafdf, threshold = 2)
-  expect_equal(nrow(overlap_mafdf), 0)
+  expect_true(nrow(overlap_mafdf) == 0)
 })
 
 
@@ -58,7 +58,7 @@ test_that("Check some overlap mutations", {
   beddf$Start_Position <- c(1, 3)
   beddf$End_Position <- c(1, 5)
   overlap_mafdf = check_mutation_overlap(beddf, mafdf)
-  expect_equal(mafdf[2,], overlap_mafdf)
+  expect_equal(overlap_mafdf, mafdf[2,])
 })
 
 
@@ -66,12 +66,33 @@ test_that("Threshold check, at least 2 centers cover a bed region", {
   beddf$Start_Position <- c(3, 3)
   beddf$End_Position <- c(5, 5)
   overlap_mafdf = check_mutation_overlap(beddf, mafdf, threshold = 2)
-  expect_equal(mafdf[2,], overlap_mafdf)
+  expect_equal(overlap_mafdf, mafdf[2,])
 })
 
+clinicaldf = matrix(nrow = 3, ncol = 2)
+colnames(clinicaldf) = c("ONCOTREE_CODE", "CENTER")
+clinicaldf[,'ONCOTREE_CODE'] = c("TEST", "TEST", "FOO")
+clinicaldf[,'CENTER'] = c("SAGE", "TEST", "SAGE")
+clinicaldf = as.data.frame(clinicaldf, stringsAsFactors = F)
 
+test_that("Check code is returned when covered by n centers", {
+  codes = find_codes_coveredby_n_centers(clinicaldf, threshold = 2)
+  expect_equal(codes, c("TEST"))
+})
 
+test_that("Check code is not returned when not covered by n centers", {
+  codes = find_codes_coveredby_n_centers(clinicaldf, threshold = 3)
+  expect_true(length(codes) == 0)
+})
 
+test_that("Check code is not returned when not covered by n centers", {
+  codes = find_codes_coveredby_n_centers(clinicaldf, threshold = 3)
+  expect_true(length(codes) == 0)
+})
 
+test_that("Check all codes returned", {
+  codes = find_codes_coveredby_n_centers(clinicaldf, threshold = 1)
+  expect_true(all( c("FOO", "TEST") %in% codes))
+})
 
 
