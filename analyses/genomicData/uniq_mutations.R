@@ -59,25 +59,15 @@ NUMBER_CENTERS_COVER_REGION = 1
 NUMBER_CENTERS_WITH_CODE = 1
 UNIQUE_MUTATIONS_FOLDER_SYNID = "syn18455620"
 
-release_uniq_mutations_ent = synStore(Folder(release,
-                                             parentId = UNIQUE_MUTATIONS_FOLDER_SYNID))
-center_with_code_folder_ent = synStore(Folder(sprintf("%s_centers_with_code",
-                                                      NUMBER_CENTERS_WITH_CODE),
-                                              parentId = release_uniq_mutations_ent$properties$id))
-uniq_mutation_folder_ent = synStore(Folder(sprintf("regions_covered_by_%s_centers",
-                                                   NUMBER_CENTERS_COVER_REGION),
-                                           parentId = center_with_code_folder_ent$properties$id))
-
-
 bed_synid = release_files_mapping[['genomic_information.txt']]
 maf_synid = release_files_mapping[['data_mutations_extended.txt']]
 sample_synid = release_files_mapping[['data_clinical_sample.txt']]
 
-bed_ent = synGet(bed_synid, followLink=T)
-maf_ent = synGet(maf_synid, followLink=T)
-sample_ent = synGet(sample_synid, followLink=T)
+bed_ent = synGet(bed_synid, followLink = T)
+maf_ent = synGet(maf_synid, followLink = T)
+sample_ent = synGet(sample_synid, followLink = T)
 
-clinicaldf = fread(sample_ent$path, skip=4)
+clinicaldf = fread(sample_ent$path, skip = 4)
 clinicaldf$CENTER = sapply(strsplit(clinicaldf$SEQ_ASSAY_ID, "-"), function(x) x[1])
 clinicaldf = clinicaldf[,c("SAMPLE_ID", "CENTER", "SEQ_ASSAY_ID", "ONCOTREE_CODE")]
 
@@ -95,8 +85,6 @@ beddf$CENTER = sapply(strsplit(beddf$SEQ_ASSAY_ID, "-"),
 # a specific code seen across n number of centers
 oncotree_codes = find_codes_coveredby_n_centers(clinicaldf,
                                                 NUMBER_CENTERS_WITH_CODE)
-
-unique_mutation_folder = tempdir()
 
 all_unique_mutationsdf = find_unique_mutations(clinicaldf,
                                                oncotree_codes,

@@ -69,6 +69,7 @@ test_that("Threshold check, at least 2 centers cover a bed region", {
   expect_equal(overlap_mafdf, mafdf[2,])
 })
 
+
 clinicaldf = matrix(nrow = 3, ncol = 2)
 colnames(clinicaldf) = c("ONCOTREE_CODE", "CENTER")
 clinicaldf[,'ONCOTREE_CODE'] = c("TEST", "TEST", "FOO")
@@ -95,4 +96,46 @@ test_that("Check all codes returned", {
   expect_true(all( c("FOO", "TEST") %in% codes))
 })
 
+
+clinicaldf = matrix(nrow = 3, ncol = 4)
+colnames(clinicaldf) = c("ONCOTREE_CODE", "CENTER", "SAMPLE_ID", "SEQ_ASSAY_ID")
+clinicaldf[,'ONCOTREE_CODE'] = c("TEST", "FOO", "TEST")
+clinicaldf[,'CENTER'] = c("SAGE", "TEST", "SAGE")
+clinicaldf[,'SAMPLE_ID'] = c("GENIE-SAGE-1-1", "GENIE-TEST-1-1", "GENIE-SAGE-1-2")
+clinicaldf[,'SEQ_ASSAY_ID'] = c("SAGE-1", "TEST-1", "SAGE-2")
+clinicaldf = as.data.frame(clinicaldf, stringsAsFactors = F)
+
+
+mafdf = matrix(nrow = 2, ncol = 3)
+colnames(mafdf) = c("Hugo_Symbol", "Tumor_Sample_Barcode", "HGVSp_Short")
+mafdf[,'Hugo_Symbol'] = c("A", "B")
+mafdf[,'Tumor_Sample_Barcode'] = c("GENIE-SAGE-1-1", "GENIE-SAGE-1-2")
+mafdf[,'HGVSp_Short'] = c("AA", "BB")
+mafdf = as.data.frame(mafdf, stringsAsFactors = F)
+
+expected_mafdf = mafdf
+expected_mafdf$mutation = c("A AA", "B BB")
+expected_mafdf$ONCOTREE_CODE = c("TEST", "TEST")
+expected_mafdf$CENTER = c("SAGE", "SAGE")
+expected_mafdf$SEQ_ASSAY_ID = c("SAGE-1", "SAGE-2")
+
+test_that("Get unique mutations for a specfic code", {
+  # This tests that even if a center has two panels, if a unique mutation exists
+  # on one panel it will be caught
+  uniq_mutations = get_code_unique_mutations(clinicaldf, mafdf, "TEST")
+  expect_equal(uniq_mutations, expected_mafdf[,colnames(uniq_mutations)])
+})
+
+test_that("Make sure if a panel has the same mutation, nothing is returned", {
+  # This checks that across panels, mutations are checked across panels
+  mafdf[,'Hugo_Symbol'] = c("A", "A")
+  mafdf[,'HGVSp_Short'] = c("AA", "AA")
+  uniq_mutations = get_code_unique_mutations(clinicaldf, mafdf, "TEST")
+  expect_true(nrow(uniq_mutations) == 0)
+})
+
+test_that("No unique mutation if sample not in mutation file", {
+  uniq_mutations = get_code_unique_mutations(clinicaldf, mafdf, "FOO")
+  expect_true(nrow(uniq_mutations) == 0)
+})
 
