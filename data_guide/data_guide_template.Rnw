@@ -328,11 +328,11 @@ print(info_tab, floating = F, caption.placement = "top",
 
 
 <<results=tex, echo=F>>=
-gene_number_info = assayinfodf[, c("SEQ_ASSAY_ID", "gene_padding", "number_of_genes")]
+gene_number_info = assayinfodf[, c("SEQ_ASSAY_ID", "number_of_genes", "target_capture_kit")]
 
 info_tab = xtable(gene_number_info[order(gene_number_info$SEQ_ASSAY_ID), ],
                   caption = 'Sequence Assay genomic information')
-align(info_tab) <- "r|c|c|c|"
+align(info_tab) <- "r|c|c|p{80mm}|"
 print(info_tab, include.rownames = F, floating = F,
       caption.placement = "top", tabular.environment = "longtable",
       hline.after = rep(c(-1:(nrow(info_tab) - 1)),1))
