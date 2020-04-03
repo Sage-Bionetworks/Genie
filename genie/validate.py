@@ -5,7 +5,10 @@ import logging
 import sys
 
 import synapseclient
-from synapseclient.exceptions import SynapseHTTPError
+try:
+    from synapseclient.core.exceptions import SynapseHTTPError
+except ModuleNotFoundError:
+    from synapseclient.exceptions import SynapseHTTPError
 
 from . import config
 from . import example_filetype_format

@@ -102,7 +102,7 @@ class Assayinfo(FileTypeFormat):
 
             columns_containing_lists = ['variant_classifications',
                                         'alteration_types',
-                                        'specimen_type', 'coverage']
+                                        'preservation_technique', 'coverage']
 
             for col in columns_containing_lists:
                 if assay_finaldf.get(col) is not None:
@@ -281,9 +281,9 @@ class Assayinfo(FileTypeFormat):
         warning += warn
         total_error += error
 
-        specimen_type = ["formalin_fixed", "FFPE", 'fresh_frozen']
+        preservation_technique = ["FFPE", 'fresh_frozen']
         warn, error = process_functions.check_col_and_values(
-            assay_info_df, 'specimen_type', specimen_type,
+            assay_info_df, 'preservation_technique', preservation_technique,
             filename="Assay_information.yaml", required=True, sep=";")
         warning += warn
         total_error += error
