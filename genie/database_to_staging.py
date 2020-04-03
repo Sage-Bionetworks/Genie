@@ -102,22 +102,20 @@ def _redaction_phi(values):
     phi_cutoff = 365*89
     pediatric_cutoff = 365*18
     # Some sites submit redacted values already
-    values = [
-        pediatric_cutoff - 1
-        if "<" in str(value) else value
-        for value in values]
-    values = [
-        phi_cutoff + 1
-        if ">" in str(value) else value
-        for value in values]
-    to_redact = [
-        int(float(value)) > phi_cutoff
-        if value not in ['', 'Unknown', 'Not Applicable', 'Not Collected']
-        else False for value in values]
-    to_redact_pediatric = [
-        int(float(value)) < pediatric_cutoff
-        if value not in ['', 'Unknown', 'Not Applicable', 'Not Collected']
-        else False for value in values]
+    values = [pediatric_cutoff - 1
+              if "<" in str(value) else value
+              for value in values]
+    values = [phi_cutoff + 1
+              if ">" in str(value) else value
+              for value in values]
+    to_redact = [int(float(value)) > phi_cutoff
+                 if value not in ['', 'Unknown', 'Not Applicable',
+                                  'Not Collected']
+                 else False for value in values]
+    to_redact_pediatric = [int(float(value)) < pediatric_cutoff
+                           if value not in ['', 'Unknown', 'Not Applicable',
+                                            'Not Collected']
+                           else False for value in values]
     return to_redact, to_redact_pediatric
 
 
@@ -809,7 +807,7 @@ def store_clinical_files(syn,
 
     logger.info("CONFIGURING CLINICAL FILES")
     logger.info("REMOVING PHI")
-    clinicaldf = redact_phi(clinicaldf)
+    # clinicaldf = redact_phi(clinicaldf)
     logger.info("ADD CANCER TYPES")
     # This removes support for both oncotree urls (only support json)
     oncotree_dict = process_functions.get_oncotree_code_mappings(oncotree_url)
@@ -1146,23 +1144,23 @@ def store_bed_files(syn, genie_version, beddf, seq_assay_ids,
         release_synid: Synapse id to store release file
     '''
     logger.info("STORING COMBINED BED FILE")
-    combined_bed_path = os.path.join(
-        GENIE_RELEASE_DIR, 'genomic_information_%s.txt' % genie_version)
+    combined_bed_path = os.path.join(GENIE_RELEASE_DIR,
+                                     'genomic_information_%s.txt' % genie_version)  # pylint: disable=line-too-long
     if not current_release_staging:
         for seq_assay in beddf['SEQ_ASSAY_ID'].unique():
             bed_seq_df = beddf[beddf['SEQ_ASSAY_ID'] == seq_assay]
             center = seq_assay.split("-")[0]
-            bed_seq_df = \
-                bed_seq_df[bed_seq_df['Hugo_Symbol'] != bed_seq_df['ID']]
+            bed_seq_df = bed_seq_df[bed_seq_df['Hugo_Symbol'] != bed_seq_df['ID']]  # pylint: disable=line-too-long
+            # There should always be a match here, because there should never
+            # be a SEQ_ASSAY_ID that starts without the center name
+            # If there is, check the bed db for SEQ_ASSAY_ID
+            center_ind = center_mappingdf['center'] == center
             if not bed_seq_df.empty:
-                bed_seq_df.to_csv(
-                    BED_DIFFS_SEQASSAY_PATH % seq_assay,
-                    index=False)
-                store_file(
-                    syn, BED_DIFFS_SEQASSAY_PATH % seq_assay,
-                    genieVersion=genie_version,
-                    parent=center_mappingdf['stagingSynId'][
-                        center_mappingdf['center'] == center][0])
+                bed_seq_df.to_csv(BED_DIFFS_SEQASSAY_PATH % seq_assay,
+                                  index=False)
+                store_file(syn, BED_DIFFS_SEQASSAY_PATH % seq_assay,
+                           genieVersion=genie_version,
+                           parent=center_mappingdf['stagingSynId'][center_ind][0])  # pylint: disable=line-too-long
     # This clinicalDf is already filtered through most of the filters
     beddf = beddf[beddf['SEQ_ASSAY_ID'].isin(seq_assay_ids)]
     beddf.to_csv(combined_bed_path, sep="\t", index=False)
