@@ -58,7 +58,9 @@ def generate_data_guide(genie_version, oncotree_version=None,
                     "{{database_synid}}": database_mapping,
                     "{{oncotree}}": oncotree_version.replace("_", "\\_"),
                     "{{username}}": genie_user,
-                    "{{password}}": genie_pass}
+                    "{{password}}": genie_pass,
+                    "{{genie_banner}}": os.path.join(PWD,
+                                                     "../genie_banner.png")}
 
     for search in replacements:
         replacement = replacements[search]
@@ -71,7 +73,7 @@ def generate_data_guide(genie_version, oncotree_version=None,
 
     subprocess.check_call(['R', 'CMD', 'Sweave', '--pdf',
                            os.path.join(PWD, "data_guide.Rnw")])
-    return os.path.join(PWD, "data_guide.pdf")
+    return "data_guide.pdf"
 
 
 def main(genie_version,
