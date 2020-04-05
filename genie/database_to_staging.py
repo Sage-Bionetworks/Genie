@@ -172,19 +172,19 @@ def redact_phi(clinicaldf, interval_cols_to_redact=['AGE_AT_SEQ_REPORT',
     # inaccurate every year)
     for col in interval_cols_to_redact:
         to_redact, to_redactpeds = _to_redact_interval(clinicaldf[col])
-        clinicaldf['BIRTH_YEAR'][to_redact] = "cannotReleaseHIPAA"
-        clinicaldf[col][to_redact] = ">32485"
-        clinicaldf['BIRTH_YEAR'][to_redactpeds] = "withheld"
-        clinicaldf[col][to_redactpeds] = "<6570"
+        clinicaldf.loc[to_redact, 'BIRTH_YEAR'] = "cannotReleaseHIPAA"
+        clinicaldf.loc[to_redact, col] = ">32485"
+        clinicaldf.loc[to_redactpeds, 'BIRTH_YEAR'] = "withheld"
+        clinicaldf.loc[to_redactpeds, col] = "<6570"
     # Redact BIRTH_YEAR values that have < or >
     # Birth year has to be done separately because it is not an interval
     clinicaldf['BIRTH_YEAR'] = _redact_year(clinicaldf['BIRTH_YEAR'])
     to_redact = _to_redact_difference(clinicaldf['BIRTH_YEAR'],
                                       clinicaldf['YEAR_CONTACT'])
-    clinicaldf['BIRTH_YEAR'][to_redact] = "cannotReleaseHIPAA"
+    clinicaldf.loc[to_redact, 'BIRTH_YEAR'] = "cannotReleaseHIPAA"
     to_redact = _to_redact_difference(clinicaldf['BIRTH_YEAR'],
                                       clinicaldf['YEAR_DEATH'])
-    clinicaldf['BIRTH_YEAR'][to_redact] = "cannotReleaseHIPAA"
+    clinicaldf.loc[to_redact, 'BIRTH_YEAR'] = "cannotReleaseHIPAA"
 
     return clinicaldf
 
