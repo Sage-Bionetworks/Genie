@@ -127,7 +127,8 @@ def test_redact_phi():
     clinicaldf['YEAR_DEATH'] = [2001, float('nan'), 2000]
 
     expected_age = pd.Series(['>32485', 32485, '<6570'])
-    expected_birth = pd.Series(['cannotReleaseHIPAA', 1903, 'cannotReleaseHIPAA'])
+    expected_birth = pd.Series(['cannotReleaseHIPAA', 1903,
+                                'cannotReleaseHIPAA'])
     with patch.object(database_to_staging, "_to_redact_interval",
                       return_value=return_bools),\
          patch.object(database_to_staging, "_redact_year",
