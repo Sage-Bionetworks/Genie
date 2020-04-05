@@ -5,11 +5,17 @@ import datetime
 import os
 import sys
 
+from mock import patch
 import pandas as pd
 
 from genie.process_functions import seqDateFilter
-from genie.database_to_staging import seq_assay_id_filter
-from genie.database_to_staging import redact_phi, no_genepanel_filter
+from genie import database_to_staging
+from genie.database_to_staging import (seq_assay_id_filter,
+                                       redact_phi,
+                                       no_genepanel_filter,
+                                       _to_redact_interval,
+                                       _redact_year,
+                                       _to_redact_difference)
 from genie.consortium_to_public import commonVariantFilter
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -79,51 +85,57 @@ def test_seqdatefilter():
     assert all(samples == expected)
 
 
+def test__to_redact_interval():
+    """Tests the correct boolean vectors are returned for phi and pediatric
+    redaction"""
+    values = pd.Series([32850, 32485, 6570, 6569, '<foo', '>testing'])
+    to_redact, to_redact_peds = _to_redact_interval(values)
+    expected_redact = [True, False, False, False, False, True]
+    expected_redact_peds = [False, False, False, True, True, False]
+    assert to_redact.to_list() == expected_redact
+    assert to_redact_peds.to_list() == expected_redact_peds
+
+
+def test__redact_year():
+    """Tests redaction of birth year based on < and >"""
+    values = pd.Series([1923, 2003, '<foo', '>testing'])
+    redacted = _redact_year(values)
+    expected_redact = [1923, 2003, 'withheld', 'cannotReleaseHIPAA']
+    assert redacted.to_list() == expected_redact
+
+
+def test___to_redact_difference():
+    """Tests if a difference between two year columns is >89, redact"""
+    year1 = pd.Series([1923, 2000, float('nan')])
+    year2 = pd.Series([1926, 2100, 2000])
+    redacted = _to_redact_difference(year1, year2)
+    expected_redact = [False, True, False]
+    assert redacted.to_list() == expected_redact
+
+
 def test_redact_phi():
-    # Remove PHI, "Make sure that removePHI fills in the right values"
-    clinicalDf = pd.DataFrame([
-        'SAGE-TEST-1', 'SAGE-TEST-2', 'SAGE-TEST-3', 'SAGE-TEST-4',
-        'SAGE-TEST-5', 'SAGE-TEST-6'])
-    clinicalDf.rename(columns={0: "SAMPLE_ID"}, inplace=True)
-    clinicalDf['AGE_AT_SEQ_REPORT'] = [
-        32850, 32485, 6570, 6569, '<foo', '>testing']
+    """Redacts PHI interval and years"""
+    return_bools = ([True, False, False],
+                    [False, False, True])
+    return_year = pd.Series([2000, 1903, 1904])
+    clinicaldf = pd.DataFrame(['SAGE-TEST-1', 'SAGE-TEST-2',
+                               'SAGE-TEST-3'])
+    clinicaldf.rename(columns={0: "SAMPLE_ID"}, inplace=True)
+    clinicaldf['AGE_AT_SEQ_REPORT'] = [32850, 32485, 6570]
+    clinicaldf['BIRTH_YEAR'] = [1900, '<1900', 1902]
+    clinicaldf['YEAR_CONTACT'] = [2100, 1904, float('nan')]
+    clinicaldf['YEAR_DEATH'] = [2001, float('nan'), 2000]
 
-    clinicalDf['BIRTH_YEAR'] = [1900, 1901, 1902, 1903, 1900, 1900]
-    clinicalDf['INT_CONTACT'] = [32850, 32485, 6570, 6569, '<foo', '>testing']
-    clinicalDf['INT_DOD'] = [32850, 32485, 6570, 6569, '<foo', '>testing']
-
-    finalClin = redact_phi(clinicalDf)
-    expectedAge = pd.Series([
-        '>32485', 32485, 6570, '<6570', '<6570', '>32485'])
-    expectedBirth = pd.Series([
-        'cannotReleaseHIPAA', 1901, 1902,
-        'withheld', 'withheld', 'cannotReleaseHIPAA'])
-
-    assert all(finalClin['AGE_AT_SEQ_REPORT'] == expectedAge)
-    assert all(finalClin['INT_CONTACT'] == expectedAge)
-    assert all(finalClin['INT_DOD'] == expectedAge)
-    assert all(finalClin['BIRTH_YEAR'] == expectedBirth)
-
-    # Test for if the other columns will redact BIRTH_YEAR as well
-    expectedBirth = pd.Series([
-        'cannotReleaseHIPAA', 'cannotReleaseHIPAA', 'withheld',
-        'withheld', 'withheld', 'cannotReleaseHIPAA'])
-    clinicalDf['AGE_AT_SEQ_REPORT'] = [32850, 32485, 6570, 6570, '<foo', 32485]
-    clinicalDf['INT_CONTACT'] = [32485, 32850, 6569, 6570, 6570, 32485]
-    clinicalDf['INT_DOD'] = [32485, 32485, 6570, 6569, 6570, '>testing']
-    clinicalDf['BIRTH_YEAR'] = [1900, 1901, 1902, 1903, 1900, 1900]
-    finalClin = redact_phi(clinicalDf)
-    assert all(finalClin['BIRTH_YEAR'] == expectedBirth)
-
-    # Test to check if > or < submitted in BIRTH_YEAR.  If so, redact
-    expectedBirth = pd.Series(['cannotReleaseHIPAA', 'withheld'])
-    clinicalDf = pd.DataFrame(['SAGE-TEST-1', 'SAGE-TEST-2'])
-    clinicalDf['AGE_AT_SEQ_REPORT'] = [32485, 6570]
-    clinicalDf['INT_CONTACT'] = [32485, 6570]
-    clinicalDf['INT_DOD'] = [32485, 6570]
-    clinicalDf['BIRTH_YEAR'] = [">asdf", "<adf"]
-    finalClin = redact_phi(clinicalDf)
-    assert all(finalClin['BIRTH_YEAR'] == expectedBirth)
+    expected_age = pd.Series(['>32485', 32485, '<6570'])
+    expected_birth = pd.Series(['cannotReleaseHIPAA', 1903, 'cannotReleaseHIPAA'])
+    with patch.object(database_to_staging, "_to_redact_interval",
+                      return_value=return_bools),\
+         patch.object(database_to_staging, "_redact_year",
+                      return_value=return_year):
+        redacted_clin = redact_phi(clinicaldf,
+                                   interval_cols_to_redact=['AGE_AT_SEQ_REPORT'])
+        assert all(redacted_clin['AGE_AT_SEQ_REPORT'] == expected_age)
+        assert all(redacted_clin['BIRTH_YEAR'] == expected_birth)
 
 # def test_MAFinBED():
 #   syn = mock.create_autospec(synapseclient.Synapse)
