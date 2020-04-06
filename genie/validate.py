@@ -215,29 +215,6 @@ def _upload_to_synapse(syn, filepaths, valid, parentid=None):
             logger.info("Stored to {}".format(ent.id))
 
 
-def collect_format_types(package_names):
-    """Find subclasses of the example_filetype_format.FileTypeFormat from a list of package names.
-
-    Args:
-        package_names: A list of Python package names as strings.
-    Returns:
-        A list of classes that are in the named packages and subclasses of example_filetype_format.FileTypeFormat.
-    """
-
-    file_format_list = []
-    for package_name in package_names:
-        importlib.import_module(package_name)
-
-    for cls in config.get_subclasses(example_filetype_format.FileTypeFormat):
-        logger.debug("checking {}.".format(cls))
-        cls_module_name = cls.__module__
-        cls_pkg = cls_module_name.split('.')[0]
-        if cls_pkg in package_names:
-            file_format_list.append(cls)
-    file_format_dict = config.make_format_registry_dict(file_format_list)
-    return file_format_dict
-
-
 def _perform_validate(syn, args):
     """This is the main entry point to the genie command line tool.
     """
@@ -259,7 +236,7 @@ def _perform_validate(syn, args):
     args.oncotree_link = _get_oncotreelink(syn, databasetosynid_mappingdf,
                                            oncotree_link=args.oncotree_link)
 
-    format_registry = collect_format_types(args.format_registry_packages)
+    format_registry = config.collect_format_types(args.format_registry_packages)
     logger.debug("Using {} file formats.".format(format_registry))
     entity_list = [synapseclient.File(name=filepath, path=filepath,
                                       parentId=None)
