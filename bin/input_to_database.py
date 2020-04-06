@@ -3,9 +3,8 @@ import os
 import argparse
 import logging
 
-from genie import input_to_database
-from genie import write_invalid_reasons
-from genie import process_functions
+from genie import (input_to_database, write_invalid_reasons,
+                   process_functions)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,7 +22,8 @@ def main(process,
          reference=None,
          vcf2maf_path=None,
          vep_path=None,
-         vep_data=None):
+         vep_data=None,
+         format_registry=None):
 
     syn = process_functions.synLogin(pemfile, debug=debug)
     # Must specify correct paths to vcf2maf, VEP and VEP data
@@ -119,10 +119,8 @@ def main(process,
 
 
 if __name__ == "__main__":
-    '''
-    Argument parsers
-    TODO: Fix case of arguments
-    '''
+    # Argument parsers
+    # TODO: Fix case of arguments
     parser = argparse.ArgumentParser(
         description='GENIE center ')
     parser.add_argument(
@@ -166,6 +164,10 @@ if __name__ == "__main__":
         help="Path to VCF reference file")
 
     # DEFAULT PARAMS
+    parser_validate.add_argument("--format_registry_packages", type=str, nargs="+",
+                                 default=["genie"],
+                                 help="Python package name(s) to get valid file formats from (default: %(default)s).")
+
     parser.add_argument(
         "--vcf2mafPath",
         type=str,
@@ -196,4 +198,5 @@ if __name__ == "__main__":
          reference=args.reference,
          vcf2maf_path=args.vcf2mafPath,
          vep_path=args.vepPath,
-         vep_data=args.vepData)
+         vep_data=args.vepData
+         format_registry=args.format_registry_packages)
