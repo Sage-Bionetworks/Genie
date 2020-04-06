@@ -90,7 +90,7 @@ def store_file(syn, filePath, genieVersion="database", name=None,
 
 def _to_redact_interval(df_col):
     """
-    Determines interval values that are <18 and >365 that need to be redacted
+    Determines interval values that are <18 and >89 that need to be redacted
     Returns bool because BIRTH_YEAR needs to be redacted as well based
     on the results
 
@@ -157,7 +157,7 @@ def redact_phi(clinicaldf, interval_cols_to_redact=['AGE_AT_SEQ_REPORT',
     """Redacts the PHI by re-annotating the clinical file
 
     Args:
-        mergedClinical: merged clinical dataframe
+        clinicaldf: merged clinical dataframe
         interval_cols_to_redact: List of interval columns to redact.
                                  Defaults to ['AGE_AT_SEQ_REPORT',
                                               'INT_CONTACT',

@@ -117,12 +117,15 @@ def test_redact_phi():
     """Redacts PHI interval and years"""
     return_bools = ([True, False, False],
                     [False, False, True])
-    return_year = pd.Series([2000, 1903, 1904])
     clinicaldf = pd.DataFrame(['SAGE-TEST-1', 'SAGE-TEST-2',
                                'SAGE-TEST-3'])
     clinicaldf.rename(columns={0: "SAMPLE_ID"}, inplace=True)
     clinicaldf['AGE_AT_SEQ_REPORT'] = [32850, 32485, 6570]
     clinicaldf['BIRTH_YEAR'] = [1900, '<1900', 1902]
+    # These are the years that are returned by the _redact_year
+    # Use these against YEAR_CONTACT and YEAR_DEATH to calculate
+    # expected_birth
+    return_year = pd.Series([2000, 1903, 1904])
     clinicaldf['YEAR_CONTACT'] = [2100, 1904, float('nan')]
     clinicaldf['YEAR_DEATH'] = [2001, float('nan'), 2000]
 
