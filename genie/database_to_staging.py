@@ -1569,3 +1569,6 @@ def create_link_version(syn, genie_version, case_list_entities,
             ents.id,
             parent=release_folder_synid,
             targetVersion=ents.versionNumber))
+
+    return {"release_folder": release_folder_synid,
+            "caselist_folder": caselist_folder_synid}
