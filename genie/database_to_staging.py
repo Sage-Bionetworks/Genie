@@ -88,92 +88,103 @@ def store_file(syn, filePath, genieVersion="database", name=None,
     return ent
 
 
-def _redaction_phi(values):
-    '''
-    Boolean vector of pediatric and PHI rows
+def _to_redact_interval(df_col):
+    """
+    Determines interval values that are <18 and >89 that need to be redacted
+    Returns bool because BIRTH_YEAR needs to be redacted as well based
+    on the results
 
     Args:
-        values: Dataframe column or list of values to check
+        df_col: Dataframe column/pandas.Series of an interval column
 
     Returns:
-        list: redact and bool vectors
-        list: pediatric redaction
-    '''
+        tuple: pandas.Series: to redact boolean vector
+               pandas.Series: to redact pediatric boolean vector
+
+    """
     phi_cutoff = 365*89
     pediatric_cutoff = 365*18
-    # Some sites submit redacted values already
-    values = [
-        pediatric_cutoff - 1
-        if "<" in str(value) else value
-        for value in values]
-    values = [
-        phi_cutoff + 1
-        if ">" in str(value) else value
-        for value in values]
-    to_redact = [
-        int(float(value)) > phi_cutoff
-        if value not in ['', 'Unknown', 'Not Applicable', 'Not Collected']
-        else False for value in values]
-    to_redact_pediatric = [
-        int(float(value)) < pediatric_cutoff
-        if value not in ['', 'Unknown', 'Not Applicable', 'Not Collected']
-        else False for value in values]
+    # Some centers pre-redact their values by adding < or >. These
+    # must be redacted
+    contain_greaterthan = df_col.astype(str).str.contains(">", na=False)
+    contain_lessthan = df_col.astype(str).str.contains("<", na=False)
+    # Add in errors='coerce' to turn strings into NaN
+    col_int = pd.to_numeric(df_col, errors='coerce')
+    to_redact = (col_int > phi_cutoff) | contain_greaterthan
+    to_redact_pediatric = (col_int < pediatric_cutoff) | contain_lessthan
     return to_redact, to_redact_pediatric
 
 
-def redact_phi(clinicaldf):
-    '''
-    Redact the PHI by re-annotating the clinical file
+def _redact_year(df_col):
+    """Redacts year values that have < or >
 
     Args:
-        mergedClinical: merged clinical dataframe
+        df_col: Dataframe column/pandas.Series of a year column
 
     Returns:
-        pandas.DataFrame: Re-annotated clinical file
-    '''
-    # Remove PHI data
-    age_fill_na = clinicaldf['AGE_AT_SEQ_REPORT'].fillna('')
-    clinicaldf['AGE_AT_SEQ_REPORT'] = age_fill_na
-    clinicaldf['BIRTH_YEAR'] = clinicaldf['BIRTH_YEAR'].fillna('')
-    to_redact, to_redactpeds = _redaction_phi(clinicaldf['AGE_AT_SEQ_REPORT'])
-    logger.info("Redacting >89")
-    logger.info(clinicaldf[to_redact])
-    logger.info("Redacting <18")
-    logger.info(clinicaldf[to_redactpeds])
+        pandas.Series: Redacted series
 
+    """
+    year = df_col.astype(str)
+    contain_greaterthan = year.str.contains(">", na=False)
+    contain_lessthan = year.str.contains("<", na=False)
+    df_col[contain_greaterthan] = "cannotReleaseHIPAA"
+    df_col[contain_lessthan] = "withheld"
+    return df_col
+
+
+def _to_redact_difference(df_col_year1, df_col_year2):
+    """Determine if difference between year2 and year1 is > 89
+
+    Args:
+        df_col_year1: Dataframe column/pandas.Series of a year column
+        df_col_year2: Dataframe column/pandas.Series of a year column
+
+    Returns:
+        pandas.Series: to redact boolean vector
+
+    """
+    # Add in errors='coerce' to turn strings into NaN
+    year1 = pd.to_numeric(df_col_year1, errors='coerce')
+    year2 = pd.to_numeric(df_col_year2, errors='coerce')
+    to_redact = year2 - year1 > 89
+    return to_redact
+
+
+def redact_phi(clinicaldf, interval_cols_to_redact=['AGE_AT_SEQ_REPORT',
+                                                    'INT_CONTACT',
+                                                    'INT_DOD']):
+    """Redacts the PHI by re-annotating the clinical file
+
+    Args:
+        clinicaldf: merged clinical dataframe
+        interval_cols_to_redact: List of interval columns to redact.
+                                 Defaults to ['AGE_AT_SEQ_REPORT',
+                                              'INT_CONTACT',
+                                              'INT_DOD']
+
+    Returns:
+        pandas.DataFrame: Redacted clinical dataframe
+
+    """
     # Moved to cannotReleaseHIPAA and withheld because the HIPAA
-    # years would change every single year.
-    # mergedClinical['BIRTH_YEAR'][toRedact] = "<1926"
-    # mergedClinical['BIRTH_YEAR'][toRedactPeds] = ">1998"
-
-    clinicaldf['BIRTH_YEAR'][to_redact] = "cannotReleaseHIPAA"
-    clinicaldf['AGE_AT_SEQ_REPORT'][to_redact] = ">32485"
-    clinicaldf['BIRTH_YEAR'][to_redactpeds] = "withheld"
-    clinicaldf['AGE_AT_SEQ_REPORT'][to_redactpeds] = "<6570"
-
-    clinicaldf['INT_CONTACT'] = clinicaldf['INT_CONTACT'].fillna('')
-    to_redact, to_redactpeds = _redaction_phi(clinicaldf['INT_CONTACT'])
-
-    clinicaldf['INT_CONTACT'][to_redact] = ">32485"
-    clinicaldf['INT_CONTACT'][to_redactpeds] = "<6570"
-    clinicaldf['BIRTH_YEAR'][to_redact] = "cannotReleaseHIPAA"
-    clinicaldf['BIRTH_YEAR'][to_redactpeds] = "withheld"
-
-    clinicaldf['INT_DOD'] = clinicaldf['INT_DOD'].fillna('')
-    to_redact, to_redactpeds = _redaction_phi(clinicaldf['INT_DOD'])
-
-    clinicaldf['INT_DOD'][to_redact] = ">32485"
-    clinicaldf['INT_DOD'][to_redactpeds] = "<6570"
-    clinicaldf['BIRTH_YEAR'][to_redact] = "cannotReleaseHIPAA"
-    clinicaldf['BIRTH_YEAR'][to_redactpeds] = "withheld"
-
-    # Redact DFCI inputed fields
-    clinicaldf['BIRTH_YEAR'] = ["cannotReleaseHIPAA"
-                                if ">" in str(year) else year
-                                for year in clinicaldf['BIRTH_YEAR']]
-
-    clinicaldf['BIRTH_YEAR'] = ["withheld" if "<" in str(year) else year
-                                for year in clinicaldf['BIRTH_YEAR']]
+    # years would change every single year. (e.g. <1926, >1998 would be
+    # inaccurate every year)
+    for col in interval_cols_to_redact:
+        to_redact, to_redactpeds = _to_redact_interval(clinicaldf[col])
+        clinicaldf.loc[to_redact, 'BIRTH_YEAR'] = "cannotReleaseHIPAA"
+        clinicaldf.loc[to_redact, col] = ">32485"
+        clinicaldf.loc[to_redactpeds, 'BIRTH_YEAR'] = "withheld"
+        clinicaldf.loc[to_redactpeds, col] = "<6570"
+    # Redact BIRTH_YEAR values that have < or >
+    # Birth year has to be done separately because it is not an interval
+    clinicaldf['BIRTH_YEAR'] = _redact_year(clinicaldf['BIRTH_YEAR'])
+    to_redact = _to_redact_difference(clinicaldf['BIRTH_YEAR'],
+                                      clinicaldf['YEAR_CONTACT'])
+    clinicaldf.loc[to_redact, 'BIRTH_YEAR'] = "cannotReleaseHIPAA"
+    to_redact = _to_redact_difference(clinicaldf['BIRTH_YEAR'],
+                                      clinicaldf['YEAR_DEATH'])
+    clinicaldf.loc[to_redact, 'BIRTH_YEAR'] = "cannotReleaseHIPAA"
 
     return clinicaldf
 
@@ -809,7 +820,7 @@ def store_clinical_files(syn,
 
     logger.info("CONFIGURING CLINICAL FILES")
     logger.info("REMOVING PHI")
-    clinicaldf = redact_phi(clinicaldf)
+    # clinicaldf = redact_phi(clinicaldf)
     logger.info("ADD CANCER TYPES")
     # This removes support for both oncotree urls (only support json)
     oncotree_dict = process_functions.get_oncotree_code_mappings(oncotree_url)
@@ -1558,3 +1569,6 @@ def create_link_version(syn, genie_version, case_list_entities,
             ents.id,
             parent=release_folder_synid,
             targetVersion=ents.versionNumber))
+
+    return {"release_folder": release_folder_synid,
+            "caselist_folder": caselist_folder_synid}
