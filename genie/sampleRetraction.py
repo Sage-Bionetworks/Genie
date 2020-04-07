@@ -4,6 +4,10 @@ import os
 
 import pandas as pd
 import synapseclient
+try:
+    from synapseclient.core.utils import to_unix_epoch_time
+except ModuleNotFoundError:
+    from synapseclient.utils import to_unix_epoch_time
 
 from .example_filetype_format import FileTypeFormat
 from . import process_functions
@@ -34,7 +38,7 @@ class sampleRetraction(FileTypeFormat):
         deleteSamplesDf.rename(columns = {0:col}, inplace=True)
         samples = [process_functions.checkGenieId(sample, self.center) for sample in deleteSamplesDf[col]]
         deleteSamplesDf[col] = samples
-        modifiedOn = synapseclient.utils.to_unix_epoch_time(datetime.datetime.strptime(modifiedOn, "%Y-%m-%dT%H:%M:%S"))
+        modifiedOn = to_unix_epoch_time(datetime.datetime.strptime(modifiedOn, "%Y-%m-%dT%H:%M:%S"))
         deleteSamplesDf['retractionDate'] = modifiedOn
         deleteSamplesDf['center'] = self.center
         return(deleteSamplesDf)
