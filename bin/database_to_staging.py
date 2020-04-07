@@ -14,6 +14,104 @@ from genie import dashboard_table_updater
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+PWD = os.path.dirname(os.path.abspath(__file__))
+
+
+def generate_unique_mutations(genie_version, database_mapping=None,
+                              genie_user=None,
+                              genie_pass=None):
+    """Generates and stores unique mutations per site based on X number of
+    sites that cover an oncotree code and X number of sites that cover a
+    specific bed region
+
+    Args:
+        genie_version: GENIE release
+        database_mapping: Database mapping synapse id
+        genie_user: GENIE synapse username
+        genie_pass: GENIE synapse password
+
+    """
+    unique_mutation_cmd = ['Rscript',
+                           os.path.join(PWD,
+                                        '../analyses/genomicData/uniq_mutations.R'),
+                           genie_version,
+                           '--database_synid_mappingid',
+                           database_mapping]
+    if genie_user is not None and genie_pass is not None:
+        unique_mutation_cmd.extend(['--syn_user', genie_user,
+                                    '--syn_pass', genie_pass])
+    subprocess.check_call(unique_mutation_cmd)
+
+
+def generate_dashboard_html(genie_version, staging=False,
+                            genie_user=None,
+                            genie_pass=None):
+    """Generates dashboard html writeout that gets uploaded to the
+    release folder
+
+    Args:
+        genie_version: GENIE release
+        staging: Use staging files. Default is False
+        genie_user: GENIE synapse username
+        genie_pass: GENIE synapse password
+
+    """
+    markdown_render_cmd = ['Rscript',
+                           os.path.join(PWD, '../genie/dashboard_markdown_generator.R'),
+                           genie_version,
+                           '--template_path',
+                           os.path.join(PWD, '../genie/dashboardTemplate.Rmd')]
+
+    if genie_user is not None and genie_pass is not None:
+        markdown_render_cmd.extend(['--syn_user', genie_user,
+                                    '--syn_pass', genie_pass])
+    if staging:
+        markdown_render_cmd.append('--staging')
+    subprocess.check_call(markdown_render_cmd)
+
+
+def generate_data_guide(genie_version, oncotree_version=None,
+                        database_mapping=None, genie_user=None,
+                        genie_pass=None):
+    """Generates the GENIE data guide
+
+    Args:
+        genie_version: GENIE release
+        oncotree_version: Version of oncotree code
+        database_mapping: Database mapping synapse id
+        genie_user: GENIE synapse username
+        genie_pass: GENIE synapse password
+
+    Returns:
+        path to data_guide.pdf
+
+    """
+
+    template_path = os.path.join(PWD, '../data_guide/data_guide_template.Rnw')
+    with open(template_path, 'r') as template_file:
+        template_str = template_file.read()
+
+    replacements = {"{{release}}": genie_version,
+                    "{{database_synid}}": database_mapping,
+                    "{{oncotree}}": oncotree_version.replace("_", "\\_"),
+                    "{{username}}": genie_user,
+                    "{{password}}": genie_pass,
+                    "{{genie_banner}}": os.path.join(PWD,
+                                                     "../genie_banner.png")}
+
+    for search in replacements:
+        replacement = replacements[search]
+        # If no replacement value is passed in, don't replace
+        if replacement is not None:
+            template_str = template_str.replace(search, replacement)
+
+    with open(os.path.join(PWD, "data_guide.Rnw"), "w") as data_guide_file:
+        data_guide_file.write(template_str)
+
+    subprocess.check_call(['R', 'CMD', 'Sweave', '--pdf',
+                           os.path.join(PWD, "data_guide.Rnw")])
+    return "data_guide.pdf"
+
 
 def main(genie_version,
          processing_date,
@@ -169,24 +267,23 @@ def main(genie_version,
                                               genie_version)
 
     logger.info("CBIO VALIDATION")
-    '''
-    Must be exit 0 because the validator sometimes fails,
-    but we still want to capture the output
-    '''
+
+    # Must be exit 0 because the validator sometimes fails,
+    # but we still want to capture the output
+
     command = [cbioValidatorPath, '-s', database_to_staging.GENIE_RELEASE_DIR,
                '-n', '; exit 0']
     cbioOutput = subprocess.check_output(" ".join(command), shell=True)
     logger.info(cbioOutput.decode("utf-8"))
 
-    cbio_validator_log = \
-        "cbioValidatorLogsConsortium_{}.txt".format(genie_version)
+    cbio_validator_log = f"cbioValidatorLogsConsortium_{genie_version}.txt"
     if not test and not staging:
         log_folder_synid = databaseSynIdMappingDf['Id'][
             databaseSynIdMappingDf['Database'] == 'logs'].values[0]
-        with open(cbio_validator_log, "w") as cbioLog:
-            cbioLog.write(cbioOutput.decode("utf-8"))
-        syn.store(synapseclient.File(
-            cbio_validator_log, parentId=log_folder_synid))
+        with open(cbio_validator_log, "w") as cbio_log:
+            cbio_log.write(cbioOutput.decode("utf-8"))
+        syn.store(synapseclient.File(cbio_validator_log,
+                                     parentId=log_folder_synid))
         os.remove(cbio_validator_log)
     logger.info("REMOVING OLD FILES")
 
@@ -197,47 +294,37 @@ def main(genie_version,
         os.unlink(private_cna_meta_path)
 
     logger.info("CREATING LINK VERSION")
-    database_to_staging.create_link_version(syn, genie_version,
-                                            caseListEntities,
-                                            genePanelEntities,
-                                            databaseSynIdMappingDf)
-
-    # Unique mutations in database to staging
-    unique_mutation_cmd = ['Rscript',
-                           os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                        '../analyses/genomicData/uniq_mutations.R'),
-                           genie_version,
-                           '--database_synid_mappingid',
-                           databaseSynIdMappingId]
-    if genie_user is not None and genie_pass is not None:
-        unique_mutation_cmd.extend(['--syn_user', genie_user,
-                                    '--syn_pass', genie_pass])
-    subprocess.check_call(unique_mutation_cmd)
+    # Returns release and case list folder
+    folders = database_to_staging.create_link_version(syn, genie_version,
+                                                      caseListEntities,
+                                                      genePanelEntities,
+                                                      databaseSynIdMappingDf)
 
     if not test:
         logger.info("DASHBOARD UPDATE")
-        dashboard_table_updater.run_dashboard(
-            syn,
-            databaseSynIdMappingDf,
-            genie_version,
-            staging=staging)
-        dashboard_markdown_html_commands = [
-            'Rscript',
-            os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         '../genie/dashboard_markdown_generator.R'),
-            genie_version,
-            '--template_path',
-            os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         '../genie/dashboardTemplate.Rmd')]
-
-        if genie_user is not None and genie_pass is not None:
-            dashboard_markdown_html_commands.extend(
-                ['--syn_user', genie_user, '--syn_pass', genie_pass])
-        if staging:
-            dashboard_markdown_html_commands.append('--staging')
-        subprocess.check_call(dashboard_markdown_html_commands)
+        dashboard_table_updater.run_dashboard(syn, databaseSynIdMappingDf,
+                                              genie_version,
+                                              staging=staging)
+        generate_dashboard_html(genie_version, staging=staging,
+                                genie_user=genie_user,
+                                genie_pass=genie_pass)
         logger.info("DASHBOARD UPDATE COMPLETE")
 
+    logger.info("AUTO GENERATE DATA GUIDE")
+    oncotree_version = oncotree_link.split("=")[1]
+    data_guide_pdf = generate_data_guide(genie_version,
+                                         oncotree_version=oncotree_version,
+                                         database_mapping=databaseSynIdMappingId,
+                                         genie_user=genie_user,
+                                         genie_pass=genie_pass)
+    data_guide_ent = synapseclient.File(data_guide_pdf,
+                                        parent=folders['release_folder'])
+    syn.store(data_guide_ent)
+    logger.info("AUTO GENERATE UNIQUE MUTATIONS")
+    generate_unique_mutations(genie_version,
+                              database_mapping=databaseSynIdMappingId,
+                              genie_user=genie_user,
+                              genie_pass=genie_pass)
     if not staging:
         database_to_staging.update_process_trackingdf(
             syn, processTrackerSynId, 'SAGE', 'dbToStage', start=False)
