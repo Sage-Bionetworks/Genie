@@ -8,6 +8,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, "genie", "__version__.py")) as f:
     exec(f.read(), about)
 
+# Add readme
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
