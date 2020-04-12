@@ -70,7 +70,7 @@ class ValidationHelper(object):
             # If valid filename, return file type.
             if filetype is not None:
                 break
-        return(filetype)
+        return filetype
 
     def validate_single_file(self, **kwargs):
         """Validate a submitted file unit.
