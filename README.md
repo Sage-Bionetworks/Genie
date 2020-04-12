@@ -26,7 +26,7 @@ genie -v
 This will install all the necessary components for you to run the validator locally on all of your files, including the Synapse client.  Please view the help to see how to run to validator.  
 ```
 genie validate -h
-genie validate clinical data_clinical_supp_SAGE.txt SAGE
+genie validate data_clinical_supp_SAGE.txt SAGE
 ```
 
 # Development
