@@ -4,7 +4,7 @@ import argparse
 import logging
 
 from genie import (input_to_database, write_invalid_reasons,
-                   process_functions, config)
+                   process_functions, config, validate)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -93,6 +93,7 @@ def main(process,
         databaseToSynIdMappingDf = \
             input_to_database.create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
 
+    validator_cls = config.collect_validation_helper(args.format_registry_packages)
     format_registry = config.collect_format_types(args.format_registry_packages)
 
     for center in centers:
@@ -104,7 +105,8 @@ def main(process,
             center_mapping_df, reference=reference,
             delete_old=delete_old,
             oncotree_link=oncotree_link,
-            format_registry=format_registry)
+            format_registry=format_registry,
+            validator_cls=validator_cls)
 
     # To ensure that this is the new entity
     center_mapping_ent = syn.get(center_mapping_id)

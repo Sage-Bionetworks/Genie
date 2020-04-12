@@ -26,7 +26,7 @@ class ValidationHelper(object):
     _validate_kwargs = []
 
     def __init__(self, syn, center, entitylist,
-                 format_registry=config.PROCESS_FILES,
+                 format_registry=None,
                  testing=False):
 
         """A validator helper class for a center's files.
@@ -235,15 +235,16 @@ def _perform_validate(syn, args):
 
     args.oncotree_link = _get_oncotreelink(syn, databasetosynid_mappingdf,
                                            oncotree_link=args.oncotree_link)
+    validator_cls = config.collect_validation_helper(args.format_registry_packages)
 
     format_registry = config.collect_format_types(args.format_registry_packages)
     logger.debug("Using {} file formats.".format(format_registry))
     entity_list = [synapseclient.File(name=filepath, path=filepath,
                                       parentId=None)
                    for filepath in args.filepath]
-    validator = GenieValidationHelper(syn=syn, center=args.center,
-                                      entitylist=entity_list,
-                                      format_registry=format_registry)
+    validator = validator_cls(syn=syn, center=args.center,
+                              entitylist=entity_list,
+                              format_registry=format_registry)
     mykwargs = dict(oncotree_link=args.oncotree_link,
                     nosymbol_check=args.nosymbol_check)
     valid, message = validator.validate_single_file(**mykwargs)

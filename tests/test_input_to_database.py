@@ -404,7 +404,8 @@ def test_valid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
-            error_trackerdf, center, testing, oncotree_link)
+            error_trackerdf, center, testing, oncotree_link,
+            validator_cls=GenieValidationHelper)
 
         assert expected_results == validate_results
         patch_validate.assert_called_once_with(
@@ -457,7 +458,8 @@ def test_invalid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
-            error_trackerdf, center, testing, oncotree_link)
+            error_trackerdf, center, testing, oncotree_link,
+            validator_cls=GenieValidationHelper)
 
         assert expected_results == validate_results
         patch_validate.assert_called_once_with(
@@ -513,7 +515,8 @@ def test_already_validated_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, entities, validation_statusdf,
-            error_trackerdf, center, testing, oncotree_link)
+            error_trackerdf, center, testing, oncotree_link,
+            validator_cls=GenieValidationHelper)
 
         assert expected_results == validate_results
         patch_validate.assert_not_called()
@@ -771,7 +774,8 @@ def test_validation():
         valid_filedf = input_to_database.validation(
             syn, center, process,
             center_mapping_df, databaseToSynIdMappingDf,
-            testing, oncotree_link, format_registry)
+            testing, oncotree_link, format_registry,
+            GenieValidationHelper)
         patch_get_center.assert_called_once_with(
             syn, center_input_synid, center, process)
         assert patch_tablequery.call_count == 2
@@ -782,7 +786,8 @@ def test_validation():
             center='SAGE',
             testing=False,
             oncotree_link=oncotree_link,
-            format_registry=format_registry)
+            format_registry=format_registry,
+            validator_cls=GenieValidationHelper)
         patch_update_status.assert_called_once_with(
             syn,
             input_status_list,

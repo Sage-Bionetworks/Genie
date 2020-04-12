@@ -229,7 +229,8 @@ def _get_status_and_error_list(valid, message, entities):
 
 def validatefile(syn, entities, validation_status_table, error_tracker_table,
                  center, testing, oncotree_link,
-                 format_registry=None):
+                 format_registry=None,
+                 validator_cls=None):
     '''Validate a list of entities.
 
     If a file has not changed, then it doesn't need to be validated.
@@ -268,12 +269,10 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
     # Need to figure out to how to remove this
     # This must pass in filenames, because filetype is determined by entity
     # name Not by actual path of file
-    # TODO: need to be able to figure out how to pass in the
-    # GenieValidationHelper
-    validator = validate.GenieValidationHelper(syn=syn, center=center,
-                                               entitylist=entities,
-                                               format_registry=format_registry,
-                                               testing=testing)
+    validator = validator_cls(syn=syn, center=center,
+                              entitylist=entities,
+                              format_registry=format_registry,
+                              testing=testing)
     filetype = validator.file_type
     if check_file_status['to_validate']:
         valid, message = validator.validate_single_file(
@@ -607,7 +606,8 @@ def update_status_and_error_tables(syn,
 
 def validation(syn, center, process,
                center_mapping_df, database_synid_mappingdf,
-               testing, oncotree_link, format_registry):
+               testing, oncotree_link, format_registry,
+               validator_cls):
     '''
     Validation of all center files
 
@@ -676,7 +676,8 @@ def validation(syn, center, process,
                 center=center,
                 testing=testing,
                 oncotree_link=oncotree_link,
-                format_registry=format_registry)
+                format_registry=format_registry,
+                validator_cls=validator_cls)
 
             input_valid_statuses.extend(status)
             if errors is not None:
@@ -713,7 +714,8 @@ def center_input_to_database(syn, center, process, testing,
                              vep_data, database_to_synid_mappingdf,
                              center_mapping_df, reference=None,
                              delete_old=False, oncotree_link=None,
-                             format_registry=None):
+                             format_registry=None,
+                             validator_cls=None):
     if only_validate:
         log_path = os.path.join(
             process_functions.SCRIPT_DIR,
@@ -757,7 +759,7 @@ def center_input_to_database(syn, center, process, testing,
     validFiles = validation(
         syn, center, process, center_mapping_df,
         database_to_synid_mappingdf,
-        testing, oncotree_link, format_registry)
+        testing, oncotree_link, format_registry, validator_cls)
 
     if len(validFiles) > 0 and not only_validate:
         # Reorganize so BED file are always validated and processed first
