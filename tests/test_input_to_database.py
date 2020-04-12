@@ -766,14 +766,14 @@ def test_validation():
                                    errortracking_mock]) as patch_tablequery,\
          patch.object(input_to_database, "validatefile",
                       return_value=(input_status_list,
-                                    invalid_errors_list, 
+                                    invalid_errors_list,
                                     messages)) as patch_validatefile,\
          patch.object(input_to_database, "update_status_and_error_tables",
                       return_value=validation_statusdf) as patch_update_status:
         valid_filedf = input_to_database.validation(
             syn, None, center, process,
             center_mapping_df, databaseToSynIdMappingDf,
-            thread, oncotree_link, genie.config.PROCESS_FILES)
+            oncotree_link, genie.config.PROCESS_FILES, thread=None)
         patch_get_center.assert_called_once_with(
             syn, center_input_synid, center, process)
         assert patch_tablequery.call_count == 2
