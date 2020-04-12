@@ -45,7 +45,7 @@ def main(process,
     database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
     
     databaseToSynIdMapping = syn.tableQuery(
-        'SELECT * FROM {}'.format(database_to_synid_mapping_synid))
+        'SELECT * FROM {}'.format(database_to_synid_mapping_synid[0]))
     databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
 
     center_mapping_id = process_functions.getDatabaseSynId(
@@ -95,9 +95,8 @@ def main(process,
 
     for center in centers:
         input_to_database.center_input_to_database(
-            syn, center, process,
-            only_validate,
-            vcf2maf_path, vep_path,
+            syn, project_id, center, process,
+            only_validate, vcf2maf_path, vep_path,
             vep_data, databaseToSynIdMappingDf,
             center_mapping_df, reference=reference,
             delete_old=delete_old,
@@ -130,6 +129,10 @@ if __name__ == "__main__":
         choices=['vcf', 'maf', 'main', 'mafSP'],
         help='Process vcf, maf or the rest of the files')
     parser.add_argument(
+        "--project_id",
+        help="Synapse Project ID where data is stored.",
+        required=True)
+    parser.add_argument(
         '--center',
         help='The centers')
     parser.add_argument(
@@ -152,10 +155,6 @@ if __name__ == "__main__":
         "--createNewMafDatabase",
         action='store_true',
         help="Creates a new maf database")
-    parser.add_argument(
-        "--project_id",
-        action='store_true',
-        help="Synapse Project ID where data is stored.")
     parser.add_argument(
         "--debug",
         action='store_true',

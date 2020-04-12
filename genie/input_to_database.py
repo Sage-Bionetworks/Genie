@@ -601,7 +601,7 @@ def update_status_and_error_tables(syn,
 
 def validation(syn, project_id, center, process,
                center_mapping_df, database_synid_mappingdf,
-               thread, oncotree_link, format_registry):
+               oncotree_link, format_registry, thread=None):
     '''
     Validation of all center files
 
@@ -744,8 +744,7 @@ def center_input_to_database(
 
     validFiles = validation(
         syn, project_id, center, process, center_mapping_df,
-        database_to_synid_mappingdf, thread,
-        oncotree_link, PROCESS_FILES)
+        database_to_synid_mappingdf, oncotree_link, PROCESS_FILES)
 
     if len(validFiles) > 0 and not only_validate:
         # Reorganize so BED file are always validated and processed first

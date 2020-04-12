@@ -93,8 +93,8 @@ class fusions(FileTypeFormat):
         return(fusion)
 
     #PROCESSING
-    def process_steps(self, fusion, databaseSynId, newPath):
-        fusion = self._process(fusion)
+    def process_steps(self, fusion, databaseSynId, newPath, databaseToSynIdMappingDf):
+        fusion = self._process(fusion, databaseToSynIdMappingDf)
         process_functions.updateData(self.syn, databaseSynId, fusion, self.center, toDelete=True)
         fusion.to_csv(newPath, sep="\t",index=False)
         return(newPath)
