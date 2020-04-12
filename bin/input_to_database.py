@@ -4,7 +4,7 @@ import argparse
 import logging
 
 from genie import (input_to_database, write_invalid_reasons,
-                   process_functions)
+                   process_functions, config)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -93,6 +93,8 @@ def main(process,
         databaseToSynIdMappingDf = \
             input_to_database.create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
 
+    format_registry = config.collect_format_types(args.format_registry_packages)
+
     for center in centers:
         input_to_database.center_input_to_database(
             syn, center, process,
@@ -101,7 +103,8 @@ def main(process,
             vep_data, databaseToSynIdMappingDf,
             center_mapping_df, reference=reference,
             delete_old=delete_old,
-            oncotree_link=oncotree_link)
+            oncotree_link=oncotree_link,
+            format_registry=format_registry)
 
     # To ensure that this is the new entity
     center_mapping_ent = syn.get(center_mapping_id)
@@ -164,9 +167,11 @@ if __name__ == "__main__":
         help="Path to VCF reference file")
 
     # DEFAULT PARAMS
-    parser_validate.add_argument("--format_registry_packages", type=str, nargs="+",
-                                 default=["genie"],
-                                 help="Python package name(s) to get valid file formats from (default: %(default)s).")
+    parser.add_argument(
+        "--format_registry_packages", type=str, nargs="+",
+        default=["genie"],
+        help="Python package name(s) to get valid file formats from "
+             "(default: %(default)s).")
 
     parser.add_argument(
         "--vcf2mafPath",
@@ -198,5 +203,5 @@ if __name__ == "__main__":
          reference=args.reference,
          vcf2maf_path=args.vcf2mafPath,
          vep_path=args.vepPath,
-         vep_data=args.vepData
+         vep_data=args.vepData,
          format_registry=args.format_registry_packages)

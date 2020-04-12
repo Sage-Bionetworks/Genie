@@ -13,7 +13,7 @@ except ModuleNotFoundError:
 import synapseutils
 import pandas as pd
 
-from .config import PROCESS_FILES
+# from .config import PROCESS_FILES
 from . import process_functions
 from . import validate
 from . import toRetract
@@ -229,7 +229,7 @@ def _get_status_and_error_list(valid, message, entities):
 
 def validatefile(syn, entities, validation_status_table, error_tracker_table,
                  center, testing, oncotree_link,
-                 format_registry=PROCESS_FILES):
+                 format_registry=None):
     '''Validate a list of entities.
 
     If a file has not changed, then it doesn't need to be validated.
@@ -301,7 +301,8 @@ def processfiles(syn, validfiles, center, path_to_genie,
                  center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
                  validVCF=None, vcf2mafPath=None,
                  veppath=None, vepdata=None,
-                 processing="main", test=False, reference=None):
+                 processing="main", test=False, reference=None,
+                 format_registry=None):
     '''
     Processing validated files
 
@@ -345,7 +346,7 @@ def processfiles(syn, validfiles, center, path_to_genie,
             else:
                 synId = synId[0]
             if fileType is not None and (processing == "main" or processing == fileType):
-                processor = PROCESS_FILES[fileType](syn, center)
+                processor = format_registry[fileType](syn, center)
                 processor.process(
                     filePath=filePath, newPath=newPath,
                     parentId=center_staging_synid, databaseSynId=synId,
@@ -364,7 +365,7 @@ def processfiles(syn, validfiles, center, path_to_genie,
         synId = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == processing][0]
         fileSynId = None
-        processor = PROCESS_FILES[processing](syn, center)
+        processor = format_registry[processing](syn, center)
         processor.process(
             filePath=filePath, newPath=newPath,
             parentId=center_staging_synid, databaseSynId=synId,
@@ -705,12 +706,12 @@ def validation(syn, center, process,
         return(valid_filesdf[['id', 'path', 'fileType', 'name']])
 
 
-def center_input_to_database(
-        syn, center, process, testing,
-        only_validate, vcf2maf_path, vep_path,
-        vep_data, database_to_synid_mappingdf,
-        center_mapping_df, reference=None,
-        delete_old=False, oncotree_link=None):
+def center_input_to_database(syn, center, process, testing,
+                             only_validate, vcf2maf_path, vep_path,
+                             vep_data, database_to_synid_mappingdf,
+                             center_mapping_df, reference=None,
+                             delete_old=False, oncotree_link=None,
+                             format_registry=None):
     if only_validate:
         log_path = os.path.join(
             process_functions.SCRIPT_DIR,
@@ -754,7 +755,7 @@ def center_input_to_database(
     validFiles = validation(
         syn, center, process, center_mapping_df,
         database_to_synid_mappingdf,
-        testing, oncotree_link, PROCESS_FILES)
+        testing, oncotree_link, format_registry)
 
     if len(validFiles) > 0 and not only_validate:
         # Reorganize so BED file are always validated and processed first
@@ -806,7 +807,8 @@ def center_input_to_database(
                      validVCF=validVCF,
                      vcf2mafPath=vcf2maf_path,
                      veppath=vep_path, vepdata=vep_data,
-                     test=testing, processing=process, reference=reference)
+                     test=testing, processing=process, reference=reference,
+                     format_registry=format_registry)
 
         # Should add in this process end tracking
         # before the deletion of samples

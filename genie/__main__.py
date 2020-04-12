@@ -97,6 +97,5 @@ def main():
     args.func(syn, args)
 
 
-
 if __name__ == "__main__":
     main()
