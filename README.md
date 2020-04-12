@@ -19,7 +19,8 @@ These are tools or packages you will need, to be able to reproduce these results
 
 ## File Validator
 ```
-pip install git+https://github.com/Sage-Bionetworks/Genie.git
+pip install synapsegenie
+genie -v
 ```
 
 This will install all the necessary components for you to run the validator locally on all of your files, including the Synapse client.  Please view the help to see how to run to validator.  
