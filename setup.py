@@ -8,7 +8,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, "genie", "__version__.py")) as f:
     exec(f.read(), about)
 
-setup(name='genie',
+setup(name='synapsegenie',
       version=about["__version__"],
       description='Processing and validation for GENIE',
       url='https://github.com/Sage-Bionetworks/Genie',
