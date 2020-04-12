@@ -268,6 +268,8 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
     # Need to figure out to how to remove this
     # This must pass in filenames, because filetype is determined by entity
     # name Not by actual path of file
+    # TODO: need to be able to figure out how to pass in the
+    # GenieValidationHelper
     validator = validate.GenieValidationHelper(syn=syn, center=center,
                                                entitylist=entities,
                                                format_registry=format_registry,
