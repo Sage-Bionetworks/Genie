@@ -549,7 +549,7 @@ kable(final_matrix,
 
 ### Panels Covering TP53
 
-These are all the panels that cover TP53 that don't have TP53 as the top mutated genes.  Please review if data is correct.
+These are all the panels that cover TP53 that don't have TP53 as the top mutated genes.  If your panel is shown in the table below, it is _possible_ that you have artifacts in your data.  **Please review and reupload if your data is incorrect**
 
 
 ```{r highlight_panels, echo=FALSE}
@@ -578,13 +578,21 @@ if (!is.null(this_bed)) {
 
 ## Assay information vs genomic information discrepancies
 
-Each panel's bed file is used to generate a gene panel file used in cBioPortal. All bed files undergo gene symbol harmonization during processing.
+During processing, each panel's bed file undergoes gene symbol harmonization and is used to generate a gene panel file used in cBioPortal.
+A user of the GENIE data pointed out that the expected gene count numbers in the data guide did not match up to the number of genes in the gene panel files made from each center's bed files.  The table below was created to assist with resolving these issues.
+
+**Here are some action items required if your panel appears in the table**. The assay_information.yaml file is a file that I assisted all the centers to create, and can be found in each center’s input directory.
 
 * `num_genes_remapped`:  number of unique genes a panel has after submitted genes are remapped
 * `num_genes_submitted`: number of unique genes found in site's submitted BED file prior to remapping
 * `num_genes_expected`: size of panel as defined in site's submitted assay_information.yaml file
 
-Ideally, `num_genes_remapped` and `num_genes_expected` should match. Panels that have differences between the two values are shown below.  `NA` means that the panel has an invalid assay information file.
+1. If the `num_genes_expected` is NA, this means your panel is either missing from your assay_information.yaml, or the file is in an invalid format and cannot be processed.  Please provide a fix.
+2. If the `num_genes_remapped` does not match `num_genes_expected`, please make sure one of the two values is correct.
+   a. If `num_genes_expected` is incorrect, please update the value in your `assay_information.yaml` file.
+   b. If `num_genes_remapped` is incorrect, please update your coordinates or gene symbols in the bed file.  Please view the bed submission guidelines to learn more about the remapping.
+3. If there is a huge difference between your `num_genes_submitted` and `num_genes_remapped`, there is a high chance that you are submitting "invalid" gene symbols.  (ie.  PDGFRA1 is not equivalent to PDGFRA and PDGFRA1 is an invalid symbol name)
+
 
 ```{r genepanel_diff, echo=F}
 if (!is.null(assay_infodf) & !is.null(this_bed)) {
