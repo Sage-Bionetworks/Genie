@@ -108,6 +108,7 @@ class Assayinfo(FileTypeFormat):
                 if assay_finaldf.get(col) is not None:
                     assay_finaldf[col] = [";".join(row)
                                           for row in assay_finaldf[col]]
+            assay_finaldf['SEQ_PIPELINE_ID'] = assay
             all_panel_info = all_panel_info.append(assay_finaldf)
         return all_panel_info
 
