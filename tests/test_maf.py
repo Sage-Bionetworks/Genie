@@ -47,8 +47,10 @@ def test_processing():
     expected_maf_dict['Center'] = ["SAGE", "SAGE", "SAGE"]
     expected_maf_dict['Tumor_Sample_Barcode'] = [
         "GENIE-SAGE-1-3", "GENIE-SAGE-1-2", "GENIE-SAGE-3-2"]
-    expected_maf_dict['Sequence_Source'] = [pd.np.nan, pd.np.nan, pd.np.nan]
-    expected_maf_dict['Sequencer'] = [pd.np.nan, pd.np.nan, pd.np.nan]
+    expected_maf_dict['Sequence_Source'] = [float('nan'), float('nan'),
+                                            float('nan')]
+    expected_maf_dict['Sequencer'] = [float('nan'), float('nan'),
+                                      float('nan')]
     expected_maf_dict['Validation_Status'] = ['', '', "f"]
     expected_mafdf = pd.DataFrame(expected_maf_dict)
     assert expected_mafdf.equals(formatted_mafdf[expected_mafdf.columns])
