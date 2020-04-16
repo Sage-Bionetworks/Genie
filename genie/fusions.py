@@ -22,7 +22,7 @@ def validateSymbol(x, bedDf, returnMappedDf=True):
         x['HUGO_SYMBOL'] = mismatch['Hugo_Symbol'].values[0]
     #else:
     #    logger.warning("%s cannot be remapped and will not be released. The symbol must exist in your seq assay ids (bed files) and must be mappable to a gene." % gene)
-    #    x['HUGO_SYMBOL'] = pd.np.nan
+    #    x['HUGO_SYMBOL'] = float('nan')
         #x['FUSION'] = x['FUSION'].replace("%s-" % gene,"%s-" % x['HUGO_SYMBOL'])
         #x['COMMENTS'] = str(x['COMMENTS']).replace("-%s" % gene,"-%s" % str(x['COMMENTS']))
     if returnMappedDf:
