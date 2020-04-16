@@ -762,12 +762,13 @@ def center_input_to_database(
 
         # merge clinical files into one row
         clinical_ind = validFiles['fileType'] == "clinical"
-        clinical_files = validFiles[clinical_ind].to_dict(orient='list')
-        # The [] implies the values in the dict as a list
-        merged_clinical = pd.DataFrame([clinical_files])
-        merged_clinical['fileType'] = 'clinical'
-        merged_clinical['name'] = "data_clinical_supp_{}.txt".format(center)
-        validFiles = validFiles[~clinical_ind].append(merged_clinical)
+        if clinical_ind.any():
+            clinical_files = validFiles[clinical_ind].to_dict(orient='list')
+            # The [] implies the values in the dict as a list
+            merged_clinical = pd.DataFrame([clinical_files])
+            merged_clinical['fileType'] = 'clinical'
+            merged_clinical['name'] = f"data_clinical_supp_{center}.txt"
+            validFiles = validFiles[~clinical_ind].append(merged_clinical)
 
         processTrackerSynId = process_functions.getDatabaseSynId(
             syn, "processTracker",
