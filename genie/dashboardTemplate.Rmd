@@ -1,6 +1,9 @@
 ---
 title: "%s Summary"
-output: html_document
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
 params:
   genieUser:
     value: x
@@ -352,6 +355,7 @@ black_list_variantsdf = black_list_variants$asDataFrame()
 # this_cna <- getFileDf("data_CNA.txt", releaseFiles)
 #this_fus <- getFileDf("data_fusions.txt", releaseFiles)
 ```
+
 ## Sample and Variant Count per center
 Please confirm that the the number of samples and variants in this release is what you expect.
 
@@ -373,6 +377,7 @@ kable(samplesPerReleaseDf, row.names = F,
 ```
 
 ## Blacklisted Variants
+This is a count of how many blacklisted variants a center has. If your center shows up in this table, please investigate your variants. If you have suggestions for variants that should be part of this list, please inform Sage Bionetworks.
 
 ```{r blacklist}
 blacklist_variants = paste(black_list_variantsdf$Hugo_Symbol,
@@ -386,23 +391,57 @@ kable(table(subset_mut$Center, subset_mut$blacklist),
       caption = "Blacklist variant count")
 ```
 
-```{r primaryPlots}
-#primary site distribution
-par(mar = c(10,3,3,1))
-barplot(sort(log(table(this_mut$FILTER)),decreasing = T),
-        main = "Log Distribution of Mutation FILTERs", las = 2)
-# plotPrimarySites(this_samples,
-#                  "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2018_06_01",
-#                  "%s")
+
+<!-- ```{r} -->
+<!-- #primary site distribution -->
+<!-- par(mar = c(10,3,3,1)) -->
+<!-- # barplot(sort(log(table(this_mut$FILTER)),decreasing = T), -->
+<!-- #         main = "Log Distribution of Mutation FILTERs", las = 2) -->
+<!-- # plotPrimarySites(this_samples, -->
+<!-- #                  "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2018_06_01", -->
+<!-- #                  "%s") -->
+<!-- ``` -->
+
+## Distribution of Clinical Attributes
+Please use the below distributions to access the validity of your clinical data.  There will be some tips for what to look for in each section.
+
+### Race
+Some european sites like GRCC, CRUK, and NKI do not collect race information from their patients.  If your institution does not either, you should see empty barplots.
+
+```{r}
 #Center X Race
+par(mar = c(10,3,3,1))
 plotCenterXRace(this_patient)
+```
+
+### Ethnicity
+Some european sites like GRCC, CRUK, and NKI do not collect ethnicity information from their patients.  If your institution does not either, you should see empty barplots.
+
+```{r}
 #Center X Ethnicity
+par(mar = c(10,3,3,1))
 plotCenterXEthnicity(this_patient)
+```
+
+### Sex
+CRUK submits samples from breast cancer patients, so their samples are all female.
+
+```{r}
 #Center X Sex
+par(mar = c(10,3,3,1))
 plotCenterXSex(this_patient)
+```
+
+### Age
+CHOP submits mainly pediatric cases, so their distribution is different from the rest.
+
+
+```{r}
 #Center X Age
+par(mar = c(10,3,3,1))
 plotCenterXAge(this_samples)
 ```
+
 
 <!-- ```{r cancer_type_plot, fig.width=14} -->
 <!-- if (!is.null(this_samples$CANCER_TYPE)) { -->
@@ -410,6 +449,9 @@ plotCenterXAge(this_samples)
 <!--   plotCancerType(this_samples) -->
 <!-- } -->
 <!-- ``` -->
+
+## Gene Panel Overlaps
+This section will show the number of genes that overlap between the myeloid, small and large GENIE panels.
 
 ```{r bed_process, include=F}
 if (!is.null(this_bed)) {
@@ -446,34 +488,41 @@ if (!is.null(this_bed)) {
 }
 ```
   
+### Meyloid Gene Panels
+
 ```{r myeloid_panel_upset}
 if (length(myeloid) > 1) {
-  print("Overlap of myeloid gene panels")
   plotPanelOverlap(this_samples, this_bed, myeloid)
 }
 
 ```
 
+### Small (<100) Gene panels
+
 ```{r small_panel_upset, fig.height=12}
 if (length(smallPanels) > 1) {
-  print("Overlap of small (<100) gene panels")
   plotPanelOverlap(this_samples, this_bed, smallPanels)
 }
 ```
 
+### Large ($\geq$ 100) Gene panels
+
 ```{r large_panel_upset, fig.height=15}
 if (length(largePanels) > 1) {
-  print("Overlap of large (>100) gene panels")
   plotPanelOverlap(this_samples, this_bed, largePanels)
 }
 ```
 
-To assist with discovering artifacts in a center's data, this will summarize the top 5 most frequently mutated genes per panel.  One of the easiest questions to answer is:
 
+## Top 5 most frequently mutated genes per panel
+
+To assist with discovering artifacts in a center's data, this will summarize the top 5 most frequently mutated genes per panel.  One of the easiest questions to answer is:
 
 **Has the frequently mutated gene list changed significantly? Is TP53 still #1?**
 
-Top 5 most frequently mutated genes per panel for all panels
+### All panels
+
+Top 5 most frequently mutated genes per panel for all panels.
 
 ```{r top_5_mutated, echo=FALSE}
 mergeddf = merge.data.frame(this_mut[,c("Tumor_Sample_Barcode", "Hugo_Symbol")],
@@ -497,6 +546,8 @@ kable(final_matrix,
 
 ```
 
+
+### Panels Covering TP53
 
 These are all the panels that cover TP53 that don't have TP53 as the top mutated genes.  Please review if data is correct.
 
@@ -525,8 +576,9 @@ if (!is.null(this_bed)) {
 }
 ```
 
+## Assay information vs genomic information discrepancies
 
-Each panel's bed file is used to generate a gene panel file used in cBioPortal. All bed files undergo gene symbol remapping during processing.
+Each panel's bed file is used to generate a gene panel file used in cBioPortal. All bed files undergo gene symbol harmonization during processing.
 
 * `num_genes_remapped`:  number of unique genes a panel has after submitted genes are remapped
 * `num_genes_submitted`: number of unique genes found in site's submitted BED file prior to remapping
