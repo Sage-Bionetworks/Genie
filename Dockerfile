@@ -29,6 +29,7 @@ RUN apt-get install -y --allow-unauthenticated \
 # 	libcurl3-dev \ 
 # 	libmariadb-client-lgpl-dev \
 
+RUN apt-get install -y texlive-full
 RUN pip3 install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto PyYAML
 RUN pip install pandas numexpr --upgrade
@@ -55,5 +56,4 @@ WORKDIR /root/
 # because must update cbioportal
 RUN git clone https://github.com/cBioPortal/cbioportal.git
 
-RUN pip install synapseclient --upgrade
 WORKDIR /root/Genie/genie
