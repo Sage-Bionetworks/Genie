@@ -36,7 +36,7 @@ def validateSymbol(gene, bedDf, returnMappedDf=True):
             "{} cannot be remapped and will not be released. The symbol "
             "must exist in your seq assay ids (bed files) and must be "
             "mappable to a gene.".format(gene))
-        gene = pd.np.nan
+        gene = float('nan')
     if returnMappedDf:
         return(gene)
     else:
