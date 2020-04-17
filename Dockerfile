@@ -29,7 +29,13 @@ RUN apt-get install -y --allow-unauthenticated \
 # 	libcurl3-dev \ 
 # 	libmariadb-client-lgpl-dev \
 
-RUN apt-get install -y texlive-full
+# Supports data guide creation
+#RUN apt-get install -y texlive-full
+RUN apt-get install -y texlive \
+	texinfo \
+	texlive-generic-recommended \
+	texlive-latex-extra
+
 RUN pip3 install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto PyYAML
 RUN pip install pandas numexpr --upgrade
