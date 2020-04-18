@@ -79,7 +79,9 @@ def build_parser():
                                      'If specified, your valid files will be uploaded '
                                      'to this directory.')
 
+    # TODO: remove this default when private genie project is ready
     parser_validate.add_argument("--project_id", type=str,
+                                 default="syn3380222",
                                  help='Synapse Project ID where data is stored.')
 
     parser_validate.add_argument("--nosymbol-check", action='store_true',

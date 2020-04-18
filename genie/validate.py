@@ -26,7 +26,7 @@ class ValidationHelper(object):
     _validate_kwargs = []
 
     def __init__(self, syn, project_id, center, entitylist,
-                 format_registry=config.PROCESS_FILES):
+                 format_registry=config.PROCESS_FILES,
                  file_type=None):
         """A validator helper class for a center's files.
 
