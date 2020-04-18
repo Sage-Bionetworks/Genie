@@ -1,9 +1,7 @@
 # Import logging last to not take in synapseclient logging
 import logging
 
-from . import bed
 from . import vcf
-from . import bedSP
 from . import clinical
 from . import seg
 from . import cbs
