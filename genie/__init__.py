@@ -9,8 +9,6 @@ from . import maf
 from . import mafSP
 from . import clinicalSP
 from . import cna
-from . import sampleRetraction
-from . import patientRetraction
 from . import mutationsInCis
 
 from .__version__ import __version__
