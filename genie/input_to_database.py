@@ -773,7 +773,6 @@ def validation(syn, center, process,
         )
 
         valid_filesdf = validation_statusdf.query('status == "VALIDATED"')
-        print(valid_filesdf)
         return(valid_filesdf[['id', 'path', 'fileType', 'name']])
 
 
