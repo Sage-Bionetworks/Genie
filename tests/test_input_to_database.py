@@ -806,21 +806,21 @@ class TestValidation:
         validationstatus_mock = emptytable_mock()
         errortracking_mock = emptytable_mock()
         with patch.object(input_to_database, "get_center_input_files",
-                        return_value=entities) as patch_get_center,\
-            patch.object(syn, "tableQuery",
-                        side_effect=[validationstatus_mock,
-                                     errortracking_mock]) as patch_tablequery,\
-            patch.object(input_to_database, "validatefile",
-                        return_value=(input_status_list,
-                                      invalid_errors_list,
-                                      messages)) as patch_validatefile,\
-            patch.object(input_to_database, "build_validation_status_table",
-                         return_value=self.validation_statusdf),\
-            patch.object(input_to_database, "build_error_tracking_table",
-                         return_value=self.errors_df),\
-            patch.object(input_to_database, "update_tables_with_duplicates",
-                         return_value=new_tables) as patch_tables,\
-            patch.object(input_to_database, "update_status_and_error_tables"):
+                          return_value=entities) as patch_get_center,\
+             patch.object(syn, "tableQuery",
+                          side_effect=[validationstatus_mock,
+                                       errortracking_mock]) as patch_query,\
+             patch.object(input_to_database, "validatefile",
+                          return_value=(input_status_list,
+                                        invalid_errors_list,
+                                        messages)) as patch_validatefile,\
+             patch.object(input_to_database, "build_validation_status_table",
+                          return_value=self.validation_statusdf),\
+             patch.object(input_to_database, "build_error_tracking_table",
+                          return_value=self.errors_df),\
+             patch.object(input_to_database, "update_tables_with_duplicates",
+                          return_value=new_tables),\
+             patch.object(input_to_database, "update_status_and_error_tables"):
             valid_filedf = input_to_database.validation(
                 syn, center, process,
                 center_mapping_df, databaseToSynIdMappingDf,
@@ -829,7 +829,7 @@ class TestValidation:
             patch_get_center.assert_called_once_with(
                 syn, center_input_synid, center, process
             )
-            assert patch_tablequery.call_count == 2
+            assert patch_query.call_count == 2
             patch_validatefile.assert_called_once_with(
                 syn, entity,
                 validationstatus_mock,
