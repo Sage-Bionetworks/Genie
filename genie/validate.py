@@ -26,8 +26,8 @@ class ValidationHelper(object):
     _validate_kwargs = []
 
     def __init__(self, syn, center, entitylist,
-                 format_registry=None,
-                 testing=False):
+                 format_registry=config.PROCESS_FILES,
+                 testing=False, file_type=None):
 
         """A validator helper class for a center's files.
 
@@ -35,8 +35,10 @@ class ValidationHelper(object):
             syn: a synapseclient.Synapse object
             center: The participating center name.
             filepathlist: a list of file paths.
-            format_registry: A dictionary mapping file format name to the format class.
+            format_registry: A dictionary mapping file format name to the
+                             format class.
             testing: Run in testing mode.
+            file_type: Specify file type to skip filename validation
         """
 
         self._synapse_client = syn
@@ -44,11 +46,11 @@ class ValidationHelper(object):
         self.center = center
         self._format_registry = format_registry
         self.testing = testing
-        self.file_type = self.determine_filetype()
+        self.file_type = (self.determine_filetype()
+                          if file_type is None else file_type)
 
     def determine_filetype(self):
-        '''
-        Get the file type of the file by validating its filename
+        """Gets the file type of the file by validating its filename
 
         Args:
             syn: Synapse object
@@ -56,7 +58,8 @@ class ValidationHelper(object):
 
         Returns:
             str: File type of input files.  None if no filetype found
-        '''
+
+        """
         filetype = None
         # Loop through file formats
         for file_format in self._format_registry:
@@ -140,21 +143,27 @@ def collect_errors_and_warnings(errors, warnings):
 
 
 def get_config(syn, synid):
-    '''
-    Get Synapse database to Table mapping in dict
-    '''
+    """Gets Synapse database to Table mapping in dict
+
+    Args:
+        syn: Synapse connection
+        synid: Synapse id of database mapping table
+
+    Returns:
+        dict: {'databasename': 'synid'}
+
+    """
     config = syn.tableQuery('SELECT * FROM {}'.format(synid))
     configdf = config.asDataFrame()
     configdf.index = configdf['Database']
     config_dict = configdf.to_dict()
-    return(config_dict['Id'])
+    return config_dict['Id']
 
 
 def _check_parentid_permission_container(syn, parentid):
-    '''
-    Check permission / container
-    Currently only checks if a user has READ permissions...
-    '''
+    """Checks permission / container
+    # TODO: Currently only checks if a user has READ permissions
+    """
     if parentid is not None:
         try:
             syn_ent = syn.get(parentid, downloadFile=False)
@@ -167,38 +176,44 @@ def _check_parentid_permission_container(syn, parentid):
 
 
 def _check_center_input(center, center_list):
-    '''
-    Check center input
+    """Checks center input
 
     Args:
         center: Center name
         center_list: List of allowed centers
-    '''
+
+    Raises:
+        ValueError: If specify a center not part of the center list
+
+    """
     if center not in center_list:
-        raise ValueError(
-            "Must specify one of these centers: {}".format(
-                ", ".join(center_list)))
+        raise ValueError("Must specify one of these "
+                         f"centers: {', '.join(center_list)}")
 
 
 def _get_oncotreelink(syn, databasetosynid_mappingdf, oncotree_link=None):
-    '''
-    Get oncotree link unless a link is specified by the user
+    """
+    Gets oncotree link unless a link is specified by the user
 
     Args:
         syn: Synapse object
         databasetosynid_mappingdf: database to synid mapping
         oncotree_link: link to oncotree. Default is None
-    '''
+
+    Returns:
+        oncotree link
+
+    """
     if oncotree_link is None:
         oncolink = databasetosynid_mappingdf.query(
             'Database == "oncotreeLink"').Id
         oncolink_ent = syn.get(oncolink.iloc[0])
         oncotree_link = oncolink_ent.externalURL
-    return(oncotree_link)
+    return oncotree_link
 
 
 def _upload_to_synapse(syn, filepaths, valid, parentid=None):
-    '''
+    """
     Upload to synapse if parentid is specified and valid
 
     Args:
@@ -206,7 +221,8 @@ def _upload_to_synapse(syn, filepaths, valid, parentid=None):
         filepaths: List of file paths
         valid: Boolean value for validity of file
         parentid: Synapse id of container. Default is None
-    '''
+
+    """
     if parentid is not None and valid:
         logger.info("Uploading file to {}".format(parentid))
         for path in filepaths:
@@ -216,8 +232,7 @@ def _upload_to_synapse(syn, filepaths, valid, parentid=None):
 
 
 def _perform_validate(syn, args):
-    """This is the main entry point to the genie command line tool.
-    """
+    """This is the main entry point to the genie command line tool."""
 
     # Check parentid argparse
     _check_parentid_permission_container(syn, args.parentid)
@@ -242,9 +257,10 @@ def _perform_validate(syn, args):
     entity_list = [synapseclient.File(name=filepath, path=filepath,
                                       parentId=None)
                    for filepath in args.filepath]
-    validator = validator_cls(syn=syn, center=args.center,
-                              entitylist=entity_list,
-                              format_registry=format_registry)
+    validator = GenieValidationHelper(syn=syn, center=args.center,
+                                      entitylist=entity_list,
+                                      format_registry=format_registry,
+                                      file_type=args.filetype)
     mykwargs = dict(oncotree_link=args.oncotree_link,
                     nosymbol_check=args.nosymbol_check)
     valid, message = validator.validate_single_file(**mykwargs)
