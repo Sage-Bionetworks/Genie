@@ -525,75 +525,6 @@ def test_already_validated_validatefile():
         patch_send_email.assert_not_called()
 
 
-def test_dups_get_duplicated_files():
-    '''
-    Test get all duplicates
-    cbs/seg
-    clinical
-    '''
-    validation_statusdf = pd.DataFrame({
-        'id': ['syn1234', 'syn2345', 'syn5555', 'syn1224', 'syn34444'],
-        'name': ['first.cbs', 'second.seg', 'data_clinical_supp_1',
-                 'data_clinical_supp_2', 'data_clinical_supp_3']})
-    expected_dup = validation_statusdf.copy()
-    expected_dup['errors'] = ''
-    dupsdf = input_to_database.get_duplicated_files(validation_statusdf, "")
-    assert dupsdf.equals(expected_dup)
-
-
-def test_nodups_get_duplicated_files():
-    '''
-    Test no duplicated
-    '''
-    validation_statusdf = pd.DataFrame({
-        'id': ['syn1234', 'syn2345', 'syn5555', 'syn1224', 'syn34444'],
-        'name': ['cbs.txt', 'second.seg', 'no_clinical.txt',
-                 'data_clinical_supp_2', 'data_clinical_supp_3']})
-    dupsdf = input_to_database.get_duplicated_files(validation_statusdf, "")
-    assert dupsdf.empty
-
-
-def test_dups_email_duplication_error():
-    '''
-    Test duplicated email sent
-    '''
-    duplicated_filesdf = pd.DataFrame({
-        'id': ['syn1234'],
-        'name': ['first.cbs']})
-    entity = synapseclient.Entity(id='syn1234')
-    entity.modifiedBy = '333'
-    entity.createdBy = '333'
-    error_email = (
-        "Dear {},\n\n"
-        "Your files ({}) are duplicated!  FILES SHOULD BE UPLOADED AS "
-        "NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE "
-        "UPLOADED EVERYTIME".format("trial", "first.cbs"))
-    with patch.object(syn, "get", return_value=entity) as patch_syn_get,\
-         patch.object(syn, "getUserProfile",
-                      return_value={'userName':
-                                    'trial'}) as patch_syn_profile,\
-         patch.object(syn, "sendMessage") as patch_send:
-        input_to_database.email_duplication_error(syn, duplicated_filesdf)
-        patch_syn_get.assert_called_once_with('syn1234')
-        patch_syn_profile.assert_called_once_with('333')
-        patch_send.assert_called_once_with(
-            ['333'], "GENIE Validation Error", error_email)
-
-
-def test_nodups_email_duplication_error():
-    '''
-    Test no email sent
-    '''
-    duplicated_filesdf = pd.DataFrame()
-    with patch.object(syn, "get") as patch_syn_get,\
-         patch.object(syn, "getUserProfile") as patch_syn_profile,\
-         patch.object(syn, "sendMessage") as patch_send:
-        input_to_database.email_duplication_error(syn, duplicated_filesdf)
-        patch_syn_get.assert_not_called()
-        patch_syn_profile.assert_not_called()
-        patch_send.assert_not_called()
-
-
 def test_valid__get_status_and_error_list():
     '''
     Tests the correct status and error lists received
@@ -685,112 +616,240 @@ class emptytable_mock:
         return([])
 
 
-def test_update_status_and_error_tables():
-    '''
-    Test updating validation status and error table
-    '''
-    validation_status_table = emptytable_mock()
-    error_tracker_table = emptytable_mock()
+class TestValidation:
+    def setup(self):
+        valid = [[sample_clinical_entity.id, sample_clinical_entity.path,
+                  sample_clinical_entity.md5, 'VALIDATED',
+                  sample_clinical_entity.name, 1553428800000, 'clinical',
+                  center, sample_clinical_entity]]
+        self.empty_validation = pd.DataFrame(
+            columns=["id", 'path', 'md5', 'status', 'name',
+                     'modifiedOn', 'fileType', 'center', 'entity']
+        )
+        self.validation_statusdf = pd.DataFrame(
+            valid, columns=["id", 'path', 'md5', 'status', 'name',
+                            'modifiedOn', 'fileType', 'center', 'entity']
+        )
+        error = [[sample_clinical_entity.id, "errors",
+                  sample_clinical_entity.name,
+                  'clinical', center, sample_clinical_entity]]
+        self.errors_df = pd.DataFrame(
+            error,
+            columns=['id', 'errors', 'name', 'fileType', 'center', 'entity']
+        )
+        self.empty_errors = pd.DataFrame(
+            columns=['id', 'errors', 'name', 'fileType', 'center', 'entity']
+        )
 
-    input_valid_statuses = [{'entity': sample_clinical_entity,
-                             'status': 'VALIDATED',
-                             'fileType': 'clinical',
-                             'center': center}]
+        self.with_dupsdf = pd.DataFrame({
+            'id': [sample_clinical_entity.id,
+                   'syn2345', 'syn5555', 'syn1224', 'syn34444'],
+            'name': ['first.cbs', 'second.seg', 'data_clinical_supp_1',
+                     'data_clinical_supp_2', 'data_clinical_supp_3'],
+            'center': ['SAGE']*5,
+            'fileType': ['type']*5,
+            'entity': ['entity']*5
+        })
+        self.duplicateddf = self.with_dupsdf.copy()
+        self.duplicateddf['errors'] = input_to_database.DUPLICATED_FILE_ERROR
 
-    expected = [[sample_clinical_entity.id, sample_clinical_entity.path,
-                 sample_clinical_entity.md5, 'VALIDATED',
-                 sample_clinical_entity.name,
-                 1553428800000, 'clinical', center]]
-    invalid_errors = []
-    expected_statusdf = pd.DataFrame(expected,
-                                     columns=["id", 'path', 'md5', 'status',
-                                              'name', 'modifiedOn',
-                                              'fileType', 'center'])
-    #input_valid_statusdf['center'] = center
-    empty_errorsdf = pd.DataFrame(columns=['id', 'errors', 'name',
-                                           'fileType', 'center'], dtype=str)
-    with patch.object(input_to_database, "get_duplicated_files",
-                      return_value=empty_errorsdf) as mock_get_duplicated,\
-         patch.object(input_to_database,
-                      "email_duplication_error") as mock_email,\
-         patch.object(process_functions, "updateDatabase") as mock_update:
-        input_validdf = input_to_database.update_status_and_error_tables(
-            syn,
-            input_valid_statuses,
-            invalid_errors,
-            validation_status_table,
-            error_tracker_table)
-        mock_get_duplicated.assert_called_once()
-        mock_email.assert_not_called()
-        assert mock_update.call_count == 2
-        assert input_validdf.equals(expected_statusdf[input_validdf.columns])
-        assert expected_statusdf.equals(input_validdf[expected_statusdf.columns])
+        self.no_dupsdf = pd.DataFrame({
+            'id': [sample_clinical_entity.id,
+                   'syn2345', 'syn5555', 'syn1224', 'syn34444'],
+            'name': ['cbs.txt', 'second.seg', 'no_clinical.txt',
+                     'data_clinical_supp_2', 'data_clinical_supp_3'],
+            'center': ['SAGE']*5,
+            'fileType': ['type']*5,
+            'entity': ['entity']*5
+        })
+        self.empty_dup = pd.DataFrame(columns=['id', 'name', 'center',
+                                               'fileType', 'entity',
+                                               'errors'])
 
+    def test_build_validation_status_table(self):
+        input_valid_statuses = [{'entity': sample_clinical_entity,
+                                 'status': 'VALIDATED',
+                                 'fileType': 'clinical',
+                                 'center': center}]
+        validationdf = input_to_database.build_validation_status_table(
+            input_valid_statuses
+        )
+        assert validationdf.equals(self.validation_statusdf)
 
-def test_validation():
-    '''
-    Test validation steps
-    '''
-    validation_statusdf = pd.DataFrame({
-        'id': ['syn1234'],
-        'status': ['VALIDATED'],
-        'path': ["/path/to/file"],
-        'name': ['filename'],
-        'fileType': ['clinical']})
+    def test_build_validation_status_table__empty(self):
+        input_valid_statuses = []
+        validationdf = input_to_database.build_validation_status_table(
+            input_valid_statuses
+        )
+        assert validationdf.equals(self.empty_validation)
 
-    testing = False
-    modified_on = 1561143558000
-    process = "main"
-    databaseToSynIdMapping = {'Database': ["clinical", 'validationStatus', 'errorTracker'],
-                              'Id': ['syn222', 'syn333', 'syn444']}
-    databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
-    entity = synapseclient.Entity(id='syn1234', md5='44444',
-                                  path='/path/to/foobar.txt',
-                                  name='data_clinical_supp_SAGE.txt')
-    entities = [entity]
-    filetype = "clinical"
-    input_status_list = [
-        [entity.id, entity.path, entity.md5,
-         'VALIDATED', entity.name, modified_on,
-         filetype, center]]
-    invalid_errors_list = []
-    messages = []
-    validationstatus_mock = emptytable_mock()
-    errortracking_mock = emptytable_mock()
-    with patch.object(input_to_database, "get_center_input_files",
-                      return_value=entities) as patch_get_center,\
-         patch.object(syn, "tableQuery",
-                      side_effect=[validationstatus_mock,
-                                   errortracking_mock]) as patch_tablequery,\
-         patch.object(input_to_database, "validatefile",
-                      return_value=(input_status_list,
-                                    invalid_errors_list, 
-                                    messages)) as patch_validatefile,\
-         patch.object(input_to_database, "update_status_and_error_tables",
-                      return_value=validation_statusdf) as patch_update_status:
-        valid_filedf = input_to_database.validation(
-            syn, center, process,
-            center_mapping_df, databaseToSynIdMappingDf,
-            testing, oncotree_link, genie.config.PROCESS_FILES)
-        patch_get_center.assert_called_once_with(
-            syn, center_input_synid, center, process)
-        assert patch_tablequery.call_count == 2
-        patch_validatefile.assert_called_once_with(
-            syn, entity,
-            validationstatus_mock,
-            errortracking_mock,
-            center='SAGE',
-            testing=False,
-            oncotree_link=oncotree_link,
-            format_registry=genie.config.PROCESS_FILES)
-        patch_update_status.assert_called_once_with(
-            syn,
-            input_status_list,
-            [],
-            validationstatus_mock,
-            errortracking_mock)
+    def test_build_error_tracking_table(self):
+        invalid_errors = [{'entity': sample_clinical_entity,
+                           'errors': 'errors',
+                           'fileType': 'clinical',
+                           'center': center}]
+        errordf = input_to_database.build_error_tracking_table(
+            invalid_errors
+        )
+        assert errordf.equals(self.errors_df)
 
-        assert valid_filedf.equals(validation_statusdf[['id', 'path', 'fileType', 'name']])
+    def test_build_error_tracking_table__empty(self):
+        invalid_errors = []
+        errordf = input_to_database.build_error_tracking_table(
+            invalid_errors
+        )
+        assert errordf.equals(self.empty_errors)
+
+    def test_update_status_and_error_tables(self):
+        """Test updating validation status and error table"""
+        validation_status_table = emptytable_mock()
+        error_tracker_table = emptytable_mock()
+
+        with patch.object(process_functions, "updateDatabase") as mock_update:
+            input_to_database.update_status_and_error_tables(
+                syn,
+                self.validation_statusdf,
+                self.errors_df,
+                validation_status_table,
+                error_tracker_table
+            )
+            assert mock_update.call_count == 2
+
+    def test_dups_get_duplicated_files(self):
+        """Test get all duplicates: cbs/seg/clinical"""
+        dupsdf = input_to_database.get_duplicated_files(self.with_dupsdf)
+        assert dupsdf.equals(self.duplicateddf)
+
+    def test_nodups_get_duplicated_files(self):
+        """Test no duplicated"""
+        dupsdf = input_to_database.get_duplicated_files(self.no_dupsdf)
+        assert dupsdf.equals(self.empty_dup)
+
+    def test_update_tables_with_duplicates(self):
+        """Tests duplicates are added to the tables and errors/statues are
+        updated
+        """
+        errorsdf = self.errors_df.copy()
+        errorsdf['errors'] = input_to_database.DUPLICATED_FILE_ERROR
+
+        validationdf = self.validation_statusdf
+        validationdf['status'] = 'INVALID'
+
+        with patch.object(input_to_database,
+                          "get_duplicated_files",
+                          return_value=self.duplicateddf):
+            updated_tables = input_to_database.update_tables_with_duplicates(
+                self.validation_statusdf,
+                self.errors_df
+            )
+        assert updated_tables['duplicated_filesdf'].equals(self.duplicateddf)
+        assert updated_tables['error_trackingdf'].equals(errorsdf)
+        assert updated_tables['validation_statusdf'].equals(validationdf)
+
+    def test_update_tables_with_duplicates__remove_old_duplicates(self):
+        """Tests that old duplicates are removed"""
+        errorsdf = self.errors_df.copy()
+        errorsdf['errors'] = input_to_database.DUPLICATED_FILE_ERROR
+        validationdf = self.validation_statusdf
+        validationdf['status'] = 'INVALID'
+
+        with patch.object(input_to_database,
+                          "get_duplicated_files",
+                          return_value=self.empty_dup):
+            updated_tables = input_to_database.update_tables_with_duplicates(
+                validationdf,
+                errorsdf
+            )
+        assert updated_tables['duplicated_filesdf'].empty
+        assert updated_tables['error_trackingdf'].empty
+        assert updated_tables['validation_statusdf'].empty
+
+    def test_update_tables_with_duplicates__remove_old_errors(self):
+        """Tests that old errors are removed"""
+        errorsdf = self.errors_df.copy()
+        errorsdf['errors'] = 'foo'
+        validationdf = self.validation_statusdf
+        validationdf['status'] = 'VALIDATED'
+
+        with patch.object(input_to_database,
+                          "get_duplicated_files",
+                          return_value=self.empty_dup):
+            updated_tables = input_to_database.update_tables_with_duplicates(
+                validationdf,
+                errorsdf
+            )
+        assert updated_tables['duplicated_filesdf'].empty
+        assert updated_tables['error_trackingdf'].empty
+        assert updated_tables['validation_statusdf'].empty
+
+    # def test_validation(self):
+    #     '''
+    #     Test validation steps
+    #     '''
+    #     validation_statusdf = pd.DataFrame({
+    #         'id': ['syn1234'],
+    #         'status': ['VALIDATED'],
+    #         'path': ["/path/to/file"],
+    #         'name': ['filename'],
+    #         'fileType': ['clinical']})
+
+    #     testing = False
+    #     modified_on = 1561143558000
+    #     process = "main"
+    #     databaseToSynIdMapping = {'Database': ["clinical", 'validationStatus', 'errorTracker'],
+    #                             'Id': ['syn222', 'syn333', 'syn444']}
+    #     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
+    #     entity = synapseclient.Entity(id='syn1234', md5='44444',
+    #                                 path='/path/to/foobar.txt',
+    #                                 name='data_clinical_supp_SAGE.txt')
+    #     entities = [entity]
+    #     filetype = "clinical"
+    #     input_status_list = [
+    #         [entity.id, entity.path, entity.md5,
+    #         'VALIDATED', entity.name, modified_on,
+    #         filetype, center]]
+    #     invalid_errors_list = []
+    #     messages = []
+    #     validationstatus_mock = emptytable_mock()
+    #     errortracking_mock = emptytable_mock()
+    #     with patch.object(input_to_database, "get_center_input_files",
+    #                     return_value=entities) as patch_get_center,\
+    #         patch.object(syn, "tableQuery",
+    #                     side_effect=[validationstatus_mock,
+    #                                 errortracking_mock]) as patch_tablequery,\
+    #         patch.object(input_to_database, "validatefile",
+    #                     return_value=(input_status_list,
+    #                                     invalid_errors_list,
+    #                                     messages)) as patch_validatefile,\
+    #         patch.object(input_to_database, "build_validation_status_table"
+    #                     return_value=),\
+    #         patch.object(input_to_database, "build_error_tracking_table"),\
+
+    #         patch.object(input_to_database, "update_tables_with_duplicates",
+    #                     return_value=validation_statusdf) as patch_update_status:
+    #         valid_filedf = input_to_database.validation(
+    #             syn, center, process,
+    #             center_mapping_df, databaseToSynIdMappingDf,
+    #             testing, oncotree_link, genie.config.PROCESS_FILES)
+    #         patch_get_center.assert_called_once_with(
+    #             syn, center_input_synid, center, process)
+    #         assert patch_tablequery.call_count == 2
+    #         patch_validatefile.assert_called_once_with(
+    #             syn, entity,
+    #             validationstatus_mock,
+    #             errortracking_mock,
+    #             center='SAGE',
+    #             testing=False,
+    #             oncotree_link=oncotree_link,
+    #             format_registry=genie.config.PROCESS_FILES)
+    #         patch_update_status.assert_called_once_with(
+    #             syn,
+    #             input_status_list,
+    #             [],
+    #             validationstatus_mock,
+    #             errortracking_mock)
+
+    #         assert valid_filedf.equals(validation_statusdf[['id', 'path', 'fileType', 'name']])
 
 
 @pytest.mark.parametrize(

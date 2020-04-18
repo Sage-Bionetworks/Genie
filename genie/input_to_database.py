@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 import time
+from typing import List
 
 import synapseclient
 try:
@@ -433,33 +434,6 @@ def create_and_archive_maf_database(syn, database_synid_mappingdf):
     return(database_synid_mappingdf)
 
 
-# def email_duplication_error(syn, duplicated_filesdf):
-#     '''
-#     Sends an email if there is a duplication error
-
-#     Args:
-#         syn: Synapse object
-#         duplicated_filesdf: dataframe with 'id', 'name' column
-#     '''
-#     if not duplicated_filesdf.empty:
-#         incorrect_files = [
-#             name for synId, name in zip(duplicated_filesdf['id'],
-#                                         duplicated_filesdf['name'])]
-#         incorrect_filenames = ", ".join(incorrect_files)
-#         incorrect_ent = syn.get(duplicated_filesdf['id'].iloc[0])
-#         send_to_users = set([incorrect_ent.modifiedBy,
-#                              incorrect_ent.createdBy])
-#         usernames = ", ".join(
-#             [syn.getUserProfile(user)['userName'] for user in send_to_users])
-#         error_email = (
-#             "Dear {},\n\n"
-#             "Your files ({}) are duplicated!  FILES SHOULD BE UPLOADED AS "
-#             "NEW VERSIONS AND THE ENTIRE DATASET SHOULD BE "
-#             "UPLOADED EVERYTIME".format(usernames, incorrect_filenames))
-#         syn.sendMessage(
-#             list(send_to_users), "GENIE Validation Error", error_email)
-
-
 def append_duplication_errors(duplicated_filesdf, user_message_dict):
     duplication_error = (
         "Duplicated filename! Files should be uploaded as new versions "
@@ -473,7 +447,7 @@ def append_duplication_errors(duplicated_filesdf, user_message_dict):
             users.append(entity.createdOn)
             filenames.append(entity.name)
         file_messages = dict(filenames=filenames,
-                            messages=duplication_error)
+                             messages=duplication_error)
         # Must get unique set of users or there
         # will be duplicated error messages sent in the email
         for user in set(users):
@@ -481,11 +455,18 @@ def append_duplication_errors(duplicated_filesdf, user_message_dict):
     return user_message_dict
 
 
-def get_duplicated_files(validation_statusdf, duplicated_error_message):
+DUPLICATED_FILE_ERROR = (
+    "Duplicated filename! Files should be uploaded as new versions "
+    "and the entire dataset should be uploaded."
+)
+
+def get_duplicated_files(validation_statusdf):
     '''
     Check for duplicated files.  There should be no duplication,
     files should be uploaded as new versions and the entire dataset
     should be uploaded everytime
+
+    #TODO: This is a custom GENIE function
 
     Args:
         validation_statusdf: dataframe with 'name' and 'id' column
@@ -495,6 +476,7 @@ def get_duplicated_files(validation_statusdf, duplicated_error_message):
         dataframe with 'id', 'name', 'errors', 'center', 'fileType'
         and 'entity' of duplicated files
     '''
+    # This is special
     logger.info("CHECK FOR DUPLICATED FILES")
     duplicated_filesdf = validation_statusdf[
         validation_statusdf['name'].duplicated(keep=False)]
@@ -513,11 +495,20 @@ def get_duplicated_files(validation_statusdf, duplicated_error_message):
     duplicated_filesdf.drop_duplicates("id", inplace=True)
     logger.info("THERE ARE {} DUPLICATED FILES".format(
         len(duplicated_filesdf)))
-    duplicated_filesdf['errors'] = duplicated_error_message
+    duplicated_filesdf['errors'] = DUPLICATED_FILE_ERROR
     return(duplicated_filesdf)
 
 
-def build_validation_status_table(input_valid_statuses):
+def build_validation_status_table(input_valid_statuses: List[dict]):
+    """Build validation status dataframe
+
+    Args:
+        input_valid_statuses: list of file validation status
+
+    Returns:
+        Validation status dataframe
+
+    """
     status_table_columns = ["id", 'path', 'md5', 'status', 'name',
                             'modifiedOn', 'fileType', 'center',
                             'entity']
@@ -542,8 +533,18 @@ def build_validation_status_table(input_valid_statuses):
     return input_valid_statusdf
 
 
-def build_error_tracking_table(invalid_errors):
-    error_table_columns = ["id", 'errors', 'name', 'fileType', 'center']
+def build_error_tracking_table(invalid_errors: List[dict]):
+    """Build error tracking dataframe
+
+    Args:
+        invalid_errors: list of file invalid errors
+
+    Returns:
+        Error tracking dataframe
+
+    """
+    error_table_columns = ["id", 'errors', 'name', 'fileType', 'center',
+                           'entity']
     invalid_error_rows = []
     for invalid_error in invalid_errors:
         entity = invalid_error['entity']
@@ -578,8 +579,6 @@ def update_status_and_error_tables(syn,
         validation_status_table: Synapse table query of validation status
         error_tracker_table: Synapse table query of error tracker
 
-    Returns:
-        input validation status dataframe
     '''
     logger.info("UPDATE VALIDATION STATUS DATABASE")
 
@@ -595,45 +594,63 @@ def update_status_and_error_tables(syn,
                                      ["id"],
                                      to_delete=True)
 
-    return(input_valid_statusdf)
-
 
 def update_tables_with_duplicates(validation_statusdf, error_trackingdf):
-    duplicated_file_error = (
-        "Duplicated filename! Files should be uploaded as new versions "
-        "and the entire dataset should be uploaded."
-    )
+    """Update validation status and error tracking dataframes with duplicated
+    files.  Also update the error table to only contain errors - centers
+    may have fixed their files so will want to remove old errors.
+
+    Args:
+        validation_statusdf: Validation status dataframe
+        error_trackingdf: Error tracking dataframe
+
+    Returns:
+        dict: validation_statusdf: Updated validation status dataframe
+              error_trackingdf: Updated error tracking dataframe
+              duplicated_filesdf:  Duplicated files dataframe
+
+    """
     # Get duplicated files
-    duplicated_filesdf = get_duplicated_files(validation_statusdf,
-                                              duplicated_file_error)
+    duplicated_filesdf = get_duplicated_files(validation_statusdf)
     # index of all duplicated files
     duplicated_idx = validation_statusdf['id'].isin(duplicated_filesdf['id'])
     validation_statusdf['status'][duplicated_idx] = "INVALID"
-    # Old errors are pulled down in validation, so update any fixed
-    # duplicated errors. This makes sure that the files removed
-    # actually had duplicated file errors and not some other error
+    duplicated_idx = error_trackingdf['id'].isin(error_trackingdf['id'])
+    error_trackingdf['errors'][duplicated_idx] = DUPLICATED_FILE_ERROR
+
+    # Old errors are pulled down in validation, so obtain list of
+    # files with duplicated file errors
     dup_ids = error_trackingdf['id'][
-        error_trackingdf['errors'] == duplicated_file_error
+        error_trackingdf['errors'] == DUPLICATED_FILE_ERROR
     ]
+    # Checks to see if the old duplicated files are still duplicated
     remove_ids = dup_ids[~dup_ids.isin(duplicated_filesdf['id'])]
 
+    # Remove fixed duplicated files
     error_trackingdf = error_trackingdf[
         ~error_trackingdf['id'].isin(remove_ids)
     ]
-    # Append duplicated file errors
-    error_trackingdf = error_trackingdf.append(
-        duplicated_filesdf[error_trackingdf.columns])
+    validation_statusdf = validation_statusdf[
+        ~validation_statusdf['id'].isin(remove_ids)
+    ]
 
+    # Append duplicated file errors
+    duplicated_filesdf['id'].isin(error_trackingdf['id'][duplicated_idx])
+    error_trackingdf = error_trackingdf.append(
+        duplicated_filesdf[error_trackingdf.columns]
+    )
+    # Remove duplicates if theres already an error that exists for the file
+    error_trackingdf.drop_duplicates("id", inplace=True)
+
+    # Since old errors are retained, make sure to only update
+    # files that are actually invalid
     invalid_ids = validation_statusdf['id'][
         validation_statusdf['status'] == "INVALID"
     ]
     error_trackingdf = error_trackingdf[
         error_trackingdf['id'].isin(invalid_ids)
     ]
-    # Remove fixed duplicated files
-    validation_statusdf = validation_statusdf[
-        ~validation_statusdf['id'].isin(remove_ids)
-    ]
+
     return {'validation_statusdf': validation_statusdf,
             'error_trackingdf': error_trackingdf,
             'duplicated_filesdf': duplicated_filesdf}
@@ -747,14 +764,15 @@ def validation(syn, center, process,
                                          user=user,
                                          message_objs=message_objs)
 
-        input_valid_statusdf = update_status_and_error_tables(
-            syn,
-            validation_statusdf,
-            error_trackingdf,
-            validation_status_table,
-            error_tracker_table)
+        update_status_and_error_tables(
+            syn=syn,
+            input_valid_statusdf=validation_statusdf,
+            invalid_errorsdf=error_trackingdf,
+            validation_status_table=validation_status_table,
+            error_tracker_table=error_tracker_table
+        )
 
-        valid_filesdf = input_valid_statusdf.query('status == "VALIDATED"')
+        valid_filesdf = validation_statusdf.query('status == "VALIDATED"')
 
         return(valid_filesdf[['id', 'path', 'fileType', 'name']])
 
