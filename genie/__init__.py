@@ -4,7 +4,6 @@ import logging
 from . import bed
 from . import vcf
 from . import bedSP
-from . import workflow
 from . import clinical
 from . import seg
 from . import cbs
