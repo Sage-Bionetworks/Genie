@@ -782,74 +782,67 @@ class TestValidation:
         assert updated_tables['error_trackingdf'].empty
         assert updated_tables['validation_statusdf'].empty
 
-    # def test_validation(self):
-    #     '''
-    #     Test validation steps
-    #     '''
-    #     validation_statusdf = pd.DataFrame({
-    #         'id': ['syn1234'],
-    #         'status': ['VALIDATED'],
-    #         'path': ["/path/to/file"],
-    #         'name': ['filename'],
-    #         'fileType': ['clinical']})
+    def test_validation(self):
+        """Test validation steps"""
+        testing = False
+        modified_on = 1561143558000
+        process = "main"
+        databaseToSynIdMapping = {'Database': ["clinical", 'validationStatus', 'errorTracker'],
+                                'Id': ['syn222', 'syn333', 'syn444']}
+        databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
+        entity = synapseclient.Entity(id='syn1234', md5='44444',
+                                      path='/path/to/foobar.txt',
+                                      name='data_clinical_supp_SAGE.txt')
+        entities = [entity]
+        filetype = "clinical"
+        input_status_list = [[entity.id, entity.path, entity.md5,
+                              'VALIDATED', entity.name, modified_on,
+                              filetype, center]]
+        invalid_errors_list = []
+        messages = []
+        new_tables = {'validation_statusdf': self.validation_statusdf,
+                      'error_trackingdf': self.errors_df,
+                      'duplicated_filesdf': self.empty_dup}
+        validationstatus_mock = emptytable_mock()
+        errortracking_mock = emptytable_mock()
+        with patch.object(input_to_database, "get_center_input_files",
+                        return_value=entities) as patch_get_center,\
+            patch.object(syn, "tableQuery",
+                        side_effect=[validationstatus_mock,
+                                     errortracking_mock]) as patch_tablequery,\
+            patch.object(input_to_database, "validatefile",
+                        return_value=(input_status_list,
+                                      invalid_errors_list,
+                                      messages)) as patch_validatefile,\
+            patch.object(input_to_database, "build_validation_status_table",
+                         return_value=self.validation_statusdf),\
+            patch.object(input_to_database, "build_error_tracking_table",
+                         return_value=self.errors_df),\
+            patch.object(input_to_database, "update_tables_with_duplicates",
+                         return_value=new_tables) as patch_tables,\
+            patch.object(input_to_database, "update_status_and_error_tables"):
+            valid_filedf = input_to_database.validation(
+                syn, center, process,
+                center_mapping_df, databaseToSynIdMappingDf,
+                testing, oncotree_link, genie.config.PROCESS_FILES
+            )
+            patch_get_center.assert_called_once_with(
+                syn, center_input_synid, center, process
+            )
+            assert patch_tablequery.call_count == 2
+            patch_validatefile.assert_called_once_with(
+                syn, entity,
+                validationstatus_mock,
+                errortracking_mock,
+                center='SAGE',
+                testing=False,
+                oncotree_link=oncotree_link,
+                format_registry=genie.config.PROCESS_FILES
+            )
 
-    #     testing = False
-    #     modified_on = 1561143558000
-    #     process = "main"
-    #     databaseToSynIdMapping = {'Database': ["clinical", 'validationStatus', 'errorTracker'],
-    #                             'Id': ['syn222', 'syn333', 'syn444']}
-    #     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
-    #     entity = synapseclient.Entity(id='syn1234', md5='44444',
-    #                                 path='/path/to/foobar.txt',
-    #                                 name='data_clinical_supp_SAGE.txt')
-    #     entities = [entity]
-    #     filetype = "clinical"
-    #     input_status_list = [
-    #         [entity.id, entity.path, entity.md5,
-    #         'VALIDATED', entity.name, modified_on,
-    #         filetype, center]]
-    #     invalid_errors_list = []
-    #     messages = []
-    #     validationstatus_mock = emptytable_mock()
-    #     errortracking_mock = emptytable_mock()
-    #     with patch.object(input_to_database, "get_center_input_files",
-    #                     return_value=entities) as patch_get_center,\
-    #         patch.object(syn, "tableQuery",
-    #                     side_effect=[validationstatus_mock,
-    #                                 errortracking_mock]) as patch_tablequery,\
-    #         patch.object(input_to_database, "validatefile",
-    #                     return_value=(input_status_list,
-    #                                     invalid_errors_list,
-    #                                     messages)) as patch_validatefile,\
-    #         patch.object(input_to_database, "build_validation_status_table"
-    #                     return_value=),\
-    #         patch.object(input_to_database, "build_error_tracking_table"),\
-
-    #         patch.object(input_to_database, "update_tables_with_duplicates",
-    #                     return_value=validation_statusdf) as patch_update_status:
-    #         valid_filedf = input_to_database.validation(
-    #             syn, center, process,
-    #             center_mapping_df, databaseToSynIdMappingDf,
-    #             testing, oncotree_link, genie.config.PROCESS_FILES)
-    #         patch_get_center.assert_called_once_with(
-    #             syn, center_input_synid, center, process)
-    #         assert patch_tablequery.call_count == 2
-    #         patch_validatefile.assert_called_once_with(
-    #             syn, entity,
-    #             validationstatus_mock,
-    #             errortracking_mock,
-    #             center='SAGE',
-    #             testing=False,
-    #             oncotree_link=oncotree_link,
-    #             format_registry=genie.config.PROCESS_FILES)
-    #         patch_update_status.assert_called_once_with(
-    #             syn,
-    #             input_status_list,
-    #             [],
-    #             validationstatus_mock,
-    #             errortracking_mock)
-
-    #         assert valid_filedf.equals(validation_statusdf[['id', 'path', 'fileType', 'name']])
+            assert valid_filedf.equals(
+                self.validation_statusdf[['id', 'path', 'fileType', 'name']]
+            )
 
 
 @pytest.mark.parametrize(
