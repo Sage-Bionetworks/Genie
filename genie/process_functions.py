@@ -105,7 +105,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 #                 else:
 #                     return(True)
 #         if returnMapping:
-#             return({gene: pd.np.nan})
+#             return({gene: float('nan')})
 #         else:
 #             return(False)
 #         #return(True)

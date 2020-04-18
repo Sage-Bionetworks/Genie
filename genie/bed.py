@@ -313,7 +313,7 @@ def remap_symbols(row, gene_positiondf):
             LOGGER.warning("{} cannot be remapped. "
                            "These rows will have an empty gene symbol".format(
                                row['Hugo_Symbol']))
-            row['Hugo_Symbol'] = pd.np.nan
+            row['Hugo_Symbol'] = float('nan')
         elif len(overlap_positions) > 1:
             symbol_list = overlap_positions['hgnc_symbol'].tolist()
             if row['Hugo_Symbol'] not in symbol_list:
@@ -322,7 +322,7 @@ def remap_symbols(row, gene_positiondf):
                                "Please correct or it will be removed.".format(
                                    row['Hugo_Symbol'],
                                    ", ".join(symbol_list)))
-                row['Hugo_Symbol'] = pd.np.nan
+                row['Hugo_Symbol'] = float('nan')
         else:
             symbol = overlap_positions['hgnc_symbol'].values[0]
             if row['Hugo_Symbol'] != symbol:
@@ -438,9 +438,9 @@ class bed(FileTypeFormat):
             if all(beddf[5].apply(lambda x: x in [True, False])):
                 beddf[5] = beddf[5].astype(bool)
             else:
-                beddf[5] = pd.np.nan
+                beddf[5] = float('nan')
         else:
-            beddf[5] = pd.np.nan
+            beddf[5] = float('nan')
         beddf = beddf[[0, 1, 2, 3, 4, 5]]
         gene_panel_path = os.path.dirname(newpath)
         # Must be .astype(bool) because `1, 0 in [True, False]`

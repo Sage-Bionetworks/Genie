@@ -1,3 +1,4 @@
+from datetime import datetime
 import mock
 from mock import patch
 import os
@@ -646,32 +647,32 @@ def test_invalid__get_status_and_error_list():
     assert input_status_list == [{'entity': entity, 'status': 'INVALID'}]
     assert invalid_errors_list == [{'entity': entity, 'errors': errors}]
 
-from datetime import datetime
+
 def test__send_validation_error_email():
     message = "invalid error message here"
     filenames = ['data_clinical_supp_SAGE.txt']
     file_user = '333'
     message_objs = [dict(filenames=filenames, messages=message)]
-    print(message_objs)
     with patch.object(syn, "getUserProfile",
                       return_value={'userName':
                                     'trial'}) as patch_syn_getuserprofile,\
          patch.object(syn, "sendMessage") as patch_syn_sendmessage,\
          patch('genie.input_to_database.datetime') as mock_datetime:
-        mock_datetime.datetime.today.return_value = datetime(2019, 11, 1, 00, 00, 00, 0)
-        mock_datetime.side_effect = lambda *args, **kw: date(*args, **kw)        
+        mock_datetime.datetime.today.return_value = datetime(2019, 11, 1, 00,
+                                                             00, 00, 0)
+        mock_datetime.side_effect = lambda *args, **kw: date(*args, **kw)
 
-        input_to_database._send_validation_error_email(
-            syn, file_user, message_objs)
-        error_message = (
-            "Dear trial,\n\n"
-            "You have invalid files! "
-            "Here are the reasons why:\n\n"
-            "Filenames: data_clinical_supp_SAGE.txt, Errors: %s\n" % message)
+        input_to_database._send_validation_error_email(syn, file_user,
+                                                       message_objs)
+        error_message = ("Dear trial,\n\n"
+                         "You have invalid files! "
+                         "Here are the reasons why:\n\n"
+                         "Filenames: data_clinical_supp_SAGE.txt, "
+                         f"Errors:\n {message}\n\n")
         patch_syn_sendmessage.assert_called_once_with(
             userIds=[file_user], messageBody=error_message,
             messageSubject='GENIE Validation Error - 2019-11-01 00:00:00')
-        patch_syn_getuserprofile.call_count == 2
+        patch_syn_getuserprofile.assert_called_once_with(file_user)
 
 
 class emptytable_mock:
