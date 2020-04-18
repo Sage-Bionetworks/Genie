@@ -3,12 +3,10 @@ import logging
 
 from . import vcf
 from . import clinical
-from . import seg
-from . import cbs
+from . import cna
 from . import maf
 from . import mafSP
 from . import clinicalSP
-from . import cna
 from . import mutationsInCis
 
 from .__version__ import __version__
