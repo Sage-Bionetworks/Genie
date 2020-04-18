@@ -721,36 +721,30 @@ def validation(syn, center, process,
         if messages_to_send:
             logger.debug("Collating messages to send to users.")
             for filenames, messages, users in messages_to_send:
-                file_messages = dict(filenames=filenames,
-                                        messages=messages)
+                file_messages = dict(filenames=filenames, messages=messages)
                 # Must get unique set of users or there
                 # will be duplicated error messages sent in the email
                 for user in set(users):
                     user_message_dict[user].append(file_messages)
-    # TODO: build tables
-    validation_statusdf = build_validation_status_table(
-        input_valid_statuses
-    )
-    error_trackingdf = build_error_tracking_table(
-        invalid_errors
-    )
+
+    validation_statusdf = build_validation_status_table(input_valid_statuses)
+    error_trackingdf = build_error_tracking_table(invalid_errors)
 
     new_tables = update_tables_with_duplicates(validation_statusdf,
-                                                error_trackingdf)
+                                               error_trackingdf)
     validation_statusdf = new_tables['validation_statusdf']
     error_trackingdf = new_tables['error_trackingdf']
     duplicated_filesdf = new_tables['duplicated_filesdf']
 
     # Append duplication errors to email list to send
     user_message_dict = append_duplication_errors(duplicated_filesdf,
-                                                    user_message_dict)
+                                                  user_message_dict)
 
     for user, message_objs in user_message_dict.items():
         logger.debug("Sending messages to user {user}.".format(user=user))
 
-        _send_validation_error_email(syn=syn,
-                                        user=user,
-                                        message_objs=message_objs)
+        _send_validation_error_email(syn=syn, user=user,
+                                     message_objs=message_objs)
 
     update_status_and_error_tables(
         syn=syn,
