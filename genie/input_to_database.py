@@ -6,6 +6,10 @@ import os
 import time
 
 import synapseclient
+try:
+    from synapseclient.core.utils import to_unix_epoch_time
+except ModuleNotFoundError:
+    from synapseclient.utils import to_unix_epoch_time
 import synapseutils
 import pandas as pd
 
@@ -48,7 +52,7 @@ def entity_date_to_timestamp(entity_date_time):
 
     date_and_time = entity_date_time.split(".")[0]
     date_time_obj = datetime.datetime.strptime(date_and_time, "%Y-%m-%dT%H:%M:%S")
-    return synapseclient.utils.to_unix_epoch_time(date_time_obj)
+    return to_unix_epoch_time(date_time_obj)
 
 
 def get_center_input_files(syn, synid, center, process="main"):
@@ -157,10 +161,9 @@ def check_existing_file_status(validation_status_table, error_tracker_table, ent
                 logger.info(status_str.format(filename=ent.name, id=ent.id,
                                               filestatus=current_status['status'].values[0]))
 
-    return({
-        'status_list': statuses,
-        'error_list': errors,
-        'to_validate': to_validate})
+    return({'status_list': statuses,
+            'error_list': errors,
+            'to_validate': to_validate})
 
 
 def _send_validation_error_email(syn, user, message_objs):
@@ -177,23 +180,18 @@ def _send_validation_error_email(syn, user, message_objs):
 
     errors = ""
     for message_obj in message_objs:
-        incorrect_files = ", ".join(message_obj['filenames'])
-        message = message_obj['messages']
-        errors += "Filenames: {filenames}, Errors: {error_message}\n".format(
-            filenames=incorrect_files, error_message=message)
+        file_names = ", ".join(message_obj['filenames'])
+        error_message = message_obj['messages']
+        errors += f"Filenames: {file_names}, Errors:\n {error_message}\n\n"
 
-    email_message = (
-        "Dear {username},\n\n"
-        "You have invalid files! "
-        "Here are the reasons why:\n\n{error_message}".format(
-            username=username,
-            error_message=errors)
-    )
+    email_message = (f"Dear {username},\n\n"
+                     "You have invalid files! "
+                     f"Here are the reasons why:\n\n{errors}")
 
     date_now = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
 
-    syn.sendMessage(userIds=[user], 
-                    messageSubject="GENIE Validation Error - {date}".format(date=date_now),
+    syn.sendMessage(userIds=[user],
+                    messageSubject=f"GENIE Validation Error - {date_now}",
                     messageBody=email_message)
 
 
@@ -624,12 +622,9 @@ def validation(syn, center, process,
     # If a center has no files, then return empty list
     if not center_files:
         logger.info("{} has not uploaded any files".format(center))
-        return([])
+        return []
     else:
-        logger.info("{center} has uploaded {len_center_files} files.".format(
-            center=center,
-            len_center_files=len(center_files)
-        ))
+        logger.info(f"{center} has uploaded {len(center_files)} files.")
 
         validation_status_synid = process_functions.getDatabaseSynId(
             syn, "validationStatus",
@@ -674,20 +669,23 @@ def validation(syn, center, process,
             input_valid_statuses.extend(status)
             if errors is not None:
                 invalid_errors.extend(errors)
-            
+
             if messages_to_send:
                 logger.debug("Collating messages to send to users.")
                 for filenames, messages, users in messages_to_send:
-                    file_messages = dict(filenames=filenames, messages=messages)
-                    for user in users:
+                    file_messages = dict(filenames=filenames,
+                                         messages=messages)
+                    # Must get unique set of users or there
+                    # will be duplicated error messages sent in the email
+                    for user in set(users):
                         user_message_dict[user].append(file_messages)
-                
+
         for user, message_objs in user_message_dict.items():
             logger.debug("Sending messages to user {user}.".format(user=user))
 
-            _send_validation_error_email(syn=syn, 
-                                            user=user,
-                                            message_objs=message_objs)
+            _send_validation_error_email(syn=syn,
+                                         user=user,
+                                         message_objs=message_objs)
 
         input_valid_statusdf = update_status_and_error_tables(
             syn,
@@ -754,15 +752,23 @@ def center_input_to_database(
 
     if len(validFiles) > 0 and not only_validate:
         # Reorganize so BED file are always validated and processed first
-        validBED = [
-            os.path.basename(i).endswith('.bed') for i in validFiles['path']]
-        beds = validFiles[validBED]
+        bed_files = validFiles['fileType'] == "bed"
+        beds = validFiles[bed_files]
         validFiles = beds.append(validFiles)
         validFiles.drop_duplicates(inplace=True)
         # Valid vcf files
-        validVCF = [
-            i for i in validFiles['path']
-            if os.path.basename(i).endswith('.vcf')]
+        vcf_files = validFiles['fileType'] == "vcf"
+        validVCF = validFiles['path'][vcf_files].tolist()
+
+        # merge clinical files into one row
+        clinical_ind = validFiles['fileType'] == "clinical"
+        if clinical_ind.any():
+            clinical_files = validFiles[clinical_ind].to_dict(orient='list')
+            # The [] implies the values in the dict as a list
+            merged_clinical = pd.DataFrame([clinical_files])
+            merged_clinical['fileType'] = 'clinical'
+            merged_clinical['name'] = f"data_clinical_supp_{center}.txt"
+            validFiles = validFiles[~clinical_ind].append(merged_clinical)
 
         processTrackerSynId = process_functions.getDatabaseSynId(
             syn, "processTracker",

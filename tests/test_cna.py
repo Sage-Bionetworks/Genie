@@ -69,7 +69,7 @@ def test_processing():
     cnaDf = cnaDf[order]
     newCnaDf = cna_class._process(cnaDf)
     newCnaDf.reset_index(inplace=True, drop=True)
-    pd.util.testing.assert_frame_equal(
+    pd.testing.assert_frame_equal(
         expectedCnaDf, newCnaDf[expectedCnaDf.columns])
 
 
