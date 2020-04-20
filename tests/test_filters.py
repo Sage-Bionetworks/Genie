@@ -88,7 +88,7 @@ def test_seqdatefilter():
 def test__to_redact_interval():
     """Tests the correct boolean vectors are returned for phi and pediatric
     redaction"""
-    values = pd.Series([32850, 32485, 6570, 6569, '<foo', '>testing'])
+    values = pd.Series([32871, 32485, 6574, 6569, '<foo', '>testing'])
     to_redact, to_redact_peds = _to_redact_interval(values)
     expected_redact = [True, False, False, False, False, True]
     expected_redact_peds = [False, False, False, True, True, False]

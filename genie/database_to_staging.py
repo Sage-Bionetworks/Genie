@@ -102,15 +102,15 @@ def _to_redact_interval(df_col):
                pandas.Series: to redact pediatric boolean vector
 
     """
-    phi_cutoff = 365.24*90
-    pediatric_cutoff = 365.25*18
+    phi_cutoff = int(365.24*90)
+    pediatric_cutoff = int(365.24*18)
     # Some centers pre-redact their values by adding < or >. These
     # must be redacted
     contain_greaterthan = df_col.astype(str).str.contains(">", na=False)
     contain_lessthan = df_col.astype(str).str.contains("<", na=False)
     # Add in errors='coerce' to turn strings into NaN
     col_int = pd.to_numeric(df_col, errors='coerce')
-    to_redact = (col_int > phi_cutoff) | contain_greaterthan
+    to_redact = (col_int >= phi_cutoff) | contain_greaterthan
     to_redact_pediatric = (col_int < pediatric_cutoff) | contain_lessthan
     return to_redact, to_redact_pediatric
 
