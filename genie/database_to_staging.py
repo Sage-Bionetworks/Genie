@@ -102,7 +102,7 @@ def _to_redact_interval(df_col):
                pandas.Series: to redact pediatric boolean vector
 
     """
-    phi_cutoff = 365*89
+    phi_cutoff = 365*90
     pediatric_cutoff = 365*18
     # Some centers pre-redact their values by adding < or >. These
     # must be redacted
