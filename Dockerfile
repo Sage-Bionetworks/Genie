@@ -30,7 +30,6 @@ RUN apt-get install -y --allow-unauthenticated \
 # 	libmariadb-client-lgpl-dev \
 
 # Supports data guide creation
-#RUN apt-get install -y texlive-full
 RUN apt-get install -y texlive \
 	texinfo \
 	texlive-generic-recommended \
