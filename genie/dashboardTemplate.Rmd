@@ -377,7 +377,7 @@ kable(samplesPerReleaseDf, row.names = F,
 ```
 
 ## Blacklisted Variants
-This is a count of how many blacklisted variants a center has. If your center shows up in this table, please investigate your variants. If you have suggestions for variants that should be part of this list, please inform Sage Bionetworks.
+This is a count of how many blacklisted variants a center has. For instance, it is likely that the BRAF p.V600M mutations are likely false positives. If your center shows up in this table, please investigate your variants. If you have suggestions for variants that should be part of this list, please inform Sage Bionetworks.
 
 ```{r blacklist}
 blacklist_variants = paste(black_list_variantsdf$Hugo_Symbol,
