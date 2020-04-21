@@ -684,16 +684,16 @@ def validation(syn, center, process,
     # Make sure the vcf validation statuses don't get wiped away
     # If process is not vcf, the vcf files are not downloaded
     add_query_str = "and name not like '%.vcf'" if process != "vcf" else ''
-
+    # id, md5, status, name, center, modifiedOn, fileType
     validation_status_table = syn.tableQuery(
-        "SELECT id,md5,status,name,center,modifiedOn,fileType FROM {synid} "
+        "SELECT * FROM {synid} "
         "where center = '{center}' {add}".format(
             synid=validation_status_synid,
             center=center,
             add=add_query_str))
-
+    # id, center, errors, name, fileType
     error_tracker_table = syn.tableQuery(
-        "SELECT id,center,errors,name FROM {synid} "
+        "SELECT * FROM {synid} "
         "where center = '{center}' {add}".format(
             synid=error_tracker_synid,
             center=center,

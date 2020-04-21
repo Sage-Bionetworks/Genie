@@ -1,5 +1,5 @@
-\documentclass{article}
-\usepackage{a4wide}
+\documentclass[a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
 \usepackage[utf8]{inputenc}
 \usepackage{longtable}
 \usepackage{tocloft}
@@ -504,7 +504,4 @@ VCF & Variant Call Format \\
    \hline
 \end{longtable}
 \end{center}
-
-
-
 \end{document}
