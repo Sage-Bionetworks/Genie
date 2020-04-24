@@ -489,9 +489,10 @@ def store_gene_panel_files(syn,
                                                             wes_genepanel_str))
     genePanelDf = genePanels.asDataFrame()
     genePanelEntities = []
+    panelNames = set(data_gene_panel['mutations'])
+    print(f"EXISTING GENE PANELS: {','.join(panelNames)}")
     for synId in genePanelDf['id']:
         genePanel = syn.get(synId)
-        panelNames = set(data_gene_panel['mutations'])
         genePanelName = os.path.basename(genePanel.path)
         newGenePanelPath = os.path.join(
             GENIE_RELEASE_DIR,
