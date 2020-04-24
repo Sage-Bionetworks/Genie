@@ -514,22 +514,31 @@ if (length(largePanels) > 1) {
 ```
 
 
-## Top 5 most frequently mutated genes per panel
+## Top 5 most frequently mutated genes per pipeline
 
-To assist with discovering artifacts in a center's data, this will summarize the top 5 most frequently mutated genes per panel.  One of the easiest questions to answer is:
+To assist with discovering artifacts in a center's data, this will summarize the top 5 most frequently mutated genes per pipeline.  One of the easiest questions to answer is:
 
 **Has the frequently mutated gene list changed significantly? Is TP53 still #1?**
 
-### All panels
+### All pipelines
 
-Top 5 most frequently mutated genes per panel for all panels.
+Top 5 most frequently mutated genes per pipeline for all pipelines.
 
 ```{r top_5_mutated, echo=FALSE}
 mergeddf = merge.data.frame(this_mut[,c("Tumor_Sample_Barcode", "Hugo_Symbol")],
                             this_samples[,c("SAMPLE_ID", "SEQ_ASSAY_ID")],
                             by.x = "Tumor_Sample_Barcode",
                             by.y = "SAMPLE_ID")
-mutated_genes = table(mergeddf$Hugo_Symbol, mergeddf$SEQ_ASSAY_ID)
+# TODO: can remove NA is fixed
+na_pipeline = assay_infodf$SEQ_PIPELINE_ID == ""
+assay_infodf$SEQ_PIPELINE_ID[na_pipeline] = assay_infodf$SEQ_ASSAY_ID[na_pipeline]
+
+# Merge in assay information to group by seq pipeline id
+mergeddf = merge.data.frame(mergeddf,
+                            assay_infodf[,c("SEQ_ASSAY_ID", "SEQ_PIPELINE_ID")],
+                            by = "SEQ_ASSAY_ID")
+
+mutated_genes = table(mergeddf$Hugo_Symbol, mergeddf$SEQ_PIPELINE_ID)
 # Top 5 mutated genes per panel
 top_5_mutated_genes = apply(mutated_genes, 2, function(x) {
   list(sort(x, decreasing = T)[1:5])
@@ -539,23 +548,25 @@ top_5_mutated_genes_string = apply(mutated_genes, 2, function(x) {
   paste(names(top_5), top_5, sep = ": ")
 })
 transposed_matrix = t(top_5_mutated_genes_string)
-final_matrix = cbind(transposed_matrix, table(mergeddf$SEQ_ASSAY_ID)[row.names(transposed_matrix)])
+final_matrix = cbind(transposed_matrix, table(mergeddf$SEQ_PIPELINE_ID)[row.names(transposed_matrix)])
 colnames(final_matrix) = c(1, 2, 3, 4, 5, "Total Variants")
 kable(final_matrix,
-      caption = "Distribution of top 5 most frequently mutated genes per SEQ_ASSAY_ID")
+      caption = "Distribution of top 5 most frequently mutated genes per SEQ_PIPELINE_ID")
 
 ```
 
 
 ### Panels Covering TP53
 
-These are all the panels that cover TP53 that don't have TP53 as the top mutated genes.  If your panel is shown in the table below, it is _possible_ that you have artifacts in your data.  **Please review and reupload if your data is incorrect**
+These are all the pipelines that cover TP53 that don't have TP53 as the top mutated genes.  If your pipeline is shown in the table below, it is _possible_ that you have artifacts in your data.  **Please review and reupload if your data is incorrect**
 
 
 ```{r highlight_panels, echo=FALSE}
-
+this_bed = merge.data.frame(this_bed,
+                            assay_infodf[,c("SEQ_ASSAY_ID", "SEQ_PIPELINE_ID")],
+                            by = "SEQ_ASSAY_ID")
 if (!is.null(this_bed)) {
-  panels_covering_tp53 = unique(this_bed$SEQ_ASSAY_ID[this_bed$Hugo_Symbol == "TP53"])
+  panels_covering_tp53 = unique(this_bed$SEQ_PIPELINE_ID[this_bed$Hugo_Symbol == "TP53"])
   # Exclude panels if TP53 is top mutated
   tp53_not_top = sapply(names(top_5_mutated_genes), function(seq_assay) {
     if (names(top_5_mutated_genes[[seq_assay]][[1]][1]) != "TP53") {
@@ -569,10 +580,10 @@ if (!is.null(this_bed)) {
     paste(names(top_5), top_5, sep = ": ")
   })
   transposed_matrix = t(top_5_mutated_genes_string)
-  final_matrix = cbind(transposed_matrix, table(mergeddf$SEQ_ASSAY_ID)[row.names(transposed_matrix)])
+  final_matrix = cbind(transposed_matrix, table(mergeddf$SEQ_PIPELINE_ID)[row.names(transposed_matrix)])
   colnames(final_matrix) = c(1, 2, 3, 4, 5, "Total Variants")
   kable(final_matrix,
-        caption = "Distribution of top 5 most frequently mutated genes per SEQ_ASSAY_ID")
+        caption = "Distribution of top 5 most frequently mutated genes per SEQ_PIPELINE_ID")
 }
 ```
 
