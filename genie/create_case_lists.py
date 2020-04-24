@@ -24,18 +24,26 @@ def create_case_lists_map(clinical_file_name):
     Returns:
         dict: key = cancer_type
               value = list of sample ids
+        dict: key = seq_assay_id
+              value = list of sample ids
+        list: Clinical samples
     """
     with open(clinical_file_name, 'rU') as clinical_file:
         clinical_file_map = {}
+        seq_assay_map = {}
+        clin_samples = []
         reader = csv.DictReader(clinical_file, dialect='excel-tab')
-        samples = []
         for row in reader:
             if row['CANCER_TYPE'] not in clinical_file_map:
                 clinical_file_map[row['CANCER_TYPE']] = [row['SAMPLE_ID']]
             else:
                 clinical_file_map[row['CANCER_TYPE']].append(row['SAMPLE_ID'])
-            samples.append(row['SAMPLE_ID'])
-    return clinical_file_map, samples
+            if seq_assay_map.get(row['SEQ_ASSAY_ID']):
+                seq_assay_map[row['SEQ_ASSAY_ID']].append(row['SAMPLE_ID'])
+            else:
+                seq_assay_map[row['SEQ_ASSAY_ID']] = [row['SAMPLE_ID']]
+            clin_samples.append(row['SAMPLE_ID'])
+    return clinical_file_map, seq_assay_map, clin_samples
 
 
 def _write_single_oncotree_case_list(cancer_type, ids, study_id,
@@ -92,26 +100,23 @@ def write_case_list_files(clinical_file_map, output_directory, study_id):
     return case_list_files
 
 
-def create_sequenced_samples(gene_matrix_file_name):
+def create_sequenced_samples(seq_assay_map, assay_info_file_name):
     """
     Gets samples sequenced
 
     Args:
-        gene_matrix_file_name: Gene matrix file
+        assay_info_file_name: Assay information name
 
     Returns:
-        tuple: list of clinical samples and cna samples
+        list of cna samples
     """
-    with open(gene_matrix_file_name, 'r') as gene_matrix_file:
-        reader = csv.DictReader(gene_matrix_file, dialect='excel-tab')
-        clinical_samples = []
+    with open(assay_info_file_name, 'r') as assay_info_file:
+        reader = csv.DictReader(assay_info_file, dialect='excel-tab')
         cna_samples = []
         for row in reader:
-            if row['cna'] != "NA":
-                cna_samples.append(row['SAMPLE_ID'])
-            clinical_samples.append(row['SAMPLE_ID'])
-
-    return clinical_samples, cna_samples
+            if "cna" in row["alteration_types"]:
+                cna_samples.extend(seq_assay_map[row['SEQ_ASSAY_ID']])
+    return cna_samples
 
 
 def write_case_list_sequenced(clinical_samples, output_directory, study_id):
@@ -206,7 +211,7 @@ def write_case_list_cnaseq(cna_samples, output_directory, study_id):
 
 
 def main(clinical_file_name,
-         gene_matrix_file_name,
+         assay_info_file_name,
          output_directory,
          study_id):
     '''
@@ -219,13 +224,14 @@ def main(clinical_file_name,
         output_directory: Output directory of case list files
         study_id: cBioPortal study id
     '''
-    case_lists_map, clin_samples = create_case_lists_map(clinical_file_name)
+    case_lists_map, seq_assay_map, clin_samples = (
+        create_case_lists_map(clinical_file_name)
+    )
     write_case_list_files(case_lists_map, output_directory, study_id)
     # create_sequenced_samples used to get the samples, but since the removal
     # of WES samples, we can no longer rely on the gene matrix file to grab
-    # all sequenced samples
-    # TODO: cna_samples will be an issue once we have CNA data from WES panels
-    _, cna_samples = create_sequenced_samples(gene_matrix_file_name)
+    # all sequenced samples, must use assay information file
+    cna_samples = create_sequenced_samples(seq_assay_map, assay_info_file_name)
     write_case_list_sequenced(clin_samples, output_directory, study_id)
     write_case_list_cna(cna_samples, output_directory, study_id)
     write_case_list_cnaseq(cna_samples, output_directory, study_id)
@@ -237,7 +243,7 @@ if __name__ == '__main__':
     parser.add_argument("clinical_file_name",
                         type=str,
                         help="Clinical file path")
-    parser.add_argument("gene_matrix_file_name",
+    parser.add_argument("assay_info_file_name",
                         type=str,
                         help="gene matrix file path")
     parser.add_argument("output_dir",
@@ -249,6 +255,6 @@ if __name__ == '__main__':
     args = parser.parse_args() #pylint: disable=invalid-name
 
     main(args.clinical_file_name,
-         args.gene_matrix_file_name,
+         args.assay_info_file_name,
          args.output_dir,
          args.study_id)
