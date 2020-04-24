@@ -131,6 +131,7 @@ assay_synid = release_files_mapping[['assay_information.txt']]
 assayinfo = suppressMessages(synGet(assay_synid, followLink = T))
 assayinfodf = read.csv(assayinfo$path, sep = "\t", stringsAsFactors = F)
 
+pipelinedf = assayinfodf[!duplicated(assayinfodf$SEQ_PIPELINE_ID), ]
 processed_centers = unique(assayinfodf$CENTER)
 
 centers = suppressMessages(synTableQuery(glue('select "Center Abbreviation", "Center" from syn16982837 ',
@@ -220,7 +221,8 @@ Protection of patient privacy is paramount, and the AACR GENIE Project therefore
 
 
 <<results=tex, echo=F>>=
-number_of_panels = xtable(table(assayinfodf$CENTER),
+
+number_of_panels = xtable(table(pipelinedf$CENTER),
                           col.names = c("center", "number of panels"),
                           caption = 'Number of Panels per Center')
 names(number_of_panels) = "Number of panels"
@@ -237,38 +239,35 @@ print(number_of_panels, floating = F,
 \begin{figure}[H]
 \begin{center}
 <<echo = F, fig=TRUE, fig.width = 5, fig.height = 6>>=
-library_selection <- ggplot(assayinfodf, aes(library_selection)) +
+library_selection <- ggplot(pipelinedf, aes(library_selection)) +
   geom_bar() +
   theme_bw() +
   labs(x = "Library Selection", y = "# of Panels")
-library_strategy <- ggplot(assayinfodf, aes(library_strategy)) +
+library_strategy <- ggplot(pipelinedf, aes(library_strategy)) +
   geom_bar() +
   theme_bw() +
   labs(x = "Library Strategy", y = "# of Panels")
 
-platform <- ggplot(assayinfodf, aes(platform)) +
+platform <- ggplot(pipelinedf, aes(platform)) +
   geom_bar() +
   theme_bw() +
   labs(x = "Platform", y = "# of Panels")
-calling_strategy <- ggplot(assayinfodf, aes(calling_strategy)) +
-  geom_bar() +
-  theme_bw() +
-  labs(x = "Calling Strategy", y = "# of Panels")
-specimen_tumor_cellularity <- ggplot(assayinfodf,
+
+specimen_tumor_cellularity <- ggplot(pipelinedf,
                                      aes(specimen_tumor_cellularity)) +
   geom_bar() +
   theme_bw() +
   labs(x = "Specimen Tumor Cellularity", y = "# of Panels")
 
 h = ggarrange(library_selection, library_strategy,
-              platform, calling_strategy,
+              platform,
               specimen_tumor_cellularity,
-              labels = c("A", "B", "C", "D", "E"),
-              ncol = 2, nrow = 3)
+              labels = c("A", "B", "C", "D"),
+              ncol = 2, nrow = 2)
 print(h)
 @
 \end{center}
-\caption{Distribution of library selection, library strategy, platform, calling strategy, and specimen tumor cellularity across pipelines}
+\caption{Distribution of library selection, library strategy, platform, and specimen tumor cellularity across pipelines}
 \end{figure}
 
 
@@ -276,7 +275,7 @@ print(h)
 allowed_coverage = c('hotspot_regions', 'coding_exons',
                      'introns', 'promoters')
 coverage_per_panel = get_list_assay_info_table(allowed_coverage,
-                                               assayinfodf,
+                                               pipelinedf,
                                                "coverage")
 info_tab = xtable(coverage_per_panel,
                   caption = 'Coverage per Panel')
@@ -293,7 +292,7 @@ allowed_alterations = c("snv", "small_indels", "gene_level_cna",
                         "intragenic_cna", "structural_variants")
 
 alterations_per_panel = get_list_assay_info_table(allowed_alterations,
-                                                  assayinfodf,
+                                                  pipelinedf,
                                                   "alteration_types")
 
 info_tab = xtable(alterations_per_panel,
@@ -314,11 +313,11 @@ print(info_tab, floating = F, caption.placement = "top",
 allowed_specimen_types = c("FFPE", 'fresh_frozen')
 
 specimen_per_panel = get_list_assay_info_table(allowed_specimen_types,
-                                               assayinfodf,
+                                               pipelinedf,
                                                "preservation_technique")
 
 info_tab = xtable(specimen_per_panel,
-                  caption = 'Specimen Types per Panel')
+                  caption = 'Preservation Techniques per Panel')
 align(info_tab) <- "|r|c|c|"
 print(info_tab, floating = F, caption.placement = "top",
       tabular.environment = "longtable",
@@ -328,11 +327,11 @@ print(info_tab, floating = F, caption.placement = "top",
 
 
 <<results=tex, echo=F>>=
-gene_number_info = assayinfodf[, c("SEQ_ASSAY_ID", "number_of_genes", "target_capture_kit")]
+gene_number_info = assayinfodf[, c("SEQ_ASSAY_ID", "calling_strategy", "number_of_genes", "target_capture_kit")]
 
 info_tab = xtable(gene_number_info[order(gene_number_info$SEQ_ASSAY_ID), ],
                   caption = 'Sequence Assay genomic information')
-align(info_tab) <- "r|c|c|p{80mm}|"
+align(info_tab) <- "r|c|c|c|p{80mm}|"
 print(info_tab, include.rownames = F, floating = F,
       caption.placement = "top", tabular.environment = "longtable",
       hline.after = rep(c(-1:(nrow(info_tab) - 1)),1))
