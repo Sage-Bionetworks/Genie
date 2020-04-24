@@ -497,8 +497,10 @@ def store_gene_panel_files(syn,
         newGenePanelPath = os.path.join(
             GENIE_RELEASE_DIR,
             genePanelName.replace(".txt", "_%s.txt" % genieVersion))
-        if genePanelName.replace(".txt", "").replace(
-                "data_gene_panel_", "") in panelNames:
+        print(genePanelName.replace(".txt", '')
+                           .replace("data_gene_panel_", ""))
+        if (genePanelName.replace(".txt", "")
+                         .replace("data_gene_panel_", "") in panelNames):
             os.rename(genePanel.path, newGenePanelPath)
             genePanelEntities.append(store_file(
                 syn, newGenePanelPath,
