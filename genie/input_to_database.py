@@ -696,12 +696,10 @@ def validation(syn, center, process,
         return(valid_filesdf[['id', 'path', 'fileType', 'name']])
 
 
-def center_input_to_database(
-        syn, center, process, testing,
-        only_validate, vcf2maf_path, vep_path,
-        vep_data, database_to_synid_mappingdf,
-        center_mapping_df, reference=None,
-        delete_old=False, oncotree_link=None):
+def center_input_to_database(syn, center, process, testing,
+                             only_validate, database_to_synid_mappingdf,
+                             center_mapping_df, delete_old=False,
+                             oncotree_link=None):
     if only_validate:
         log_path = os.path.join(
             process_functions.SCRIPT_DIR,

@@ -19,11 +19,7 @@ def main(process,
          oncotree_link=None,
          create_new_maf_database=False,
          testing=False,
-         debug=False,
-         reference=None,
-         vcf2maf_path=None,
-         vep_path=None,
-         vep_data=None):
+         debug=False):
 
     syn = process_functions.synLogin(pemfile, debug=debug)
     # Must specify correct paths to vcf2maf, VEP and VEP data
@@ -97,11 +93,11 @@ def main(process,
         input_to_database.center_input_to_database(
             syn, center, process,
             testing, only_validate,
-            vcf2maf_path, vep_path,
-            vep_data, databaseToSynIdMappingDf,
-            center_mapping_df, reference=reference,
+            databaseToSynIdMappingDf,
+            center_mapping_df,
             delete_old=delete_old,
-            oncotree_link=oncotree_link)
+            oncotree_link=oncotree_link
+        )
 
     # To ensure that this is the new entity
     center_mapping_ent = syn.get(center_mapping_id)
@@ -127,7 +123,7 @@ if __name__ == "__main__":
         description='GENIE center ')
     parser.add_argument(
         "process",
-        choices=['vcf', 'maf', 'main', 'mafSP'],
+        choices=['mutation', 'main'],
         help='Process vcf, maf or the rest of the files')
     parser.add_argument(
         '--center',
@@ -160,27 +156,6 @@ if __name__ == "__main__":
         "--debug",
         action='store_true',
         help="Add debug mode to synapse")
-    parser.add_argument(
-        "--reference",
-        type=str,
-        help="Path to VCF reference file")
-
-    # DEFAULT PARAMS
-    parser.add_argument(
-        "--vcf2mafPath",
-        type=str,
-        help="Path to vcf2maf",
-        default=os.path.expanduser("~/vcf2maf-1.6.14"))
-    parser.add_argument(
-        "--vepPath",
-        type=str,
-        help="Path to VEP",
-        default=os.path.expanduser("~/vep"))
-    parser.add_argument(
-        "--vepData",
-        type=str,
-        help="Path to VEP data",
-        default=os.path.expanduser("~/.vep"))
 
     args = parser.parse_args()
 
@@ -192,8 +167,4 @@ if __name__ == "__main__":
          oncotree_link=args.oncotree_link,
          create_new_maf_database=args.createNewMafDatabase,
          testing=args.testing,
-         debug=args.debug,
-         reference=args.reference,
-         vcf2maf_path=args.vcf2mafPath,
-         vep_path=args.vepPath,
-         vep_data=args.vepData)
+         debug=args.debug)
