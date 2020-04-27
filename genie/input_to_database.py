@@ -17,6 +17,7 @@ from .config import PROCESS_FILES
 from . import process_functions
 from . import validate
 from . import toRetract
+from . import process_mutation
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -293,9 +294,8 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
 
 def processfiles(syn, validfiles, center, path_to_genie,
                  center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-                 validVCF=None, vcf2mafPath=None,
-                 veppath=None, vepdata=None,
-                 processing="main", test=False, reference=None):
+                 validVCF=None,
+                 processing="main", test=False):
     '''
     Processing validated files
 
@@ -324,51 +324,47 @@ def processfiles(syn, validfiles, center, path_to_genie,
     if not os.path.exists(center_staging_folder):
         os.makedirs(center_staging_folder)
 
-    if processing != 'vcf':
-        for fileSynId, filePath, name, fileType in zip(validfiles['id'],
-                                                       validfiles['path'],
-                                                       validfiles['name'],
-                                                       validfiles['fileType']):
+    if processing == 'main':
+        for _, row in validfiles.iterrows():
+            filetype = row['fileType']
             # filename = os.path.basename(filePath)
-            newPath = os.path.join(center_staging_folder, name)
+            newpath = os.path.join(center_staging_folder, row['name'])
             # store = True
-            synId = databaseToSynIdMappingDf.Id[
-                databaseToSynIdMappingDf['Database'] == fileType]
-            if len(synId) == 0:
-                synId = None
+            tableid = databaseToSynIdMappingDf.Id[
+                databaseToSynIdMappingDf['Database'] == filetype]
+            # tableid is a series, so much check actual length
+            # Can't do `if tableid:`
+            if len(tableid) == 0:
+                tableid = None
             else:
-                synId = synId[0]
-            if fileType is not None and (processing == "main" or processing == fileType):
-                processor = PROCESS_FILES[fileType](syn, center)
-                processor.process(
-                    filePath=filePath, newPath=newPath,
-                    parentId=center_staging_synid, databaseSynId=synId,
-                    oncotree_link=oncotree_link,
-                    fileSynId=fileSynId, validVCF=validVCF,
-                    path_to_GENIE=path_to_genie, vcf2mafPath=vcf2mafPath,
-                    veppath=veppath, vepdata=vepdata,
-                    processing=processing,
-                    databaseToSynIdMappingDf=databaseToSynIdMappingDf,
-                    reference=reference, test=test)
+                tableid = tableid[0]
 
+            if filetype is not None:
+                processor = PROCESS_FILES[filetype](syn, center)
+                processor.process(
+                    filePath=row['path'], newPath=newpath,
+                    parentId=center_staging_synid, databaseSynId=tableid,
+                    oncotree_link=oncotree_link, fileSynId=row['id'],
+                    databaseToSynIdMappingDf=databaseToSynIdMappingDf,
+                    test=test
+                )
     else:
-        filePath = None
-        newPath = None
-        fileType = None
-        synId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == processing][0]
-        fileSynId = None
-        processor = PROCESS_FILES[processing](syn, center)
-        processor.process(
-            filePath=filePath, newPath=newPath,
-            parentId=center_staging_synid, databaseSynId=synId,
-            oncotree_link=oncotree_link,
-            fileSynId=fileSynId, validVCF=validVCF,
-            path_to_GENIE=path_to_genie, vcf2mafPath=vcf2mafPath,
-            veppath=veppath, vepdata=vepdata,
-            processing=processing,
-            databaseToSynIdMappingDf=databaseToSynIdMappingDf,
-            reference=reference)
+        # just for VCFs for now.
+        # TODO: add in support for maf
+        maf_tableid = databaseToSynIdMappingDf.Id[
+            databaseToSynIdMappingDf['Database'] == 'vcf2maf'][0]
+        flatfiles_synid = databaseToSynIdMappingDf.Id[
+            databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
+        vcf_files = validfiles['fileType'] == "vcf"
+        valid_vcfs = validfiles['path'][vcf_files].tolist()
+        process_mutation.process_mutation_workflow(
+            syn=syn,
+            center=syn,
+            mutation_files=valid_vcfs,
+            genie_annotation_pkg="/root/genie-annotation-pkg",
+            maf_tableid=maf_tableid,
+            flatfiles_synid=flatfiles_synid
+        )
 
     logger.info("ALL DATA STORED IN DATABASE")
 
@@ -800,9 +796,7 @@ def center_input_to_database(
                      center_mapping_df, oncotree_link,
                      database_to_synid_mappingdf,
                      validVCF=validVCF,
-                     vcf2mafPath=vcf2maf_path,
-                     veppath=vep_path, vepdata=vep_data,
-                     test=testing, processing=process, reference=reference)
+                     test=testing, processing=process)
 
         # Should add in this process end tracking
         # before the deletion of samples
