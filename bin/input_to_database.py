@@ -22,18 +22,6 @@ def main(process,
          debug=False):
 
     syn = process_functions.synLogin(pemfile, debug=debug)
-    # Must specify correct paths to vcf2maf, VEP and VEP data
-    # if trying to process vcf, maf and mafSP
-    if process in ['vcf', 'maf', 'mafSP'] and not only_validate:
-        assert os.path.exists(vcf2maf_path), (
-            "Path to vcf2maf (--vcf2mafPath) must be specified "
-            "if `--process {vcf,maf,mafSP}` is used")
-        assert os.path.exists(vep_path), (
-            "Path to VEP (--vepPath) must be specified "
-            "if `--process {vcf,maf,mafSP}` is used")
-        assert os.path.exists(vep_data), (
-            "Path to VEP data (--vepData) must be specified "
-            "if `--process {vcf,maf,mafSP}` is used")
 
     if testing:
         database_to_synid_mapping_synid = "syn11600968"
@@ -89,9 +77,9 @@ def main(process,
         databaseToSynIdMappingDf = \
             input_to_database.create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
 
-    for center in centers:
+    for process_center in centers:
         input_to_database.center_input_to_database(
-            syn, center, process,
+            syn, process_center, process,
             testing, only_validate,
             databaseToSynIdMappingDf,
             center_mapping_df,
