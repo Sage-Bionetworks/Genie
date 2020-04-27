@@ -4,7 +4,10 @@ from mock import patch
 import pandas as pd
 import pytest
 import synapseclient
-from synapseclient.exceptions import SynapseHTTPError
+try:
+    from synapseclient.exceptions import SynapseHTTPError
+except ModuleNotFoundError:
+    from synapseclient.core.exceptions import SynapseHTTPError
 
 from genie import validate, clinical, process_functions
 
