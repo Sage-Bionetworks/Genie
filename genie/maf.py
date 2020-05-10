@@ -305,9 +305,22 @@ class maf(FileTypeFormat):
         return(total_error, warning)
 
     def _get_dataframe(self, filePathList):
-        '''
-        Get mutation dataframe
-        '''
+        """Get mutation dataframe"""
+        # Must do this because pandas.read_csv will allow for a file to
+        # have more column headers than content.  E.g.
+        # A,B,C,D,E
+        # 1,2
+        # 2,3
+        with open(filePathList[0], 'r') as maf_f:
+            firstline = maf_f.readline()
+            if firstline.startswith("#"):
+                firstline = maf_f.readline()
+            secondline = maf_f.readline()
+
+        if len(firstline.split("\t")) != len(secondline.split("\t")):
+            raise ValueError("Number of fields in a line do not match the "
+                             "expected number of columns")
+
         mutationdf = pd.read_csv(filePathList[0],
                                  sep="\t",
                                  comment="#",
