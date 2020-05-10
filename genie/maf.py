@@ -324,6 +324,7 @@ class maf(FileTypeFormat):
         mutationdf = pd.read_csv(filePathList[0],
                                  sep="\t",
                                  comment="#",
+                                 # Keep the value 'NA'
                                  na_values=['-1.#IND', '1.#QNAN', '1.#IND',
                                             '-1.#QNAN', '#N/A N/A', 'NaN',
                                             '#N/A', 'N/A', '#NA', 'NULL',
@@ -331,5 +332,8 @@ class maf(FileTypeFormat):
                                  keep_default_na=False,
                                  # This is to check if people write files
                                  # with R, quote=T
-                                 quoting=3)
+                                 quoting=3,
+                                 # Retain completely blank lines so that
+                                 # validator will cause the file to fail
+                                 skip_blank_lines=False)
         return mutationdf
