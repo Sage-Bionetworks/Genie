@@ -421,8 +421,7 @@ def create_and_archive_maf_database(syn, database_synid_mappingdf):
     vcf2maf_mappingdf = database_synid_mappingdf[
         database_synid_mappingdf['Database'] == 'vcf2maf']
     # vcf2maf_mappingdf['Id'][0] = newMafDb.id
-    # Update this synid later
-    syn.store(synapseclient.Table("syn12094210", vcf2maf_mappingdf))
+    syn.store(synapseclient.Table("syn10967259", vcf2maf_mappingdf))
     # Move and archive old mafdatabase (This is the staging synid)
     maf_database_ent.parentId = "syn7208886"
     maf_database_ent.name = "ARCHIVED " + maf_database_ent.name
