@@ -14,6 +14,82 @@ except ModuleNotFoundError:
 from . import process_functions
 
 WORKDIR = os.path.expanduser("~/.synapseCache")
+# Some columns are already capitalized, so they aren't included here
+MAF_COL_MAPPING = {
+    'HUGO_SYMBOL': 'Hugo_Symbol',
+    'ENTREZ_GENE_ID': 'Entrez_Gene_Id',
+    'CENTER': 'Center',
+    'NCBI_BUILD': 'NCBI_Build',
+    'CHROMOSOME': 'Chromosome',
+    'START_POSITION': 'Start_Position',
+    'END_POSITION': 'End_Position',
+    'STRAND': 'Strand',
+    'VARIANT_CLASSIFICATION': 'Variant_Classification',
+    'VARIANT_TYPE': 'Variant_Type',
+    'REFERENCE_ALLELE': 'Reference_Allele',
+    'TUMOR_SEQ_ALLELE1': 'Tumor_Seq_Allele1',
+    'TUMOR_SEQ_ALLELE2': 'Tumor_Seq_Allele2',
+    'DBSNP_RS': 'dbSNP_RS',
+    'DBSNP_VAL_STATUS': 'dbSNP_Val_Status',
+    'TUMOR_SAMPLE_BARCODE': 'Tumor_Sample_Barcode',
+    'MATCHED_NORM_SAMPLE_BARCODE': 'Matched_Norm_Sample_Barcode',
+    'MATCH_NORM_SEQ_ALLELE1': 'Match_Norm_Seq_Allele1',
+    'MATCH_NORM_SEQ_ALLELE2': 'Match_Norm_Seq_Allele2',
+    'TUMOR_VALIDATION_ALLELE1': 'Tumor_Validation_Allele1',
+    'TUMOR_VALIDATION_ALLELE2': 'Tumor_Validation_Allele2',
+    'MATCH_NORM_VALIDATION_ALLELE1': 'Match_Norm_Validation_Allele1',
+    'MATCH_NORM_VALIDATION_ALLELE2': 'Match_Norm_Validation_Allele2',
+    'VERIFICATION_STATUS': 'Verification_Status',
+    'VALIDATION_STATUS': 'Validation_Status',
+    'MUTATION_STATUS': 'Mutation_Status',
+    'SEQUENCING_PHASE': 'Sequencing_Phase',
+    'SEQUENCE_SOURCE': 'Sequence_Source',
+    'VALIDATION_METHOD': 'Validation_Method',
+    'SCORE': 'Score',
+    'BAM_FILE': 'BAM_File',
+    'SEQUENCER': 'Sequencer',
+    'T_REF_COUNT': 't_ref_count',
+    'T_ALT_COUNT': 't_alt_count',
+    'N_REF_COUNT': 'n_ref_count',
+    'N_ALT_COUNT': 'n_alt_count',
+    'COMMENTS': 'comments',
+    'ALLELE': 'Allele',
+    'AMINO_ACID_CHANGE': 'amino_acid_change',
+    'AMINO_ACIDS': 'Amino_acids',
+    'CDS_POSITION': 'CDS_position',
+    'CODONS': 'Codons',
+    'CONSEQUENCE': 'Consequence',
+    'EXISTING_VARIATION': 'Existing_variation',
+    'EXON_NUMBER': 'Exon_Number',
+    'FEATURE': 'Feature',
+    'FEATURE_TYPE': 'Feature_type',
+    'GENE': 'Gene',
+    'HGVSC': 'HGVSc',
+    'HGVSP': 'HGVSp',
+    'HGVSP_SHORT': 'HGVSp_Short',
+    'HOTSPOT': 'Hotspot',
+    'MA:FIMPACT': 'MA:FImpact',
+    'MA:LINK.MSA': 'MA:link.MSA',
+    'MA:LINK.PDB': 'MA:link.PDB',
+    'MA:LINK.VAR': 'MA:link.var',
+    'MA:PROTEIN.CHANGE': 'MA:protein.change',
+    'POLYPHEN': 'PolyPhen',
+    'PROTEIN_POSITION': 'Protein_position',
+    'REFSEQ': 'RefSeq',
+    'TRANSCRIPT': 'transcript',
+    'TRANSCRIPT_ID': 'Transcript_ID',
+    'ALL_EFFECTS': 'all_effects',
+    'CDNA_CHANGE': 'cdna_change',
+    'CDNA_POSITION': 'cDNA_position',
+    'N_DEPTH': 'n_depth',
+    'T_DEPTH': 't_depth'
+}
+
+
+def rename_column_headers(dataframe):
+    """Rename dataframe column headers"""
+    dataframe = dataframe.rename(columns=MAF_COL_MAPPING)
+    return dataframe
 
 
 def process_mutation_workflow(syn, center, mutation_files,
