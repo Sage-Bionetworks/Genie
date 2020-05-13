@@ -657,7 +657,7 @@ def update_tables_with_duplicates(validation_statusdf, error_trackingdf):
 
 
 def validation(syn, center, process,
-               center_mapping_df, database_synid_mappingdf,
+               center_files, database_synid_mappingdf,
                testing, oncotree_link, format_registry):
     '''
     Validation of all center files
@@ -673,108 +673,89 @@ def validation(syn, center, process,
     Returns:
         dataframe: Valid files
     '''
-    center_input_synid = center_mapping_df['inputSynId'][
-        center_mapping_df['center'] == center][0]
-    logger.info("Center: " + center)
-    center_files = get_center_input_files(syn, center_input_synid, center,
-                                          process)
+    logger.info(f"{center} has uploaded {len(center_files)} files.")
+    validation_status_synid = process_functions.getDatabaseSynId(
+        syn, "validationStatus",
+        databaseToSynIdMappingDf=database_synid_mappingdf)
+    error_tracker_synid = process_functions.getDatabaseSynId(
+        syn, "errorTracker",
+        databaseToSynIdMappingDf=database_synid_mappingdf)
 
-    # If a center has no files, then return empty list
-    if not center_files:
-        logger.info("{} has not uploaded any files".format(center))
-        return []
-    else:
-        logger.info(f"{center} has uploaded {len(center_files)} files.")
+    # Make sure the vcf validation statuses don't get wiped away
+    # If process is not vcf, the vcf files are not downloaded
+    add_query_str = "and name not like '%.vcf'" if process != "vcf" else ''
+    # id, md5, status, name, center, modifiedOn, fileType
+    validation_status_table = syn.tableQuery(
+        "SELECT * FROM {synid} "
+        "where center = '{center}' {add}".format(
+            synid=validation_status_synid,
+            center=center,
+            add=add_query_str))
+    # id, center, errors, name, fileType
+    error_tracker_table = syn.tableQuery(
+        "SELECT * FROM {synid} "
+        "where center = '{center}' {add}".format(
+            synid=error_tracker_synid,
+            center=center,
+            add=add_query_str))
 
-        validation_status_synid = process_functions.getDatabaseSynId(
-            syn, "validationStatus",
-            databaseToSynIdMappingDf=database_synid_mappingdf)
-        error_tracker_synid = process_functions.getDatabaseSynId(
-            syn, "errorTracker",
-            databaseToSynIdMappingDf=database_synid_mappingdf)
+    input_valid_statuses = []
+    invalid_errors = []
 
-        # Make sure the vcf validation statuses don't get wiped away
-        # If process is not vcf, the vcf files are not downloaded
-        add_query_str = "and name not like '%.vcf'" if process != "vcf" else ''
+    user_message_dict = defaultdict(list)
 
-        # id, md5, status, name, center, modifiedOn, fileType
-        validation_status_table = syn.tableQuery(
-            "SELECT * FROM {synid} "
-            "where center = '{center}' {add}".format(
-                synid=validation_status_synid,
-                center=center,
-                add=add_query_str))
-        # id, center, errors, name, fileType
-        error_tracker_table = syn.tableQuery(
-            "SELECT * FROM {synid} "
-            "where center = '{center}' {add}".format(
-                synid=error_tracker_synid,
-                center=center,
-                add=add_query_str))
+    for ents in center_files:
+        status, errors, messages_to_send = validatefile(
+            syn, ents,
+            validation_status_table,
+            error_tracker_table,
+            center=center,
+            testing=testing,
+            oncotree_link=oncotree_link,
+            format_registry=format_registry)
 
-        input_valid_statuses = []
-        invalid_errors = []
+        input_valid_statuses.extend(status)
+        if errors is not None:
+            invalid_errors.extend(errors)
 
-        user_message_dict = defaultdict(list)
+        if messages_to_send:
+            logger.debug("Collating messages to send to users.")
+            for filenames, messages, users in messages_to_send:
+                file_messages = dict(filenames=filenames, messages=messages)
+                # Must get unique set of users or there
+                # will be duplicated error messages sent in the email
+                for user in set(users):
+                    user_message_dict[user].append(file_messages)
 
-        for ents in center_files:
-            status, errors, messages_to_send = validatefile(
-                syn, ents,
-                validation_status_table,
-                error_tracker_table,
-                center=center,
-                testing=testing,
-                oncotree_link=oncotree_link,
-                format_registry=format_registry)
+    validation_statusdf = build_validation_status_table(input_valid_statuses)
+    error_trackingdf = build_error_tracking_table(invalid_errors)
 
-            input_valid_statuses.extend(status)
-            if errors is not None:
-                invalid_errors.extend(errors)
+    new_tables = update_tables_with_duplicates(validation_statusdf,
+                                               error_trackingdf)
+    validation_statusdf = new_tables['validation_statusdf']
+    error_trackingdf = new_tables['error_trackingdf']
+    duplicated_filesdf = new_tables['duplicated_filesdf']
 
-            if messages_to_send:
-                logger.debug("Collating messages to send to users.")
-                for filenames, messages, users in messages_to_send:
-                    file_messages = dict(filenames=filenames,
-                                         messages=messages)
-                    # Must get unique set of users or there
-                    # will be duplicated error messages sent in the email
-                    for user in set(users):
-                        user_message_dict[user].append(file_messages)
-        # TODO: build tables
-        validation_statusdf = build_validation_status_table(
-            input_valid_statuses
-        )
-        error_trackingdf = build_error_tracking_table(
-            invalid_errors
-        )
+    # Append duplication errors to email list to send
+    user_message_dict = append_duplication_errors(duplicated_filesdf,
+                                                  user_message_dict)
 
-        new_tables = update_tables_with_duplicates(validation_statusdf,
-                                                   error_trackingdf)
-        validation_statusdf = new_tables['validation_statusdf']
-        error_trackingdf = new_tables['error_trackingdf']
-        duplicated_filesdf = new_tables['duplicated_filesdf']
+    for user, message_objs in user_message_dict.items():
+        logger.debug("Sending messages to user {user}.".format(user=user))
 
-        # Append duplication errors to email list to send
-        user_message_dict = append_duplication_errors(duplicated_filesdf,
-                                                      user_message_dict)
+        _send_validation_error_email(syn=syn, user=user,
+                                     message_objs=message_objs)
 
-        for user, message_objs in user_message_dict.items():
-            logger.debug("Sending messages to user {user}.".format(user=user))
+    update_status_and_error_tables(
+        syn=syn,
+        input_valid_statusdf=validation_statusdf,
+        invalid_errorsdf=error_trackingdf,
+        validation_status_table=validation_status_table,
+        error_tracker_table=error_tracker_table
+    )
 
-            _send_validation_error_email(syn=syn,
-                                         user=user,
-                                         message_objs=message_objs)
-
-        update_status_and_error_tables(
-            syn=syn,
-            input_valid_statusdf=validation_statusdf,
-            invalid_errorsdf=error_trackingdf,
-            validation_status_table=validation_status_table,
-            error_tracker_table=error_tracker_table
-        )
-
-        valid_filesdf = validation_statusdf.query('status == "VALIDATED"')
-        return(valid_filesdf[['id', 'path', 'fileType', 'name']])
+    valid_filesdf = validation_statusdf.query('status == "VALIDATED"')
+    return(valid_filesdf[['id', 'path', 'fileType', 'name']])
 
 
 def center_input_to_database(
@@ -823,10 +804,20 @@ def center_input_to_database(
     if delete_old:
         process_functions.rmFiles(os.path.join(path_to_genie, center))
 
-    validFiles = validation(
-        syn, center, process, center_mapping_df,
-        database_to_synid_mappingdf,
-        testing, oncotree_link, PROCESS_FILES)
+    center_input_synid = center_mapping_df['inputSynId'][
+        center_mapping_df['center'] == center][0]
+    logger.info("Center: " + center)
+    center_files = get_center_input_files(syn, center_input_synid, center,
+                                          process)
+
+    # only validate if there are center files
+    if center_files:
+        validFiles = validation(syn, center, process, center_files,
+                                database_to_synid_mappingdf,
+                                testing, oncotree_link, PROCESS_FILES)
+    else:
+        logger.info("{} has not uploaded any files".format(center))
+        return
 
     if len(validFiles) > 0 and not only_validate:
         # Reorganize so BED file are always validated and processed first

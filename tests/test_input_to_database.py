@@ -805,9 +805,7 @@ class TestValidation:
                       'duplicated_filesdf': self.empty_dup}
         validationstatus_mock = emptytable_mock()
         errortracking_mock = emptytable_mock()
-        with patch.object(input_to_database, "get_center_input_files",
-                          return_value=entities) as patch_get_center,\
-             patch.object(syn, "tableQuery",
+        with patch.object(syn, "tableQuery",
                           side_effect=[validationstatus_mock,
                                        errortracking_mock]) as patch_query,\
              patch.object(input_to_database, "validatefile",
@@ -823,11 +821,8 @@ class TestValidation:
              patch.object(input_to_database, "update_status_and_error_tables"):
             valid_filedf = input_to_database.validation(
                 syn, center, process,
-                center_mapping_df, databaseToSynIdMappingDf,
+                entities, databaseToSynIdMappingDf,
                 testing, oncotree_link, genie.config.PROCESS_FILES
-            )
-            patch_get_center.assert_called_once_with(
-                syn, center_input_synid, center, process
             )
             assert patch_query.call_count == 2
             patch_validatefile.assert_called_once_with(
