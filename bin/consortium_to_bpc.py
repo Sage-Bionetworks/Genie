@@ -101,7 +101,7 @@ def main(release):
                                 "case_lists")):
             ent = syn.get(synid_map[name], followLink=True,
                           downloadFile=False)
-            synu.copy(syn, ent, bpc_folder_ent,
+            synu.copy(syn, ent, bpc_folder_ent.id,
                       setProvnance=None,
                       updateExisting=True)
     
