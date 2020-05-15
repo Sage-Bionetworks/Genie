@@ -25,27 +25,25 @@ class ValidationHelper(object):
     # Overload this per class
     _validate_kwargs = []
 
-    def __init__(self, syn, center, entitylist,
+    def __init__(self, syn, project_id, center, entitylist,
                  format_registry=config.PROCESS_FILES,
-                 testing=False, file_type=None):
-
+                 file_type=None):
         """A validator helper class for a center's files.
 
         Args:
             syn: a synapseclient.Synapse object
+            project_id: Synapse Project ID where files are stored and configured.
             center: The participating center name.
             filepathlist: a list of file paths.
             format_registry: A dictionary mapping file format name to the
                              format class.
-            testing: Run in testing mode.
             file_type: Specify file type to skip filename validation
         """
-
         self._synapse_client = syn
+        self._project = syn.get(project_id)
         self.entitylist = entitylist
         self.center = center
         self._format_registry = format_registry
-        self.testing = testing
         self.file_type = (self.determine_filetype()
                           if file_type is None else file_type)
 
@@ -63,8 +61,7 @@ class ValidationHelper(object):
         filetype = None
         # Loop through file formats
         for file_format in self._format_registry:
-            validator = self._format_registry[file_format](self._synapse_client, self.center,
-                                                           testing=self.testing)
+            validator = self._format_registry[file_format](self._synapse_client, self.center)
             try:
                 filenames = [entity.name for entity in self.entitylist]
                 filetype = validator.validateFilename(filenames)
@@ -95,8 +92,7 @@ class ValidationHelper(object):
                 mykwargs[required_parameter] = kwargs[required_parameter]
 
             validator_cls = self._format_registry[self.file_type]
-            validator = validator_cls(self._synapse_client, self.center,
-                                      testing=self.testing)
+            validator = validator_cls(self._synapse_client, self.center)
             filepathlist = [entity.path for entity in self.entitylist]
             valid, errors, warnings = validator.validate(filePathList=filepathlist,
                                                          **mykwargs)
@@ -265,7 +261,7 @@ def _perform_validate(syn, args):
     _check_parentid_permission_container(syn, args.parentid)
 
     databasetosynid_mappingdf = process_functions.get_synid_database_mappingdf(
-        syn, test=args.testing)
+        syn, project_id=args.project_id)
 
     synid = databasetosynid_mappingdf.query('Database == "centerMapping"').Id
 
@@ -283,12 +279,14 @@ def _perform_validate(syn, args):
     entity_list = [synapseclient.File(name=filepath, path=filepath,
                                       parentId=None)
                    for filepath in args.filepath]
-    validator = GenieValidationHelper(syn=syn, center=args.center,
+    validator = GenieValidationHelper(syn=syn, project_id=args.project_id,
+                                      center=args.center,
                                       entitylist=entity_list,
                                       format_registry=format_registry,
                                       file_type=args.filetype)
     mykwargs = dict(oncotree_link=args.oncotree_link,
-                    nosymbol_check=args.nosymbol_check)
+                    nosymbol_check=args.nosymbol_check,
+                    project_id=args.project_id)
     valid, message = validator.validate_single_file(**mykwargs)
 
     # Upload to synapse if parentid is specified and valid

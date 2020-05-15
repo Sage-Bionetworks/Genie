@@ -1,9 +1,9 @@
 ---
 title: "%s Summary"
-output:
-  html_document:
-    toc: true
-    toc_depth: 3
+output: html_document
+#  html_document:
+#    toc: true
+#    toc_depth: 3
 params:
   genieUser:
     value: x
@@ -573,7 +573,7 @@ if (!is.null(this_bed)) {
       return(seq_assay)
     }
   })
-  relevant_panels = mutated_genes[, panels_covering_tp53]
+  relevant_panels = mutated_genes[, colnames(mutated_genes) %in% panels_covering_tp53]
   relevant_panels = relevant_panels[, colnames(relevant_panels) %in% unlist(tp53_not_top)]
   top_5_mutated_genes_string = apply(relevant_panels, 2, function(x) {
     top_5 = sort(x, decreasing = T)[1:5]

@@ -62,7 +62,7 @@ def entity_date_to_timestamp(entity_date_time):
     return to_unix_epoch_time(date_time_obj)
 
 
-def get_center_input_files(syn, synid, center, process="main"):
+def get_center_input_files(syn, synid, center, process="main", downloadFile=True):
     '''
     This function walks through each center's input directory
     to get a list of tuples of center files
@@ -94,8 +94,7 @@ def get_center_input_files(syn, synid, center, process="main"):
             if name.endswith(".vcf") and process != "vcf":
                 continue
 
-            ent = syn.get(ent_synid)
-            logger.debug(ent)
+            ent = syn.get(ent_synid, downloadFile=downloadFile)
 
             # Clinical file can come as two files.
             # The two files need to be merged together which is
@@ -228,8 +227,8 @@ def _get_status_and_error_list(valid, message, entities):
     return input_status_list, invalid_errors_list
 
 
-def validatefile(syn, entities, validation_status_table, error_tracker_table,
-                 center, testing, oncotree_link,
+def validatefile(syn, project_id, entities, validation_status_table, error_tracker_table,
+                 center, threads, oncotree_link,
                  format_registry=PROCESS_FILES):
     '''Validate a list of entities.
 
@@ -241,7 +240,6 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
         validation_statusdf: Validation status dataframe
         error_trackerdf: Invalid files error tracking dataframe
         center: Center of interest
-        testing: Boolean determining whether using testing parameter
         oncotree_link: Oncotree url
 
     Returns:
@@ -269,10 +267,10 @@ def validatefile(syn, entities, validation_status_table, error_tracker_table,
     # Need to figure out to how to remove this
     # This must pass in filenames, because filetype is determined by entity
     # name Not by actual path of file
-    validator = validate.GenieValidationHelper(syn=syn, center=center,
+    validator = validate.GenieValidationHelper(syn=syn, project_id=project_id,
+                                               center=center,
                                                entitylist=entities,
-                                               format_registry=format_registry,
-                                               testing=testing)
+                                               format_registry=format_registry)
     filetype = validator.file_type
     if check_file_status['to_validate']:
         valid, message = validator.validate_single_file(
@@ -302,7 +300,7 @@ def processfiles(syn, validfiles, center, path_to_genie,
                  center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
                  validVCF=None, vcf2mafPath=None,
                  veppath=None, vepdata=None,
-                 processing="main", test=False, reference=None):
+                 processing="main", reference=None):
     '''
     Processing validated files
 
@@ -320,7 +318,6 @@ def processfiles(syn, validfiles, center, path_to_genie,
         veppath: Path to vep
         vepdata: Path to vep index files
         processing: Processing type. Defaults to main
-        test: Test flag
         reference: Reference file for vcf2maf
     '''
     logger.info("PROCESSING {} FILES: {}".format(center, len(validfiles)))
@@ -356,7 +353,7 @@ def processfiles(syn, validfiles, center, path_to_genie,
                     veppath=veppath, vepdata=vepdata,
                     processing=processing,
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf,
-                    reference=reference, test=test)
+                    reference=reference)
 
     else:
         filePath = None
@@ -409,7 +406,7 @@ def create_and_archive_maf_database(syn, database_synid_mappingdf):
         Editted database to synapse id mapping dataframe
     '''
     maf_database_synid = process_functions.getDatabaseSynId(
-        syn, "vcf2maf", databaseToSynIdMappingDf=database_synid_mappingdf)
+        syn, "vcf2maf", project_id=None, databaseToSynIdMappingDf=database_synid_mappingdf)
     maf_database_ent = syn.get(maf_database_synid)
     maf_columns = list(syn.getTableColumns(maf_database_synid))
     schema = synapseclient.Schema(
@@ -428,8 +425,7 @@ def create_and_archive_maf_database(syn, database_synid_mappingdf):
     vcf2maf_mappingdf = database_synid_mappingdf[
         database_synid_mappingdf['Database'] == 'vcf2maf']
     # vcf2maf_mappingdf['Id'][0] = newMafDb.id
-    # Update this synid later
-    syn.store(synapseclient.Table("syn12094210", vcf2maf_mappingdf))
+    syn.store(synapseclient.Table("syn10967259", vcf2maf_mappingdf))
     # Move and archive old mafdatabase (This is the staging synid)
     maf_database_ent.parentId = "syn7208886"
     maf_database_ent.name = "ARCHIVED " + maf_database_ent.name
@@ -669,9 +665,9 @@ def _update_tables_content(validation_statusdf, error_trackingdf):
             'duplicated_filesdf': duplicated_filesdf}
 
 
-def validation(syn, center, process,
+def validation(syn, project_id, center, process,
                center_files, database_synid_mappingdf,
-               testing, oncotree_link, format_registry):
+               oncotree_link, format_registry):
     '''
     Validation of all center files
 
@@ -680,7 +676,7 @@ def validation(syn, center, process,
         center: Center name
         process: main, vcf, maf
         center_mapping_df: center mapping dataframe
-        testing: True if testing
+        thread: Unused parameter for now
         oncotree_link: Link to oncotree
 
     Returns:
@@ -721,11 +717,10 @@ def validation(syn, center, process,
 
     for ents in center_files:
         status, errors, messages_to_send = validatefile(
-            syn, ents,
+            syn, project_id, ents,
             validation_status_table,
             error_tracker_table,
-            center=center,
-            testing=testing,
+            center=center, threads=1,
             oncotree_link=oncotree_link,
             format_registry=format_registry)
 
@@ -776,7 +771,7 @@ def validation(syn, center, process,
 
 
 def center_input_to_database(
-        syn, center, process, testing,
+        syn, project_id, center, process,
         only_validate, vcf2maf_path, vep_path,
         vep_data, database_to_synid_mappingdf,
         center_mapping_df, reference=None,
@@ -795,11 +790,6 @@ def center_input_to_database(
     fileHandler = logging.FileHandler(log_path, mode='w')
     fileHandler.setFormatter(logFormatter)
     logger.addHandler(fileHandler)
-
-    if testing:
-        logger.info("###########################################")
-        logger.info("############NOW IN TESTING MODE############")
-        logger.info("###########################################")
 
     # ----------------------------------------
     # Start input to staging process
@@ -829,9 +819,9 @@ def center_input_to_database(
 
     # only validate if there are center files
     if center_files:
-        validFiles = validation(syn, center, process, center_files,
+        validFiles = validation(syn, project_id, center, process, center_files,
                                 database_to_synid_mappingdf,
-                                testing, oncotree_link, PROCESS_FILES)
+                                oncotree_link, PROCESS_FILES)
     else:
         logger.info("{} has not uploaded any files".format(center))
         return
@@ -887,7 +877,7 @@ def center_input_to_database(
                      validVCF=validVCF,
                      vcf2mafPath=vcf2maf_path,
                      veppath=vep_path, vepdata=vep_data,
-                     test=testing, processing=process, reference=reference)
+                     processing=process, reference=reference)
 
         # Should add in this process end tracking
         # before the deletion of samples
@@ -902,7 +892,7 @@ def center_input_to_database(
         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
         logger.info("SAMPLE/PATIENT RETRACTION")
-        toRetract.retract(syn, testing)
+        toRetract.retract(syn, project_id=project_id)
 
     else:
         messageOut = \
