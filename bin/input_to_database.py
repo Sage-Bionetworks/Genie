@@ -12,13 +12,13 @@ logger = logging.getLogger(__name__)
 
 
 def main(process,
+         project_id,
          center=None,
          pemfile=None,
          delete_old=False,
          only_validate=False,
          oncotree_link=None,
          create_new_maf_database=False,
-         testing=False,
          debug=False,
          reference=None,
          vcf2maf_path=None,
@@ -39,13 +39,13 @@ def main(process,
             "Path to VEP data (--vepData) must be specified "
             "if `--process {vcf,maf,mafSP}` is used")
 
-    if testing:
-        database_to_synid_mapping_synid = "syn11600968"
-    else:
-        database_to_synid_mapping_synid = "syn10967259"
-
+    # Get the Synapse Project where data is stored
+    # Should have annotations to find the table lookup
+    project = syn.get(project_id)
+    database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
+    
     databaseToSynIdMapping = syn.tableQuery(
-        'SELECT * FROM {}'.format(database_to_synid_mapping_synid))
+        'SELECT * FROM {}'.format(database_to_synid_mapping_synid[0]))
     databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
 
     center_mapping_id = process_functions.getDatabaseSynId(
@@ -95,9 +95,8 @@ def main(process,
 
     for center in centers:
         input_to_database.center_input_to_database(
-            syn, center, process,
-            testing, only_validate,
-            vcf2maf_path, vep_path,
+            syn, project_id, center, process,
+            only_validate, vcf2maf_path, vep_path,
             vep_data, databaseToSynIdMappingDf,
             center_mapping_df, reference=reference,
             delete_old=delete_old,
@@ -130,6 +129,10 @@ if __name__ == "__main__":
         choices=['vcf', 'maf', 'main', 'mafSP'],
         help='Process vcf, maf or the rest of the files')
     parser.add_argument(
+        "--project_id",
+        help="Synapse Project ID where data is stored.",
+        required=True)
+    parser.add_argument(
         '--center',
         help='The centers')
     parser.add_argument(
@@ -152,10 +155,6 @@ if __name__ == "__main__":
         "--createNewMafDatabase",
         action='store_true',
         help="Creates a new maf database")
-    parser.add_argument(
-        "--testing",
-        action='store_true',
-        help="Testing the infrastructure!")
     parser.add_argument(
         "--debug",
         action='store_true',
@@ -185,13 +184,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args.process,
+         project_id=args.project_id,
          center=args.center,
          pemfile=args.pemFile,
          delete_old=args.deleteOld,
          only_validate=args.onlyValidate,
          oncotree_link=args.oncotree_link,
          create_new_maf_database=args.createNewMafDatabase,
-         testing=args.testing,
          debug=args.debug,
          reference=args.reference,
          vcf2maf_path=args.vcf2mafPath,

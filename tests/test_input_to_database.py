@@ -131,8 +131,8 @@ def test_main_get_center_input_files():
     syn_get_effects = [sample_clinical_entity, patient_clinical_entity]
     expected_center_file_list = [syn_get_effects]
 
-    calls = [mock.call(sample_clinical_synid),
-             mock.call(patient_clinical_synid)]
+    calls = [mock.call(sample_clinical_synid, downloadFile=True),
+             mock.call(patient_clinical_synid, downloadFile=True)]
 
     with patch.object(synapseutils, "walk",
                       return_value=walk_return()) as patch_synapseutils_walk,\
@@ -160,10 +160,10 @@ def test_vcf_get_center_input_files():
         [vcf1_entity], [vcf2_entity],
         [sample_clinical_entity, patient_clinical_entity]]
     calls = [
-        mock.call(sample_clinical_synid),
-        mock.call(patient_clinical_synid),
-        mock.call(vcf1synid),
-        mock.call(vcf2synid)]
+        mock.call(sample_clinical_synid, downloadFile=True),
+        mock.call(patient_clinical_synid, downloadFile=True),
+        mock.call(vcf1synid, downloadFile=True),
+        mock.call(vcf2synid, downloadFile=True)]
 
     with patch.object(synapseutils, "walk",
                       return_value=walk_return()) as patch_synapseutils_walk,\
@@ -379,7 +379,7 @@ def test_valid_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    testing = False
+    threads = 0
     valid = True
     message = "Is valid"
     filetype = "clinical"
@@ -404,8 +404,9 @@ def test_valid_validatefile():
                       "_send_validation_error_email") as patch_send_email:
 
         validate_results = input_to_database.validatefile(
-            syn, entities, validation_statusdf,
-            error_trackerdf, center, testing, oncotree_link)
+            syn, None, entities, validation_statusdf,
+            error_trackerdf, center, threads, oncotree_link,
+            format_registry=genie.config.PROCESS_FILES)
 
         assert expected_results == validate_results
         patch_validate.assert_called_once_with(
@@ -433,7 +434,7 @@ def test_invalid_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    testing = False
+    threads = 0
     valid = False
     message = "Is invalid"
     filetype = "clinical"
@@ -457,8 +458,9 @@ def test_invalid_validatefile():
                       return_value=status_error_list_results) as patch_get_staterror_list:
 
         validate_results = input_to_database.validatefile(
-            syn, entities, validation_statusdf,
-            error_trackerdf, center, testing, oncotree_link)
+            syn, None, entities, validation_statusdf,
+            error_trackerdf, center, threads, oncotree_link,
+            format_registry=genie.config.PROCESS_FILES)
 
         assert expected_results == validate_results
         patch_validate.assert_called_once_with(
@@ -484,7 +486,7 @@ def test_already_validated_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    testing = False
+    threads = 0
     valid = False
     errors = "Invalid file"
     filetype = "markdown"
@@ -513,8 +515,9 @@ def test_already_validated_validatefile():
                       "_send_validation_error_email") as patch_send_email:
 
         validate_results = input_to_database.validatefile(
-            syn, entities, validation_statusdf,
-            error_trackerdf, center, testing, oncotree_link)
+            syn, None, entities, validation_statusdf,
+            error_trackerdf, center, threads, oncotree_link,
+            format_registry=genie.config.PROCESS_FILES)
 
         assert expected_results == validate_results
         patch_validate.assert_not_called()
@@ -784,7 +787,6 @@ class TestValidation:
 
     def test_validation(self):
         """Test validation steps"""
-        testing = False
         modified_on = 1561143558000
         process = "main"
         databaseToSynIdMapping = {'Database': ["clinical", 'validationStatus', 'errorTracker'],
@@ -820,17 +822,16 @@ class TestValidation:
                           return_value=new_tables),\
              patch.object(input_to_database, "update_status_and_error_tables"):
             valid_filedf = input_to_database.validation(
-                syn, center, process,
+                syn, "syn123", center, process,
                 entities, databaseToSynIdMappingDf,
-                testing, oncotree_link, genie.config.PROCESS_FILES
+                oncotree_link, genie.config.PROCESS_FILES
             )
             assert patch_query.call_count == 2
             patch_validatefile.assert_called_once_with(
-                syn, entity,
+                syn, "syn123", entity,
                 validationstatus_mock,
                 errortracking_mock,
-                center='SAGE',
-                testing=False,
+                center='SAGE', threads=1,
                 oncotree_link=oncotree_link,
                 format_registry=genie.config.PROCESS_FILES
             )
@@ -869,7 +870,7 @@ def test_main_processfile(process, genieclass, filetype):
             center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
-            processing=process, test=False, reference=None)
+            processing=process, reference=None)
         patch_class.assert_called_once()
 
 
@@ -898,7 +899,7 @@ def test_mainnone_processfile():
             center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
-            processing="main", test=False, reference=None)
+            processing="main", reference=None)
         patch_clin.assert_not_called()
 
 
@@ -926,5 +927,5 @@ def test_notvcf_processfile():
             center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             validVCF=None, vcf2mafPath=None,
             veppath=None, vepdata=None,
-            processing='vcf', test=False, reference=None)
+            processing='vcf', reference=None)
         patch_process.assert_called_once()
