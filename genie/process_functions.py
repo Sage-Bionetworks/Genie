@@ -246,39 +246,33 @@ def get_syntabledf(syn, query_string):
     return(tabledf)
 
 
-def get_synid_database_mappingdf(syn, test=False, staging=False):
+def get_synid_database_mappingdf(syn, project_id):
     '''
     Get database to synapse id mapping dataframe
 
     Args:
         syn: Synapse object
-        test: Use test table. Default is False
-        staging: Use stagin table. Default is False
+        project_id: Synapse Project ID with a 'dbMapping' annotation.
 
     Returns:
         database to synapse id mapping dataframe
     '''
-    if test:
-        database_mapping_synid = "syn11600968"
-    elif staging:
-        database_mapping_synid = "syn12094210"
-    else:
-        database_mapping_synid = "syn10967259"
 
+    project = syn.get(project_id)
+    database_mapping_synid = project.annotations['dbMapping'][0]
     database_map_query = "SELECT * FROM {}".format(database_mapping_synid)
     mappingdf = get_syntabledf(syn, database_map_query)
-    return(mappingdf)
+    return mappingdf
 
 
-def getDatabaseSynId(syn, tableName, test=False,
-                     databaseToSynIdMappingDf=None):
+def getDatabaseSynId(syn, tableName, project_id=None, databaseToSynIdMappingDf=None):
     '''
     Get database synapse id from database to synapse id mapping table
 
     Args:
         syn: Synapse object
+        project_id: Synapse Project ID with a database mapping table.
         tableName: Name of synapse table
-        test: Use test table. Default is False
         databaseToSynIdMappingDf: Avoid calling rest call to download table
                                   if the mapping table is already downloaded
 
@@ -286,7 +280,8 @@ def getDatabaseSynId(syn, tableName, test=False,
         str:  Synapse id of wanted database
     '''
     if databaseToSynIdMappingDf is None:
-        databaseToSynIdMappingDf = get_synid_database_mappingdf(syn, test=test)
+        databaseToSynIdMappingDf = get_synid_database_mappingdf(syn,
+                                                                project_id=project_id)
 
     synId = lookup_dataframe_value(databaseToSynIdMappingDf, "Id",
                                    'Database == "{}"'.format(tableName))

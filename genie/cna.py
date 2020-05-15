@@ -86,14 +86,14 @@ class cna(FileTypeFormat):
 
     _process_kwargs = ["newPath", 'databaseToSynIdMappingDf']
 
-    _validation_kwargs = ['nosymbol_check']
+    _validation_kwargs = ['nosymbol_check', 'project_id']
 
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == \
             "data_CNA_{}.txt".format(self.center)
 
-    def _process(self, cnaDf):
+    def _process(self, cnaDf, databaseToSynIdMappingDf):
         cnaDf.rename(columns={
             cnaDf.columns[0]: cnaDf.columns[0].upper()}, inplace=True)
         cnaDf.rename(columns={
@@ -103,8 +103,9 @@ class cna(FileTypeFormat):
                  if col.upper() == "ENTREZ_GENE_ID"]
         if len(index) > 0:
             del cnaDf[cnaDf.columns[index][0]]
-        bedSynId = process_functions.getDatabaseSynId(
-            self.syn, "bed", test=self.testing)
+
+        bedSynId = databaseToSynIdMappingDf.Id[
+            databaseToSynIdMappingDf['Database'] == "bed"][0]
         bed = self.syn.tableQuery(
             "select Hugo_Symbol, ID from {} where CENTER = '{}'" .format(
                 bedSynId, self.center))
@@ -134,8 +135,7 @@ class cna(FileTypeFormat):
         return(cnaDf)
 
     def process_steps(self, cnaDf, newPath, databaseToSynIdMappingDf):
-
-        newCNA = self._process(cnaDf)
+        newCNA = self._process(cnaDf, databaseToSynIdMappingDf)
 
         centerMafSynId = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
@@ -151,7 +151,7 @@ class cna(FileTypeFormat):
             self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
         return(newPath)
 
-    def _validate(self, cnvDF, nosymbol_check):
+    def _validate(self, cnvDF, nosymbol_check, project_id):
         total_error = ""
         warning = ""
         cnvDF.columns = [col.upper() for col in cnvDF.columns]
@@ -180,8 +180,9 @@ class cna(FileTypeFormat):
         else:
             cnvDF['HUGO_SYMBOL'] = keepSymbols
             if haveColumn and not nosymbol_check:
-                bedSynId = process_functions.getDatabaseSynId(
-                    self.syn, "bed", test=self.testing)
+                databaseToSynIdMappingDf = process_functions.get_synid_database_mappingdf(self.syn, project_id)
+                bedSynId = process_functions.getDatabaseSynId(self.syn, "bed",
+                                                              databaseToSynIdMappingDf=databaseToSynIdMappingDf)
                 bed = self.syn.tableQuery(
                     "select Hugo_Symbol, ID from {} where "
                     "CENTER = '{}'".format(bedSynId, self.center))
