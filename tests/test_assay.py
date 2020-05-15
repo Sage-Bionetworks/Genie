@@ -117,11 +117,13 @@ def test_fillcols__process():
     Add in CENTER, gene_padding, and variant_classifications if missing
     '''
 
-    assay_info_dict = {'SEQ_ASSAY_ID': ['SAGE-Foo_1']}
+    assay_info_dict = {'SEQ_ASSAY_ID': ['SAGE-Foo_1'],
+                       'SEQ_PIPELINE_ID': ['SAGE_Foo']}
     assay_info_df = pd.DataFrame(assay_info_dict)
     processed_assay_df = ASSAY_INFO._process(assay_info_df)
     expected_assay_df = pd.DataFrame(
         {'SEQ_ASSAY_ID': ['SAGE-FOO-1'],
+         'SEQ_PIPELINE_ID': ['SAGE-FOO'],
          'gene_padding': [10],
          'variant_classifications': [float('nan')],
          'CENTER': ['SAGE']})
@@ -136,12 +138,14 @@ def test_default10__process():
     '''
 
     assay_info_dict = {'SEQ_ASSAY_ID': ['SAGE-1', 'SAGE-2'],
+                       'SEQ_PIPELINE_ID': ['SAGE-1', 'SAGE-2'],
                        'gene_padding': [20, float('nan')],
                        'variant_classifications': ['test', 'test']}
     assay_info_df = pd.DataFrame(assay_info_dict)
     processed_assay_df = ASSAY_INFO._process(assay_info_df)
     expected_assay_df = pd.DataFrame(
         {'SEQ_ASSAY_ID': ['SAGE-1', 'SAGE-2'],
+         'SEQ_PIPELINE_ID': ['SAGE-1', 'SAGE-2'],
          'gene_padding': [20, 10],
          'variant_classifications': ['test', 'test'],
          'CENTER': ['SAGE', 'SAGE']})
