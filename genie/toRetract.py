@@ -26,32 +26,32 @@ def retract_samples(syn, database_synid, col, remove_values):
         print("Nothing to retract")
 
 
-def retract(syn, test=False):
+def retract(syn, project_id):
     '''
     Main retraction function
     
     params:
         syn: synapse object
-        test: use test files or main files. Default is False
+        project_id: Synapse Project ID with a database mapping table
     '''
 
-    patientRetract = syn.tableQuery('select * from %s' % process_functions.getDatabaseSynId(syn, "patientRetraction", test=test))
+    patientRetract = syn.tableQuery('select * from %s' % process_functions.getDatabaseSynId(syn, tableName="patientRetraction", project_id=project_id))
     patientRetractIds = patientRetract.asDataFrame()
     #grab all clinical samples that belong to patients in the patient clinical file and append to sample list
-    sampleClinical = syn.tableQuery('select * from %s' % process_functions.getDatabaseSynId(syn, "sample", test=test))
+    sampleClinical = syn.tableQuery('select * from %s' % process_functions.getDatabaseSynId(syn, tableName="sample", project_id=project_id))
     sampleClinicalDf = sampleClinical.asDataFrame()
     appendSamples = sampleClinicalDf['SAMPLE_ID'][sampleClinicalDf['PATIENT_ID'].isin(patientRetractIds.geniePatientId)]
     
-    sampleRetract = syn.tableQuery('select * from %s' % process_functions.getDatabaseSynId(syn, "sampleRetraction", test=test))
+    sampleRetract = syn.tableQuery('select * from %s' % process_functions.getDatabaseSynId(syn, tableName="sampleRetraction", project_id=project_id))
     sampleRetractIds = sampleRetract.asDataFrame()
 
     allRetractedSamples = sampleRetractIds['genieSampleId'].append(appendSamples)
 
     #Only need to retract clinical data, because the rest of the data is filtered by clinical data
     #Sample Clinical Data
-    retract_samples(syn,process_functions.getDatabaseSynId(syn,"sample", test=test),"SAMPLE_ID",allRetractedSamples)
+    retract_samples(syn,process_functions.getDatabaseSynId(syn, tableName="sample", project_id=project_id),"SAMPLE_ID",allRetractedSamples)
     #Patient Clinical Data
-    retract_samples(syn, process_functions.getDatabaseSynId(syn, "patient", test=test),"PATIENT_ID",patientRetractIds['geniePatientId'])
+    retract_samples(syn, process_functions.getDatabaseSynId(syn, tableName="patient", project_id=project_id),"PATIENT_ID",patientRetractIds['geniePatientId'])
 
 def main():
     '''
@@ -59,11 +59,11 @@ def main():
     '''
     parser = argparse.ArgumentParser(description='Sample retraction')
     parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
-    parser.add_argument("--test", action='store_true',help="Run test")
+    parser.add_argument("--project_id", type=str, help="Synapse Project ID to use.")
     parser.add_argument("--debug", action='store_true',help="Synapse Debug Feature")
     args = parser.parse_args()
     syn = process_functions.synLogin(args.pemFile, debug=args.debug)
-    retract(syn, args.test)
+    retract(syn, args.project_id)
 
 if __name__ == "__main__":
     main()
