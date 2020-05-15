@@ -787,7 +787,6 @@ class TestValidation:
 
     def test_validation(self):
         """Test validation steps"""
-        testing = False
         modified_on = 1561143558000
         process = "main"
         databaseToSynIdMapping = {'Database': ["clinical", 'validationStatus', 'errorTracker'],
@@ -823,17 +822,16 @@ class TestValidation:
                           return_value=new_tables),\
              patch.object(input_to_database, "update_status_and_error_tables"):
             valid_filedf = input_to_database.validation(
-                syn, center, process,
+                syn, "syn123", center, process,
                 entities, databaseToSynIdMappingDf,
-                testing, oncotree_link, genie.config.PROCESS_FILES
+                oncotree_link, genie.config.PROCESS_FILES
             )
             assert patch_query.call_count == 2
             patch_validatefile.assert_called_once_with(
-                syn, entity,
+                syn, "syn123", entity,
                 validationstatus_mock,
                 errortracking_mock,
-                center='SAGE',
-                testing=False,
+                center='SAGE', threads=1,
                 oncotree_link=oncotree_link,
                 format_registry=genie.config.PROCESS_FILES
             )
