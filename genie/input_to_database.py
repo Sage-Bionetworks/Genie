@@ -22,6 +22,12 @@ from . import toRetract
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+DUPLICATED_FILE_ERROR = (
+    "Duplicated filename! Files should be uploaded as new versions "
+    "and the entire dataset should be uploaded."
+)
+
 '''
 TODO:
 Could potentially get all the inforamation of the file entity right here
@@ -435,6 +441,18 @@ def create_and_archive_maf_database(syn, database_synid_mappingdf):
 
 
 def append_duplication_errors(duplicated_filesdf, user_message_dict):
+    """Duplicated files can occur because centers can upload files with the
+    same filename in different folders.  This is to append duplication
+    errors to the list of errors to email
+
+    Args:
+        duplicated_filesdf: Dataframe of duplciated files
+        user_message_dict: Dictionary containing list of error messages to
+                           send to each user.
+
+    Returns:
+        Dictionary containing list of error messages to send to each user.
+    """
     duplication_error = (
         "Duplicated filename! Files should be uploaded as new versions "
         "and the entire dataset should be uploaded."
@@ -454,11 +472,6 @@ def append_duplication_errors(duplicated_filesdf, user_message_dict):
             user_message_dict[user].append(file_messages)
     return user_message_dict
 
-
-DUPLICATED_FILE_ERROR = (
-    "Duplicated filename! Files should be uploaded as new versions "
-    "and the entire dataset should be uploaded."
-)
 
 def get_duplicated_files(validation_statusdf):
     '''
