@@ -715,6 +715,8 @@ def validation(syn, center, process,
     input_valid_statuses = []
     invalid_errors = []
 
+    # This default dict will capture all the error messages to send to
+    # particular users
     user_message_dict = defaultdict(list)
 
     for ents in center_files:
@@ -749,7 +751,9 @@ def validation(syn, center, process,
     error_trackingdf = new_tables['error_trackingdf']
     duplicated_filesdf = new_tables['duplicated_filesdf']
 
-    # Append duplication errors to email list to send
+    # In GENIE, we not only want to send out file format errors, but
+    # also when there are duplicated errors.  The function below will
+    # append duplication errors as an email to send to users (if applicable)
     user_message_dict = append_duplication_errors(duplicated_filesdf,
                                                   user_message_dict)
 
