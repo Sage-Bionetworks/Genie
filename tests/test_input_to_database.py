@@ -725,7 +725,7 @@ class TestValidation:
         dupsdf = input_to_database.get_duplicated_files(self.no_dupsdf)
         assert dupsdf.equals(self.empty_dup)
 
-    def test_update_tables_with_duplicates(self):
+    def test__update_tables_content(self):
         """Tests duplicates are added to the tables and errors/statues are
         updated
         """
@@ -738,7 +738,7 @@ class TestValidation:
         with patch.object(input_to_database,
                           "get_duplicated_files",
                           return_value=self.duplicateddf):
-            updated_tables = input_to_database.update_tables_with_duplicates(
+            updated_tables = input_to_database._update_tables_content(
                 self.validation_statusdf,
                 self.errors_df
             )
@@ -746,7 +746,7 @@ class TestValidation:
         assert updated_tables['error_trackingdf'].equals(errorsdf)
         assert updated_tables['validation_statusdf'].equals(validationdf)
 
-    def test_update_tables_with_duplicates__remove_old_duplicates(self):
+    def test__update_tables_content__remove_old_duplicates(self):
         """Tests that old duplicates are removed"""
         errorsdf = self.errors_df.copy()
         errorsdf['errors'] = input_to_database.DUPLICATED_FILE_ERROR
@@ -756,7 +756,7 @@ class TestValidation:
         with patch.object(input_to_database,
                           "get_duplicated_files",
                           return_value=self.empty_dup):
-            updated_tables = input_to_database.update_tables_with_duplicates(
+            updated_tables = input_to_database._update_tables_content(
                 validationdf,
                 errorsdf
             )
@@ -764,7 +764,7 @@ class TestValidation:
         assert updated_tables['error_trackingdf'].empty
         assert updated_tables['validation_statusdf'].empty
 
-    def test_update_tables_with_duplicates__remove_old_errors(self):
+    def test__update_tables_content__remove_old_errors(self):
         """Tests that old errors are removed"""
         errorsdf = self.errors_df.copy()
         errorsdf['errors'] = 'foo'
@@ -774,7 +774,7 @@ class TestValidation:
         with patch.object(input_to_database,
                           "get_duplicated_files",
                           return_value=self.empty_dup):
-            updated_tables = input_to_database.update_tables_with_duplicates(
+            updated_tables = input_to_database._update_tables_content(
                 validationdf,
                 errorsdf
             )
@@ -816,7 +816,7 @@ class TestValidation:
                           return_value=self.validation_statusdf),\
              patch.object(input_to_database, "build_error_tracking_table",
                           return_value=self.errors_df),\
-             patch.object(input_to_database, "update_tables_with_duplicates",
+             patch.object(input_to_database, "_update_tables_content",
                           return_value=new_tables),\
              patch.object(input_to_database, "update_status_and_error_tables"):
             valid_filedf = input_to_database.validation(

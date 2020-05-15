@@ -608,7 +608,7 @@ def update_status_and_error_tables(syn,
                                      to_delete=True)
 
 
-def update_tables_with_duplicates(validation_statusdf, error_trackingdf):
+def _update_tables_content(validation_statusdf, error_trackingdf):
     """Update validation status and error tracking dataframes with duplicated
     files.  Also update the error table to only contain errors - centers
     may have fixed their files so will want to remove old errors.
@@ -743,8 +743,8 @@ def validation(syn, center, process,
     validation_statusdf = build_validation_status_table(input_valid_statuses)
     error_trackingdf = build_error_tracking_table(invalid_errors)
 
-    new_tables = update_tables_with_duplicates(validation_statusdf,
-                                               error_trackingdf)
+    new_tables = _update_tables_content(validation_statusdf,
+                                        error_trackingdf)
     validation_statusdf = new_tables['validation_statusdf']
     error_trackingdf = new_tables['error_trackingdf']
     duplicated_filesdf = new_tables['duplicated_filesdf']
