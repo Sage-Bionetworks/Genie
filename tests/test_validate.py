@@ -4,7 +4,10 @@ from mock import patch
 import pandas as pd
 import pytest
 import synapseclient
-from synapseclient.exceptions import SynapseHTTPError
+try:
+    from synapseclient.exceptions import SynapseHTTPError
+except ModuleNotFoundError:
+    from synapseclient.core.exceptions import SynapseHTTPError
 
 from genie import validate, clinical, process_functions
 
@@ -38,7 +41,7 @@ def test_perfect_determine_filetype(ent_list, fileformat):
     Tests determining of file type through filenames
     Parameters are passed in from filename_fileformat_map
     """
-    validator = validate.GenieValidationHelper(syn, CENTER, ent_list)
+    validator = validate.GenieValidationHelper(syn, None, CENTER, ent_list)
     assert validator.determine_filetype() == fileformat
 
 
@@ -48,7 +51,8 @@ def test_wrongfilename_noerror_determine_filetype():
     when raise_error flag is False
     '''
     ent_list = [WRONG_NAME_ENT]
-    validator = validate.GenieValidationHelper(syn, center=CENTER,
+    validator = validate.GenieValidationHelper(syn, project_id=None,
+                                               center=CENTER,
                                                entitylist=ent_list)
     assert validator.file_type is None
 
@@ -109,7 +113,8 @@ def test_valid_validate_single_file():
                                     warning_string)) as mock_genie_class,\
          patch.object(validate, "collect_errors_and_warnings",
                       return_value=expected_message) as mock_determine:
-        validator = validate.GenieValidationHelper(syn, center=CENTER,
+        validator = validate.GenieValidationHelper(syn, project_id=None,
+                                                   center=CENTER,
                                                    entitylist=entitylist)
         valid, message = validator.validate_single_file(oncotree_link=None,
                                                         nosymbol_check=False)
@@ -134,7 +139,7 @@ def test_filetype_validate_single_file():
     """
     entitylist = [WRONG_NAME_ENT]
     expected_error = "----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
-    validator = validate.GenieValidationHelper(syn, CENTER, entitylist)
+    validator = validate.GenieValidationHelper(syn, None, CENTER, entitylist)
 
     valid, message = validator.validate_single_file()
     assert message == expected_error
@@ -152,7 +157,8 @@ def test_wrongfiletype_validate_single_file():
     with patch.object(validate.GenieValidationHelper,
                       "determine_filetype",
                       return_value=None) as mock_determine_filetype:
-        validator = validate.GenieValidationHelper(syn=syn, center=CENTER,
+        validator = validate.GenieValidationHelper(syn=syn, project_id=None,
+                                                   center=CENTER,
                                                    entitylist=entitylist)
         valid, message = validator.validate_single_file()
 
@@ -216,11 +222,12 @@ class argparser:
     oncotree_link = "link"
     parentid = None
     filetype = None
-    testing = False
+    project_id = None
     center = "try"
     filepath = "path.csv"
     nosymbol_check = False
     format_registry_packages = ["genie"]
+    project_id = "syn1234"
 
     def asDataFrame(self):
         database_dict = {"Database": ["centerMapping", 'oncotreeLink'],
@@ -280,11 +287,12 @@ def test_perform_validate():
          patch.object(validate, "_upload_to_synapse") as patch_syn_upload:
         validate._perform_validate(syn, arg)
         patch_check_parentid.assert_called_once_with(syn, arg.parentid)
-        patch_getdb.assert_called_once_with(syn, test=arg.testing)
+        patch_getdb.assert_called_once_with(syn, project_id=arg.project_id)
         patch_syn_tablequery.assert_called_once_with('select * from syn123')
         patch_check_center.assert_called_once_with(arg.center, ["try", "foo"])
         patch_get_onco.assert_called_once()
         patch_validate.assert_called_once_with(oncotree_link=arg.oncotree_link,
-                                               nosymbol_check=arg.nosymbol_check)
+                                               nosymbol_check=arg.nosymbol_check,
+                                               project_id=arg.project_id)
         patch_syn_upload.assert_called_once_with(
             syn, arg.filepath, valid, parentid=arg.parentid)

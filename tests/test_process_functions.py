@@ -1,5 +1,6 @@
-import pytest
 import mock
+from mock import patch
+import pytest
 
 import pandas as pd
 import synapseclient
@@ -14,7 +15,7 @@ DATABASE_DF = pd.DataFrame({
     "foo": [1, 2, 3],
     "baz": [float('nan'), float('nan'), float('nan')]})
 DATABASE_DF.index = ['1_3', '2_3', '3_5']
-
+ENTITY = synapseclient.Project("foo", annotations={"dbMapping": ["syn1234"]})
 
 def test_valid__check_valid_df():
     genie.process_functions._check_valid_df(DATABASE_DF, "test")
@@ -266,15 +267,6 @@ def test_norows__delete_rows():
     assert delete_rows.empty
 
 
-@pytest.fixture(params=[
-    # tuple with (input, expectedOutput)
-    (False, False, "syn10967259"),
-    (False, True, "syn12094210"),
-    (True, False, "syn11600968")])
-def database_map(request):
-    return request.param
-
-
 class argparser:
     def asDataFrame(self):
         database_dict = {"Database": ["centerMapping"],
@@ -283,22 +275,21 @@ class argparser:
         return(databasetosynid_mappingdf)
 
 
-def test_get_synid_database_mappingdf(database_map):
+def test_get_synid_database_mappingdf():
     '''
     Test getting database mapping config
     no flags
     staging flag
     test flag
     '''
-    (test, staging, synid) = database_map
     arg = argparser()
-    with mock.patch(
-            "genie.process_functions.get_syntabledf",
-            return_value=arg.asDataFrame()) as patch_gettabledf:
+    with patch.object(syn, "get", return_value=ENTITY), \
+         patch.object(genie.process_functions, "get_syntabledf",
+                      return_value=arg.asDataFrame()) as patch_gettabledf:
         df = genie.process_functions.get_synid_database_mappingdf(
-            syn, test=test, staging=staging)
+            syn, project_id=None)
         patch_gettabledf.assert_called_once_with(
-            syn, "SELECT * FROM {}".format(synid))
+            syn, "SELECT * FROM {}".format(ENTITY.dbMapping[0]))
         assert df.equals(arg.asDataFrame())
 
 
@@ -307,8 +298,8 @@ def test_get_syntabledf():
     Test helper function that queries synapse tables and returns dataframes
     '''
     arg = argparser()
-    with mock.patch.object(
-            syn, "tableQuery", return_value=arg) as patch_syn_tablequery:
+    with patch.object(syn, "tableQuery",
+                      return_value=arg) as patch_syn_tablequery:
         querystring = "select * from foo"
         df = genie.process_functions.get_syntabledf(syn, querystring)
         patch_syn_tablequery.assert_called_once_with(querystring)

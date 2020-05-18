@@ -54,6 +54,8 @@ class Assayinfo(FileTypeFormat):
         seq_assay_ids = [assay.upper().replace('_', '-')
                          for assay in df['SEQ_ASSAY_ID']]
         df['SEQ_ASSAY_ID'] = seq_assay_ids
+        df['SEQ_PIPELINE_ID'] = [assay.upper().replace('_', '-')
+                                 for assay in df['SEQ_PIPELINE_ID']]
         if process_functions.checkColExist(df, "gene_padding"):
             df['gene_padding'] = df['gene_padding'].fillna(10)
             df['gene_padding'] = df['gene_padding'].astype(int)
