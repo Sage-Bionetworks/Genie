@@ -19,7 +19,7 @@ These are tools or packages you will need, to be able to reproduce these results
 
 ## File Validator
 ```
-pip install synapsegenie
+pip install aacrgenie
 genie -v
 ```
 
