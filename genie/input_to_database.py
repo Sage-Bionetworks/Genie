@@ -359,11 +359,16 @@ def processfiles(syn, validfiles, center, path_to_genie,
             databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
         vcf_files = validfiles['fileType'] == "vcf"
         valid_vcfs = validfiles['path'][vcf_files].tolist()
+        # TODO: Don't hardcode this
+        genome_nexus_pkg = "/home/tyu/annotation-tools"
+        # Certificate to use GENIE Genome Nexus
+        syn.get("syn22053204", downloadLocation=genome_nexus_pkg)
+
         process_mutation.process_mutation_workflow(
             syn=syn,
             center=syn,
             mutation_files=valid_vcfs,
-            genie_annotation_pkg="/root/genie-annotation-pkg",
+            genie_annotation_pkg=genome_nexus_pkg,
             maf_tableid=maf_tableid,
             flatfiles_synid=flatfiles_synid
         )
