@@ -92,7 +92,7 @@ def get_center_input_files(syn, synid, center, process="main", downloadFile=True
             # This is to remove vcfs from being validated during main
             # processing. Often there are too many vcf files, and it is
             # not necessary for them to be run everytime.
-            if name.endswith(".vcf") and process != "vcf":
+            if name.endswith(".vcf") and process != "mutation":
                 continue
 
             ent = syn.get(ent_synid, downloadFile=downloadFile)
@@ -359,19 +359,24 @@ def processfiles(syn, validfiles, center, path_to_genie,
             databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
         vcf_files = validfiles['fileType'] == "vcf"
         valid_vcfs = validfiles['path'][vcf_files].tolist()
-        # TODO: Don't hardcode this
-        genome_nexus_pkg = "/home/tyu/annotation-tools"
-        # Certificate to use GENIE Genome Nexus
-        syn.get("syn22053204", downloadLocation=genome_nexus_pkg)
-
-        process_mutation.process_mutation_workflow(
-            syn=syn,
-            center=center,
-            mutation_files=valid_vcfs,
-            genie_annotation_pkg=genome_nexus_pkg,
-            maf_tableid=maf_tableid,
-            flatfiles_synid=flatfiles_synid
-        )
+        if valid_vcfs:
+            # TODO: Don't hardcode this
+            genome_nexus_pkg = "/home/tyu/annotation-tools"
+            # Certificate to use GENIE Genome Nexus
+            syn.get("syn22053204", downloadLocation=genome_nexus_pkg)
+            # Genome Nexus Jar file
+            syn.get("syn22084320",
+                    downloadLocation=genome_nexus_pkg)
+            process_mutation.process_mutation_workflow(
+                syn=syn,
+                center=center,
+                mutation_files=valid_vcfs,
+                genie_annotation_pkg=genome_nexus_pkg,
+                maf_tableid=maf_tableid,
+                flatfiles_synid=flatfiles_synid
+            )
+        else:
+            logger.info("No mutation files")
 
     logger.info("ALL DATA STORED IN DATABASE")
 
@@ -691,7 +696,7 @@ def validation(syn, project_id, center, process,
 
     # Make sure the vcf validation statuses don't get wiped away
     # If process is not vcf, the vcf files are not downloaded
-    add_query_str = "and name not like '%.vcf'" if process != "vcf" else ''
+    add_query_str = "and name not like '%.vcf'" if process != "mutation" else ''
     # id, md5, status, name, center, modifiedOn, fileType
     validation_status_table = syn.tableQuery(
         "SELECT * FROM {synid} "

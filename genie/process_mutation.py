@@ -1,4 +1,5 @@
 """Process mutation files"""
+import logging
 import os
 import shutil
 import subprocess
@@ -6,12 +7,11 @@ import tempfile
 
 import pandas as pd
 import synapseclient
-try:
-    from synapesclient.exceptions import SynapseTimeoutError
-except ModuleNotFoundError:
-    from synapseclient.core.exceptions import SynapseTimeoutError
+from synapseclient.core.exceptions import SynapseTimeoutError
 
 from . import process_functions
+
+logger = logging.getLogger(__name__)
 
 WORKDIR = os.path.expanduser("~/.synapseCache")
 # Some columns are already capitalized, so they aren't included here
@@ -127,21 +127,22 @@ def annotate_mutation(center: str, mutation_files: list,
     output_files_dir = tempfile.mkdtemp(dir=WORKDIR)
 
     for mutation_file in mutation_files:
-        shutil.copyfile(mutation_file, input_files_dir)
-
+        shutil.copy(mutation_file, input_files_dir)
+    merged_maf_path = os.path.join(
+        output_files_dir, f"data_mutations_extended_{center}.txt"
+    )
     annotater_cmd = ['bash', os.path.join(genie_annotation_pkg,
                                           'annotation_suite_wrapper.sh'),
                      f'-i={input_files_dir}',
                      f'-o={output_files_dir}',
-                     f'-m=data_mutations_extended_{center}.txt',
+                     f'-m={merged_maf_path}',
                      f'-c={center}',
                      '-s=WXS',
                      f'-p={genie_annotation_pkg}']
 
     subprocess.check_call(annotater_cmd)
 
-    return os.path.join(output_files_dir,
-                        "annotated", f"data_mutations_extended_{center}.txt")
+    return merged_maf_path
 
 
 def append_or_createdf(dataframe: 'DataFrame', filepath: str):
@@ -152,7 +153,7 @@ def append_or_createdf(dataframe: 'DataFrame', filepath: str):
         filepath: Filepath to append or create
 
     """
-    if os.stat(filepath).st_size == 0:
+    if not os.path.exists(filepath) or os.stat(filepath).st_size == 0:
         dataframe.to_csv(filepath, sep="\t", index=False)
     else:
         dataframe.to_csv(filepath, sep="\t", mode='a', index=False,
@@ -232,7 +233,7 @@ def split_and_store_maf(syn: 'Synapse', center: str, maf_tableid: str,
         WORKDIR, center, "staging",
         f"data_mutations_extended_{center}_MAF_narrow.txt"
     )
-    maf_chunks = pd.read_csv(annotated_maf_path, chunksize=100000)
+    maf_chunks = pd.read_csv(annotated_maf_path, sep="\t", chunksize=100000)
 
     for maf_chunk in maf_chunks:
         maf_chunk = format_maf(maf_chunk, center)
