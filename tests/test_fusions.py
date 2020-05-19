@@ -1,4 +1,5 @@
 import mock
+from mock import patch
 import pytest
 
 import pandas as pd
@@ -28,7 +29,8 @@ table_query_results_map = {
     ("select Hugo_Symbol, ID from syn8457748 where CENTER = 'SAGE'",):
         createMockTable(symbols),
 }
-
+ENTITY = synapseclient.Project("testing",
+                               annotations={'dbMapping': ["syn10967259"]})
 
 syn = mock.create_autospec(synapseclient.Synapse)
 syn.tableQuery.side_effect = table_query_results
@@ -60,7 +62,7 @@ def test_processing():
         "METHOD": ["foo", 'foo', 'foo'],
         "FRAME": ["foo", 'foo', 'foo']})
 
-    newFusionDf = fusionClass._process(fusionDf)
+    newFusionDf = fusionClass._process(fusionDf, databaseMapping)
     assert expectedFusionDf.equals(newFusionDf[expectedFusionDf.columns])
 
 
@@ -79,10 +81,10 @@ def test_validation():
         "RNA_SUPPORT": ["foo", 'foo', 'foo'],
         "METHOD": ["foo", 'foo', 'foo'],
         "FRAME": ["foo", 'foo', 'foo']})
-
-    error, warning = fusionClass._validate(fusionDf, False)
-    assert error == ""
-    assert warning == ""
+    with patch.object(syn, "get", return_value=ENTITY):
+        error, warning = fusionClass._validate(fusionDf, False, "syn1234")
+        assert error == ""
+        assert warning == ""
 
     fusionDf = pd.DataFrame({
         "HUGO_SYMBOL": [float('nan'), 'AAK1', 'AAAS'],
@@ -93,17 +95,18 @@ def test_validation():
         "RNA_SUPPORT": ["foo", 'foo', 'foo'],
         "METHOD": ["foo", 'foo', 'foo'],
         "FRAME": ["foo", 'foo', 'foo']})
+    with patch.object(syn, "get", return_value=ENTITY):
+        error, warning = fusionClass._validate(fusionDf, False, "syn1234")
+        expectedErrors = (
+            "Your fusion file must at least have these headers: ENTREZ_GENE_ID.\n"
+            "Your fusion file should not have any NA/blank Hugo Symbols.\n")
 
-    error, warning = fusionClass._validate(fusionDf, False)
-    expectedErrors = (
-        "Your fusion file must at least have these headers: ENTREZ_GENE_ID.\n"
-        "Your fusion file should not have any NA/blank Hugo Symbols.\n")
-
-    assert error == expectedErrors
-    assert warning == ""
+        assert error == expectedErrors
+        assert warning == ""
     # Do not check symbols
-    error, warning = fusionClass._validate(fusionDf, True)
-    expectedErrors = (
-        "Your fusion file must at least have these headers: ENTREZ_GENE_ID.\n")
-    assert error == expectedErrors
-    assert warning == ""
+    with patch.object(syn, "get", return_value=ENTITY):
+        error, warning = fusionClass._validate(fusionDf, True, "syn1234")
+        expectedErrors = (
+            "Your fusion file must at least have these headers: ENTREZ_GENE_ID.\n")
+        assert error == expectedErrors
+        assert warning == ""
