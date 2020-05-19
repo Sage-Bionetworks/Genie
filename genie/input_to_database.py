@@ -366,7 +366,7 @@ def processfiles(syn, validfiles, center, path_to_genie,
 
         process_mutation.process_mutation_workflow(
             syn=syn,
-            center=syn,
+            center=center,
             mutation_files=valid_vcfs,
             genie_annotation_pkg=genome_nexus_pkg,
             maf_tableid=maf_tableid,
