@@ -1,4 +1,4 @@
-![genie banner](genie_banner.png)
+![genie banner](https://raw.githubusercontent.com/Sage-Bionetworks/Genie/master/genie_banner.png)
 
 # AACR Project GENIE
 
