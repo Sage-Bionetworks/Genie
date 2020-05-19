@@ -12,7 +12,7 @@ with open(os.path.join(here, "genie", "__version__.py")) as f:
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-setup(name='synapsegenie',
+setup(name='aacrgenie',
       version=about["__version__"],
       description='Processing and validation for GENIE',
       long_description=long_description,
