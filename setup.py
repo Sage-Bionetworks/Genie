@@ -28,7 +28,7 @@ setup(name='aacrgenie',
       scripts=['bin/input_to_database.py',
                'bin/database_to_staging.py'],
       install_requires=['pandas>=0.23.0',
-                        'synapseclient>=1.9,<2',
+                        'synapseclient>=1.9.4',
                         'httplib2>=0.11.3',
                         'pycrypto>=2.6.1',
                         'PyYAML>=5.1'])
