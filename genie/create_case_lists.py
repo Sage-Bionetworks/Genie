@@ -3,6 +3,7 @@
 Creates case lists per cancer type
 """
 import argparse
+from collections import defaultdict
 import csv
 import os
 
@@ -29,19 +30,13 @@ def create_case_lists_map(clinical_file_name):
         list: Clinical samples
     """
     with open(clinical_file_name, 'rU') as clinical_file:
-        clinical_file_map = {}
-        seq_assay_map = {}
+        seq_assay_map = defaultdict(list)
+        clinical_file_map = defaultdict(list)
         clin_samples = []
         reader = csv.DictReader(clinical_file, dialect='excel-tab')
         for row in reader:
-            if row['CANCER_TYPE'] not in clinical_file_map:
-                clinical_file_map[row['CANCER_TYPE']] = [row['SAMPLE_ID']]
-            else:
-                clinical_file_map[row['CANCER_TYPE']].append(row['SAMPLE_ID'])
-            if seq_assay_map.get(row['SEQ_ASSAY_ID']):
-                seq_assay_map[row['SEQ_ASSAY_ID']].append(row['SAMPLE_ID'])
-            else:
-                seq_assay_map[row['SEQ_ASSAY_ID']] = [row['SAMPLE_ID']]
+            clinical_file_map[row['CANCER_TYPE']].append(row['SAMPLE_ID'])
+            seq_assay_map[row['SEQ_ASSAY_ID']].append(row['SAMPLE_ID'])
             clin_samples.append(row['SAMPLE_ID'])
     return clinical_file_map, seq_assay_map, clin_samples
 
