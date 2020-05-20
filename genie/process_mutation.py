@@ -147,27 +147,6 @@ def process_mutation_workflow(syn: Synapse, center: str,
     return annotated_maf_path
 
 
-# def process_mutation_workflow(syn: Synapse, center: str,
-#                               mutation_files: list,
-#                               genie_annotation_pkg: str,
-#                               maf_tableid: str, flatfiles_synid: str) -> str:
-#     """Process vcf/maf workflow"""
-
-#     annotated_maf_path = annotate_mutation(
-#         center=center,
-#         mutation_files=mutation_files,
-#         genie_annotation_pkg=genie_annotation_pkg)
-
-#     # Split into narrow maf and store into db / flat file
-#     split_and_store_maf(syn=syn,
-#                         center=center,
-#                         maf_tableid=maf_tableid,
-#                         annotated_maf_path=annotated_maf_path,
-#                         flatfiles_synid=flatfiles_synid)
-
-#     return annotated_maf_path
-
-
 def annotate_mutation(center: str, mutation_files: list,
                       genie_annotation_pkg: str,
                       workdir: str) -> str:
@@ -218,23 +197,28 @@ def append_or_createdf(dataframe: pd.DataFrame, filepath: str):
                          header=None)
 
 
-def store_full_maf(syn: 'Synapse', filepath: str, parentid: str):
-    """Stores full maf file"""
+def store_full_maf(syn: Synapse, filepath: str, parentid: str):
+    """Stores full maf file
+
+    Args:
+        syn: Synapse connection
+        filepath: Path to file
+        parentid: Synapse container id
+
+    """
     syn.store(synapseclient.File(filepath, parentId=parentid))
 
 
 def store_narrow_maf(syn: Synapse, filepath: str, maf_tableid: str):
-    '''
-    Stores the processed maf
-    There is a isNarrow option, but note that the number of rows
-    of the maf file DOES NOT change in this function
+    """
+    Stores the narrow maf in Synapse Table
 
     Args:
-        filePath: Path to maf file
-        mafSynId: database synid
-        centerMafSynid: center flat file folder synid
-        isNarrow: Is the file a narrow maf. Defaul to False.
-    '''
+        syn: Synapse connection
+        filepath: Path to maf file
+        maf_tableid: database synid
+
+    """
     logger.info('STORING %s' % filepath)
     database = syn.get(maf_tableid)
     try:
