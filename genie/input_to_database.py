@@ -300,8 +300,7 @@ def validatefile(syn, project_id, entities, validation_status_table, error_track
 def processfiles(syn, validfiles, center, path_to_genie,
                  center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
                  processing="main"):
-    '''
-    Processing validated files
+    """Processing validated files
 
     Args:
         syn: Synapse object
@@ -313,8 +312,7 @@ def processfiles(syn, validfiles, center, path_to_genie,
         oncotree_link: Link to oncotree
         databaseToSynIdMappingDf: Database to synapse id mapping dataframe
         processing: Processing type. Defaults to main
-        reference: Reference file for vcf2maf
-    '''
+    """
     logger.info("PROCESSING {} FILES: {}".format(center, len(validfiles)))
     center_staging_folder = os.path.join(path_to_genie, center)
     center_staging_synid = center_mapping_df.query(
@@ -347,30 +345,16 @@ def processfiles(syn, validfiles, center, path_to_genie,
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf
                 )
     else:
-        maf_tableid = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == 'vcf2maf'][0]
-        flatfiles_synid = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
-        mutation_files = validfiles['fileType'].isin(["maf", "vcf"])
-        valid_mutation_files = validfiles['path'][mutation_files].tolist()
-        if valid_mutation_files:
-            # TODO: Don't hardcode this
-            genome_nexus_pkg = "/home/tyu/annotation-tools"
-            # Certificate to use GENIE Genome Nexus
-            syn.get("syn22053204", downloadLocation=genome_nexus_pkg)
-            # Genome Nexus Jar file
-            syn.get("syn22084320",
-                    downloadLocation=genome_nexus_pkg)
-            process_mutation.process_mutation_workflow(
-                syn=syn,
-                center=center,
-                mutation_files=valid_mutation_files,
-                genie_annotation_pkg=genome_nexus_pkg,
-                maf_tableid=maf_tableid,
-                flatfiles_synid=flatfiles_synid
-            )
-        else:
-            logger.info("No mutation files")
+        # TODO: Don't hardcode this
+        genome_nexus_pkg = "/home/tyu/annotation-tools"
+        process_mutation.process_mutation_workflow(
+            syn=syn,
+            center=center,
+            validfiles=validfiles,
+            genie_annotation_pkg=genome_nexus_pkg,
+            database_mappingdf=databaseToSynIdMappingDf,
+            workdir=path_to_genie
+        )
 
     logger.info("ALL DATA STORED IN DATABASE")
 

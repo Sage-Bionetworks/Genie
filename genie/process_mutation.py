@@ -87,34 +87,86 @@ MAF_COL_MAPPING = {
 }
 
 
-def rename_column_headers(dataframe):
-    """Rename dataframe column headers"""
+def rename_column_headers(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """Rename dataframe column headers.  The headers must be compliant
+    with GDC MAF standards"""
     dataframe = dataframe.rename(columns=MAF_COL_MAPPING)
     return dataframe
 
 
 def process_mutation_workflow(syn: Synapse, center: str,
-                              mutation_files: list,
+                              validfiles: pd.DataFrame,
                               genie_annotation_pkg: str,
-                              maf_tableid: str, flatfiles_synid: str):
-    """Process vcf/maf workflow"""
+                              database_mappingdf: str,
+                              workdir: str) -> str:
+    """Process vcf/maf workflow
+
+    Args:
+        syn: Synapse connection
+        center: Center name
+        validfiles: Center validated files
+        genie_annotation_pkg: Genome Nexus annotation tools
+        database_mappingdf: Database to synapse id mapping dataframe
+        workdir: Working directory
+
+    Returns:
+        Annotated Maf Path"""
+    mutation_files = validfiles['fileType'].isin(["maf", "vcf"])
+    valid_mutation_files = validfiles['path'][mutation_files].tolist()
+    if valid_mutation_files:
+        return
+    # Certificate to use GENIE Genome Nexus
+    syn.get("syn22053204", downloadLocation=genie_annotation_pkg)
+    # Genome Nexus Jar file
+    syn.get("syn22084320",
+            downloadLocation=genie_annotation_pkg)
+
     annotated_maf_path = annotate_mutation(
         center=center,
         mutation_files=mutation_files,
-        genie_annotation_pkg=genie_annotation_pkg)
+        genie_annotation_pkg=genie_annotation_pkg,
+        workdir=workdir
+    )
 
+    maf_tableid = database_mappingdf.Id[
+        database_mappingdf['Database'] == 'vcf2maf'][0]
+    flatfiles_synid = database_mappingdf.Id[
+        database_mappingdf['Database'] == "centerMaf"][0]
     # Split into narrow maf and store into db / flat file
     split_and_store_maf(syn=syn,
                         center=center,
                         maf_tableid=maf_tableid,
                         annotated_maf_path=annotated_maf_path,
-                        flatfiles_synid=flatfiles_synid)
+                        flatfiles_synid=flatfiles_synid,
+                        workdir=workdir)
 
     return annotated_maf_path
 
 
+# def process_mutation_workflow(syn: Synapse, center: str,
+#                               mutation_files: list,
+#                               genie_annotation_pkg: str,
+#                               maf_tableid: str, flatfiles_synid: str) -> str:
+#     """Process vcf/maf workflow"""
+
+#     annotated_maf_path = annotate_mutation(
+#         center=center,
+#         mutation_files=mutation_files,
+#         genie_annotation_pkg=genie_annotation_pkg)
+
+#     # Split into narrow maf and store into db / flat file
+#     split_and_store_maf(syn=syn,
+#                         center=center,
+#                         maf_tableid=maf_tableid,
+#                         annotated_maf_path=annotated_maf_path,
+#                         flatfiles_synid=flatfiles_synid)
+
+#     return annotated_maf_path
+
+
 def annotate_mutation(center: str, mutation_files: list,
-                      genie_annotation_pkg: str) -> str:
+                      genie_annotation_pkg: str,
+                      workdir: str) -> str:
     """Process vcf/maf files
 
     Args:
@@ -125,8 +177,8 @@ def annotate_mutation(center: str, mutation_files: list,
     Returns:
         Path to final maf
     """
-    input_files_dir = tempfile.mkdtemp(dir=WORKDIR)
-    output_files_dir = tempfile.mkdtemp(dir=WORKDIR)
+    input_files_dir = tempfile.mkdtemp(dir=workdir)
+    output_files_dir = tempfile.mkdtemp(dir=workdir)
 
     for mutation_file in mutation_files:
         shutil.copy(mutation_file, input_files_dir)
@@ -167,7 +219,7 @@ def store_full_maf(syn: 'Synapse', filepath: str, parentid: str):
     syn.store(synapseclient.File(filepath, parentId=parentid))
 
 
-def store_narrow_maf(syn: 'Synapse', filepath: str, maf_tableid: str):
+def store_narrow_maf(syn: Synapse, filepath: str, maf_tableid: str):
     '''
     Stores the processed maf
     There is a isNarrow option, but note that the number of rows
@@ -191,8 +243,15 @@ def store_narrow_maf(syn: 'Synapse', filepath: str, maf_tableid: str):
         pass
 
 
-def format_maf(mafdf: 'DataFrame', center: str) -> 'DataFrame':
-    """Format maf file, shortens the maf file length"""
+def format_maf(mafdf: pd.DataFrame, center: str) -> pd.DataFrame:
+    """Format maf file, shortens the maf file length
+
+    Args:
+        mafdf: mutation dataframe
+        center: Center name
+
+    Returns:
+        Formatted mutation dataframe"""
     mafdf['Center'] = center
     mafdf['Tumor_Sample_Barcode'] = [
         process_functions.checkGenieId(i, center)
@@ -209,7 +268,8 @@ def format_maf(mafdf: 'DataFrame', center: str) -> 'DataFrame':
 
 
 def split_and_store_maf(syn: 'Synapse', center: str, maf_tableid: str,
-                        annotated_maf_path: str, flatfiles_synid: str):
+                        annotated_maf_path: str, flatfiles_synid: str,
+                        workdir: str):
     """Separates annotated maf file into narrow and full maf and stores them
 
     Args:
@@ -224,11 +284,11 @@ def split_and_store_maf(syn: 'Synapse', center: str, maf_tableid: str,
                        for col in syn.getTableColumns(maf_tableid)
                        if col['name'] != 'inBED']
     full_maf_path = os.path.join(
-        WORKDIR, center, "staging",
+        workdir, center, "staging",
         f"data_mutations_extended_{center}_MAF.txt"
     )
     narrow_maf_path = os.path.join(
-        WORKDIR, center, "staging",
+        workdir, center, "staging",
         f"data_mutations_extended_{center}_MAF_narrow.txt"
     )
     maf_chunks = pd.read_csv(annotated_maf_path, sep="\t", chunksize=100000)
