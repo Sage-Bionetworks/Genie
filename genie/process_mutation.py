@@ -110,7 +110,10 @@ def process_mutation_workflow(syn: Synapse, center: str,
         workdir: Working directory
 
     Returns:
-        Annotated Maf Path"""
+        Annotated Maf Path
+
+    """
+    # Get valid files
     mutation_files = validfiles['fileType'].isin(["maf", "vcf"])
     valid_mutation_files = validfiles['path'][mutation_files].tolist()
     if valid_mutation_files:
