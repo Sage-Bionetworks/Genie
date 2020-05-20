@@ -118,6 +118,7 @@ def process_mutation_workflow(syn: Synapse, center: str,
     valid_mutation_files = validfiles['path'][mutation_files].tolist()
     # If there are no valid mutation files, return
     if not valid_mutation_files:
+        logger.info("No mutation data")
         return
     # Certificate to use GENIE Genome Nexus
     syn.get("syn22053204", downloadLocation=genie_annotation_pkg)
