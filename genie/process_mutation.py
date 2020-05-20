@@ -182,6 +182,7 @@ def annotate_mutation(center: str, mutation_files: list,
     Returns:
         Path to final maf
     """
+    logger.info(workdir)
     input_files_dir = tempfile.mkdtemp(dir=workdir)
     output_files_dir = tempfile.mkdtemp(dir=workdir)
 
