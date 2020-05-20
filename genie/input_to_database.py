@@ -699,7 +699,6 @@ def validation(syn, project_id, center, process,
         add_to_query = f"and fileType <> '{exclude_type}'"
     else:
         add_to_query = ''
-    exclude_type = 'vcf' if process != 'mutation' else 'notblank'
     # id, md5, status, name, center, modifiedOn, fileType
     validation_status_table = syn.tableQuery(
         f"SELECT * FROM {validation_status_synid} "
