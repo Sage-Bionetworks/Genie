@@ -691,7 +691,9 @@ def validation(syn, project_id, center, process,
     # Make sure the vcf validation statuses don't get wiped away
     # If process is not vcf, the vcf files are not downloaded
     # TODO: Add parameter to exclude types
-    exclude_type = 'vcf' if process != 'mutation' else ''
+    # Set as 'undefined' instead of blank, because want to include
+    # the null filetypes when appropriate
+    exclude_type = 'vcf' if process != 'mutation' else 'undefined'
     # id, md5, status, name, center, modifiedOn, fileType
     validation_status_table = syn.tableQuery(
         f"SELECT * FROM {validation_status_synid} "
