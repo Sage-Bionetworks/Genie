@@ -696,12 +696,14 @@ def validation(syn, project_id, center, process,
     validation_status_table = syn.tableQuery(
         f"SELECT * FROM {validation_status_synid} "
         f"where center = '{center}' and "
-        f"fileType <> {exclude_type}")
+        f"fileType <> '{exclude_type}'"
+    )
     # id, center, errors, name, fileType
     error_tracker_table = syn.tableQuery(
         f"SELECT * FROM {error_tracker_synid} "
         f"where center = '{center}' and "
-        f"fileType <> {exclude_type}")
+        f"fileType <> '{exclude_type}'"
+    )
 
     input_valid_statuses = []
     invalid_errors = []
