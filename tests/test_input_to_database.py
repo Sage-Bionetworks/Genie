@@ -770,7 +770,7 @@ class TestValidation:
     def test__update_tables_content__remove_old_errors(self):
         """Tests that old errors are removed"""
         errorsdf = self.errors_df.copy()
-        errorsdf['errors'] = 'foo'
+        errorsdf['errors'] = input_to_database.DUPLICATED_FILE_ERROR
         validationdf = self.validation_statusdf
         validationdf['status'] = 'VALIDATED'
 
