@@ -299,7 +299,7 @@ def validatefile(syn, project_id, entities, validation_status_table, error_track
 
 def processfiles(syn, validfiles, center, path_to_genie,
                  center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-                 validVCF=None, processing="main"):
+                 processing="main"):
     '''
     Processing validated files
 
@@ -312,10 +312,6 @@ def processfiles(syn, validfiles, center, path_to_genie,
         center_mapping_df: Center mapping dataframe
         oncotree_link: Link to oncotree
         databaseToSynIdMappingDf: Database to synapse id mapping dataframe
-        validVCF: Valid vcf files
-        vcf2mafPath: Path to vcf2maf
-        veppath: Path to vep
-        vepdata: Path to vep index files
         processing: Processing type. Defaults to main
         reference: Reference file for vcf2maf
     '''
@@ -357,9 +353,9 @@ def processfiles(syn, validfiles, center, path_to_genie,
             databaseToSynIdMappingDf['Database'] == 'vcf2maf'][0]
         flatfiles_synid = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
-        vcf_files = validfiles['fileType'] == "vcf"
-        valid_vcfs = validfiles['path'][vcf_files].tolist()
-        if valid_vcfs:
+        mutation_files = validfiles['fileType'].isin(["maf", "vcf"])
+        valid_mutation_files = validfiles['path'][mutation_files].tolist()
+        if valid_mutation_files:
             # TODO: Don't hardcode this
             genome_nexus_pkg = "/home/tyu/annotation-tools"
             # Certificate to use GENIE Genome Nexus
@@ -370,7 +366,7 @@ def processfiles(syn, validfiles, center, path_to_genie,
             process_mutation.process_mutation_workflow(
                 syn=syn,
                 center=center,
-                mutation_files=valid_vcfs,
+                mutation_files=valid_mutation_files,
                 genie_annotation_pkg=genome_nexus_pkg,
                 maf_tableid=maf_tableid,
                 flatfiles_synid=flatfiles_synid
@@ -834,10 +830,6 @@ def center_input_to_database(syn, project_id, center, process,
         beds = validFiles[bed_files]
         validFiles = beds.append(validFiles)
         validFiles.drop_duplicates(inplace=True)
-        # Valid vcf files
-        vcf_files = validFiles['fileType'] == "vcf"
-        validVCF = validFiles['path'][vcf_files].tolist()
-
         # merge clinical files into one row
         clinical_ind = validFiles['fileType'] == "clinical"
         if clinical_ind.any():
@@ -876,7 +868,7 @@ def center_input_to_database(syn, project_id, center, process,
         processfiles(syn, validFiles, center, path_to_genie,
                      center_mapping_df, oncotree_link,
                      database_to_synid_mappingdf,
-                     validVCF=validVCF, processing=process)
+                     processing=process)
 
         # Should add in this process end tracking
         # before the deletion of samples
