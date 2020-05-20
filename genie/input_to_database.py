@@ -702,7 +702,7 @@ def validation(syn, project_id, center, process,
     # id, md5, status, name, center, modifiedOn, fileType
     validation_status_table = syn.tableQuery(
         f"SELECT * FROM {validation_status_synid} "
-        f"where center = '{center} {add_to_query}"
+        f"where center = '{center}' {add_to_query}"
     )
     # id, center, errors, name, fileType
     error_tracker_table = syn.tableQuery(
