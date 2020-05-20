@@ -657,6 +657,9 @@ def _update_tables_content(validation_statusdf, error_trackingdf):
     error_trackingdf = error_trackingdf[
         error_trackingdf['id'].isin(invalid_ids)
     ]
+    # Fill blank file type values with 'other'
+    error_trackingdf['fileType'].fillna('other', inplace=True)
+    validation_statusdf['fileType'].fillna('other', inplace=True)
 
     return {'validation_statusdf': validation_statusdf,
             'error_trackingdf': error_trackingdf,
@@ -691,23 +694,16 @@ def validation(syn, project_id, center, process,
     # Make sure the vcf validation statuses don't get wiped away
     # If process is not vcf, the vcf files are not downloaded
     # TODO: Add parameter to exclude types
-    # Must add to the query string, because there are
-    # blank fileTypes which will disappear whenever doing a
-    # <> query
-    if process != 'mutation':
-        exclude_type = 'vcf'
-        add_to_query = f"and fileType <> '{exclude_type}'"
-    else:
-        add_to_query = ''
+    exclude_type = 'vcf' if process != 'mutation' else ''
     # id, md5, status, name, center, modifiedOn, fileType
     validation_status_table = syn.tableQuery(
-        f"SELECT * FROM {validation_status_synid} "
-        f"where center = '{center}' {add_to_query}"
+        f"SELECT * FROM {validation_status_synid} where "
+        f"center = '{center}' and fileType <> '{exclude_type}'"
     )
     # id, center, errors, name, fileType
     error_tracker_table = syn.tableQuery(
-        f"SELECT * FROM {error_tracker_synid} "
-        f"where center = '{center}' {add_to_query}"
+        f"SELECT * FROM {error_tracker_synid} where "
+        f"center = '{center}' and fileType <> '{exclude_type}'"
     )
 
     input_valid_statuses = []
