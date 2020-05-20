@@ -347,8 +347,6 @@ def processfiles(syn, validfiles, center, path_to_genie,
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf
                 )
     else:
-        # just for VCFs for now.
-        # TODO: add in support for maf
         maf_tableid = databaseToSynIdMappingDf.Id[
             databaseToSynIdMappingDf['Database'] == 'vcf2maf'][0]
         flatfiles_synid = databaseToSynIdMappingDf.Id[
@@ -692,21 +690,18 @@ def validation(syn, project_id, center, process,
 
     # Make sure the vcf validation statuses don't get wiped away
     # If process is not vcf, the vcf files are not downloaded
-    add_query_str = "and name not like '%.vcf'" if process != "mutation" else ''
+    # TODO: Add parameter to exclude types
+    exclude_type = 'vcf' if process != 'mutation' else ''
     # id, md5, status, name, center, modifiedOn, fileType
     validation_status_table = syn.tableQuery(
-        "SELECT * FROM {synid} "
-        "where center = '{center}' {add}".format(
-            synid=validation_status_synid,
-            center=center,
-            add=add_query_str))
+        f"SELECT * FROM {validation_status_synid} "
+        f"where center = '{center}' and "
+        f"fileType <> {exclude_type}")
     # id, center, errors, name, fileType
     error_tracker_table = syn.tableQuery(
-        "SELECT * FROM {synid} "
-        "where center = '{center}' {add}".format(
-            synid=error_tracker_synid,
-            center=center,
-            add=add_query_str))
+        f"SELECT * FROM {error_tracker_synid} "
+        f"where center = '{center}' and "
+        f"fileType <> {exclude_type}")
 
     input_valid_statuses = []
     invalid_errors = []
