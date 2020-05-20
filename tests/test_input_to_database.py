@@ -8,7 +8,7 @@ import pandas as pd
 import synapseclient
 import synapseutils
 
-from genie import input_to_database, process_functions
+from genie import input_to_database, process_functions, process_mutation
 from genie.clinical import clinical
 import genie.config
 from genie.mafSP import mafSP
@@ -903,9 +903,9 @@ def test_mainnone_processfile():
         patch_clin.assert_not_called()
 
 
-def test_notvcf_processfile():
+def test_notmutation_processfile():
     '''
-    Make sure vcf, maf, mafSP is called correctly
+    Make sure mutation is called correctly
     '''
     validfiles = {'id': ['syn1'],
                   'path': ['/path/to/data_clinical_supp_SAGE.txt'],
@@ -921,11 +921,18 @@ def test_notvcf_processfile():
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
 
-    with patch.object(vcf, "process") as patch_process:
+    with patch.object(process_mutation,
+                      "process_mutation_workflow") as patch_process:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie,
             center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-            validVCF=None, vcf2mafPath=None,
-            veppath=None, vepdata=None,
-            processing='vcf', reference=None)
-        patch_process.assert_called_once()
+            processing='mutation')
+        # TODO: fix hardcoding
+        patch_process.assert_called_once_with(
+            syn=syn,
+            center=center,
+            validfiles=validfilesdf,
+            genie_annotation_pkg="/home/tyu/annotation-tools",
+            database_mappingdf=databaseToSynIdMappingDf,
+            workdir=path_to_genie
+        )
