@@ -116,7 +116,8 @@ def process_mutation_workflow(syn: Synapse, center: str,
     # Get valid files
     mutation_files = validfiles['fileType'].isin(["maf", "vcf"])
     valid_mutation_files = validfiles['path'][mutation_files].tolist()
-    if valid_mutation_files:
+    # If there are no valid mutation files, return
+    if not valid_mutation_files:
         return
     # Certificate to use GENIE Genome Nexus
     syn.get("syn22053204", downloadLocation=genie_annotation_pkg)
