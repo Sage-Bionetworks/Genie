@@ -14,7 +14,6 @@ from . import process_functions
 
 logger = logging.getLogger(__name__)
 
-WORKDIR = os.path.expanduser("~/.synapseCache")
 # Some columns are already capitalized, so they aren't included here
 MAF_COL_MAPPING = {
     'HUGO_SYMBOL': 'Hugo_Symbol',
@@ -128,7 +127,7 @@ def process_mutation_workflow(syn: Synapse, center: str,
 
     annotated_maf_path = annotate_mutation(
         center=center,
-        mutation_files=mutation_files,
+        mutation_files=valid_mutation_files,
         genie_annotation_pkg=genie_annotation_pkg,
         workdir=workdir
     )
@@ -182,7 +181,6 @@ def annotate_mutation(center: str, mutation_files: list,
     Returns:
         Path to final maf
     """
-    logger.info(workdir)
     input_files_dir = tempfile.mkdtemp(dir=workdir)
     output_files_dir = tempfile.mkdtemp(dir=workdir)
 
