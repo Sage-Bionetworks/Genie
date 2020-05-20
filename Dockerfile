@@ -51,10 +51,10 @@ RUN Rscript /installPackages.R
 
 WORKDIR /root
 RUN git clone https://github.com/genome-nexus/annotation-tools.git
-RUN git clone https://github.com/genome-nexus/genome-nexus-annotation-pipeline.git
+# RUN git clone https://github.com/genome-nexus/genome-nexus-annotation-pipeline.git
 
-WORKDIR /root/genome-nexus-annotation-pipeline
-RUN mvn clean install
+# WORKDIR /root/genome-nexus-annotation-pipeline
+# RUN mvn clean install
 
 # Only copy most recent changes in code are always installed
 # Do not build from local computer

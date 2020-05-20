@@ -7,6 +7,7 @@ import tempfile
 
 import pandas as pd
 import synapseclient
+from synapseclient import Synapse
 from synapseclient.core.exceptions import SynapseTimeoutError
 
 from . import process_functions
@@ -92,9 +93,10 @@ def rename_column_headers(dataframe):
     return dataframe
 
 
-def process_mutation_workflow(syn, center, mutation_files,
-                              genie_annotation_pkg,
-                              maf_tableid, flatfiles_synid):
+def process_mutation_workflow(syn: Synapse, center: str,
+                              mutation_files: list,
+                              genie_annotation_pkg: str,
+                              maf_tableid: str, flatfiles_synid: str):
     """Process vcf/maf workflow"""
     annotated_maf_path = annotate_mutation(
         center=center,
@@ -145,7 +147,7 @@ def annotate_mutation(center: str, mutation_files: list,
     return merged_maf_path
 
 
-def append_or_createdf(dataframe: 'DataFrame', filepath: str):
+def append_or_createdf(dataframe: pd.DataFrame, filepath: str):
     """Creates a file with the dataframe or appends to a existing file.
 
     Args:
@@ -158,10 +160,6 @@ def append_or_createdf(dataframe: 'DataFrame', filepath: str):
     else:
         dataframe.to_csv(filepath, sep="\t", mode='a', index=False,
                          header=None)
-    # write_or_append = "wb" if maf else "ab"
-    # with open(filepath, write_or_append) as maf_file:
-    #     maf_text = process_functions.removeStringFloat(maf_text)
-    #     maf_file.write(maf_text.encode("utf-8"))
 
 
 def store_full_maf(syn: 'Synapse', filepath: str, parentid: str):
