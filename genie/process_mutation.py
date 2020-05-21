@@ -103,21 +103,30 @@ def determine_dtype(path):
     return column_types
 
 
-def move_mutation(mutation_path, input_files_dir):
-    """Move mutation file into processing directory"""
+def move_maf(mutation_path, input_files_dir):
+    """Moves maf files into processing directory. Maf file's column headers
+    are renamed if necessary"""
     header_df = pd.read_csv(mutation_path, sep="\t",
                             index_col=0, nrows=1, comment="#")
-    # If mutation file is vcf or doesn't have incorrect headers
-    if (mutation_path.endswith(".vcf") or
-            sum(header_df.columns.isin(MAF_COL_MAPPING.keys())) == 0):
-        shutil.copy(mutation_file, input_files_dir)
-    else:
+    # If any column headers need to be remapped, remap
+    if sum(header_df.columns.isin(MAF_COL_MAPPING.keys())) > 0:
         filename = os.path.basename(mutation_path)
         column_types = determine_dtype(mutation_path)
         mafdf = pd.read_csv(mutation_path, sep="\t", dtype=column_types)
         mafdf = rename_column_headers(mafdf)
         mafdf.to_csv(os.path.join(input_files_dir, filename),
-                     sep="\t", index=False,)
+                     sep="\t", index=False)
+    else:
+        shutil.copy(mutation_file, input_files_dir)
+
+
+def move_mutation(mutation_path, input_files_dir):
+    """Move mutation file into processing directory"""
+    # If mutation file is vcf, just copy
+    if mutation_path.endswith(".vcf"):
+        shutil.copy(mutation_path, input_files_dir)
+    else:
+        move_maf(mutation_path, input_files_dir)
 
 
 def process_mutation_workflow(syn: Synapse, center: str,
