@@ -1,7 +1,7 @@
-import pytest
-import mock
-from mock import patch
+from unittest import mock
+from unittest.mock import patch
 import uuid
+import pytest
 
 import pandas as pd
 import synapseclient
@@ -16,7 +16,7 @@ DATABASE_DF = pd.DataFrame({
     "foo": [1, 2, 3],
     "baz": [float('nan'), float('nan'), float('nan')]})
 DATABASE_DF.index = ['1_3', '2_3', '3_5']
-
+ENTITY = synapseclient.Project("foo", annotations={"dbMapping": ["syn1234"]})
 
 def test_valid__check_valid_df():
     process_functions._check_valid_df(DATABASE_DF, "test")
@@ -285,12 +285,13 @@ def test_get_synid_database_mappingdf(test, staging, synid):
     test flag
     '''
     arg = argparser()
-    with patch.object(process_functions, "get_syntabledf",
+    with patch.object(syn, "get", return_value=ENTITY), \
+         patch.object(genie.process_functions, "get_syntabledf",
                       return_value=arg.asDataFrame()) as patch_gettabledf:
-        df = process_functions.get_synid_database_mappingdf(
-            syn, test=test, staging=staging)
+        df = genie.process_functions.get_synid_database_mappingdf(
+            syn, project_id=None)
         patch_gettabledf.assert_called_once_with(
-            syn, "SELECT * FROM {}".format(synid))
+            syn, "SELECT * FROM {}".format(ENTITY.dbMapping[0]))
         assert df.equals(arg.asDataFrame())
 
 

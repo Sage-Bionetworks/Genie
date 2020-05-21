@@ -22,7 +22,7 @@ def validateSymbol(x, bedDf, returnMappedDf=True):
         x['HUGO_SYMBOL'] = mismatch['Hugo_Symbol'].values[0]
     #else:
     #    logger.warning("%s cannot be remapped and will not be released. The symbol must exist in your seq assay ids (bed files) and must be mappable to a gene." % gene)
-    #    x['HUGO_SYMBOL'] = pd.np.nan
+    #    x['HUGO_SYMBOL'] = float('nan')
         #x['FUSION'] = x['FUSION'].replace("%s-" % gene,"%s-" % x['HUGO_SYMBOL'])
         #x['COMMENTS'] = str(x['COMMENTS']).replace("-%s" % gene,"-%s" % str(x['COMMENTS']))
     if returnMappedDf:
@@ -50,16 +50,16 @@ class fusions(FileTypeFormat):
    
     _fileType = "fusions"
 
-    _process_kwargs = ["newPath", "databaseSynId"]
+    _process_kwargs = ["newPath", "databaseSynId", "databaseToSynIdMappingDf"]
 
-    _validation_kwargs = ['nosymbol_check']
+    _validation_kwargs = ['nosymbol_check', 'project_id']
 
     #VALIDATE FILENAME
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "data_fusions_%s.txt" % self.center
 
 
-    def _process(self, fusion):
+    def _process(self, fusion, databaseToSynIdMappingDf):
         fusion.columns = [col.upper() for col in fusion.columns]
         fusion['CENTER'] = self.center
         newsamples = [process_functions.checkGenieId(i,self.center) for i in fusion['TUMOR_SAMPLE_BARCODE']]
@@ -73,7 +73,8 @@ class fusions(FileTypeFormat):
         fusion['ENTREZ_GENE_ID'] = fusion['ENTREZ_GENE_ID'].fillna(0)
         fusion = fusion.drop_duplicates()
         fusion['ID'] = fusion['HUGO_SYMBOL'].copy()
-        bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=self.testing)
+        bedSynId = process_functions.getDatabaseSynId(self.syn, "bed",
+                                                      databaseToSynIdMappingDf=databaseToSynIdMappingDf)
         bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))
         bedDf = bed.asDataFrame()
         fusion = fusion.apply(lambda x: validateSymbol(x, bedDf), axis=1)
@@ -92,13 +93,13 @@ class fusions(FileTypeFormat):
         return(fusion)
 
     #PROCESSING
-    def process_steps(self, fusion, databaseSynId, newPath):
-        fusion = self._process(fusion)
+    def process_steps(self, fusion, databaseSynId, newPath, databaseToSynIdMappingDf):
+        fusion = self._process(fusion, databaseToSynIdMappingDf)
         process_functions.updateData(self.syn, databaseSynId, fusion, self.center, toDelete=True)
         fusion.to_csv(newPath, sep="\t",index=False)
         return(newPath)
 
-    def _validate(self, fusionDF, nosymbol_check):
+    def _validate(self, fusionDF, nosymbol_check, project_id):
         total_error = ""
         warning = ""
 
@@ -116,7 +117,9 @@ class fusions(FileTypeFormat):
         if process_functions.checkColExist(fusionDF, "HUGO_SYMBOL") and not nosymbol_check:
            # logger.info("VALIDATING %s GENE SYMBOLS" % os.path.basename(filePath))
             #invalidated_genes = fusionDF["HUGO_SYMBOL"].drop_duplicates().apply(validateSymbol)
-            bedSynId = process_functions.getDatabaseSynId(self.syn, "bed", test=self.testing)
+            databaseToSynIdMappingDf = process_functions.get_synid_database_mappingdf(self.syn, project_id)
+            bedSynId = process_functions.getDatabaseSynId(self.syn, "bed",
+                                                          databaseToSynIdMappingDf=databaseToSynIdMappingDf)
             bed = self.syn.tableQuery("select Hugo_Symbol, ID from %s where CENTER = '%s'" % (bedSynId, self.center))
             bedDf = bed.asDataFrame()
             #invalidated_genes = self.pool.map(process_functions.validateSymbol, fusionDF["HUGO_SYMBOL"].drop_duplicates())
