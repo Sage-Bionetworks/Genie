@@ -117,7 +117,7 @@ def move_maf(mutation_path, input_files_dir):
         mafdf.to_csv(os.path.join(input_files_dir, filename),
                      sep="\t", index=False)
     else:
-        shutil.copy(mutation_file, input_files_dir)
+        shutil.copy(mutation_path, input_files_dir)
 
 
 def move_mutation(mutation_path, input_files_dir):
