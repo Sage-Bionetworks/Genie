@@ -344,6 +344,27 @@ def test__update_database_mapping():
         patch_syn_store.assert_called_once()
 
 
+def test_noname__move_entity():
+    """Tests not changing entity name"""
+    ent = synapseclient.Entity(name="foo", parentId="syn2222")
+    new_parent = "syn1234"
+    with patch.object(syn, "store") as patch_syn_store:
+        process_functions._move_entity(syn, ent, new_parent)
+        ent.parentId = new_parent
+        patch_syn_store.assert_called_once_with(ent)
+
+
+def test_name__move_entity():
+    """Tests entity name is updated"""
+    ent = synapseclient.Entity(name="foo", parentId="syn2222")
+    new_parent = "syn1234"
+    new_name = "updated name"
+    with patch.object(syn, "store") as patch_syn_store:
+        process_functions._move_entity(syn, ent, new_parent, new_name)
+        ent.parentId = new_parent
+        ent.name = new_name
+        patch_syn_store.assert_called_once_with(ent)
+
 # def test_create_and_archive_maf_database():
 #     '''
 #     Test the creation and archive of the maf database
