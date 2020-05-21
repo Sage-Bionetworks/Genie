@@ -332,7 +332,7 @@ gene_number_info$number_of_genes <- as.integer(gene_number_info$number_of_genes)
 info_tab = xtable(gene_number_info[order(gene_number_info$SEQ_ASSAY_ID), ],
                   caption = 'Sequence Assay Genomic Information')
 names(info_tab) <- c('SEQ_ASSAY_ID','Calling Strategy','Number Of Genes', 'Target Capture Kit')
-align(info_tab) <- "r|c|c|p{12mm}|p{70mm}|"
+align(info_tab) <- "r|c|c|p{14mm}|p{70mm}|"
 print(info_tab, include.rownames = F, floating = F,
       caption.placement = "top", tabular.environment = "longtable", size="small",
       hline.after = rep(c(-1:(nrow(info_tab) - 1)),1))
