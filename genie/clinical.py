@@ -608,6 +608,7 @@ class clinical(FileTypeFormat):
                             allowed_string_values=['Unknown', 'Not Collected',
                                                    'Not Applicable',
                                                    '>89', '<18'])
+        total_error += error
 
         # CHECK: YEAR CONTACT
         error = _check_year(clinicaldf=clinicalDF,
