@@ -218,7 +218,7 @@ Protection of patient privacy is paramount, and the AACR GENIE Project therefore
 \addcontentsline{toc}{section}{Summary of Sequence Pipeline}
 \section*{Summary of Sequence Pipeline}
 
-In releases previous to 8.0-public, the SEQ\_ASSAY\_ID an institution's identifier for their assay.  Starting the 8.0-public release, several centers actually have multiple SEQ\_ASSAY\_ID per assay.  Due to this, we have introduced SEQ\_PIPELINE\_ID (pipeline), which can have multiple SEQ\_ASSAY\_ID (panel).  For sites that don't have multiple panels per assay, there will be no difference between their SEQ\_ASSAY\_ID and SEQ\_PIPELIPE\_ID.  All the information below can be found in the assay information file.
+Traditionally, the SEQ\_ASSAY\_ID was used as an institution's identifier for their assays when each assay had one associated gene panel.  As GENIE grew, we wanted to support an assay having multiple gene panels.  SEQ\_ASSAY\_ID was repurposed to be an identifier for a center's assay OR panel.  For those centers that have multiple panels per assay, we introduced SEQ\_PIPELINE\_ID (pipeline), which encompasses multiple SEQ\_ASSAY\_ID (panel).
 
 <<results=tex, echo=F>>=
 
