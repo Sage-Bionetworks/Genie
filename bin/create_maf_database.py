@@ -1,8 +1,7 @@
 """Script to invoke creating maf database"""
 #! /usr/bin/env python3
 import argparse
-import logging
-import time
+from datetime import date
 
 from genie import process_functions
 
@@ -19,7 +18,8 @@ def main(filetype: str, projectid: str, archive_projectid: str = None,
         debug: Add debug mode to synapse
     """
     syn = process_functions.synLogin(pemfile, debug=debug)
-    table_name = 'Narrow MAF {} Database'.format(time.time())
+    today = date.today()
+    table_name = f'Narrow MAF Database - {today}'
     filetype = "vcf2maf"
     if archive_projectid is None:
         archive_projectid = projectid
