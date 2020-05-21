@@ -286,9 +286,9 @@ def test_get_synid_database_mappingdf(test, staging, synid):
     '''
     arg = argparser()
     with patch.object(syn, "get", return_value=ENTITY), \
-         patch.object(genie.process_functions, "get_syntabledf",
+         patch.object(process_functions, "get_syntabledf",
                       return_value=arg.asDataFrame()) as patch_gettabledf:
-        df = genie.process_functions.get_synid_database_mappingdf(
+        df = process_functions.get_synid_database_mappingdf(
             syn, project_id=None)
         patch_gettabledf.assert_called_once_with(
             syn, "SELECT * FROM {}".format(ENTITY.dbMapping[0]))
