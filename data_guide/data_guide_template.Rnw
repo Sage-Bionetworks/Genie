@@ -333,7 +333,7 @@ info_tab = xtable(gene_number_info[order(gene_number_info$SEQ_ASSAY_ID), ],
                   caption = 'Sequence Assay Genomic Information')
 align(info_tab) <- "r|c|c|c|p{70mm}|"
 print(info_tab, include.rownames = F, floating = F,
-      caption.placement = "top", tabular.environment = "longtable",
+      caption.placement = "top", tabular.environment = "longtable", size="small",
       hline.after = rep(c(-1:(nrow(info_tab) - 1)),1))
 @
 
