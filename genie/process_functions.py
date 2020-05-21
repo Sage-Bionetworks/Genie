@@ -13,6 +13,7 @@ import ast
 from Crypto.PublicKey import RSA
 import pandas as pd
 import synapseclient
+from synapseclient import Synapse
 
 # try:
 #   from urllib.request import urlopen
@@ -1108,23 +1109,50 @@ def _move_entity(syn, ent, parentid, name=None):
     return moved_ent
 
 
-def create_new_fileformat_table(syn, database_mapping,
-                                file_format,
-                                newdb_name,
-                                projectid,
-                                archive_projectid):
+def get_dbmapping(syn: Synapse, projectid: str) -> dict:
+    """Gets database mapping information
+
+    Args:
+        syn: Synapse connection
+        projectid: Project id where new data lives
+
+    Returns:
+        {'synid': database mapping syn id,
+         'df': database mapping pd.DataFrame}
+
+    """
+    project_ent = syn.get(projectid)
+    dbmapping_synid = project_ent.annotations.get("dbMapping", "")[0]
+    database_mapping = syn.tableQuery(f'select * from {dbmapping_synid}')
+    database_mappingdf = database_mapping.asDataFrame()
+    return {'synid': dbmapping_synid,
+            'df': database_mappingdf}
+
+
+def create_new_fileformat_table(syn: Synapse,
+                                file_format: str,
+                                newdb_name: str,
+                                projectid: str,
+                                archive_projectid: str) -> dict:
     """Creates new database table based on old database table and archives
     old database table
 
     Args:
         syn: Synapse object
-        database_synid_mapping: Synapse table query of database synid mapping
         file_format: File format to update
         newdb_name: Name of new database table
         projectid: Project id where new database should live
         archive_projectid: Project id where old database should be moved
+
+    Returns:
+        {"newdb_ent": New database synapseclient.Table,
+         "newdb_mappingdf": new databse pd.DataFrame,
+         "moved_ent": old database synpaseclient.Table}
     """
-    database_mappingdf = database_mapping.asDataFrame()
+    db_info = get_dbmapping(syn, projectid)
+    database_mappingdf = db_info['df']
+    dbmapping_synid = db_info['synid']
+
     olddb_synid = getDatabaseSynId(syn, file_format,
                                    databaseToSynIdMappingDf=database_mappingdf)
     olddb_ent = syn.get(olddb_synid)
@@ -1136,7 +1164,7 @@ def create_new_fileformat_table(syn, database_mapping,
                                annotations=olddb_ent.annotations)
 
     newdb_mappingdf = _update_database_mapping(syn, database_mappingdf,
-                                               database_mapping.tableId,
+                                               dbmapping_synid,
                                                file_format, newdb_ent.id)
     # Automatically rename the archived entity with ARCHIVED
     # This will attempt to resolve any issues if the table already exists at
