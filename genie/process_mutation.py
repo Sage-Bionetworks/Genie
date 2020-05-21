@@ -93,6 +93,33 @@ def rename_column_headers(dataframe: pd.DataFrame) -> pd.DataFrame:
     return dataframe
 
 
+def determine_dtype(path):
+    """Reads in a dataframe partially and determines the dtype of columns"""
+    subset_df = pd.read_csv(path, nrows=100, sep="\t")
+    dtypes = subset_df.dtypes
+    colnames = dtypes.index
+    types = [i.name for i in dtypes.values]
+    column_types = dict(zip(colnames, types))
+    return column_types
+
+
+def move_mutation(mutation_path, input_files_dir):
+    """Move mutation file into processing directory"""
+    header_df = pd.read_csv(mutation_path, sep="\t",
+                            index_col=0, nrows=1, comment="#")
+    # If mutation file is vcf or doesn't have incorrect headers
+    if (mutation_path.endswith(".vcf") or
+            sum(header_df.columns.isin(MAF_COL_MAPPING.keys())) == 0):
+        shutil.copy(mutation_file, input_files_dir)
+    else:
+        filename = os.path.basename(mutation_path)
+        column_types = determine_dtype(mutation_path)
+        mafdf = pd.read_csv(mutation_path, sep="\t", dtype=column_types)
+        mafdf = rename_column_headers(mafdf)
+        mafdf.to_csv(os.path.join(input_files_dir, filename),
+                     sep="\t", index=False,)
+
+
 def process_mutation_workflow(syn: Synapse, center: str,
                               validfiles: pd.DataFrame,
                               genie_annotation_pkg: str,
@@ -164,7 +191,8 @@ def annotate_mutation(center: str, mutation_files: list,
     output_files_dir = tempfile.mkdtemp(dir=workdir)
 
     for mutation_file in mutation_files:
-        shutil.copy(mutation_file, input_files_dir)
+        move_mutation(mutation_file, input_files_dir)
+
     merged_maf_path = os.path.join(
         output_files_dir, f"data_mutations_extended_{center}.txt"
     )
