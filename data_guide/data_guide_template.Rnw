@@ -218,14 +218,14 @@ Protection of patient privacy is paramount, and the AACR GENIE Project therefore
 \addcontentsline{toc}{section}{Summary of Sequence Pipeline}
 \section*{Summary of Sequence Pipeline}
 
-
+Each sample in GENIE is associated to a SEQ_ASSAY_ID, which is the institutional assay identifier for genomic testing platform.  Due to several sites that actually have many different SEQ_ASSAY_ID's that use same workflow, we have introduced SEQ_PIPELINE_ID, which is present in the assay information file.  For many of the sites the SEQ_PIPELINE_ID will be same as the SEQ_ASSAY_ID.
 
 <<results=tex, echo=F>>=
 
 number_of_panels = xtable(table(pipelinedf$CENTER),
-                          col.names = c("center", "number of panels"),
-                          caption = 'Number of Panels per Center')
-names(number_of_panels) = "Number of panels"
+                          col.names = c("center", "number of panels/pipelines"),
+                          caption = 'Number of pipelines per Center')
+names(number_of_panels) = "Number of Panels/Pipelines"
 align(number_of_panels) <- "|r|l|"
 
 print(number_of_panels, floating = F,
@@ -242,22 +242,22 @@ print(number_of_panels, floating = F,
 library_selection <- ggplot(pipelinedf, aes(library_selection)) +
   geom_bar() +
   theme_bw() +
-  labs(x = "Library Selection", y = "# of Panels")
+  labs(x = "Library Selection", y = "# of Panels/Pipelines")
 library_strategy <- ggplot(pipelinedf, aes(library_strategy)) +
   geom_bar() +
   theme_bw() +
-  labs(x = "Library Strategy", y = "# of Panels")
+  labs(x = "Library Strategy", y = "# of Panels/Pipelines")
 
 platform <- ggplot(pipelinedf, aes(platform)) +
   geom_bar() +
   theme_bw() +
-  labs(x = "Platform", y = "# of Panels")
+  labs(x = "Platform", y = "# of Panels/Pipelines")
 
 specimen_tumor_cellularity <- ggplot(pipelinedf,
                                      aes(specimen_tumor_cellularity)) +
   geom_bar() +
   theme_bw() +
-  labs(x = "Specimen Tumor Cellularity", y = "# of Panels")
+  labs(x = "Specimen Tumor Cellularity", y = "# of Panels/Pipelines")
 
 h = ggarrange(library_selection, library_strategy,
               platform,
@@ -267,7 +267,7 @@ h = ggarrange(library_selection, library_strategy,
 print(h)
 @
 \end{center}
-\caption{Distribution of library selection, library strategy, platform, and specimen tumor cellularity across pipelines}
+\caption{Distribution of library selection, library strategy, platform, and specimen tumor cellularity across Panels/Pipelines}
 \end{figure}
 
 
@@ -278,7 +278,7 @@ coverage_per_panel = get_list_assay_info_table(allowed_coverage,
                                                pipelinedf,
                                                "coverage")
 info_tab = xtable(coverage_per_panel,
-                  caption = 'Coverage per Panel')
+                  caption = 'Coverage per Panel/Pipeline')
 align(info_tab) <- "|r|c|c|c|c|"
 print(info_tab, floating = F, caption.placement = "top",
       tabular.environment = "longtable",
@@ -296,7 +296,7 @@ alterations_per_panel = get_list_assay_info_table(allowed_alterations,
                                                   "alteration_types")
 
 info_tab = xtable(alterations_per_panel,
-                  caption = 'Alteration Types per Panel')
+                  caption = 'Alteration Types per Panel/Pipeline')
 
 align(info_tab) <- "|r|c|c|c|c|c|"
 print(info_tab, floating = F, caption.placement = "top",
@@ -317,7 +317,7 @@ specimen_per_panel = get_list_assay_info_table(allowed_specimen_types,
                                                "preservation_technique")
 
 info_tab = xtable(specimen_per_panel,
-                  caption = 'Preservation Techniques per Panel')
+                  caption = 'Preservation Techniques per Panels/Pipelines')
 align(info_tab) <- "|r|c|c|"
 print(info_tab, floating = F, caption.placement = "top",
       tabular.environment = "longtable",
@@ -328,10 +328,10 @@ print(info_tab, floating = F, caption.placement = "top",
 
 <<results=tex, echo=F>>=
 gene_number_info = assayinfodf[, c("SEQ_ASSAY_ID", "calling_strategy", "number_of_genes", "target_capture_kit")]
-
+gene_number_info$number_of_genes <- as.integer(gene_number_info$number_of_genes)
 info_tab = xtable(gene_number_info[order(gene_number_info$SEQ_ASSAY_ID), ],
-                  caption = 'Sequence Assay genomic information')
-align(info_tab) <- "r|c|c|c|p{80mm}|"
+                  caption = 'Sequence Assay Genomic Information')
+align(info_tab) <- "r|c|c|c|p{70mm}|"
 print(info_tab, include.rownames = F, floating = F,
       caption.placement = "top", tabular.environment = "longtable",
       hline.after = rep(c(-1:(nrow(info_tab) - 1)),1))
