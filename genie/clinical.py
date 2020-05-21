@@ -595,34 +595,21 @@ class clinical(FileTypeFormat):
             total_error += "Sample Clinical File: Must have SEQ_DATE column.\n"
 
         # CHECK: BIRTH_YEAR
-
         error = _check_year(clinicaldf=clinicalDF,
                             year_col="BIRTH_YEAR",
                             filename="Patient Clinical File",
                             allowed_string_values=['Unknown', '>89', '<18'])
         total_error += error
 
-        # CHECK: VITAL_STATUS
-        # YEAR DEATH
-        haveColumn = process_functions.checkColExist(clinicalDF, "YEAR_DEATH")
-        if haveColumn:
-            not_null_years = clinicalDF.YEAR_DEATH[
-                ~clinicalDF.YEAR_DEATH.isin(['Unknown', 'Not Collected',
-                                             'Not Applicable', '>89', '<18'])
-            ]
-            try:
-                not_null_years.apply(
-                    lambda x: datetime.datetime.strptime(str(int(x)), '%Y'))
-            except Exception:
-                total_error += (
-                    "Patient Clinical File: Please double check your "
-                    "YEAR_DEATH column, it must be an integer in YYYY format, "
-                    "'Unknown', 'Not Applicable' or 'Not Collected'.\n")
-        else:
-            total_error += \
-                "Patient Clinical File: Must have YEAR_DEATH column.\n"
+        # CHECK: YEAR DEATH
+        error = _check_year(clinicaldf=clinicalDF,
+                            year_col="YEAR_DEATH",
+                            filename="Patient Clinical File",
+                            allowed_string_values=['Unknown', 'Not Collected',
+                                                   'Not Applicable',
+                                                   '>89', '<18'])
 
-        # YEAR CONTACT
+        # CHECK: YEAR CONTACT
         error = _check_year(clinicaldf=clinicalDF,
                             year_col="YEAR_CONTACT",
                             filename="Patient Clinical File",
@@ -630,27 +617,7 @@ class clinical(FileTypeFormat):
                                                    '>89', '<18'])
         total_error += error
 
-        # haveColumn = process_functions.checkColExist(
-        #     clinicalDF, "YEAR_CONTACT")
-        # if haveColumn:
-        #     not_null_years = clinicalDF.YEAR_CONTACT[
-        #         ~clinicalDF.YEAR_CONTACT.isin(['Unknown', 'Not Collected',
-        #                                        'cannotReleaseHIPAA',
-        #                                        'withheld'])
-        #     ]
-        #     try:
-        #         not_null_years.apply(
-        #             lambda x: datetime.datetime.strptime(str(int(x)), '%Y'))
-        #     except Exception:
-        #         total_error += (
-        #             "Patient Clinical File: Please double check your "
-        #             "YEAR_CONTACT column, it must be an integer in YYYY "
-        #             "format, 'Unknown' or 'Not Collected'.\n")
-        # else:
-        #     total_error += \
-        #         "Patient Clinical File: Must have YEAR_CONTACT column.\n"
-
-        # INT CONTACT
+        # CHECK: INT CONTACT
         haveColumn = process_functions.checkColExist(clinicalDF, "INT_CONTACT")
         if haveColumn:
             if not all([process_functions.checkInt(i)
