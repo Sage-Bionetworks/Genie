@@ -599,9 +599,7 @@ class clinical(FileTypeFormat):
         error = _check_year(clinicaldf=clinicalDF,
                             year_col="BIRTH_YEAR",
                             filename="Patient Clinical File",
-                            allowed_string_values=['Unknown',
-                                                   'cannotReleaseHIPAA',
-                                                   'withheld'])
+                            allowed_string_values=['Unknown', '>89', '<18'])
         total_error += error
 
         # CHECK: VITAL_STATUS
@@ -610,9 +608,7 @@ class clinical(FileTypeFormat):
         if haveColumn:
             not_null_years = clinicalDF.YEAR_DEATH[
                 ~clinicalDF.YEAR_DEATH.isin(['Unknown', 'Not Collected',
-                                             'Not Applicable',
-                                             'cannotReleaseHIPAA',
-                                             'withheld'])
+                                             'Not Applicable', '>89', '<18'])
             ]
             try:
                 not_null_years.apply(
@@ -631,8 +627,7 @@ class clinical(FileTypeFormat):
                             year_col="YEAR_CONTACT",
                             filename="Patient Clinical File",
                             allowed_string_values=['Unknown', 'Not Collected',
-                                                   'cannotReleaseHIPAA',
-                                                   'withheld'])
+                                                   '>89', '<18'])
         total_error += error
 
         # haveColumn = process_functions.checkColExist(
