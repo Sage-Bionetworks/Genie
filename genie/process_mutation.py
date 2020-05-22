@@ -52,7 +52,6 @@ MAF_COL_MAPPING = {
     'T_ALT_COUNT': 't_alt_count',
     'N_REF_COUNT': 'n_ref_count',
     'N_ALT_COUNT': 'n_alt_count',
-    'COMMENTS': 'comments',
     'ALLELE': 'Allele',
     'AMINO_ACID_CHANGE': 'amino_acid_change',
     'AMINO_ACIDS': 'Amino_acids',
@@ -100,6 +99,11 @@ def determine_dtype(path):
     colnames = dtypes.index
     types = [i.name for i in dtypes.values]
     column_types = dict(zip(colnames, types))
+    # TODO: move into own function
+    if column_types.get("IS_NEW"):
+        column_types['IS_NEW'] = 'object'
+    if column_types.get("ALLELE_NUM"):
+        column_types['ALLELE_NUM'] = 'object'
     return column_types
 
 
