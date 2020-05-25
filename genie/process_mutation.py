@@ -100,10 +100,11 @@ def determine_dtype(path):
     types = [i.name for i in dtypes.values]
     column_types = dict(zip(colnames, types))
     # TODO: move into own function
-    if column_types.get("IS_NEW"):
-        column_types['IS_NEW'] = 'object'
-    if column_types.get("ALLELE_NUM"):
-        column_types['ALLELE_NUM'] = 'object'
+    known_string_cols = ['IS_NEW', 'ALLELE_NUM', 'Chromosome', 'CLIN_SIG',
+                         'MOTIF_NAME', 'HIGH_INF_POS', 'MINIMISED']
+    for str_col in known_string_cols:
+        if column_types.get(str_col):
+            column_types[str_col] = 'object'
     return column_types
 
 

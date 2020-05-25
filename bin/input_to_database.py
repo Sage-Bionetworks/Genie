@@ -45,10 +45,14 @@ def main(process,
                 ", ".join(center_mapping_df.center)))
         centers = [center]
     else:
+        # exclude_sites = ['JHU', 'DFCI', 'GRCC', 'VICC', 'NKI', 'MSK']
         center_mapping_df = \
             center_mapping_df[~center_mapping_df['inputSynId'].isnull()]
         # release is a bool column
         center_mapping_df = center_mapping_df[center_mapping_df['release']]
+        # center_mapping_df = center_mapping_df[
+        #     ~center_mapping_df['center'].isin(exclude_sites)
+        # ]
         centers = center_mapping_df.center
 
     if oncotree_link is None:
