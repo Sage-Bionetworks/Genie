@@ -425,8 +425,7 @@ def create_and_archive_maf_database(syn, database_synid_mappingdf):
     vcf2maf_mappingdf = database_synid_mappingdf[
         database_synid_mappingdf['Database'] == 'vcf2maf']
     # vcf2maf_mappingdf['Id'][0] = newMafDb.id
-    # Update this synid later
-    syn.store(synapseclient.Table("syn12094210", vcf2maf_mappingdf))
+    syn.store(synapseclient.Table("syn10967259", vcf2maf_mappingdf))
     # Move and archive old mafdatabase (This is the staging synid)
     maf_database_ent.parentId = "syn7208886"
     maf_database_ent.name = "ARCHIVED " + maf_database_ent.name
@@ -458,8 +457,8 @@ def append_duplication_errors(duplicated_filesdf, user_message_dict):
         filenames = []
         users = []
         for entity in duplicated_filesdf['entity']:
-            users.append(entity.modifiedOn)
-            users.append(entity.createdOn)
+            users.append(entity.modifiedBy)
+            users.append(entity.createdBy)
             filenames.append(entity.name)
         file_messages = dict(filenames=filenames,
                              messages=duplication_error)
@@ -506,7 +505,7 @@ def get_duplicated_files(validation_statusdf):
     logger.info("THERE ARE {} DUPLICATED FILES".format(
         len(duplicated_filesdf)))
     duplicated_filesdf['errors'] = DUPLICATED_FILE_ERROR
-    return(duplicated_filesdf)
+    return duplicated_filesdf
 
 
 def build_validation_status_table(input_valid_statuses: List[dict]):
@@ -625,7 +624,7 @@ def _update_tables_content(validation_statusdf, error_trackingdf):
     # index of all duplicated files
     duplicated_idx = validation_statusdf['id'].isin(duplicated_filesdf['id'])
     validation_statusdf['status'][duplicated_idx] = "INVALID"
-    duplicated_idx = error_trackingdf['id'].isin(error_trackingdf['id'])
+    duplicated_idx = error_trackingdf['id'].isin(duplicated_filesdf['id'])
     error_trackingdf['errors'][duplicated_idx] = DUPLICATED_FILE_ERROR
 
     # Old errors are pulled down in validation, so obtain list of

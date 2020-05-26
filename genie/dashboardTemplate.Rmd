@@ -1,9 +1,9 @@
 ---
 title: "%s Summary"
-output:
-  html_document:
-    toc: true
-    toc_depth: 3
+output: html_document
+#  html_document:
+#    toc: true
+#    toc_depth: 3
 params:
   genieUser:
     value: x
@@ -516,13 +516,33 @@ if (length(largePanels) > 1) {
 
 ## Top 5 most frequently mutated genes per panel
 
-To assist with discovering artifacts in a center's data, this will summarize the top 5 most frequently mutated genes per panel.  One of the easiest questions to answer is:
+To assist with discovering artifacts in a center's data, this will summarize the top 5 most frequently mutated genes per panel for all non-synonymous mutations.  All mutations that have `Variant_Classifications` of "Silent", "Intron", "3'UTR", "3'Flank", "5'UTR", "IGR" and "5'Flank" are filtered out with the exception of TERT promoters. One of the easiest questions to answer is:
 
 **Has the frequently mutated gene list changed significantly? Is TP53 still #1?**
 
 ### All panels
 
 Top 5 most frequently mutated genes per panel for all panels.
+
+```{r, include=F}
+# Filter maf file to only contain non synonymous variants.
+# Follow same strategy here:
+# https://github.com/cBioPortal/cbioportal/blob/v3.3.4/core/src/main/java/org/mskcc/cbio/portal/scripts/MutationFilter.java#L86
+filter_maf <- function(mafdf) {
+  filter_classifications = c("Silent", "Intron", "3'UTR",
+                             "3'Flank", "5'UTR", "IGR")
+  non_coding_mutations = mafdf$Variant_Classification %in% filter_classifications
+  # Remove non coding
+  mafdf <- mafdf[!non_coding_mutations, ]
+  flank_classification = mafdf$Variant_Classification == "5'Flank"
+  tert_mutations = mafdf$Hugo_Symbol == "TERT"
+  # Remove 5'Flank unless it is TERT
+  mafdf[!flank_classification | tert_mutations, ]
+}
+this_mut <- filter_maf(this_mut)
+
+```
+
 
 ```{r top_5_mutated, echo=FALSE}
 mergeddf = merge.data.frame(this_mut[,c("Tumor_Sample_Barcode", "Hugo_Symbol")],
@@ -562,7 +582,7 @@ if (!is.null(this_bed)) {
       return(seq_assay)
     }
   })
-  relevant_panels = mutated_genes[, panels_covering_tp53]
+  relevant_panels = mutated_genes[, colnames(mutated_genes) %in% panels_covering_tp53]
   relevant_panels = relevant_panels[, colnames(relevant_panels) %in% unlist(tp53_not_top)]
   top_5_mutated_genes_string = apply(relevant_panels, 2, function(x) {
     top_5 = sort(x, decreasing = T)[1:5]
