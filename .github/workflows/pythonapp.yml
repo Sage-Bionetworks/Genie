@@ -33,7 +33,7 @@ jobs:
     #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest tests/ --doctest-modules --cov=genie --cov-report=html
+        pytest tests/ --doctest-modules --cov=aacrgenie --cov-report=html
     - name: Upload pytest test results
       uses: actions/upload-artifact@master
       with:
