@@ -161,9 +161,10 @@ def process_mutation_workflow(syn: Synapse, center: str,
         logger.info("No mutation data")
         return
     # Certificate to use GENIE Genome Nexus
-    syn.get("syn22053204", downloadLocation=genie_annotation_pkg)
+    syn.get("syn22053204", ifcollision="overwrite.local",
+            downloadLocation=genie_annotation_pkg)
     # Genome Nexus Jar file
-    syn.get("syn22084320",
+    syn.get("syn22084320", ifcollision="overwrite.local",
             downloadLocation=genie_annotation_pkg)
 
     annotated_maf_path = annotate_mutation(
