@@ -315,7 +315,7 @@ def split_and_store_maf(syn: 'Synapse', center: str, maf_tableid: str,
                        if col['name'] != 'inBED']
     full_maf_path = os.path.join(
         workdir, center, "staging",
-        f"data_mutations_extended_{center}_MAF.txt"
+        f"data_mutations_extended_{center}.txt"
     )
     narrow_maf_path = os.path.join(
         workdir, center, "staging",

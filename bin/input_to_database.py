@@ -45,7 +45,9 @@ def main(process,
                 ", ".join(center_mapping_df.center)))
         centers = [center]
     else:
-        # exclude_sites = ['JHU', 'DFCI', 'GRCC', 'VICC', 'NKI', 'MSK']
+        # exclude_sites = ['JHU', 'DFCI', 'GRCC', 'VICC', 'NKI', 'MSK',
+        #                  'UHN', 'MDA', 'WAKE', 'YALE', 'UCSF', 'CRUK',
+        #                  'CHOP', 'VHIO', 'SCI', 'PHS', 'COLU', 'UCHI']
         center_mapping_df = \
             center_mapping_df[~center_mapping_df['inputSynId'].isnull()]
         # release is a bool column
