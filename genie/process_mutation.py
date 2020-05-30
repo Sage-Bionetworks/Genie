@@ -102,7 +102,12 @@ def determine_dtype(path):
     # TODO: move into own function
     known_string_cols = ['IS_NEW', 'ALLELE_NUM', 'Chromosome', 'CLIN_SIG',
                          'MOTIF_NAME', 'HIGH_INF_POS', 'MINIMISED',
-                         'CHROMOSOME']
+                         'CHROMOSOME', 'VERIFICATION_STATUS',
+                         'VALIDATION_STATUS', 'MUTATION_STATUS',
+                         'SEQUENCE_SOURCE', 'SEQUENCER', 'REPORT_AF',
+                         'CDNA_CHANGE', 'AMINO_ACID_CHANGE',
+                         'TRANSCRIPT', 'STRAND_VEP',
+                         'HGNC_ID', 'PUBMED', 'PICK']
     for str_col in known_string_cols:
         if column_types.get(str_col):
             column_types[str_col] = 'object'
