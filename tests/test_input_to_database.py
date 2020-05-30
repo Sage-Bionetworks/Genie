@@ -11,9 +11,6 @@ import synapseutils
 from genie import input_to_database, process_functions
 from genie_registry.clinical import clinical
 import genie.config
-from genie_registry.mafSP import mafSP
-from genie_registry.maf import maf
-from genie_registry.vcf import vcf
 from genie.validate import GenieValidationHelper
 
 
