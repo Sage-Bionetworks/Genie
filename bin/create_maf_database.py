@@ -20,7 +20,7 @@ def main(filetype: str, projectid: str, archive_projectid: str = None,
     syn = process_functions.synLogin(pemfile, debug=debug)
     today = date.today()
     table_name = f'Narrow MAF Database - {today}'
-    filetype = "vcf2maf"
+    # filetype = "vcf2maf"
     if archive_projectid is None:
         archive_projectid = projectid
 
@@ -36,8 +36,9 @@ def main(filetype: str, projectid: str, archive_projectid: str = None,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('project_id', type=str,
-                        help='Synapse Project ID where data is stored.',
-                        required=True)
+                        help='Synapse Project ID where data is stored.')
+    parser.add_argument('--filetype', type=str, default="vcf2maf",
+                        help='File type to store')
     parser.add_argument(
         '--archive_project_id', type=str,
         help='Synapse Project ID where you want old table to be stored'
