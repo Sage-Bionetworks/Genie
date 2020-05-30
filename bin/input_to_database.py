@@ -3,9 +3,8 @@ import os
 import argparse
 import logging
 
-from genie import input_to_database
-from genie import write_invalid_reasons
-from genie import process_functions
+from genie import (input_to_database, write_invalid_reasons,
+                   process_functions, config)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,7 +22,8 @@ def main(process,
          reference=None,
          vcf2maf_path=None,
          vep_path=None,
-         vep_data=None):
+         vep_data=None,
+         format_registry=None):
 
     syn = process_functions.synLogin(pemfile, debug=debug)
     # Must specify correct paths to vcf2maf, VEP and VEP data
@@ -93,6 +93,8 @@ def main(process,
         databaseToSynIdMappingDf = \
             input_to_database.create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
 
+    format_registry = config.collect_format_types(args.format_registry_packages)
+
     for center in centers:
         input_to_database.center_input_to_database(
             syn, project_id, center, process,
@@ -100,7 +102,8 @@ def main(process,
             vep_data, databaseToSynIdMappingDf,
             center_mapping_df, reference=reference,
             delete_old=delete_old,
-            oncotree_link=oncotree_link)
+            oncotree_link=oncotree_link,
+            format_registry=format_registry)
 
     # To ensure that this is the new entity
     center_mapping_ent = syn.get(center_mapping_id)
@@ -118,10 +121,8 @@ def main(process,
 
 
 if __name__ == "__main__":
-    '''
-    Argument parsers
-    TODO: Fix case of arguments
-    '''
+    # Argument parsers
+    # TODO: Fix case of arguments
     parser = argparse.ArgumentParser(
         description='GENIE center ')
     parser.add_argument(
@@ -166,6 +167,13 @@ if __name__ == "__main__":
 
     # DEFAULT PARAMS
     parser.add_argument(
+        "--format_registry_packages", type=str, nargs="+",
+        default=["genie_registry"],
+        help="Python package name(s) to get valid file formats from "
+             "(default: %(default)s)."
+    )
+
+    parser.add_argument(
         "--vcf2mafPath",
         type=str,
         help="Path to vcf2maf",
@@ -195,4 +203,5 @@ if __name__ == "__main__":
          reference=args.reference,
          vcf2maf_path=args.vcf2mafPath,
          vep_path=args.vepPath,
-         vep_data=args.vepData)
+         vep_data=args.vepData,
+         format_registry=args.format_registry_packages)
