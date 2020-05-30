@@ -6,7 +6,8 @@ import pytest
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from genie import validate, clinical, process_functions
+from genie import validate, process_functions
+from genie_registry import clinical
 
 CENTER = "SAGE"
 syn = mock.create_autospec(synapseclient.Synapse)

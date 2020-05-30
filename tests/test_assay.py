@@ -6,7 +6,7 @@ import pytest
 import synapseclient
 import pandas as pd
 
-from genie.assay import Assayinfo
+from genie_registry.assay import Assayinfo
 from genie import process_functions
 
 GDC_DATA_DICT = {

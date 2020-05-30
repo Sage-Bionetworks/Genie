@@ -5,7 +5,7 @@ import pytest
 import pandas as pd
 import synapseclient
 
-from genie.clinical import clinical
+from genie_registry.clinical import clinical
 
 
 def createMockTable(dataframe):

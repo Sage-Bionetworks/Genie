@@ -1,6 +1,6 @@
 from datetime import datetime
 import mock
-from mock import patch
+from mock import patch, Mock
 import os
 import pytest
 
@@ -9,7 +9,7 @@ import synapseclient
 import synapseutils
 
 from genie import input_to_database, process_functions
-from genie.clinical import clinical
+from genie_registry.clinical import clinical
 import genie.config
 from genie_registry.mafSP import mafSP
 from genie_registry.maf import maf
@@ -396,7 +396,7 @@ def test_valid_validatefile():
                       return_value={'status_list': [],
                                     'error_list': [],
                                     'to_validate': True}) as patch_check, \
-         patch.object(GenieValidationHelper,"validate_single_file",
+         patch.object(GenieValidationHelper, "validate_single_file",
                       return_value=(valid, message)) as patch_validate,\
          patch.object(input_to_database, "_get_status_and_error_list",
                       return_value=status_error_list_results) as patch_get_staterror_list,\
@@ -405,8 +405,7 @@ def test_valid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, None, entities, validation_statusdf,
-            error_trackerdf, center, threads, oncotree_link,
-            format_registry=genie.config.PROCESS_FILES)
+            error_trackerdf, center, threads, oncotree_link)
 
         assert expected_results == validate_results
         patch_validate.assert_called_once_with(
@@ -459,8 +458,8 @@ def test_invalid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, None, entities, validation_statusdf,
-            error_trackerdf, center, threads, oncotree_link,
-            format_registry=genie.config.PROCESS_FILES)
+            error_trackerdf, center, threads, oncotree_link
+        )
 
         assert expected_results == validate_results
         patch_validate.assert_called_once_with(
@@ -517,7 +516,7 @@ def test_already_validated_validatefile():
         validate_results = input_to_database.validatefile(
             syn, None, entities, validation_statusdf,
             error_trackerdf, center, threads, oncotree_link,
-            format_registry=genie.config.PROCESS_FILES)
+        )
 
         assert expected_results == validate_results
         patch_validate.assert_not_called()
@@ -807,6 +806,7 @@ class TestValidation:
                       'duplicated_filesdf': self.empty_dup}
         validationstatus_mock = emptytable_mock()
         errortracking_mock = emptytable_mock()
+        valiate_cls = Mock()
         with patch.object(syn, "tableQuery",
                           side_effect=[validationstatus_mock,
                                        errortracking_mock]) as patch_query,\
@@ -821,10 +821,12 @@ class TestValidation:
              patch.object(input_to_database, "_update_tables_content",
                           return_value=new_tables),\
              patch.object(input_to_database, "update_status_and_error_tables"):
+
             valid_filedf = input_to_database.validation(
                 syn, "syn123", center, process,
                 entities, databaseToSynIdMappingDf,
-                oncotree_link, genie.config.PROCESS_FILES
+                oncotree_link,
+                format_registry={"test": valiate_cls}
             )
             assert patch_query.call_count == 2
             patch_validatefile.assert_called_once_with(
@@ -833,7 +835,7 @@ class TestValidation:
                 errortracking_mock,
                 center='SAGE', threads=1,
                 oncotree_link=oncotree_link,
-                format_registry=genie.config.PROCESS_FILES
+                format_registry={"test": valiate_cls}
             )
 
             assert valid_filedf.equals(
@@ -843,9 +845,9 @@ class TestValidation:
 
 @pytest.mark.parametrize(
     'process, genieclass, filetype', [
-        ('main', clinical, 'clinical'),
-        ('maf', maf, 'maf'),
-        ('mafSP', mafSP, 'mafSP')
+        ('main', Mock(), 'clinical'),
+        ('maf', Mock(), 'maf'),
+        ('mafSP', Mock(), 'mafSP')
     ]
 )
 def test_main_processfile(process, genieclass, filetype):
@@ -863,15 +865,15 @@ def test_main_processfile(process, genieclass, filetype):
     databaseToSynIdMapping = {'Database': [filetype],
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
+    format_registry = {filetype: genieclass}
 
-    with patch.object(genieclass, "process") as patch_class:
-        input_to_database.processfiles(
-            syn, validfilesdf, center, path_to_genie,
-            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-            validVCF=None, vcf2mafPath=None,
-            veppath=None, vepdata=None,
-            processing=process, reference=None)
-        patch_class.assert_called_once()
+    input_to_database.processfiles(
+        syn, validfilesdf, center, path_to_genie,
+        center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
+        validVCF=None, vcf2mafPath=None,
+        veppath=None, vepdata=None,
+        processing=process, reference=None,
+        format_registry=format_registry)
 
 
 def test_mainnone_processfile():
@@ -892,15 +894,16 @@ def test_mainnone_processfile():
     databaseToSynIdMapping = {'Database': ["clinical"],
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
+    process_cls = Mock()
 
-    with patch.object(clinical, "process") as patch_clin:
-        input_to_database.processfiles(
-            syn, validfilesdf, center, path_to_genie,
-            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-            validVCF=None, vcf2mafPath=None,
-            veppath=None, vepdata=None,
-            processing="main", reference=None)
-        patch_clin.assert_not_called()
+    input_to_database.processfiles(
+        syn, validfilesdf, center, path_to_genie,
+        center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
+        validVCF=None, vcf2mafPath=None,
+        veppath=None, vepdata=None,
+        processing="main", reference=None,
+        format_registry={"main": process_cls})
+    process_cls.assert_not_called()
 
 
 def test_notvcf_processfile():
@@ -920,12 +923,13 @@ def test_notvcf_processfile():
     databaseToSynIdMapping = {'Database': ['vcf'],
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
+    process_cls = Mock()
 
-    with patch.object(vcf, "process") as patch_process:
-        input_to_database.processfiles(
-            syn, validfilesdf, center, path_to_genie,
-            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-            validVCF=None, vcf2mafPath=None,
-            veppath=None, vepdata=None,
-            processing='vcf', reference=None)
-        patch_process.assert_called_once()
+    input_to_database.processfiles(
+        syn, validfilesdf, center, path_to_genie,
+        center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
+        validVCF=None, vcf2mafPath=None,
+        veppath=None, vepdata=None,
+        processing='vcf', reference=None,
+        format_registry={"vcf": process_cls})
+    process_cls.assert_not_called
