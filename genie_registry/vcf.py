@@ -4,8 +4,8 @@ import subprocess
 
 import pandas as pd
 
+from genie import process_functions
 from .maf import maf
-from . import process_functions
 
 logger = logging.getLogger(__name__)
 

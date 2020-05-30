@@ -4,13 +4,10 @@ import os
 
 import pandas as pd
 import synapseclient
-try:
-    from synapseclient.core.utils import to_unix_epoch_time
-except ModuleNotFoundError:
-    from synapseclient.utils import to_unix_epoch_time
+from synapseclient.core.utils import to_unix_epoch_time
 
-from .example_filetype_format import FileTypeFormat
-from . import process_functions
+from genie.example_filetype_format import FileTypeFormat
+from genie import process_functions
 
 logger = logging.getLogger(__name__)
 

@@ -7,9 +7,9 @@ import yaml
 import pandas as pd
 import synapseclient
 
-from .example_filetype_format import FileTypeFormat
-from . import process_functions
-from .database_to_staging import redact_phi
+from genie.example_filetype_format import FileTypeFormat
+from genie import process_functions
+from genie.database_to_staging import redact_phi
 
 logger = logging.getLogger(__name__)
 

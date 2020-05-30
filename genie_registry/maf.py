@@ -4,13 +4,10 @@ import subprocess
 
 import pandas as pd
 import synapseclient
-try:
-    from synapseclient.core.exceptions import SynapseHTTPError
-except ModuleNotFoundError:
-    from synapseclient.exceptions import SynapseHTTPError
+from synapseclient.core.exceptions import SynapseHTTPError
 
-from .example_filetype_format import FileTypeFormat
-from . import process_functions
+from genie.example_filetype_format import FileTypeFormat
+from genie import process_functions
 
 logger = logging.getLogger(__name__)
 
