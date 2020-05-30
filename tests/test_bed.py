@@ -9,9 +9,9 @@ import synapseclient
 import pandas as pd
 from pandas.testing import assert_frame_equal
 
-import genie.bed
-from genie.bed import bed
-from genie.bedSP import bedSP
+import genie_registry.bed
+from genie_registry.bed import bed
+from genie_registry.bedSP import bedSP
 
 if not shutil.which('bedtools'):
     pytest.skip("bedtools is not found, skipping bed tests", 
