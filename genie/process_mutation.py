@@ -84,33 +84,49 @@ MAF_COL_MAPPING = {
     'T_DEPTH': 't_depth'
 }
 
+KNOWN_STRING_COLS = ['IS_NEW', 'ALLELE_NUM', 'Chromosome', 'CLIN_SIG',
+                     'MOTIF_NAME', 'HIGH_INF_POS', 'MINIMISED',
+                     'CHROMOSOME', 'VERIFICATION_STATUS',
+                     'VALIDATION_STATUS', 'MUTATION_STATUS',
+                     'SEQUENCE_SOURCE', 'SEQUENCER', 'REPORT_AF',
+                     'CDNA_CHANGE', 'AMINO_ACID_CHANGE',
+                     'TRANSCRIPT', 'STRAND_VEP',
+                     'HGNC_ID', 'PUBMED', 'PICK']
 
-def rename_column_headers(dataframe: pd.DataFrame) -> pd.DataFrame:
-    """Rename dataframe column headers.  The headers must be compliant
-    with GDC MAF standards"""
-    dataframe = dataframe.rename(columns=MAF_COL_MAPPING)
+
+def _rename_column_headers(dataframe: pd.DataFrame,
+                           col_map: dict) -> pd.DataFrame:
+    """Rename dataframe column headers
+
+    Args:
+        dataframe: pandas dataframe
+        col_map: Column Mapping {column_name: new_column_name,}
+
+    Returns:
+        Dataframe with new columns
+
+    """
+    dataframe = dataframe.rename(columns=col_map)
     return dataframe
 
 
-def determine_dtype(path):
+def _convert_to_str_dtype(column_types, known_string_cols):
+    """Sometimes the deteremined dtype is incorrect based off the first
+    100 rows, update the incorrect dtypes.
+    """
+    for str_col in known_string_cols:
+        if column_types.get(str_col):
+            column_types[str_col] = 'object'
+    return column_types
+
+
+def determine_dtype(path: str):
     """Reads in a dataframe partially and determines the dtype of columns"""
     subset_df = pd.read_csv(path, nrows=100, sep="\t")
     dtypes = subset_df.dtypes
     colnames = dtypes.index
     types = [i.name for i in dtypes.values]
     column_types = dict(zip(colnames, types))
-    # TODO: move into own function
-    known_string_cols = ['IS_NEW', 'ALLELE_NUM', 'Chromosome', 'CLIN_SIG',
-                         'MOTIF_NAME', 'HIGH_INF_POS', 'MINIMISED',
-                         'CHROMOSOME', 'VERIFICATION_STATUS',
-                         'VALIDATION_STATUS', 'MUTATION_STATUS',
-                         'SEQUENCE_SOURCE', 'SEQUENCER', 'REPORT_AF',
-                         'CDNA_CHANGE', 'AMINO_ACID_CHANGE',
-                         'TRANSCRIPT', 'STRAND_VEP',
-                         'HGNC_ID', 'PUBMED', 'PICK']
-    for str_col in known_string_cols:
-        if column_types.get(str_col):
-            column_types[str_col] = 'object'
     return column_types
 
 
@@ -123,8 +139,10 @@ def move_maf(mutation_path, input_files_dir):
     if sum(header_df.columns.isin(MAF_COL_MAPPING.keys())) > 0:
         filename = os.path.basename(mutation_path)
         column_types = determine_dtype(mutation_path)
-        mafdf = pd.read_csv(mutation_path, sep="\t", dtype=column_types)
-        mafdf = rename_column_headers(mafdf)
+        new_column_types = _convert_to_str_dtype(column_types,
+                                                 KNOWN_STRING_COLS)
+        mafdf = pd.read_csv(mutation_path, sep="\t", dtype=new_column_types)
+        mafdf = _rename_column_headers(mafdf, col_map=MAF_COL_MAPPING)
         mafdf.to_csv(os.path.join(input_files_dir, filename),
                      sep="\t", index=False)
     else:
