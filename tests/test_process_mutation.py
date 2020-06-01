@@ -48,7 +48,7 @@ class TestDtype():
         self.column_types = {"foo": 'int64',
                              "bar": 'object'}
 
-    def test__convert_to_str_dtype(self):
+    def test__rename_column_headers(self):
         """Tests the renaming of column headers"""
         col_map = {"foo": "new_foo",
                    "bar": "new_bar"}
