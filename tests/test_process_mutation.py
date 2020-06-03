@@ -106,3 +106,17 @@ class TestDtype():
             patch_rename.assert_called_once_with(
                 testdf, col_map=process_mutation.MAF_COL_MAPPING
             )
+
+    def test_move_mutation_vcf(self):
+        """Test moving vcfs"""
+        with patch.object(shutil, "copy") as patch_copy:
+            process_mutation.move_mutation("/path/to/my.vcf", self.input_dir)
+            patch_copy.assert_called_once_with("/path/to/my.vcf",
+                                               self.input_dir)
+
+    def test_move_mutation_maf(self):
+        """Test moving maf files"""
+        with patch.object(process_mutation, "move_maf") as patch_move:
+            process_mutation.move_mutation(self.mutation_path, self.input_dir)
+            patch_move.assert_called_once_with(self.mutation_path,
+                                               self.input_dir)
