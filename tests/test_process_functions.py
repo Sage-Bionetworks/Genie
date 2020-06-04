@@ -17,6 +17,17 @@ DATABASE_DF = pd.DataFrame({
 DATABASE_DF.index = ['1_3', '2_3', '3_5']
 ENTITY = synapseclient.Project("foo", annotations={"dbMapping": ["syn1234"]})
 
+def test_removeStringFloat():
+    for (input, output) in [
+        ("1.0\t", "1\t"),
+        ("1.0\n", "1\n"),
+        ("1.5\t", "1.5\t"),
+        ("1\t", "1\t"),
+        ("0\t", "0\t"),
+        ("'a'\t'b'\n1.0\t2.0\n", "'a'\t'b'\n1\t2\n"),
+    ]:
+        assert genie.process_functions.removeStringFloat(input) == output
+
 def test_valid__check_valid_df():
     genie.process_functions._check_valid_df(DATABASE_DF, "test")
 
