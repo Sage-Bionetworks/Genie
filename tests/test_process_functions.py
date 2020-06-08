@@ -17,6 +17,21 @@ DATABASE_DF = pd.DataFrame({
 DATABASE_DF.index = ['1_3', '2_3', '3_5']
 ENTITY = synapseclient.Project("foo", annotations={"dbMapping": ["syn1234"]})
 
+@pytest.mark.parametrize("input_str,output", [
+        ("1.0\t", "1\t"),
+        ("1.0\n", "1\n"),
+        ("1.5\t", "1.5\t"),
+        ("1\t", "1\t"),
+        ("0\t", "0\t"),
+        ("'a'\t'b'\n1.0\t2.0\n", "'a'\t'b'\n1\t2\n"),
+    ])
+def test_removeStringFloat(input_str, output):
+    """Remove string float - will always assume that there is a \n
+    at the end.  This is because if a value was 2.01, we dont want to
+    remove the .0 from this."""
+    assert genie.process_functions.removeStringFloat(input_str) == output
+
+
 def test_valid__check_valid_df():
     genie.process_functions._check_valid_df(DATABASE_DF, "test")
 
