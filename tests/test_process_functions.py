@@ -25,7 +25,6 @@ ENTITY = synapseclient.Project("foo", annotations={"dbMapping": ["syn1234"]})
         ("0\t", "0\t"),
         ("'a'\t'b'\n1.0\t2.0\n", "'a'\t'b'\n1\t2\n"),
     ])
-
 def test_removeStringFloat(input_str, output):
     """Remove string float - will always assume that there is a \n
     at the end.  This is because if a value was 2.01, we dont want to
