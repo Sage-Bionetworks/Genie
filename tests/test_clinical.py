@@ -343,7 +343,7 @@ def test_perfect__validate():
     sampledf = pd.DataFrame(dict(
         SAMPLE_ID=["ID1-1", "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
         PATIENT_ID=["ID1", "ID2", "ID3", "ID4", "ID5"],
-        AGE_AT_SEQ_REPORT=[100000, "Unknown", 20000, 20000, 100000],
+        AGE_AT_SEQ_REPORT=[">32485", "Unknown", "<6570", 20000, 100000],
         ONCOTREE_CODE=['AMPCA', 'AMPCA', 'Unknown', 'AMPCA', 'AMPCA'],
         SAMPLE_TYPE=[1, 2, 3, 4, 4],
         SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-SAGE-1', 'SAGE-1', 'SAGE-1', 'SAGE-1'],
@@ -396,7 +396,8 @@ def test_nonull__validate():
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         expected_errors = (
             "Sample Clinical File: Please double check your "
-            "AGE_AT_SEQ_REPORT. It must be an integer or 'Unknown'.\n"
+            "AGE_AT_SEQ_REPORT. It must be an integer, 'Unknown', "
+            "'>32485', '<6570'.\n"
             "Sample Clinical File: Please double check your SAMPLE_TYPE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your BIRTH_YEAR "
@@ -512,7 +513,8 @@ def test_errors__validate():
             "information and no null patient ids allowed. "
             "These samples are missing patient data: ID4-1\n"
             "Sample Clinical File: Please double check your "
-            "AGE_AT_SEQ_REPORT. It must be an integer or 'Unknown'.\n"
+            "AGE_AT_SEQ_REPORT. It must be an integer, 'Unknown', "
+            "'>32485', '<6570'.\n"
             "Sample Clinical File: Please double check that all your "
             "ONCOTREE CODES exist in the mapping. You have 1 samples that "
             "don't map. These are the codes that don't map: AMPCAD\n"

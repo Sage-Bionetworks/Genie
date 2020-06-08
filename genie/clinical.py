@@ -448,7 +448,8 @@ class clinical(FileTypeFormat):
                         for i in age_seq_report_df[age]]):
                 total_error += (
                     "Sample Clinical File: Please double check your "
-                    "AGE_AT_SEQ_REPORT. It must be an integer or 'Unknown'.\n")
+                    "AGE_AT_SEQ_REPORT. It must be an integer, 'Unknown', "
+                    "'>32485', '<6570'.\n")
             else:
                 age_seq_report_df[age] = age_seq_report_df[age].astype(int)
                 median_age = age_seq_report_df[age].median()
