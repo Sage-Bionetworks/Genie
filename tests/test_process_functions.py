@@ -31,6 +31,7 @@ def test_removeStringFloat(input_str, output):
     remove the .0 from this."""
     assert genie.process_functions.removeStringFloat(input_str) == output
 
+
 def test_valid__check_valid_df():
     genie.process_functions._check_valid_df(DATABASE_DF, "test")
 
