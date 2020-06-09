@@ -1,5 +1,7 @@
 """Test process mutation functions"""
 import shutil
+import subprocess
+import tempfile
 from unittest.mock import create_autospec, patch, call
 
 import pandas as pd
@@ -125,6 +127,7 @@ class TestDtype():
                                                self.input_dir)
 
 def test_process_mutation_workflow():
+    """Integration test to make sure workflow runs"""
     validfiles = pd.DataFrame(
         {
             "fileType": ['vcf', 'maf'],
@@ -172,3 +175,36 @@ def test_process_mutation_workflow():
             workdir=workdir
         )
         assert maf == maf_path
+
+
+def test_annotate_mutation():
+    """Integration test, test that annotate mutation is called currectly"""
+    center = "SAGE"
+    mutation_files = ["path/to/vcf"]
+    genie_annotation_pkg = "annotation/pkg/path"
+    workdir = "working/dir/path"
+    mktemp_calls = [call(dir=workdir)]*2
+    input_dir = "input/dir"
+    with patch.object(tempfile, "mkdtemp",
+                      return_value=input_dir) as patch_mktemp,\
+         patch.object(process_mutation,
+                      "move_mutation") as patch_move,\
+         patch.object(subprocess, "check_call") as patch_call:
+        maf_path = process_mutation.annotate_mutation(
+            center=center,
+            mutation_files=mutation_files,
+            genie_annotation_pkg=genie_annotation_pkg,
+            workdir=workdir
+        )
+        patch_mktemp.assert_has_calls(mktemp_calls)
+        patch_move.assert_called_once_with("path/to/vcf", input_dir)
+        patch_call.assert_called_once_with(
+            ['bash', "annotation/pkg/path/annotation_suite_wrapper.sh",
+             f'-i={input_dir}',
+             f'-o={input_dir}',
+             f'-m=input/dir/data_mutations_extended_{center}.txt',
+             f'-c={center}',
+             '-s=WXS',
+             f'-p={genie_annotation_pkg}']
+        )
+        assert maf_path == f"input/dir/data_mutations_extended_{center}.txt"
