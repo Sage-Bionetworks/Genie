@@ -289,9 +289,9 @@ def store_narrow_maf(syn: Synapse, filepath: str, maf_tableid: str):
 
     """
     logger.info('STORING %s' % filepath)
-    database = syn.get(maf_tableid)
+    # database = syn.get(maf_tableid)
     try:
-        update_table = synapseclient.Table(database.id, filepath,
+        update_table = synapseclient.Table(maf_tableid, filepath,
                                            separator="\t")
         syn.store(update_table)
     except SynapseTimeoutError:

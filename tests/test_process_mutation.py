@@ -6,6 +6,7 @@ from unittest.mock import create_autospec, patch, call
 
 import pandas as pd
 import synapseclient
+from synapseclient.core.exceptions import SynapseTimeoutError
 
 from genie import process_mutation
 
@@ -243,3 +244,27 @@ def test_append_or_createdf_create_file_0size():
         patch_tocsv.assert_called_once_with(
             temp_file.name, sep="\t", index=False
         )
+
+
+def test_store_full_maf():
+    """Test storing of full maf"""
+    with patch.object(SYN, "store") as patch_store:
+        process_mutation.store_full_maf(SYN, "full/path", "syn1234")
+        patch_store.assert_called_once_with(
+            synapseclient.File("full/path", parentId="syn1234")
+        )
+
+
+def test_store_narrow_maf():
+    """Test storing of narrow maf"""
+    with patch.object(SYN, "store") as patch_store:
+        process_mutation.store_narrow_maf(SYN, "full/path", "syn1234")
+        patch_store.assert_called_once()
+
+
+def test_store_narrow_maf_test_error():
+    """Test storing of narrow maf catches and passes error"""
+    with patch.object(SYN, "store",
+                      side_effect=SynapseTimeoutError) as patch_store:
+        process_mutation.store_narrow_maf(SYN, "full/path", "syn1234")
+        patch_store.assert_called_once()
