@@ -208,3 +208,38 @@ def test_annotate_mutation():
              f'-p={genie_annotation_pkg}']
         )
         assert maf_path == f"input/dir/data_mutations_extended_{center}.txt"
+
+
+def test_append_or_createdf_append():
+    """Test appending dataframe"""
+    test_df = pd.DataFrame({"test": ["testme"]})
+    with tempfile.NamedTemporaryFile() as temp_file,\
+         patch.object(test_df, "to_csv") as patch_tocsv:
+        temp_file.write(b'Hello world!')
+        temp_file.seek(0)
+        process_mutation.append_or_createdf(test_df, temp_file.name)
+        patch_tocsv.assert_called_once_with(
+            temp_file.name, sep="\t", mode='a', index=False,
+            header=None)
+
+
+def test_append_or_createdf_create_none_exist_path():
+    """Test creating dataframe when filepath passed in doesn't exist"""
+    test_df = pd.DataFrame({"test": ["testme"]})
+    with patch.object(test_df, "to_csv") as patch_tocsv:
+        process_mutation.append_or_createdf(test_df, "DNE")
+        patch_tocsv.assert_called_once_with(
+            "DNE", sep="\t", index=False
+        )
+
+
+def test_append_or_createdf_create_file_0size():
+    """Test creating dataframe when file passed in is 0 in size"""
+    test_df = pd.DataFrame({"test": ["testme"]})
+    with tempfile.NamedTemporaryFile() as temp_file,\
+         patch.object(test_df, "to_csv") as patch_tocsv:
+        temp_file.seek(0)
+        process_mutation.append_or_createdf(test_df, temp_file.name)
+        patch_tocsv.assert_called_once_with(
+            temp_file.name, sep="\t", index=False
+        )
