@@ -268,3 +268,69 @@ def test_store_narrow_maf_test_error():
                       side_effect=SynapseTimeoutError) as patch_store:
         process_mutation.store_narrow_maf(SYN, "full/path", "syn1234")
         patch_store.assert_called_once()
+
+
+def test_split_and_store_maf():
+    """Integration test, check splitting and storing of maf functions are
+    called"""
+    # getTableColumns
+    # pd.read_csv(
+    # format_maf
+    # append_or_createdf
+    # store_narrow_maf
+    # store_full_maf
+    columns = [
+        {'name': "inBED"},
+        {"name": "colA"},
+        {'name': "colB"}
+    ]
+    exampledf = pd.DataFrame(
+        {
+            "colA": ['test', 'foo'],
+            "colB": ["bar", "baz"],
+            "colC": [2, 3]
+        }
+    )
+    subsetdf = pd.DataFrame(
+        {
+            "colA": ['test', 'foo'],
+            "colB": ["bar", "baz"],
+        }
+    )
+    annotated_maf_path = "maf/path"
+    center = "SAGE"
+    full_maf_path = "workdir/path/SAGE/staging/data_mutations_extended_SAGE.txt"
+    narrow_maf_path = "workdir/path/SAGE/staging/data_mutations_extended_SAGE_MAF_narrow.txt"
+
+    with patch.object(SYN, "getTableColumns",
+                      return_value=columns) as patch_getcols,\
+         patch.object(pd, "read_csv",
+                      return_value=[exampledf]) as patch_readcsv,\
+         patch.object(process_mutation, "format_maf",
+                      return_value=exampledf) as patch_format,\
+         patch.object(process_mutation,
+                      "append_or_createdf") as patch_append,\
+         patch.object(process_mutation,
+                      "store_narrow_maf") as patch_narrow,\
+         patch.object(process_mutation,
+                      "store_full_maf") as patch_full:
+        process_mutation.split_and_store_maf(
+            syn=SYN,
+            center=center,
+            maf_tableid="sy12345",
+            annotated_maf_path=annotated_maf_path,
+            flatfiles_synid="syn2345",
+            workdir="workdir/path"
+        )
+        patch_getcols.assert_called_once_with("sy12345")
+        patch_readcsv.assert_called_once_with(
+            annotated_maf_path, sep="\t", chunksize=100000
+        )
+        patch_format.assert_called_once_with(exampledf, center)
+
+        assert patch_append.call_count == 2
+
+        patch_narrow.assert_called_once_with(SYN, narrow_maf_path,
+                                             "sy12345")
+        patch_full.assert_called_once_with(SYN, full_maf_path,
+                                           "syn2345")
