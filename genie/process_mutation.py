@@ -199,9 +199,11 @@ def process_mutation_workflow(syn: Synapse, center: str,
     )
 
     maf_tableid = database_mappingdf.Id[
-        database_mappingdf['Database'] == 'vcf2maf'][0]
+        database_mappingdf['Database'] == 'vcf2maf'
+    ].iloc[0]
     flatfiles_synid = database_mappingdf.Id[
-        database_mappingdf['Database'] == "centerMaf"][0]
+        database_mappingdf['Database'] == "centerMaf"
+    ].iloc[0]
     # Split into narrow maf and store into db / flat file
     split_and_store_maf(syn=syn,
                         center=center,

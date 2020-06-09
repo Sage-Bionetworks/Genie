@@ -1,10 +1,13 @@
 """Test process mutation functions"""
 import shutil
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch, call
 
 import pandas as pd
+import synapseclient
 
 from genie import process_mutation
+
+SYN = create_autospec(synapseclient.Synapse)
 
 
 def test_format_maf():
@@ -120,3 +123,52 @@ class TestDtype():
             process_mutation.move_mutation(self.mutation_path, self.input_dir)
             patch_move.assert_called_once_with(self.mutation_path,
                                                self.input_dir)
+
+def test_process_mutation_workflow():
+    validfiles = pd.DataFrame(
+        {
+            "fileType": ['vcf', 'maf'],
+            "path": ["path/to/vcf", "path/to/maf"]
+        }
+    )
+    database_mapping = pd.DataFrame(
+        {
+            "Database": ['vcf2maf', 'centerMaf'],
+            "Id": ['syn123', 'syn234']
+        }
+    )
+    genie_annotation_pkg = "annotation/pkg/path"
+    syn_get_calls = [call("syn22053204", ifcollision="overwrite.local",
+                          downloadLocation=genie_annotation_pkg),
+                     call("syn22084320", ifcollision="overwrite.local",
+                          downloadLocation=genie_annotation_pkg)]
+    center = "SAGE"
+    workdir = "working/dir/path"
+    maf_path = "path/to/maf"
+    with patch.object(SYN, "get") as patch_synget,\
+         patch.object(process_mutation,
+                      "annotate_mutation",
+                      return_value=maf_path) as patch_annotation,\
+         patch.object(process_mutation,
+                      "split_and_store_maf") as patch_split:
+
+        maf = process_mutation.process_mutation_workflow(
+            SYN, center, validfiles,
+            genie_annotation_pkg, database_mapping, workdir
+        )
+        patch_synget.assert_has_calls(syn_get_calls)
+        patch_annotation.assert_called_once_with(
+            center=center,
+            mutation_files=["path/to/vcf", "path/to/maf"],
+            genie_annotation_pkg=genie_annotation_pkg,
+            workdir=workdir
+        )
+        patch_split.assert_called_once_with(
+            syn=SYN,
+            center=center,
+            maf_tableid='syn123',
+            annotated_maf_path=maf_path,
+            flatfiles_synid='syn234',
+            workdir=workdir
+        )
+        assert maf == maf_path
