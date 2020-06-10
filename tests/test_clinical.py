@@ -1,8 +1,8 @@
 import datetime
-import mock
-import pytest
+from unittest import mock
 
 import pandas as pd
+import pytest
 import synapseclient
 
 from genie_registry.clinical import clinical

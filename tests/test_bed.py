@@ -1,13 +1,13 @@
 """Test GENIE Bed class"""
 import tempfile
 import shutil
-import mock
-from mock import patch
-import pytest
+from unittest import mock
+from unittest.mock import patch
 
-import synapseclient
 import pandas as pd
 from pandas.testing import assert_frame_equal
+import pytest
+import synapseclient
 
 import genie_registry.bed
 from genie_registry.bed import bed

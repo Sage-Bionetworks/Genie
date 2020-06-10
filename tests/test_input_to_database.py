@@ -1,10 +1,10 @@
 from datetime import datetime
-import mock
-from mock import patch, Mock
 import os
-import pytest
+from unittest import mock
+from unittest.mock import patch
 
 import pandas as pd
+import pytest
 import synapseclient
 import synapseutils
 

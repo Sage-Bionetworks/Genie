@@ -1,6 +1,7 @@
 """Tests validate.py"""
-import mock
-from mock import patch, Mock
+from unittest import mock
+from unittest.mock import patch
+
 import pandas as pd
 import pytest
 import synapseclient
