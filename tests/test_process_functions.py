@@ -30,7 +30,7 @@ def test_removeStringFloat(input_str, output):
     """Remove string float - will always assume that there is a \n
     at the end.  This is because if a value was 2.01, we dont want to
     remove the .0 from this."""
-    assert genie.process_functions.removeStringFloat(input_str) == output
+    assert process_functions.removeStringFloat(input_str) == output
 
 
 def test_valid__check_valid_df():
