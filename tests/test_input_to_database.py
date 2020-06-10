@@ -924,7 +924,7 @@ def test_notmutation_processfile():
             syn=syn,
             center=center,
             validfiles=validfilesdf,
-            genie_annotation_pkg="/home/tyu/annotation-tools",
+            genie_annotation_pkg="/root/annotation-tools",
             database_mappingdf=databaseToSynIdMappingDf,
             workdir=path_to_genie
         )
