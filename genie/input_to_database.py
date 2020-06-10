@@ -850,7 +850,7 @@ def center_input_to_database(syn, project_id, center, process,
                      center_mapping_df, oncotree_link,
                      database_to_synid_mappingdf,
                      processing=process,
-                     genie_annotation_pkg=genie_annotation_pkg)
+                     genome_nexus_pkg=genie_annotation_pkg)
 
         # Should add in this process end tracking
         # before the deletion of samples
