@@ -7,10 +7,7 @@ import time
 from typing import List
 
 import synapseclient
-try:
-    from synapseclient.core.utils import to_unix_epoch_time
-except ModuleNotFoundError:
-    from synapseclient.utils import to_unix_epoch_time
+from synapseclient.core.utils import to_unix_epoch_time
 import synapseutils
 import pandas as pd
 

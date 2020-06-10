@@ -1,7 +1,7 @@
-import mock
-import pytest
+from unittest import mock
 
 import pandas as pd
+import pytest
 import synapseclient
 
 from genie.maf import maf

@@ -1,8 +1,8 @@
-import mock
-from mock import patch
-import pytest
+from unittest import mock
+from unittest.mock import patch
 
 import pandas as pd
+import pytest
 import synapseclient
 
 from genie.fusions import fusions
