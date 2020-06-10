@@ -10,7 +10,8 @@ from genie import process_functions
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
+# TODO: Remove oncotree_link
+# TODO: Remove gneie_annotation_pkg
 def main(process,
          project_id,
          center=None,
@@ -18,6 +19,7 @@ def main(process,
          delete_old=False,
          only_validate=False,
          oncotree_link=None,
+         genie_annotation_pkg=None,
          create_new_maf_database=False,
          debug=False):
 
@@ -89,7 +91,8 @@ def main(process,
             only_validate, databaseToSynIdMappingDf,
             center_mapping_df,
             delete_old=delete_old,
-            oncotree_link=oncotree_link
+            oncotree_link=oncotree_link,
+            genie_annotation_pkg=genie_annotation_pkg
         )
 
     # To ensure that this is the new entity
@@ -149,7 +152,10 @@ if __name__ == "__main__":
         "--debug",
         action='store_true',
         help="Add debug mode to synapse")
-
+    parser.add_argument(
+        "--genie_annotation_pkg",
+        help="GENIE annotation pkg"
+    )
     args = parser.parse_args()
 
     main(args.process,
@@ -160,4 +166,5 @@ if __name__ == "__main__":
          only_validate=args.onlyValidate,
          oncotree_link=args.oncotree_link,
          create_new_maf_database=args.createNewMafDatabase,
-         debug=args.debug)
+         debug=args.debug,
+         genie_annotation_pkg=args.genie_annotation_pkg)

@@ -296,10 +296,11 @@ def validatefile(syn, project_id, entities, validation_status_table, error_track
         invalid_errors.update({'fileType': filetype, 'center': center})
     return input_status_list, invalid_errors_list, messages_to_send
 
-
+# TODO: Create ProcessHelper class
 def processfiles(syn, validfiles, center, path_to_genie,
                  center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-                 processing="main"):
+                 processing="main",
+                 genome_nexus_pkg="/root/annotation-tools"):
     """Processing validated files
 
     Args:
@@ -345,8 +346,6 @@ def processfiles(syn, validfiles, center, path_to_genie,
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf
                 )
     else:
-        # TODO: Don't hardcode this
-        genome_nexus_pkg = "/home/tyu/annotation-tools"
         process_mutation.process_mutation_workflow(
             syn=syn,
             center=center,
@@ -755,7 +754,7 @@ def validation(syn, project_id, center, process,
 def center_input_to_database(syn, project_id, center, process,
                              only_validate, database_to_synid_mappingdf,
                              center_mapping_df, delete_old=False,
-                             oncotree_link=None):
+                             oncotree_link=None, genie_annotation_pkg=None):
     if only_validate:
         log_path = os.path.join(
             process_functions.SCRIPT_DIR,
@@ -850,7 +849,8 @@ def center_input_to_database(syn, project_id, center, process,
         processfiles(syn, validFiles, center, path_to_genie,
                      center_mapping_df, oncotree_link,
                      database_to_synid_mappingdf,
-                     processing=process)
+                     processing=process,
+                     genie_annotation_pkg=genie_annotation_pkg)
 
         # Should add in this process end tracking
         # before the deletion of samples
