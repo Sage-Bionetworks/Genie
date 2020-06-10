@@ -1,13 +1,11 @@
 """Tests validate.py"""
-import mock
-from mock import patch
+from unittest import mock
+from unittest.mock import patch
+
 import pandas as pd
 import pytest
 import synapseclient
-try:
-    from synapseclient.exceptions import SynapseHTTPError
-except ModuleNotFoundError:
-    from synapseclient.core.exceptions import SynapseHTTPError
+from synapseclient.core.exceptions import SynapseHTTPError
 
 from genie import validate, clinical, process_functions
 

@@ -4,8 +4,8 @@ Test GENIE filters
 import datetime
 import os
 import sys
+from unittest.mock import patch
 
-from mock import patch
 import pandas as pd
 
 from genie.process_functions import seqDateFilter
