@@ -1,10 +1,10 @@
 """Test assay information validation and processing"""
 import copy
-from mock import patch, create_autospec
-import pytest
+from unittest.mock import patch, create_autospec
 
-import synapseclient
 import pandas as pd
+import pytest
+import synapseclient
 
 from genie.assay import Assayinfo
 from genie import process_functions
