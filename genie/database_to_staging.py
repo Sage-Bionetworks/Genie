@@ -223,10 +223,10 @@ def configure_maf(mafdf, keep_samples, remove_variants,
     if mafdf.get("Annotation_Status") is None:
         mafdf['Annotation_Status'] = "SUCCESS"
     success = mafdf['Annotation_Status'] == "SUCCESS"
-    print(mafdf.head())
+
     mafdf = mafdf.loc[(keep_maf & ~common_variants &
                        ~to_remove_variants & success),]
-    print(mafdf.head())
+
     fillnas = ['t_depth', 't_ref_count', 't_alt_count',
                'n_depth', 'n_ref_count', 'n_alt_count']
     for col in fillnas:
