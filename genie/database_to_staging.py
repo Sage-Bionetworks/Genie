@@ -216,7 +216,11 @@ def configure_maf(mafdf, keep_samples, remove_variants,
     # Only keep specific samples
     keep_maf = mafdf['Tumor_Sample_Barcode'].isin(keep_samples)
     # Remove common variants
-    common_variants = mafdf['FILTER'].str.contains("common_variant")
+    # na=False to resolve this linked error
+    # https://stackoverflow.com/questions/52297740
+    common_variants = mafdf['FILTER'].astype(str).str.contains(
+        "common_variant", na=False
+    )
     # Remove specific variants
     to_remove_variants = variant.isin(remove_variants)
     # Genome Nexus successfully annotated (vcf2maf does not have this column)
@@ -702,7 +706,7 @@ def store_maf_files(syn,
                                 chunksize=100000)
         for mafchunk in mafchunks:
             # Get center for center staging maf
-            center = mafchunk['Center'][0]
+            center = mafchunk['Center'].iloc[0]
             # Create maf for release
             merged_mafdf = configure_maf(
                 mafchunk, keep_for_merged_consortium_samples,
