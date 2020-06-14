@@ -234,12 +234,6 @@ def main(args):
     data_guide_ent = synapseclient.File(data_guide_pdf,
                                         parent=folders['release_folder'])
     syn.store(data_guide_ent)
-
-
-
-
-
-
     logger.info("COMPLETED CONSORTIUM TO PUBLIC")
 
 

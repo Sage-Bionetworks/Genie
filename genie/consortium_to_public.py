@@ -180,7 +180,9 @@ def consortiumToPublic(syn, processingDate, genie_version,
                 or entName.endswith(".html")
                 or entName in ["data_clinical_sample.txt",
                                "data_gene_matrix.txt",
-                               "data_clinical_patient.txt"]):
+                               "data_clinical_patient.txt",
+                               "data_guide.pdf",
+                               "release_notes.pdf"]):
             # data_gene_matrix was processed above because it had to be
             # used for generating caselists
             continue

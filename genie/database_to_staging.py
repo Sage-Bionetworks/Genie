@@ -1544,11 +1544,11 @@ def create_link_version(syn, genie_version, case_list_entities,
     for release_file in consortium_release_files:
         not_folder = release_file['type'] != "org.sagebionetworks.repo.model.Folder"
         # data_clinical.txt MUST be pulled in when doing consortium release
-        not_clinical = (release_file['name'] != "data_clinical.txt" or
-                        release_type == "consortium")
+        not_public = (release_file['name'] != "data_clinical.txt" or
+                      release_type == "consortium")
         is_gene_panel = release_file['name'].startswith("data_gene_panel")
 
-        if not_folder and not_clinical and not is_gene_panel:
+        if not_folder and not_public and not is_gene_panel:
             syn.store(synapseclient.Link(
                 release_file['id'],
                 parent=release_folder_synid,
