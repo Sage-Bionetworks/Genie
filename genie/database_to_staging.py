@@ -1558,11 +1558,13 @@ def create_link_version(syn, genie_version, case_list_entities,
     release_files = syn.getChildren(release_folder_synid)
     clinical_ent = [ents['id']
                     for ents in release_files
-                    if ents['name'] == "data_clinical.txt"][0]
+                    if ents['name'] == "data_clinical.txt"]
     if clinical_ent:
         # Set private permission for the data_clinical.txt link
-        syn.setPermissions(clinical_ent, principalId=3346558, accessType=[])
-        syn.setPermissions(clinical_ent, principalId=3326313, accessType=[])
+        syn.setPermissions(clinical_ent[0], principalId=3346558,
+                           accessType=[])
+        syn.setPermissions(clinical_ent[0], principalId=3326313,
+                           accessType=[])
 
     for ents in case_list_entities:
         syn.store(synapseclient.Link(
