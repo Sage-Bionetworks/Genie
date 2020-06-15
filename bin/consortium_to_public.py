@@ -190,22 +190,6 @@ def main(args):
         processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
-    # if not args.test:
-    #     logger.info("DASHBOARD UPDATE")
-    #     dashboard_table_updater.run_dashboard(
-    #         syn, databaseSynIdMappingDf,
-    #         args.genieVersion, staging=args.staging, public=True)
-    #     dashboard_markdown_gen_path = os.path.join(
-    #         os.path.dirname(os.path.abspath(__file__)),
-    #         'dashboard_markdown_generator.R')
-    #     dashboard_markdown_html_commands = ['Rscript',
-    #                                         dashboard_markdown_gen_path,
-    #                                         args.genieVersion]
-    #     if args.staging:
-    #         dashboard_markdown_html_commands.append('--staging')
-    #     subprocess.check_call(dashboard_markdown_html_commands)
-    #     logger.info("DASHBOARD UPDATE COMPLETE")
-
     if not args.test:
         logger.info("DASHBOARD UPDATE")
         dashboard_table_updater.run_dashboard(syn, databaseSynIdMappingDf,
