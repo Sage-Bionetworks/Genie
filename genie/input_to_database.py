@@ -332,7 +332,7 @@ def processfiles(syn, validfiles, center, path_to_genie,
                 tableid = tableid[0]
 
             if filetype is not None:
-                processor = format_registry[processing](syn, center)
+                processor = format_registry[filetype](syn, center)
                 processor.process(
                     filePath=row['path'], newPath=newpath,
                     parentId=center_staging_synid, databaseSynId=tableid,

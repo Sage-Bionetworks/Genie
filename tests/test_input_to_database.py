@@ -842,8 +842,7 @@ class TestValidation:
 @pytest.mark.parametrize(
     'process, genieclass, filetype', [
         ('main', Mock(), 'clinical'),
-        ('maf', Mock(), 'maf'),
-        ('mafSP', Mock(), 'mafSP')
+        ('main', Mock(), 'maf'),
     ]
 )
 def test_main_processfile(process, genieclass, filetype):
@@ -863,13 +862,14 @@ def test_main_processfile(process, genieclass, filetype):
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
     format_registry = {filetype: genieclass}
 
-    with patch.object(genieclass, "process") as patch_class:
-        input_to_database.processfiles(
-            syn, validfilesdf, center, path_to_genie,
-            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-            processing=process,
-            format_registry=format_registry)
-        patch_class.assert_called_once()
+    input_to_database.processfiles(
+        syn, validfilesdf, center, path_to_genie,
+        center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
+        processing=process,
+        format_registry=format_registry
+    )
+    genieclass.assert_called_once()
+
 
 
 def test_mainnone_processfile():
@@ -899,7 +899,7 @@ def test_mainnone_processfile():
         patch_clin.assert_not_called()
 
 
-def test_notmutation_processfile():
+def test_mutation_processfile():
     '''
     Make sure mutation is called correctly
     '''
@@ -916,6 +916,7 @@ def test_notmutation_processfile():
     databaseToSynIdMapping = {'Database': ['vcf'],
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
+    process_cls = Mock()
 
     with patch.object(process_mutation,
                       "process_mutation_workflow") as patch_process:
