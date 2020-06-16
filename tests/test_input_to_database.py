@@ -8,7 +8,7 @@ import pytest
 import synapseclient
 import synapseutils
 
-from genie import input_to_database, process_functions
+from genie import input_to_database, process_functions, process_mutation
 from genie_registry.clinical import clinical
 import genie.config
 from genie.validate import GenieValidationHelper
@@ -146,11 +146,11 @@ def test_main_get_center_input_files():
         patch_syn_get.assert_has_calls(calls)
 
 
-def test_vcf_get_center_input_files():
-    '''
+def test_mutation_get_center_input_files():
+    """
     Test to make sure center input files are gotten
     including the vcf files since process vcf is specified
-    '''
+    """
     syn_get_effects = [sample_clinical_entity, patient_clinical_entity,
                        vcf1_entity, vcf2_entity]
     expected_center_file_list = [
@@ -166,10 +166,9 @@ def test_vcf_get_center_input_files():
                       return_value=walk_return()) as patch_synapseutils_walk,\
          patch.object(syn, "get",
                       side_effect=syn_get_effects) as patch_syn_get:
-        center_file_list = input_to_database.get_center_input_files(syn,
-                                                                    "syn12345",
-                                                                    center,
-                                                                    process="vcf")
+        center_file_list = input_to_database.get_center_input_files(
+            syn, "syn12345", center, process="mutation"
+        )
         assert len(center_file_list) == len(expected_center_file_list)
         assert len(center_file_list[2]) == 2
         assert center_file_list == expected_center_file_list
@@ -842,9 +841,14 @@ class TestValidation:
 
 @pytest.mark.parametrize(
     'process, genieclass, filetype', [
+<<<<<<< HEAD
         ('main', Mock(), 'clinical'),
         ('maf', Mock(), 'maf'),
         ('mafSP', Mock(), 'mafSP')
+=======
+        ('main', clinical, 'clinical'),
+        ('main', maf, 'maf')
+>>>>>>> develop
     ]
 )
 def test_main_processfile(process, genieclass, filetype):
@@ -864,6 +868,7 @@ def test_main_processfile(process, genieclass, filetype):
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
     format_registry = {filetype: genieclass}
 
+<<<<<<< HEAD
     input_to_database.processfiles(
         syn, validfilesdf, center, path_to_genie,
         center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
@@ -871,12 +876,18 @@ def test_main_processfile(process, genieclass, filetype):
         veppath=None, vepdata=None,
         processing=process, reference=None,
         format_registry=format_registry)
+=======
+    with patch.object(genieclass, "process") as patch_class:
+        input_to_database.processfiles(
+            syn, validfilesdf, center, path_to_genie,
+            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
+            processing=process)
+        patch_class.assert_called_once()
+>>>>>>> develop
 
 
 def test_mainnone_processfile():
-    '''
-    If file type is None, the processing function is not called
-    '''
+    """If file type is None, the processing function is not called"""
     validfiles = {'id': ['syn1'],
                   'path': ['/path/to/data_clinical_supp_SAGE.txt'],
                   'fileType': [None],
@@ -893,6 +904,7 @@ def test_mainnone_processfile():
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
     process_cls = Mock()
 
+<<<<<<< HEAD
     input_to_database.processfiles(
         syn, validfilesdf, center, path_to_genie,
         center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
@@ -901,11 +913,19 @@ def test_mainnone_processfile():
         processing="main", reference=None,
         format_registry={"main": process_cls})
     process_cls.assert_not_called()
+=======
+    with patch.object(clinical, "process") as patch_clin:
+        input_to_database.processfiles(
+            syn, validfilesdf, center, path_to_genie,
+            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
+            processing="main")
+        patch_clin.assert_not_called()
+>>>>>>> develop
 
 
-def test_notvcf_processfile():
+def test_notmutation_processfile():
     '''
-    Make sure vcf, maf, mafSP is called correctly
+    Make sure mutation is called correctly
     '''
     validfiles = {'id': ['syn1'],
                   'path': ['/path/to/data_clinical_supp_SAGE.txt'],
@@ -920,6 +940,7 @@ def test_notvcf_processfile():
     databaseToSynIdMapping = {'Database': ['vcf'],
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
+<<<<<<< HEAD
     process_cls = Mock()
 
     input_to_database.processfiles(
@@ -930,3 +951,21 @@ def test_notvcf_processfile():
         processing='vcf', reference=None,
         format_registry={"vcf": process_cls})
     process_cls.assert_not_called
+=======
+
+    with patch.object(process_mutation,
+                      "process_mutation_workflow") as patch_process:
+        input_to_database.processfiles(
+            syn, validfilesdf, center, path_to_genie,
+            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
+            processing='mutation')
+        # TODO: fix hardcoding
+        patch_process.assert_called_once_with(
+            syn=syn,
+            center=center,
+            validfiles=validfilesdf,
+            genie_annotation_pkg="/root/annotation-tools",
+            database_mappingdf=databaseToSynIdMappingDf,
+            workdir=path_to_genie
+        )
+>>>>>>> develop

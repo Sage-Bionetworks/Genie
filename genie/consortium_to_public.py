@@ -180,7 +180,9 @@ def consortiumToPublic(syn, processingDate, genie_version,
                 or entName.endswith(".html")
                 or entName in ["data_clinical_sample.txt",
                                "data_gene_matrix.txt",
-                               "data_clinical_patient.txt"]):
+                               "data_clinical_patient.txt",
+                               "data_guide.pdf",
+                               "release_notes.pdf"]):
             # data_gene_matrix was processed above because it had to be
             # used for generating caselists
             continue
@@ -290,73 +292,6 @@ def consortiumToPublic(syn, processingDate, genie_version,
             copiedEnt.versionComment = genie_version
             syn.store(copiedEnt, forceVersion=False)
     return caseListEntities, genePanelEntities
-
-
-# Check to see if can use createLinkVersion from db_to_stage
-# There are specific things to each script.
-# Db to stage sets permissions on a data clinical file
-# And pulls the consortium release db synid
-def createLinkVersion(syn, genie_version, caseListEntities,
-                      genePanelEntities, databaseSynIdMappingDf):
-    versioning = genie_version.split(".")
-    logger.info(genie_version)
-    main = versioning[0]
-    releaseSynId = databaseSynIdMappingDf['Id'][
-        databaseSynIdMappingDf['Database'] == 'release'].values[0]
-    publicSynId = databaseSynIdMappingDf['Id'][
-        databaseSynIdMappingDf['Database'] == 'public'].values[0]
-    # second = ".".join(versioning[1:])
-    releases = synapseutils.walk(syn, releaseSynId)
-    mainReleaseFolders = next(releases)[1]
-    releaseFolderSynId = [synId for folderName, synId in mainReleaseFolders
-                          if folderName == "Release %s" % main]
-    if len(releaseFolderSynId) > 0:
-        secondRelease = synapseutils.walk(syn, releaseFolderSynId[0])
-        secondReleaseFolders = next(secondRelease)[1]
-        secondReleaseFolderSynIdList = [
-            synId for folderName, synId in secondReleaseFolders
-            if folderName == genie_version]
-        if len(secondReleaseFolderSynIdList) > 0:
-            secondReleaseFolderSynId = secondReleaseFolderSynIdList[0]
-        else:
-            secondReleaseFolderSynId = syn.store(
-                synapseclient.Folder(genie_version,
-                                     parent=releaseFolderSynId[0])).id
-    else:
-        mainReleaseFolderId = syn.store(
-            synapseclient.Folder("Release %s" % main,
-                                 parent=releaseSynId)).id
-        secondReleaseFolderSynId = syn.store(
-            synapseclient.Folder(genie_version, parent=mainReleaseFolderId)).id
-
-    caselistId = database_to_staging.find_caselistid(syn,
-                                                     secondReleaseFolderSynId)
-
-    publicRelease = syn.getChildren(publicSynId)
-    # Link public release files
-    for ents in publicRelease:
-        not_folder = ents['type'] != "org.sagebionetworks.repo.model.Folder"
-        not_clinical = ents['name'] != "data_clinical.txt"
-        check_gene_panel = ents['name'].startswith("data_gene_panel")
-        if not_folder and not_clinical and not check_gene_panel:
-            ent_link = synapseclient.Link(ents['id'],
-                                          parent=secondReleaseFolderSynId,
-                                          targetVersion=ents['versionNumber'])
-            syn.store(ent_link)
-
-    # Link case lists
-    for ents in caseListEntities:
-        case_list_link = synapseclient.Link(ents.id,
-                                            parent=caselistId,
-                                            targetVersion=ents.versionNumber)
-        syn.store(case_list_link)
-
-    # Store gene panels
-    for ents in genePanelEntities:
-        gene_panel_link = synapseclient.Link(ents.id,
-                                             parent=secondReleaseFolderSynId,
-                                             targetVersion=ents.versionNumber)
-        syn.store(gene_panel_link)
 
 
 def get_public_to_consortium_synid_mapping(syn, releaseSynId, test=False):

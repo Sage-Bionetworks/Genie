@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y gnupg2 software-properties-common
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
 RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran35/'
 
+# General sys dependencies
 RUN apt-get update && apt-get install -y --allow-unauthenticated \
 	bedtools \ 
 	dos2unix \
@@ -16,6 +17,7 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated \
 	r-base-core \
 	r-base-dev \
 	curl 
+
 #synapser client dependencies
 RUN apt-get install -y --allow-unauthenticated \
     dpkg-dev \
@@ -25,9 +27,7 @@ RUN apt-get install -y --allow-unauthenticated \
 	libcurl4-openssl-dev \
 # VariantAnnotation dependency
 	libxml2-dev
-# 	libcurl3 \
-# 	libcurl3-dev \ 
-# 	libmariadb-client-lgpl-dev \
+
 
 # Supports data guide creation
 RUN apt-get install -y texlive \
@@ -35,12 +35,12 @@ RUN apt-get install -y texlive \
 	texlive-generic-recommended \
 	texlive-latex-extra
 
+# For genome nexus
+RUN apt-get install -y openjdk-8-jre
+
 RUN pip3 install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto PyYAML
 RUN pip install pandas numexpr --upgrade
-
-# RUN rm /usr/bin/python 
-# RUN ln -s /usr/bin/python3 /usr/bin/python 
 
 #install pandoc 1.19.2.1 (dashboard use)
 RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.1-1-amd64.deb
@@ -48,6 +48,13 @@ RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb
 
 COPY docker/installPackages.R /installPackages.R
 RUN Rscript /installPackages.R
+
+WORKDIR /root
+RUN git clone https://github.com/genome-nexus/annotation-tools.git
+# RUN git clone https://github.com/genome-nexus/genome-nexus-annotation-pipeline.git
+
+# WORKDIR /root/genome-nexus-annotation-pipeline
+# RUN mvn clean install
 
 # Only copy most recent changes in code are always installed
 # Do not build from local computer

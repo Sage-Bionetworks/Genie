@@ -61,8 +61,14 @@ def makeCNARow(row, symbols):
 
 
 def mergeCNAvalues(x):
-    x.dropna(inplace=True)
-    uniqueValues = set(x.unique())
+    """Merge CNA values, make sure if there are two rows that are the
+    same gene, the values are merged"""
+    # Change into its own series, because sometimes doing an apply
+    # will cause there to be a missing index value which will
+    # cause dropna() to fail.
+    values = pd.Series(x.values)
+    values.dropna(inplace=True)
+    uniqueValues = set(values.unique())
     if len(uniqueValues) == 1:
         returnVal = x.tolist()[0]
     elif len(uniqueValues) <= 2:
