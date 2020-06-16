@@ -16,7 +16,8 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated \
 	git \
 	r-base-core \
 	r-base-dev \
-	curl 
+	curl \
+	openjdk-8-jre
 
 #synapser client dependencies
 RUN apt-get install -y --allow-unauthenticated \
@@ -35,7 +36,7 @@ RUN apt-get install -y texlive \
 	texlive-latex-extra
 
 # For genome nexus
-RUN apt-get install -y openjdk-8-jre
+# RUN apt-get install -y openjdk-8-jre
 
 RUN pip3 install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto PyYAML
