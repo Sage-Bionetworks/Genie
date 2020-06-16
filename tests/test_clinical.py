@@ -1,4 +1,5 @@
 import datetime
+import json
 from unittest import mock
 
 import pandas as pd
@@ -427,7 +428,9 @@ def test_nonull__validate():
             "This column must only be these values: 1, 2, 99\n"
             "Patient Clinical File: Please double check your ETHNICITY "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n")
-        assert error == expected_errors.format(year=datetime.datetime.utcnow().year)
+        assert error == expected_errors.format(
+            year=datetime.datetime.utcnow().year
+        )
         assert warning == ""
 
 
@@ -466,7 +469,6 @@ def test_missingcols__validate():
             "This column will be added\n"
             "Patient Clinical File: Doesn't have ETHNICITY column. "
             "This column will be added\n")
-        print(error)
         assert error == expected_errors
         assert warning == expected_warnings
 
@@ -478,15 +480,15 @@ def test_errors__validate():
     sampleDf = pd.DataFrame(dict(
         SAMPLE_ID=[float('nan'), "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
         PATIENT_ID=["ID6", "ID2", "ID3", float('nan'), "ID5"],
-        AGE_AT_SEQ_REPORT=[10, 100000, "doo", 100000, 100000],
+        AGE_AT_SEQ_REPORT=[10, 100000, ">doo", 100000, 100000],
         ONCOTREE_CODE=['AMPCAD', 'TESTIS', 'AMPCA', 'AMPCA', 'UCEC'],
         SAMPLE_TYPE=[1, 2, 3, 4, 6],
         SEQ_ASSAY_ID=[float('nan'), 'Sage-1', 'SAGE-1', 'S-SAGE-1', 'SAGE-1'],
         SEQ_DATE=['Jane-2013', 'Jan-2013', 'Jan-2013', 'Jan-2013', 'Jan-2013'],
         YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 19930, 1990],
         YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 19940],
-        INT_CONTACT=['>32485', '<6570', 'Unknown', 'Not Collected', "foobar"],
-        INT_DOD=['>32485', '<6570', 'Unknown', 'Not Collected', 'dense'],
+        INT_CONTACT=['>32485', '<6570', 'Unknown', 'Not Collected', ">foobar"],
+        INT_DOD=['>32485', '<6570', 'Unknown', 'Not Collected', '<dense'],
         DEAD=[1, False, 'Unknown', 'Not Collected', 'Not Applicable']))
 
     patientDf = pd.DataFrame(dict(
@@ -496,8 +498,7 @@ def test_errors__validate():
         SECONDARY_RACE=[1, 2, 3, 6, float('nan')],
         TERTIARY_RACE=[1, 2, 3, 6, float('nan')],
         ETHNICITY=[1, 2, 3, 6, float('nan')],
-        BIRTH_YEAR=[1990, 1990, datetime.datetime.utcnow().year + 1,
-                    1990, 1990],
+        BIRTH_YEAR=[1990, 1990, ">90", 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"]))
     clinicalDf = patientDf.merge(sampleDf, on="PATIENT_ID")
     with mock.patch(
@@ -618,25 +619,31 @@ def test_duplicated__validate():
 
 
 class fake_oncotree():
-    import json
     text = json.dumps({
         'TISSUE': {
             'children': {
-              'AMPCA': {
-                'level': 1,
-                'mainType': 'Ampullary Cancer',
-                'name': 'Ampullary Carcinoma',
-                'children': {
-                    'TESTIS': {
-                        'level': 2,
-                        'mainType': 'Testicular Cancer, NOS',
-                        'name': 'Testis',
-                        'children': []},
-                    'UCEC': {
-                        'level': 2,
-                        'mainType': 'Endometrial Cancer',
-                        'name': 'Endometrial Carcinoma',
-                        'children': []}}}}}})
+                'AMPCA': {
+                    'level': 1,
+                    'mainType': 'Ampullary Cancer',
+                    'name': 'Ampullary Carcinoma',
+                    'children': {
+                        'TESTIS': {
+                            'level': 2,
+                            'mainType': 'Testicular Cancer, NOS',
+                            'name': 'Testis',
+                            'children': []
+                        },
+                        'UCEC': {
+                            'level': 2,
+                            'mainType': 'Endometrial Cancer',
+                            'name': 'Endometrial Carcinoma',
+                            'children': []
+                        }
+                    }
+                }
+            }
+        }
+    })
 
 
 expected_onco_mapping = {
@@ -644,17 +651,21 @@ expected_onco_mapping = {
         'CANCER_TYPE': 'Ampullary Cancer',
         'CANCER_TYPE_DETAILED': 'Ampullary Carcinoma',
         'ONCOTREE_PRIMARY_NODE': 'AMPCA',
-        'ONCOTREE_SECONDARY_NODE': ''},
+        'ONCOTREE_SECONDARY_NODE': ''
+    },
     'TESTIS': {
         'CANCER_TYPE': 'Testicular Cancer, NOS',
         'CANCER_TYPE_DETAILED': 'Testis',
         'ONCOTREE_PRIMARY_NODE': 'AMPCA',
-        'ONCOTREE_SECONDARY_NODE': 'TESTIS'},
+        'ONCOTREE_SECONDARY_NODE': 'TESTIS'
+    },
     'UCEC': {
         'CANCER_TYPE': 'Endometrial Cancer',
         'CANCER_TYPE_DETAILED': 'Endometrial Carcinoma',
         'ONCOTREE_PRIMARY_NODE': 'AMPCA',
-        'ONCOTREE_SECONDARY_NODE': 'UCEC'}}
+        'ONCOTREE_SECONDARY_NODE': 'UCEC'
+    }
+}
 
 
 def test_get_oncotree_code_mappings():

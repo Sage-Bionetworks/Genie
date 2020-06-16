@@ -57,6 +57,8 @@ def _check_year(clinicaldf: pd.DataFrame, year_col: int, filename: str,
                 lambda x: datetime.datetime.strptime(
                     str(int(x)), '%Y').year > year_now
             )
+            # Make sure that none of the years are greater than the current
+            # year.  It can be the same, but can't future years.
             assert not years.any()
         except Exception:
             error = (f"{filename}: Please double check your {year_col} "
