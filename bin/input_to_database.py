@@ -10,7 +10,8 @@ from genie import process_functions
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
+# TODO: Remove oncotree_link
+# TODO: Remove gneie_annotation_pkg
 def main(process,
          project_id,
          center=None,
@@ -18,26 +19,11 @@ def main(process,
          delete_old=False,
          only_validate=False,
          oncotree_link=None,
+         genie_annotation_pkg=None,
          create_new_maf_database=False,
-         debug=False,
-         reference=None,
-         vcf2maf_path=None,
-         vep_path=None,
-         vep_data=None):
+         debug=False):
 
     syn = process_functions.synLogin(pemfile, debug=debug)
-    # Must specify correct paths to vcf2maf, VEP and VEP data
-    # if trying to process vcf, maf and mafSP
-    if process in ['vcf', 'maf', 'mafSP'] and not only_validate:
-        assert os.path.exists(vcf2maf_path), (
-            "Path to vcf2maf (--vcf2mafPath) must be specified "
-            "if `--process {vcf,maf,mafSP}` is used")
-        assert os.path.exists(vep_path), (
-            "Path to VEP (--vepPath) must be specified "
-            "if `--process {vcf,maf,mafSP}` is used")
-        assert os.path.exists(vep_data), (
-            "Path to VEP data (--vepData) must be specified "
-            "if `--process {vcf,maf,mafSP}` is used")
 
     # Get the Synapse Project where data is stored
     # Should have annotations to find the table lookup
@@ -61,10 +47,16 @@ def main(process,
                 ", ".join(center_mapping_df.center)))
         centers = [center]
     else:
+        # exclude_sites = ['JHU', 'DFCI', 'GRCC', 'VICC', 'NKI', 'MSK',
+        #                  'UHN', 'MDA', 'WAKE', 'YALE', 'UCSF', 'CRUK',
+        #                  'CHOP', 'VHIO', 'SCI', 'PHS', 'COLU', 'UCHI']
         center_mapping_df = \
             center_mapping_df[~center_mapping_df['inputSynId'].isnull()]
         # release is a bool column
         center_mapping_df = center_mapping_df[center_mapping_df['release']]
+        # center_mapping_df = center_mapping_df[
+        #     ~center_mapping_df['center'].isin(exclude_sites)
+        # ]
         centers = center_mapping_df.center
 
     if oncotree_link is None:
@@ -93,14 +85,15 @@ def main(process,
         databaseToSynIdMappingDf = \
             input_to_database.create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
 
-    for center in centers:
+    for process_center in centers:
         input_to_database.center_input_to_database(
-            syn, project_id, center, process,
-            only_validate, vcf2maf_path, vep_path,
-            vep_data, databaseToSynIdMappingDf,
-            center_mapping_df, reference=reference,
+            syn, project_id, process_center, process,
+            only_validate, databaseToSynIdMappingDf,
+            center_mapping_df,
             delete_old=delete_old,
-            oncotree_link=oncotree_link)
+            oncotree_link=oncotree_link,
+            genie_annotation_pkg=genie_annotation_pkg
+        )
 
     # To ensure that this is the new entity
     center_mapping_ent = syn.get(center_mapping_id)
@@ -126,7 +119,7 @@ if __name__ == "__main__":
         description='GENIE center ')
     parser.add_argument(
         "process",
-        choices=['vcf', 'maf', 'main', 'mafSP'],
+        choices=['mutation', 'main'],
         help='Process vcf, maf or the rest of the files')
     parser.add_argument(
         "--project_id",
@@ -160,27 +153,9 @@ if __name__ == "__main__":
         action='store_true',
         help="Add debug mode to synapse")
     parser.add_argument(
-        "--reference",
-        type=str,
-        help="Path to VCF reference file")
-
-    # DEFAULT PARAMS
-    parser.add_argument(
-        "--vcf2mafPath",
-        type=str,
-        help="Path to vcf2maf",
-        default=os.path.expanduser("~/vcf2maf-1.6.14"))
-    parser.add_argument(
-        "--vepPath",
-        type=str,
-        help="Path to VEP",
-        default=os.path.expanduser("~/vep"))
-    parser.add_argument(
-        "--vepData",
-        type=str,
-        help="Path to VEP data",
-        default=os.path.expanduser("~/.vep"))
-
+        "--genie_annotation_pkg",
+        help="GENIE annotation pkg"
+    )
     args = parser.parse_args()
 
     main(args.process,
@@ -192,7 +167,4 @@ if __name__ == "__main__":
          oncotree_link=args.oncotree_link,
          create_new_maf_database=args.createNewMafDatabase,
          debug=args.debug,
-         reference=args.reference,
-         vcf2maf_path=args.vcf2mafPath,
-         vep_path=args.vepPath,
-         vep_data=args.vepData)
+         genie_annotation_pkg=args.genie_annotation_pkg)
