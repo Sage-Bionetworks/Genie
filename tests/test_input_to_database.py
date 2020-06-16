@@ -841,14 +841,9 @@ class TestValidation:
 
 @pytest.mark.parametrize(
     'process, genieclass, filetype', [
-<<<<<<< HEAD
         ('main', Mock(), 'clinical'),
         ('maf', Mock(), 'maf'),
         ('mafSP', Mock(), 'mafSP')
-=======
-        ('main', clinical, 'clinical'),
-        ('main', maf, 'maf')
->>>>>>> develop
     ]
 )
 def test_main_processfile(process, genieclass, filetype):
@@ -868,22 +863,13 @@ def test_main_processfile(process, genieclass, filetype):
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
     format_registry = {filetype: genieclass}
 
-<<<<<<< HEAD
-    input_to_database.processfiles(
-        syn, validfilesdf, center, path_to_genie,
-        center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-        validVCF=None, vcf2mafPath=None,
-        veppath=None, vepdata=None,
-        processing=process, reference=None,
-        format_registry=format_registry)
-=======
     with patch.object(genieclass, "process") as patch_class:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie,
             center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-            processing=process)
+            processing=process,
+            format_registry=format_registry)
         patch_class.assert_called_once()
->>>>>>> develop
 
 
 def test_mainnone_processfile():
@@ -904,23 +890,13 @@ def test_mainnone_processfile():
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
     process_cls = Mock()
 
-<<<<<<< HEAD
-    input_to_database.processfiles(
-        syn, validfilesdf, center, path_to_genie,
-        center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-        validVCF=None, vcf2mafPath=None,
-        veppath=None, vepdata=None,
-        processing="main", reference=None,
-        format_registry={"main": process_cls})
-    process_cls.assert_not_called()
-=======
     with patch.object(clinical, "process") as patch_clin:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie,
             center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-            processing="main")
+            processing="main",
+            format_registry={"main": process_cls})
         patch_clin.assert_not_called()
->>>>>>> develop
 
 
 def test_notmutation_processfile():
@@ -940,25 +916,14 @@ def test_notmutation_processfile():
     databaseToSynIdMapping = {'Database': ['vcf'],
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
-<<<<<<< HEAD
-    process_cls = Mock()
-
-    input_to_database.processfiles(
-        syn, validfilesdf, center, path_to_genie,
-        center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-        validVCF=None, vcf2mafPath=None,
-        veppath=None, vepdata=None,
-        processing='vcf', reference=None,
-        format_registry={"vcf": process_cls})
-    process_cls.assert_not_called
-=======
 
     with patch.object(process_mutation,
                       "process_mutation_workflow") as patch_process:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie,
             center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-            processing='mutation')
+            processing='mutation',
+            format_registry={"vcf": process_cls})
         # TODO: fix hardcoding
         patch_process.assert_called_once_with(
             syn=syn,
@@ -968,4 +933,3 @@ def test_notmutation_processfile():
             database_mappingdf=databaseToSynIdMappingDf,
             workdir=path_to_genie
         )
->>>>>>> develop
