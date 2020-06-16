@@ -17,26 +17,21 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated \
 	r-base-core \
 	r-base-dev \
 	curl \
-	openjdk-8-jre
-
 #synapser client dependencies
-RUN apt-get install -y --allow-unauthenticated \
     dpkg-dev \
 	zlib1g-dev \
 	libssl-dev \
 	libffi-dev \
 	libcurl4-openssl-dev \
 # VariantAnnotation dependency
-	libxml2-dev
-
+	libxml2-dev \
 # Supports data guide creation
-RUN apt-get install -y texlive \
+	texlive \
 	texinfo \
 	texlive-generic-recommended \
-	texlive-latex-extra
-
-# For genome nexus
-# RUN apt-get install -y openjdk-8-jre
+	texlive-latex-extra \
+# genome nexus
+	openjdk-8-jre
 
 RUN pip3 install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto PyYAML
