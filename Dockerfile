@@ -36,7 +36,7 @@ RUN apt-get install -y texlive \
 	texlive-latex-extra
 
 # For genome nexus
-RUN apt-get install -y openjdk-8-jdk
+RUN apt-get install -y openjdk-8-jre
 
 RUN pip3 install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto PyYAML
