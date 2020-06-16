@@ -924,13 +924,14 @@ def test_mutation_processfile():
             syn, validfilesdf, center, path_to_genie,
             center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             processing='mutation',
+            genome_nexus_pkg="/path/to/nexus",
             format_registry={"vcf": process_cls})
         # TODO: fix hardcoding
         patch_process.assert_called_once_with(
             syn=syn,
             center=center,
             validfiles=validfilesdf,
-            genie_annotation_pkg="/root/annotation-tools",
+            genie_annotation_pkg="/path/to/nexus",
             database_mappingdf=databaseToSynIdMappingDf,
             workdir=path_to_genie
         )
