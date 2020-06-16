@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 from genie import create_case_lists
