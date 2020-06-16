@@ -642,7 +642,8 @@ def store_maf_files(syn,
                         f.write(header)
         # with open(mafEnt.path,"r") as newMafFile:
         #   newMafFile.readline()
-            center = mafEnt.path.split("_")[3]
+            # In case filename isn't named correctly.
+            center = mafEnt.path.split("_")[3].replace(".txt", "")
             # Make sure to only write the centers that release = True
             if center in center_mappingdf.center.tolist():
                 for row in mafFile:
