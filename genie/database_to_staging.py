@@ -189,13 +189,28 @@ def redact_phi(clinicaldf, interval_cols_to_redact=['AGE_AT_SEQ_REPORT',
     return clinicaldf
 
 
-def configure_maf(mafdf, keep_samples, remove_variants,
-                  flagged_variants):
+def remove_maf_samples(mafdf: pd.DataFrame,
+                       keep_samples: list) -> pd.DataFrame:
+    """Remove samples from maf file
+
+    Args:
+        mafdf: Maf dataframe
+        keep_samples: Samples to keep
+
+    Returns:
+        Filtered maf dataframe
+
+    """
+    keep_maf = mafdf['Tumor_Sample_Barcode'].isin(keep_samples)
+    mafdf = mafdf.loc[keep_maf, ]
+    return mafdf
+
+
+def configure_maf(mafdf, remove_variants, flagged_variants):
     """Configures each maf dataframe, does germline filtering
 
     Args:
         mafdf: Maf dataframe
-        keepSamples: Samples to keep
         remove_variants: Variants to remove
         flagged_variants: Variants to flag
 
@@ -213,14 +228,19 @@ def configure_maf(mafdf, keep_samples, remove_variants,
 
     # Flag mutation in cis variants
     mafdf['mutationInCis_Flag'] = mergecheck_variant.isin(flagged_variants)
-    # Only keep specific samples
-    keep_maf = mafdf['Tumor_Sample_Barcode'].isin(keep_samples)
     # Remove common variants
     # na=False to resolve this linked error
     # https://stackoverflow.com/questions/52297740
     common_variants = mafdf['FILTER'].astype(str).str.contains(
         "common_variant", na=False
     )
+    gnomad_cols = ["gnomAD_AFR_AF", 'gnomAD_AMR_AF', 'gnomAD_ASJ_AF',
+                   'gnomAD_EAS_AF', 'gnomAD_FIN_AF', 'gnomAD_NFE_AF',
+                   'gnomAD_OTH_AF', 'gnomAD_SAS_AF']
+    new_common_variants = mafdf.loc[
+        :, gnomad_cols
+    ].max(axis=1, skipna=True) > 0.001
+
     # Remove specific variants
     to_remove_variants = variant.isin(remove_variants)
     # Genome Nexus successfully annotated (vcf2maf does not have this column)
@@ -228,7 +248,7 @@ def configure_maf(mafdf, keep_samples, remove_variants,
         mafdf['Annotation_Status'] = "SUCCESS"
     success = mafdf['Annotation_Status'] == "SUCCESS"
 
-    mafdf = mafdf.loc[(keep_maf & ~common_variants &
+    mafdf = mafdf.loc[(~common_variants & ~new_common_variants &
                        ~to_remove_variants & success),]
 
     fillnas = ['t_depth', 't_ref_count', 't_alt_count',
@@ -648,26 +668,26 @@ def store_maf_files(syn,
         if center in center_mappingdf.center.tolist():
             mafchunks = pd.read_csv(maf_ent.path, sep="\t", comment="#",
                                     chunksize=100000)
-            center = mafchunks[0]['Center'].iloc[0]
 
             for mafchunk in mafchunks:
                 # Get center for center staging maf
                 center = mafchunk['Center'].iloc[0]
-                # Create maf for release
-                merged_mafdf = configure_maf(
-                    mafchunk, keep_for_merged_consortium_samples,
-                    remove_mafinbed_variants,
+                # Configure maf
+                configured_mafdf = configure_maf(
+                    mafchunk, remove_mafinbed_variants,
                     flagged_mutationInCis_variants
                 )
-                #if not merged_mafdf.empty:
+                # Create maf for release
+                merged_mafdf = remove_maf_samples(
+                    configured_mafdf,
+                    keep_for_merged_consortium_samples
+                )
                 append_or_create_release_maf(merged_mafdf, mutations_path)
                 # Create maf for center staging
-                center_mafdf = configure_maf(
-                    mafchunk, keep_for_center_consortium_samples,
-                    remove_mafinbed_variants,
-                    flagged_mutationInCis_variants
+                center_mafdf = remove_maf_samples(
+                    configured_mafdf,
+                    keep_for_center_consortium_samples
                 )
-                #if not center_mafdf.empty:
                 append_or_create_release_maf(
                     center_mafdf, MUTATIONS_CENTER_PATH % center
                 )
