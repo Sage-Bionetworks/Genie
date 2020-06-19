@@ -639,32 +639,38 @@ def store_maf_files(syn,
     for center in clinicaldf['CENTER'].unique():
         with open(MUTATIONS_CENTER_PATH % center, 'w'):
             pass
+
     for _, mafSynId in enumerate(centerMafSynIdsDf.id):
-        mafEnt = syn.get(mafSynId)
-        logger.info(mafEnt.path)
-        mafchunks = pd.read_csv(mafEnt.path, sep="\t", comment="#",
-                                chunksize=100000)
-        for mafchunk in mafchunks:
-            # Get center for center staging maf
-            center = mafchunk['Center'].iloc[0]
-            # Create maf for release
-            merged_mafdf = configure_maf(
-                mafchunk, keep_for_merged_consortium_samples,
-                remove_mafinbed_variants,
-                flagged_mutationInCis_variants
-            )
-            #if not merged_mafdf.empty:
-            append_or_create_release_maf(merged_mafdf, mutations_path)
-            # Create maf for center staging
-            center_mafdf = configure_maf(
-                mafchunk, keep_for_center_consortium_samples,
-                remove_mafinbed_variants,
-                flagged_mutationInCis_variants
-            )
-            #if not center_mafdf.empty:
-            append_or_create_release_maf(
-                center_mafdf, MUTATIONS_CENTER_PATH % center
-            )
+        maf_ent = syn.get(mafSynId)
+        logger.info(maf_ent.path)
+        # Extract center name
+        center = maf_ent.path.split("_")[3].replace(".txt", "")
+        if center in center_mappingdf.center.tolist():
+            mafchunks = pd.read_csv(maf_ent.path, sep="\t", comment="#",
+                                    chunksize=100000)
+            center = mafchunks[0]['Center'].iloc[0]
+
+            for mafchunk in mafchunks:
+                # Get center for center staging maf
+                center = mafchunk['Center'].iloc[0]
+                # Create maf for release
+                merged_mafdf = configure_maf(
+                    mafchunk, keep_for_merged_consortium_samples,
+                    remove_mafinbed_variants,
+                    flagged_mutationInCis_variants
+                )
+                #if not merged_mafdf.empty:
+                append_or_create_release_maf(merged_mafdf, mutations_path)
+                # Create maf for center staging
+                center_mafdf = configure_maf(
+                    mafchunk, keep_for_center_consortium_samples,
+                    remove_mafinbed_variants,
+                    flagged_mutationInCis_variants
+                )
+                #if not center_mafdf.empty:
+                append_or_create_release_maf(
+                    center_mafdf, MUTATIONS_CENTER_PATH % center
+                )
 
     store_file(syn, mutations_path,
                parent=release_synid,
