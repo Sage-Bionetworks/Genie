@@ -671,7 +671,6 @@ def store_maf_files(syn,
 
             for mafchunk in mafchunks:
                 # Get center for center staging maf
-                center = mafchunk['Center'].iloc[0]
                 # Configure maf
                 configured_mafdf = configure_maf(
                     mafchunk, remove_mafinbed_variants,
