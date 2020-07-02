@@ -44,13 +44,6 @@ RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb
 COPY docker/installPackages.R /installPackages.R
 RUN Rscript /installPackages.R
 
-WORKDIR /root
-RUN git clone https://github.com/genome-nexus/annotation-tools.git
-# RUN git clone https://github.com/genome-nexus/genome-nexus-annotation-pipeline.git
-
-# WORKDIR /root/genome-nexus-annotation-pipeline
-# RUN mvn clean install
-
 # Only copy most recent changes in code are always installed
 # Do not build from local computer
 WORKDIR /root/Genie
@@ -62,5 +55,6 @@ WORKDIR /root/
 # Must move this git clone to after the install of Genie,
 # because must update cbioportal
 RUN git clone https://github.com/cBioPortal/cbioportal.git
+RUN git clone https://github.com/Sage-Bionetworks/annotation-tools.git
 
-WORKDIR /root/Genie/genie
+WORKDIR /root/Genie
