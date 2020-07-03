@@ -189,64 +189,77 @@ def redact_phi(clinicaldf, interval_cols_to_redact=['AGE_AT_SEQ_REPORT',
     return clinicaldf
 
 
-def configure_maf_row(row_array, headers, keep_samples, remove_variants,
-                      flagged_variants):
-    """Configures each maf row, does germline filtering
+def remove_maf_samples(mafdf: pd.DataFrame,
+                       keep_samples: list) -> pd.DataFrame:
+    """Remove samples from maf file
 
     Args:
-        rowArray: Each maf row
-        headers: maf Headers
-        keepSamples: Samples to keep
+        mafdf: Maf dataframe
+        keep_samples: Samples to keep
+
+    Returns:
+        Filtered maf dataframe
+
+    """
+    keep_maf = mafdf['Tumor_Sample_Barcode'].isin(keep_samples)
+    mafdf = mafdf.loc[keep_maf, ]
+    return mafdf
+
+
+def configure_maf(mafdf, remove_variants, flagged_variants):
+    """Configures each maf dataframe, does germline filtering
+
+    Args:
+        mafdf: Maf dataframe
         remove_variants: Variants to remove
         flagged_variants: Variants to flag
 
     Returns:
         configured maf row
     """
-    chrom = str(row_array[headers.index('Chromosome')])
-    start = str(row_array[headers.index('Start_Position')])
-    end = str(row_array[headers.index('End_Position')])
-    ref = str(row_array[headers.index('Reference_Allele')])
-    seq = str(row_array[headers.index('Tumor_Seq_Allele2')])
-    sampleid = str(row_array[headers.index('Tumor_Sample_Barcode')])
-    hgvsp = str(row_array[headers.index('HGVSp_Short')])
-    filter_info = str(row_array[headers.index('FILTER')])
-    variant = '{} {} {} {} {} {}'.format(chrom, start, end,
-                                         ref, seq, sampleid)
-    # Add this line for now because merge check uses
-    # different primary key from maf
-    mergecheck_variant = '{} {} {} {} {} {}'.format(chrom, start, hgvsp,
-                                                    ref, seq, sampleid)
-    # if pd.Series(sampleId).isin(keepSamples).any() and \
-    # not pd.Series(variant).isin(remove_variants).any():
-    if sampleid in keep_samples.tolist() \
-            and variant not in remove_variants.tolist() \
-            and "common_variant" not in filter_info: # germline filtering
-        fillnas = ['t_depth', 't_ref_count', 't_alt_count',
-                   'n_depth', 'n_ref_count', 'n_alt_count']
-        for i in fillnas:
-            # mutationsDf[i] = mutationsDf[i].fillna("NA")
-            # mutationsDf[i] = ["NA" if str(each) == "." else each
-            #                    for each in  mutationsDf[i]]
-            value = row_array[headers.index(i)]
-            row_array[headers.index(i)] = "" if str(value) == "." else value
+    variant = mafdf[
+        ['Chromosome', 'Start_Position', 'End_Position',
+         'Reference_Allele', 'Tumor_Seq_Allele2', 'Tumor_Sample_Barcode']
+    ].apply(lambda x: ' '.join(x.map(str)), axis=1)
+    mergecheck_variant = mafdf[
+        ['Chromosome', 'Start_Position', 'HGVSp_Short',
+         'Reference_Allele', 'Tumor_Seq_Allele2', 'Tumor_Sample_Barcode']
+    ].apply(lambda x: ' '.join(x.map(str)), axis=1)
 
-        n_depth = row_array[headers.index("n_depth")]
-        row_array[headers.index("Match_Norm_Seq_Allele2")] = \
-            '' if str(n_depth) in ["NA", "0.0"] else n_depth
-        row_array[headers.index("Match_Norm_Seq_Allele1")] = \
-            '' if str(n_depth) in ["NA", "0.0"] else n_depth
-        # row_array.pop(headers.index('inBED'))
-        if mergecheck_variant in flagged_variants.tolist():
-            row_array.append('True')
-        else:
-            row_array.append('')
-        new_row = "\t".join(row_array)
-        new_row += "\n"
-        new_row = process_functions.removeStringFloat(new_row)
-        return new_row
-    else:
-        return None
+    # Flag mutation in cis variants
+    mafdf['mutationInCis_Flag'] = mergecheck_variant.isin(flagged_variants)
+    # Remove common variants
+    # na=False to resolve this linked error
+    # https://stackoverflow.com/questions/52297740
+    common_variants = mafdf['FILTER'].astype(str).str.contains(
+        "common_variant", na=False
+    )
+    gnomad_cols = ["gnomAD_AFR_AF", 'gnomAD_AMR_AF', 'gnomAD_ASJ_AF',
+                   'gnomAD_EAS_AF', 'gnomAD_FIN_AF', 'gnomAD_NFE_AF',
+                   'gnomAD_OTH_AF', 'gnomAD_SAS_AF']
+    new_common_variants = mafdf.loc[
+        :, gnomad_cols
+    ].max(axis=1, skipna=True) > 0.001
+
+    # Remove specific variants
+    to_remove_variants = variant.isin(remove_variants)
+    # Genome Nexus successfully annotated (vcf2maf does not have this column)
+    if mafdf.get("Annotation_Status") is None:
+        mafdf['Annotation_Status'] = "SUCCESS"
+    success = mafdf['Annotation_Status'] == "SUCCESS"
+
+    mafdf = mafdf.loc[(~common_variants & ~new_common_variants &
+                       ~to_remove_variants & success),]
+
+    fillnas = ['t_depth', 't_ref_count', 't_alt_count',
+               'n_depth', 'n_ref_count', 'n_alt_count']
+    for col in fillnas:
+        mafdf[col][mafdf[col].astype(str) == "."] = ""
+    n_depth_ind = mafdf['n_depth'].astype(str).isin(["NA", "0.0", "0"])
+    mafdf['Match_Norm_Seq_Allele2'][n_depth_ind] = ''
+    mafdf['Match_Norm_Seq_Allele1'][n_depth_ind] = ''
+
+    return mafdf
 
 
 def runMAFinBED(syn,
@@ -590,6 +603,24 @@ def store_fusion_files(syn,
         name="data_fusions.txt")
 
 
+def append_or_create_release_maf(dataframe: pd.DataFrame, filepath: str):
+    """Creates a file with the dataframe or appends to a existing file.
+
+    Args:
+        df: pandas.dataframe to write out
+        filepath: Filepath to append or create
+
+    """
+    if not os.path.exists(filepath) or os.stat(filepath).st_size == 0:
+        data = process_functions.removePandasDfFloat(dataframe)
+        with open(filepath, "w") as f_out:
+            f_out.write(data)
+    else:
+        data = process_functions.removePandasDfFloat(dataframe, header=False)
+        with open(filepath, "a") as f_out:
+            f_out.write(data)
+
+
 def store_maf_files(syn,
                     genie_version,
                     flatfiles_view_synid,
@@ -625,62 +656,57 @@ def store_maf_files(syn,
     centerMafSynIdsDf = centerMafSynIds.asDataFrame()
     mutations_path = os.path.join(
         GENIE_RELEASE_DIR, 'data_mutations_extended_%s.txt' % genie_version)
-    with open(mutations_path, 'w') as f:
+    with open(mutations_path, 'w'):
         pass
-    for index, mafSynId in enumerate(centerMafSynIdsDf.id):
-        mafEnt = syn.get(mafSynId)
-        logger.info(mafEnt.path)
-        with open(mafEnt.path, "r") as mafFile:
-            header = mafFile.readline()
-            headers = header.replace("\n", "").split("\t")
-            # Add in mutation in cis flag header
-            headers.append("mutationInCis_Flag")
-            header = "\t".join(headers) + "\n"
-            if index == 0:
-                with open(mutations_path, 'a') as f:
-                    f.write(header)
-                # Create maf file per center for their staging directory
-                for center in clinicaldf['CENTER'].unique():
-                    with open(MUTATIONS_CENTER_PATH % center, 'w') as f:
-                        f.write(header)
-        # with open(mafEnt.path,"r") as newMafFile:
-        #   newMafFile.readline()
-            # In case filename isn't named correctly.
-            center = mafEnt.path.split("_")[3].replace(".txt", "")
-            # Make sure to only write the centers that release = True
-            if center in center_mappingdf.center.tolist():
-                for row in mafFile:
-                    rowArray = row.replace("\n", "").split("\t")
-                    center = rowArray[headers.index('Center')]
-                    newMergedRow = configure_maf_row(
-                        rowArray, headers,
-                        keep_for_merged_consortium_samples,
-                        remove_mafinbed_variants,
-                        flagged_mutationInCis_variants)
-                    if newMergedRow is not None:
-                        with open(mutations_path, 'a') as f:
-                            f.write(newMergedRow)
-                    newCenterRow = configure_maf_row(
-                        rowArray, headers,
-                        keep_for_center_consortium_samples,
-                        remove_mafinbed_variants,
-                        flagged_mutationInCis_variants)
-                    if newCenterRow is not None:
-                        with open(MUTATIONS_CENTER_PATH % center, 'a') as f:
-                            f.write(newCenterRow)
-    store_file(
-        syn, mutations_path,
-        parent=release_synid,
-        genieVersion=genie_version,
-        name="data_mutations_extended.txt")
+    # Create maf file per center for their staging directory
+    for center in clinicaldf['CENTER'].unique():
+        with open(MUTATIONS_CENTER_PATH % center, 'w'):
+            pass
+
+    for _, mafSynId in enumerate(centerMafSynIdsDf.id):
+        maf_ent = syn.get(mafSynId)
+        logger.info(maf_ent.path)
+        # Extract center name
+        center = maf_ent.path.split("_")[3].replace(".txt", "")
+        if center in center_mappingdf.center.tolist():
+            mafchunks = pd.read_csv(maf_ent.path, sep="\t", comment="#",
+                                    chunksize=100000)
+
+            for mafchunk in mafchunks:
+                # Get center for center staging maf
+                # Configure maf
+                configured_mafdf = configure_maf(
+                    mafchunk, remove_mafinbed_variants,
+                    flagged_mutationInCis_variants
+                )
+                # Create maf for release
+                merged_mafdf = remove_maf_samples(
+                    configured_mafdf,
+                    keep_for_merged_consortium_samples
+                )
+                append_or_create_release_maf(merged_mafdf, mutations_path)
+                # Create maf for center staging
+                center_mafdf = remove_maf_samples(
+                    configured_mafdf,
+                    keep_for_center_consortium_samples
+                )
+                append_or_create_release_maf(
+                    center_mafdf, MUTATIONS_CENTER_PATH % center
+                )
+
+    store_file(syn, mutations_path,
+               parent=release_synid,
+               genieVersion=genie_version,
+               name="data_mutations_extended.txt")
 
     if not current_release_staging:
         for center in clinicaldf['CENTER'].unique():
-            store_file(
-                syn, MUTATIONS_CENTER_PATH % center,
-                genieVersion=genie_version,
-                parent=center_mappingdf['stagingSynId'][
-                    center_mappingdf['center'] == center][0])
+            staging_synid = center_mappingdf['stagingSynId'][
+                center_mappingdf['center'] == center
+            ][0]
+            store_file(syn, MUTATIONS_CENTER_PATH % center,
+                       genieVersion=genie_version,
+                       parent=staging_synid)
 
 
 def run_genie_filters(syn,
