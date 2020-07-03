@@ -420,11 +420,13 @@ ONCOTREE\_CODE & LUAD & The primary cancer diagnosis “main type”, based on t
    \hline
 PATIENT\_ID & GENIE-JHU-1234 & The unique, anonymized patient identifier for the GENIE project. Conforms to the following the convention: GENIE-CENTER-1234. The first component is the string, "GENIE"; the second component is the Center abbreviation. The third component is an anonymized unique identifier for the patient.\\
    \hline
-PRIMARY\_RACE & Asian, Black, Native American Other, Unknown, White & The primary race recorded for the patient; this data element maps to the NAACCR v16, Element \#160. For institutions collecting more than one race category, this race code is the primary race for the patient. Institutions not collecting race have set this field to Unknown. \\
+PRIMARY\_RACE & Asian \newline Black \newline Native American \newline Other \newline Unknown \newline White & The primary race recorded for the patient; this data element maps to the NAACCR v16, Element \#160. For institutions collecting more than one race category, this race code is the primary race for the patient. Institutions not collecting race have set this field to Unknown. \\
    \hline
 SAMPLE\_ID & GENIE-JHU-1234-9876 & The unique, anonymized sample identifier for the GENIE project. Conforms to the following the convention: GENIE-CENTER-1234-9876. The first component is the string, "GENIE"; the second component is the Center abbreviation. The third component is an anonymized, unique patient identifier. The fourth component is a unique identifier for the sample that will distinguish between two or more specimens from a single patient. \\
    \hline
-SAMPLE\_TYPE &  Primary, Metastasis, Unspecified & Sample type, e.g. Primary or Metastasis. \\
+SAMPLE\_TYPE &  Primary \newline Metastasis \newline Unspecified \newline Not Applicable or Heme & The specimen's type including primary, metastasis and etc... \\
+   \hline
+SAMPLE\_TYPE\_DETAILED &  Primary tumor \newline Lymph node metastasis & The specimen's detailed type based on its location, including primary site, site of local recurrence, distant metastasis or hematologic malignancy. \\
    \hline
 SEQ\_ASSAY\_ID & DFCI-ONCOPANEL-1 & The institutional assay identifier for genomic testing platform. Components are separated by hyphens, with the first component corresponding to the Center's abbreviation. All specimens tested by the same platform should have the same identifier. \\
    \hline
@@ -444,7 +446,7 @@ INT\_CONTACT & 15000  &  Interval in days from DOB to date of last contact. \\
    \hline
 INT\_DOD & 15000 & Interval in days from DOB to DOD.  \\
    \hline
-DEAD & Yes, No  & Is this patient known to be deceased? \\
+DEAD & Yes \newline No  & Is this patient known to be deceased? \\
    \hline
 \end{longtable}
 \end{center}
