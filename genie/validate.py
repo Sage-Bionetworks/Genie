@@ -87,6 +87,7 @@ class ValidationHelper(object):
                 assert required_parameter in kwargs.keys(), \
                     "%s not in parameter list" % required_parameter
                 mykwargs[required_parameter] = kwargs[required_parameter]
+                mykwargs['project_id'] = self._project.id
 
             validator_cls = self._format_registry[self.file_type]
             validator = validator_cls(self._synapse_client, self.center)
