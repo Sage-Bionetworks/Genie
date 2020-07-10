@@ -1,6 +1,6 @@
 """Tests validate.py"""
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pandas as pd
 import pytest
@@ -102,8 +102,9 @@ def test_valid_validate_single_file():
     expected_valid = True
     expected_message = "valid message here!"
     expected_filetype = "clinical"
-
-    with patch.object(validate.GenieValidationHelper,
+    project_ent = Mock(id='syn1234')
+    with patch.object(syn, "get", return_value=project_ent),\
+         patch.object(validate.GenieValidationHelper,
                       "determine_filetype",
                       return_value=expected_filetype) as mock_determine_ftype,\
          patch.object(clinical.clinical, "validate",
@@ -111,7 +112,7 @@ def test_valid_validate_single_file():
                                     warning_string)) as mock_genie_class,\
          patch.object(validate, "collect_errors_and_warnings",
                       return_value=expected_message) as mock_determine:
-        validator = validate.GenieValidationHelper(syn, project_id=None,
+        validator = validate.GenieValidationHelper(syn, project_id="syn1234",
                                                    center=CENTER,
                                                    entitylist=entitylist)
         valid, message = validator.validate_single_file(oncotree_link=None,
@@ -125,7 +126,8 @@ def test_valid_validate_single_file():
 
         mock_genie_class.assert_called_once_with(filePathList=[CLIN_ENT.path],
                                                  oncotree_link=None,
-                                                 nosymbol_check=False)
+                                                 nosymbol_check=False,
+                                                 project_id='syn1234')
 
         mock_determine.assert_called_once_with(error_string, warning_string)
 
