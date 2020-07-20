@@ -6,8 +6,10 @@ install.packages("UpSetR", repo="https://ftp.osuosl.org/pub/cran/")
 install.packages("testthat", repo="https://ftp.osuosl.org/pub/cran/")
 install.packages("xtable", repo="https://ftp.osuosl.org/pub/cran/")
 install.packages("ggpubr", repo="https://ftp.osuosl.org/pub/cran/")
+install.packages("XML", repo="https://ftp.osuosl.org/pub/cran/")
 
 install.packages("BiocManager", repo="https://ftp.osuosl.org/pub/cran/")
+
 BiocManager::install("VariantAnnotation")
 
 library(synapser)
