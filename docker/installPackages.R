@@ -1,14 +1,14 @@
 install.packages("synapser", repos=c("https://sage-bionetworks.github.io/ran", "http://cran.fhcrc.org"))
-install.packages("dplyr", repo="https://ftp.osuosl.org/pub/cran/")
-install.packages("argparse", repo="https://ftp.osuosl.org/pub/cran/")
-install.packages("rmarkdown", repo="https://ftp.osuosl.org/pub/cran/")
-install.packages("UpSetR", repo="https://ftp.osuosl.org/pub/cran/")
-install.packages("testthat", repo="https://ftp.osuosl.org/pub/cran/")
-install.packages("xtable", repo="https://ftp.osuosl.org/pub/cran/")
-install.packages("ggpubr", repo="https://ftp.osuosl.org/pub/cran/")
-install.packages("XML", repo="https://ftp.osuosl.org/pub/cran/")
+install.packages("dplyr", repos = "http://cran.r-project.org")
+install.packages("argparse", repos = "http://cran.r-project.org")
+install.packages("rmarkdown", repos = "http://cran.r-project.org")
+install.packages("UpSetR", repos = "http://cran.r-project.org")
+install.packages("testthat", repos = "http://cran.r-project.org")
+install.packages("xtable", repos = "http://cran.r-project.org")
+install.packages("ggpubr", repos = "http://cran.r-project.org")
+install.packages("XML", repos = "http://cran.r-project.org")
 
-install.packages("BiocManager", repo="https://ftp.osuosl.org/pub/cran/")
+install.packages("BiocManager", repos = "http://cran.r-project.org")
 
 BiocManager::install("VariantAnnotation")
 
