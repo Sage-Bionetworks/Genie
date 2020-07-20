@@ -318,7 +318,7 @@ def removeStringFloat(string):
     return(string)
 
 
-def removePandasDfFloat(df):
+def removePandasDfFloat(df, header=True):
     '''
     Remove decimal for integers due to pandas
 
@@ -328,7 +328,11 @@ def removePandasDfFloat(df):
     Return:
         str: tsv in text
     '''
-    text = df.to_csv(sep="\t", index=False)
+    if header:
+        text = df.to_csv(sep="\t", index=False)
+    else:
+        text = df.to_csv(sep="\t", index=False, header=None)
+
     text = removeStringFloat(text)
     return(text)
 

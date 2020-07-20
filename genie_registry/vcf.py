@@ -34,6 +34,7 @@ class vcf(FileTypeFormat):
                 if row.startswith("#CHROM"):
                     headers = \
                         row.replace("\n", "").replace("\r", "").split("\t")
+                    break
         if headers is not None:
             vcfdf = pd.read_csv(filepath, sep="\t", comment="#", header=None,
                                 names=headers)

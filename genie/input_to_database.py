@@ -268,7 +268,8 @@ def validatefile(syn, project_id, entities, validation_status_table, error_track
     filetype = validator.file_type
     if check_file_status['to_validate']:
         valid, message = validator.validate_single_file(
-            oncotree_link=oncotree_link, nosymbol_check=False)
+            oncotree_link=oncotree_link, nosymbol_check=False
+        )
         logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             valid, message, entities)

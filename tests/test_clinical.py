@@ -1,4 +1,5 @@
 import datetime
+import json
 from unittest import mock
 
 import pandas as pd
@@ -343,7 +344,7 @@ def test_perfect__validate():
     sampledf = pd.DataFrame(dict(
         SAMPLE_ID=["ID1-1", "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
         PATIENT_ID=["ID1", "ID2", "ID3", "ID4", "ID5"],
-        AGE_AT_SEQ_REPORT=[100000, "Unknown", 20000, 20000, 100000],
+        AGE_AT_SEQ_REPORT=[">32485", "Unknown", "<6570", 20000, 100000],
         ONCOTREE_CODE=['AMPCA', 'AMPCA', 'Unknown', 'AMPCA', 'AMPCA'],
         SAMPLE_TYPE=[1, 2, 3, 4, 4],
         SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-SAGE-1', 'SAGE-1', 'SAGE-1', 'SAGE-1'],
@@ -396,18 +397,19 @@ def test_nonull__validate():
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         expected_errors = (
             "Sample Clinical File: Please double check your "
-            "AGE_AT_SEQ_REPORT. It must be an integer or 'Unknown'.\n"
+            "AGE_AT_SEQ_REPORT. It must be an integer, 'Unknown', "
+            "'>32485', '<6570'.\n"
             "Sample Clinical File: Please double check your SAMPLE_TYPE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your BIRTH_YEAR "
-            "column, it must be an integer in YYYY format > {year} or "
-            "'Unknown'.\n"
+            "column, it must be an integer in YYYY format < {year} or "
+            "'Unknown', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your YEAR_DEATH "
-            "column, it must be an integer in YYYY format, 'Unknown', "
-            "'Not Applicable' or 'Not Collected'.\n"
+            "column, it must be an integer in YYYY format < {year} or "
+            "'Unknown', 'Not Collected', 'Not Applicable', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your YEAR_CONTACT "
-            "column, it must be an integer in YYYY format, 'Unknown' or "
-            "'Not Collected'.\n"
+            "column, it must be an integer in YYYY format < {year} or "
+            "'Unknown', 'Not Collected', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your INT_CONTACT "
             "column, it must be an integer, '>32485', '<6570', 'Unknown' "
             "or 'Not Collected'.\n"
@@ -426,7 +428,9 @@ def test_nonull__validate():
             "This column must only be these values: 1, 2, 99\n"
             "Patient Clinical File: Please double check your ETHNICITY "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n")
-        assert error == expected_errors.format(year=datetime.datetime.utcnow().year)
+        assert error == expected_errors.format(
+            year=datetime.datetime.utcnow().year
+        )
         assert warning == ""
 
 
@@ -465,7 +469,6 @@ def test_missingcols__validate():
             "This column will be added\n"
             "Patient Clinical File: Doesn't have ETHNICITY column. "
             "This column will be added\n")
-        print(error)
         assert error == expected_errors
         assert warning == expected_warnings
 
@@ -477,15 +480,15 @@ def test_errors__validate():
     sampleDf = pd.DataFrame(dict(
         SAMPLE_ID=[float('nan'), "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
         PATIENT_ID=["ID6", "ID2", "ID3", float('nan'), "ID5"],
-        AGE_AT_SEQ_REPORT=[10, 100000, "doo", 100000, 100000],
+        AGE_AT_SEQ_REPORT=[10, 100000, ">doo", 100000, 100000],
         ONCOTREE_CODE=['AMPCAD', 'TESTIS', 'AMPCA', 'AMPCA', 'UCEC'],
         SAMPLE_TYPE=[1, 2, 3, 4, 6],
         SEQ_ASSAY_ID=[float('nan'), 'Sage-1', 'SAGE-1', 'S-SAGE-1', 'SAGE-1'],
         SEQ_DATE=['Jane-2013', 'Jan-2013', 'Jan-2013', 'Jan-2013', 'Jan-2013'],
         YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 19930, 1990],
         YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 19940],
-        INT_CONTACT=['>32485', '<6570', 'Unknown', 'Not Collected', "foobar"],
-        INT_DOD=['>32485', '<6570', 'Unknown', 'Not Collected', 'dense'],
+        INT_CONTACT=['>32485', '<6570', 'Unknown', 'Not Collected', ">foobar"],
+        INT_DOD=['>32485', '<6570', 'Unknown', 'Not Collected', '<dense'],
         DEAD=[1, False, 'Unknown', 'Not Collected', 'Not Applicable']))
 
     patientDf = pd.DataFrame(dict(
@@ -495,8 +498,7 @@ def test_errors__validate():
         SECONDARY_RACE=[1, 2, 3, 6, float('nan')],
         TERTIARY_RACE=[1, 2, 3, 6, float('nan')],
         ETHNICITY=[1, 2, 3, 6, float('nan')],
-        BIRTH_YEAR=[1990, 1990, datetime.datetime.utcnow().year + 1,
-                    1990, 1990],
+        BIRTH_YEAR=[1990, 1990, ">90", 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"]))
     clinicalDf = patientDf.merge(sampleDf, on="PATIENT_ID")
     with mock.patch(
@@ -512,7 +514,8 @@ def test_errors__validate():
             "information and no null patient ids allowed. "
             "These samples are missing patient data: ID4-1\n"
             "Sample Clinical File: Please double check your "
-            "AGE_AT_SEQ_REPORT. It must be an integer or 'Unknown'.\n"
+            "AGE_AT_SEQ_REPORT. It must be an integer, 'Unknown', "
+            "'>32485', '<6570'.\n"
             "Sample Clinical File: Please double check that all your "
             "ONCOTREE CODES exist in the mapping. You have 1 samples that "
             "don't map. These are the codes that don't map: AMPCAD\n"
@@ -530,14 +533,14 @@ def test_errors__validate():
             "For values that don't have SEQ_DATES that you want "
             "released use 'release'.\n"
             "Patient Clinical File: Please double check your BIRTH_YEAR "
-            "column, it must be an integer in YYYY format > {year} or "
-            "'Unknown'.\n"
+            "column, it must be an integer in YYYY format < {year} or "
+            "'Unknown', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your YEAR_DEATH "
-            "column, it must be an integer in YYYY format, 'Unknown', "
-            "'Not Applicable' or 'Not Collected'.\n"
+            "column, it must be an integer in YYYY format < {year} or "
+            "'Unknown', 'Not Collected', 'Not Applicable', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your YEAR_CONTACT "
-            "column, it must be an integer in YYYY format, 'Unknown' or "
-            "'Not Collected'.\n"
+            "column, it must be an integer in YYYY format < {year} or "
+            "'Unknown', 'Not Collected', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your INT_CONTACT "
             "column, it must be an integer, '>32485', '<6570', 'Unknown' or "
             "'Not Collected'.\n"
@@ -616,25 +619,31 @@ def test_duplicated__validate():
 
 
 class fake_oncotree():
-    import json
     text = json.dumps({
         'TISSUE': {
             'children': {
-              'AMPCA': {
-                'level': 1,
-                'mainType': 'Ampullary Cancer',
-                'name': 'Ampullary Carcinoma',
-                'children': {
-                    'TESTIS': {
-                        'level': 2,
-                        'mainType': 'Testicular Cancer, NOS',
-                        'name': 'Testis',
-                        'children': []},
-                    'UCEC': {
-                        'level': 2,
-                        'mainType': 'Endometrial Cancer',
-                        'name': 'Endometrial Carcinoma',
-                        'children': []}}}}}})
+                'AMPCA': {
+                    'level': 1,
+                    'mainType': 'Ampullary Cancer',
+                    'name': 'Ampullary Carcinoma',
+                    'children': {
+                        'TESTIS': {
+                            'level': 2,
+                            'mainType': 'Testicular Cancer, NOS',
+                            'name': 'Testis',
+                            'children': []
+                        },
+                        'UCEC': {
+                            'level': 2,
+                            'mainType': 'Endometrial Cancer',
+                            'name': 'Endometrial Carcinoma',
+                            'children': []
+                        }
+                    }
+                }
+            }
+        }
+    })
 
 
 expected_onco_mapping = {
@@ -642,17 +651,21 @@ expected_onco_mapping = {
         'CANCER_TYPE': 'Ampullary Cancer',
         'CANCER_TYPE_DETAILED': 'Ampullary Carcinoma',
         'ONCOTREE_PRIMARY_NODE': 'AMPCA',
-        'ONCOTREE_SECONDARY_NODE': ''},
+        'ONCOTREE_SECONDARY_NODE': ''
+    },
     'TESTIS': {
         'CANCER_TYPE': 'Testicular Cancer, NOS',
         'CANCER_TYPE_DETAILED': 'Testis',
         'ONCOTREE_PRIMARY_NODE': 'AMPCA',
-        'ONCOTREE_SECONDARY_NODE': 'TESTIS'},
+        'ONCOTREE_SECONDARY_NODE': 'TESTIS'
+    },
     'UCEC': {
         'CANCER_TYPE': 'Endometrial Cancer',
         'CANCER_TYPE_DETAILED': 'Endometrial Carcinoma',
         'ONCOTREE_PRIMARY_NODE': 'AMPCA',
-        'ONCOTREE_SECONDARY_NODE': 'UCEC'}}
+        'ONCOTREE_SECONDARY_NODE': 'UCEC'
+    }
+}
 
 
 def test_get_oncotree_code_mappings():
