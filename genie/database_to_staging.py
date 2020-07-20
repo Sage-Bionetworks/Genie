@@ -231,9 +231,9 @@ def configure_maf(mafdf, remove_variants, flagged_variants):
     # Remove common variants
     # na=False to resolve this linked error
     # https://stackoverflow.com/questions/52297740
-    common_variants = mafdf['FILTER'].astype(str).str.contains(
-        "common_variant", na=False
-    )
+    # common_variants = mafdf['FILTER'].astype(str).str.contains(
+    #     "common_variant", na=False
+    # )
     gnomad_cols = ["gnomAD_AFR_AF", 'gnomAD_AMR_AF', 'gnomAD_ASJ_AF',
                    'gnomAD_EAS_AF', 'gnomAD_FIN_AF', 'gnomAD_NFE_AF',
                    'gnomAD_OTH_AF', 'gnomAD_SAS_AF']
@@ -248,7 +248,7 @@ def configure_maf(mafdf, remove_variants, flagged_variants):
         mafdf['Annotation_Status'] = "SUCCESS"
     success = mafdf['Annotation_Status'] == "SUCCESS"
 
-    mafdf = mafdf.loc[(~common_variants & ~new_common_variants &
+    mafdf = mafdf.loc[(~new_common_variants &
                        ~to_remove_variants & success),]
 
     fillnas = ['t_depth', 't_ref_count', 't_alt_count',
