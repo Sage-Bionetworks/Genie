@@ -239,7 +239,7 @@ def configure_maf(mafdf, remove_variants, flagged_variants):
                    'gnomAD_OTH_AF', 'gnomAD_SAS_AF']
     new_common_variants = mafdf.loc[
         :, gnomad_cols
-    ].max(axis=1, skipna=True) > 0.001
+    ].max(axis=1, skipna=True) > 0.0005
 
     # Remove specific variants
     to_remove_variants = variant.isin(remove_variants)
