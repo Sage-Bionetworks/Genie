@@ -17,6 +17,32 @@ logger = logging.getLogger(__name__)
 PWD = os.path.dirname(os.path.abspath(__file__))
 
 
+def generate_unique_mutations(genie_version, database_mapping=None,
+                              genie_user=None,
+                              genie_pass=None):
+    """Generates and stores unique mutations per site based on X number of
+    sites that cover an oncotree code and X number of sites that cover a
+    specific bed region
+
+    Args:
+        genie_version: GENIE release
+        database_mapping: Database mapping synapse id
+        genie_user: GENIE synapse username
+        genie_pass: GENIE synapse password
+
+    """
+    unique_mutation_cmd = ['Rscript',
+                           os.path.join(PWD,
+                                        '../analyses/genomicData/uniq_mutations.R'),
+                           genie_version,
+                           '--database_synid_mappingid',
+                           database_mapping]
+    if genie_user is not None and genie_pass is not None:
+        unique_mutation_cmd.extend(['--syn_user', genie_user,
+                                    '--syn_pass', genie_pass])
+    subprocess.check_call(unique_mutation_cmd)
+
+
 def generate_dashboard_html(genie_version, staging=False,
                             genie_user=None,
                             genie_pass=None):
@@ -24,7 +50,6 @@ def generate_dashboard_html(genie_version, staging=False,
     release folder
 
     Args:
-        syn: Synapse connection
         genie_version: GENIE release
         staging: Use staging files. Default is False
         genie_user: GENIE synapse username
@@ -48,7 +73,19 @@ def generate_dashboard_html(genie_version, staging=False,
 def generate_data_guide(genie_version, oncotree_version=None,
                         database_mapping=None, genie_user=None,
                         genie_pass=None):
-    """Generates the GENIE data guide"""
+    """Generates the GENIE data guide
+
+    Args:
+        genie_version: GENIE release
+        oncotree_version: Version of oncotree code
+        database_mapping: Database mapping synapse id
+        genie_user: GENIE synapse username
+        genie_pass: GENIE synapse password
+
+    Returns:
+        path to data_guide.pdf
+
+    """
 
     template_path = os.path.join(PWD, '../data_guide/data_guide_template.Rnw')
     with open(template_path, 'r') as template_file:
@@ -263,10 +300,6 @@ def main(genie_version,
                                                       genePanelEntities,
                                                       databaseSynIdMappingDf)
 
-    if not staging:
-        database_to_staging.update_process_trackingdf(
-            syn, processTrackerSynId, 'SAGE', 'dbToStage', start=False)
-
     if not test:
         logger.info("DASHBOARD UPDATE")
         dashboard_table_updater.run_dashboard(syn, databaseSynIdMappingDf,
@@ -276,8 +309,8 @@ def main(genie_version,
                                 genie_user=genie_user,
                                 genie_pass=genie_pass)
         logger.info("DASHBOARD UPDATE COMPLETE")
-        logger.info("AUTO GENERATE DATA GUIDE")
 
+    logger.info("AUTO GENERATE DATA GUIDE")
     oncotree_version = oncotree_link.split("=")[1]
     data_guide_pdf = generate_data_guide(genie_version,
                                          oncotree_version=oncotree_version,
@@ -287,6 +320,15 @@ def main(genie_version,
     data_guide_ent = synapseclient.File(data_guide_pdf,
                                         parent=folders['release_folder'])
     syn.store(data_guide_ent)
+    logger.info("AUTO GENERATE UNIQUE MUTATIONS")
+    generate_unique_mutations(genie_version,
+                              database_mapping=databaseSynIdMappingId,
+                              genie_user=genie_user,
+                              genie_pass=genie_pass)
+    if not staging:
+        database_to_staging.update_process_trackingdf(
+            syn, processTrackerSynId, 'SAGE', 'dbToStage', start=False)
+
     logger.info("COMPLETED DATABASE TO STAGING")
 
 
