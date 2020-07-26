@@ -42,8 +42,7 @@ genie validate data_clinical_supp_SAGE.txt SAGE
 2. Log into AWS Batch
 3. Run `genie-job-mainprocess`
 4. Run `genie-job-mafprocess` (Make sure to add `--createdMafDatabase` flag)
-5. Run `genie-job-vcfprocess`
-6. Run `genie-job-release` (Make sure to update release version and number)
+5. Run `genie-job-release` (Make sure to update release version and number)
 
 ## Processing on EC2
 
