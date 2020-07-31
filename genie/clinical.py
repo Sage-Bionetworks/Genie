@@ -102,6 +102,114 @@ class clinical(FileTypeFormat):
             assert all(required.isin([os.path.basename(i) for i in filePath]))
 
     # PROCESSING
+def update_clinicaldf(self, clinicaldf, sex_mapping,
+                         race_mapping, ethnicity_mapping, sample_type):
+        race_mapping.index = race_mapping['CODE']
+        race_dict = race_mapping.to_dict()
+
+        ethnicity_mapping.index = ethnicity_mapping['CODE']
+        ethnicity_dict = ethnicity_mapping.to_dict()
+
+        sex_mapping.index = sex_mapping['CODE']
+        sex_dict = sex_mapping.to_dict()
+        # Use pandas mapping feature
+
+        clinicaldf.replace({"PRIMARY_RACE": race_dict['CBIO_LABEL']})
+
+        # PATIENT ID
+        if x.get("PATIENT_ID") is not None:
+            x['PATIENT_ID'] = process_functions.checkGenieId(
+                x['PATIENT_ID'], self.center)
+        # RACE
+        if x.get('PRIMARY_RACE') is not None:
+            x['PRIMARY_RACE'] = process_functions.getCODE(
+                race_mapping, x['PRIMARY_RACE'])
+        else:
+            x['PRIMARY_RACE'] = "Not Collected"
+
+        if x.get('SECONDARY_RACE') is not None:
+            x['SECONDARY_RACE'] = process_functions.getCODE(
+                race_mapping, x['SECONDARY_RACE'])
+        else:
+            x['SECONDARY_RACE'] = "Not Collected"
+
+        if x.get('TERTIARY_RACE') is not None:
+            x['TERTIARY_RACE'] = process_functions.getCODE(
+                race_mapping, x['TERTIARY_RACE'])
+        else:
+            x['TERTIARY_RACE'] = "Not Collected"
+        # ETHNICITY
+        if x.get('ETHNICITY') is not None:
+            x['ETHNICITY'] = process_functions.getCODE(
+                ethnicity_mapping, x['ETHNICITY'])
+        else:
+            x['ETHNICITY'] = "Not Collected"
+        # BIRTH YEAR
+        if x.get("BIRTH_YEAR") is not None:
+            # BIRTH YEAR (Check if integer)
+            if process_functions.checkInt(x['BIRTH_YEAR']):
+                x['BIRTH_YEAR'] = int(x['BIRTH_YEAR'])
+        # SEX
+        if x.get("SEX") is not None:
+            x['SEX'] = process_functions.getCODE(sex_mapping, x['SEX'])
+        # TRIM EVERY COLUMN MAKE ALL DASHES
+        # SAMPLE ID
+        if x.get('SAMPLE_ID') is not None:
+            x['SAMPLE_ID'] = process_functions.checkGenieId(
+                x['SAMPLE_ID'], self.center)
+        # AGE AT SEQ REPORT
+        if x.get('AGE_AT_SEQ_REPORT') is not None:
+            if process_functions.checkInt(x['AGE_AT_SEQ_REPORT']):
+                x['AGE_AT_SEQ_REPORT'] = int(x['AGE_AT_SEQ_REPORT'])
+
+        # SEQ ASSAY ID
+        if x.get('SEQ_ASSAY_ID') is not None:
+            x['SEQ_ASSAY_ID'] = x['SEQ_ASSAY_ID'].replace('_', '-')
+            # standardize all SEQ_ASSAY_ID with uppercase
+            x['SEQ_ASSAY_ID'] = x['SEQ_ASSAY_ID'].upper()
+
+        # SAMPLE_TYPE
+        if x.get('SAMPLE_TYPE') is not None:
+            sampleType = x['SAMPLE_TYPE']
+            x['SAMPLE_TYPE'] = process_functions.getCODE(
+                sample_type, sampleType)
+            # Trim spaces
+            x['SAMPLE_TYPE_DETAILED'] = process_functions.getCODE(
+                sample_type, sampleType, useDescription=True)
+
+        if x.get('SEQ_DATE') is not None:
+            x['SEQ_DATE'] = x['SEQ_DATE'].title()
+            x['SEQ_YEAR'] = \
+                int(str(x['SEQ_DATE']).split("-")[1]) \
+                if str(x['SEQ_DATE']) != "Release" else float('nan')
+
+        if x.get('YEAR_CONTACT') is None:
+            x['YEAR_CONTACT'] = 'Not Collected'
+        else:
+            if process_functions.checkInt(x['YEAR_CONTACT']):
+                x['YEAR_CONTACT'] = int(x['YEAR_CONTACT'])
+
+        if x.get('YEAR_DEATH') is None:
+            x['YEAR_DEATH'] = 'Not Collected'
+        else:
+            if process_functions.checkInt(x['YEAR_DEATH']):
+                x['YEAR_DEATH'] = int(x['YEAR_DEATH'])
+
+        if x.get('INT_CONTACT') is None:
+            x['INT_CONTACT'] = 'Not Collected'
+
+        if x.get('INT_DOD') is None:
+            x['INT_DOD'] = 'Not Collected'
+
+        if x.get('DEAD') is None:
+            x['DEAD'] = 'Not Collected'
+
+        # TRIM EVERY COLUMN MAKE ALL DASHES
+        for i in x.keys():
+            if isinstance(x[i], str):
+                x[i] = x[i].strip(" ")
+        return(x)
+
     # Update clinical file with the correct mappings
     def update_clinical(self, x, sex_mapping,
                         race_mapping, ethnicity_mapping, sample_type):
