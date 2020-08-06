@@ -716,6 +716,31 @@ def test__check_year_invalid():
         f"it must be an integer in YYYY format <= {year_now}.\n"
     )
 
-def test_remap_clinical_values():
+
+def test_remap_clinical_values_sampletype():
+    """Test adding of sample type detailed when remapping clinical values"""
+    testdf = pd.DataFrame(
+        {"SAMPLE_TYPE": [1, 2, 99]}
+    )
+    expecteddf = pd.DataFrame(
+        {"SAMPLE_TYPE": ["Test", "Why", "Unknown"],
+         "SAMPLE_TYPE_DETAILED": ["non", "asdf", "asdfasdf"]}
+    )
+    remappeddf = genie.clinical.remap_clinical_values(testdf, sexdf, no_nan,
+                                                      sexdf, no_nan)
+    assert expecteddf.equals(remappeddf)
+
+
+@pytest.mark.parametrize("col", ["SEX", "PRIMARY_RACE", "SECONDARY_RACE",
+                                 "TERTIARY_RACE", "ETHNICITY"])
+def test_remap_clinical_values(col):
     """Test Remapping clinical values"""
-    remap_clinical_values
+    testdf = pd.DataFrame(
+        {col: [1, 2, 99]}
+    )
+    expecteddf = pd.DataFrame(
+        {col: ["Male", "Female", "Unknown"]}
+    )
+    remappeddf = genie.clinical.remap_clinical_values(testdf, sexdf, sexdf,
+                                                      sexdf, sexdf)
+    assert expecteddf.equals(remappeddf)
