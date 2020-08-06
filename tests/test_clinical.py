@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 import synapseclient
 
+import genie
 from genie.clinical import clinical
 
 
@@ -401,13 +402,13 @@ def test_nonull__validate():
             "Sample Clinical File: Please double check your SAMPLE_TYPE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your BIRTH_YEAR "
-            "column, it must be an integer in YYYY format < {year} or "
+            "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your YEAR_DEATH "
-            "column, it must be an integer in YYYY format < {year} or "
+            "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', 'Not Collected', 'Not Applicable', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your YEAR_CONTACT "
-            "column, it must be an integer in YYYY format < {year} or "
+            "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', 'Not Collected', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your INT_CONTACT "
             "column, it must be an integer, '>32485', '<6570', 'Unknown' "
@@ -532,13 +533,13 @@ def test_errors__validate():
             "For values that don't have SEQ_DATES that you want "
             "released use 'release'.\n"
             "Patient Clinical File: Please double check your BIRTH_YEAR "
-            "column, it must be an integer in YYYY format < {year} or "
+            "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your YEAR_DEATH "
-            "column, it must be an integer in YYYY format < {year} or "
+            "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', 'Not Collected', 'Not Applicable', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your YEAR_CONTACT "
-            "column, it must be an integer in YYYY format < {year} or "
+            "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', 'Not Collected', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your INT_CONTACT "
             "column, it must be an integer, '>32485', '<6570', 'Unknown' or "
@@ -675,3 +676,46 @@ def test_get_oncotree_code_mappings():
             process_functions.get_oncotree_code_mappings(json_oncotreeurl)
         retry_get_url.called_once_with(json_oncotreeurl)
         assert onco_mapping == expected_onco_mapping
+
+
+def test__check_year_no_errors():
+    """Tests perfect checking year validation function"""
+    perfectdf = pd.DataFrame(
+        {"BIRTH_YEAR": ["Unknown", 1990, 1990, 1990, 1990]}
+    )
+    error = genie.clinical._check_year(perfectdf, "BIRTH_YEAR", "Filename",
+                                       allowed_string_values = ["Unknown"])
+    assert error == ''
+
+
+def test__check_year_too_big_year():
+    """Tests year can't be greater than current year"""
+    year_now = datetime.datetime.utcnow().year
+
+    errordf = pd.DataFrame(
+        {"BIRTH_YEAR": ["Unknown", year_now+1, 1990, 1990, 1990]}
+    )
+    error = genie.clinical._check_year(errordf, "BIRTH_YEAR", "Filename",
+                                       allowed_string_values = ["Unknown"])
+    assert error == (
+        "Filename: Please double check your BIRTH_YEAR column, "
+        f"it must be an integer in YYYY format <= {year_now} or 'Unknown'.\n"
+    )
+
+
+def test__check_year_invalid():
+    """Tests year can't be greater than current year"""
+    year_now = datetime.datetime.utcnow().year
+
+    errordf = pd.DataFrame(
+        {"BIRTH_YEAR": ["Unknown", 1990, 1990, 1990, 1990]}
+    )
+    error = genie.clinical._check_year(errordf, "BIRTH_YEAR", "Filename")
+    assert error == (
+        "Filename: Please double check your BIRTH_YEAR column, "
+        f"it must be an integer in YYYY format <= {year_now}.\n"
+    )
+
+def test_remap_clinical_values():
+    """Test Remapping clinical values"""
+    remap_clinical_values
