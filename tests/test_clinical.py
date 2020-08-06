@@ -133,7 +133,6 @@ def test_patient_fillvs__process():
         'YEAR_CONTACT', 'YEAR_DEATH', 'INT_CONTACT', 'INT_DOD', 'DEAD']
     clinical_template = pd.DataFrame(columns=patient_cols)
     new_patientdf = clin_class._process(patientdf, clinical_template)
-
     assert new_patientdf.columns.isin(expected_patientdf.columns).all()
     assert expected_patientdf.equals(new_patientdf[expected_patientdf.columns])
 
@@ -566,7 +565,6 @@ def test_errors__validate():
             "ONCOTREE_CODES: ID2-1,ID5-1\n")
         assert error == expectedErrors.format(
             year=datetime.datetime.utcnow().year)
-        print(warning)
         assert warning == expectedWarnings
 
 
