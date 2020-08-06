@@ -495,7 +495,7 @@ class clinical(FileTypeFormat):
                     "don't map: {}\n".format(
                         len(unmapped_oncotrees),
                         ",".join(set(unmapped_oncotrees))))
-
+            # Should add the SEX mismatch into the dashboard file
             if process_functions.checkColExist(clinicaldf, "SEX") and \
                'oncotree_mapping_dict' in locals() and \
                havePatientColumn and \
@@ -543,31 +543,31 @@ class clinical(FileTypeFormat):
         total_error += error
 
         # CHECK: SEQ_ASSAY_ID
-        haveColumn = \
-            process_functions.checkColExist(clinicaldf, "SEQ_ASSAY_ID")
+        haveColumn = process_functions.checkColExist(clinicaldf,
+                                                     "SEQ_ASSAY_ID")
         if haveColumn:
             if not all([i != "" for i in clinicaldf['SEQ_ASSAY_ID']]):
                 total_error += (
                     "Sample Clinical File: Please double check your "
-                    "SEQ_ASSAY_ID columns, there are empty rows.\n")
+                    "SEQ_ASSAY_ID columns, there are empty rows.\n"
+                )
             # must remove empty seq assay ids first
             # Checking if seq assay ids start with the center name
-            seqAssayIds = \
-                clinicaldf.SEQ_ASSAY_ID[clinicaldf.SEQ_ASSAY_ID != ""]
-            allSeqAssays = seqAssayIds.unique()
-            notNormalized = []
-            not_caps = []
-            for seqassay in allSeqAssays:
+            empty_seq_idx = clinicaldf.SEQ_ASSAY_ID != ""
+            seqassay_ids = clinicaldf.SEQ_ASSAY_ID[empty_seq_idx]
+            uniq_seqassay_ids = seqassay_ids.unique()
+            invalid_seqassay = []
+            for seqassay in uniq_seqassay_ids:
                 # SEQ Ids are all capitalized now, so no need to check
                 # for differences in case
                 if not seqassay.upper().startswith(self.center):
-                    not_caps.append(seqassay)
-            if len(not_caps) > 0:
+                    invalid_seqassay.append(seqassay)
+            if invalid_seqassay:
                 total_error += (
                     "Sample Clinical File: Please make sure your "
                     "SEQ_ASSAY_IDs start with your center "
                     "abbreviation: {}.\n".format(
-                        ", ".join(not_caps)))
+                        ", ".join(invalid_seqassay)))
         else:
             total_error += \
                 "Sample Clinical File: Must have SEQ_ASSAY_ID column.\n"
@@ -580,26 +580,26 @@ class clinical(FileTypeFormat):
             "For July-Sep: use Jul-YEAR. "
             "For Oct-Dec: use Oct-YEAR. (ie. Apr-2017) "
             "For values that don't have SEQ_DATES that "
-            "you want released use 'release'.\n")
+            "you want released use 'release'.\n"
+        )
 
         if haveColumn:
             clinicaldf['SEQ_DATE'] = [
                 i.title() for i in clinicaldf['SEQ_DATE'].astype(str)
             ]
 
-            seqDate = clinicaldf['SEQ_DATE'][
+            seqdate = clinicaldf['SEQ_DATE'][
                 clinicaldf['SEQ_DATE'] != 'Release']
             if sum(clinicaldf['SEQ_DATE'] == '') > 0:
                 total_error += (
                     "Sample Clinical File: Samples without SEQ_DATEs will "
                     "NOT be released.\n")
             try:
-                if not seqDate.empty:
-                    dates = seqDate.apply(
+                if not seqdate.empty:
+                    seqdate.apply(
                         lambda date: datetime.datetime.strptime(date, '%b-%Y'))
-                    # REMOVE JUN LATER
-                    if not all([i.startswith(("Jul", "Jan", "Oct", "Apr"))
-                                for i in seqDate]):
+                    if not seqdate.str.startswith(
+                            ("Jan", "Apr", "Jul", "Oct")).all():
                         total_error += seq_date_error
             except ValueError:
                 total_error += seq_date_error
