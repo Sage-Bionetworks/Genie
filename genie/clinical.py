@@ -77,6 +77,36 @@ def _check_year(clinicaldf: pd.DataFrame, year_col: int, filename: str,
     return error
 
 
+# PROCESSING
+def remap_clinical_values(clinicaldf, sex_mapping,
+                          race_mapping, ethnicity_mapping, sample_type):
+    race_mapping.index = race_mapping['CODE']
+    race_dict = race_mapping.to_dict()
+
+    ethnicity_mapping.index = ethnicity_mapping['CODE']
+    ethnicity_dict = ethnicity_mapping.to_dict()
+
+    sex_mapping.index = sex_mapping['CODE']
+    sex_dict = sex_mapping.to_dict()
+
+    sample_type.index = sample_type['CODE']
+    sample_type_dict = sample_type.to_dict()
+    # Use pandas mapping feature
+    if clinicaldf.get("SAMPLE_TYPE") is not None:
+        clinicaldf['SAMPLE_TYPE_DETAILED'] = clinicaldf['SAMPLE_TYPE']
+
+    clinicaldf = clinicaldf.replace({
+        "PRIMARY_RACE": race_dict['CBIO_LABEL'],
+        "SECONDARY_RACE": race_dict['CBIO_LABEL'],
+        "TERTIARY_RACE": race_dict['CBIO_LABEL'],
+        "SAMPLE_TYPE": sample_type_dict['CBIO_LABEL'],
+        "SAMPLE_TYPE_DETAILED": sample_type_dict['DESCRIPTION'],
+        "SEX": sex_dict['CBIO_LABEL'],
+        'ETHNICITY': ethnicity_dict['CBIO_LABEL']
+    })
+    return clinicaldf
+
+
 class clinical(FileTypeFormat):
 
     _fileType = "clinical"
@@ -101,35 +131,8 @@ class clinical(FileTypeFormat):
                 "data_clinical_supp_patient_{}.txt".format(self.center)])
             assert all(required.isin([os.path.basename(i) for i in filePath]))
 
-    # PROCESSING
-    def update_clinicaldf(self, clinicaldf, sex_mapping,
-                          race_mapping, ethnicity_mapping, sample_type):
-
-        race_mapping.index = race_mapping['CODE']
-        race_dict = race_mapping.to_dict()
-
-        ethnicity_mapping.index = ethnicity_mapping['CODE']
-        ethnicity_dict = ethnicity_mapping.to_dict()
-
-        sex_mapping.index = sex_mapping['CODE']
-        sex_dict = sex_mapping.to_dict()
-
-        sample_type.index = sample_type['CODE']
-        sample_type_dict = sample_type.to_dict()
-        # Use pandas mapping feature
-
-        clinicaldf.replace({"PRIMARY_RACE": race_dict['CBIO_LABEL'],
-                            "SECONDARY_RACE": race_dict['CBIO_LABEL'],
-                            "TERTIARY_RACE": race_dict['CBIO_LABEL'],
-                            "SAMPLE_TYPE": sample_type_dict['CBIO_LABEL'],
-                            "SEX": sex_dict['CBIO_LABEL'],
-                            'ETHNICITY': ethnicity_dict['CBIO_LABEL']})
-        # df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-        return clinicaldf
-
     # Update clinical file with the correct mappings
-    def update_clinical(self, row, sex_mapping,
-                        race_mapping, ethnicity_mapping, sample_type):
+    def update_clinical(self, row):
         # Must create copy or else it will overwrite the original row
         x = row.copy()
         # # PATIENT ID
@@ -137,42 +140,28 @@ class clinical(FileTypeFormat):
             x['PATIENT_ID'] = process_functions.checkGenieId(
                 x['PATIENT_ID'], self.center)
         # # RACE
-        if x.get('PRIMARY_RACE') is not None:
-            x['PRIMARY_RACE'] = process_functions.getCODE(
-                race_mapping, x['PRIMARY_RACE'])
-        else:
+        if x.get('PRIMARY_RACE') is None:
             x['PRIMARY_RACE'] = "Not Collected"
 
-        if x.get('SECONDARY_RACE') is not None:
-            x['SECONDARY_RACE'] = process_functions.getCODE(
-                race_mapping, x['SECONDARY_RACE'])
-        else:
+        if x.get('SECONDARY_RACE') is None:
             x['SECONDARY_RACE'] = "Not Collected"
 
-        if x.get('TERTIARY_RACE') is not None:
-            x['TERTIARY_RACE'] = process_functions.getCODE(
-                race_mapping, x['TERTIARY_RACE'])
-        else:
+        if x.get('TERTIARY_RACE') is None:
             x['TERTIARY_RACE'] = "Not Collected"
         # ETHNICITY
-        if x.get('ETHNICITY') is not None:
-            x['ETHNICITY'] = process_functions.getCODE(
-                ethnicity_mapping, x['ETHNICITY'])
-        else:
+        if x.get('ETHNICITY') is None:
             x['ETHNICITY'] = "Not Collected"
         # BIRTH YEAR
         if x.get("BIRTH_YEAR") is not None:
             # BIRTH YEAR (Check if integer)
             if process_functions.checkInt(x['BIRTH_YEAR']):
                 x['BIRTH_YEAR'] = int(x['BIRTH_YEAR'])
-        # SEX
-        if x.get("SEX") is not None:
-            x['SEX'] = process_functions.getCODE(sex_mapping, x['SEX'])
-        # TRIM EVERY COLUMN MAKE ALL DASHES
+
         # SAMPLE ID
         if x.get('SAMPLE_ID') is not None:
             x['SAMPLE_ID'] = process_functions.checkGenieId(
                 x['SAMPLE_ID'], self.center)
+
         # AGE AT SEQ REPORT
         if x.get('AGE_AT_SEQ_REPORT') is not None:
             if process_functions.checkInt(x['AGE_AT_SEQ_REPORT']):
@@ -183,15 +172,6 @@ class clinical(FileTypeFormat):
             x['SEQ_ASSAY_ID'] = x['SEQ_ASSAY_ID'].replace('_', '-')
             # standardize all SEQ_ASSAY_ID with uppercase
             x['SEQ_ASSAY_ID'] = x['SEQ_ASSAY_ID'].upper()
-
-        # SAMPLE_TYPE
-        if x.get('SAMPLE_TYPE') is not None:
-            sampleType = x['SAMPLE_TYPE']
-            x['SAMPLE_TYPE'] = process_functions.getCODE(
-                sample_type, sampleType)
-            # Trim spaces
-            x['SAMPLE_TYPE_DETAILED'] = process_functions.getCODE(
-                sample_type, sampleType, useDescription=True)
 
         if x.get('SEQ_DATE') is not None:
             x['SEQ_DATE'] = x['SEQ_DATE'].title()
@@ -252,13 +232,15 @@ class clinical(FileTypeFormat):
         race_mapping = process_functions.getGenieMapping(
             self.syn, "syn7434236")
         sex_mapping = process_functions.getGenieMapping(self.syn, "syn7434222")
-        sampleType_mapping = process_functions.getGenieMapping(
+        sampletype_mapping = process_functions.getGenieMapping(
             self.syn, "syn7434273")
         # Attach MSK to centers
         # clinicalMerged = clinicalMerged.fillna("")
-        remapped_clindf = clinical.apply(lambda x: self.update_clinical(
-            x, sex_mapping, race_mapping,
-            ethnicity_mapping, sampleType_mapping), axis=1)
+        clinical = remap_clinical_values(
+            clinical, sex_mapping, race_mapping, ethnicity_mapping,
+            sampletype_mapping
+        )
+        remapped_clindf = clinical.apply(self.update_clinical, axis=1)
         # Some columns may have been added during update,
         # remove unwanted columns again
         remapped_clindf = remapped_clindf.drop(remapped_clindf.columns[
@@ -344,7 +326,7 @@ class clinical(FileTypeFormat):
                 process_functions.get_oncotree_code_mappings(oncotree_link)
             # Add in unknown key for oncotree code
             oncotree_mapping_dict['UNKNOWN'] = {}
-            oncotree_mapping['ONCOTREE_CODE'] = oncotree_mapping_dict.keys()
+            oncotree_mapping['ONCOTREE_CODE'] = list(oncotree_mapping_dict.keys())
             # Make oncotree codes uppercase (SpCC/SPCC)
             sampleClinical['ONCOTREE_CODE'] = sampleClinical[
                 'ONCOTREE_CODE'].astype(str).str.upper()
