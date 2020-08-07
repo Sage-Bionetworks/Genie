@@ -64,7 +64,7 @@ def _check_year(clinicaldf: pd.DataFrame, year_col: int, filename: str,
         except Exception:
             error = (f"{filename}: Please double check your {year_col} "
                      "column, it must be an integer in YYYY format "
-                     f"< {year_now}")
+                     f"<= {year_now}")
             # Tack on allowed string values
             if allowed_string_values:
                 error += " or '{}'.\n".format(
@@ -79,8 +79,23 @@ def _check_year(clinicaldf: pd.DataFrame, year_col: int, filename: str,
 
 
 # PROCESSING
-def remap_clinical_values(clinicaldf, sex_mapping,
-                          race_mapping, ethnicity_mapping, sample_type):
+def remap_clinical_values(clinicaldf: pd.DataFrame, sex_mapping: pd.DataFrame,
+                          race_mapping: pd.DataFrame,
+                          ethnicity_mapping: pd.DataFrame,
+                          sampletype_mapping: pd.DataFrame) -> pd.DataFrame:
+    """Remap clinical attributes from integer to string values
+
+    Args:
+        clinicaldf: Clinical data
+        sex_mapping: Sex mapping data
+        race_mapping: Race mapping data
+        ethnicity_mapping: Ethnicity mapping data
+        sample_type: Sample type mapping data
+
+    Returns:
+        Mapped clinical dataframe
+    """
+
     race_mapping.index = race_mapping['CODE']
     race_dict = race_mapping.to_dict()
 
@@ -90,21 +105,23 @@ def remap_clinical_values(clinicaldf, sex_mapping,
     sex_mapping.index = sex_mapping['CODE']
     sex_dict = sex_mapping.to_dict()
 
-    sample_type.index = sample_type['CODE']
-    sample_type_dict = sample_type.to_dict()
-    # Use pandas mapping feature
+    sampletype_mapping.index = sampletype_mapping['CODE']
+    sampletype_dict = sampletype_mapping.to_dict()
+
     if clinicaldf.get("SAMPLE_TYPE") is not None:
         clinicaldf['SAMPLE_TYPE_DETAILED'] = clinicaldf['SAMPLE_TYPE']
 
+    # Use pandas mapping feature
     clinicaldf = clinicaldf.replace({
         "PRIMARY_RACE": race_dict['CBIO_LABEL'],
         "SECONDARY_RACE": race_dict['CBIO_LABEL'],
         "TERTIARY_RACE": race_dict['CBIO_LABEL'],
-        "SAMPLE_TYPE": sample_type_dict['CBIO_LABEL'],
-        "SAMPLE_TYPE_DETAILED": sample_type_dict['DESCRIPTION'],
+        "SAMPLE_TYPE": sampletype_dict['CBIO_LABEL'],
+        "SAMPLE_TYPE_DETAILED": sampletype_dict['DESCRIPTION'],
         "SEX": sex_dict['CBIO_LABEL'],
         'ETHNICITY': ethnicity_dict['CBIO_LABEL']
     })
+
     return clinicaldf
 
 
