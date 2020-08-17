@@ -578,7 +578,7 @@ kable(final_matrix,
 
 ### Panels Covering TP53
 
-These are all the pipelines that cover TP53 that don't have TP53 as the top mutated genes.  If your pipeline is shown in the table below, it is _possible_ that you have artifacts in your data.  **Please review and reupload if your data is incorrect**
+These are all the pipelines that cover TP53 that don't have TP53 as the top mutated genes.  If your pipeline is shown in the table below, it is _possible_ that you have artifacts in your data.  **Please review and reupload if your data is incorrect**  The release notes will capture if sites have confirmed that the variants shown in this table has no artifacts.
 
 
 ```{r highlight_panels, echo=FALSE}
