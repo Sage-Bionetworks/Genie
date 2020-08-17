@@ -122,9 +122,9 @@ mafVR = VRanges(seqnames = Rle(paste0("chr",genieMutData$Chromosome)),
                 ranges = IRanges(start = genieMutData$Start_Position,
                                  end = genieMutData$End_Position),
                 ref = genieMutData$Reference_Allele,
-                alt = genieMutData$Tumor_Seq_Allele2,
+                # alt = genieMutData$Tumor_Seq_Allele2,
                 altDepth = genieMutData$t_alt_count_num,
-                totalDepth = genieMutData$t_depth_new,
+                # totalDepth = genieMutData$t_depth_new,
                 sampleNames = genieMutData$Tumor_Sample_Barcode)
 seqlevels(mafVR) = sort(seqlevels(mafVR))
 

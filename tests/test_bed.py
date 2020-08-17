@@ -9,9 +9,9 @@ from pandas.testing import assert_frame_equal
 import pytest
 import synapseclient
 
-import genie.bed
-from genie.bed import bed
-from genie.bedSP import bedSP
+import genie_registry.bed
+from genie_registry.bed import bed
+from genie_registry.bedSP import bedSP
 
 if not shutil.which('bedtools'):
     pytest.skip("bedtools is not found, skipping bed tests", 
@@ -81,7 +81,7 @@ def test_perfect___process():
         3: ['AAK1', 'AAED1', 'AAAS', 'XRCC1', 'foo'],
         4: [True, True, True, 1, 1],
         5: [True, True, False, 0, 1]})
-    with patch.object(genie.bed, "create_gtf",
+    with patch.object(genie_registry.bed, "create_gtf",
                       return_value=(EXON_TEMP.name, GENE_TEMP.name)):
         new_beddf = bed_class._process(
             beddf, seq_assay_id, new_path, parentid, create_panel=False)
@@ -121,7 +121,7 @@ def test_includeinpanel___process():
         2: [69689532, 1111, 53719548, 44084624],
         3: ['foo', 'bar', 'baz', 'boo'],
         4: [True, True, 0, 1]})
-    with patch.object(genie.bed, "create_gtf",
+    with patch.object(genie_registry.bed, "create_gtf",
                       return_value=(EXON_TEMP.name, GENE_TEMP.name)):
         new_beddf = bedsp_class._process(
             beddf, seq_assay_id, new_path, parentid, create_panel=False)
@@ -157,7 +157,7 @@ def test_clinicalreport___process():
         3: ['foo', 'bar', 'baz', 'boo'],
         4: [True, True, False, True],
         5: [True, float('nan'), False, True]})
-    with patch.object(genie.bed, "create_gtf",
+    with patch.object(genie_registry.bed, "create_gtf",
                       return_value=(EXON_TEMP.name, GENE_TEMP.name)):
         new_beddf = bedsp_class._process(
             beddf, seq_assay_id, new_path, parentid, create_panel=False)

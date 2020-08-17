@@ -3,9 +3,8 @@ import os
 import argparse
 import logging
 
-from genie import input_to_database
-from genie import write_invalid_reasons
-from genie import process_functions
+from genie import (input_to_database, write_invalid_reasons,
+                   process_functions, config)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -21,7 +20,8 @@ def main(process,
          oncotree_link=None,
          genie_annotation_pkg=None,
          create_new_maf_database=False,
-         debug=False):
+         debug=False,
+         format_registry=None):
 
     syn = process_functions.synLogin(pemfile, debug=debug)
 
@@ -85,6 +85,8 @@ def main(process,
         databaseToSynIdMappingDf = \
             input_to_database.create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
 
+    format_registry = config.collect_format_types(args.format_registry_packages)
+
     for process_center in centers:
         input_to_database.center_input_to_database(
             syn, project_id, process_center, process,
@@ -92,6 +94,7 @@ def main(process,
             center_mapping_df,
             delete_old=delete_old,
             oncotree_link=oncotree_link,
+            format_registry=format_registry,
             genie_annotation_pkg=genie_annotation_pkg
         )
 
@@ -111,10 +114,8 @@ def main(process,
 
 
 if __name__ == "__main__":
-    '''
-    Argument parsers
-    TODO: Fix case of arguments
-    '''
+    # Argument parsers
+    # TODO: Fix case of arguments
     parser = argparse.ArgumentParser(
         description='GENIE center ')
     parser.add_argument(
@@ -156,6 +157,14 @@ if __name__ == "__main__":
         "--genie_annotation_pkg",
         help="GENIE annotation pkg"
     )
+
+    # DEFAULT PARAMS
+    parser.add_argument(
+        "--format_registry_packages", type=str, nargs="+",
+        default=["genie_registry"],
+        help="Python package name(s) to get valid file formats from "
+             "(default: %(default)s)."
+    )
     args = parser.parse_args()
 
     main(args.process,
@@ -167,4 +176,5 @@ if __name__ == "__main__":
          oncotree_link=args.oncotree_link,
          create_new_maf_database=args.createNewMafDatabase,
          debug=args.debug,
-         genie_annotation_pkg=args.genie_annotation_pkg)
+         genie_annotation_pkg=args.genie_annotation_pkg,
+         format_registry=args.format_registry_packages)

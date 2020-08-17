@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 import synapseclient
 
-from genie.mutationsInCis import mutationsInCis
+from genie_registry.mutationsInCis import mutationsInCis
 
 
 def createMockTable(dataframe):

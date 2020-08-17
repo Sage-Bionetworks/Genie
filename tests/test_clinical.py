@@ -6,7 +6,8 @@ import pandas as pd
 import pytest
 import synapseclient
 
-from genie.clinical import clinical
+import genie_registry
+from genie_registry.clinical import clinical
 
 
 def createMockTable(dataframe):
@@ -133,7 +134,6 @@ def test_patient_fillvs__process():
         'YEAR_CONTACT', 'YEAR_DEATH', 'INT_CONTACT', 'INT_DOD', 'DEAD']
     clinical_template = pd.DataFrame(columns=patient_cols)
     new_patientdf = clin_class._process(patientdf, clinical_template)
-
     assert new_patientdf.columns.isin(expected_patientdf.columns).all()
     assert expected_patientdf.equals(new_patientdf[expected_patientdf.columns])
 
@@ -402,13 +402,13 @@ def test_nonull__validate():
             "Sample Clinical File: Please double check your SAMPLE_TYPE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your BIRTH_YEAR "
-            "column, it must be an integer in YYYY format < {year} or "
+            "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your YEAR_DEATH "
-            "column, it must be an integer in YYYY format < {year} or "
+            "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', 'Not Collected', 'Not Applicable', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your YEAR_CONTACT "
-            "column, it must be an integer in YYYY format < {year} or "
+            "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', 'Not Collected', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your INT_CONTACT "
             "column, it must be an integer, '>32485', '<6570', 'Unknown' "
@@ -533,13 +533,13 @@ def test_errors__validate():
             "For values that don't have SEQ_DATES that you want "
             "released use 'release'.\n"
             "Patient Clinical File: Please double check your BIRTH_YEAR "
-            "column, it must be an integer in YYYY format < {year} or "
+            "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your YEAR_DEATH "
-            "column, it must be an integer in YYYY format < {year} or "
+            "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', 'Not Collected', 'Not Applicable', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your YEAR_CONTACT "
-            "column, it must be an integer in YYYY format < {year} or "
+            "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', 'Not Collected', '>89', '<18'.\n"
             "Patient Clinical File: Please double check your INT_CONTACT "
             "column, it must be an integer, '>32485', '<6570', 'Unknown' or "
@@ -566,7 +566,6 @@ def test_errors__validate():
             "ONCOTREE_CODES: ID2-1,ID5-1\n")
         assert error == expectedErrors.format(
             year=datetime.datetime.utcnow().year)
-        print(warning)
         assert warning == expectedWarnings
 
 
@@ -677,3 +676,77 @@ def test_get_oncotree_code_mappings():
             process_functions.get_oncotree_code_mappings(json_oncotreeurl)
         retry_get_url.called_once_with(json_oncotreeurl)
         assert onco_mapping == expected_onco_mapping
+
+
+def test__check_year_no_errors():
+    """Tests perfect checking year validation function"""
+    perfectdf = pd.DataFrame(
+        {"BIRTH_YEAR": ["Unknown", 1990, 1990, 1990, 1990]}
+    )
+    error = genie_registry.clinical._check_year(perfectdf, "BIRTH_YEAR", "Filename",
+                                       allowed_string_values = ["Unknown"])
+    assert error == ''
+
+
+def test__check_year_too_big_year():
+    """Tests year can't be greater than current year"""
+    year_now = datetime.datetime.utcnow().year
+
+    errordf = pd.DataFrame(
+        {"BIRTH_YEAR": ["Unknown", year_now+1, 1990, 1990, 1990]}
+    )
+    error = genie_registry.clinical._check_year(
+        errordf, "BIRTH_YEAR", "Filename",
+        allowed_string_values = ["Unknown"]
+    )
+    assert error == (
+        "Filename: Please double check your BIRTH_YEAR column, "
+        f"it must be an integer in YYYY format <= {year_now} or 'Unknown'.\n"
+    )
+
+
+def test__check_year_invalid():
+    """Tests year can't be greater than current year"""
+    year_now = datetime.datetime.utcnow().year
+
+    errordf = pd.DataFrame(
+        {"BIRTH_YEAR": ["Unknown", 1990, 1990, 1990, 1990]}
+    )
+    error = genie_registry.clinical._check_year(
+        errordf, "BIRTH_YEAR", "Filename"
+    )
+    assert error == (
+        "Filename: Please double check your BIRTH_YEAR column, "
+        f"it must be an integer in YYYY format <= {year_now}.\n"
+    )
+
+
+def test_remap_clinical_values_sampletype():
+    """Test adding of sample type detailed when remapping clinical values"""
+    testdf = pd.DataFrame(
+        {"SAMPLE_TYPE": [1, 2, 99]}
+    )
+    expecteddf = pd.DataFrame(
+        {"SAMPLE_TYPE": ["Test", "Why", "Unknown"],
+         "SAMPLE_TYPE_DETAILED": ["non", "asdf", "asdfasdf"]}
+    )
+    remappeddf = genie_registry.clinical.remap_clinical_values(
+        testdf, sexdf, no_nan, sexdf, no_nan
+    )
+    assert expecteddf.equals(remappeddf)
+
+
+@pytest.mark.parametrize("col", ["SEX", "PRIMARY_RACE", "SECONDARY_RACE",
+                                 "TERTIARY_RACE", "ETHNICITY"])
+def test_remap_clinical_values(col):
+    """Test Remapping clinical values"""
+    testdf = pd.DataFrame(
+        {col: [1, 2, 99]}
+    )
+    expecteddf = pd.DataFrame(
+        {col: ["Male", "Female", "Unknown"]}
+    )
+    remappeddf = genie_registry.clinical.remap_clinical_values(
+        testdf, sexdf, sexdf, sexdf, sexdf
+    )
+    assert expecteddf.equals(remappeddf)

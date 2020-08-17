@@ -3,7 +3,7 @@ import os
 
 import synapseclient
 
-from .example_filetype_format import FileTypeFormat
+from genie.example_filetype_format import FileTypeFormat
 
 logger = logging.getLogger(__name__)
 
