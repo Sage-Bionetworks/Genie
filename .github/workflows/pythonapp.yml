@@ -33,9 +33,9 @@ jobs:
     #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest tests/ --cov=genie --cov-report=html
+        pytest tests/ --cov=genie --cov=genie_registry --cov-report=html
     - name: Upload pytest test results
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v2
       with:
         name: pytest-results-${{ matrix.python-version }}
         path: htmlcov

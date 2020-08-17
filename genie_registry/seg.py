@@ -3,8 +3,8 @@ import os
 
 import pandas as pd
 
-from .example_filetype_format import FileTypeFormat
-from . import process_functions
+from genie.example_filetype_format import FileTypeFormat
+from genie import process_functions
 
 logger = logging.getLogger(__name__)
 

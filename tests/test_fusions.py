@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 import synapseclient
 
-from genie.fusions import fusions
+from genie_registry.fusions import fusions
 
 
 def createMockTable(dataframe):

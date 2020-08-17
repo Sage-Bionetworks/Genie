@@ -6,8 +6,8 @@ import pandas as pd
 import pytest
 import synapseclient
 
-import genie
-from genie.clinical import clinical
+import genie_registry
+from genie_registry.clinical import clinical
 
 
 def createMockTable(dataframe):
@@ -683,7 +683,7 @@ def test__check_year_no_errors():
     perfectdf = pd.DataFrame(
         {"BIRTH_YEAR": ["Unknown", 1990, 1990, 1990, 1990]}
     )
-    error = genie.clinical._check_year(perfectdf, "BIRTH_YEAR", "Filename",
+    error = genie_registry.clinical._check_year(perfectdf, "BIRTH_YEAR", "Filename",
                                        allowed_string_values = ["Unknown"])
     assert error == ''
 
@@ -695,8 +695,10 @@ def test__check_year_too_big_year():
     errordf = pd.DataFrame(
         {"BIRTH_YEAR": ["Unknown", year_now+1, 1990, 1990, 1990]}
     )
-    error = genie.clinical._check_year(errordf, "BIRTH_YEAR", "Filename",
-                                       allowed_string_values = ["Unknown"])
+    error = genie_registry.clinical._check_year(
+        errordf, "BIRTH_YEAR", "Filename",
+        allowed_string_values = ["Unknown"]
+    )
     assert error == (
         "Filename: Please double check your BIRTH_YEAR column, "
         f"it must be an integer in YYYY format <= {year_now} or 'Unknown'.\n"
@@ -710,7 +712,9 @@ def test__check_year_invalid():
     errordf = pd.DataFrame(
         {"BIRTH_YEAR": ["Unknown", 1990, 1990, 1990, 1990]}
     )
-    error = genie.clinical._check_year(errordf, "BIRTH_YEAR", "Filename")
+    error = genie_registry.clinical._check_year(
+        errordf, "BIRTH_YEAR", "Filename"
+    )
     assert error == (
         "Filename: Please double check your BIRTH_YEAR column, "
         f"it must be an integer in YYYY format <= {year_now}.\n"
@@ -726,8 +730,9 @@ def test_remap_clinical_values_sampletype():
         {"SAMPLE_TYPE": ["Test", "Why", "Unknown"],
          "SAMPLE_TYPE_DETAILED": ["non", "asdf", "asdfasdf"]}
     )
-    remappeddf = genie.clinical.remap_clinical_values(testdf, sexdf, no_nan,
-                                                      sexdf, no_nan)
+    remappeddf = genie_registry.clinical.remap_clinical_values(
+        testdf, sexdf, no_nan, sexdf, no_nan
+    )
     assert expecteddf.equals(remappeddf)
 
 
@@ -741,6 +746,7 @@ def test_remap_clinical_values(col):
     expecteddf = pd.DataFrame(
         {col: ["Male", "Female", "Unknown"]}
     )
-    remappeddf = genie.clinical.remap_clinical_values(testdf, sexdf, sexdf,
-                                                      sexdf, sexdf)
+    remappeddf = genie_registry.clinical.remap_clinical_values(
+        testdf, sexdf, sexdf, sexdf, sexdf
+    )
     assert expecteddf.equals(remappeddf)

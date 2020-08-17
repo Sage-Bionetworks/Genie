@@ -11,11 +11,7 @@ from synapseclient.core.utils import to_unix_epoch_time
 import synapseutils
 import pandas as pd
 
-from .config import PROCESS_FILES
-from . import process_functions
-from . import validate
-from . import toRetract
-from . import process_mutation
+from . import process_functions, process_mutation, toRetract, validate
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -227,7 +223,7 @@ def _get_status_and_error_list(valid, message, entities):
 
 def validatefile(syn, project_id, entities, validation_status_table, error_tracker_table,
                  center, threads, oncotree_link,
-                 format_registry=PROCESS_FILES):
+                 format_registry=None):
     '''Validate a list of entities.
 
     If a file has not changed, then it doesn't need to be validated.
@@ -298,7 +294,8 @@ def validatefile(syn, project_id, entities, validation_status_table, error_track
 def processfiles(syn, validfiles, center, path_to_genie,
                  center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
                  processing="main",
-                 genome_nexus_pkg="/root/annotation-tools"):
+                 genome_nexus_pkg="/root/annotation-tools",
+                 format_registry=None):
     """Processing validated files
 
     Args:
@@ -336,7 +333,7 @@ def processfiles(syn, validfiles, center, path_to_genie,
                 tableid = tableid[0]
 
             if filetype is not None:
-                processor = PROCESS_FILES[filetype](syn, center)
+                processor = format_registry[filetype](syn, center)
                 processor.process(
                     filePath=row['path'], newPath=newpath,
                     parentId=center_staging_synid, databaseSynId=tableid,
@@ -752,7 +749,8 @@ def validation(syn, project_id, center, process,
 def center_input_to_database(syn, project_id, center, process,
                              only_validate, database_to_synid_mappingdf,
                              center_mapping_df, delete_old=False,
-                             oncotree_link=None, genie_annotation_pkg=None):
+                             oncotree_link=None, genie_annotation_pkg=None,
+                             format_registry=None):
     if only_validate:
         log_path = os.path.join(
             process_functions.SCRIPT_DIR,
@@ -798,7 +796,7 @@ def center_input_to_database(syn, project_id, center, process,
     if center_files:
         validFiles = validation(syn, project_id, center, process, center_files,
                                 database_to_synid_mappingdf,
-                                oncotree_link, PROCESS_FILES)
+                                oncotree_link, format_registry)
     else:
         logger.info("{} has not uploaded any files".format(center))
         return
@@ -848,7 +846,8 @@ def center_input_to_database(syn, project_id, center, process,
                      center_mapping_df, oncotree_link,
                      database_to_synid_mappingdf,
                      processing=process,
-                     genome_nexus_pkg=genie_annotation_pkg)
+                     genome_nexus_pkg=genie_annotation_pkg,
+                     format_registry=format_registry)
 
         # Should add in this process end tracking
         # before the deletion of samples
