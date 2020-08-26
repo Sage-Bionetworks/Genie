@@ -78,4 +78,3 @@ sudo rm -rf /var/lib/ecs/data/ecs_agent_data.json
 3. Update Center Mapping table https://www.synapse.org/#!Synapse:syn10061452/tables/
 4. Add center to distribution tables: https://www.synapse.org/#!Synapse:syn10627220/tables/, https://www.synapse.org/#!Synapse:syn7268822/tables/
 3. Add users to their GENIE folder
-
