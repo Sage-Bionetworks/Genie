@@ -7,7 +7,7 @@ import pytest
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from genie import validate, process_functions, example_filetype_format
+from synapsegenie import validate, process_functions, example_filetype_format
 
 CENTER = "SAGE"
 syn = mock.create_autospec(synapseclient.Synapse)
