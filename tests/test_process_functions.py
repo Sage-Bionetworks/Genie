@@ -29,20 +29,20 @@ def test_removeStringFloat(input_str, output):
     """Remove string float - will always assume that there is a \n
     at the end.  This is because if a value was 2.01, we dont want to
     remove the .0 from this."""
-    assert genie.process_functions.removeStringFloat(input_str) == output
+    assert synapsegenie.process_functions.removeStringFloat(input_str) == output
 
 
 def test_valid__check_valid_df():
-    genie.process_functions._check_valid_df(DATABASE_DF, "test")
+    synapsegenie.process_functions._check_valid_df(DATABASE_DF, "test")
 
 
 def test_invalid__check_valid_df():
     with pytest.raises(ValueError, match="Must pass in pandas dataframe"):
-        genie.process_functions._check_valid_df("foo", "test")
+        synapsegenie.process_functions._check_valid_df("foo", "test")
     with pytest.raises(
             ValueError,
             match="'error' column must exist in dataframe"):
-        genie.process_functions._check_valid_df(DATABASE_DF, "error")
+        synapsegenie.process_functions._check_valid_df(DATABASE_DF, "error")
 
 
 def test__get_left_diff_df():
@@ -51,14 +51,14 @@ def test__get_left_diff_df():
         "test": ['test1', 'test2', 'test3', 'test4'],
         "foo": [1, 2, 3, 4],
         "baz": [float('nan'), float('nan'), float('nan'), 3.2]})
-    get_diff = genie.process_functions._get_left_diff_df(
+    get_diff = synapsegenie.process_functions._get_left_diff_df(
         new_datadf, DATABASE_DF, 'UNIQUE_KEY')
     expecteddf = new_datadf.loc[[3]]
     assert get_diff.equals(expecteddf[get_diff.columns])
 
 
 def test_norows_get_left_diff_df():
-    append_rows = genie.process_functions._get_left_diff_df(
+    append_rows = synapsegenie.process_functions._get_left_diff_df(
         DATABASE_DF, DATABASE_DF, 'UNIQUE_KEY')
     assert append_rows.empty
 
@@ -72,7 +72,7 @@ def test_first_validation_get_left_diff_df():
     with pytest.raises(
             ValueError,
             match="'FOO' column must exist in dataframe"):
-        genie.process_functions._get_left_diff_df(
+        synapsegenie.process_functions._get_left_diff_df(
             DATABASE_DF, DATABASE_DF, 'FOO')
 
 
@@ -87,7 +87,7 @@ def test_second_validation_get_left_diff_df():
     with pytest.raises(
             ValueError,
             match="'FOO' column must exist in dataframe"):
-        genie.process_functions._get_left_diff_df(
+        synapsegenie.process_functions._get_left_diff_df(
             testing, DATABASE_DF, 'FOO')
 
 
@@ -100,7 +100,7 @@ def test_first_validation_get_left_union_df():
     with pytest.raises(
             ValueError,
             match="'FOO' column must exist in dataframe"):
-        genie.process_functions._get_left_union_df(
+        synapsegenie.process_functions._get_left_union_df(
             DATABASE_DF, DATABASE_DF, 'FOO')
 
 
@@ -115,7 +115,7 @@ def test_second_validation_get_left_union_df():
     with pytest.raises(
             ValueError,
             match="'FOO' column must exist in dataframe"):
-        genie.process_functions._get_left_union_df(
+        synapsegenie.process_functions._get_left_union_df(
             testing, DATABASE_DF, 'FOO')
 
 
@@ -129,7 +129,7 @@ def test_append__append_rows():
         'test': ['test4'],
         'foo': [4],
         'baz': [3.2]})
-    append_rows = genie.process_functions._append_rows(
+    append_rows = synapsegenie.process_functions._append_rows(
         new_datadf, DATABASE_DF, 'UNIQUE_KEY')
     append_rows.fillna('', inplace=True)
     expecteddf.fillna('', inplace=True)
@@ -149,7 +149,7 @@ def test___create_update_rowsdf():
         "baz": [3, 5, float('nan')]},
         index=['test1', 'test5', 'test4'])
 
-    to_update_rowsdf = genie.process_functions._create_update_rowsdf(
+    to_update_rowsdf = synapsegenie.process_functions._create_update_rowsdf(
         database, new_datadf, DATABASE_DF.index, differentrows)
     expecteddf = pd.DataFrame({
         "test": ['test1', 'test4'],
@@ -173,7 +173,7 @@ def test_none__create_update_rowsdf():
         "baz": [3, 5, float('nan')]},
         index=['test1', 'test5', 'test4'])
 
-    to_update_rowsdf = genie.process_functions._create_update_rowsdf(
+    to_update_rowsdf = synapsegenie.process_functions._create_update_rowsdf(
         database, new_datadf, DATABASE_DF.index, differentrows)
     assert to_update_rowsdf.empty
 
@@ -184,7 +184,7 @@ def test___get_left_union_df():
         "test": ['test', 'test2', 'test3'],
         "foo": [1, 3, 3],
         "baz": [float('nan'), 5, float('nan')]})
-    left_union = genie.process_functions._get_left_union_df(
+    left_union = synapsegenie.process_functions._get_left_union_df(
         new_datadf, DATABASE_DF, 'UNIQUE_KEY')
     expecteddf = pd.DataFrame({
         'UNIQUE_KEY': ['test1'],
@@ -200,7 +200,7 @@ def test_none__get_left_union_df():
         "test": ['test', 'test2', 'test3'],
         "foo": [1, 3, 3],
         "baz": [float('nan'), 5, float('nan')]})
-    left_union = genie.process_functions._get_left_union_df(
+    left_union = synapsegenie.process_functions._get_left_union_df(
         new_datadf, DATABASE_DF, 'UNIQUE_KEY')
     assert left_union.empty
 
@@ -221,7 +221,7 @@ def test_update__update_rows():
         "baz": ['', 5],
         'ROW_ID': ['1', '2'],
         'ROW_VERSION': ['3', '3']})
-    update_rows = genie.process_functions._update_rows(
+    update_rows = synapsegenie.process_functions._update_rows(
         new_datadf, DATABASE_DF, 'UNIQUE_KEY')
     assert update_rows.equals(expecteddf[update_rows.columns])
 
@@ -243,7 +243,7 @@ def test_maintaintype__update_rows():
         'ROW_ID': ['2'],
         'ROW_VERSION': ['3']})
     expecteddf = expecteddf.astype({'baz': object})
-    update_rows = genie.process_functions._update_rows(
+    update_rows = synapsegenie.process_functions._update_rows(
         new_datadf, DATABASE_DF, 'UNIQUE_KEY')
     assert update_rows.equals(expecteddf[update_rows.columns])
 
@@ -257,7 +257,7 @@ def test_noupdate__update_rows():
         "test": ['test'],
         "foo": [1],
         "baz": [float('nan')]})
-    update_rows = genie.process_functions._update_rows(
+    update_rows = synapsegenie.process_functions._update_rows(
         new_datadf, DATABASE_DF, 'UNIQUE_KEY')
     assert update_rows.empty
 
@@ -271,13 +271,13 @@ def test_delete__delete_rows():
     expecteddf = pd.DataFrame({
         0: ['2', '3'],
         1: ['3', '5']})
-    delete_rows = genie.process_functions._delete_rows(
+    delete_rows = synapsegenie.process_functions._delete_rows(
         new_datadf, DATABASE_DF, 'UNIQUE_KEY')
     assert delete_rows.equals(expecteddf)
 
 
 def test_norows__delete_rows():
-    delete_rows = genie.process_functions._delete_rows(
+    delete_rows = synapsegenie.process_functions._delete_rows(
         DATABASE_DF, DATABASE_DF, 'UNIQUE_KEY')
     assert delete_rows.empty
 
@@ -299,9 +299,9 @@ def test_get_synid_database_mappingdf():
     '''
     arg = argparser()
     with patch.object(syn, "get", return_value=ENTITY), \
-         patch.object(genie.process_functions, "get_syntabledf",
+         patch.object(synapsegenie.process_functions, "get_syntabledf",
                       return_value=arg.asDataFrame()) as patch_gettabledf:
-        df = genie.process_functions.get_synid_database_mappingdf(
+        df = synapsegenie.process_functions.get_synid_database_mappingdf(
             syn, project_id=None)
         patch_gettabledf.assert_called_once_with(
             syn, "SELECT * FROM {}".format(ENTITY.dbMapping[0]))
@@ -316,6 +316,6 @@ def test_get_syntabledf():
     with patch.object(syn, "tableQuery",
                       return_value=arg) as patch_syn_tablequery:
         querystring = "select * from foo"
-        df = genie.process_functions.get_syntabledf(syn, querystring)
+        df = synapsegenie.process_functions.get_syntabledf(syn, querystring)
         patch_syn_tablequery.assert_called_once_with(querystring)
         assert df.equals(arg.asDataFrame())

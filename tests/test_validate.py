@@ -7,7 +7,8 @@ import pytest
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from synapsegenie import validate, process_functions, example_filetype_format
+from synapsegenie import (config, example_filetype_format,
+                          process_functions, validate)
 
 CENTER = "SAGE"
 syn = mock.create_autospec(synapseclient.Synapse)
@@ -304,6 +305,7 @@ def test_perform_validate():
                       return_value=arg) as patch_syn_tablequery,\
          patch.object(validate, "_check_center_input") as patch_check_center,\
          patch.object(validate, "_get_oncotreelink") as patch_get_onco,\
+         patch.object(config, "collect_format_types") as patch_collect,\
          patch.object(validate.GenieValidationHelper,
                       "validate_single_file",
                       return_value=(valid, 'foo')) as patch_validate,\
@@ -314,6 +316,7 @@ def test_perform_validate():
         patch_syn_tablequery.assert_called_once_with('select * from syn123')
         patch_check_center.assert_called_once_with(arg.center, ["try", "foo"])
         patch_get_onco.assert_called_once()
+        patch_collect.assert_called_once_with(["genie"])
         patch_validate.assert_called_once_with(oncotree_link=arg.oncotree_link,
                                                nosymbol_check=arg.nosymbol_check,
                                                project_id=arg.project_id)

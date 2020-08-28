@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 # figure out the version
 about = {}
 here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, "genie", "__version__.py")) as f:
+with open(os.path.join(here, "synapsegenie", "__version__.py")) as f:
     exec(f.read(), about)
 
 # Add readme
@@ -24,7 +24,9 @@ setup(name='synapsegenie',
       packages=find_packages(),
       zip_safe=False,
       python_requires='>=3.6',
-      entry_points={'console_scripts': ['synapsegenie = genie.__main__:main']},
+      entry_points={'console_scripts': [
+          'synapsegenie = synapsegenie.__main__:main'
+      ]},
       install_requires=['pandas>=1.0',
                         'synapseclient>=2.0',
                         'httplib2>=0.11.3',

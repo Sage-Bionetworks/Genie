@@ -11,7 +11,7 @@ from synapseclient.core.utils import to_unix_epoch_time
 import synapseutils
 import pandas as pd
 
-from . import process_functions, process_mutation, toRetract, validate
+from . import process_functions, toRetract, validate
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -341,14 +341,15 @@ def processfiles(syn, validfiles, center, path_to_genie,
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf
                 )
     else:
-        process_mutation.process_mutation_workflow(
-            syn=syn,
-            center=center,
-            validfiles=validfiles,
-            genie_annotation_pkg=genome_nexus_pkg,
-            database_mappingdf=databaseToSynIdMappingDf,
-            workdir=path_to_genie
-        )
+        pass
+        # process_mutation.process_mutation_workflow(
+        #     syn=syn,
+        #     center=center,
+        #     validfiles=validfiles,
+        #     genie_annotation_pkg=genome_nexus_pkg,
+        #     database_mappingdf=databaseToSynIdMappingDf,
+        #     workdir=path_to_genie
+        # )
 
     logger.info("ALL DATA STORED IN DATABASE")
 

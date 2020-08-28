@@ -6,8 +6,8 @@ import logging
 
 import synapseclient
 
-import genie.config
-import genie.validate
+import synapsegenie.config
+import synapsegenie.validate
 from .__version__ import __version__
 
 
@@ -87,7 +87,7 @@ def build_parser():
     parser_validate.add_argument("--nosymbol-check", action='store_true',
                                  help='Do not check hugo symbols of fusion and cna file')
 
-    parser_validate.set_defaults(func=genie.validate._perform_validate)
+    parser_validate.set_defaults(func=synapsegenie.validate._perform_validate)
     return parser
 
 

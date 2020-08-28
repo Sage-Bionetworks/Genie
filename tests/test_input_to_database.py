@@ -8,7 +8,7 @@ import pytest
 import synapseclient
 import synapseutils
 
-from synapsegenie import input_to_database, process_functions, process_mutation
+from synapsegenie import input_to_database, process_functions
 import synapsegenie.config
 from synapsegenie.validate import GenieValidationHelper
 
@@ -582,7 +582,7 @@ def test__send_validation_error_email():
                       return_value={'userName':
                                     'trial'}) as patch_syn_getuserprofile,\
          patch.object(syn, "sendMessage") as patch_syn_sendmessage,\
-         patch('genie.input_to_database.datetime') as mock_datetime:
+         patch('synapsegenie.input_to_database.datetime') as mock_datetime:
         mock_datetime.datetime.today.return_value = datetime(2019, 11, 1, 00,
                                                              00, 00, 0)
         mock_datetime.side_effect = lambda *args, **kw: date(*args, **kw)
@@ -870,7 +870,7 @@ def test_main_processfile(process, genieclass, filetype):
     genieclass.assert_called_once()
 
 
-
+# TODO: Fix this
 def test_mainnone_processfile():
     """If file type is None, the processing function is not called"""
     validfiles = {'id': ['syn1'],
@@ -889,48 +889,11 @@ def test_mainnone_processfile():
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
     process_cls = Mock()
 
-    with patch.object(clinical, "process") as patch_clin:
-        input_to_database.processfiles(
-            syn, validfilesdf, center, path_to_genie,
-            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-            processing="main",
-            format_registry={"main": process_cls})
-        patch_clin.assert_not_called()
+    # with patch.object(clinical, "process") as patch_clin:
+    input_to_database.processfiles(
+        syn, validfilesdf, center, path_to_genie,
+        center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
+        processing="main",
+        format_registry={"main": process_cls})
+    process_cls.assert_not_called()
 
-
-def test_mutation_processfile():
-    '''
-    Make sure mutation is called correctly
-    '''
-    validfiles = {'id': ['syn1'],
-                  'path': ['/path/to/data_clinical_supp_SAGE.txt'],
-                  'fileType': [None]}
-    validfilesdf = pd.DataFrame(validfiles)
-    center = "SAGE"
-    path_to_genie = "./"
-    oncotree_link = "www.google.com"
-    center_mapping = {'stagingSynId': ["syn123"],
-                      'center': [center]}
-    center_mapping_df = pd.DataFrame(center_mapping)
-    databaseToSynIdMapping = {'Database': ['vcf'],
-                              'Id': ['syn222']}
-    databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
-    process_cls = Mock()
-
-    with patch.object(process_mutation,
-                      "process_mutation_workflow") as patch_process:
-        input_to_database.processfiles(
-            syn, validfilesdf, center, path_to_genie,
-            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-            processing='mutation',
-            genome_nexus_pkg="/path/to/nexus",
-            format_registry={"vcf": process_cls})
-        # TODO: fix hardcoding
-        patch_process.assert_called_once_with(
-            syn=syn,
-            center=center,
-            validfiles=validfilesdf,
-            genie_annotation_pkg="/path/to/nexus",
-            database_mappingdf=databaseToSynIdMappingDf,
-            workdir=path_to_genie
-        )
