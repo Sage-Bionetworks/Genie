@@ -8,10 +8,9 @@ import pytest
 import synapseclient
 import synapseutils
 
-from genie import input_to_database, process_functions, process_mutation
-from genie_registry.clinical import clinical
-import genie.config
-from genie.validate import GenieValidationHelper
+from synapsegenie import input_to_database, process_functions, process_mutation
+import synapsegenie.config
+from synapsegenie.validate import GenieValidationHelper
 
 
 syn = mock.create_autospec(synapseclient.Synapse)

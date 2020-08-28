@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 import synapseclient
 
-import genie.process_functions
+import synapsegenie.process_functions
 
 syn = mock.create_autospec(synapseclient.Synapse)
 
