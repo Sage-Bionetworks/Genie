@@ -8,6 +8,8 @@ import synapseclient
 
 import synapsegenie.config
 import synapsegenie.validate
+import synapsegenie.bootstrap
+
 from .__version__ import __version__
 
 
@@ -32,6 +34,10 @@ def synapse_login(username=None, password=None):
                                   password=password,
                                   silent=True)
     return syn
+
+
+def bootstrap_infra(syn, args):
+    synapsegenie.bootstrap.main(syn)
 
 
 def build_parser():
@@ -88,6 +94,18 @@ def build_parser():
                                  help='Do not check hugo symbols of fusion and cna file')
 
     parser_validate.set_defaults(func=synapsegenie.validate._perform_validate)
+
+    parser_bootstrap = subparsers.add_parser('bootstrap-infra',
+                                            help='Create GENIE-like infra')
+    parser_bootstrap.add_argument(
+        "--format_registry_packages", type=str, nargs="+",
+        default=["example_registry"],
+        help="Python package name(s) to get valid file formats from "
+             "(default: %(default)s)."
+    )
+
+    parser_bootstrap.set_defaults(func=bootstrap_infra)
+
     return parser
 
 
