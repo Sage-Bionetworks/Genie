@@ -12,9 +12,9 @@ with open(os.path.join(here, "genie", "__version__.py")) as f:
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-setup(name='aacrgenie',
+setup(name='synapsegenie',
       version=about["__version__"],
-      description='Processing and validation for GENIE',
+      description='Synapse flat file validation and processing pipeline',
       long_description=long_description,
       long_description_content_type="text/markdown",
       url='https://github.com/Sage-Bionetworks/Genie',
