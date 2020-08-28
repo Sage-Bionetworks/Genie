@@ -6,9 +6,8 @@ import logging
 
 import synapseclient
 
-import synapsegenie.config
-import synapsegenie.validate
-import synapsegenie.bootstrap
+from synapsegenie import (bootstrap, config, input_to_database,
+                          process_functions, validate, write_invalid_reasons)
 
 from .__version__ import __version__
 
@@ -37,10 +36,76 @@ def synapse_login(username=None, password=None):
 
 
 def bootstrap_infra(syn, args):
-    synapsegenie.bootstrap.main(syn)
+    """Create GENIE-like infrastructure"""
+    bootstrap.main(syn)
 
+
+def process_cli_wrapper(syn, args):
+    """Process CLI wrapper"""
+    process(syn, args.process, args.project_id, center=args.center,
+            pemfile=args.pemfile, delete_old=args.delete_old,
+            only_validate=args.only_validate, debug=args.debug,
+            format_registry_packages=args.format_registry_packages)
+
+
+def process(syn, process, project_id, center=None, pemfile=None,
+            delete_old=False, only_validate=False, debug=False,
+            format_registry_packages=None):
+    """Process files"""
+    # Get the Synapse Project where data is stored
+    # Should have annotations to find the table lookup
+    project = syn.get(project_id)
+    database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
+
+    databaseToSynIdMapping = syn.tableQuery(
+        'SELECT * FROM {}'.format(database_to_synid_mapping_synid[0]))
+    databaseToSynIdMappingDf = databaseToSynIdMapping.asDataFrame()
+
+    center_mapping_id = process_functions.getDatabaseSynId(
+        syn, "centerMapping",
+        databaseToSynIdMappingDf=databaseToSynIdMappingDf
+    )
+
+    center_mapping = syn.tableQuery(f'SELECT * FROM {center_mapping_id}')
+    center_mapping_df = center_mapping.asDataFrame()
+
+    if center is not None:
+        assert center in center_mapping_df.center.tolist(), (
+            "Must specify one of these centers: {}".format(
+                ", ".join(center_mapping_df.center)))
+        centers = [center]
+    else:
+        center_mapping_df = center_mapping_df[
+            ~center_mapping_df['inputSynId'].isnull()
+        ]
+        # release is a bool column
+        center_mapping_df = center_mapping_df[center_mapping_df['release']]
+        centers = center_mapping_df.center
+
+    format_registry = config.collect_format_types(format_registry_packages)
+
+    for process_center in centers:
+        input_to_database.center_input_to_database(
+            syn, project_id, process_center, process,
+            only_validate, databaseToSynIdMappingDf,
+            center_mapping_df,
+            delete_old=delete_old,
+            format_registry=format_registry
+        )
+
+    error_tracker_synid = process_functions.getDatabaseSynId(
+        syn, "errorTracker", databaseToSynIdMappingDf=databaseToSynIdMappingDf
+    )
+    # Only write out invalid reasons if the center
+    # isnt specified and if only validate
+    if center is None and only_validate:
+        logger.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
+        write_invalid_reasons.write_invalid_reasons(
+            syn, center_mapping_df, error_tracker_synid
+        )
 
 def build_parser():
+    """Build CLI parsers"""
     parser = argparse.ArgumentParser(description='GENIE processing')
 
     parser.add_argument("--syn_user", type=str, help='Synapse username')
@@ -93,7 +158,7 @@ def build_parser():
     parser_validate.add_argument("--nosymbol-check", action='store_true',
                                  help='Do not check hugo symbols of fusion and cna file')
 
-    parser_validate.set_defaults(func=synapsegenie.validate._perform_validate)
+    parser_validate.set_defaults(func=validate._perform_validate)
 
     parser_bootstrap = subparsers.add_parser('bootstrap-infra',
                                             help='Create GENIE-like infra')
@@ -105,6 +170,45 @@ def build_parser():
     )
 
     parser_bootstrap.set_defaults(func=bootstrap_infra)
+
+    parser_process = subparsers.add_parser(
+        'process', help='Process files'
+    )
+    parser_process.add_argument(
+        "process", choices=['main']
+    )
+    parser_process.add_argument(
+        "--project_id",
+        help="Synapse Project ID where data is stored.",
+        required=True
+    )
+    parser_process.add_argument(
+        '--center', help='The centers'
+    )
+    parser_process.add_argument(
+        "--pemfile", type=str,
+        help="Path to PEM file (genie.pem)"
+    )
+    parser_process.add_argument(
+        "--delete_old", action='store_true',
+        help="Delete all old processed and temp files"
+    )
+    parser_process.add_argument(
+        "--only_validate", action='store_true',
+        help="Only validate the files, don't process"
+    )
+    parser_process.add_argument(
+        "--debug", action='store_true',
+        help="Add debug mode to synapse"
+    )
+    # DEFAULT PARAMS
+    parser_process.add_argument(
+        "--format_registry_packages", type=str, nargs="+",
+        default=["example_registry"],
+        help="Python package name(s) to get valid file formats from "
+             "(default: %(default)s)."
+    )
+    parser_process.set_defaults(func=process_cli_wrapper)
 
     return parser
 

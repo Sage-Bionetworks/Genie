@@ -11,7 +11,7 @@ from synapseclient.core.utils import to_unix_epoch_time
 import synapseutils
 import pandas as pd
 
-from . import process_functions, toRetract, validate
+from . import process_functions, validate
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -567,7 +567,6 @@ def update_status_and_error_tables(syn,
 
     '''
     logger.info("UPDATE VALIDATION STATUS DATABASE")
-
     process_functions.updateDatabase(syn, error_tracker_table.asDataFrame(),
                                      invalid_errorsdf,
                                      error_tracker_table.tableId,
@@ -804,44 +803,44 @@ def center_input_to_database(syn, project_id, center, process,
 
     if len(validFiles) > 0 and not only_validate:
         # Reorganize so BED file are always validated and processed first
-        bed_files = validFiles['fileType'] == "bed"
-        beds = validFiles[bed_files]
-        validFiles = beds.append(validFiles)
-        validFiles.drop_duplicates(inplace=True)
-        # merge clinical files into one row
-        clinical_ind = validFiles['fileType'] == "clinical"
-        if clinical_ind.any():
-            clinical_files = validFiles[clinical_ind].to_dict(orient='list')
-            # The [] implies the values in the dict as a list
-            merged_clinical = pd.DataFrame([clinical_files])
-            merged_clinical['fileType'] = 'clinical'
-            merged_clinical['name'] = f"data_clinical_supp_{center}.txt"
-            validFiles = validFiles[~clinical_ind].append(merged_clinical)
+        # bed_files = validFiles['fileType'] == "bed"
+        # beds = validFiles[bed_files]
+        # validFiles = beds.append(validFiles)
+        # validFiles.drop_duplicates(inplace=True)
+        # # merge clinical files into one row
+        # clinical_ind = validFiles['fileType'] == "clinical"
+        # if clinical_ind.any():
+        #     clinical_files = validFiles[clinical_ind].to_dict(orient='list')
+        #     # The [] implies the values in the dict as a list
+        #     merged_clinical = pd.DataFrame([clinical_files])
+        #     merged_clinical['fileType'] = 'clinical'
+        #     merged_clinical['name'] = f"data_clinical_supp_{center}.txt"
+        #     validFiles = validFiles[~clinical_ind].append(merged_clinical)
 
-        processTrackerSynId = process_functions.getDatabaseSynId(
-            syn, "processTracker",
-            databaseToSynIdMappingDf=database_to_synid_mappingdf)
-        # Add process tracker for time start
-        processTracker = syn.tableQuery(
-            "SELECT timeStartProcessing FROM {} "
-            "where center = '{}' and "
-            "processingType = '{}'".format(
-                processTrackerSynId, center, process))
-        processTrackerDf = processTracker.asDataFrame()
-        if len(processTrackerDf) == 0:
-            new_rows = [[
-                center,
-                str(int(time.time()*1000)),
-                str(int(time.time()*1000)),
-                process]]
+        # processTrackerSynId = process_functions.getDatabaseSynId(
+        #     syn, "processTracker",
+        #     databaseToSynIdMappingDf=database_to_synid_mappingdf)
+        # # Add process tracker for time start
+        # processTracker = syn.tableQuery(
+        #     "SELECT timeStartProcessing FROM {} "
+        #     "where center = '{}' and "
+        #     "processingType = '{}'".format(
+        #         processTrackerSynId, center, process))
+        # processTrackerDf = processTracker.asDataFrame()
+        # if len(processTrackerDf) == 0:
+        #     new_rows = [[
+        #         center,
+        #         str(int(time.time()*1000)),
+        #         str(int(time.time()*1000)),
+        #         process]]
 
-            syn.store(synapseclient.Table(
-                processTrackerSynId, new_rows))
-        else:
-            processTrackerDf['timeStartProcessing'][0] = \
-                str(int(time.time()*1000))
-            syn.store(synapseclient.Table(
-                processTrackerSynId, processTrackerDf))
+        #     syn.store(synapseclient.Table(
+        #         processTrackerSynId, new_rows))
+        # else:
+        #     processTrackerDf['timeStartProcessing'][0] = \
+        #         str(int(time.time()*1000))
+        #     syn.store(synapseclient.Table(
+        #         processTrackerSynId, processTrackerDf))
 
         processfiles(syn, validFiles, center, path_to_genie,
                      center_mapping_df, oncotree_link,
@@ -852,18 +851,18 @@ def center_input_to_database(syn, project_id, center, process,
 
         # Should add in this process end tracking
         # before the deletion of samples
-        processTracker = syn.tableQuery(
-            "SELECT timeEndProcessing FROM {synid} where center = '{center}' "
-            "and processingType = '{processtype}'".format(
-                synid=processTrackerSynId,
-                center=center,
-                processtype=process))
-        processTrackerDf = processTracker.asDataFrame()
-        processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
-        syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
+        # processTracker = syn.tableQuery(
+        #     "SELECT timeEndProcessing FROM {synid} where center = '{center}' "
+        #     "and processingType = '{processtype}'".format(
+        #         synid=processTrackerSynId,
+        #         center=center,
+        #         processtype=process))
+        # processTrackerDf = processTracker.asDataFrame()
+        # processTrackerDf['timeEndProcessing'][0] = str(int(time.time()*1000))
+        # syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
-        logger.info("SAMPLE/PATIENT RETRACTION")
-        toRetract.retract(syn, project_id=project_id)
+        # logger.info("SAMPLE/PATIENT RETRACTION")
+        # toRetract.retract(syn, project_id=project_id)
 
     else:
         messageOut = \
