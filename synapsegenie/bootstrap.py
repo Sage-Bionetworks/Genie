@@ -1,17 +1,72 @@
 """Bootstrap the components of a project to be used with the GENIE framework.
 """
+from typing import List, Union
 import random
 import tempfile
 
 import synapseclient
+from synapseclient import Schema, Synapse
 import pandas
 
 from . import config
 
 
+def _create_table(syn: Synapse, name: str, col_config: List[dict],
+                  parent: str) -> Schema:
+    """Create Synapse Table
+
+    Args:
+        syn: Synapse connection
+        name: Table name
+        col_config: Column dict configuration
+        parent: Synapse id of project
+
+    Returns:
+        Stored Synapse Table
+
+    """
+    cols = [synapseclient.Column(**col) for col in col_config]
+    schema = synapseclient.Schema(name=name, columns=cols, parent=parent)
+    schema = syn.store(schema)
+    return schema
+
+
+def create_status_table(syn, parent):
+    """Set up the table that holds the validation status of all submitted
+    files.
+    """
+    status_table_col_defs = [
+        {'name': 'id',
+         'columnType': 'ENTITYID'},
+        {'name': 'md5',
+         'columnType': 'STRING',
+         'maximumSize': 1000},
+        {'name': 'status',
+         'columnType': 'STRING',
+         'maximumSize': 50,
+         'facetType': 'enumeration'},
+        {'name': 'name',
+         'columnType': 'STRING',
+         'maximumSize': 1000},
+        {'name': 'center',
+         'columnType': 'STRING',
+         'maximumSize': 20,
+         'facetType': 'enumeration'},
+        {'name': 'modifiedOn',
+         'columnType': 'DATE'},
+        # {'name': 'versionNumber',
+        #  'columnType': 'STRING',
+        #  'maximumSize': 50},
+        {'name': 'fileType',
+         'columnType': 'STRING',
+         'maximumSize': 50}
+    ]
+    return _create_table(syn, name="Status Table",
+                         col_config=status_table_col_defs,
+                         parent=parent)
+
+
 def main(syn):
-    # Determine which file formats are going to be used.
-    format_registry = config.collect_format_types(['example_registry'])
 
     # Basic setup of the project
     project_name = "Testing Synapse Genie"
@@ -57,40 +112,7 @@ def main(syn):
             synfile = syn.store(synapseclient.File(tmp.name, parent=folder))
 
     # Set up the table that holds the validation status of all submitted files.
-    status_table_col_defs = [
-        {'name': 'id',
-         'columnType': 'ENTITYID'},
-        {'name': 'md5',
-         'columnType': 'STRING',
-         'maximumSize': 1000},
-        {'name': 'status',
-         'columnType': 'STRING',
-         'maximumSize': 50,
-         'facetType': 'enumeration'},
-        {'name': 'name',
-         'columnType': 'STRING',
-         'maximumSize': 1000},
-        {'name': 'center',
-         'columnType': 'STRING',
-         'maximumSize': 20,
-         'facetType': 'enumeration'},
-        {'name': 'modifiedOn',
-         'columnType': 'DATE'},
-        {'name': 'versionNumber',
-         'columnType': 'STRING',
-         'maximumSize': 50},
-        {'name': 'fileType',
-         'columnType': 'STRING',
-         'maximumSize': 50}
-    ]
-
-    status_table_cols = [synapseclient.Column(**col)
-                         for col in status_table_col_defs]
-
-    status_schema = synapseclient.Schema(name='Status Table',
-                                         columns=status_table_cols,
-                                         parent=project)
-    status_schema = syn.store(status_schema)
+    status_schema = create_status_table(syn, project)
 
     # Set up the table that maps the center abbreviation to the folder where
     # their data is uploaded. This is used by the GENIE framework to find the
@@ -146,9 +168,9 @@ def main(syn):
         {'name': 'name',
          'columnType': 'STRING',
          'maximumSize': 500},
-        {'name': 'versionNumber',
-         'columnType': 'STRING',
-         'maximumSize': 50},
+        # {'name': 'versionNumber',
+        #  'columnType': 'STRING',
+        #  'maximumSize': 50},
         {'name': 'fileType',
          'columnType': 'STRING',
          'maximumSize': 50}
@@ -164,6 +186,8 @@ def main(syn):
     # This table is used in many GENIE functions to find the correct table to update
     # or get the state of something from.
 
+
+
     db_map_col_defs = [
         {'name': 'Database',
          'columnType': 'STRING',
@@ -177,6 +201,9 @@ def main(syn):
                                          columns=db_map_cols, parent=project)
     db_map_schema = syn.store(db_map_schema)
 
+    # Add dbMapping annotation
+    project.annotations.dbMapping = db_map_schema.tableId
+    project = syn.store(project)
     # Add the tables we already created to the mapping table.
     dbmap_df = pandas.DataFrame(
         dict(Database=['centerMapping', 'validationStatus', 'errorTracker',
@@ -195,12 +222,12 @@ def main(syn):
 
     output_folder_map = []
 
-    default_table_col_defs = status_table_col_defs = [
-        {'name': 'PRIMARY_KEY',
-         'columnType': 'STRING'}
-    ]
-    default_table_cols = [synapseclient.Column(**col)
-                          for col in default_table_col_defs]
+    # default_table_col_defs = status_table_col_defs = [
+    #     {'name': 'PRIMARY_KEY',
+    #      'columnType': 'STRING'}
+    # ]
+    # default_table_cols = [synapseclient.Column(**col)
+    #                       for col in default_table_col_defs]
 
     default_primary_key = 'PRIMARY_KEY'
 
@@ -209,6 +236,9 @@ def main(syn):
     # means that both of these operations will be available at the beginning.
     # The mapping between the file type and the folder or table have a consistent naming. 
     # The key ('Database' value) is {file_type}_folder or {file_type}_table.
+    # Determine which file formats are going to be used.
+    format_registry = config.collect_format_types(['example_registry'])
+
     for file_type, obj in format_registry.items():
         file_type_folder = synapseclient.Folder(name=file_type,
                                                 parent=output_folder)
@@ -217,7 +247,6 @@ def main(syn):
                                       Id=file_type_folder.id))
         
         file_type_schema = synapseclient.Schema(name=file_type,
-                                                columns=default_table_cols,
                                                 parent=project)
         file_type_schema.annotations.primaryKey = default_primary_key
         file_type_schema = syn.store(file_type_schema)
