@@ -12,6 +12,30 @@ from . import process_functions
 logger = logging.getLogger(__name__)
 
 
+def _check_tsa1_tsa2(df):
+    """If maf file has both TSA1 and TSA2,
+    TSA1 must equal REF, or TSA1 must equal TSA2.
+    """
+    tsa2_col_exist = process_functions.checkColExist(df, "TUMOR_SEQ_ALLELE2")
+    tsa1_col_exist = process_functions.checkColExist(df, "TUMOR_SEQ_ALLELE1")
+    ref_col_exist = process_functions.checkColExist(df, "REFERENCE_ALLELE")
+    error = ""
+    if tsa2_col_exist and tsa1_col_exist and ref_col_exist:
+        tsa1_eq_ref = all(df['TUMOR_SEQ_ALLELE1'] == df['REFERENCE_ALLELE'])
+        tsa1_eq_tsa2 = all(
+            df['TUMOR_SEQ_ALLELE1'] == df['TUMOR_SEQ_ALLELE2']
+        )
+        if not (tsa1_eq_ref or tsa1_eq_tsa2):
+            error = (
+                "Mutation File: Contains both "
+                "TUMOR_SEQ_ALLELE1 and TUMOR_SEQ_ALLELE2 columns. "
+                "The values in TUMOR_SEQ_ALLELE1 must be the same as "
+                "all the values in REFERENCE_ALELLE OR TUMOR_SEQ_ALLELE2."
+            )
+    return error
+
+
+
 def _check_allele_col(df, col):
     """
     Check the Allele column is correctly formatted.
@@ -163,6 +187,9 @@ class maf(FileTypeFormat):
                     "Mutation File: "
                     "CHROMOSOME column cannot have any values that "
                     "start with 'chr' or any 'WT' values.\n")
+
+        error = _check_tsa1_tsa2(mutationDF)
+        total_error += error
 
         return total_error, warning
 
