@@ -1,9 +1,11 @@
 from unittest import mock
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
 import synapseclient
 
+import genie_registry.maf
 from genie_registry.maf import maf
 from genie_registry.mafSP import mafSP
 
@@ -105,17 +107,19 @@ def test_errors_validation():
 
     error, warning = maf_class._validate(mafDf)
 
-    expectedErrors = ("Mutation File: "
-                      "Cannot have any empty REFERENCE_ALLELE values.\n"
-                      "Mutation File: "
-                      "CHROMOSOME column cannot have any values that start "
-                      "with 'chr' or any 'WT' values.\n")
+    expectedErrors = (
+        "Mutation File: "
+        "REFERENCE_ALLELE can't have any blank or null values.\n"
+        "Mutation File: "
+        "CHROMOSOME column cannot have any values that start "
+        "with 'chr' or any 'WT' values.\n"
+    )
     expectedWarnings = ("Mutation File: "
                         "Does not have the column headers that can give "
                         "extra information to the processed mutation file: "
                         "T_REF_COUNT, N_DEPTH.\n"
                         "Mutation File: "
-                        "Your REFERENCE_ALLELE column contains NA values, "
+                        "REFERENCE_ALLELE column contains 'NA' values, "
                         "which cannot be placeholders for blank values.  "
                         "Please put in empty strings for blank values.\n")
 
@@ -135,13 +139,17 @@ def test_invalid_validation():
         N_ALT_COUNT=[1, 2, 3, 4, 3, 4],
         TUMOR_SEQ_ALLELE2=["NA", float('nan'), "A", "A", "A", "A"]))
 
-    error, warning = maf_class._validate(mafDf)
-
+    with patch.object(genie_registry.maf, "_check_tsa1_tsa2",
+                      return_value="") as check_tsa1_tsa2:
+        error, warning = maf_class._validate(mafDf)
+        check_tsa1_tsa2.assert_called_once_with(mafDf)
     expectedErrors = (
         "Mutation File: Should not have duplicate rows\n"
         "Mutation File: "
         "If you are missing T_DEPTH, you must have T_REF_COUNT!\n"
-        "Mutation File: TUMOR_SEQ_ALLELE2 can't have any null values.\n")
+        "Mutation File: "
+        "TUMOR_SEQ_ALLELE2 can't have any blank or null values.\n"
+    )
     expectedWarnings = (
         "Mutation File: TUMOR_SEQ_ALLELE2 column contains 'NA' values, "
         "which cannot be placeholders for blank values.  "
@@ -150,3 +158,72 @@ def test_invalid_validation():
         "extra information to the processed mutation file: T_REF_COUNT.\n")
     assert error == expectedErrors
     assert warning == expectedWarnings
+
+
+@pytest.mark.parametrize("col", ["temp", "REFERENCE_ALLELE"])
+def test_noerror__check_allele_col(col):
+    """Test error and warning is an empty string if REF col isn't passed in"""
+    df = pd.DataFrame(dict(
+        REFERENCE_ALLELE=["A", "A"]
+    ))
+    error, warning = genie_registry.maf._check_allele_col(df, col)
+    assert error == ""
+    assert warning == ""
+
+
+def test_warning__check_allele_col():
+    """Test warning occurs when 'NA' string is passed in"""
+    df = pd.DataFrame(dict(
+        TEMP=["NA", "A"]
+    ))
+    error, warning = genie_registry.maf._check_allele_col(df, "TEMP")
+    assert error == ""
+    assert warning == (
+        "Mutation File: "
+        "TEMP column contains 'NA' values, "
+        "which cannot be placeholders for blank values.  "
+        "Please put in empty strings for blank values.\n"
+    )
+
+
+def test_error__check_allele_col():
+    """Test error occurs when blank allele is passed in"""
+    df = pd.DataFrame(dict(
+        TEMP=[float('nan'), "A"]
+    ))
+    error, warning = genie_registry.maf._check_allele_col(df, "TEMP")
+    assert error == (
+        "Mutation File: TEMP can't have any blank or null values.\n"
+    )
+    assert warning == ""
+
+
+def test_invalid__check_tsa1_tsa2():
+    """Test the scenario in which maf file has TSA1 and TSA2 and fails"""
+    df = pd.DataFrame(dict(
+        REFERENCE_ALLELE=["A", "A", "A"],
+        TUMOR_SEQ_ALLELE1=["B", "B", "B"],
+        TUMOR_SEQ_ALLELE2=["C", "C", "C"]
+    ))
+    error = genie_registry.maf._check_tsa1_tsa2(df)
+    assert error == (
+        "Mutation File: Contains both "
+        "TUMOR_SEQ_ALLELE1 and TUMOR_SEQ_ALLELE2 columns. "
+        "The values in TUMOR_SEQ_ALLELE1 must be the same as "
+        "all the values in REFERENCE_ALELLE OR TUMOR_SEQ_ALLELE2."
+    )
+
+
+@pytest.mark.parametrize(
+    "df",
+    [pd.DataFrame(dict(REFERENCE_ALLELE=["A", "A", "A"],
+                       TUMOR_SEQ_ALLELE1=["C", "C", "C"],
+                       TUMOR_SEQ_ALLELE2=["C", "C", "C"])),
+     pd.DataFrame(dict(REFERENCE_ALLELE=["C", "C", "C"],
+                       TUMOR_SEQ_ALLELE1=["C", "C", "C"],
+                       TUMOR_SEQ_ALLELE2=["A", "A", "A"]))]
+)
+def test_valid__check_tsa1_tsa2(df):
+    """Test valid TSA1 and TSA2"""
+    error = genie_registry.maf._check_tsa1_tsa2(df)
+    assert error == ""
