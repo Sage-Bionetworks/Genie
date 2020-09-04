@@ -105,17 +105,19 @@ def test_errors_validation():
 
     error, warning = maf_class._validate(mafDf)
 
-    expectedErrors = ("Mutation File: "
-                      "Cannot have any empty REFERENCE_ALLELE values.\n"
-                      "Mutation File: "
-                      "CHROMOSOME column cannot have any values that start "
-                      "with 'chr' or any 'WT' values.\n")
+    expectedErrors = (
+        "Mutation File: "
+        "REFERENCE_ALLELE can't have any blank or null values.\n"
+        "Mutation File: "
+        "CHROMOSOME column cannot have any values that start "
+        "with 'chr' or any 'WT' values.\n"
+    )
     expectedWarnings = ("Mutation File: "
                         "Does not have the column headers that can give "
                         "extra information to the processed mutation file: "
                         "T_REF_COUNT, N_DEPTH.\n"
                         "Mutation File: "
-                        "Your REFERENCE_ALLELE column contains NA values, "
+                        "REFERENCE_ALLELE column contains 'NA' values, "
                         "which cannot be placeholders for blank values.  "
                         "Please put in empty strings for blank values.\n")
 
@@ -141,7 +143,9 @@ def test_invalid_validation():
         "Mutation File: Should not have duplicate rows\n"
         "Mutation File: "
         "If you are missing T_DEPTH, you must have T_REF_COUNT!\n"
-        "Mutation File: TUMOR_SEQ_ALLELE2 can't have any null values.\n")
+        "Mutation File: "
+        "TUMOR_SEQ_ALLELE2 can't have any blank or null values.\n"
+    )
     expectedWarnings = (
         "Mutation File: TUMOR_SEQ_ALLELE2 column contains 'NA' values, "
         "which cannot be placeholders for blank values.  "

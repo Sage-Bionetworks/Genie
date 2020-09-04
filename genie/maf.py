@@ -11,6 +11,40 @@ from . import process_functions
 
 logger = logging.getLogger(__name__)
 
+
+def _check_allele_col(df, col):
+    """
+    Check the Allele column is correctly formatted.
+
+    Args:
+        df: mutation dataframe
+        col: Column header name
+
+    Returns:
+        error, warning
+
+    """
+    col_exist = process_functions.checkColExist(df, col)
+    error = ""
+    warning = ""
+    if col_exist:
+        # CHECK: The value "NA" can't be used as a placeholder
+        if sum(df[col].fillna('') == "NA") > 0:
+            warning = (
+                "Mutation File: "
+                f"{col} column contains 'NA' values, "
+                "which cannot be placeholders for blank values.  "
+                "Please put in empty strings for blank values.\n"
+            )
+        # CHECK: There can't be any null values
+        if sum(df[col].isnull()) > 0:
+            error = (
+                f"Mutation File: {col} can't have any blank or null values.\n"
+            )
+
+    return error, warning
+
+
 class maf(FileTypeFormat):
     '''
     MAF file format validation / processing
@@ -97,25 +131,14 @@ class maf(FileTypeFormat):
                     "Mutation File: "
                     "If you are missing T_DEPTH, you must have T_REF_COUNT!\n")
 
-        # CHECK: Must have either TUMOR_SEQ_ALLELE2 column
-        if process_functions.checkColExist(mutationDF, "TUMOR_SEQ_ALLELE2"):
-            # CHECK: The value "NA" can't be used as a placeholder
-            if sum(mutationDF["TUMOR_SEQ_ALLELE2"].fillna('') == "NA") > 0:
-                warning += (
-                    "Mutation File: "
-                    "TUMOR_SEQ_ALLELE2 column contains 'NA' values, "
-                    "which cannot be placeholders for blank values.  "
-                    "Please put in empty strings for blank values.\n")
-            # CHECK: There can't be any null values
-            if sum(mutationDF["TUMOR_SEQ_ALLELE2"].isnull()) > 0:
-                total_error += (
-                    "Mutation File: "
-                    "TUMOR_SEQ_ALLELE2 can't have any null values.\n")
+        # CHECK: Must have TUMOR_SEQ_ALLELE2
+        error, warn = _check_allele_col(mutationDF, "TUMOR_SEQ_ALLELE2")
+        total_error += error
+        warning += warn
 
         # CHECK: Mutation file would benefit from columns in optional_headers
-        if not all([
-                process_functions.checkColExist(mutationDF, i)
-                for i in optional_headers]) and not SP:
+        if not all([process_functions.checkColExist(mutationDF, i)
+                    for i in optional_headers]) and not SP:
             warning += (
                 "Mutation File: "
                 "Does not have the column headers that can give extra "
@@ -124,19 +147,10 @@ class maf(FileTypeFormat):
                         i for i in optional_headers
                         if i not in mutationDF.columns.values])))
 
-        if process_functions.checkColExist(mutationDF, "REFERENCE_ALLELE"):
-            if sum(mutationDF['REFERENCE_ALLELE'] == "NA") > 0:
-                warning += (
-                    "Mutation File: "
-                    "Your REFERENCE_ALLELE column contains NA values, "
-                    "which cannot be placeholders for blank values.  "
-                    "Please put in empty strings for blank values.\n")
-            # CHECK: mutation file must not have empty reference
-            # or variant alleles
-            if sum(mutationDF['REFERENCE_ALLELE'].isnull()) > 0:
-                total_error += (
-                    "Mutation File: "
-                    "Cannot have any empty REFERENCE_ALLELE values.\n")
+        # CHECK: Must have REFERENCE_ALLELE
+        error, warn = _check_allele_col(mutationDF, "REFERENCE_ALLELE")
+        total_error += error
+        warning += warn
 
         if process_functions.checkColExist(mutationDF, "CHROMOSOME"):
             # CHECK: Chromosome column can't have any values that start
@@ -150,7 +164,7 @@ class maf(FileTypeFormat):
                     "CHROMOSOME column cannot have any values that "
                     "start with 'chr' or any 'WT' values.\n")
 
-        return(total_error, warning)
+        return total_error, warning
 
     def _get_dataframe(self, filePathList):
         """Get mutation dataframe"""
