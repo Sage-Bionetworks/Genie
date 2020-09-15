@@ -62,7 +62,7 @@ def find_caselistid(syn, parentid):
 
 def store_file(syn, filePath, genieVersion="database", name=None,
                parent=None, fileFormat=None, cBioFileFormat=None,
-               tag_or_commit="master"):
+               tag_or_commit="v11.0.0"):
     '''
     Convenience function to store files
 
