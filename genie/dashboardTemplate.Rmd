@@ -418,12 +418,13 @@ unlink("samples_to_retract.csv")
 
 ```
 
-The GENIE retraction policy states that if a sample/patient is implicitly or explicitly after the first 3 months of a public release, it should be retracted from the public release.  To assist with this, we ask centers to confirm the retracted samples listed in this file: `r paste0("https://www.synapse.org/#!Synapse:", ent$properties$id)` . Centers should only have samples here if someone has withdrew consent - If you have samples/patients in this table that should not be on here, please upload a fix to your data or let Tom Yu from Sage know immediately.
-
+The GENIE retraction policy states that if a sample/patient is retracted within the first 3 months of a public release, it should be removed from the latest public release. This retraction will occur after the 3rd consortium release. If a sample is retracted after the 3 month period, it will not be released in the next public release.  This table below lists the number of samples explicitly or implicitly retracted by centers.
 
 ```{r}
 kable(table(possible_retracted$CENTER, possible_retracted$RETRACTION))
 ```
+
+ To confirm that we are retracting the right samples, we ask centers to confirm the retracted samples listed in this file: `r paste0("https://www.synapse.org/#!Synapse:", ent$properties$id)`. **Centers should only have samples in the linked file if someone has withdrew consent**. If you have samples/patients that should not be retracted, please upload a fix to your data or let Tom Yu from Sage know immediately.
 
 ---
 
