@@ -32,10 +32,10 @@ def generate_dashboard_html(genie_version, staging=False,
 
     """
     markdown_render_cmd = ['Rscript',
-                           os.path.join(PWD, '../genie/dashboard_markdown_generator.R'),
+                           os.path.join(PWD, '../R/dashboard_markdown_generator.R'),
                            genie_version,
                            '--template_path',
-                           os.path.join(PWD, '../genie/dashboardTemplate.Rmd')]
+                           os.path.join(PWD, '../templates/dashboardTemplate.Rmd')]
 
     if genie_user is not None and genie_pass is not None:
         markdown_render_cmd.extend(['--syn_user', genie_user,
