@@ -1,11 +1,26 @@
+import logging
+
 import pandas as pd
 import synapseclient
+from synapseclient import Synapse
 
 from . import dashboard_table_updater
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-def get_latest_public_release(syn, release):
-    """Finds latest public release"""
+
+def get_latest_public_release(syn: Synapse, release: str) -> str:
+    """Finds latest public release
+
+    Args:
+        syn: Synapse connection
+        release: GENIE release version
+
+    Returns:
+        Synapse folder id
+
+    """
     major_release = release.split(".")[0]
     public_major_release = int(major_release) - 1
     public_rel = syn.tableQuery(
@@ -19,8 +34,17 @@ def get_latest_public_release(syn, release):
     return public_releasedf['id'][0]
 
 
-def find_release(syn, release):
-    """Finds the Synapse id of a private consortium release folder"""
+def find_release(syn: Synapse, release: str) -> str:
+    """Finds the Synapse id of a private consortium release folder
+
+    Args:
+        syn: Synapse connection
+        release: GENIE release version
+
+    Returns:
+        Synapse folder id
+
+    """
     release_synid = syn.tableQuery(
         "select distinct(parentId) from syn16804261 where "
         f"release = '{release}'"
@@ -31,12 +55,18 @@ def find_release(syn, release):
     return releasedf.iloc[0,0]
 
 
-def notify(syn, possible_retracted):
-    """Notify centers of samples to be retracted"""
+def notify(syn: Synapse, possible_retracted: pd.DataFrame):
+    """Notify centers of samples to be retracted
+
+    Args:
+        syn: Synapse connection
+        possible_retracted: Possibly retracted samples dataframe
+
+    """
     possible_retracted['CENTER'] = [
         assay.split("-")[0] for assay in possible_retracted['SEQ_ASSAY_ID']
     ]
-    print(possible_retracted['CENTER'].value_counts())
+    logger.info(possible_retracted['CENTER'].value_counts())
 
     center_retracted = possible_retracted.groupby("CENTER")
 
@@ -69,7 +99,6 @@ def notify(syn, possible_retracted):
         
         emaillist = [3324230, 1968150]
         emaillist.extend(center_users.tolist())
-        print(emaillist)
         # Remove this when finalized
         emaillist = [3324230]
         syn.sendMessage(userIds=emaillist,
@@ -77,9 +106,20 @@ def notify(syn, possible_retracted):
                         messageBody=retraction_email)
 
 
-def annotate_with_retraction_type(syn, possible_retracted):
-    """Determine if sample is explcitly or implicitly retracted"""
+def annotate_with_retraction_type(
+        syn: Synapse,
+        possible_retracted: pd.DataFrame
+    ) -> pd.DataFrame:
+    """Determine if sample is explcitly or implicitly retracted
 
+    Args:
+        syn: Synapse connection
+        possible_retracted: Possibly retracted samples dataframe
+
+    Returns:
+        Same dataframe with retraction type column
+
+    """
     # assume most samples are implicitly retracted
     possible_retracted['RETRACTION'] = "implicit"
     # Get explicitly retracted
@@ -103,9 +143,20 @@ def annotate_with_retraction_type(syn, possible_retracted):
     return possible_retracted
 
 
-def get_possible_retracted(syn, public_clindf, release_clindf):
+def get_possible_retracted(syn: Synapse,
+                           public_clindf: pd.DataFrame,
+                           release_clindf: pd.DataFrame) -> pd.DataFrame:
     """Get samples that are possibly retracted
     The reason 'possibly' is because centers can rename their samples
+
+    Args:
+        syn: Synapse connection
+        public_clindf: Public release clinical dataframe
+        release_clindf: Specified release clinical dataframe
+
+    Returns:
+        Possibly retracted samples dataframe
+
     """
     # Only samples that are not in the database any longer are the ones that
     # are excluded
@@ -125,8 +176,14 @@ def get_possible_retracted(syn, public_clindf, release_clindf):
     return possible_retracted
 
 
-def main(syn, release):
-    """Notify centers of samples to be retracted"""
+def main(syn: Synapse, release: str):
+    """Notify centers of samples to be retracted
+
+    Args:
+        syn: Synapse connect
+        release: GENIE release version
+
+    """
     # Get latest public release folder synapse id and clinical file
     pub_release_synid = get_latest_public_release(syn, release)
     # Get latest release synapse id
