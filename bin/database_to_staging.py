@@ -50,7 +50,7 @@ def generate_data_guide(genie_version, oncotree_version=None,
                         genie_pass=None):
     """Generates the GENIE data guide"""
 
-    template_path = os.path.join(PWD, '../data_guide/data_guide_template.Rnw')
+    template_path = os.path.join(PWD, '../templates/data_guide_template.Rnw')
     with open(template_path, 'r') as template_file:
         template_str = template_file.read()
 
