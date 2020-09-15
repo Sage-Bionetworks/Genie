@@ -6,10 +6,9 @@ import subprocess
 import synapseclient
 # import time
 
-from genie import database_to_staging
-from genie import process_functions
-from genie import create_case_lists
-from genie import dashboard_table_updater
+from genie import (create_case_lists, dashboard_table_updater,
+                   database_to_staging, process_functions,
+                   notify_retraction)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -287,6 +286,10 @@ def main(genie_version,
     data_guide_ent = synapseclient.File(data_guide_pdf,
                                         parent=folders['release_folder'])
     syn.store(data_guide_ent)
+
+    if not staging or not test:
+        notify_retraction.main(syn, genie_version)
+
     logger.info("COMPLETED DATABASE TO STAGING")
 
 
