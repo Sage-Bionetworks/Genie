@@ -299,6 +299,8 @@ kable(samplesPerReleaseDf, row.names = F,
       caption = "Number of samples and variants per center")
 ```
 
+---
+
 ## Blacklisted Variants
 This is a count of how many blacklisted variants a center has. For instance, it is likely that the BRAF p.V600M mutations are likely false positives. If your center shows up in this table, please investigate your variants. If you have suggestions for variants that should be part of this list, please inform Sage Bionetworks.
 
@@ -314,6 +316,7 @@ kable(table(subset_mut$Center, subset_mut$blacklist),
       caption = "Blacklist variant count")
 ```
 
+---
 
 ## Distribution of Clinical Attributes
 Please use the below distributions to access the validity of your clinical data.  There will be some tips for what to look for in each section.
