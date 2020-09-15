@@ -92,12 +92,12 @@ get_file_mapping = function(release_folder_synid) {
 
 get_list_assay_info_table <- function(allowed_values, assayinfodf, col) {
   na_ind = is.na(assayinfodf[,col])
-  seq_assays = assayinfodf$SEQ_ASSAY_ID[!na_ind]
+  seq_assays = assayinfodf$SEQ_PIPELINE_ID[!na_ind]
   col_per_panel = matrix(nrow = length(seq_assays),
                          ncol = length(allowed_values),
                          dimnames = list(seq_assays, allowed_values))
   for (panel in seq_assays) {
-    str_value = assayinfodf[,col][assayinfodf$SEQ_ASSAY_ID == panel]
+    str_value = assayinfodf[,col][assayinfodf$SEQ_PIPELINE_ID == panel]
     str_value_vector = unlist(strsplit(str_value, ";"))
     col_per_panel[panel, ] = ''
     col_per_panel[panel, str_value_vector] = "\\checkmark"
