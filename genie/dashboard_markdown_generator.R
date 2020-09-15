@@ -30,7 +30,6 @@ tryCatch({
 }, error = function(err) {
   synLogin(genie_user, genie_pass)
 })
-#options(bitmapType='cairo')
 
 if (args$staging) {
  database_synid_mappingid = 'syn12094210'
@@ -41,14 +40,14 @@ if (args$staging) {
 }
 
 # For testing only
-genie_user=NULL
-genie_pass=NULL
-release = "9.2-consortium"
-template_path = "genie/dashboardTemplate.Rmd"
+# genie_user=NULL
+# genie_pass=NULL
+# release = "9.2-consortium"
+# template_path = "genie/dashboardTemplate.Rmd"
 #
 
 rmarkdown_path = sprintf('%s.Rmd', release)
-file.copy(template_path, rmarkdown_path)
+file.copy(template_path, rmarkdown_path, overwrite = T)
 rmarkdown::render(rmarkdown_path,
                   params = list("genieUser" = genie_user,
                                 "geniePass" = genie_pass,
