@@ -7,8 +7,7 @@ import synapseclient
 # import time
 
 from genie import (create_case_lists, dashboard_table_updater,
-                   database_to_staging, process_functions,
-                   notify_retraction)
+                   database_to_staging, process_functions)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -286,7 +285,6 @@ def main(genie_version,
     data_guide_ent = synapseclient.File(data_guide_pdf,
                                         parent=folders['release_folder'])
     syn.store(data_guide_ent)
-
     logger.info("COMPLETED DATABASE TO STAGING")
 
 
