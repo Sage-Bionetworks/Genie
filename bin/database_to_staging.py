@@ -287,9 +287,6 @@ def main(genie_version,
                                         parent=folders['release_folder'])
     syn.store(data_guide_ent)
 
-    if not staging or not test:
-        notify_retraction.main(syn, genie_version)
-
     logger.info("COMPLETED DATABASE TO STAGING")
 
 
