@@ -6,8 +6,8 @@ import logging
 
 import synapseclient
 
-import genie.config
-import genie.validate
+# import genie.config
+from . import create_case_lists, validate
 from .__version__ import __version__
 
 
@@ -32,6 +32,15 @@ def synapse_login(username=None, password=None):
                                   password=password,
                                   silent=True)
     return syn
+
+
+def perform_create_case_list(syn, args):
+    """CLI to create case lists given a clinical and assay information file"""
+    create_case_lists.main(args.clinical_file_name,
+                           args.assay_info_file_name,
+                           args.output_dir,
+                           args.study_id)
+
 
 
 def build_parser():
@@ -87,7 +96,25 @@ def build_parser():
     parser_validate.add_argument("--nosymbol-check", action='store_true',
                                  help='Do not check hugo symbols of fusion and cna file')
 
-    parser_validate.set_defaults(func=genie.validate._perform_validate)
+    parser_validate.set_defaults(func=validate._perform_validate)
+
+    parser_create_case = subparsers.add_parser(
+        'create-case-lists', help='Creates cBioPortal case list files'
+    )
+    parser_create_case.add_argument("clinical_file_name",
+                                    type=str,
+                                    help="Clinical file path")
+    parser_create_case.add_argument("assay_info_file_name",
+                                    type=str,
+                                    help="gene matrix file path")
+    parser_create_case.add_argument("output_dir",
+                                    type=str,
+                                    help="Output directory")
+    parser_create_case.add_argument("study_id",
+                                    type=str,
+                                    help="Output directory")
+    parser_create_case.set_defaults(func=perform_create_case_list)
+
     return parser
 
 
@@ -97,7 +124,6 @@ def main():
     syn = synapse_login(args.syn_user, args.syn_pass)
     # func has to match the set_defaults
     args.func(syn, args)
-
 
 
 if __name__ == "__main__":
