@@ -100,6 +100,7 @@ def create_sequenced_samples(seq_assay_map, assay_info_file_name):
     Gets samples sequenced
 
     Args:
+        seq_assay_map: dictionary containing lists of samples per seq_assay_id
         assay_info_file_name: Assay information name
 
     Returns:
@@ -209,16 +210,15 @@ def main(clinical_file_name,
          assay_info_file_name,
          output_directory,
          study_id):
-    '''
-    Gets clinical file and gene matrix file and processes it
+    """Gets clinical file and gene matrix file and processes it
     to obtain case list files
 
     Args:
         clinical_file_name: Clinical file path
-        gene_matrix_file_name: Gene matrix file path
+        assay_info_file_name: Assay information name
         output_directory: Output directory of case list files
         study_id: cBioPortal study id
-    '''
+    """
     case_lists_map, seq_assay_map, clin_samples = (
         create_case_lists_map(clinical_file_name)
     )
@@ -230,26 +230,3 @@ def main(clinical_file_name,
     write_case_list_sequenced(clin_samples, output_directory, study_id)
     write_case_list_cna(cna_samples, output_directory, study_id)
     write_case_list_cnaseq(cna_samples, output_directory, study_id)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Creation of case lists') #pylint: disable=invalid-name
-
-    parser.add_argument("clinical_file_name",
-                        type=str,
-                        help="Clinical file path")
-    parser.add_argument("assay_info_file_name",
-                        type=str,
-                        help="gene matrix file path")
-    parser.add_argument("output_dir",
-                        type=str,
-                        help="Output directory")
-    parser.add_argument("study_id",
-                        type=str,
-                        help="Output directory")
-    args = parser.parse_args() #pylint: disable=invalid-name
-
-    main(args.clinical_file_name,
-         args.assay_info_file_name,
-         args.output_dir,
-         args.study_id)
