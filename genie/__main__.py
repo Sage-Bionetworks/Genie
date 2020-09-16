@@ -6,7 +6,6 @@ import logging
 
 import synapseclient
 
-# import genie.config
 from . import create_case_lists, validate
 from .__version__ import __version__
 
@@ -67,7 +66,7 @@ def build_parser():
     parser_validate.add_argument("center", type=str, help='Contributing Centers')
 
     parser_validate.add_argument("--format_registry_packages", type=str, nargs="+",
-                                 default=["genie"],
+                                 default=["genie_registry"],
                                  help="Python package name(s) to get valid file formats from (default: %(default)s).")
 
     parser_validate.add_argument("--oncotree_link", type=str, help="Link to oncotree code")
@@ -91,7 +90,7 @@ def build_parser():
     # TODO: remove this default when private genie project is ready
     parser_validate.add_argument("--project_id", type=str,
                                  default="syn3380222",
-                                 help='Synapse Project ID where data is stored.')
+                                 help='Synapse Project ID where data is stored. (default: %(default)s).')
 
     parser_validate.add_argument("--nosymbol-check", action='store_true',
                                  help='Do not check hugo symbols of fusion and cna file')
