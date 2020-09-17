@@ -41,7 +41,6 @@ def perform_create_case_list(syn, args):
                            args.study_id)
 
 
-
 def build_parser():
     parser = argparse.ArgumentParser(description='GENIE processing')
 
