@@ -99,7 +99,7 @@ flag_variants_to_merge <- function(genieMutData, genieClinData, samplesToRun, up
                   ranges = IRanges(start = genieMutData$Start_Position,
                                    end = genieMutData$End_Position),
                   ref = genieMutData$Reference_Allele,
-                  alt = genieMutData$Tumor_Seq_Allele2,
+                  # alt = genieMutData$Tumor_Seq_Allele2,
                   altDepth = genieMutData$t_alt_count_num,
                   totalDepth = genieMutData$t_depth,
                   sampleNames = genieMutData$Tumor_Sample_Barcode)

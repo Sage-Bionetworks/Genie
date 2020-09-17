@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 import synapseclient
 
-from genie.workflow import workflow
+from genie_registry.workflow import workflow
 
 syn = mock.create_autospec(synapseclient.Synapse)
 workflow_class = workflow(syn, "SAGE")

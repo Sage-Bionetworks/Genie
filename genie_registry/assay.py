@@ -4,8 +4,8 @@ import yaml
 
 import pandas as pd
 
-from .example_filetype_format import FileTypeFormat
-from . import process_functions
+from genie.example_filetype_format import FileTypeFormat
+from genie import process_functions
 
 
 class Assayinfo(FileTypeFormat):

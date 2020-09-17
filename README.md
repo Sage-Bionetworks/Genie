@@ -42,8 +42,7 @@ genie validate data_clinical_supp_SAGE.txt SAGE
 2. Log into AWS Batch
 3. Run `genie-job-mainprocess`
 4. Run `genie-job-mafprocess` (Make sure to add `--createdMafDatabase` flag)
-5. Run `genie-job-vcfprocess`
-6. Run `genie-job-release` (Make sure to update release version and number)
+5. Run `genie-job-release` (Make sure to update release version and number)
 
 ## Processing on EC2
 
@@ -63,7 +62,7 @@ python consortium_to_public.py Jan-2019 ~/cbioportal/ 5.0-public
 
 
 ## Instructions to setup batch
-1. Build an AMI that can run batch jobs! Start from [this page](https://console.aws.amazon.com/batch/home?region=us-east-1#/first-run) and follow instructions and specify your docker image.  It is important at this stage that you time the building of your AMI, or your AMI will not be able to start batch jobs.  After doing so, you will have to start an instance with the AMI and run these 2 commands:
+1. Build an AMI that can run batch jobs! Start from [this page](https://console.aws.amazon.com/batch/home?region=us-east-1#/first-run) and follow instructions and specify your docker image. It is important at this stage that you time the building of your AMI, or your AMI will not be able to start batch jobs.  After doing so, you will have to start an instance with the AMI and run these 2 commands:
 
 ```
 sudo stop ecs
@@ -79,4 +78,3 @@ sudo rm -rf /var/lib/ecs/data/ecs_agent_data.json
 3. Update Center Mapping table https://www.synapse.org/#!Synapse:syn10061452/tables/
 4. Add center to distribution tables: https://www.synapse.org/#!Synapse:syn10627220/tables/, https://www.synapse.org/#!Synapse:syn7268822/tables/
 3. Add users to their GENIE folder
-
