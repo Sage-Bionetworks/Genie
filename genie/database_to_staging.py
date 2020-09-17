@@ -14,6 +14,7 @@ import synapseclient
 import synapseutils
 
 from . import process_functions
+from . import __version__
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -61,7 +62,8 @@ def find_caselistid(syn, parentid):
 
 
 def store_file(syn, filePath, genieVersion="database", name=None,
-               parent=None, fileFormat=None, cBioFileFormat=None):
+               parent=None, fileFormat=None, cBioFileFormat=None,
+               tag_or_commit=None):
     '''
     Convenience function to store files
 
@@ -74,6 +76,7 @@ def store_file(syn, filePath, genieVersion="database", name=None,
         cBioFileFormat: cBioPortal file format
         staging: Staging GENIE release.  Default to False
         caseLists: Case lists are stored elsewhere
+        tag_or_commit: Github tag or commit
     '''
     logger.info("STORING FILE: {}".format(os.path.basename(filePath)))
     if name is None:
@@ -84,7 +87,12 @@ def store_file(syn, filePath, genieVersion="database", name=None,
         ent.fileFormat = fileFormat
     if cBioFileFormat is not None:
         ent.cBioFileFormat = cBioFileFormat
-    ent = syn.store(ent)
+    if tag_or_commit is None:
+        tag_or_commit = f"v{__version__.__version__}"
+    ent = syn.store(
+        ent,
+        used=f"https://github.com/Sage-Bionetworks/Genie/tree/{tag_or_commit}"
+    )
     return ent
 
 
