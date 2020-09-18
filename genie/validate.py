@@ -7,9 +7,7 @@ import sys
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from . import config
-from . import example_filetype_format
-from . import process_functions
+from . import config, example_filetype_format, process_functions
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -23,7 +21,7 @@ class ValidationHelper(object):
     _validate_kwargs = []
 
     def __init__(self, syn, project_id, center, entitylist,
-                 format_registry=config.PROCESS_FILES,
+                 format_registry=None,
                  file_type=None):
         """A validator helper class for a center's files.
 
@@ -87,6 +85,7 @@ class ValidationHelper(object):
                 assert required_parameter in kwargs.keys(), \
                     "%s not in parameter list" % required_parameter
                 mykwargs[required_parameter] = kwargs[required_parameter]
+                mykwargs['project_id'] = self._project.id
 
             validator_cls = self._format_registry[self.file_type]
             validator = validator_cls(self._synapse_client, self.center)
@@ -100,6 +99,7 @@ class ValidationHelper(object):
         return (valid, message)
 
 
+# TODO: Remove this at some point
 class GenieValidationHelper(ValidationHelper):
     """A validator helper class for AACR Project Genie.
     """
@@ -224,33 +224,6 @@ def _upload_to_synapse(syn, filepaths, valid, parentid=None):
             logger.info("Stored to {}".format(ent.id))
 
 
-def collect_format_types(package_names):
-    """Finds subclasses of the example_filetype_format.FileTypeFormat
-    from a list of package names.
-
-    Args:
-        package_names: A list of Python package names as strings.
-
-    Returns:
-        A list of classes that are in the named packages and subclasses
-        of example_filetype_format.FileTypeFormat
-
-    """
-
-    file_format_list = []
-    for package_name in package_names:
-        importlib.import_module(package_name)
-
-    for cls in config.get_subclasses(example_filetype_format.FileTypeFormat):
-        logger.debug("checking {}.".format(cls))
-        cls_module_name = cls.__module__
-        cls_pkg = cls_module_name.split('.')[0]
-        if cls_pkg in package_names:
-            file_format_list.append(cls)
-    file_format_dict = config.make_format_registry_dict(file_format_list)
-    return file_format_dict
-
-
 def _perform_validate(syn, args):
     """This is the main entry point to the genie command line tool."""
 
@@ -271,7 +244,9 @@ def _perform_validate(syn, args):
     args.oncotree_link = _get_oncotreelink(syn, databasetosynid_mappingdf,
                                            oncotree_link=args.oncotree_link)
 
-    format_registry = collect_format_types(args.format_registry_packages)
+    format_registry = config.collect_format_types(
+        args.format_registry_packages
+    )
     logger.debug("Using {} file formats.".format(format_registry))
     entity_list = [synapseclient.File(name=filepath, path=filepath,
                                       parentId=None)

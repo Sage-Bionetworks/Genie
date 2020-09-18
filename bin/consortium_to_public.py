@@ -15,6 +15,69 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+PWD = os.path.dirname(os.path.abspath(__file__))
+
+
+# TODO: Move to genie.database_to_staging.py
+def generate_dashboard_html(genie_version, staging=False,
+                            genie_user=None,
+                            genie_pass=None):
+    """Generates dashboard html writeout that gets uploaded to the
+    release folder
+
+    Args:
+        syn: Synapse connection
+        genie_version: GENIE release
+        staging: Use staging files. Default is False
+        genie_user: GENIE synapse username
+        genie_pass: GENIE synapse password
+
+    """
+    markdown_render_cmd = ['Rscript',
+                           os.path.join(PWD, '../genie/dashboard_markdown_generator.R'),
+                           genie_version,
+                           '--template_path',
+                           os.path.join(PWD, '../genie/dashboardTemplate.Rmd')]
+
+    if genie_user is not None and genie_pass is not None:
+        markdown_render_cmd.extend(['--syn_user', genie_user,
+                                    '--syn_pass', genie_pass])
+    if staging:
+        markdown_render_cmd.append('--staging')
+    subprocess.check_call(markdown_render_cmd)
+
+
+# TODO: Move to genie.database_to_staging.py
+def generate_data_guide(genie_version, oncotree_version=None,
+                        database_mapping=None, genie_user=None,
+                        genie_pass=None):
+    """Generates the GENIE data guide"""
+
+    template_path = os.path.join(PWD, '../data_guide/data_guide_template.Rnw')
+    with open(template_path, 'r') as template_file:
+        template_str = template_file.read()
+
+    replacements = {"{{release}}": genie_version,
+                    "{{database_synid}}": database_mapping,
+                    "{{oncotree}}": oncotree_version.replace("_", "\\_"),
+                    "{{username}}": genie_user,
+                    "{{password}}": genie_pass,
+                    "{{genie_banner}}": os.path.join(PWD,
+                                                     "../genie_banner.png")}
+
+    for search in replacements:
+        replacement = replacements[search]
+        # If no replacement value is passed in, don't replace
+        if replacement is not None:
+            template_str = template_str.replace(search, replacement)
+
+    with open(os.path.join(PWD, "data_guide.Rnw"), "w") as data_guide_file:
+        data_guide_file.write(template_str)
+
+    subprocess.check_call(['R', 'CMD', 'Sweave', '--pdf',
+                           os.path.join(PWD, "data_guide.Rnw")])
+    return "data_guide.pdf"
+
 
 def main(args):
     cbioValidatorPath = os.path.join(
@@ -33,6 +96,12 @@ def main(args):
             "abbreviated_month-YEAR ie. Oct-2017")
 
     syn = process_functions.synLogin(args.pemFile, debug=args.debug)
+    genie_user = os.environ.get('GENIE_USER')
+    if args.pemFile is not None:
+        genie_pass = process_functions.get_password(args.pemFile)
+    else:
+        genie_pass = None
+
     # Get all the possible public releases
     # Get configuration
     if args.test:
@@ -107,9 +176,11 @@ def main(args):
         os.unlink(seg_meta_file)
 
     logger.info("CREATING LINK VERSION")
-    consortium_to_public.createLinkVersion(
+    folders = database_to_staging.create_link_version(
         syn, args.genieVersion, caseListEntities,
-        genePanelEntities, databaseSynIdMappingDf)
+        genePanelEntities, databaseSynIdMappingDf,
+        release_type="public"
+    )
     # Don't update process tracker is testing or staging
     if not args.test and not args.staging:
         processTracker = syn.tableQuery(
@@ -121,20 +192,32 @@ def main(args):
 
     if not args.test:
         logger.info("DASHBOARD UPDATE")
-        dashboard_table_updater.run_dashboard(
-            syn, databaseSynIdMappingDf,
-            args.genieVersion, staging=args.staging, public=True)
-        dashboard_markdown_gen_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            'dashboard_markdown_generator.R')
-        dashboard_markdown_html_commands = ['Rscript',
-                                            dashboard_markdown_gen_path,
-                                            args.genieVersion]
-        if args.staging:
-            dashboard_markdown_html_commands.append('--staging')
-        subprocess.check_call(dashboard_markdown_html_commands)
+        dashboard_table_updater.run_dashboard(syn, databaseSynIdMappingDf,
+                                              args.genieVersion,
+                                              staging=args.staging)
+        generate_dashboard_html(args.genieVersion, staging=args.staging,
+                                genie_user=genie_user,
+                                genie_pass=genie_pass)
         logger.info("DASHBOARD UPDATE COMPLETE")
+        logger.info("AUTO GENERATE DATA GUIDE")
 
+    onco_link = databaseSynIdMappingDf['Id'][
+        databaseSynIdMappingDf['Database'] == 'oncotreeLink'
+    ].values[0]
+    onco_link_ent = syn.get(onco_link)
+    oncotree_link = onco_link_ent.externalURL
+    oncotree_version = oncotree_link.split("=")[1]
+
+    data_guide_pdf = generate_data_guide(
+        args.genieVersion,
+        oncotree_version=oncotree_version,
+        database_mapping=databaseSynIdMappingId,
+        genie_user=genie_user,
+        genie_pass=genie_pass
+    )
+    data_guide_ent = synapseclient.File(data_guide_pdf,
+                                        parent=folders['release_folder'])
+    syn.store(data_guide_ent)
     logger.info("COMPLETED CONSORTIUM TO PUBLIC")
 
 

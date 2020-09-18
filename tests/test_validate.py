@@ -1,13 +1,13 @@
 """Tests validate.py"""
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pandas as pd
 import pytest
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from genie import validate, clinical, process_functions
+from genie import validate, process_functions, example_filetype_format
 
 CENTER = "SAGE"
 syn = mock.create_autospec(synapseclient.Synapse)
@@ -29,18 +29,24 @@ WRONG_NAME_ENT = synapseclient.File(name="wrong.txt",
                                     parentId="syn12345")
 
 
-@pytest.mark.parametrize("ent_list,fileformat",
-                         # tuple with (input, expectedOutput)
-                         [([CNA_ENT], "cna"),
-                          ([CLIN_ENT], "clinical"),
-                          ([SAMPLE_ENT, PATIENT_ENT], "clinical")])
-def test_perfect_determine_filetype(ent_list, fileformat):
+class FileFormat(example_filetype_format.FileTypeFormat):
+    _fileType = "clinical"
+
+
+def test_perfect_determine_filetype():
     """
     Tests determining of file type through filenames
     Parameters are passed in from filename_fileformat_map
     """
-    validator = validate.GenieValidationHelper(syn, None, CENTER, ent_list)
-    assert validator.determine_filetype() == fileformat
+    filetype = "clincial"
+    ent_list = [SAMPLE_ENT]
+    with patch.object(FileFormat, "validateFilename",
+                      return_value=filetype):
+        validator = validate.GenieValidationHelper(
+            syn, None, CENTER, ent_list,
+            format_registry={filetype: FileFormat}
+        )
+        assert validator.determine_filetype() == filetype
 
 
 def test_wrongfilename_noerror_determine_filetype():
@@ -49,10 +55,13 @@ def test_wrongfilename_noerror_determine_filetype():
     when raise_error flag is False
     '''
     ent_list = [WRONG_NAME_ENT]
-    validator = validate.GenieValidationHelper(syn, project_id=None,
-                                               center=CENTER,
-                                               entitylist=ent_list)
-    assert validator.file_type is None
+    with patch.object(FileFormat, "validateFilename",
+                      side_effect=AssertionError):
+        validator = validate.GenieValidationHelper(
+            syn, project_id=None,
+            center=CENTER, entitylist=ent_list,
+            format_registry={"wrong": FileFormat})
+        assert validator.file_type is None
 
 
 def test_valid_collect_errors_and_warnings():
@@ -102,18 +111,20 @@ def test_valid_validate_single_file():
     expected_valid = True
     expected_message = "valid message here!"
     expected_filetype = "clinical"
-
-    with patch.object(validate.GenieValidationHelper,
+    project_ent = Mock(id='syn1234')
+    with patch.object(syn, "get", return_value=project_ent),\
+         patch.object(validate.GenieValidationHelper,
                       "determine_filetype",
                       return_value=expected_filetype) as mock_determine_ftype,\
-         patch.object(clinical.clinical, "validate",
+         patch.object(FileFormat, "validate",
                       return_value=(expected_valid, error_string,
                                     warning_string)) as mock_genie_class,\
          patch.object(validate, "collect_errors_and_warnings",
                       return_value=expected_message) as mock_determine:
-        validator = validate.GenieValidationHelper(syn, project_id=None,
+        validator = validate.GenieValidationHelper(syn, project_id="syn1234",
                                                    center=CENTER,
-                                                   entitylist=entitylist)
+                                                   entitylist=entitylist,
+                                                   format_registry={'clinical': FileFormat})
         valid, message = validator.validate_single_file(oncotree_link=None,
                                                         nosymbol_check=False)
 
@@ -125,7 +136,8 @@ def test_valid_validate_single_file():
 
         mock_genie_class.assert_called_once_with(filePathList=[CLIN_ENT.path],
                                                  oncotree_link=None,
-                                                 nosymbol_check=False)
+                                                 nosymbol_check=False,
+                                                 project_id='syn1234')
 
         mock_determine.assert_called_once_with(error_string, warning_string)
 
@@ -136,12 +148,21 @@ def test_filetype_validate_single_file():
     if it is an incorrect filetype
     """
     entitylist = [WRONG_NAME_ENT]
-    expected_error = "----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
-    validator = validate.GenieValidationHelper(syn, None, CENTER, entitylist)
+    expected_error = ("----------------ERRORS----------------\n"
+                      "Your filename is incorrect! Please change your "
+                      "filename before you run the validator or specify "
+                      "--filetype if you are running the validator locally")
 
-    valid, message = validator.validate_single_file()
-    assert message == expected_error
-    assert not valid
+    with patch.object(FileFormat, "validateFilename",
+                      side_effect=AssertionError):
+        validator = validate.GenieValidationHelper(
+            syn, None, CENTER, entitylist,
+            format_registry={'wrong': FileFormat}
+        )
+
+        valid, message = validator.validate_single_file()
+        assert message == expected_error
+        assert not valid
 
 
 def test_wrongfiletype_validate_single_file():
@@ -150,14 +171,18 @@ def test_wrongfiletype_validate_single_file():
     in, an error is thrown
     """
     entitylist = [WRONG_NAME_ENT]
-    expected_error = '----------------ERRORS----------------\nYour filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally'
+    expected_error = ('----------------ERRORS----------------\n'
+                      'Your filename is incorrect! Please change your '
+                      'filename before you run the validator or specify '
+                      '--filetype if you are running the validator locally')
 
     with patch.object(validate.GenieValidationHelper,
                       "determine_filetype",
                       return_value=None) as mock_determine_filetype:
-        validator = validate.GenieValidationHelper(syn=syn, project_id=None,
-                                                   center=CENTER,
-                                                   entitylist=entitylist)
+        validator = validate.GenieValidationHelper(
+            syn=syn, project_id=None, center=CENTER,
+            entitylist=entitylist,
+            format_registry={'wrong': Mock()})
         valid, message = validator.validate_single_file()
 
         assert message == expected_error

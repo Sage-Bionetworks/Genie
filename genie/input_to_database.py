@@ -11,10 +11,7 @@ from synapseclient.core.utils import to_unix_epoch_time
 import synapseutils
 import pandas as pd
 
-from .config import PROCESS_FILES
-from . import process_functions
-from . import validate
-from . import toRetract
+from . import process_functions, process_mutation, toRetract, validate
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -88,7 +85,7 @@ def get_center_input_files(syn, synid, center, process="main", downloadFile=True
             # This is to remove vcfs from being validated during main
             # processing. Often there are too many vcf files, and it is
             # not necessary for them to be run everytime.
-            if name.endswith(".vcf") and process != "vcf":
+            if name.endswith(".vcf") and process != "mutation":
                 continue
 
             ent = syn.get(ent_synid, downloadFile=downloadFile)
@@ -226,7 +223,7 @@ def _get_status_and_error_list(valid, message, entities):
 
 def validatefile(syn, project_id, entities, validation_status_table, error_tracker_table,
                  center, threads, oncotree_link,
-                 format_registry=PROCESS_FILES):
+                 format_registry=None):
     '''Validate a list of entities.
 
     If a file has not changed, then it doesn't need to be validated.
@@ -271,7 +268,8 @@ def validatefile(syn, project_id, entities, validation_status_table, error_track
     filetype = validator.file_type
     if check_file_status['to_validate']:
         valid, message = validator.validate_single_file(
-            oncotree_link=oncotree_link, nosymbol_check=False)
+            oncotree_link=oncotree_link, nosymbol_check=False
+        )
         logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
             valid, message, entities)
@@ -292,14 +290,13 @@ def validatefile(syn, project_id, entities, validation_status_table, error_track
         invalid_errors.update({'fileType': filetype, 'center': center})
     return input_status_list, invalid_errors_list, messages_to_send
 
-
+# TODO: Create ProcessHelper class
 def processfiles(syn, validfiles, center, path_to_genie,
                  center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
-                 validVCF=None, vcf2mafPath=None,
-                 veppath=None, vepdata=None,
-                 processing="main", reference=None):
-    '''
-    Processing validated files
+                 processing="main",
+                 genome_nexus_pkg="/root/annotation-tools",
+                 format_registry=None):
+    """Processing validated files
 
     Args:
         syn: Synapse object
@@ -310,13 +307,8 @@ def processfiles(syn, validfiles, center, path_to_genie,
         center_mapping_df: Center mapping dataframe
         oncotree_link: Link to oncotree
         databaseToSynIdMappingDf: Database to synapse id mapping dataframe
-        validVCF: Valid vcf files
-        vcf2mafPath: Path to vcf2maf
-        veppath: Path to vep
-        vepdata: Path to vep index files
         processing: Processing type. Defaults to main
-        reference: Reference file for vcf2maf
-    '''
+    """
     logger.info("PROCESSING {} FILES: {}".format(center, len(validfiles)))
     center_staging_folder = os.path.join(path_to_genie, center)
     center_staging_synid = center_mapping_df.query(
@@ -325,51 +317,38 @@ def processfiles(syn, validfiles, center, path_to_genie,
     if not os.path.exists(center_staging_folder):
         os.makedirs(center_staging_folder)
 
-    if processing != 'vcf':
-        for fileSynId, filePath, name, fileType in zip(validfiles['id'],
-                                                       validfiles['path'],
-                                                       validfiles['name'],
-                                                       validfiles['fileType']):
+    if processing == 'main':
+        for _, row in validfiles.iterrows():
+            filetype = row['fileType']
             # filename = os.path.basename(filePath)
-            newPath = os.path.join(center_staging_folder, name)
+            newpath = os.path.join(center_staging_folder, row['name'])
             # store = True
-            synId = databaseToSynIdMappingDf.Id[
-                databaseToSynIdMappingDf['Database'] == fileType]
-            if len(synId) == 0:
-                synId = None
+            tableid = databaseToSynIdMappingDf.Id[
+                databaseToSynIdMappingDf['Database'] == filetype]
+            # tableid is a series, so much check actual length
+            # Can't do `if tableid:`
+            if len(tableid) == 0:
+                tableid = None
             else:
-                synId = synId[0]
-            if fileType is not None and (processing == "main" or processing == fileType):
-                processor = PROCESS_FILES[fileType](syn, center)
-                processor.process(
-                    filePath=filePath, newPath=newPath,
-                    parentId=center_staging_synid, databaseSynId=synId,
-                    oncotree_link=oncotree_link,
-                    fileSynId=fileSynId, validVCF=validVCF,
-                    path_to_GENIE=path_to_genie, vcf2mafPath=vcf2mafPath,
-                    veppath=veppath, vepdata=vepdata,
-                    processing=processing,
-                    databaseToSynIdMappingDf=databaseToSynIdMappingDf,
-                    reference=reference)
+                tableid = tableid[0]
 
+            if filetype is not None:
+                processor = format_registry[filetype](syn, center)
+                processor.process(
+                    filePath=row['path'], newPath=newpath,
+                    parentId=center_staging_synid, databaseSynId=tableid,
+                    oncotree_link=oncotree_link, fileSynId=row['id'],
+                    databaseToSynIdMappingDf=databaseToSynIdMappingDf
+                )
     else:
-        filePath = None
-        newPath = None
-        fileType = None
-        synId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == processing][0]
-        fileSynId = None
-        processor = PROCESS_FILES[processing](syn, center)
-        processor.process(
-            filePath=filePath, newPath=newPath,
-            parentId=center_staging_synid, databaseSynId=synId,
-            oncotree_link=oncotree_link,
-            fileSynId=fileSynId, validVCF=validVCF,
-            path_to_GENIE=path_to_genie, vcf2mafPath=vcf2mafPath,
-            veppath=veppath, vepdata=vepdata,
-            processing=processing,
-            databaseToSynIdMappingDf=databaseToSynIdMappingDf,
-            reference=reference)
+        process_mutation.process_mutation_workflow(
+            syn=syn,
+            center=center,
+            validfiles=validfiles,
+            genie_annotation_pkg=genome_nexus_pkg,
+            database_mappingdf=databaseToSynIdMappingDf,
+            workdir=path_to_genie
+        )
 
     logger.info("ALL DATA STORED IN DATABASE")
 
@@ -597,6 +576,9 @@ def _update_tables_content(validation_statusdf, error_trackingdf):
     error_trackingdf = error_trackingdf[
         error_trackingdf['id'].isin(invalid_ids)
     ]
+    # Fill blank file type values with 'other'
+    error_trackingdf['fileType'].fillna('other', inplace=True)
+    validation_statusdf['fileType'].fillna('other', inplace=True)
 
     return {'validation_statusdf': validation_statusdf,
             'error_trackingdf': error_trackingdf,
@@ -630,21 +612,18 @@ def validation(syn, project_id, center, process,
 
     # Make sure the vcf validation statuses don't get wiped away
     # If process is not vcf, the vcf files are not downloaded
-    add_query_str = "and name not like '%.vcf'" if process != "vcf" else ''
+    # TODO: Add parameter to exclude types
+    exclude_type = 'vcf' if process != 'mutation' else ''
     # id, md5, status, name, center, modifiedOn, fileType
     validation_status_table = syn.tableQuery(
-        "SELECT * FROM {synid} "
-        "where center = '{center}' {add}".format(
-            synid=validation_status_synid,
-            center=center,
-            add=add_query_str))
+        f"SELECT * FROM {validation_status_synid} where "
+        f"center = '{center}' and fileType <> '{exclude_type}'"
+    )
     # id, center, errors, name, fileType
     error_tracker_table = syn.tableQuery(
-        "SELECT * FROM {synid} "
-        "where center = '{center}' {add}".format(
-            synid=error_tracker_synid,
-            center=center,
-            add=add_query_str))
+        f"SELECT * FROM {error_tracker_synid} where "
+        f"center = '{center}' and fileType <> '{exclude_type}'"
+    )
 
     input_valid_statuses = []
     invalid_errors = []
@@ -708,12 +687,11 @@ def validation(syn, project_id, center, process,
     return(valid_filesdf[['id', 'path', 'fileType', 'name']])
 
 
-def center_input_to_database(
-        syn, project_id, center, process,
-        only_validate, vcf2maf_path, vep_path,
-        vep_data, database_to_synid_mappingdf,
-        center_mapping_df, reference=None,
-        delete_old=False, oncotree_link=None):
+def center_input_to_database(syn, project_id, center, process,
+                             only_validate, database_to_synid_mappingdf,
+                             center_mapping_df, delete_old=False,
+                             oncotree_link=None, genie_annotation_pkg=None,
+                             format_registry=None):
     if only_validate:
         log_path = os.path.join(
             process_functions.SCRIPT_DIR,
@@ -759,7 +737,7 @@ def center_input_to_database(
     if center_files:
         validFiles = validation(syn, project_id, center, process, center_files,
                                 database_to_synid_mappingdf,
-                                oncotree_link, PROCESS_FILES)
+                                oncotree_link, format_registry)
     else:
         logger.info("{} has not uploaded any files".format(center))
         return
@@ -770,10 +748,6 @@ def center_input_to_database(
         beds = validFiles[bed_files]
         validFiles = beds.append(validFiles)
         validFiles.drop_duplicates(inplace=True)
-        # Valid vcf files
-        vcf_files = validFiles['fileType'] == "vcf"
-        validVCF = validFiles['path'][vcf_files].tolist()
-
         # merge clinical files into one row
         clinical_ind = validFiles['fileType'] == "clinical"
         if clinical_ind.any():
@@ -812,10 +786,9 @@ def center_input_to_database(
         processfiles(syn, validFiles, center, path_to_genie,
                      center_mapping_df, oncotree_link,
                      database_to_synid_mappingdf,
-                     validVCF=validVCF,
-                     vcf2mafPath=vcf2maf_path,
-                     veppath=vep_path, vepdata=vep_data,
-                     processing=process, reference=reference)
+                     processing=process,
+                     genome_nexus_pkg=genie_annotation_pkg,
+                     format_registry=format_registry)
 
         # Should add in this process end tracking
         # before the deletion of samples

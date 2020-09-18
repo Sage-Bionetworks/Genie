@@ -4,8 +4,8 @@ import pandas as pd
 import pytest
 import synapseclient
 
-from genie.seg import seg
-from genie.cbs import cbs
+from genie_registry.seg import seg
+from genie_registry.cbs import cbs
 
 syn = mock.create_autospec(synapseclient.Synapse)
 

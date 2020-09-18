@@ -6,8 +6,7 @@ import logging
 
 import synapseclient
 
-import genie.config
-import genie.validate
+from . import create_case_lists, validate
 from .__version__ import __version__
 
 
@@ -34,6 +33,14 @@ def synapse_login(username=None, password=None):
     return syn
 
 
+def perform_create_case_list(syn, args):
+    """CLI to create case lists given a clinical and assay information file"""
+    create_case_lists.main(args.clinical_file_name,
+                           args.assay_info_file_name,
+                           args.output_dir,
+                           args.study_id)
+
+
 def build_parser():
     parser = argparse.ArgumentParser(description='GENIE processing')
 
@@ -58,7 +65,7 @@ def build_parser():
     parser_validate.add_argument("center", type=str, help='Contributing Centers')
 
     parser_validate.add_argument("--format_registry_packages", type=str, nargs="+",
-                                 default=["genie"],
+                                 default=["genie_registry"],
                                  help="Python package name(s) to get valid file formats from (default: %(default)s).")
 
     parser_validate.add_argument("--oncotree_link", type=str, help="Link to oncotree code")
@@ -82,12 +89,30 @@ def build_parser():
     # TODO: remove this default when private genie project is ready
     parser_validate.add_argument("--project_id", type=str,
                                  default="syn3380222",
-                                 help='Synapse Project ID where data is stored.')
+                                 help='Synapse Project ID where data is stored. (default: %(default)s).')
 
     parser_validate.add_argument("--nosymbol-check", action='store_true',
                                  help='Do not check hugo symbols of fusion and cna file')
 
-    parser_validate.set_defaults(func=genie.validate._perform_validate)
+    parser_validate.set_defaults(func=validate._perform_validate)
+
+    parser_create_case = subparsers.add_parser(
+        'create-case-lists', help='Creates cBioPortal case list files'
+    )
+    parser_create_case.add_argument("clinical_file_name",
+                                    type=str,
+                                    help="Clinical file path")
+    parser_create_case.add_argument("assay_info_file_name",
+                                    type=str,
+                                    help="gene matrix file path")
+    parser_create_case.add_argument("output_dir",
+                                    type=str,
+                                    help="Output directory")
+    parser_create_case.add_argument("study_id",
+                                    type=str,
+                                    help="Output directory")
+    parser_create_case.set_defaults(func=perform_create_case_list)
+
     return parser
 
 
@@ -97,7 +122,6 @@ def main():
     syn = synapse_login(args.syn_user, args.syn_pass)
     # func has to match the set_defaults
     args.func(syn, args)
-
 
 
 if __name__ == "__main__":
