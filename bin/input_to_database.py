@@ -155,9 +155,9 @@ if __name__ == "__main__":
         "--oncotree_link",
         type=str,
         help="Link to oncotree code")
-    parser.add_argument(	
+    parser.add_argument(
         "--createNewMafDatabase",
-        action='store_true',	
+        action='store_true',
         help="Creates a new maf database")
     parser.add_argument(
         "--debug",
