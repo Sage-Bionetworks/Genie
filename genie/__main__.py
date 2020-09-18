@@ -41,7 +41,7 @@ def perform_create_case_list(syn, args):
                            args.study_id)
 
 
-def perform_get_invalid_reasons(syn, args):
+def perform_get_file_errors(syn, args):
     """CLI to get invalid reasons"""
     project = syn.get(args.project_id)
     db_mapping = syn.tableQuery(f"select * from {project.dbMapping[0]}")
@@ -128,7 +128,7 @@ def build_parser():
     parser_create_case.set_defaults(func=perform_create_case_list)
 
     parser_get_invalid = subparsers.add_parser(
-        'get-invalid-reason', help='Get invalid reasons'
+        'get-file-errors', help='Get all the file invalid reasons'
     )
     parser_get_invalid.add_argument(
         "--project_id", type=str,
@@ -136,7 +136,7 @@ def build_parser():
         help='Synapse Project ID where data is stored. (default: %(default)s).'
     )
     parser_get_invalid.add_argument("center", type=str, help='Contributing Centers')
-    parser_get_invalid.set_defaults(func=perform_get_invalid_reasons)
+    parser_get_invalid.set_defaults(func=perform_get_file_errors)
 
     return parser
 
