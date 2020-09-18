@@ -41,8 +41,8 @@ RUN pip install pandas numexpr --upgrade
 RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.1-1-amd64.deb
 RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb	
 
-COPY R/installPackages.R /installPackages.R
-RUN Rscript /installPackages.R
+COPY R/install_packages.R /install_packages.R
+RUN Rscript /install_packages.R
 
 # Only copy most recent changes in code are always installed
 # Do not build from local computer
