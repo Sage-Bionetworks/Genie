@@ -94,7 +94,7 @@ def main(process,
             syn, "vcf2maf", table_name, project_id, 'syn7208886'
         )
         syn.setPermissions(new_tables['newdb_ent'].id, 3326313, [])
-    exit()
+
     format_registry = config.collect_format_types(args.format_registry_packages)
 
     for process_center in centers:
@@ -156,7 +156,7 @@ if __name__ == "__main__":
         type=str,
         help="Link to oncotree code")
     parser.add_argument(	
-        "--create_new_mafdb",	
+        "--createNewMafDatabase",
         action='store_true',	
         help="Creates a new maf database")
     parser.add_argument(
@@ -184,7 +184,7 @@ if __name__ == "__main__":
          delete_old=args.deleteOld,
          only_validate=args.onlyValidate,
          oncotree_link=args.oncotree_link,
-         create_new_maf_database=args.create_new_mafdb,
+         create_new_maf_database=args.createNewMafDatabase,
          debug=args.debug,
          genie_annotation_pkg=args.genie_annotation_pkg,
          format_registry=args.format_registry_packages)
