@@ -1173,7 +1173,7 @@ def create_new_fileformat_table(syn: Synapse,
     # Automatically rename the archived entity with ARCHIVED
     # This will attempt to resolve any issues if the table already exists at
     # location
-    new_table_name = f"ARCHIVED {time.time()}-{newdb_ent.name}"
+    new_table_name = f"ARCHIVED {time.time()}-{olddb_ent.name}"
     moved_ent = _move_entity(syn, olddb_ent, archive_projectid,
                              name=new_table_name)
     return {"newdb_ent": newdb_ent,

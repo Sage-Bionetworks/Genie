@@ -1,5 +1,5 @@
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import uuid
 
 import pandas as pd
@@ -380,36 +380,56 @@ def test_name__move_entity():
         ent.name = new_name
         patch_syn_store.assert_called_once_with(ent)
 
-# def test_create_and_archive_maf_database():
-#     '''
-#     Test the creation and archive of the maf database
-#     '''
-#     table_ent = synapseclient.Entity(
-#         parentId="syn123", name="foo", primaryKey=['annot'], id='syn12345')
-#     new_maf_ent = synapseclient.Entity(id="syn2222")
-#     database_synid_mappingdf = pd.DataFrame({
-#         'Database': ['vcf2maf', 'main'],
-#         'Id': ['syn12345', 'syn23455']})
 
-#     with patch.object(syn, "store",
-#                       return_value=new_maf_ent) as patch_syn_store,\
-#          patch.object(syn, "setPermissions",
-#                       return_value=None) as patch_syn_set_permissions,\
-#          patch.object(syn, "get",
-#                       return_value=table_ent) as patch_syn_get,\
-#          patch.object(syn, "getTableColumns",
-#                       return_value=['foo', 'ddooo']) as patch_syn_get_table_columns:
+def test_create_new_fileformat_table():
+    fileformat = str(uuid.uuid1())
+    db_synid = "syn1111111"
+    database_mappingdf = pd.DataFrame({'Database': [fileformat, "foo"],
+                                       "Id": [db_synid, "bar"]})
+    db_mapping_info = {'synid': 'syn666',
+                       'df': database_mappingdf}
+    table_ent = synapseclient.Entity(
+        parentId="syn123", name="foo", primaryKey=['annot'], id='syn12345'
+    )
+    project_id = "syn234"
+    archived_project_id = "syn23333"
+    new_table_name = str(uuid.uuid1())
 
-#         database_mappingdf = input_to_database.create_and_archive_maf_database(
-#             syn, database_synid_mappingdf)
-
-#         assert database_mappingdf['Id'][
-#             database_mappingdf['Database'] == 'vcf2maf'].values[0] \
-#             == new_maf_ent.id
-#         assert database_mappingdf['Id'][
-#             database_mappingdf['Database'] == 'main'].values[0] == 'syn23455'
-#         patch_syn_get_table_columns.assert_called_once_with('syn12345')
-#         patch_syn_get.assert_called_once_with('syn12345')
-#         assert patch_syn_store.call_count == 3
-#         patch_syn_set_permissions.assert_called_once_with(
-#             new_maf_ent.id, 3326313, [])
+    new_table_ent = synapseclient.Entity(
+        parentId="syn123323", name="foofoo", id='syn23231'
+    )
+    update_return = Mock()
+    move_entity_return = Mock()
+    with patch.object(process_functions, "get_dbmapping",
+                      return_value=db_mapping_info) as patch_getdb,\
+         patch.object(syn, "get",
+                      return_value=table_ent) as patch_syn_get,\
+         patch.object(syn, "getTableColumns",
+                      return_value=['foo', 'ddooo']) as patch_get_table_cols,\
+         patch.object(process_functions, "_create_schema",
+                      return_value=new_table_ent) as patch_create_schema,\
+         patch.object(process_functions,
+                      "_update_database_mapping",
+                      return_value=update_return) as patch_update,\
+         patch.object(process_functions, "_move_entity",
+                      return_value=move_entity_return) as patch_move,\
+         patch.object(process_functions.time, "time", return_value=2):
+        new_table = process_functions.create_new_fileformat_table(
+            syn, fileformat, new_table_name, project_id, archived_project_id
+        )
+        patch_getdb.assert_called_once_with(syn, project_id)
+        patch_syn_get.assert_called_once_with(db_synid)
+        patch_get_table_cols.assert_called_once_with(db_synid)
+        patch_create_schema.assert_called_once_with(
+            syn, table_name=new_table_name, columns=['foo', 'ddooo'],
+            parentid=project_id, annotations=table_ent.annotations
+        )
+        patch_update.assert_called_once_with(syn, database_mappingdf,
+                                             'syn666', fileformat,
+                                             new_table_ent.id)
+        patch_move.assert_called_once_with(syn, table_ent,
+                                           archived_project_id,
+                                           name="ARCHIVED 2-foo")
+        assert new_table == {"newdb_ent": new_table_ent,
+                             "newdb_mappingdf": update_return,
+                             "moved_ent": move_entity_return}
