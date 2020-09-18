@@ -48,8 +48,8 @@ def _combine_center_file_errors(syn: Synapse, center_errorsdf: pd.DataFrame) -> 
         Center errors in a pretty formatted string
 
     """
+    center_errors = ""
     for _, row in center_errorsdf.iterrows():
-        center_errors = ""
         ent = syn.get(row['id'], downloadFile=False)
         file_errors = row['errors'].replace("|", "\n")
         error_text = f"\t{ent.name} ({ent.id}):\n\n{file_errors}\n\n"
