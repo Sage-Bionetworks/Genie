@@ -128,14 +128,14 @@ def build_parser():
     parser_create_case.set_defaults(func=perform_create_case_list)
 
     parser_get_invalid = subparsers.add_parser(
-        'get-file-errors', help='Get all the file invalid reasons'
+        'get-file-errors', help='Get the file invalid reasons for a specific center'
     )
+    parser_get_invalid.add_argument("center", type=str, help='Contributing Centers')
     parser_get_invalid.add_argument(
         "--project_id", type=str,
         default="syn3380222",
         help='Synapse Project ID where data is stored. (default: %(default)s).'
     )
-    parser_get_invalid.add_argument("center", type=str, help='Contributing Centers')
     parser_get_invalid.set_defaults(func=perform_get_file_errors)
 
     return parser
