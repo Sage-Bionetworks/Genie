@@ -276,6 +276,8 @@ public_release_synid = get_latest_public_release(release)
 public_release_files = as.list(synGetChildren(public_release_synid))
 public_sampledf <- getFileDf("data_clinical_sample.txt", public_release_files)
 
+public_sampledf$CENTER = sapply(strsplit(public_sampledf$SEQ_ASSAY_ID, "-"),
+                                function(x) x[1])
 ```
 
 
@@ -358,6 +360,43 @@ par(mar = c(10,3,3,1))
 plotCenterXAge(this_samples)
 ```
 
+
+```{r, include=F, echo=F}
+check_seq_year = "SEQ_YEAR" %in% colnames(this_samples)
+```
+
+`r if(check_seq_year) {"### Sequencing year\nThis is to show how many samples were sequenced per year. There are supposed to be at least 500 additional samples per consortium release per center."}`
+
+```{r, echo=F}
+if (check_seq_year) {
+  kable(table(this_samples$SEQ_YEAR, this_samples$CENTER))
+}
+```
+
+### New samples submitted
+This is the number of new samples submitted since the last public release. A gentle reminder for sites that it is GENIE policy to submit at least 500 samples between each public release.  Please contact AACR if you cannot do this.
+
+```{r}
+public_center_sample_count = table(public_sampledf$CENTER)
+current_center_sample_count = table(this_samples$CENTER)
+all_centers = union(names(public_center_sample_count),
+                    names(current_center_sample_count))
+center_differences = c()
+for (center in all_centers) {
+  center_current =  current_center_sample_count[center]
+  public_center_current = public_center_sample_count[center]
+  if (is.na(public_center_current)) {
+    public_center_current = 0
+  }
+  if (is.na( center_current)) {
+    center_current = 0
+  }
+  release_difference = center_current - public_center_current
+  center_differences[center] = release_difference
+}
+kable(center_differences, col.names = "Number of samples")
+```
+
 ---
 
 ## GENIE Retraction Policy
@@ -383,8 +422,6 @@ db_samplesdf = sample_table$asDataFrame()
 exist_idx = public_sampledf$SAMPLE_ID %in% this_samples$SAMPLE_ID
 in_db_samples_idx = public_sampledf$SAMPLE_ID %in% db_samplesdf$SAMPLE_ID
 
-public_sampledf$CENTER = sapply(strsplit(public_sampledf$SEQ_ASSAY_ID, "-"),
-                                function(x) x[1])
 # Get all possibly retracted
 # The reason possibly because samples could have been renamed
 possible_retracted = public_sampledf[!exist_idx & !in_db_samples_idx,
