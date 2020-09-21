@@ -197,12 +197,12 @@ def main(genie_version,
     clinical_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
         'data_clinical_{}.txt'.format(genie_version))
-    gene_matrix_path = os.path.join(
+    assay_information_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
-        "data_gene_matrix_{}.txt".format(genie_version))
+        "assay_information_{}.txt".format(genie_version))
     create_case_lists.main(
         clinical_path,
-        gene_matrix_path,
+        assay_information_path,
         database_to_staging.CASE_LIST_PATH,
         "genie_private")
     caseListFiles = os.listdir(database_to_staging.CASE_LIST_PATH)
@@ -284,9 +284,9 @@ def main(genie_version,
                                          database_mapping=databaseSynIdMappingId,
                                          genie_user=genie_user,
                                          genie_pass=genie_pass)
-    data_guide_ent = synapseclient.File(data_guide_pdf,
-                                        parent=folders['release_folder'])
-    syn.store(data_guide_ent)
+    database_to_staging.store_file(syn, data_guide_pdf,
+                                   genieVersion=genie_version,
+                                   parent=folders['release_folder'])
     logger.info("COMPLETED DATABASE TO STAGING")
 
 
