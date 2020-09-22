@@ -282,9 +282,9 @@ def main(genie_version,
                                          database_mapping=databaseSynIdMappingId,
                                          genie_user=genie_user,
                                          genie_pass=genie_pass)
-    data_guide_ent = synapseclient.File(data_guide_pdf,
-                                        parent=folders['release_folder'])
-    syn.store(data_guide_ent)
+    database_to_staging.store_file(syn, data_guide_pdf,
+                                   genieVersion=genie_version,
+                                   parent=folders['release_folder'])
     logger.info("COMPLETED DATABASE TO STAGING")
 
 
