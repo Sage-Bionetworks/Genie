@@ -26,7 +26,7 @@ def write(syn: Synapse, center_mapping_df: pd.DataFrame, error_tracker_synid: st
         staging_synid = center_mapping_df['stagingSynId'][
             center_mapping_df['center'] == center][0]
         with open(center + "_errors.txt", 'w') as errorfile:
-            if center in center_errors:
+            if center not in center_errors:
                 errorfile.write("No errors!")
             else:
                 errorfile.write(center_errors[center])
