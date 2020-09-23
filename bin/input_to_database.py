@@ -119,8 +119,8 @@ def main(process,
     # isnt specified and if only validate
     if center is None and only_validate:
         logger.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
-        write_invalid_reasons.write_invalid_reasons(
-            syn, center_mapping_df, error_tracker_synid)
+        write_invalid_reasons.write(syn, center_mapping_df,
+                                    error_tracker_synid)
 
 
 if __name__ == "__main__":

@@ -674,7 +674,11 @@ def validation(syn, project_id, center, process,
 
         _send_validation_error_email(syn=syn, user=user,
                                      message_objs=message_objs)
-
+    # \n write out new lines when they exist in the middle of a column
+    # So the \n never gets uploaded into synapse table
+    # change the delimiting to '|'.
+    error_trackingdf['errors'] = [error.replace("\n", "|")
+                                  for error in error_trackingdf['errors']]
     update_status_and_error_tables(
         syn=syn,
         input_valid_statusdf=validation_statusdf,
