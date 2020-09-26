@@ -301,65 +301,6 @@ kable(samplesPerReleaseDf, row.names = F,
 
 ---
 
-## Blacklisted Variants
-This is a count of how many blacklisted variants a center has. For instance, it is likely that the BRAF p.V600M mutations are likely false positives. If your center shows up in this table, please investigate your variants. If you have suggestions for variants that should be part of this list, please inform Sage Bionetworks.
-
-```{r blacklist}
-blacklist_variants = paste(black_list_variantsdf$Hugo_Symbol,
-                           black_list_variantsdf$HGVSp_Short)
-subset_mut = this_mut[this_mut$Hugo_Symbol %in% black_list_variantsdf$Hugo_Symbol,
-                      c("Hugo_Symbol","Center","HGVSp_Short")]
-subset_mut$blacklist = paste(subset_mut$Hugo_Symbol,
-                             subset_mut$HGVSp_Short)
-subset_mut = subset_mut[subset_mut$blacklist %in% blacklist_variants,]
-kable(table(subset_mut$Center, subset_mut$blacklist),
-      caption = "Blacklist variant count")
-```
-
----
-
-## Distribution of Clinical Attributes
-Please use the below distributions to access the validity of your clinical data.  There will be some tips for what to look for in each section.
-
-### Race
-Some european sites like GRCC, CRUK, and NKI do not collect race information from their patients.  If your institution does not either, you should see empty barplots.
-
-```{r}
-#Center X Race
-par(mar = c(10,3,3,1))
-plotCenterXRace(this_patient)
-```
-
-### Ethnicity
-Some european sites like GRCC, CRUK, and NKI do not collect ethnicity information from their patients.  If your institution does not either, you should see empty barplots.
-
-```{r}
-#Center X Ethnicity
-par(mar = c(10,3,3,1))
-plotCenterXEthnicity(this_patient)
-```
-
-### Sex
-CRUK submits samples from breast cancer patients, so their samples are all female.
-
-```{r}
-#Center X Sex
-par(mar = c(10,3,3,1))
-plotCenterXSex(this_patient)
-```
-
-### Age
-CHOP submits mainly pediatric cases, so their distribution is different from the rest.
-
-
-```{r}
-#Center X Age
-par(mar = c(10,3,3,1))
-plotCenterXAge(this_samples)
-```
-
----
-
 ## GENIE Retraction Policy
 
 ```{r determine_retraction, echo=F, include=F}
@@ -418,13 +359,82 @@ unlink("samples_to_retract.csv")
 
 ```
 
-The GENIE retraction policy states that if a sample/patient is retracted within the first 3 months of a public release, it should be removed from the latest public release. This retraction will occur after the 3rd consortium release. If a sample is retracted after the 3 month period, it will not be released in the next public release.  This table below lists the number of samples explicitly or implicitly retracted by centers.
+This table below lists the number of samples explicitly or implicitly retracted by centers.
+
 
 ```{r}
 kable(table(possible_retracted$CENTER, possible_retracted$RETRACTION))
 ```
 
- To confirm that we are retracting the right samples, we ask centers to confirm the retracted samples listed in this file: `r paste0("https://www.synapse.org/#!Synapse:", ent$properties$id)`. **Centers should only have samples in the linked file if someone has withdrew consent**. If you have samples/patients that should not be retracted, please upload a fix to your data or let Tom Yu from Sage know immediately.
+These sample/patient IDs have been marked for retraction from GENIE: `r paste0("https://www.synapse.org/#!Synapse:", ent$properties$id)` and have been removed from the GENIE database. However, removal from public release files occurs according to the following fixed schedule. Please apprise your patients of this schedule so that they are aware of the timeline for retraction of their data.  If you see samples that should not be retracted, please upload a fix to your data or let Tom Yu from Sage know immediately.
+
+For patient retractions submitted between these months, a new public release will be generated that removes the affected records. The new release will be issued no later than April or October, respectively:
+* January-March
+* July-September
+
+For patient retractions submitted between these months, the records will be removed from the next regularly-scheduled public release in July or January, respectively:
+* April-June
+* October-December
+
+
+---
+
+## Blacklisted Variants
+This is a count of how many blacklisted variants a center has. For instance, it is likely that the BRAF p.V600M mutations are likely false positives. If your center shows up in this table, please investigate your variants. If you have suggestions for variants that should be part of this list, please inform Sage Bionetworks.
+
+```{r blacklist}
+blacklist_variants = paste(black_list_variantsdf$Hugo_Symbol,
+                           black_list_variantsdf$HGVSp_Short)
+subset_mut = this_mut[this_mut$Hugo_Symbol %in% black_list_variantsdf$Hugo_Symbol,
+                      c("Hugo_Symbol","Center","HGVSp_Short")]
+subset_mut$blacklist = paste(subset_mut$Hugo_Symbol,
+                             subset_mut$HGVSp_Short)
+subset_mut = subset_mut[subset_mut$blacklist %in% blacklist_variants,]
+kable(table(subset_mut$Center, subset_mut$blacklist),
+      caption = "Blacklist variant count")
+```
+
+---
+
+## Distribution of Clinical Attributes
+Please use the below distributions to access the validity of your clinical data.  There will be some tips for what to look for in each section.
+
+### Race
+Some european sites like GRCC, CRUK, and NKI do not collect race information from their patients.  If your institution does not either, you should see empty barplots.
+
+```{r}
+#Center X Race
+par(mar = c(10,3,3,1))
+plotCenterXRace(this_patient)
+```
+
+### Ethnicity
+Some european sites like GRCC, CRUK, and NKI do not collect ethnicity information from their patients.  If your institution does not either, you should see empty barplots.
+
+```{r}
+#Center X Ethnicity
+par(mar = c(10,3,3,1))
+plotCenterXEthnicity(this_patient)
+```
+
+### Sex
+CRUK submits samples from breast cancer patients, so their samples are all female.
+
+```{r}
+#Center X Sex
+par(mar = c(10,3,3,1))
+plotCenterXSex(this_patient)
+```
+
+### Age
+CHOP submits mainly pediatric cases, so their distribution is different from the rest.
+
+
+```{r}
+#Center X Age
+par(mar = c(10,3,3,1))
+plotCenterXAge(this_samples)
+```
 
 ---
 
