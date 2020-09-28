@@ -282,7 +282,7 @@ public_sampledf$CENTER = sapply(strsplit(public_sampledf$SEQ_ASSAY_ID, "-"),
 
 
 ## Sample and Variant Count per center
-Please confirm that the the number of samples and variants in this release is what you expect.
+Please confirm that the the number of samples and variants in this release is what you expect. The "New Sample" column shows the number of new samples submitted since the last public release. A gentle reminder for sites that it is GENIE policy to submit at least 500 samples between each public release.  Please contact AACR if you cannot do this.
 
 ```{r sampleTable}
 sampleCounts = table(this_samples$CENTER)
@@ -297,6 +297,24 @@ samplesPerReleaseDf = rbind(release_infodf,
                             data.frame("Center" = "Total",
                                        "Samples" = sum(sampleCounts),
                                        "Variants" = sum(variant_counts)))
+
+# Get sample difference
+public_center_sample_count = table(public_sampledf$CENTER)
+center_differences = c()
+for (center in names(sampleCounts)) {
+  center_current =  sampleCounts[center]
+  public_center_current = public_center_sample_count[center]
+  if (is.na(public_center_current)) {
+    public_center_current = 0
+  }
+  if (is.na( center_current)) {
+    center_current = 0
+  }
+  release_difference = center_current - public_center_current
+  center_differences[center] = release_difference
+}
+center_differences = c(center_differences, sum(center_differences))
+samplesPerReleaseDf["New Samples"] = center_differences
 kable(samplesPerReleaseDf, row.names = F,
       caption = "Number of samples and variants per center")
 ```
@@ -368,11 +386,14 @@ kable(table(possible_retracted$CENTER, possible_retracted$RETRACTION))
 
 These sample/patient IDs have been marked for retraction from GENIE: `r paste0("https://www.synapse.org/#!Synapse:", ent$properties$id)` and have been removed from the GENIE database. However, removal from public release files occurs according to the following fixed schedule. Please apprise your patients of this schedule so that they are aware of the timeline for retraction of their data.  If you see samples that should not be retracted, please upload a fix to your data or let Tom Yu from Sage know immediately.
 
+
 For patient retractions submitted between these months, a new public release will be generated that removes the affected records. The new release will be issued no later than April or October, respectively:
+
 * January-March
 * July-September
 
 For patient retractions submitted between these months, the records will be removed from the next regularly-scheduled public release in July or January, respectively:
+
 * April-June
 * October-December
 
@@ -447,30 +468,6 @@ check_seq_year = "SEQ_YEAR" %in% colnames(this_samples)
 if (check_seq_year) {
   kable(table(this_samples$SEQ_YEAR, this_samples$CENTER))
 }
-```
-
-### New samples submitted
-This is the number of new samples submitted since the last public release. A gentle reminder for sites that it is GENIE policy to submit at least 500 samples between each public release.  Please contact AACR if you cannot do this.
-
-```{r}
-public_center_sample_count = table(public_sampledf$CENTER)
-current_center_sample_count = table(this_samples$CENTER)
-all_centers = union(names(public_center_sample_count),
-                    names(current_center_sample_count))
-center_differences = c()
-for (center in all_centers) {
-  center_current =  current_center_sample_count[center]
-  public_center_current = public_center_sample_count[center]
-  if (is.na(public_center_current)) {
-    public_center_current = 0
-  }
-  if (is.na( center_current)) {
-    center_current = 0
-  }
-  release_difference = center_current - public_center_current
-  center_differences[center] = release_difference
-}
-kable(center_differences, col.names = "Number of samples")
 ```
 
 ---
