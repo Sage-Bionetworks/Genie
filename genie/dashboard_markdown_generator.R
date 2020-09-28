@@ -40,9 +40,10 @@ if (args$staging) {
 }
 
 # For testing only
+# database_synid_mappingid = 'syn10967259'
 # genie_user=NULL
 # genie_pass=NULL
-# release = "9.2-consortium"
+# release = "9.3-consortium"
 # template_path = "genie/dashboardTemplate.Rmd"
 #
 
