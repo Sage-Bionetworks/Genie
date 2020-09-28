@@ -1,7 +1,11 @@
 #! /usr/bin/env python3
-import os
+"""Script to crawl Synapse folder for a center, validate, and update database tables.
+
+"""
 import argparse
+from datetime import date
 import logging
+import os
 
 from genie import (input_to_database, write_invalid_reasons,
                    process_functions, config)
@@ -82,8 +86,14 @@ def main(process,
 
     # Create new maf database, should only happen once if its specified
     if create_new_maf_database:
-        databaseToSynIdMappingDf = \
-            input_to_database.create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
+        today = date.today()
+        table_name = f'Narrow MAF Database - {today}'
+        # filetype = "vcf2maf"
+        # syn7208886 is the GENIE staging project to archive maf table
+        new_tables = process_functions.create_new_fileformat_table(
+            syn, "vcf2maf", table_name, project_id, 'syn7208886'
+        )
+        syn.setPermissions(new_tables['newdb_ent'].id, 3326313, [])
 
     format_registry = config.collect_format_types(args.format_registry_packages)
 
@@ -109,8 +119,8 @@ def main(process,
     # isnt specified and if only validate
     if center is None and only_validate:
         logger.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
-        write_invalid_reasons.write_invalid_reasons(
-            syn, center_mapping_df, error_tracker_synid)
+        write_invalid_reasons.write(syn, center_mapping_df,
+                                    error_tracker_synid)
 
 
 if __name__ == "__main__":

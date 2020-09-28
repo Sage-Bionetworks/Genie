@@ -325,41 +325,6 @@ def test_error_check_existing_file_status():
             emptydf, emptydf, entities)
 
 
-def test_create_and_archive_maf_database():
-    '''
-    Test the creation and archive of the maf database
-    '''
-    table_ent = synapseclient.Entity(
-        parentId="syn123", name="foo", primaryKey=['annot'], id='syn12345')
-    new_maf_ent = synapseclient.Entity(id="syn2222")
-    database_synid_mappingdf = pd.DataFrame({
-        'Database': ['vcf2maf', 'main'],
-        'Id': ['syn12345', 'syn23455']})
-
-    with patch.object(syn, "store",
-                      return_value=new_maf_ent) as patch_syn_store,\
-         patch.object(syn, "setPermissions",
-                      return_value=None) as patch_syn_set_permissions,\
-         patch.object(syn, "get",
-                      return_value=table_ent) as patch_syn_get,\
-         patch.object(syn, "getTableColumns",
-                      return_value=['foo', 'ddooo']) as patch_syn_get_table_columns:
-
-        database_mappingdf = input_to_database.create_and_archive_maf_database(
-            syn, database_synid_mappingdf)
-
-        assert database_mappingdf['Id'][
-            database_mappingdf['Database'] == 'vcf2maf'].values[0] \
-            == new_maf_ent.id
-        assert database_mappingdf['Id'][
-            database_mappingdf['Database'] == 'main'].values[0] == 'syn23455'
-        patch_syn_get_table_columns.assert_called_once_with('syn12345')
-        patch_syn_get.assert_called_once_with('syn12345')
-        assert patch_syn_store.call_count == 3
-        patch_syn_set_permissions.assert_called_once_with(
-            new_maf_ent.id, 3326313, [])
-
-
 def test_valid_validatefile():
     '''
     Tests the behavior of a file that gets validated that becomes

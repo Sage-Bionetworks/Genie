@@ -6,7 +6,7 @@ import logging
 
 import synapseclient
 
-from . import create_case_lists, validate
+from . import create_case_lists, validate, write_invalid_reasons
 from .__version__ import __version__
 
 
@@ -39,6 +39,20 @@ def perform_create_case_list(syn, args):
                            args.assay_info_file_name,
                            args.output_dir,
                            args.study_id)
+
+
+def perform_get_file_errors(syn, args):
+    """CLI to get invalid reasons"""
+    project = syn.get(args.project_id)
+    db_mapping = syn.tableQuery(f"select * from {project.dbMapping[0]}")
+    db_mappingdf = db_mapping.asDataFrame()
+    error_tracker_synid = db_mappingdf['Id'][
+        db_mappingdf['Database'] == "errorTracker"
+    ][0]
+    center_errors = write_invalid_reasons.get_center_invalid_errors(
+        syn, error_tracker_synid
+    )
+    print(center_errors[args.center])
 
 
 def build_parser():
@@ -112,6 +126,17 @@ def build_parser():
                                     type=str,
                                     help="Output directory")
     parser_create_case.set_defaults(func=perform_create_case_list)
+
+    parser_get_invalid = subparsers.add_parser(
+        'get-file-errors', help='Get the file invalid reasons for a specific center'
+    )
+    parser_get_invalid.add_argument("center", type=str, help='Contributing Centers')
+    parser_get_invalid.add_argument(
+        "--project_id", type=str,
+        default="syn3380222",
+        help='Synapse Project ID where data is stored. (default: %(default)s).'
+    )
+    parser_get_invalid.set_defaults(func=perform_get_file_errors)
 
     return parser
 

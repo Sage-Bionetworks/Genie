@@ -6,10 +6,8 @@ import subprocess
 import synapseclient
 # import time
 
-from genie import database_to_staging
-from genie import process_functions
-from genie import create_case_lists
-from genie import dashboard_table_updater
+from genie import (create_case_lists, dashboard_table_updater,
+                   database_to_staging, process_functions)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
