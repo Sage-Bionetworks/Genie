@@ -282,7 +282,7 @@ public_sampledf$CENTER = sapply(strsplit(public_sampledf$SEQ_ASSAY_ID, "-"),
 
 
 ## Sample and Variant Count per center
-Please confirm that the the number of samples and variants in this release is what you expect. The "New Sample" column shows the number of new samples submitted since the last public release. A gentle reminder for sites that it is GENIE policy to submit at least 500 samples between each public release.  Please contact AACR if you cannot do this.
+Please confirm that the the number of samples and variants in this release is what you expect. The "New Sample" column shows the number of new samples submitted since the last public release. A gentle reminder for sites that it is GENIE policy to submit at least 500 samples per year.  Please contact AACR if you cannot do this.
 
 ```{r sampleTable}
 sampleCounts = table(this_samples$CENTER)
@@ -457,18 +457,17 @@ par(mar = c(10,3,3,1))
 plotCenterXAge(this_samples)
 ```
 
+<!-- ```{r, include=F, echo=F} -->
+<!-- check_seq_year = "SEQ_YEAR" %in% colnames(this_samples) -->
+<!-- ``` -->
 
-```{r, include=F, echo=F}
-check_seq_year = "SEQ_YEAR" %in% colnames(this_samples)
-```
+<!-- `r if(check_seq_year) {"### Sequencing year\nThis is to show the SEQ_YEAR distribution."}` -->
 
-`r if(check_seq_year) {"### Sequencing year\nThis is to show how many samples were sequenced per year. There are supposed to be at least 500 additional samples per consortium release per center."}`
-
-```{r, echo=F}
-if (check_seq_year) {
-  kable(table(this_samples$SEQ_YEAR, this_samples$CENTER))
-}
-```
+<!-- ```{r, echo=F} -->
+<!-- if (check_seq_year) { -->
+<!--   kable(table(this_samples$SEQ_YEAR, this_samples$CENTER)) -->
+<!-- } -->
+<!-- ``` -->
 
 ---
 
