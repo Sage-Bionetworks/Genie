@@ -5,9 +5,9 @@ import pandas as pd
 import pytest
 import synapseclient
 
-import genie.maf
-from genie.maf import maf
-from genie.mafSP import mafSP
+import genie_registry.maf
+from genie_registry.maf import maf
+from genie_registry.mafSP import mafSP
 
 syn = mock.create_autospec(synapseclient.Synapse)
 
@@ -139,7 +139,7 @@ def test_invalid_validation():
         N_ALT_COUNT=[1, 2, 3, 4, 3, 4],
         TUMOR_SEQ_ALLELE2=["NA", float('nan'), "A", "A", "A", "A"]))
 
-    with patch.object(genie.maf, "_check_tsa1_tsa2",
+    with patch.object(genie_registry.maf, "_check_tsa1_tsa2",
                       return_value="") as check_tsa1_tsa2:
         error, warning = maf_class._validate(mafDf)
         check_tsa1_tsa2.assert_called_once_with(mafDf)
@@ -166,7 +166,7 @@ def test_noerror__check_allele_col(col):
     df = pd.DataFrame(dict(
         REFERENCE_ALLELE=["A", "A"]
     ))
-    error, warning = genie.maf._check_allele_col(df, col)
+    error, warning = genie_registry.maf._check_allele_col(df, col)
     assert error == ""
     assert warning == ""
 
@@ -176,7 +176,7 @@ def test_warning__check_allele_col():
     df = pd.DataFrame(dict(
         TEMP=["NA", "A"]
     ))
-    error, warning = genie.maf._check_allele_col(df, "TEMP")
+    error, warning = genie_registry.maf._check_allele_col(df, "TEMP")
     assert error == ""
     assert warning == (
         "Mutation File: "
@@ -191,7 +191,7 @@ def test_error__check_allele_col():
     df = pd.DataFrame(dict(
         TEMP=[float('nan'), "A"]
     ))
-    error, warning = genie.maf._check_allele_col(df, "TEMP")
+    error, warning = genie_registry.maf._check_allele_col(df, "TEMP")
     assert error == (
         "Mutation File: TEMP can't have any blank or null values.\n"
     )
@@ -205,7 +205,7 @@ def test_invalid__check_tsa1_tsa2():
         TUMOR_SEQ_ALLELE1=["B", "B", "B"],
         TUMOR_SEQ_ALLELE2=["C", "C", "C"]
     ))
-    error = genie.maf._check_tsa1_tsa2(df)
+    error = genie_registry.maf._check_tsa1_tsa2(df)
     assert error == (
         "Mutation File: Contains both "
         "TUMOR_SEQ_ALLELE1 and TUMOR_SEQ_ALLELE2 columns. "
@@ -225,5 +225,5 @@ def test_invalid__check_tsa1_tsa2():
 )
 def test_valid__check_tsa1_tsa2(df):
     """Test valid TSA1 and TSA2"""
-    error = genie.maf._check_tsa1_tsa2(df)
+    error = genie_registry.maf._check_tsa1_tsa2(df)
     assert error == ""
