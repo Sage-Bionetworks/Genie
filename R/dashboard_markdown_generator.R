@@ -47,6 +47,7 @@ if (args$staging) {
 # template_path = "genie/dashboardTemplate.Rmd"
 #
 
+
 rmarkdown_path = sprintf('%s.Rmd', release)
 file.copy(template_path, rmarkdown_path, overwrite = T)
 rmarkdown::render(rmarkdown_path,
@@ -54,9 +55,19 @@ rmarkdown::render(rmarkdown_path,
                                 "geniePass" = genie_pass,
                                 "database_synid_mappingid" = database_synid_mappingid,
                                 "release" = release))
-
+# Obtain release folder
+database_synid_mapping = synTableQuery(sprintf('select * from %s',
+                                               database_synid_mappingid))
+database_synid_mappingdf = as.data.frame(database_synid_mapping)
+release_folder_fileview_synid = database_synid_mappingdf$Id[
+  database_synid_mappingdf$Database == "releaseFolder"
+]
+release_folder = synTableQuery(sprintf("select id from %s where name = '%s'",
+                                       release_folder_fileview_synid, release))
+release_folder_synid = release_folder$asDataFrame()$id
 #Store the html file.
-release_html_ent = synStore(File(rmarkdown_path,
+html_path = sprintf('%s.html', release)
+release_html_ent = synStore(File(html_path,
                                  parentId = release_folder_synid))
 synStore(Wiki(markdown = sprintf("${preview?entityId=%s}",
                                  release_html_ent$properties$id),
