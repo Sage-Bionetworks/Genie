@@ -35,7 +35,7 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated \
 
 RUN pip3 install --upgrade pip
 RUN pip install synapseclient httplib2 pycrypto PyYAML
-RUN pip install pandas==1.0 numexpr --upgrade
+RUN pip install pandas numexpr --upgrade
 
 #install pandoc 1.19.2.1 (dashboard use)
 RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.1-1-amd64.deb

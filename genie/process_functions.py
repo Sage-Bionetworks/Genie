@@ -1,5 +1,4 @@
-import ast
-from Crypto.PublicKey import RSA
+"""Processing functions that are used in the GENIE pipeline"""
 import datetime
 import json
 import logging
@@ -8,9 +7,13 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 import tempfile
+import time
 
+import ast
+from Crypto.PublicKey import RSA
 import pandas as pd
 import synapseclient
+from synapseclient import Synapse
 
 # try:
 #   from urllib.request import urlopen
@@ -1040,3 +1043,139 @@ def get_gdc_data_dictionary(filetype):
         .format(filetype=filetype))
     gdc_response = json.loads(gdc_dict.text)
     return(gdc_response)
+
+
+def _create_schema(syn, table_name, parentid, columns=None, annotations=None):
+    """Creates Table Schema
+
+    Args:
+        syn: Synapse object
+        table_name: Name of table
+        parentid: Project synapse id
+        columns: Columns of Table
+        annotations: Dictionary of annotations to add
+
+    Returns:
+        Schema
+    """
+    schema = synapseclient.Schema(name=table_name,
+                                  columns=columns,
+                                  parent=parentid,
+                                  annotations=annotations)
+    new_schema = syn.store(schema)
+    return new_schema
+
+
+def _update_database_mapping(syn, database_synid_mappingdf,
+                             database_mapping_synid,
+                             fileformat, new_tableid):
+    """Updates database to synapse id mapping table
+
+    Args:
+        syn: Synapse object
+        database_synid_mappingdf: Database to synapse id mapping dataframe
+        database_mapping_synid: Database to synapse id table id
+        fileformat: File format updated
+        new_tableid: New file format table id
+
+    Returns:
+        Updated Table object
+    """
+    fileformat_ind = database_synid_mappingdf['Database'] == fileformat
+    # Store in the new database synid
+    database_synid_mappingdf['Id'][fileformat_ind] = new_tableid
+    # Only update the one row
+    to_update_row = database_synid_mappingdf[fileformat_ind]
+
+    updated_table = syn.store(synapseclient.Table(database_mapping_synid,
+                                                  to_update_row))
+    return database_synid_mappingdf
+
+
+# TODO: deprecate once move function is out of the cli into the
+# client master branch
+def _move_entity(syn, ent, parentid, name=None):
+    """Moves an entity (works like linux mv)
+
+    Args:
+        syn: Synapse object
+        ent: Synapse Entity
+        parentid: Synapse Project id
+        name: New Entity name if a new name is desired
+
+    Returns:
+        Moved Entity
+    """
+    ent.parentId = parentid
+    if name is not None:
+        ent.name = name
+    moved_ent = syn.store(ent)
+    return moved_ent
+
+
+def get_dbmapping(syn: Synapse, projectid: str) -> dict:
+    """Gets database mapping information
+
+    Args:
+        syn: Synapse connection
+        projectid: Project id where new data lives
+
+    Returns:
+        {'synid': database mapping syn id,
+         'df': database mapping pd.DataFrame}
+
+    """
+    project_ent = syn.get(projectid)
+    dbmapping_synid = project_ent.annotations.get("dbMapping", "")[0]
+    database_mapping = syn.tableQuery(f'select * from {dbmapping_synid}')
+    database_mappingdf = database_mapping.asDataFrame()
+    return {'synid': dbmapping_synid,
+            'df': database_mappingdf}
+
+
+def create_new_fileformat_table(syn: Synapse,
+                                file_format: str,
+                                newdb_name: str,
+                                projectid: str,
+                                archive_projectid: str) -> dict:
+    """Creates new database table based on old database table and archives
+    old database table
+
+    Args:
+        syn: Synapse object
+        file_format: File format to update
+        newdb_name: Name of new database table
+        projectid: Project id where new database should live
+        archive_projectid: Project id where old database should be moved
+
+    Returns:
+        {"newdb_ent": New database synapseclient.Table,
+         "newdb_mappingdf": new databse pd.DataFrame,
+         "moved_ent": old database synpaseclient.Table}
+    """
+    db_info = get_dbmapping(syn, projectid)
+    database_mappingdf = db_info['df']
+    dbmapping_synid = db_info['synid']
+
+    olddb_synid = getDatabaseSynId(syn, file_format,
+                                   databaseToSynIdMappingDf=database_mappingdf)
+    olddb_ent = syn.get(olddb_synid)
+    olddb_columns = list(syn.getTableColumns(olddb_synid))
+
+    newdb_ent = _create_schema(syn, table_name=newdb_name,
+                               columns=olddb_columns,
+                               parentid=projectid,
+                               annotations=olddb_ent.annotations)
+
+    newdb_mappingdf = _update_database_mapping(syn, database_mappingdf,
+                                               dbmapping_synid,
+                                               file_format, newdb_ent.id)
+    # Automatically rename the archived entity with ARCHIVED
+    # This will attempt to resolve any issues if the table already exists at
+    # location
+    new_table_name = f"ARCHIVED {time.time()}-{olddb_ent.name}"
+    moved_ent = _move_entity(syn, olddb_ent, archive_projectid,
+                             name=new_table_name)
+    return {"newdb_ent": newdb_ent,
+            "newdb_mappingdf": newdb_mappingdf,
+            "moved_ent": moved_ent}

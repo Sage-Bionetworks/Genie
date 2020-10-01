@@ -1,11 +1,14 @@
 #! /usr/bin/env python3
-import os
-import argparse
-import logging
+"""Script to crawl Synapse folder for a center, validate, and update database tables.
 
-from genie import input_to_database
-from genie import write_invalid_reasons
-from genie import process_functions
+"""
+import argparse
+from datetime import date
+import logging
+import os
+
+from genie import (input_to_database, write_invalid_reasons,
+                   process_functions, config)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -21,7 +24,8 @@ def main(process,
          oncotree_link=None,
          genie_annotation_pkg=None,
          create_new_maf_database=False,
-         debug=False):
+         debug=False,
+         format_registry=None):
 
     syn = process_functions.synLogin(pemfile, debug=debug)
 
@@ -82,8 +86,16 @@ def main(process,
 
     # Create new maf database, should only happen once if its specified
     if create_new_maf_database:
-        databaseToSynIdMappingDf = \
-            input_to_database.create_and_archive_maf_database(syn, databaseToSynIdMappingDf)
+        today = date.today()
+        table_name = f'Narrow MAF Database - {today}'
+        # filetype = "vcf2maf"
+        # syn7208886 is the GENIE staging project to archive maf table
+        new_tables = process_functions.create_new_fileformat_table(
+            syn, "vcf2maf", table_name, project_id, 'syn7208886'
+        )
+        syn.setPermissions(new_tables['newdb_ent'].id, 3326313, [])
+
+    format_registry = config.collect_format_types(args.format_registry_packages)
 
     for process_center in centers:
         input_to_database.center_input_to_database(
@@ -92,6 +104,7 @@ def main(process,
             center_mapping_df,
             delete_old=delete_old,
             oncotree_link=oncotree_link,
+            format_registry=format_registry,
             genie_annotation_pkg=genie_annotation_pkg
         )
 
@@ -106,15 +119,13 @@ def main(process,
     # isnt specified and if only validate
     if center is None and only_validate:
         logger.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
-        write_invalid_reasons.write_invalid_reasons(
-            syn, center_mapping_df, error_tracker_synid)
+        write_invalid_reasons.write(syn, center_mapping_df,
+                                    error_tracker_synid)
 
 
 if __name__ == "__main__":
-    '''
-    Argument parsers
-    TODO: Fix case of arguments
-    '''
+    # Argument parsers
+    # TODO: Fix case of arguments
     parser = argparse.ArgumentParser(
         description='GENIE center ')
     parser.add_argument(
@@ -156,6 +167,14 @@ if __name__ == "__main__":
         "--genie_annotation_pkg",
         help="GENIE annotation pkg"
     )
+
+    # DEFAULT PARAMS
+    parser.add_argument(
+        "--format_registry_packages", type=str, nargs="+",
+        default=["genie_registry"],
+        help="Python package name(s) to get valid file formats from "
+             "(default: %(default)s)."
+    )
     args = parser.parse_args()
 
     main(args.process,
@@ -167,4 +186,5 @@ if __name__ == "__main__":
          oncotree_link=args.oncotree_link,
          create_new_maf_database=args.createNewMafDatabase,
          debug=args.debug,
-         genie_annotation_pkg=args.genie_annotation_pkg)
+         genie_annotation_pkg=args.genie_annotation_pkg,
+         format_registry=args.format_registry_packages)
