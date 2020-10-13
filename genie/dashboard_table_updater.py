@@ -10,9 +10,7 @@ from synapseclient.core.utils import to_unix_epoch_time
 
 from genie import process_functions
 
-logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def get_center_data_completion(center, df):

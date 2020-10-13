@@ -10,7 +10,7 @@ from . import create_case_lists, validate, write_invalid_reasons
 from .__version__ import __version__
 
 
-logger = logging.getLogger('genie')
+logger = logging.getLogger(__name__)
 
 
 def synapse_login(username=None, password=None):

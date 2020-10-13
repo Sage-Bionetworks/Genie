@@ -16,7 +16,6 @@ import synapseutils
 from . import process_functions
 from . import __version__
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # GENIE CONSTANTS
