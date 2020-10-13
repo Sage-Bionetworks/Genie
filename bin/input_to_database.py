@@ -121,6 +121,7 @@ def main(process,
         logger.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
         write_invalid_reasons.write(syn, center_mapping_df,
                                     error_tracker_synid)
+    logger.info("INPUT TO DATABASE COMPLETE")
 
 
 if __name__ == "__main__":
