@@ -66,14 +66,12 @@ getFileDf <- function(fileName, releaseFiles) {
   }
 }
 
-plotPanelOverlap <- function(samples, bed, assays) {
-  #source("../analyses/genomicData/panelOverlap_gene.R")
-  #panelOverlap = getPanelOverlap(genieClinData = this_samples,genieBedData = this_bed)
-  #kable(panelOverlap)
-  makePanelList = function(assay,bed){
-    return(unique(as.character(bed$Hugo_Symbol[bed$SEQ_ASSAY_ID == assay])))
-  }
-  listInput = lapply(as.list(assays), function(x){makePanelList(x,bed)})
+makePanelList = function(assay, bed) {
+  return(unique(as.character(bed$Hugo_Symbol[bed$SEQ_PIPELINE_ID == assay])))
+}
+
+plotPanelOverlap <- function(bed, assays) {
+  listInput = lapply(as.list(assays), function(x) { makePanelList(x, bed) })
   names(listInput) = assays
   upset(fromList(listInput),
         order.by = "freq",
@@ -634,10 +632,13 @@ if (!is.null(this_bed)) {
   myeloid = this_assays[this_assays %in% myeloid_panels]
 
   normal = this_assays[!this_assays %in% myeloid_panels]
+  seq_pipeline_ids = unique(
+    this_bed$SEQ_PIPELINE_ID[this_bed$SEQ_ASSAY_ID %in% normal]
+  )
   smallPanels = c()
   largePanels = c()
-  for (panel in normal) {
-    panelDf = this_bed[this_bed$SEQ_ASSAY_ID == panel,]
+  for (panel in seq_pipeline_ids) {
+    panelDf = this_bed[this_bed$SEQ_PIPELINE_ID == panel,]
     if (length(table(panelDf$Hugo_Symbol)) < 100) {
       smallPanels = c(smallPanels, panel)
       # Don't add to panel if more than 1500 genes
@@ -656,7 +657,7 @@ if (!is.null(this_bed)) {
 
 ```{r myeloid_panel_upset}
 if (length(myeloid) > 1) {
-  plotPanelOverlap(this_samples, this_bed, myeloid)
+  plotPanelOverlap(this_bed, myeloid)
 }
 
 ```
@@ -665,14 +666,14 @@ if (length(myeloid) > 1) {
 
 ```{r small_panel_upset, fig.height=12}
 if (length(smallPanels) > 1) {
-  plotPanelOverlap(this_samples, this_bed, smallPanels)
+  plotPanelOverlap(this_bed, smallPanels)
 }
 ```
 
 ### Large ($\geq$ 100) Gene panels
 
-```{r large_panel_upset, fig.height=15}
+```{r large_panel_upset, fig.height=12}
 if (length(largePanels) > 1) {
-  plotPanelOverlap(this_samples, this_bed, largePanels)
+  plotPanelOverlap(this_bed, largePanels)
 }
 ```
