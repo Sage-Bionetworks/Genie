@@ -30,10 +30,10 @@ def generate_dashboard_html(genie_version, staging=False,
 
     """
     markdown_render_cmd = ['Rscript',
-                           os.path.join(PWD, '../genie/dashboard_markdown_generator.R'),
+                           os.path.join(PWD, '../R/dashboard_markdown_generator.R'),
                            genie_version,
                            '--template_path',
-                           os.path.join(PWD, '../genie/dashboardTemplate.Rmd')]
+                           os.path.join(PWD, '../templates/dashboardTemplate.Rmd')]
 
     if genie_user is not None and genie_pass is not None:
         markdown_render_cmd.extend(['--syn_user', genie_user,
@@ -48,7 +48,7 @@ def generate_data_guide(genie_version, oncotree_version=None,
                         genie_pass=None):
     """Generates the GENIE data guide"""
 
-    template_path = os.path.join(PWD, '../data_guide/data_guide_template.Rnw')
+    template_path = os.path.join(PWD, '../templates/data_guide_template.Rnw')
     with open(template_path, 'r') as template_file:
         template_str = template_file.read()
 
