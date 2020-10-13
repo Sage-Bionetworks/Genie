@@ -9,7 +9,6 @@ import synapseclient
 from genie import (create_case_lists, dashboard_table_updater,
                    database_to_staging, process_functions)
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 PWD = os.path.dirname(os.path.abspath(__file__))

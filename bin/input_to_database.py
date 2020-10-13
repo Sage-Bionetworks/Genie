@@ -10,7 +10,6 @@ import os
 from genie import (input_to_database, write_invalid_reasons,
                    process_functions, config)
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # TODO: Remove oncotree_link
