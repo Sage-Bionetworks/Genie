@@ -10,7 +10,6 @@ import os
 from genie import (input_to_database, write_invalid_reasons,
                    process_functions, config)
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # TODO: Remove oncotree_link
@@ -121,6 +120,7 @@ def main(process,
         logger.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
         write_invalid_reasons.write(syn, center_mapping_df,
                                     error_tracker_synid)
+    logger.info("INPUT TO DATABASE COMPLETE")
 
 
 if __name__ == "__main__":

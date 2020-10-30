@@ -13,9 +13,7 @@ from . import process_functions
 from . import database_to_staging
 from . import create_case_lists
 
-logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def storeFile(syn, filePath, parentId, genie_version, name=None):

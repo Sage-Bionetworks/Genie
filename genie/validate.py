@@ -9,9 +9,7 @@ from synapseclient.core.exceptions import SynapseHTTPError
 
 from . import config, example_filetype_format, process_functions
 
-logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 class ValidationHelper(object):

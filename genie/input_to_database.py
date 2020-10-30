@@ -13,7 +13,6 @@ import pandas as pd
 
 from . import process_functions, process_mutation, toRetract, validate
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
