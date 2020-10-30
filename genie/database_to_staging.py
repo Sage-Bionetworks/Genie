@@ -62,7 +62,7 @@ def find_caselistid(syn, parentid):
 
 def store_file(syn, filePath, genieVersion="database", name=None,
                parent=None, fileFormat=None, cBioFileFormat=None,
-               tag_or_commit=None):
+               tag_or_commit=None, used=None):
     '''
     Convenience function to store files
 
@@ -76,6 +76,7 @@ def store_file(syn, filePath, genieVersion="database", name=None,
         staging: Staging GENIE release.  Default to False
         caseLists: Case lists are stored elsewhere
         tag_or_commit: Github tag or commit
+        used: List of entities used in creation of file
     '''
     logger.info("STORING FILE: {}".format(os.path.basename(filePath)))
     if name is None:
@@ -90,7 +91,8 @@ def store_file(syn, filePath, genieVersion="database", name=None,
         tag_or_commit = f"v{__version__.__version__}"
     ent = syn.store(
         ent,
-        used=f"https://github.com/Sage-Bionetworks/Genie/tree/{tag_or_commit}"
+        executed=f"https://github.com/Sage-Bionetworks/Genie/tree/{tag_or_commit}",
+        used=used
     )
     return ent
 
@@ -598,8 +600,8 @@ def store_fusion_files(syn,
         ['Hugo_Symbol', 'Tumor_Sample_Barcode', 'Fusion']].duplicated()]
     # FusionsDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
     fusionText = process_functions.removePandasDfFloat(FusionsDf)
-    fusions_path = os.path.join(
-        GENIE_RELEASE_DIR, 'data_fusions_%s.txt' % genie_version)
+    fusions_path = os.path.join(GENIE_RELEASE_DIR,
+                                f'data_fusions_{genie_version}.txt')
     with open(fusions_path, "w") as fusionFile:
         fusionFile.write(fusionText)
     store_file(
@@ -668,13 +670,14 @@ def store_maf_files(syn,
     for center in clinicaldf['CENTER'].unique():
         with open(MUTATIONS_CENTER_PATH % center, 'w'):
             pass
-
+    used_entities = []
     for _, mafSynId in enumerate(centerMafSynIdsDf.id):
         maf_ent = syn.get(mafSynId)
         logger.info(maf_ent.path)
         # Extract center name
         center = maf_ent.path.split("_")[3].replace(".txt", "")
         if center in center_mappingdf.center.tolist():
+            used_entities.append(f"{maf_ent.id}.{maf_ent.versionNumber}")
             mafchunks = pd.read_csv(maf_ent.path, sep="\t", comment="#",
                                     chunksize=100000)
 
@@ -700,10 +703,9 @@ def store_maf_files(syn,
                     center_mafdf, MUTATIONS_CENTER_PATH % center
                 )
 
-    store_file(syn, mutations_path,
-               parent=release_synid,
-               genieVersion=genie_version,
-               name="data_mutations_extended.txt")
+    store_file(syn, mutations_path, parent=release_synid,
+               genieVersion=genie_version, name="data_mutations_extended.txt",
+               used=used_entities)
 
     if not current_release_staging:
         for center in clinicaldf['CENTER'].unique():
@@ -1097,6 +1099,8 @@ def store_seg_files(syn, genie_version,
     logger.info("MERING, FILTERING, STORING SEG FILES")
     seg_path = os.path.join(GENIE_RELEASE_DIR,
                             'genie_private_data_cna_hg19_%s.seg' % genie_version)
+    version = syn.create_snapshot_version(seg_synid, comment=genie_version)
+
     seg = syn.tableQuery(
         'SELECT ID,CHROM,LOCSTART,LOCEND,NUMMARK,SEGMEAN'
         ',CENTER FROM %s' % seg_synid)
