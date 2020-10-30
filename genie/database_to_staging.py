@@ -562,7 +562,9 @@ def store_fusion_files(syn,
     FusionsDf = return_syn_tablequerydf(
         syn,
         'select HUGO_SYMBOL,ENTREZ_GENE_ID,CENTER,TUMOR_SAMPLE_BARCODE,FUSION,'
-        'DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME from {}'.format(fusion_synid))
+        f'DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME from {fusion_synid}'
+    )
+    version = syn.create_snapshot_version(fusion_synid, comment=genie_version)
     # FusionsDf = Fusions.asDataFrame()
     FusionsDf['ENTREZ_GENE_ID'][FusionsDf['ENTREZ_GENE_ID'] == 0] = float('nan')
 
@@ -602,13 +604,14 @@ def store_fusion_files(syn,
     fusionText = process_functions.removePandasDfFloat(FusionsDf)
     fusions_path = os.path.join(GENIE_RELEASE_DIR,
                                 f'data_fusions_{genie_version}.txt')
-    with open(fusions_path, "w") as fusionFile:
-        fusionFile.write(fusionText)
+    with open(fusions_path, "w") as fusion_file:
+        fusion_file.write(fusionText)
     store_file(
         syn, fusions_path,
         parent=release_synid,
         genieVersion=genie_version,
-        name="data_fusions.txt")
+        name="data_fusions.txt",
+        used=f"{fusion_synid}.{version}")
 
 
 def append_or_create_release_maf(dataframe: pd.DataFrame, filepath: str):
