@@ -997,11 +997,10 @@ def store_cna_files(syn, flatfiles_view_synid,
     '''
     logger.info("MERING, FILTERING, STORING CNA FILES")
     cna_path = os.path.join(GENIE_RELEASE_DIR,
-                            "data_CNA_{}.txt".format(genie_version))
+                            f"data_CNA_{genie_version}.txt")
     query_str = ("select id from {} "
                  "where name like 'data_CNA%'").format(flatfiles_view_synid)
-    center_cna_synids = syn.tableQuery(query_str)
-    center_cna_synidsdf = center_cna_synids.asDataFrame()
+    center_cna_synidsdf = process_functions.get_syntabledf(syn, query_str)
     # Grab all unique symbols and form cna_template
     all_symbols = set()
     for cna_synid in center_cna_synidsdf['id']:
@@ -1025,12 +1024,13 @@ def store_cna_files(syn, flatfiles_view_synid,
         pd.Series(keep_for_merged_consortium_samples))
 
     cna_samples = []
-
+    used_entities = []
     for cna_synId in center_cna_synidsdf['id']:
         cna_ent = syn.get(cna_synId)
         center = cna_ent.name.replace("data_CNA_", "").replace(".txt", "")
         logger.info(cna_ent.path)
         if center in center_mappingdf.center.tolist():
+            used_entities.append(f'{cna_synId}.{cna_ent.versionNumber}')
             center_cna = pd.read_csv(cna_ent.path, sep="\t")
             merged_cna = cna_template.merge(
                 center_cna, on="Hugo_Symbol", how="outer")
@@ -1072,7 +1072,7 @@ def store_cna_files(syn, flatfiles_view_synid,
                 cna_file.write(output.decode("utf-8").replace(" ", "\t"))
 
     store_file(syn, cna_path, parent=release_synid, genieVersion=genie_version,
-               name="data_CNA.txt")
+               name="data_CNA.txt", used=used_entities)
 
     return cna_samples
 
