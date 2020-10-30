@@ -518,9 +518,9 @@ def store_gene_panel_files(syn,
         genePanelName = os.path.basename(genePanel.path)
         newGenePanelPath = os.path.join(
             GENIE_RELEASE_DIR,
-            genePanelName.replace(".txt", "_%s.txt" % genieVersion))
+            genePanelName.replace(".txt", f"_{genieVersion}.txt"))
         print(genePanelName.replace(".txt", '')
-                           .replace("data_gene_panel_", ""))
+              .replace("data_gene_panel_", ""))
         if (genePanelName.replace(".txt", "")
                          .replace("data_gene_panel_", "") in panelNames):
             os.rename(genePanel.path, newGenePanelPath)
@@ -529,7 +529,8 @@ def store_gene_panel_files(syn,
                 parent=consortiumReleaseSynId,
                 genieVersion=genieVersion,
                 name=genePanelName,
-                cBioFileFormat="genePanel"))
+                cBioFileFormat="genePanel",
+                used=f"{synId}.{genePanel.versionNumber}"))
     return genePanelEntities
 
 
