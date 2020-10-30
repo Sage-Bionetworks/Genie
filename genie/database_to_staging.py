@@ -833,7 +833,8 @@ def store_clinical_files(syn,
                          remove_merged_consortium_samples,
                          release_synid,
                          current_release_staging,
-                         center_mappingdf):
+                         center_mappingdf,
+                         used=None):
     '''
     Create, filter, configure, and store clinical file
 
@@ -1103,7 +1104,8 @@ def store_seg_files(syn, genie_version,
 
     seg = syn.tableQuery(
         'SELECT ID,CHROM,LOCSTART,LOCEND,NUMMARK,SEGMEAN'
-        ',CENTER FROM %s' % seg_synid)
+        f',CENTER FROM {seg_synid}'
+    )
     segdf = seg.asDataFrame()
     segdf = segdf.rename(columns={'CHROM': 'chrom',
                                   'LOCSTART': 'loc.start',
@@ -1132,7 +1134,8 @@ def store_seg_files(syn, genie_version,
         seg_file.write(segtext)
     store_file(syn, seg_path, parent=release_synid,
                genieVersion=genie_version,
-               name="genie_private_data_cna_hg19.seg")
+               name="genie_private_data_cna_hg19.seg",
+               used=f"{seg_synid}.{version}")
 
 
 def store_data_gene_matrix(syn, genie_version, clinicaldf,
@@ -1197,8 +1200,9 @@ def store_bed_files(syn, genie_version, beddf, seq_assay_ids,
         release_synid: Synapse id to store release file
     '''
     logger.info("STORING COMBINED BED FILE")
-    combined_bed_path = os.path.join(GENIE_RELEASE_DIR,
-                                     'genomic_information_%s.txt' % genie_version)  # pylint: disable=line-too-long
+    combined_bed_path = os.path.join(
+        GENIE_RELEASE_DIR, f'genomic_information_{genie_version}.txt'
+    )
     if not current_release_staging:
         for seq_assay in beddf['SEQ_ASSAY_ID'].unique():
             bed_seq_df = beddf[beddf['SEQ_ASSAY_ID'] == seq_assay]
@@ -1272,26 +1276,37 @@ def stagingToCbio(syn, processingDate, genieVersion,
     assay_info_synid = databaseSynIdMappingDf['Id'][assay_info_ind][0]
 
     # Using center mapping df to gate centers in release fileStage
-    patient = syn.tableQuery(
-        "SELECT * FROM {} where CENTER in ('{}')".format(
-            patientSynId, "','".join(CENTER_MAPPING_DF.center)))
-    sample = syn.tableQuery(
-        "SELECT * FROM {} where CENTER in ('{}')".format(
-            sampleSynId, "','".join(CENTER_MAPPING_DF.center)))
-    bed = syn.tableQuery(
+    center_query_str = "','".join(CENTER_MAPPING_DF.center)
+    patient_snapshot = syn.create_snapshot_version(patientSynId,
+                                                   comment=genieVersion)
+    patient_used = f"{patientSynId}.{patient_snapshot}"
+    patientDf = process_functions.get_syntabledf(
+        syn,
+        f"SELECT * FROM {patientSynId} where CENTER in ('{center_query_str}')"
+    )
+    sample_snapshot = syn.create_snapshot_version(sampleSynId,
+                                                  comment=genieVersion)
+    sample_used = f"{sampleSynId}.{sample_snapshot}"
+    sampleDf = process_functions.get_syntabledf(
+        syn,
+        f"SELECT * FROM {sampleSynId} where CENTER in ('{center_query_str}')"
+    )
+    bed_snapshot = syn.create_snapshot_version(bedSynId,
+                                               comment=genieVersion)
+    bed_used = f"{bedSynId}.{bed_snapshot}"
+    bedDf = process_functions.get_syntabledf(
+        syn,
         "SELECT Chromosome,Start_Position,End_Position,Hugo_Symbol,ID,"
         "SEQ_ASSAY_ID,Feature_Type,includeInPanel FROM"
-        " {} where CENTER in ('{}')".format(
-            bedSynId, "','".join(CENTER_MAPPING_DF.center)))
-    patientDf = patient.asDataFrame()
-    sampleDf = sample.asDataFrame()
-    bedDf = bed.asDataFrame()
+        f" {bedSynId} where CENTER in ('{center_query_str}')"
+    )
 
     # Clinical release scope filter
     # If private -> Don't release to public
-    clinicalReleaseScope = syn.tableQuery(
-        "SELECT * FROM syn8545211 where releaseScope <> 'private'")
-    clinicalReleaseScopeDf = clinicalReleaseScope.asDataFrame()
+    clinicalReleaseScopeDf = process_functions.get_syntabledf(
+        syn,
+        "SELECT * FROM syn8545211 where releaseScope <> 'private'"
+    )
 
     patientCols = clinicalReleaseScopeDf['fieldName'][
         clinicalReleaseScopeDf['level'] == "patient"].tolist()
@@ -1346,7 +1361,8 @@ def stagingToCbio(syn, processingDate, genieVersion,
             removeForMergedConsortiumSamples,
             consortiumReleaseSynId,
             current_release_staging,
-            CENTER_MAPPING_DF)
+            CENTER_MAPPING_DF,
+            used=[sample_used, patient_used])
 
     assert not clinicalDf['SAMPLE_ID'].duplicated().any()
 
