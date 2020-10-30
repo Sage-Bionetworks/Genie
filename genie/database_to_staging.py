@@ -88,7 +88,7 @@ def store_file(syn, filePath, genieVersion="database", name=None,
     if cBioFileFormat is not None:
         ent.cBioFileFormat = cBioFileFormat
     if tag_or_commit is None:
-        tag_or_commit = f"v{__version__.__version__}"
+        tag_or_commit = f"v{__version__}"
     ent = syn.store(
         ent,
         executed=f"https://github.com/Sage-Bionetworks/Genie/tree/{tag_or_commit}",
@@ -937,7 +937,7 @@ def store_clinical_files(syn,
                 syn, SAMPLE_CENTER_PATH % center,
                 genieVersion=genie_version,
                 parent=center_mappingdf['stagingSynId'][
-                    center_mappingdf['center'] == center][0])
+                    center_mappingdf['center'] == center][0],)
             store_file(
                 syn, PATIENT_CENTER_PATH % center,
                 genieVersion=genie_version,
@@ -963,14 +963,16 @@ def store_clinical_files(syn,
         clinicaldf, mapping, patient_cols, sample_cols,
         clinical_sample_path, clinical_patient_path)
     store_file(syn, clinical_sample_path, parent=release_synid,
-               genieVersion=genie_version, name="data_clinical_sample.txt")
+               genieVersion=genie_version, name="data_clinical_sample.txt",
+               used=used)
 
     store_file(syn, clinical_patient_path, parent=release_synid,
-               genieVersion=genie_version, name="data_clinical_patient.txt")
+               genieVersion=genie_version, name="data_clinical_patient.txt",
+               used=used)
 
     clinicaldf.to_csv(clinical_path, sep="\t", index=False)
     store_file(syn, clinical_path, parent=release_synid,
-               name="data_clinical.txt")
+               name="data_clinical.txt", used=used)
 
     return(clinicaldf,
            keep_center_consortium_samples,
