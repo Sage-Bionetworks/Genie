@@ -503,12 +503,13 @@ def store_gene_panel_files(syn,
     wes_genepanel_str = "','".join(wes_genepanel_filenames)
     # Only need to upload these files once
     logger.info("STORING GENE PANELS FILES")
-    genePanels = syn.tableQuery("select id from {} where "
-                                "cBioFileFormat = 'genePanel' and "
-                                "fileStage = 'staging' and "
-                                "name not in ('{}')".format(fileviewSynId,
-                                                            wes_genepanel_str))
-    genePanelDf = genePanels.asDataFrame()
+    genePanelDf = process_functions.get_syntabledf(
+        syn,
+        f"select id from {fileviewSynId} where "
+        "cBioFileFormat = 'genePanel' and "
+        "fileStage = 'staging' and "
+        f"name not in ('{wes_genepanel_str}')"
+    )
     genePanelEntities = []
     panelNames = set(data_gene_panel['mutations'])
     print(f"EXISTING GENE PANELS: {','.join(panelNames)}")
@@ -530,11 +531,6 @@ def store_gene_panel_files(syn,
                 name=genePanelName,
                 cBioFileFormat="genePanel"))
     return genePanelEntities
-
-
-def return_syn_tablequerydf(syn, query):
-    table = syn.tableQuery(query)
-    return(table.asDataFrame())
 
 
 def store_fusion_files(syn,
@@ -559,7 +555,7 @@ def store_fusion_files(syn,
         center_mappingdf: Center mapping dataframe
     '''
     logger.info("MERING, FILTERING, STORING FUSION FILES")
-    FusionsDf = return_syn_tablequerydf(
+    FusionsDf = process_functions.get_syntabledf(
         syn,
         'select HUGO_SYMBOL,ENTREZ_GENE_ID,CENTER,TUMOR_SAMPLE_BARCODE,FUSION,'
         f'DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME from {fusion_synid}'
