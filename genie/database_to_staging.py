@@ -1105,7 +1105,7 @@ def store_seg_files(syn, genie_version,
     '''
     logger.info("MERING, FILTERING, STORING SEG FILES")
     seg_path = os.path.join(GENIE_RELEASE_DIR,
-                            'genie_private_data_cna_hg19_%s.seg' % genie_version)
+                            f'genie_private_data_cna_hg19_{genie_version}.seg')
     version = syn.create_snapshot_version(seg_synid, comment=genie_version)
 
     seg = syn.tableQuery(
@@ -1146,7 +1146,7 @@ def store_seg_files(syn, genie_version,
 
 def store_data_gene_matrix(syn, genie_version, clinicaldf,
                            cna_samples, release_synid,
-                           wes_seqassayids):
+                           wes_seqassayids, used=None):
     '''
     Create and store data gene matrix file
 
@@ -1191,7 +1191,7 @@ def store_data_gene_matrix(syn, genie_version, clinicaldf,
 
 def store_bed_files(syn, genie_version, beddf, seq_assay_ids,
                     center_mappingdf, current_release_staging,
-                    release_synid):
+                    release_synid, used=None):
     '''
     Store bed files, store the bed regions that had symbols remapped
     Filters bed file by clinical dataframe seq assays
@@ -1228,7 +1228,8 @@ def store_bed_files(syn, genie_version, beddf, seq_assay_ids,
     beddf = beddf[beddf['SEQ_ASSAY_ID'].isin(seq_assay_ids)]
     beddf.to_csv(combined_bed_path, sep="\t", index=False)
     store_file(syn, combined_bed_path, parent=release_synid,
-               genieVersion=genie_version, name="genomic_information.txt")
+               genieVersion=genie_version, name="genomic_information.txt",
+               used=used)
 
 
 def stagingToCbio(syn, processingDate, genieVersion,
@@ -1446,7 +1447,8 @@ def stagingToCbio(syn, processingDate, genieVersion,
         clinicalDf['SEQ_ASSAY_ID'].unique(),
         CENTER_MAPPING_DF,
         current_release_staging,
-        consortiumReleaseSynId)
+        consortiumReleaseSynId,
+        used=bed_used)
 
     return genePanelEntities
 
