@@ -809,15 +809,19 @@ def store_assay_info_files(syn, genie_version, assay_info_synid,
     """
     logger.info("Creates assay information file")
     assay_info_path = os.path.join(GENIE_RELEASE_DIR,
-                                   'assay_information_%s.txt' % genie_version)
+                                   f'assay_information_{genie_version}.txt')
     seq_assay_str = "','".join(clinicaldf['SEQ_ASSAY_ID'])
-    assay_info = syn.tableQuery("select * from {} where SEQ_ASSAY_ID "
-                                "in ('{}')".format(assay_info_synid,
-                                                   seq_assay_str))
-    assay_infodf = assay_info.asDataFrame()
+    version = syn.create_snapshot_version(assay_info_synid,
+                                          comment=genie_version)
+    assay_infodf = process_functions.get_syntabledf(
+        syn,
+        f"select * from {assay_info_synid} where SEQ_ASSAY_ID "
+        f"in ('{seq_assay_str}')"
+    )
     assay_infodf.to_csv(assay_info_path, sep="\t", index=False)
     store_file(syn, assay_info_path, parent=release_synid,
-               genieVersion=genie_version, name="assay_information.txt")
+               genieVersion=genie_version, name="assay_information.txt",
+               used=f"{assay_info_synid}.{version}")
     wes_index = assay_infodf['library_strategy'] == 'WXS'
     wes_panels = assay_infodf['SEQ_ASSAY_ID'][wes_index]
     return wes_panels.tolist()
