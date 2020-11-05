@@ -16,7 +16,6 @@ import synapseutils
 from . import process_functions
 from . import __version__
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # GENIE CONSTANTS
@@ -291,10 +290,9 @@ def runMAFinBED(syn,
         pd.Series: Variants to remove
     '''
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    mafinbed_script = os.path.join(script_dir,
-                                   '../analyses/genomicData/MAFinBED.R')
-    notinbed_file = os.path.join(script_dir,
-                                 '../analyses/genomicData/notinbed.csv')
+    mafinbed_script = os.path.join(script_dir, '../R/MAFinBED.R')
+    # TODO: Use tempfile
+    notinbed_file = os.path.join(script_dir, '../R/notinbed.csv')
     # The MAFinBED script filters out the centers that aren't being processed
     command = ['Rscript', mafinbed_script, notinbed_file]
     if genie_user is not None and genie_pass is not None:
@@ -379,7 +377,7 @@ def mutation_in_cis_filter(syn,
     if not skipMutationsInCis:
         mergeCheck_script = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            '../analyses/mergeFlag/mergeCheck.R')
+            '../R/mergeCheck.R')
         command = ['Rscript', mergeCheck_script]
         if genie_user is not None and genie_pass is not None:
             command.extend(['--syn_user', genie_user,

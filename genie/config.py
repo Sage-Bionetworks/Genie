@@ -4,9 +4,7 @@ import logging
 
 from . import example_filetype_format
 
-logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 # BASE_CLASS = example_filetype_format.FileTypeFormat
 

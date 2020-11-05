@@ -6,9 +6,7 @@ import pandas as pd
 import synapseclient
 from synapseclient import Synapse
 
-logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def write(syn: Synapse, center_mapping_df: pd.DataFrame, error_tracker_synid: str):

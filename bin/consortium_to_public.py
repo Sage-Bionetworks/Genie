@@ -11,9 +11,7 @@ from genie import process_functions
 from genie import consortium_to_public
 from genie import database_to_staging
 
-logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 PWD = os.path.dirname(os.path.abspath(__file__))
 
