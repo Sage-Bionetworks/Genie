@@ -87,7 +87,7 @@ def store_file(syn, filePath, genieVersion="database", name=None,
     if cBioFileFormat is not None:
         ent.cBioFileFormat = cBioFileFormat
     if tag_or_commit is None:
-        tag_or_commit = f"v{__version__.__version__}"
+        tag_or_commit = f"v{__version__}"
     ent = syn.store(
         ent,
         used=f"https://github.com/Sage-Bionetworks/Genie/tree/{tag_or_commit}"
