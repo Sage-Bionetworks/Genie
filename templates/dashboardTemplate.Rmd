@@ -349,37 +349,42 @@ possible_retracted = public_sampledf[!exist_idx & !in_db_samples_idx,
 
 # Determine if sample is explicitly or implicitly retracted
 # assume most samples are implicitly retracted
-possible_retracted$RETRACTION = "implicit"
-# Get explicitly retracted
-retracted_patient = synTableQuery(
-  sprintf("select geniePatientId from %s", patient_retract_synid)
-)
-retracted_patientdf = retracted_patient$asDataFrame()
-retracted_sample = synTableQuery(
-  sprintf("select genieSampleId from %s", sample_retract_synid)
-)
-retracted_sampledf = retracted_sample$asDataFrame()
+if (nrow(possible_retracted) > 0) {
+  possible_retracted$RETRACTION = "implicit"
+  # Get explicitly retracted
+  retracted_patient = synTableQuery(
+    sprintf("select geniePatientId from %s", patient_retract_synid)
+  )
+  retracted_patientdf = retracted_patient$asDataFrame()
+  retracted_sample = synTableQuery(
+    sprintf("select genieSampleId from %s", sample_retract_synid)
+  )
+  retracted_sampledf = retracted_sample$asDataFrame()
 
-retracted_patients_idx = possible_retracted$PATIENT_ID %in%
-  retracted_patientdf$geniePatientId
-retracted_samples_idx = possible_retracted$SAMPLE_ID %in%
-  retracted_sampledf$genieSampleId
+  retracted_patients_idx = possible_retracted$PATIENT_ID %in%
+    retracted_patientdf$geniePatientId
+  retracted_samples_idx = possible_retracted$SAMPLE_ID %in%
+    retracted_sampledf$genieSampleId
 
-possible_retracted$RETRACTION[
-    retracted_patients_idx & retracted_samples_idx
-] = 'explicit'
+  possible_retracted$RETRACTION[
+      retracted_patients_idx & retracted_samples_idx
+  ] = 'explicit'
 
+}
 write.csv(possible_retracted, "samples_to_retract.csv", row.names=F, quote=F)
 ent = synStore(File("samples_to_retract.csv", parent=release_synid))
 unlink("samples_to_retract.csv")
-
 ```
 
 This table below lists the number of samples explicitly or implicitly retracted by centers.
 
 
 ```{r}
-kable(table(possible_retracted$CENTER, possible_retracted$RETRACTION))
+if (nrow(possible_retracted) > 0) {
+  kable(table(possible_retracted$CENTER, possible_retracted$RETRACTION))
+} else {
+  kable(possible_retracted)
+}
 ```
 
 These sample/patient IDs have been marked for retraction from GENIE: `r paste0("https://www.synapse.org/#!Synapse:", ent$properties$id)` and have been removed from the GENIE database. However, removal from public release files occurs according to the following fixed schedule. Please apprise your patients of this schedule so that they are aware of the timeline for retraction of their data.  If you see samples that should not be retracted, please upload a fix to your data or let Tom Yu from Sage know immediately.
