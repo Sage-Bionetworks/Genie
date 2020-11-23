@@ -93,9 +93,11 @@ def main(process,
             syn, "vcf2maf", table_name, project_id, 'syn7208886'
         )
         syn.setPermissions(new_tables['newdb_ent'].id, 3326313, [])
+        databaseToSynIdMappingDf = new_tables['newdb_mappingdf']
 
     format_registry = config.collect_format_types(args.format_registry_packages)
-
+    print(databaseToSynIdMappingDf)
+    raise ValueError("stop")
     for process_center in centers:
         input_to_database.center_input_to_database(
             syn, project_id, process_center, process,
