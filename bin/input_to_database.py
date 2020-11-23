@@ -96,8 +96,6 @@ def main(process,
         databaseToSynIdMappingDf = new_tables['newdb_mappingdf']
 
     format_registry = config.collect_format_types(args.format_registry_packages)
-    print(databaseToSynIdMappingDf)
-    raise ValueError("stop")
     for process_center in centers:
         input_to_database.center_input_to_database(
             syn, project_id, process_center, process,
