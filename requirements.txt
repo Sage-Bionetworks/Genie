@@ -1,1 +1,1 @@
-synapseclient==2.0.0
+synapseclient==2.2.2
