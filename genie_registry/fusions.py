@@ -88,6 +88,9 @@ class fusions(FileTypeFormat):
         # fusion = fusion[~fusion['HUGO_SYMBOL'].isnull()]
         fusion['FUSION'] = fusion['FUSION'].fillna("")
         fusion, nonmapped = remapFusion(temp.to_dict()['HUGO_SYMBOL'], fusion, "FUSION")
+        # Fill in blank hugo symbol columns with original symbol
+        null_symbols_idx = fusion['HUGO_SYMBOL'].isnull()
+        fusion['HUGO_SYMBOL'][null_symbols_idx] = fusion['ID'][null_symbols_idx]
         #fusion, nonmapped = remapFusion(temp.to_dict()['HUGO_SYMBOL'], fusion, "COMMENTS")
         fusion['ENTREZ_GENE_ID'] = [int(float(i)) for i in fusion['ENTREZ_GENE_ID']]
         return(fusion)
