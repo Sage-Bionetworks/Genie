@@ -366,7 +366,7 @@ Seventeen of the nineteen GENIE participating centers performed tumor-only seque
     \item{Somatically mutable germline sites at MSH6:F1088, TP53:R290, TERT:E280,\\ ASXL1:G645\_G646.}
 \end{itemize}
 
-The resulting MAF filtered by the gnomAD allele frequency (AF) columns.  If any variant had a gnomAD subpopulation AF of 0.0005 or greater, it was considered a germline variant and filtered out.  This 0.0005 threshold was selected because it tagged no more than 1\% of the somatic calls across all MSK-IMPACT samples with patient-matched controls.\\\\
+The resulting MAF was filtered by the gnomAD allele frequency (AF) columns.  If any variant had a gnomAD subpopulation AF of 0.0005 or greater, it was filtered out as a germline variant.  This 0.0005 threshold was selected because it tagged no more than 1\% of the somatic calls across all MSK-IMPACT samples with patient-matched controls.\\\\
 
 
 \addcontentsline{toc}{section}{Description of Data Files}
