@@ -114,12 +114,13 @@ def consortiumToPublic(syn, processingDate, genie_version,
     consortiumReleaseWalk = synapseutils.walk(syn, releaseId)
 
     consortiumRelease = next(consortiumReleaseWalk)
-    clinical = [syn.get(synid, followLink=True)
-                for filename, synid in consortiumRelease[2]
-                if filename == "data_clinical.txt"][0]
-    gene_matrix = [syn.get(synid, followLink=True)
-                   for filename, synid in consortiumRelease[2]
-                   if filename == "data_gene_matrix.txt"][0]
+    for filename, synid in consortiumRelease[2]:
+        if filename == "data_clinical.txt":
+            clinical = syn.get(synid, followLink=True)
+        elif filename == "data_gene_matrix.txt":
+            gene_matrix = syn.get(synid, followLink=True)
+        elif filename == "assay_information.txt":
+            assay_info = syn.get(synid, followLink=True)
 
     clinicalDf = pd.read_csv(clinical.path, sep="\t", comment="#")
     gene_matrixdf = pd.read_csv(gene_matrix.path, sep="\t")
@@ -156,7 +157,7 @@ def consortiumToPublic(syn, processingDate, genie_version,
     storeFile(syn, clinical_path, public_release_preview, genie_version,
               name="data_clinical.txt")
 
-    create_case_lists.main(clinical_path, data_gene_panel_path,
+    create_case_lists.main(clinical_path, assay_info.path,
                            database_to_staging.CASE_LIST_PATH, "genie_public")
 
     caseListFiles = os.listdir(database_to_staging.CASE_LIST_PATH)
