@@ -671,6 +671,11 @@ def store_maf_files(syn,
         with open(MUTATIONS_CENTER_PATH % center, 'w'):
             pass
     used_entities = []
+    # Must get the headers (because can't assume headers are the same order)
+    maf_ent = syn.get(centerMafSynIdsDf.id[0])
+    headerdf = pd.read_csv(maf_ent.path, sep="\t", comment="#", nrows=0)
+    column_order = headerdf.columns
+
     for _, mafSynId in enumerate(centerMafSynIdsDf.id):
         maf_ent = syn.get(mafSynId)
         logger.info(maf_ent.path)
@@ -682,6 +687,8 @@ def store_maf_files(syn,
                                     chunksize=100000)
 
             for mafchunk in mafchunks:
+                # Reorder column headers
+                mafchunk = mafchunk[column_order]
                 # Get center for center staging maf
                 # Configure maf
                 configured_mafdf = configure_maf(
