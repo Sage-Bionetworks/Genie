@@ -181,7 +181,8 @@ def consortiumToPublic(syn, processingDate, genie_version,
                                "data_gene_matrix.txt",
                                "data_clinical_patient.txt",
                                "data_guide.pdf",
-                               "release_notes.pdf"]):
+                               "release_notes.pdf",
+                               "samples_to_retract.csv"]):
             # data_gene_matrix was processed above because it had to be
             # used for generating caselists
             continue
@@ -211,7 +212,7 @@ def consortiumToPublic(syn, processingDate, genie_version,
         elif "mutation" in entName:
             mutation = syn.get(entId, followLink=True)
             mutationDf = pd.read_csv(mutation.path, sep="\t", comment="#")
-            mutationDf = commonVariantFilter(mutationDf)
+            # mutationDf = commonVariantFilter(mutationDf)
             mutationDf['FILTER'] = "PASS"
             mutationDf = mutationDf[
                 mutationDf['Tumor_Sample_Barcode'].isin(publicReleaseSamples)]

@@ -1,0 +1,497 @@
+\documentclass[a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{longtable}
+\usepackage{tocloft}
+\usepackage{amssymb}
+\usepackage{blindtext}
+ \cftpagenumbersoff{section}
+ \cftpagenumbersoff{subsection}
+\usepackage{color}   %May be necessary if you want to color links
+\usepackage{hyperref}
+\usepackage{float}
+\hypersetup{
+    colorlinks=true, %set true if you want colored links
+    linktoc=all,     %set to all if you want both sections and subsections linked
+    linkcolor=blue,  %choose some color if you want links to stand out
+}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\rhead{{{release}}}
+\lhead{\today}
+
+\title{AACR GENIE {{release}} Data Guide}
+\author{AACR}
+
+
+% Definition of \maketitle
+\makeatletter         
+\def\@maketitle{
+\begin{center}
+\includegraphics[width=1.0\textwidth]{{{genie_banner}}}\\[8ex]
+{\Huge \@title }\\[4ex] 
+{\Large  \@author}\\[4ex] 
+\@date\\[8ex]
+\end{center}}
+\makeatother
+
+\begin{document}
+
+
+\SweaveOpts{concordance=TRUE}
+
+
+<<echo=F, include=F, results=hide>>=
+library(xtable)
+library(synapser)
+library(ggplot2)
+library(ggpubr)
+library(glue)
+
+get_release_folder_synid <- function(database_synid_mappingid, release) {
+  database_synid_mapping = synTableQuery(glue('select * from {synid}',
+                                              synid = database_synid_mappingid))
+  database_synid_mappingdf = synapser::as.data.frame(database_synid_mapping)
+  release_folder_ind = database_synid_mappingdf$Database == "releaseFolder"
+  release_folder_fileview_synid = database_synid_mappingdf$Id[release_folder_ind]
+
+  choose_from_release = synTableQuery(glue("select distinct(name) as releases from {synid} where ",
+                                           "name not like 'Release%' and name <> 'case_lists'",
+                                           synid = release_folder_fileview_synid))
+  releases = synapser::as.data.frame(choose_from_release)
+  if (!any(releases$releases %in% release)) {
+    stop(glue("Must choose correct release: {releases}",
+              releases = paste0(releases$releases, collapse = ", ")))
+  }
+
+  release_folder = synTableQuery(glue("select id from {synid} where name = '{release}'",
+                                      synid = release_folder_fileview_synid,
+                                      release = release),
+                                 includeRowIdAndRowVersion = F)
+  release_folder$asDataFrame()$id
+}
+
+
+get_file_mapping = function(release_folder_synid) {
+  release_ent = synGet(release_folder_synid)
+  print(release_ent$properties$name)
+  release_files = synGetChildren(release_folder_synid)
+  release_files_list = as.list(release_files)
+  file_mapping = sapply(release_files_list, function(release_file) {
+    mapping = c()
+    if (release_file$name == "genie_combined.bed") {
+      release_file$name = "genomic_information.txt"
+    }
+    mapping[release_file$name] = release_file$id
+    mapping
+  })
+  file_mapping
+}
+
+
+get_list_assay_info_table <- function(allowed_values, assayinfodf, col) {
+  na_ind = is.na(assayinfodf[,col])
+  seq_assays = assayinfodf$SEQ_PIPELINE_ID[!na_ind]
+  col_per_panel = matrix(nrow = length(seq_assays),
+                         ncol = length(allowed_values),
+                         dimnames = list(seq_assays, allowed_values))
+  for (panel in seq_assays) {
+    str_value = assayinfodf[,col][assayinfodf$SEQ_PIPELINE_ID == panel]
+    str_value_vector = unlist(strsplit(str_value, ";"))
+    col_per_panel[panel, ] = ''
+    col_per_panel[panel, str_value_vector] = "\\checkmark"
+  }
+  col_per_panel
+}
+
+tryCatch({
+  synLogin()
+}, error = function(err) {
+  genie_user = "{{username}}"
+  genie_pass = "{{password}}"
+  synLogin(genie_user, genie_pass)
+})
+
+#database_synid_mappingid = 'syn10967259'
+database_synid_mappingid = "{{database_synid}}"
+release = "{{release}}"
+
+release_folder_synid <- get_release_folder_synid(database_synid_mappingid, release)
+
+# Get release files mapping
+release_files_mapping = get_file_mapping(release_folder_synid)
+
+# bed_synid = release_files_mapping[['genomic_information.txt']]
+# maf_synid = release_files_mapping[['data_mutations_extended.txt']]
+# sample_synid = release_files_mapping[['data_clinical_patient.txt']]
+assay_synid = release_files_mapping[['assay_information.txt']]
+
+
+assayinfo = suppressMessages(synGet(assay_synid, followLink = T))
+assayinfodf = read.csv(assayinfo$path, sep = "\t", stringsAsFactors = F)
+
+pipelinedf = assayinfodf[!duplicated(assayinfodf$SEQ_PIPELINE_ID), ]
+processed_centers = unique(assayinfodf$CENTER)
+
+centers = suppressMessages(synTableQuery(glue('select "Center Abbreviation", "Center" from syn16982837 ',
+                                              "where \"Center Abbreviation\" in ('{centers}')",
+                                              centers = paste(processed_centers, collapse = "','")),
+                                         includeRowIdAndRowVersion = F))
+
+genomic_profile = suppressMessages(synTableQuery(glue('select * from syn21642088 ',
+                                                      "where center in ('{centers}')",
+                                                       centers = paste(processed_centers, collapse = "','")),
+                                                 includeRowIdAndRowVersion = F))
+
+@
+
+\maketitle
+
+\tableofcontents
+
+\newpage
+
+\addcontentsline{toc}{section}{About this Document}
+\section*{About this Document}
+
+This document provides an overview of {{release}} release of American Association for Cancer Research (AACR) GENIE data.
+
+\addcontentsline{toc}{section}{Version of Data}
+\section*{Version of Data}
+
+AACR GENIE Project Data: Version {{release}}\\\\
+AACR Project GENIE data versions follow a numbering scheme derived from \href{https://semver.org/}{semantic versioning}, where the digits in the version correspond to: major.patch-release-type.  "Major" releases are public releases of new sample data.  "Patch" releases are corrections to major releases, including data retractions.  "Release-type" refers to whether the release is a public AACR Project GENIE release or a private/consortium-only release.  Public releases will be denoted with the nomenclature "X.X-public" and consortium-only private releases will be denoted with the nomenclature "X.X-consortium".
+
+
+\addcontentsline{toc}{section}{Data Access}
+\section*{Data Access}
+AACR GENIE Data is currently available via two mechanisms:
+\begin{itemize}
+    \item Synapse Platform (Sage Bionetworks):  https://synapse.org/genie
+    \item cBioPortal for Cancer Genomics (MSK): https://www.cbioportal.org/genie/
+\end{itemize}
+
+
+\addcontentsline{toc}{section}{Terms Of Access}
+\section*{Terms Of Access}
+All users of the AACR Project GENIE data must agree to the following terms of use; failure to abide by any term herein will result in revocation of access.
+
+\begin{itemize}
+    \item Users will not attempt to identify or contact individual participants from whom these data were collected by any means.
+    \item Users will not redistribute the data without express written permission from the AACR Project GENIE Coordinating Center (send email to:  info@aacrgenie.org).
+\end{itemize}
+When publishing or presenting work using or referencing the AACR Project GENIE dataset please include the following attributions:
+
+\begin{itemize}
+   \item Please cite: \emph{The AACR Project GENIE Consortium. AACR Project GENIE: Powering Precision Medicine Through An International Consortium, Cancer Discov. 2017 Aug;7(8):818-831} and include the version of the dataset used.
+   \item The authors would like to acknowledge the American Association for Cancer Research and its financial and material support in the development of the AACR Project GENIE registry, as well as members of the consortium for their commitment to data sharing. Interpretations are the responsibility of study authors.
+\end{itemize}
+Posters and presentations should include the AACR Project GENIE logo.
+
+
+
+\addcontentsline{toc}{section}{Introduction to AACR GENIE}
+\section*{Introduction to AACR GENIE}
+
+The AACR Project Genomics, Evidence, Neoplasia, Information, Exchange (GENIE) is a multi-phase, multi-year, international data-sharing project that aims to catalyze precision cancer medicine.  The GENIE platform will integrate and link clinical-grade cancer genomic data with clinical outcome data for tens of thousands of cancer patients treated at multiple international institutions. The project fulfills an unmet need in oncology by providing the statistical power necessary to improve clinical decision-making, to identify novel therapeutic targets, to understand of patient response to therapy, and to design new biomarker-driven clinical trials.  The project will also serve as a prototype for aggregating, harmonizing, and sharing clinical-grade, next-generation sequencing (NGS) data obtained during routine medical practice.\\\\
+The data within GENIE is being shared with the global research community.  The database currently contains CLIA-/ISO-certified genomic data obtained during the course of routine practice at multiple international institutions (Table 1), and will continue to grow as more patients are treated at additional participating centers.
+
+<<results=tex, echo=F>>=
+xtab = xtable(centers$asDataFrame(),
+              caption = 'Participating Centers')
+align(xtab) <- "r|l|p{90mm}|"
+
+print(xtab, include.rownames = F,
+      floating = F, caption.placement = "top",
+      tabular.environment = "longtable",
+      hline.after = rep(c(-1:(nrow(xtab) - 1)),1))
+
+@
+
+
+\addcontentsline{toc}{section}{Human Subjects Protection and Privacy}
+\section*{Human Subjects Protection and Privacy}
+
+Protection of patient privacy is paramount, and the AACR GENIE Project therefore requires that each participating center share data in a manner consistent with patient consent and center-specific Institutional Review Board (IRB) policies. The exact approach varies by center, but largely falls into one of three categories: IRB-approved patient-consent to sharing of de-identified data, captured at time of molecular testing; IRB waivers and; and IRB approvals of GENIE-specific research proposals.  Additionally, all data has been de-identified via the HIPAA Safe Harbor Method.  Full details regarding the HIPAA Safe Harbor Method are available online at:  https://www.hhs.gov/hipaa/for-professionals/privacy/special-topics/de-identification/.
+
+\addcontentsline{toc}{section}{Summary of Sequence Pipeline}
+\section*{Summary of Sequence Pipeline}
+
+Traditionally, the SEQ\_ASSAY\_ID was used as an institution's identifier for their assays when each assay had one associated gene panel.  As GENIE grew, we wanted to support an assay having multiple gene panels.  SEQ\_ASSAY\_ID was repurposed to be an identifier for a center's assay OR panel.  For those centers that have multiple panels per assay, we introduced SEQ\_PIPELINE\_ID (pipeline), which encompasses multiple SEQ\_ASSAY\_ID (panel).
+
+<<results=tex, echo=F>>=
+
+number_of_panels = xtable(table(pipelinedf$CENTER),
+                          col.names = c("center", "number of panels/pipelines"),
+                          caption = 'Number of pipelines per Center')
+names(number_of_panels) = "Number of Panels/Pipelines"
+align(number_of_panels) <- "|r|l|"
+
+print(number_of_panels, floating = F,
+      caption.placement = "top",
+      tabular.environment = "longtable",
+      hline.after = rep(c(-1:(nrow(number_of_panels) - 1)),1))
+
+@
+
+
+\begin{figure}[H]
+\begin{center}
+<<echo = F, fig=TRUE, fig.width = 5, fig.height = 6>>=
+library_selection <- ggplot(pipelinedf, aes(library_selection)) +
+  geom_bar() +
+  theme_bw() +
+  labs(x = "Library Selection", y = "# of Panels/Pipelines")
+library_strategy <- ggplot(pipelinedf, aes(library_strategy)) +
+  geom_bar() +
+  theme_bw() +
+  labs(x = "Library Strategy", y = "# of Panels/Pipelines")
+
+platform <- ggplot(pipelinedf, aes(platform)) +
+  geom_bar() +
+  theme_bw() +
+  labs(x = "Platform", y = "# of Panels/Pipelines")
+
+specimen_tumor_cellularity <- ggplot(pipelinedf,
+                                     aes(specimen_tumor_cellularity)) +
+  geom_bar() +
+  theme_bw() +
+  labs(x = "Specimen Tumor Cellularity", y = "# of Panels/Pipelines")
+
+h = ggarrange(library_selection, library_strategy,
+              platform,
+              specimen_tumor_cellularity,
+              labels = c("A", "B", "C", "D"),
+              ncol = 2, nrow = 2)
+print(h)
+@
+\end{center}
+\caption{Distribution of library selection, library strategy, platform, and specimen tumor cellularity across Panels/Pipelines}
+\end{figure}
+
+
+<<results=tex, echo=F>>=
+allowed_coverage = c('hotspot_regions', 'coding_exons',
+                     'introns', 'promoters')
+coverage_per_panel = get_list_assay_info_table(allowed_coverage,
+                                               pipelinedf,
+                                               "coverage")
+info_tab = xtable(coverage_per_panel,
+                  caption = 'Coverage per Panel/Pipeline')
+align(info_tab) <- "|r|c|c|c|c|"
+print(info_tab, floating = F, caption.placement = "top",
+      tabular.environment = "longtable",
+      sanitize.text.function = function(x) {gsub("_", "\\_", x, fixed = TRUE)},
+      hline.after = rep(c(-1:(nrow(info_tab) - 1)),1))
+
+@
+
+<<results=tex, echo=F>>=
+allowed_alterations = c("snv", "small_indels", "gene_level_cna",
+                        "intragenic_cna", "structural_variants")
+
+alterations_per_panel = get_list_assay_info_table(allowed_alterations,
+                                                  pipelinedf,
+                                                  "alteration_types")
+
+info_tab = xtable(alterations_per_panel,
+                  caption = 'Alteration Types per Panel/Pipeline')
+
+align(info_tab) <- "|r|c|c|c|c|c|"
+print(info_tab, floating = F, caption.placement = "top",
+      tabular.environment = "longtable",
+      sanitize.text.function = function(x) {gsub("_", "\\_", x, fixed = TRUE)},
+      hline.after = rep(c(-1:(nrow(info_tab) - 1)),1))
+
+
+@
+
+
+
+<<results=tex, echo=F>>=
+allowed_specimen_types = c("FFPE", 'fresh_frozen')
+
+specimen_per_panel = get_list_assay_info_table(allowed_specimen_types,
+                                               pipelinedf,
+                                               "preservation_technique")
+
+info_tab = xtable(specimen_per_panel,
+                  caption = 'Preservation Techniques per Panels/Pipelines')
+align(info_tab) <- "|r|c|c|"
+print(info_tab, floating = F, caption.placement = "top",
+      tabular.environment = "longtable",
+      sanitize.text.function = function(x) {gsub("_", "\\_", x, fixed = TRUE)},
+      hline.after = rep(c(-1:(nrow(info_tab) - 1)),1))
+@
+
+
+<<results=tex, echo=F>>=
+gene_number_info = assayinfodf[, c("SEQ_ASSAY_ID", "calling_strategy", "number_of_genes", "target_capture_kit")]
+gene_number_info$number_of_genes <- as.integer(gene_number_info$number_of_genes)
+info_tab = xtable(gene_number_info[order(gene_number_info$SEQ_ASSAY_ID), ],
+                  caption = 'Sequence Assay Genomic Information')
+names(info_tab) <- c('SEQ_ASSAY_ID','Calling Strategy','Number Of Genes', 'Target Capture Kit')
+align(info_tab) <- "r|c|c|p{14mm}|p{70mm}|"
+print(info_tab, include.rownames = F, floating = F,
+      caption.placement = "top", tabular.environment = "longtable", size="small",
+      hline.after = rep(c(-1:(nrow(info_tab) - 1)),1))
+@
+
+
+\addcontentsline{toc}{subsection}{Genomic Profiling at Each Center}
+\subsection*{Genomic Profiling at Each Center}
+
+
+<<results=tex, echo=F>>=
+genomic_profiledf = genomic_profile$asDataFrame()
+profiles = paste(genomic_profiledf$genomic_profile, collapse = "\\\\\\\\\\ ")
+profiles = gsub("\\\\", "\\", profiles, fixed = TRUE)
+profiles = gsub("\\\\", "\\", profiles, fixed = TRUE)
+cat(profiles)
+@
+
+
+
+\addcontentsline{toc}{section}{Pipeline for Annotating Mutations and Filtering Putative Germline SNPs}
+\section*{Pipeline for Annotating Mutations and Filtering Putative Germline SNPs}
+
+Contributing GENIE centers provided mutation data in \href{http://samtools.github.io/hts-specs/}{Variant Call Format (VCF)} or Mutation Annotation Format (\href{https://docs.gdc.cancer.gov/Data/File\_Formats/MAF\_Format}{GDC MAF v1.0.0}) with additional fields for read counts supporting variant alleles, reference alleles, and total depth. Some "MAF-like" text files with \href{https://github.com/mskcc/vcf2maf/blob/v1.6.17/data/minimalist\_test\_maf.tsv}{minimal required columns} were also received from the participating centers. These various input formats were converted into a complete tab-separated MAF format, with \href{https://www.genomenexus.org/}{Genome Nexus}.\\\\
+While the GENIE data available from Sage contains all mutation data, the following mutation types are automatically filtered upon import into the \href{http://www.cbioportal.org/genie}{cBioPortal}: Silent, Intronic, 3' UTR, 3' Flank, 5' UTR, 5' Flank and Intergenic region (IGR).\\\\
+Seventeen of the nineteen GENIE participating centers performed tumor-only sequencing i.e. without also sequencing a patient-matched control sample like blood, to isolate somatic events. These centers minimized artifacts and germline events using pooled controls from unrelated individuals, or using databases of known artifacts, common germline variants, and recurrent somatic mutations. However, there remains a risk that such centers may inadvertently release germline variants that can theoretically be used for patient re-identification. To minimize this risk, the GENIE consortium developed a stringent germline filtering pipeline, and applied it uniformly to all variants across all centers. This pipeline flags sufficiently recurrent artifacts and germline events reported by the Exome Aggregation Consortium (\href{http://exac.broadinstitute.org}{ExAC}). Specifically, the non-TCGA subset VCF of ExAC 0.3.1 was used after excluding known somatic events:\\
+
+\begin{itemize}
+    \item{Hotspots from Chang et al. minus some likely artifacts.\\(dx.doi.org/10.1038/nbt.3391)}
+    \item{Somatic mutations associated with clonal hematopoietic expansion from Xie et al.\\(dx.doi.org/10.1038/nm.3733)}
+    \item{Somatically mutable germline sites at MSH6:F1088, TP53:R290, TERT:E280,\\ ASXL1:G645\_G646.}
+\end{itemize}
+
+The resulting MAF was filtered by the gnomAD allele frequency (AF) columns.  If any variant had a gnomAD subpopulation AF of 0.0005 or greater, it was filtered out as a germline variant.  This 0.0005 threshold was selected because it tagged no more than 1\% of the somatic calls across all MSK-IMPACT samples with patient-matched controls.\\\\
+
+
+\addcontentsline{toc}{section}{Description of Data Files}
+\section*{Description of Data Files}
+
+
+Description on most of the data files can be found under the "Data files" section for \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats}{cBioPortal file formats}.
+
+
+\begin{center}
+\begin{longtable}{ |p{45mm}|p{40mm}|p{55mm}| }
+\caption{GENIE Data Files} \\
+  \hline
+File Name & Description & Details \\ 
+  \hline
+data\_mutations\_extended.txt & Mutation data & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#mutation-data}{MAF format} \\
+   \hline
+data\_CNA.txt & Discritized copy number data.  \newline Note: Not all centers contributed copy number data to GENIE. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#discrete-copy-number-data}{CNA format} \\
+   \hline
+data\_fusions.txt & Structural variant data. \newline Note: not all centers contributed structural rearrangement data to GENIE. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#fusion-data}{Fusion format} \\
+   \hline
+genomic\_information.txt &  File describing genomic coordinates covered by all platforms for GENIE data.  \newline Note: Not all centers contributed copy number data to GENIE. & This is not a cBioPortal file format. \newline \textbf{Chromosome}, \textbf{Start\_Position}, \textbf{End\_Position}: Gene positions. \newline \textbf{Hugo\_Symbol}: Re-mapped gene symbol based on gene positions. \textbf{ID}: Center submitted gene symbols. \newline \textbf{SEQ\_ASSAY\_ID}: The institutional assay identifier for genomic testing platform. \newline \textbf{Feature\_Type}: "exon", "intron", or "intergenic". \newline \textbf{includeInPanel}: Used to define gene panel files for cBioPortal. \newline \textbf{clinicalReported}: These are the genes that were clinically Reported. Blank means information not provided.\\
+   \hline
+assay\_information.txt & Assay information & This is not a cBioPortal file format. \newline \textbf{is\_paried\_end}, \textbf{library\_selection}, , \textbf{library\_strategy}, \textbf{platform}, \textbf{read\_length}, \textbf{target\_capture\_kit}, \textbf{instrument\_model}: defined by \href{https://docs.gdc.cancer.gov/Data\_Dictionary/viewer/#?view=table-definition-view&id=read\_group}{GDC read group} \newline \textbf{number\_of\_genes}: Number of genes from which variants are called \newline \textbf{variant\_classifications}: List of types of variants that are reported for this assay. \newline \textbf{gene\_padding}: Number of basepairs to add to exon endpoints for the inBED filter.  \newline \textbf{alteration\_types}: List of alteration types. \newline \textbf{specimen\_type}: List of specimen types \newline \textbf{specimen\_tumor\_cellularity}: Tumor Cellularity Cutoff \newline \textbf{calling\_strategy}: Yumor only or tumor normal \newline \textbf{coverage}: List of coverage \\
+   \hline
+genie\_data\_cna\_hg19.seg  & Segmented copy number data.  \newline Note: Not all centers contributed copy number data to GENIE. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#segmented-data}{SEG format} \\
+   \hline
+data\_clinical.txt & De-identified tier 1 clinical data. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#clinical-data}{clinical format}. See Clinical Data section below for more details. \\
+   \hline
+\end{longtable}
+\end{center}
+
+
+
+\addcontentsline{toc}{section}{Clinical Data}
+\section*{Clinical Data}
+
+\begin{center}
+\begin{longtable}{ |p{45mm}|p{40mm}|p{50mm}| }
+\caption{GENIE Clinical Data Fields} \\
+  \hline
+Data Element & Example Values & Data Description \\ 
+  \hline
+AGE\_AT\_SEQ\_REPORT & Integer values, <18 or >89.  &  The age of the patient at the time that the sequencing results were reported. Age is masked for patients aged 90 years and greater and for patients under 18 years. \\
+   \hline
+CENTER & MSK & The center submitting the clinical and genomic data   \\
+   \hline
+ETHNICITY & Non-Spanish/non-Hispanic \newline Spanish/Hispanic \newline Unknown & Indication of Spanish/Hispanic origin of the patient; this data element maps to the NAACCR v16, Element \#190. Institutions not collecting Spanish/Hispanic origin have set this column to Unknown. \\
+   \hline
+ONCOTREE\_CODE & LUAD & The primary cancer diagnosis "main type", based on the \href{http://oncotree.mskcc.org}{OncoTree ontology}. The version of Oncotree ontology that was used for GENIE {{release}} is \href{http://oncotree.mskcc.org/#/home?version={{oncotree}}}{{{oncotree}}} \\
+   \hline
+PATIENT\_ID & GENIE-JHU-1234 & The unique, anonymized patient identifier for the GENIE project. Conforms to the following the convention: GENIE-CENTER-1234. The first component is the string, "GENIE"; the second component is the Center abbreviation. The third component is an anonymized unique identifier for the patient.\\
+   \hline
+PRIMARY\_RACE & Asian \newline Black \newline Native American \newline Other \newline Unknown \newline White & The primary race recorded for the patient; this data element maps to the NAACCR v16, Element \#160. For institutions collecting more than one race category, this race code is the primary race for the patient. Institutions not collecting race have set this field to Unknown. \\
+   \hline
+SAMPLE\_ID & GENIE-JHU-1234-9876 & The unique, anonymized sample identifier for the GENIE project. Conforms to the following the convention: GENIE-CENTER-1234-9876. The first component is the string, "GENIE"; the second component is the Center abbreviation. The third component is an anonymized, unique patient identifier. The fourth component is a unique identifier for the sample that will distinguish between two or more specimens from a single patient. \\
+   \hline
+SAMPLE\_TYPE &  Primary \newline Metastasis \newline Unspecified \newline Not Applicable or Heme & The specimen's type including primary, metastasis and etc... \\
+   \hline
+SAMPLE\_TYPE\_DETAILED &  Primary tumor \newline Lymph node metastasis & The specimen's detailed type based on its location, including primary site, site of local recurrence, distant metastasis or hematologic malignancy. \\
+   \hline
+SEQ\_ASSAY\_ID & DFCI-ONCOPANEL-1 & The institutional assay identifier for genomic testing platform. Components are separated by hyphens, with the first component corresponding to the Center's abbreviation. All specimens tested by the same platform should have the same identifier. \\
+   \hline
+SEX & Female, Male & The patient's sex code; this data element maps to the NAACCR v16, Element \#220. \\
+   \hline
+CANCER\_TYPE & Non-Small Cell Lung Cancer & The primary cancer diagnosis "main type", based on the \href{http://oncotree.mskcc.org}{OncoTree ontology}. For example, the OncoTree code of LUAD maps to: "Non-Small Cell Lung Cancer".  The version of Oncotree ontology that was used for GENIE {{release}} is \href{http://oncotree.mskcc.org/#/home?version={{oncotree}}}{{{oncotree}}} \\
+   \hline
+CANCER\_TYPE\_DETAILED & Lung Adenocarcinoma & The primary cancer diagnosis label, based on the \href{http://oncotree.mskcc.org}{OncoTree ontology}. For example, the OncoTree code of LUAD maps to the label: "Lung Adenocarcinoma (LUAD)". The version of Oncotree ontology that was used for GENIE {{release}} is \href{http://oncotree.mskcc.org/#/home?version={{oncotree}}}{{{oncotree}}}  \\
+   \hline
+\end{longtable}
+\end{center}
+
+Cancer types are reported using the \href{http://oncotree.mskcc.org}{OncoTree ontology} originally developed at Memorial Sloan Kettering Cancer Center. The {{release}} uses the OncoTree version {{oncotree}}. The centers participating in GENIE applied the OncoTree cancer types to the tested specimens in a variety of methods depending on center-specific workflows. A brief description of how the cancer type assignment process for each center is specified in Table 9.
+
+
+<<results=tex, echo=F>>=
+
+genomic_prof = xtable(genomic_profiledf[, c('center', 'oncotree_assignment')],
+                      caption = 'Center Strategies for OncoTree Assignment')
+align(genomic_prof) <- "|c|p{10mm}|p{120mm}|"
+print(genomic_prof, floating = F, caption.placement = "top",
+      tabular.environment = "longtable", include.rownames = FALSE,
+      hline.after = rep(c(-1:(nrow(genomic_profiledf) - 1)),1))
+
+@
+
+
+
+\addcontentsline{toc}{section}{Abbreviations and Acronym Glossary}
+\section*{Abbreviations and Acronym Glossary}
+For center abbreviations please see Table 1.
+
+\begin{center}
+\begin{longtable}{ |p{20mm}|p{100mm}| }
+  \hline
+Abbreviation & Full Term \\
+  \hline
+AACR & American Association for Cancer Research, Philadelphia, PA, USA \\
+   \hline
+CNA & Copy number alterations \\
+   \hline
+CNV & Copy number variants \\
+   \hline
+FFPE & Formalin-fixed, paraffin-embedded \\
+   \hline
+GENIE & Genomics, Evidence, Neoplasia, Information, Exchange \\
+   \hline
+HIPAA & Health Insurance Portability and Accountability Act \\
+   \hline
+IRB & Institutional Review Board \\
+   \hline
+MAF & Mutation annotation format \\
+   \hline
+NAACCR & North American Association of Central Cancer Registries \\
+   \hline
+NGS & Next-generation sequencing \\
+   \hline
+PCR & Polymerase chain reaction \\
+   \hline
+SNP & Single-nucleotide polymorphism \\
+   \hline
+SNV & Single-nucleotide variants \\
+   \hline
+VCF & Variant Call Format \\
+   \hline
+\end{longtable}
+\end{center}
+\end{document}
