@@ -65,21 +65,23 @@ class vcf(FileTypeFormat):
         total_error = ""
         warning = ""
         if not all(required_headers.isin(vcfdf.columns)):
-            total_error += ("Your vcf file must have these headers: "
+            total_error += ("vcf: Must have these headers: "
                             "CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO.\n")
         else:
             # No duplicated values
             primary_cols = ["#CHROM", "POS", "REF", "ALT"]
             if vcfdf.duplicated(primary_cols).any():
-                total_error += "Your vcf file should not have duplicate rows\n"
+                total_error += (
+                    "vcf: Must not have duplicate variants.\n"
+                )
 
             if vcfdf[['#CHROM', 'POS']].isnull().values.any():
-                total_error += ("Your vcf file may contain rows that are "
+                total_error += ("vcf: May contain rows that are "
                                 "space delimited instead of tab delimited.\n")
 
         if len(vcfdf.columns) > 8:
             if "FORMAT" not in vcfdf.columns:
-                total_error += ("Your vcf file must have FORMAT header "
+                total_error += ("vcf: Must have FORMAT header "
                                 "if genotype columns exist.\n")
 
         # Require that they report variants mapped to
@@ -89,15 +91,15 @@ class vcf(FileTypeFormat):
         if have_column:
             nochr = ["chr" in i for i in vcfdf['#CHROM'] if isinstance(i, str)]
             if sum(nochr) > 0:
-                warning += ("Your vcf file should not have the chr prefix "
+                warning += ("vcf: Should not have the chr prefix "
                             "in front of chromosomes.\n")
             if sum(vcfdf['#CHROM'].isin(["chrM"])) > 0:
-                total_error += "Your vcf file must not have variants on chrM.\n"
+                total_error += "vcf: Must not have variants on chrM.\n"
 
         # No white spaces
         white_space = vcfdf.apply(lambda x: contains_whitespace(x), axis=1)
         if sum(white_space) > 0:
-            warning += ("Your vcf file should not have any "
+            warning += ("vcf: Should not have any "
                         "white spaces in any of the columns.\n")
 
         # I can also recommend a `bcftools query` command that
