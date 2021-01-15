@@ -69,7 +69,7 @@ class vcf(FileTypeFormat):
                             "CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO.\n")
         else:
             # No duplicated values
-            primary_cols = ["#CHROM", "POS", "ID", "REF", "ALT"]
+            primary_cols = ["#CHROM", "POS", "REF", "ALT"]
             if vcfdf.duplicated(primary_cols).any():
                 total_error += "Your vcf file should not have duplicate rows\n"
 
