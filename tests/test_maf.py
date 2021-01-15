@@ -132,19 +132,21 @@ def test_invalid_validation():
         CHROMOSOME=[1, 2, 3, 4, 2, 4],
         T_ALT_COUNT=[1, 2, 3, 4, 3, 4],
         START_POSITION=[1, 2, 3, 4, 2, 4],
-        REFERENCE_ALLELE=["A", "A", "A", "A", "A", "A"],
-        TUMOR_SAMPLE_BARCODE=["ID1-1", "ID1-1", "ID1-1", "ID1-1", "ID1-1", "ID1-1"],
+        REFERENCE_ALLELE=["A ", "A ", "A", "A ", "A ", " A"],
+        TUMOR_SAMPLE_BARCODE=["ID1-1", "ID1-1", "ID1-1",
+                              "ID1-1", "ID1-1", "ID1-1"],
         N_DEPTH=[1, 2, 3, 4, 3, 4],
         N_REF_COUNT=[1, 2, 3, 4, 3, 4],
         N_ALT_COUNT=[1, 2, 3, 4, 3, 4],
-        TUMOR_SEQ_ALLELE2=["NA", float('nan'), "A", "A", "A", "A"]))
+        TUMOR_SEQ_ALLELE2=["NA", float('nan'), " A", "A ", " A", " A"]))
 
     with patch.object(genie_registry.maf, "_check_tsa1_tsa2",
                       return_value="") as check_tsa1_tsa2:
         error, warning = maf_class._validate(mafDf)
         check_tsa1_tsa2.assert_called_once_with(mafDf)
     expectedErrors = (
-        "Mutation File: Should not have duplicate rows\n"
+        "Mutation File: Should not have duplicated variants. "
+        "Samples with duplicated variants: ID1-1\n"
         "Mutation File: "
         "If you are missing T_DEPTH, you must have T_REF_COUNT!\n"
         "Mutation File: "

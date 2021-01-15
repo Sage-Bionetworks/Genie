@@ -144,9 +144,22 @@ class maf(FileTypeFormat):
             primary_cols = ['CHROMOSOME', 'START_POSITION',
                             'REFERENCE_ALLELE', 'TUMOR_SAMPLE_BARCODE',
                             'TUMOR_SEQ_ALLELE2']
-            if mutationDF.duplicated(primary_cols).any():
-                total_error += ("Mutation File: "
-                                "Should not have duplicate rows\n")
+            # Strip white space if string column
+            for col in primary_cols:
+                if mutationDF[col].dtype == object:
+                    mutationDF[col] = mutationDF[col].str.strip()
+            duplicated_idx = mutationDF.duplicated(primary_cols)
+            # Find samples with duplicated variants
+            duplicated_variants = mutationDF['TUMOR_SAMPLE_BARCODE'][
+                duplicated_idx
+            ].unique().tolist()
+
+            if duplicated_idx.any():
+                total_error += (
+                    "Mutation File: Should not have duplicated variants. "
+                    "Samples with duplicated variants: "
+                    f"{', '.join(duplicated_variants)}\n"
+                )
 
         check_col = process_functions.checkColExist(mutationDF, "T_DEPTH")
         if not check_col and not SP:
