@@ -51,11 +51,11 @@ def test_validation():
 
     error, warning = vcfClass._validate(vcfDf)
     expectedError = (
-        "Your vcf file must have these headers: CHROM, POS, ID, REF, "
+        "vcf: Must have these headers: CHROM, POS, ID, REF, "
         "ALT, QUAL, FILTER, INFO.\n"
-        "Your vcf file must have FORMAT header if genotype columns exist.\n")
+        "vcf: Must have FORMAT header if genotype columns exist.\n")
     expectedWarning = (
-        "Your vcf file should not have any white spaces "
+        "vcf: Should not have any white spaces "
         "in any of the columns.\n")
     assert error == expectedError
     assert warning == expectedWarning
@@ -70,11 +70,11 @@ def test_validation():
                           "INFO": ['AAK1', 'AAED1', 'AAAS', 'AAK1']})
 
     error, warning = vcfClass._validate(vcfDf)
-    expectedError = ("Your vcf file should not have duplicate rows\n"
-                     "Your vcf file may contain rows that are "
+    expectedError = ("vcf: Must not have duplicate variants.\n"
+                     "vcf: May contain rows that are "
                      "space delimited instead of tab delimited.\n"
-                     "Your vcf file must not have variants on chrM.\n")
-    expectedWarning = ("Your vcf file should not have the chr prefix "
+                     "vcf: Must not have variants on chrM.\n")
+    expectedWarning = ("vcf: Should not have the chr prefix "
                        "in front of chromosomes.\n")
     assert error == expectedError
     assert warning == expectedWarning

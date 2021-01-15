@@ -27,7 +27,7 @@ def _check_tsa1_tsa2(df):
         )
         if not (tsa1_eq_ref or tsa1_eq_tsa2):
             error = (
-                "Mutation File: Contains both "
+                "maf: Contains both "
                 "TUMOR_SEQ_ALLELE1 and TUMOR_SEQ_ALLELE2 columns. "
                 "The values in TUMOR_SEQ_ALLELE1 must be the same as "
                 "all the values in REFERENCE_ALELLE OR TUMOR_SEQ_ALLELE2."
@@ -55,7 +55,7 @@ def _check_allele_col(df, col):
         # CHECK: The value "NA" can't be used as a placeholder
         if sum(df[col].fillna('') == "NA") > 0:
             warning = (
-                "Mutation File: "
+                "maf: "
                 f"{col} column contains 'NA' values, "
                 "which cannot be placeholders for blank values.  "
                 "Please put in empty strings for blank values.\n"
@@ -63,7 +63,7 @@ def _check_allele_col(df, col):
         # CHECK: There can't be any null values
         if sum(df[col].isnull()) > 0:
             error = (
-                f"Mutation File: {col} can't have any blank or null values.\n"
+                f"maf: {col} can't have any blank or null values.\n"
             )
 
     return error, warning
@@ -128,8 +128,7 @@ class maf(FileTypeFormat):
         if not all([process_functions.checkColExist(mutationDF, i)
                     for i in correct_column_headers]):
             total_error += (
-                "Mutation File: "
-                "Must at least have these headers: {}. "
+                "maf: Must at least have these headers: {}. "
                 "If you are writing your maf file with R, please make"
                 "sure to specify the 'quote=FALSE' parameter.\n".format(
                     ",".join([i for i in correct_column_headers
@@ -137,23 +136,36 @@ class maf(FileTypeFormat):
         else:
             # CHECK: First column must be in the first_header list
             if mutationDF.columns[0] not in first_header:
-                total_error += ("Mutation File: First column header must be "
+                total_error += ("maf: First column header must be "
                                 "one of these: {}.\n".format(
                                     ", ".join(first_header)))
             # No duplicated values
             primary_cols = ['CHROMOSOME', 'START_POSITION',
                             'REFERENCE_ALLELE', 'TUMOR_SAMPLE_BARCODE',
                             'TUMOR_SEQ_ALLELE2']
-            if mutationDF.duplicated(primary_cols).any():
-                total_error += ("Mutation File: "
-                                "Should not have duplicate rows\n")
+            # Strip white space if string column
+            for col in primary_cols:
+                if mutationDF[col].dtype == object:
+                    mutationDF[col] = mutationDF[col].str.strip()
+            duplicated_idx = mutationDF.duplicated(primary_cols)
+            # Find samples with duplicated variants
+            duplicated_variants = mutationDF['TUMOR_SAMPLE_BARCODE'][
+                duplicated_idx
+            ].unique().tolist()
+
+            if duplicated_idx.any():
+                total_error += (
+                    "maf: Must not have duplicated variants. "
+                    "Samples with duplicated variants: "
+                    f"{', '.join(duplicated_variants)}\n"
+                )
 
         check_col = process_functions.checkColExist(mutationDF, "T_DEPTH")
         if not check_col and not SP:
             if not process_functions.checkColExist(mutationDF, "T_REF_COUNT"):
                 total_error += (
-                    "Mutation File: "
-                    "If you are missing T_DEPTH, you must have T_REF_COUNT!\n")
+                    "maf: If missing T_DEPTH, must have T_REF_COUNT!\n"
+                )
 
         # CHECK: Must have TUMOR_SEQ_ALLELE2
         error, warn = _check_allele_col(mutationDF, "TUMOR_SEQ_ALLELE2")
@@ -164,9 +176,8 @@ class maf(FileTypeFormat):
         if not all([process_functions.checkColExist(mutationDF, i)
                     for i in optional_headers]) and not SP:
             warning += (
-                "Mutation File: "
-                "Does not have the column headers that can give extra "
-                "information to the processed mutation file: {}.\n".format(
+                "maf: Does not have the column headers that can give extra "
+                "information to the processed maf: {}.\n".format(
                     ", ".join([
                         i for i in optional_headers
                         if i not in mutationDF.columns.values])))
@@ -184,8 +195,7 @@ class maf(FileTypeFormat):
                 for i in mutationDF['CHROMOSOME']]
             if sum(invalidValues) > 0:
                 total_error += (
-                    "Mutation File: "
-                    "CHROMOSOME column cannot have any values that "
+                    "maf: CHROMOSOME column cannot have any values that "
                     "start with 'chr' or any 'WT' values.\n")
 
         error = _check_tsa1_tsa2(mutationDF)
