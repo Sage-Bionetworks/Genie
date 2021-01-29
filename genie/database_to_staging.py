@@ -1345,6 +1345,8 @@ def stagingToCbio(syn, processingDate, genieVersion,
     # Remove patients without any sample or patient ids
     clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isnull()]
     clinicalDf = clinicalDf[~clinicalDf['PATIENT_ID'].isnull()]
+    # Make sure to remove any null ONCOTREE_CODE
+    clinicalDf = clinicalDf[~clinicalDf['ONCOTREE_CODE'].isnull()]
 
     remove_mafInBed_variants, \
         removeForMergedConsortiumSamples, \
