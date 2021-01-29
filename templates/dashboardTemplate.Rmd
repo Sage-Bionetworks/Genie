@@ -581,7 +581,7 @@ missing_t_alt_count_idx =  is.na(this_mut$t_alt_count)
 
 missing_t_depth = table(this_mut$Center[missing_t_depth_idx])
 missing_t_ref_count = table(this_mut$Center[missing_t_ref_count_idx])
-missing_t_alt_count = table(this_mut$Center[missing_t_alt_count])
+missing_t_alt_count = table(this_mut$Center[missing_t_alt_count_idx])
 centers = unique(c(names(missing_t_depth),
                    names(missing_t_ref_count),
                    names(missing_t_alt_count)))
