@@ -439,7 +439,7 @@ Please use the below distributions to access the validity of your clinical data.
 ### Race
 Some european sites like GRCC, CRUK, and NKI do not collect race information from their patients.  If your institution does not either, you should see empty barplots.
 
-```{r}
+```{r race}
 #Center X Race
 par(mar = c(10,3,3,1))
 plotCenterXRace(this_patient)
@@ -448,7 +448,7 @@ plotCenterXRace(this_patient)
 ### Ethnicity
 Some european sites like GRCC, CRUK, and NKI do not collect ethnicity information from their patients.  If your institution does not either, you should see empty barplots.
 
-```{r}
+```{r ethnicity}
 #Center X Ethnicity
 par(mar = c(10,3,3,1))
 plotCenterXEthnicity(this_patient)
@@ -457,7 +457,7 @@ plotCenterXEthnicity(this_patient)
 ### Sex
 CRUK submits samples from breast cancer patients, so their samples are all female.
 
-```{r}
+```{r sex}
 #Center X Sex
 par(mar = c(10,3,3,1))
 plotCenterXSex(this_patient)
@@ -467,17 +467,16 @@ plotCenterXSex(this_patient)
 CHOP submits mainly pediatric cases, so their distribution is different from the rest.
 
 
-```{r}
+```{r age}
 #Center X Age
 par(mar = c(10,3,3,1))
 plotCenterXAge(this_samples)
 ```
 
+<!-- ```{r seqyear, include=F, echo=F} -->
+<!-- check_seq_year = "SEQ_YEAR" %in% colnames(this_samples) -->
+<!-- ``` -->
 
-
-```{r, include=F, echo=F}
-check_seq_year = "SEQ_YEAR" %in% colnames(this_samples)
-```
 
 <!-- `r if(check_seq_year) {"### Sequencing year\nThis is to show the SEQ_YEAR distribution."}` -->
 
@@ -490,7 +489,7 @@ check_seq_year = "SEQ_YEAR" %in% colnames(this_samples)
 ### Cancer Type (Null)
 This will show NULL or UNKNOWN cancer types.
 
-```{r}
+```{r cancertype}
 unknown_cancer_type = this_samples$CANCER_TYPE %in% c("UNKNOWN", '')
 null_cancer_type = is.na(this_samples$CANCER_TYPE)
 
@@ -498,14 +497,14 @@ na_cancer_type_subset = this_samples[unknown_cancer_type | null_cancer_type, ]
 kable(table(na_cancer_type_subset$CANCER_TYPE, na_cancer_type_subset$CENTER))
 ```
 
-### Vtial Status ('Missing' values)
+### Vital Status ('Missing' values)
 
 These are the centers with 'missing' vital status
 values: "Unknown", "Not Collected" for:
 
 * YEAR_CONTACT
 
-```{r}
+```{r yearcontact}
 missing_vs = this_patient$YEAR_CONTACT %in% c("Unknown", 'Not Collected')
 
 missing_subset = this_patient[missing_vs, ]
@@ -516,7 +515,7 @@ kable(table(missing_subset$YEAR_CONTACT, missing_subset$CENTER))
 * INT_CONTACT
 
 
-```{r}
+```{r intcontact}
 missing_vs = this_patient$INT_CONTACT %in% c("Unknown", 'Not Collected')
 
 missing_subset = this_patient[missing_vs, ]
@@ -525,7 +524,7 @@ kable(table(missing_subset$INT_CONTACT, missing_subset$CENTER))
 
 * YEAR_DEATH
 
-```{r}
+```{r yeardeath}
 missing_vs = this_patient$YEAR_DEATH %in% c("Unknown", 'Not Collected')
 
 missing_subset = this_patient[missing_vs, ]
@@ -534,7 +533,7 @@ kable(table(missing_subset$YEAR_DEATH, missing_subset$CENTER))
 
 * INT_DOD
 
-```{r}
+```{r intdod}
 missing_vs = this_patient$INT_DOD %in% c("Unknown", 'Not Collected')
 
 missing_subset = this_patient[missing_vs, ]
@@ -543,7 +542,7 @@ kable(table(missing_subset$INT_DOD, missing_subset$CENTER))
 
 * DEAD
 
-```{r}
+```{r dead}
 missing_vs = this_patient$DEAD %in% c("Unknown", 'Not Collected')
 
 missing_subset = this_patient[missing_vs, ]
@@ -564,7 +563,7 @@ duplicated_variants  = sum(duplicated_idx) > 0
 
 `r if(duplicated_variants) {"---\n\n### Duplicated Variants\nThese duplicated variants will be removed if not corrected."}`
 
-```{r, echo=F}
+```{r duplicated, echo=F}
 if (duplicated_variants) {
   kable(variant[duplicated_idx], col.names=NULL)
 }
@@ -574,7 +573,7 @@ if (duplicated_variants) {
 
 ## Missing Variant Counts
 These are the sites with missing `t_depth`, `t_alt_count` and `t_ref_count` values.
-```{r, echo=F}
+```{r variantcounts, echo=F}
 missing_t_depth_idx = is.na(this_mut$t_depth)
 missing_t_ref_count_idx = is.na(this_mut$t_ref_count)
 missing_t_alt_count_idx =  is.na(this_mut$t_alt_count)
@@ -601,14 +600,14 @@ kable(missing_counts)
 
 
 
-```{r}
+```{r, echo=F}
 non_somatic <- this_mut[this_mut$Reference_Allele==this_mut$Tumor_Seq_Allele2 &
                           this_mut$Reference_Allele==this_mut$Tumor_Seq_Allele1,]
 ```
 
 `r if(nrow(non_somatic) > 0) {"---\n\n### Non-somatic Mutations\nThese mutations should be removed."}`
 
-```{r}
+```{r nonsomatic, echo=F}
 if (nrow(non_somatic) > 0) {
   kable(non_somatic[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
                         "Tumor_Seq_Allele1", "Tumor_Seq_Allele2",
