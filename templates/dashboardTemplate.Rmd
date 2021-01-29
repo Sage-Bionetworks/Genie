@@ -567,7 +567,7 @@ duplicated_variants  = sum(duplicated_idx) > 0
 if (duplicated_variants) {
   kable(this_mut[duplicated_idx, c("Chromosome", "Start_Position",
                                    "Reference_Allele",
-                                   "Tumor_Seq_allele2",
+                                   "Tumor_Seq_Allele2",
                                    "Tumor_Sample_Barcode")])
 }
 ```
