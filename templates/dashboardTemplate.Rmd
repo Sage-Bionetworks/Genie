@@ -598,8 +598,6 @@ kable(missing_counts)
 ```
 
 
-
-
 ```{r, echo=F}
 non_somatic <- this_mut[this_mut$Reference_Allele==this_mut$Tumor_Seq_Allele2 &
                           this_mut$Reference_Allele==this_mut$Tumor_Seq_Allele1,]
@@ -612,25 +610,42 @@ if (nrow(non_somatic) > 0) {
   kable(non_somatic[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
                         "Tumor_Seq_Allele1", "Tumor_Seq_Allele2",
                         "Tumor_Sample_Barcode")])
+
 }
 ```
 
 
-```{r}
-invalid <- this_mut[nchar(this_mut$Reference_Allele) == nchar(this_mut$Tumor_Seq_Allele2) &
-              nchar(this_mut$Reference_Allele)==2 &
-              this_mut$Variant_Type == "DNP",]
-```
-
-`r if(nrow(invalid) > 0) {"---\n\n### SNV labelled as DNP\nThese are variants that have variant type DNP that should be SNV."}`
-
-```{r snvdnp, echo=F}
-if (nrow(invalid) > 0) {
-  kable(invalid[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
-                    "Tumor_Seq_Allele1", "Tumor_Seq_Allele2",
-                    "Tumor_Sample_Barcode")])
+```{r invalid_variant_type}
+invalid_dnp <- this_mut[
+  nchar(this_mut$Reference_Allele) == nchar(this_mut$Tumor_Seq_Allele2) &
+    nchar(this_mut$Reference_Allele)==2 &
+    this_mut$Variant_Type == "DNP",
+]
+if (nrow(invalid_dnp) > 0) {
+  write.csv(invalid_dnp, "snv_as_dnp.csv", row.names=F, quote=F)
+  # ent = synStore(File("snv_as_dnp.csv", parent=release_synid))
+  dnp_ent = synStore(File("snv_as_dnp.csv", parent="syn4990358"))
+  unlink("snv_as_dnp.csv")
 }
+
+invalid_onp <- this_mut[
+  nchar(this_mut$Reference_Allele) == nchar(this_mut$Tumor_Seq_Allele2) &
+    nchar(this_mut$Reference_Allele) == 3 &
+    this_mut$Variant_Type == "ONP",]
+
+if (nrow(invalid_onp) > 0) {
+  write.csv(invalid_onp, "snv_as_onp.csv", row.names=F, quote=F)
+  # ent = synStore(File("snv_as_dnp.csv", parent=release_synid))
+  onp_ent = synStore(File("snv_as_onp.csv", parent="syn4990358"))
+  unlink("snv_as_onp.csv")
+}
+
 ```
+
+`r if(nrow(invalid) > 0) {paste0("---\n\n### SNV labelled as DNP\nThese are variants that have variant type DNP that should be SNV: ", "https://www.synapse.org/#!Synapse:", dnp_ent$properties$id}`
+
+`r if(nrow(invalid) > 0) {paste0("---\n\n### SNV labelled as ONP\nThese are variants that have variant type ONP that should be SNV: ", "https://www.synapse.org/#!Synapse:", onp_ent$properties$id}`
+
 
 ---
 
