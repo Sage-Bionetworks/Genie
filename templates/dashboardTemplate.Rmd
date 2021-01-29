@@ -277,7 +277,8 @@ maf_synid = database_synid_mappingdf$Id[
 mafdb = synTableQuery(sprintf('select Hugo_Symbol, Center, Chromosome, Tumor_Sample_Barcode, HGVSp_Short from %s', maf_synid),
                       includeRowIdAndRowVersion = F)
 mafdbdf = mafdb$asDataFrame()
-mafdbdf = mafdb[mafdb$Tumor_Sample_Barcode %in% this_samples$SAMPLE_ID, ]
+# Subset mafdf
+mafdbdf = mafdbdf[mafdbdf$Tumor_Sample_Barcode %in% this_samples$SAMPLE_ID, ]
 
 # Get most recent public release clinical file
 public_release_synid = get_latest_public_release(release)
