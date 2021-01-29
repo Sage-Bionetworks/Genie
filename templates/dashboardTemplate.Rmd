@@ -633,8 +633,7 @@ if (nrow(invalid_dnp) > 0) {
                            "Variant_Type")],
             "snv_as_dnp.csv",
             row.names=F, quote=F)
-  # ent = synStore(File("snv_as_dnp.csv", parent=release_synid))
-  dnp_ent = synStore(File("snv_as_dnp.csv", parent="syn4990358"))
+  dnp_ent = synStore(File("snv_as_dnp.csv", parent=release_synid))
   unlink("snv_as_dnp.csv")
 }
 
@@ -648,8 +647,7 @@ if (nrow(invalid_onp) > 0) {
                             "Tumor_Seq_Allele2", "Tumor_Sample_Barcode",
                             "Variant_Type")],
             "snv_as_onp.csv", row.names=F, quote=F)
-  # ent = synStore(File("snv_as_onp.csv", parent=release_synid))
-  onp_ent = synStore(File("snv_as_onp.csv", parent="syn4990358"))
+  onp_ent = synStore(File("snv_as_onp.csv", parent=release_synid))
   unlink("snv_as_onp.csv")
 }
 
