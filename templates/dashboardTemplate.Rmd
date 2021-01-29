@@ -562,12 +562,40 @@ duplicated_idx = duplicated(variant)
 duplicated_variants  = sum(duplicated_idx) > 0
 ```
 
-`r if(duplicated_variants) {"### Duplicated Variants\nThese duplicated variants will be removed if not corrected."}`
+`r if(duplicated_variants) {"---\n\n### Duplicated Variants\nThese duplicated variants will be removed if not corrected."}`
 
 ```{r, echo=F}
 if (duplicated_variants) {
   kable(variant[duplicated_idx], col.names=NULL)
 }
+```
+
+---
+
+## Missing Variant Counts
+These are the sites with missing `t_depth`, `t_alt_count` and `t_ref_count` values.
+```{r, echo=F}
+missing_t_depth_idx = is.na(this_mut$t_depth)
+missing_t_ref_count_idx = is.na(this_mut$t_ref_count)
+missing_t_alt_count_idx =  is.na(this_mut$t_alt_count)
+
+missing_t_depth = table(this_mut$Center[missing_t_depth_idx])
+missing_t_ref_count = table(this_mut$Center[missing_t_ref_count_idx])
+missing_t_alt_count = table(this_mut$Center[missing_t_alt_count])
+centers = unique(c(names(missing_t_depth),
+                   names(missing_t_ref_count),
+                   names(missing_t_alt_count)))
+missing_counts = matrix(data=NA, nrow=length(centers), ncol=3,
+                        dimnames = list(centers,
+                                        c("t_depth", "t_alt_count",
+                                          "t_ref_count")))
+
+
+missing_counts[names(missing_t_depth), 't_depth'] = missing_t_depth
+missing_counts[names(missing_t_ref_count), 't_ref_count'] = missing_t_ref_count
+missing_counts[names(missing_t_alt_count), 't_alt_count'] = missing_t_alt_count
+missing_counts[is.na(missing_counts)] = 0
+kable(missing_counts)
 ```
 
 ---
