@@ -416,6 +416,7 @@ For patient retractions submitted between these months, the records will be remo
 
 ## Flagged Mutations
 This is a count of how many flagged mutations a center has. Most of these variants are potential artifacts flagged by manual review of cBioPortal. These variants have been removed from the data. Please inform Sage Bionetworks:
+
 * Suggestions for variants that should be part of this list
 * If any variant shouldn't be part of this list
 
