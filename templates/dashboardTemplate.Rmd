@@ -616,6 +616,22 @@ if (nrow(non_somatic) > 0) {
 ```
 
 
+```{r}
+invalid <- this_mut[nchar(this_mut$Reference_Allele) == nchar(this_mut$Tumor_Seq_Allele2) &
+              nchar(this_mut$Reference_Allele)==2 &
+              this_mut$Variant_Type == "DNP",]
+```
+
+`r if(nrow(invalid) > 0) {"---\n\n### SNV labelled as DNP\nThese are variants that have variant type DNP that should be SNV."}`
+
+```{r snvdnp, echo=F}
+if (nrow(invalid) > 0) {
+  kable(invalid[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
+                    "Tumor_Seq_Allele1", "Tumor_Seq_Allele2",
+                    "Tumor_Sample_Barcode")])
+}
+```
+
 ---
 
 ## Top 5 most frequently mutated genes per pipeline
