@@ -598,6 +598,25 @@ missing_counts[is.na(missing_counts)] = 0
 kable(missing_counts)
 ```
 
+
+
+
+```{r}
+non_somatic <- this_mut[this_mut$Reference_Allele==this_mut$Tumor_Seq_Allele2 &
+                          this_mut$Reference_Allele==this_mut$Tumor_Seq_Allele1,]
+```
+
+`r if(nrow(non_somatic) > 0) {"---\n\n### Non-somatic Mutations\nThese mutations should be removed."}`
+
+```{r}
+if (nrow(non_somatic) > 0) {
+  kable(non_somatic[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
+                        "Tumor_Seq_Allele1", "Tumor_Seq_Allele2",
+                        "Tumor_Sample_Barcode")])
+}
+```
+
+
 ---
 
 ## Top 5 most frequently mutated genes per pipeline
