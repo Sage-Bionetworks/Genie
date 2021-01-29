@@ -430,6 +430,7 @@ kable(table(subset_mut$blacklist, subset_mut$Center),
       caption = "Blacklist variant count")
 ```
 
+
 ---
 
 ## Distribution of Clinical Attributes
@@ -473,6 +474,7 @@ plotCenterXAge(this_samples)
 ```
 
 
+
 ```{r, include=F, echo=F}
 check_seq_year = "SEQ_YEAR" %in% colnames(this_samples)
 ```
@@ -485,6 +487,30 @@ check_seq_year = "SEQ_YEAR" %in% colnames(this_samples)
 <!-- } -->
 <!-- ``` -->
 
+## Cancer Type
+```{r}
+kable(table(this_samples$CANCER_TYPE, this_samples$CENTER))
+```
+
+
+
+```{r, include=F, echo=F}
+variant <- paste0(this_mut$Tumor_Sample_Barcode, "_",
+                  this_mut$Chromosome, ":",
+                  this_mut$Start_Position, "_",
+                  this_mut$Reference_Allele, "/",
+                  this_mut$Tumor_Seq_Allele2)
+duplicated_idx = duplicated(variant)
+duplicated_variants  = sum(duplicated_idx) > 0
+```
+
+`r if(duplicated_variants) {"### Duplicated Variants\nThese duplicated variants will be removed if not corrected."}`
+
+```{r, echo=F}
+if (duplicated_variants) {
+  kable(variant[duplicated_idx], col.names=NULL)
+}
+```
 
 ---
 
