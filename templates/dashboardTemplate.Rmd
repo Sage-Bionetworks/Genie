@@ -263,8 +263,10 @@ if (is.null(this_bed)) {
 this_assays = as.character(unique(this_samples$SEQ_ASSAY_ID))
 this_mut <- getFileDf("data_mutations_extended.txt", releaseFiles)
 assay_infodf = getFileDf("assay_information.txt", releaseFiles)
-black_list_variants <- synTableQuery("select * from syn18459663",
-                                     includeRowIdAndRowVersion = F)
+black_list_variants <- synTableQuery(
+  "select * from syn18459663 where filter_variant is true",
+  includeRowIdAndRowVersion = F
+)
 black_list_variantsdf = black_list_variants$asDataFrame()
 # this_cna <- getFileDf("data_CNA.txt", releaseFiles)
 #this_fus <- getFileDf("data_fusions.txt", releaseFiles)
@@ -272,7 +274,7 @@ black_list_variantsdf = black_list_variants$asDataFrame()
 maf_synid = database_synid_mappingdf$Id[
   database_synid_mappingdf$Database == "vcf2maf"
 ]
-mafdb = synTableQuery(sprintf('select Hugo_Symbol, Center, Chromosome, Tumor_Sample_Barcode, HGVSp_Short from %s where filter_variant is true', maf_synid),
+mafdb = synTableQuery(sprintf('select Hugo_Symbol, Center, Chromosome, Tumor_Sample_Barcode, HGVSp_Short from %s', maf_synid),
                       includeRowIdAndRowVersion = F)
 mafdbdf = mafdb$asDataFrame()
 mafdbdf = mafdb[mafdb$Tumor_Sample_Barcode %in% this_samples$SAMPLE_ID, ]
