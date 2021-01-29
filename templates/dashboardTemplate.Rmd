@@ -473,10 +473,10 @@ par(mar = c(10,3,3,1))
 plotCenterXAge(this_samples)
 ```
 
-<!-- ```{r seqyear, include=F, echo=F} -->
-<!-- check_seq_year = "SEQ_YEAR" %in% colnames(this_samples) -->
-<!-- ``` -->
 
+```{r seqyear, include=F, echo=F}
+check_seq_year = "SEQ_YEAR" %in% colnames(this_samples)
+```
 
 <!-- `r if(check_seq_year) {"### Sequencing year\nThis is to show the SEQ_YEAR distribution."}` -->
 
