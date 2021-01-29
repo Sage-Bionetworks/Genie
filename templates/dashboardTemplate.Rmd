@@ -565,7 +565,10 @@ duplicated_variants  = sum(duplicated_idx) > 0
 
 ```{r duplicated, echo=F}
 if (duplicated_variants) {
-  kable(variant[duplicated_idx], col.names=NULL)
+  kable(this_mut[duplicated_idx, c("Chromosome", "Start_Position",
+                                   "Reference_Allele",
+                                   "Tumor_Seq_allele2",
+                                   "Tumor_Sample_Barcode")])
 }
 ```
 
@@ -642,9 +645,9 @@ if (nrow(invalid_onp) > 0) {
 
 ```
 
-`r if(nrow(invalid) > 0) {paste0("---\n\n### SNV labelled as DNP\nThese are variants that have variant type DNP that should be SNV: ", "https://www.synapse.org/#!Synapse:", dnp_ent$properties$id}`
+`r if(nrow(invalid) > 0) {paste0("---\n\n### SNV labelled as DNP\nThese are variants that have variant type DNP that should be SNV: ", "https://www.synapse.org/#!Synapse:", dnp_ent$properties$id)}`
 
-`r if(nrow(invalid) > 0) {paste0("---\n\n### SNV labelled as ONP\nThese are variants that have variant type ONP that should be SNV: ", "https://www.synapse.org/#!Synapse:", onp_ent$properties$id}`
+`r if(nrow(invalid) > 0) {paste0("---\n\n### SNV labelled as ONP\nThese are variants that have variant type ONP that should be SNV: ", "https://www.synapse.org/#!Synapse:", onp_ent$properties$id)}`
 
 
 ---
