@@ -628,7 +628,11 @@ invalid_dnp <- this_mut[
     this_mut$Variant_Type == "DNP",
 ]
 if (nrow(invalid_dnp) > 0) {
-  write.csv(invalid_dnp, "snv_as_dnp.csv", row.names=F, quote=F)
+  write.csv(invalid_dnp[,c("Hugo_Symbol", "Chromosome", "Reference_Allele",
+                           "Tumor_Seq_Allele2", "Tumor_Sample_Barcode",
+                           "Variant_Type")],
+            "snv_as_dnp.csv",
+            row.names=F, quote=F)
   # ent = synStore(File("snv_as_dnp.csv", parent=release_synid))
   dnp_ent = synStore(File("snv_as_dnp.csv", parent="syn4990358"))
   unlink("snv_as_dnp.csv")
@@ -640,7 +644,10 @@ invalid_onp <- this_mut[
     this_mut$Variant_Type == "ONP",]
 
 if (nrow(invalid_onp) > 0) {
-  write.csv(invalid_onp, "snv_as_onp.csv", row.names=F, quote=F)
+  write.csv(invalid_onp[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
+                            "Tumor_Seq_Allele2", "Tumor_Sample_Barcode",
+                            "Variant_Type")],
+            "snv_as_onp.csv", row.names=F, quote=F)
   # ent = synStore(File("snv_as_onp.csv", parent=release_synid))
   onp_ent = synStore(File("snv_as_onp.csv", parent="syn4990358"))
   unlink("snv_as_onp.csv")
