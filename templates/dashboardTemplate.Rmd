@@ -487,7 +487,7 @@ check_seq_year = "SEQ_YEAR" %in% colnames(this_samples)
 <!-- } -->
 <!-- ``` -->
 
-## NA Cancer Type
+### Cancer Type (Null)
 This will show NULL or UNKNOWN cancer types.
 
 ```{r}
@@ -496,6 +496,66 @@ null_cancer_type = is.na(this_samples$CANCER_TYPE)
 
 na_cancer_type_subset = this_samples[unknown_cancer_type | null_cancer_type, ]
 kable(table(na_cancer_type_subset$CANCER_TYPE, na_cancer_type_subset$CENTER))
+```
+
+### YEAR_CONTACT ('Missing' values)
+These are the centers with 'missing' YEAR_CONTACT
+values: "Unknown", "Not Collected"
+
+```{r}
+missing_vs = this_patient$YEAR_CONTACT %in% c("Unknown", 'Not Collected')
+
+missing_subset = this_patient[missing_vs, ]
+kable(table(missing_subset$YEAR_CONTACT, missing_subset$CENTER))
+```
+
+
+### YEAR_DEATH ('Missing' values)
+
+These are the centers with 'missing' YEAR_DEATH
+values: "Unknown", "Not Collected"
+
+```{r}
+missing_vs = this_patient$YEAR_DEATH %in% c("Unknown", 'Not Collected')
+
+missing_subset = this_patient[missing_vs, ]
+kable(table(missing_subset$YEAR_DEATH, missing_subset$CENTER))
+```
+
+### INT_CONTACT ('Missing' values)
+
+These are the centers with 'missing' INT_CONTACT
+values: "Unknown", "Not Collected"
+
+```{r}
+missing_vs = this_patient$INT_CONTACT %in% c("Unknown", 'Not Collected')
+
+missing_subset = this_patient[missing_vs, ]
+kable(table(missing_subset$INT_CONTACT, missing_subset$CENTER))
+```
+
+### INT_DOD ('Missing' values)
+
+These are the centers with 'missing' INT_DOD
+values: "Unknown", "Not Collected"
+
+```{r}
+missing_vs = this_patient$INT_DOD %in% c("Unknown", 'Not Collected')
+
+missing_subset = this_patient[missing_vs, ]
+kable(table(missing_subset$INT_DOD, missing_subset$CENTER))
+```
+
+### DEAD ('Missing' values)
+
+These are the centers with 'missing' DEAD
+values: "Unknown", "Not Collected"
+
+```{r}
+missing_vs = this_patient$DEAD %in% c("Unknown", 'Not Collected')
+
+missing_subset = this_patient[missing_vs, ]
+kable(table(missing_subset$DEAD, missing_subset$CENTER))
 ```
 
 
