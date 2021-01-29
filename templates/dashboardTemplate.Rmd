@@ -645,9 +645,9 @@ if (nrow(invalid_onp) > 0) {
 
 ```
 
-`r if(nrow(invalid) > 0) {paste0("---\n\n### SNV labelled as DNP\nThese are variants that have variant type DNP that should be SNV: ", "https://www.synapse.org/#!Synapse:", dnp_ent$properties$id)}`
+`r if(nrow(invalid_dnp) > 0) {paste0("---\n\n### SNV labelled as DNP\nThese are variants that have variant type DNP that should be SNV: ", "https://www.synapse.org/#!Synapse:", dnp_ent$properties$id)}`
 
-`r if(nrow(invalid) > 0) {paste0("---\n\n### SNV labelled as ONP\nThese are variants that have variant type ONP that should be SNV: ", "https://www.synapse.org/#!Synapse:", onp_ent$properties$id)}`
+`r if(nrow(invalid_onp) > 0) {paste0("---\n\n### SNV labelled as ONP\nThese are variants that have variant type ONP that should be SNV: ", "https://www.synapse.org/#!Synapse:", onp_ent$properties$id)}`
 
 
 ---
