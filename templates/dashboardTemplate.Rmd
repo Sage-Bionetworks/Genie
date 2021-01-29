@@ -491,7 +491,7 @@ check_seq_year = "SEQ_YEAR" %in% colnames(this_samples)
 This will show NULL or UNKNOWN cancer types.
 
 ```{r}
-unknown_cancer_type = this_samples$CANCER_TYPE %in% "UNKNOWN"
+unknown_cancer_type = this_samples$CANCER_TYPE %in% c("UNKNOWN", '')
 null_cancer_type = is.na(this_samples$CANCER_TYPE)
 
 na_cancer_type_subset = this_samples[unknown_cancer_type | null_cancer_type, ]
