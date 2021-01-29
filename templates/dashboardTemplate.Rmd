@@ -415,10 +415,10 @@ For patient retractions submitted between these months, the records will be remo
 ---
 
 ## Flagged Mutations
-This is a count of how many flagged mutations a center has. Most of these variants are potential artifacts flagged by manual review of cBioPortal. These variants have been removed from the data. Please inform Sage Bionetworks:
+This is a count of how many flagged mutations a center has. Most of these variants are potential artifacts flagged by manual review of cBioPortal. These variants have been removed from the data. Please inform Sage Bionetworks about:
 
 * Suggestions for variants that should be part of this list
-* If any variant shouldn't be part of this list
+* Any variant shouldn't be part of this list
 
 ```{r blacklist}
 blacklist_variants = paste(black_list_variantsdf$Hugo_Symbol,
@@ -569,7 +569,8 @@ if (duplicated_variants) {
   kable(this_mut[duplicated_idx, c("Chromosome", "Start_Position",
                                    "Reference_Allele",
                                    "Tumor_Seq_Allele2",
-                                   "Tumor_Sample_Barcode")])
+                                   "Tumor_Sample_Barcode")],
+        row.names=F)
 }
 ```
 
@@ -613,13 +614,14 @@ non_somatic <- this_mut[this_mut$Reference_Allele==this_mut$Tumor_Seq_Allele2 &
 if (nrow(non_somatic) > 0) {
   kable(non_somatic[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
                         "Tumor_Seq_Allele1", "Tumor_Seq_Allele2",
-                        "Tumor_Sample_Barcode")], row.names = F)
+                        "Tumor_Sample_Barcode")],
+        row.names=F)
 
 }
 ```
 
 
-```{r invalid_variant_type, echo=F}
+```{r invalid_variant_type, echo=F, include=F}
 invalid_dnp <- this_mut[
   nchar(this_mut$Reference_Allele) == nchar(this_mut$Tumor_Seq_Allele2) &
     nchar(this_mut$Reference_Allele)==2 &
