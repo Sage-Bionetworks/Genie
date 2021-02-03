@@ -170,17 +170,21 @@ class maf(FileTypeFormat):
             )
         numerical_cols = ['T_DEPTH', 'T_ALT_COUNT', 'T_REF_COUNT',
                           'N_DEPTH', 'N_REF_COUNT', 'N_ALT_COUNT']
-        for numerical_col in numerical_cols:
-            col_exists = process_functions.checkColExist(mutationDF,
-                                                         numerical_col)
+        for col in numerical_cols:
+            col_exists = process_functions.checkColExist(mutationDF, col)
             if col_exists:
                 # Since NA is an allowed value, when reading in the dataframe
                 # the 'NA' string is not converted.  This will convert all
                 # 'NA' values in the numerical columns into actual float('nan')
-                remapped = mutationDF[numerical_col].map({"NA": float('nan')})
-                if remapped.dtype not in [int, float]:
+                mutationDF.loc[mutationDF[col] == "NA", col] = float('nan')
+                # Attempt to convert column to float
+                try:
+                    mutationDF[col] = mutationDF[col].astype(float)
+                except ValueError:
+                    pass
+                if mutationDF[col].dtype not in [int, float]:
                     total_error.write(
-                        f"maf: {numerical_col} must be a numerical column.\n"
+                        f"maf: {col} must be a numerical column.\n"
                     )
 
         # CHECK: Must have TUMOR_SEQ_ALLELE2
@@ -206,10 +210,11 @@ class maf(FileTypeFormat):
         if process_functions.checkColExist(mutationDF, "CHROMOSOME"):
             # CHECK: Chromosome column can't have any values that start
             # with chr or have any WT values
-            invalidValues = [
+            invalid_values = [
                 str(i).startswith("chr") or str(i) == "WT"
-                for i in mutationDF['CHROMOSOME']]
-            if sum(invalidValues) > 0:
+                for i in mutationDF['CHROMOSOME']
+            ]
+            if sum(invalid_values) > 0:
                 total_error.write(
                     "maf: CHROMOSOME column cannot have any values that "
                     "start with 'chr' or any 'WT' values.\n"
