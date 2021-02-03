@@ -159,10 +159,6 @@ class maf(FileTypeFormat):
                     "Samples with duplicated variants: "
                     f"{', '.join(duplicated_variants)}\n"
                 )
-            if mutationDF.T_ALT_COUNT.dtype not in [int, float]:
-                total_error.write(
-                    "maf: T_ALT_COUNT must be a numerical column."
-                )
 
         t_depth_exists = process_functions.checkColExist(mutationDF,
                                                          "T_DEPTH")
@@ -178,7 +174,11 @@ class maf(FileTypeFormat):
             col_exists = process_functions.checkColExist(mutationDF,
                                                          numerical_col)
             if col_exists:
-                if mutationDF[numerical_col].dtype not in [int, float]:
+                # Since NA is an allowed value, when reading in the dataframe
+                # the 'NA' string is not converted.  This will convert all
+                # 'NA' values in the numerical columns into actual float('nan')
+                remapped = mutationDF[numerical_col].map({"NA": float('nan')})
+                if remapped.dtype not in [int, float]:
                     total_error.write(
                         f"maf: {numerical_col} must be a numerical column.\n"
                     )
