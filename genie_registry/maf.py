@@ -1,10 +1,7 @@
 import os
 import logging
-import subprocess
 
 import pandas as pd
-import synapseclient
-from synapseclient.core.exceptions import SynapseHTTPError
 
 from genie.example_filetype_format import FileTypeFormat
 from genie import process_functions
@@ -159,13 +156,29 @@ class maf(FileTypeFormat):
                     "Samples with duplicated variants: "
                     f"{', '.join(duplicated_variants)}\n"
                 )
-
-        check_col = process_functions.checkColExist(mutationDF, "T_DEPTH")
-        if not check_col and not SP:
-            if not process_functions.checkColExist(mutationDF, "T_REF_COUNT"):
+            if mutationDF.T_ALT_COUNT.dtype not in [int, float]:
                 total_error += (
-                    "maf: If missing T_DEPTH, must have T_REF_COUNT!\n"
+                    "maf: T_ALT_COUNT must be a numerical column."
                 )
+
+        t_depth_exists = process_functions.checkColExist(mutationDF,
+                                                         "T_DEPTH")
+        t_ref_exists = process_functions.checkColExist(mutationDF,
+                                                       "T_REF_COUNT")
+        if not t_depth_exists and not t_ref_exists and not SP:
+            total_error += (
+                "maf: If missing T_DEPTH, must have T_REF_COUNT!\n"
+            )
+        numerical_cols = ['T_DEPTH', 'T_ALT_COUNT', 'T_REF_COUNT',
+                          'N_DEPTH', 'N_REF_COUNT', 'N_ALT_COUNT']
+        for numerical_col in numerical_cols:
+            col_exists = process_functions.checkColExist(mutationDF,
+                                                         numerical_col)
+            if col_exists:
+                if mutationDF[numerical_col].dtype not in [int, float]:
+                    total_error += (
+                        f"maf: {numerical_col} must be a numerical column.\n"
+                    )
 
         # CHECK: Must have TUMOR_SEQ_ALLELE2
         error, warn = _check_allele_col(mutationDF, "TUMOR_SEQ_ALLELE2")

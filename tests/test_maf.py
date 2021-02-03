@@ -34,7 +34,7 @@ def test_perfect_validation():
         T_ALT_COUNT=[1, 2, 3, 4, 3],
         T_DEPTH=[1, 2, 3, 4, 3],
         T_REF_COUNT=[1, 2, 3, 4, 3],
-        N_DEPTH=[1, 2, 3, 4, 3],
+        N_DEPTH=[1, 2, 3, float('nan'), 3],
         N_REF_COUNT=[1, 2, 3, 4, 3],
         N_ALT_COUNT=[1, 2, 3, 4, 3],
         TUMOR_SEQ_ALLELE2=["A", "A", "A", "A", "A"]))
@@ -135,7 +135,7 @@ def test_invalid_validation():
         TUMOR_SAMPLE_BARCODE=["ID1-1", "ID1-1", "ID1-1",
                               "ID1-1", "ID1-1", "ID1-1"],
         N_DEPTH=[1, 2, 3, 4, 3, 4],
-        N_REF_COUNT=[1, 2, 3, 4, 3, 4],
+        N_REF_COUNT=[1, 2, 3, "string", 3, 4],
         N_ALT_COUNT=[1, 2, 3, 4, 3, 4],
         TUMOR_SEQ_ALLELE2=["NA", float('nan'), " A", "A ", " A", " A"]))
 
@@ -148,6 +148,7 @@ def test_invalid_validation():
         "Samples with duplicated variants: ID1-1\n"
         "maf: "
         "If missing T_DEPTH, must have T_REF_COUNT!\n"
+        "maf: N_REF_COUNT must be a numerical column.\n"
         "maf: "
         "TUMOR_SEQ_ALLELE2 can't have any blank or null values.\n"
     )
