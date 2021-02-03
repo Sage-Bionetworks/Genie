@@ -1,3 +1,4 @@
+from io import StringIO
 import os
 import logging
 
@@ -118,13 +119,14 @@ class maf(FileTypeFormat):
 
         mutationDF.columns = [col.upper() for col in mutationDF.columns]
 
-        total_error = ""
+        # total_error = ""
+        total_error = StringIO()
         warning = ""
 
         # CHECK: Everything in correct_column_headers must be in mutation file
         if not all([process_functions.checkColExist(mutationDF, i)
                     for i in correct_column_headers]):
-            total_error += (
+            total_error.write(
                 "maf: Must at least have these headers: {}. "
                 "If you are writing your maf file with R, please make"
                 "sure to specify the 'quote=FALSE' parameter.\n".format(
@@ -133,9 +135,10 @@ class maf(FileTypeFormat):
         else:
             # CHECK: First column must be in the first_header list
             if mutationDF.columns[0] not in first_header:
-                total_error += ("maf: First column header must be "
-                                "one of these: {}.\n".format(
-                                    ", ".join(first_header)))
+                total_error.write(
+                    "maf: First column header must be "
+                    "one of these: {}.\n".format(", ".join(first_header))
+                )
             # No duplicated values
             primary_cols = ['CHROMOSOME', 'START_POSITION',
                             'REFERENCE_ALLELE', 'TUMOR_SAMPLE_BARCODE',
@@ -151,13 +154,13 @@ class maf(FileTypeFormat):
             ].unique().tolist()
 
             if duplicated_idx.any():
-                total_error += (
+                total_error.write(
                     "maf: Must not have duplicated variants. "
                     "Samples with duplicated variants: "
                     f"{', '.join(duplicated_variants)}\n"
                 )
             if mutationDF.T_ALT_COUNT.dtype not in [int, float]:
-                total_error += (
+                total_error.write(
                     "maf: T_ALT_COUNT must be a numerical column."
                 )
 
@@ -166,7 +169,7 @@ class maf(FileTypeFormat):
         t_ref_exists = process_functions.checkColExist(mutationDF,
                                                        "T_REF_COUNT")
         if not t_depth_exists and not t_ref_exists and not SP:
-            total_error += (
+            total_error.write(
                 "maf: If missing T_DEPTH, must have T_REF_COUNT!\n"
             )
         numerical_cols = ['T_DEPTH', 'T_ALT_COUNT', 'T_REF_COUNT',
@@ -176,13 +179,13 @@ class maf(FileTypeFormat):
                                                          numerical_col)
             if col_exists:
                 if mutationDF[numerical_col].dtype not in [int, float]:
-                    total_error += (
+                    total_error.write(
                         f"maf: {numerical_col} must be a numerical column.\n"
                     )
 
         # CHECK: Must have TUMOR_SEQ_ALLELE2
         error, warn = _check_allele_col(mutationDF, "TUMOR_SEQ_ALLELE2")
-        total_error += error
+        total_error.write(error)
         warning += warn
 
         # CHECK: Mutation file would benefit from columns in optional_headers
@@ -197,7 +200,7 @@ class maf(FileTypeFormat):
 
         # CHECK: Must have REFERENCE_ALLELE
         error, warn = _check_allele_col(mutationDF, "REFERENCE_ALLELE")
-        total_error += error
+        total_error.write(error)
         warning += warn
 
         if process_functions.checkColExist(mutationDF, "CHROMOSOME"):
@@ -207,14 +210,15 @@ class maf(FileTypeFormat):
                 str(i).startswith("chr") or str(i) == "WT"
                 for i in mutationDF['CHROMOSOME']]
             if sum(invalidValues) > 0:
-                total_error += (
+                total_error.write(
                     "maf: CHROMOSOME column cannot have any values that "
-                    "start with 'chr' or any 'WT' values.\n")
+                    "start with 'chr' or any 'WT' values.\n"
+                )
 
         error = _check_tsa1_tsa2(mutationDF)
-        total_error += error
+        total_error.write(error)
 
-        return total_error, warning
+        return total_error.getvalue(), warning
 
     def _get_dataframe(self, filePathList):
         """Get mutation dataframe"""
