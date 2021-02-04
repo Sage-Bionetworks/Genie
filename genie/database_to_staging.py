@@ -215,7 +215,7 @@ def remove_maf_samples(mafdf: pd.DataFrame,
     return mafdf
 
 
-def configure_maf(mafdf, remove_variants, flagged_variants, flagged_mutationsdf):
+def configure_maf(mafdf, remove_variants, flagged_variants):
     """Configures each maf dataframe, does germline filtering
 
     Args:
@@ -252,17 +252,6 @@ def configure_maf(mafdf, remove_variants, flagged_variants, flagged_mutationsdf)
         :, gnomad_cols
     ].max(axis=1, skipna=True) > 0.0005
 
-    # Flagged mutation filter
-    flagged_mutation_str = flagged_mutationsdf[
-        ['Hugo_Symbol', 'HGVSp_Short']
-    ].apply(lambda x: ' '.join(x.map(str)), axis=1)
-
-    maf_mutation_str = mafdf[['Hugo_Symbol', 'HGVSp_Short']].apply(
-        lambda x: ' '.join(x.map(str)), axis=1
-    )
-    # Location of flagged mutations
-    flagged_mutations_idx = maf_mutation_str.isin(flagged_mutation_str)
-
     # Remove specific variants
     to_remove_variants = variant.isin(remove_variants)
     # Genome Nexus successfully annotated (vcf2maf does not have this column)
@@ -271,7 +260,7 @@ def configure_maf(mafdf, remove_variants, flagged_variants, flagged_mutationsdf)
     # Make sure to only get variants that were successfully annotated
     success = mafdf['Annotation_Status'] == "SUCCESS"
 
-    mafdf = mafdf.loc[(~common_variants_idx & ~flagged_mutations_idx &
+    mafdf = mafdf.loc[(~common_variants_idx &
                        ~to_remove_variants & success),]
 
     fillnas = ['t_depth', 't_ref_count', 't_alt_count',
@@ -689,12 +678,6 @@ def store_maf_files(syn,
     maf_ent = syn.get(centerMafSynIdsDf.id[0])
     headerdf = pd.read_csv(maf_ent.path, sep="\t", comment="#", nrows=0)
     column_order = headerdf.columns
-    # Download flagged mutation table
-    flagged_mutations = syn.tableQuery(
-        "select * from syn18459663 where filter_variant is true"
-    )
-    flagged_mutationsdf = flagged_mutations.asDataFrame()
-
     for _, mafSynId in enumerate(centerMafSynIdsDf.id):
         maf_ent = syn.get(mafSynId)
         logger.info(maf_ent.path)
@@ -713,7 +696,6 @@ def store_maf_files(syn,
                 configured_mafdf = configure_maf(
                     mafchunk, remove_mafinbed_variants,
                     flagged_mutationInCis_variants,
-                    flagged_mutationsdf
                 )
                 # Create maf for release
                 merged_mafdf = remove_maf_samples(
