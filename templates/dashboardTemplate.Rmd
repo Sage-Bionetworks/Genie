@@ -406,7 +406,8 @@ For patient retractions submitted between these months, the records will be remo
 ---
 
 ## Flagged Mutations
-This is a count of how many flagged mutations a center has. Most of these variants are potential artifacts flagged by manual review of cBioPortal. These variants have been removed from the data. Please inform Sage Bionetworks about:
+This is a count of how many flagged mutations a center has. Most of these variants are potential
+artifacts flagged by manual review of cBioPortal. Please inform Sage Bionetworks about:
 
 * Suggestions for variants that should be part of this list
 * Any variant shouldn't be part of this list
@@ -613,30 +614,34 @@ if (nrow(non_somatic) > 0) {
 
 
 ```{r invalid_variant_type, echo=F, include=F}
-invalid_dnp <- this_mut[
+is_dnp <- this_mut[
   nchar(this_mut$Reference_Allele) == nchar(this_mut$Tumor_Seq_Allele2) &
     nchar(this_mut$Reference_Allele)==2 &
     this_mut$Variant_Type == "DNP",
 ]
-if (nrow(invalid_dnp) > 0) {
-  write.csv(invalid_dnp[,c("Hugo_Symbol", "Chromosome", "Reference_Allele",
-                           "Tumor_Seq_Allele2", "Tumor_Sample_Barcode",
-                           "Variant_Type")],
+not_dnp <- substr(this_mut[is_dnp]$Reference_Allele,1, 1) == substr(this_mut[is_dnp]$Tumor_Seq_Allele2, 1, 1) | 
+           substr(this_mut[is_dnp]$Reference_Allele, 1, 2) == substr(this_mut[is_dnp]$Tumor_Seq_Allele2, 1, 2)
+if (nrow(not_dnp) > 0) {
+  write.csv(not_dnp[,c("Hugo_Symbol", "Chromosome", "Reference_Allele",
+                       "Tumor_Seq_Allele2", "Tumor_Sample_Barcode",
+                       "Variant_Type")],
             "snv_as_dnp.csv",
             row.names=F, quote=F)
   dnp_ent = synStore(File("snv_as_dnp.csv", parent=release_synid))
   unlink("snv_as_dnp.csv")
 }
 
-invalid_onp <- this_mut[
+is_onp <- this_mut[
   nchar(this_mut$Reference_Allele) == nchar(this_mut$Tumor_Seq_Allele2) &
     nchar(this_mut$Reference_Allele) == 3 &
     this_mut$Variant_Type == "ONP",]
+not_onp<-substr(this_mut[is_onp]$Reference_Allele, 1, 1) == substr(this_mut[is_onp]$Tumor_Seq_Allele2, 1, 1) | 
+         substr(this_mut[is_onp]$Reference_Allele, 1, 2) == substr(this_mut[is_onp]$Tumor_Seq_Allele2, 1, 2)
 
-if (nrow(invalid_onp) > 0) {
-  write.csv(invalid_onp[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
-                            "Tumor_Seq_Allele2", "Tumor_Sample_Barcode",
-                            "Variant_Type")],
+if (nrow(not_onp) > 0) {
+  write.csv(not_onp[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
+                        "Tumor_Seq_Allele2", "Tumor_Sample_Barcode",
+                        "Variant_Type")],
             "snv_as_onp.csv", row.names=F, quote=F)
   onp_ent = synStore(File("snv_as_onp.csv", parent=release_synid))
   unlink("snv_as_onp.csv")
@@ -644,9 +649,9 @@ if (nrow(invalid_onp) > 0) {
 
 ```
 
-`r if(nrow(invalid_dnp) > 0) {paste0("---\n\n## SNV labelled as DNP\nThese are variants that have variant type DNP that should be SNV: ", "https://www.synapse.org/#!Synapse:", dnp_ent$properties$id)}`
+`r if(nrow(not_dnp) > 0) {paste0("---\n\n## SNV labelled as DNP\nThese are variants that have variant type DNP that should be SNV: ", "https://www.synapse.org/#!Synapse:", dnp_ent$properties$id)}`
 
-`r if(nrow(invalid_onp) > 0) {paste0("---\n\n## SNV labelled as ONP\nThese are variants that have variant type ONP that should be SNV: ", "https://www.synapse.org/#!Synapse:", onp_ent$properties$id)}`
+`r if(nrow(not_onp) > 0) {paste0("---\n\n## SNV labelled as ONP\nThese are variants that have variant type ONP that should be SNV: ", "https://www.synapse.org/#!Synapse:", onp_ent$properties$id)}`
 
 
 ---
