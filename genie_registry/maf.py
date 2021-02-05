@@ -121,7 +121,7 @@ class maf(FileTypeFormat):
 
         # total_error = ""
         total_error = StringIO()
-        warning = ""
+        warning = StringIO()
 
         # CHECK: Everything in correct_column_headers must be in mutation file
         if not all([process_functions.checkColExist(mutationDF, i)
@@ -190,22 +190,23 @@ class maf(FileTypeFormat):
         # CHECK: Must have TUMOR_SEQ_ALLELE2
         error, warn = _check_allele_col(mutationDF, "TUMOR_SEQ_ALLELE2")
         total_error.write(error)
-        warning += warn
+        warning.write(warn)
 
         # CHECK: Mutation file would benefit from columns in optional_headers
         if not all([process_functions.checkColExist(mutationDF, i)
                     for i in optional_headers]) and not SP:
-            warning += (
+            warning.write(
                 "maf: Does not have the column headers that can give extra "
                 "information to the processed maf: {}.\n".format(
                     ", ".join([
                         i for i in optional_headers
-                        if i not in mutationDF.columns.values])))
+                        if i not in mutationDF.columns.values]))
+            )
 
         # CHECK: Must have REFERENCE_ALLELE
         error, warn = _check_allele_col(mutationDF, "REFERENCE_ALLELE")
         total_error.write(error)
-        warning += warn
+        warning.write(warn)
 
         if process_functions.checkColExist(mutationDF, "CHROMOSOME"):
             # CHECK: Chromosome column can't have any values that start
@@ -223,7 +224,7 @@ class maf(FileTypeFormat):
         error = _check_tsa1_tsa2(mutationDF)
         total_error.write(error)
 
-        return total_error.getvalue(), warning
+        return total_error.getvalue(), warning.getvalue()
 
     def _get_dataframe(self, filePathList):
         """Get mutation dataframe"""
