@@ -263,8 +263,10 @@ if (is.null(this_bed)) {
 this_assays = as.character(unique(this_samples$SEQ_ASSAY_ID))
 this_mut <- getFileDf("data_mutations_extended.txt", releaseFiles)
 assay_infodf = getFileDf("assay_information.txt", releaseFiles)
-black_list_variants <- synTableQuery("select * from syn18459663",
-                                     includeRowIdAndRowVersion = F)
+black_list_variants <- synTableQuery(
+  "select * from syn18459663 where filter_variant is true",
+  includeRowIdAndRowVersion = F
+)
 black_list_variantsdf = black_list_variants$asDataFrame()
 # this_cna <- getFileDf("data_CNA.txt", releaseFiles)
 #this_fus <- getFileDf("data_fusions.txt", releaseFiles)
@@ -403,20 +405,24 @@ For patient retractions submitted between these months, the records will be remo
 
 ---
 
-## Blacklisted Variants
-This is a count of how many blacklisted variants a center has. For instance, it is likely that the BRAF p.V600M mutations are likely false positives. If your center shows up in this table, please investigate your variants. If you have suggestions for variants that should be part of this list, please inform Sage Bionetworks.
+## Flagged Mutations
+This is a count of how many flagged mutations a center has. Most of these variants are potential
+artifacts flagged by manual review of cBioPortal. Please inform Sage Bionetworks about:
+
+* Suggestions for variants that should be part of this list
+* Any variant shouldn't be part of this list
 
 ```{r blacklist}
 blacklist_variants = paste(black_list_variantsdf$Hugo_Symbol,
                            black_list_variantsdf$HGVSp_Short)
-subset_mut = this_mut[this_mut$Hugo_Symbol %in% black_list_variantsdf$Hugo_Symbol,
-                      c("Hugo_Symbol","Center","HGVSp_Short")]
+subset_mut = this_mut[this_mut$Hugo_Symbol %in% black_list_variantsdf$Hugo_Symbol, ]
 subset_mut$blacklist = paste(subset_mut$Hugo_Symbol,
                              subset_mut$HGVSp_Short)
 subset_mut = subset_mut[subset_mut$blacklist %in% blacklist_variants,]
-kable(table(subset_mut$Center, subset_mut$blacklist),
+kable(table(subset_mut$blacklist, subset_mut$Center),
       caption = "Blacklist variant count")
 ```
+
 
 ---
 
@@ -426,7 +432,7 @@ Please use the below distributions to access the validity of your clinical data.
 ### Race
 Some european sites like GRCC, CRUK, and NKI do not collect race information from their patients.  If your institution does not either, you should see empty barplots.
 
-```{r}
+```{r race}
 #Center X Race
 par(mar = c(10,3,3,1))
 plotCenterXRace(this_patient)
@@ -435,7 +441,7 @@ plotCenterXRace(this_patient)
 ### Ethnicity
 Some european sites like GRCC, CRUK, and NKI do not collect ethnicity information from their patients.  If your institution does not either, you should see empty barplots.
 
-```{r}
+```{r ethnicity}
 #Center X Ethnicity
 par(mar = c(10,3,3,1))
 plotCenterXEthnicity(this_patient)
@@ -444,7 +450,7 @@ plotCenterXEthnicity(this_patient)
 ### Sex
 CRUK submits samples from breast cancer patients, so their samples are all female.
 
-```{r}
+```{r sex}
 #Center X Sex
 par(mar = c(10,3,3,1))
 plotCenterXSex(this_patient)
@@ -454,14 +460,14 @@ plotCenterXSex(this_patient)
 CHOP submits mainly pediatric cases, so their distribution is different from the rest.
 
 
-```{r}
+```{r age}
 #Center X Age
 par(mar = c(10,3,3,1))
 plotCenterXAge(this_samples)
 ```
 
 
-```{r, include=F, echo=F}
+```{r seqyear, include=F, echo=F}
 check_seq_year = "SEQ_YEAR" %in% colnames(this_samples)
 ```
 
@@ -472,6 +478,191 @@ check_seq_year = "SEQ_YEAR" %in% colnames(this_samples)
 <!--   kable(table(this_samples$SEQ_YEAR, this_samples$CENTER)) -->
 <!-- } -->
 <!-- ``` -->
+
+
+### Cancer Type (Null)
+This will show NULL or UNKNOWN cancer types.
+
+```{r cancertype}
+unknown_cancer_type = this_samples$CANCER_TYPE %in% c("UNKNOWN", '')
+null_cancer_type = is.na(this_samples$CANCER_TYPE)
+
+na_cancer_type_subset = this_samples[unknown_cancer_type | null_cancer_type, ]
+kable(table(na_cancer_type_subset$CANCER_TYPE, na_cancer_type_subset$CENTER))
+```
+
+<!-- Only display if vital status exists -->
+
+`r if(!is.null(this_samples$YEAR_CONTACT)) { "### Vital Status ('Missing' values)\nThese are the centers with 'missing' vital status values: 'Unknown', 'Not Collected' for:\n\n"}`
+
+`r if(!is.null(this_samples$YEAR_CONTACT)) { "* YEAR_CONTACT\n"}`
+
+
+```{r yearcontact}
+if(!is.null(this_samples$YEAR_CONTACT)) {
+  missing_vs = this_patient$YEAR_CONTACT %in% c("Unknown", 'Not Collected')
+
+  missing_subset = this_patient[missing_vs, ]
+  kable(table(missing_subset$YEAR_CONTACT, missing_subset$CENTER))
+}
+```
+
+`r if(!is.null(this_samples$YEAR_CONTACT)) { "* INT_CONTACT\n"}`
+
+```{r intcontact}
+if(!is.null(this_samples$YEAR_CONTACT)) {
+
+  missing_vs = this_patient$INT_CONTACT %in% c("Unknown", 'Not Collected')
+
+  missing_subset = this_patient[missing_vs, ]
+  kable(table(missing_subset$INT_CONTACT, missing_subset$CENTER))
+}
+```
+
+`r if(!is.null(this_samples$YEAR_CONTACT)) { "* YEAR_DEATH\n"}`
+
+```{r yeardeath}
+if(!is.null(this_samples$YEAR_CONTACT)) {
+
+  missing_vs = this_patient$YEAR_DEATH %in% c("Unknown", 'Not Collected')
+
+  missing_subset = this_patient[missing_vs, ]
+  kable(table(missing_subset$YEAR_DEATH, missing_subset$CENTER))
+}
+```
+
+`r if(!is.null(this_samples$YEAR_CONTACT)) { "* INT_DOD\n"}`
+
+```{r intdod}
+if(!is.null(this_samples$YEAR_CONTACT)) {
+
+  missing_vs = this_patient$INT_DOD %in% c("Unknown", 'Not Collected')
+
+  missing_subset = this_patient[missing_vs, ]
+  kable(table(missing_subset$INT_DOD, missing_subset$CENTER))
+}
+```
+
+`r if(!is.null(this_samples$YEAR_CONTACT)) { "* DEAD\n"}`
+
+```{r dead}
+if(!is.null(this_samples$YEAR_CONTACT)) {
+
+  missing_vs = this_patient$DEAD %in% c("Unknown", 'Not Collected')
+
+  missing_subset = this_patient[missing_vs, ]
+  kable(table(missing_subset$DEAD, missing_subset$CENTER))
+}
+```
+
+
+```{r, include=F, echo=F}
+variant <- paste0(this_mut$Tumor_Sample_Barcode, "_",
+                  this_mut$Chromosome, ":",
+                  this_mut$Start_Position, "_",
+                  this_mut$Reference_Allele, "/",
+                  this_mut$Tumor_Seq_Allele2)
+duplicated_idx = duplicated(variant)
+duplicated_variants  = sum(duplicated_idx) > 0
+```
+
+`r if(duplicated_variants) {"---\n\n### Duplicated Variants\nThese duplicated variants will be removed if not corrected."}`
+
+```{r duplicated, echo=F}
+if (duplicated_variants) {
+  kable(this_mut[duplicated_idx, c("Chromosome", "Start_Position",
+                                   "Reference_Allele",
+                                   "Tumor_Seq_Allele2",
+                                   "Tumor_Sample_Barcode")],
+        row.names=F)
+}
+```
+
+---
+
+## Missing Variant Counts
+These are the sites with missing `t_depth`, `t_alt_count` and `t_ref_count` values.
+```{r variantcounts, echo=F}
+missing_t_depth_idx = is.na(this_mut$t_depth)
+missing_t_ref_count_idx = is.na(this_mut$t_ref_count)
+missing_t_alt_count_idx =  is.na(this_mut$t_alt_count)
+
+missing_t_depth = table(this_mut$Center[missing_t_depth_idx])
+missing_t_ref_count = table(this_mut$Center[missing_t_ref_count_idx])
+missing_t_alt_count = table(this_mut$Center[missing_t_alt_count_idx])
+centers = unique(c(names(missing_t_depth),
+                   names(missing_t_ref_count),
+                   names(missing_t_alt_count)))
+missing_counts = matrix(data=NA, nrow=length(centers), ncol=3,
+                        dimnames = list(centers,
+                                        c("t_depth", "t_alt_count",
+                                          "t_ref_count")))
+
+
+missing_counts[names(missing_t_depth), 't_depth'] = missing_t_depth
+missing_counts[names(missing_t_ref_count), 't_ref_count'] = missing_t_ref_count
+missing_counts[names(missing_t_alt_count), 't_alt_count'] = missing_t_alt_count
+missing_counts[is.na(missing_counts)] = 0
+kable(missing_counts)
+```
+
+
+```{r, echo=F}
+non_somatic <- this_mut[this_mut$Reference_Allele==this_mut$Tumor_Seq_Allele2 &
+                          this_mut$Reference_Allele==this_mut$Tumor_Seq_Allele1,]
+```
+
+`r if(nrow(non_somatic) > 0) {"---\n\n### Non-somatic Mutations\nThese mutations should be removed."}`
+
+```{r nonsomatic, echo=F}
+if (nrow(non_somatic) > 0) {
+  kable(non_somatic[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
+                        "Tumor_Seq_Allele1", "Tumor_Seq_Allele2",
+                        "Tumor_Sample_Barcode")],
+        row.names=F)
+
+}
+```
+
+
+```{r invalid_variant_type, echo=F, include=F}
+is_dnp <- nchar(this_mut$Reference_Allele) == nchar(this_mut$Tumor_Seq_Allele2) &
+          nchar(this_mut$Reference_Allele)==2 & this_mut$Variant_Type == "DNP"
+not_dnp <- this_mut[
+  substr(this_mut$Reference_Allele[is_dnp], 1, 1) == substr(this_mut$Tumor_Seq_Allele2[is_dnp], 1, 1) |
+  substr(this_mut$Reference_Allele[is_dnp], 1, 2) == substr(this_mut$Tumor_Seq_Allele2[is_dnp], 1, 2),
+]
+if (nrow(not_dnp) > 0) {
+  write.csv(not_dnp[,c("Hugo_Symbol", "Chromosome", "Reference_Allele",
+                       "Tumor_Seq_Allele2", "Tumor_Sample_Barcode",
+                       "Variant_Type")],
+            "snv_as_dnp.csv",
+            row.names=F, quote=F)
+  dnp_ent = synStore(File("snv_as_dnp.csv", parent=release_synid))
+  unlink("snv_as_dnp.csv")
+}
+
+is_onp <- nchar(this_mut$Reference_Allele) == nchar(this_mut$Tumor_Seq_Allele2) &
+          nchar(this_mut$Reference_Allele) == 3 & this_mut$Variant_Type == "ONP"
+not_onp <- this_mut[
+  substr(this_mut$Reference_Allele[is_onp], 1, 1) == substr(this_mut$Tumor_Seq_Allele2[is_onp], 1, 1) |
+  substr(this_mut$Reference_Allele[is_onp], 1, 2) == substr(this_mut$Tumor_Seq_Allele2[is_onp], 1, 2),
+]
+
+if (nrow(not_onp) > 0) {
+  write.csv(not_onp[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
+                        "Tumor_Seq_Allele2", "Tumor_Sample_Barcode",
+                        "Variant_Type")],
+            "snv_as_onp.csv", row.names=F, quote=F)
+  onp_ent = synStore(File("snv_as_onp.csv", parent=release_synid))
+  unlink("snv_as_onp.csv")
+}
+
+```
+
+`r if(nrow(not_dnp) > 0) {paste0("---\n\n## SNV labelled as DNP\nThese are variants that have variant type DNP that should be SNV: ", "https://www.synapse.org/#!Synapse:", dnp_ent$properties$id)}`
+
+`r if(nrow(not_onp) > 0) {paste0("---\n\n## SNV labelled as ONP\nThese are variants that have variant type ONP that should be SNV: ", "https://www.synapse.org/#!Synapse:", onp_ent$properties$id)}`
 
 
 ---

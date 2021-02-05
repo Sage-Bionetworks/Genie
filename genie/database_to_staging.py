@@ -243,10 +243,12 @@ def configure_maf(mafdf, remove_variants, flagged_variants):
     # common_variants = mafdf['FILTER'].astype(str).str.contains(
     #     "common_variant", na=False
     # )
+    # Germline Filter
     gnomad_cols = ["gnomAD_AFR_AF", 'gnomAD_AMR_AF', 'gnomAD_ASJ_AF',
                    'gnomAD_EAS_AF', 'gnomAD_FIN_AF', 'gnomAD_NFE_AF',
                    'gnomAD_OTH_AF', 'gnomAD_SAS_AF']
-    new_common_variants = mafdf.loc[
+    # location of germline variants
+    common_variants_idx = mafdf.loc[
         :, gnomad_cols
     ].max(axis=1, skipna=True) > 0.0005
 
@@ -255,9 +257,10 @@ def configure_maf(mafdf, remove_variants, flagged_variants):
     # Genome Nexus successfully annotated (vcf2maf does not have this column)
     if mafdf.get("Annotation_Status") is None:
         mafdf['Annotation_Status'] = "SUCCESS"
+    # Make sure to only get variants that were successfully annotated
     success = mafdf['Annotation_Status'] == "SUCCESS"
 
-    mafdf = mafdf.loc[(~new_common_variants &
+    mafdf = mafdf.loc[(~common_variants_idx &
                        ~to_remove_variants & success),]
 
     fillnas = ['t_depth', 't_ref_count', 't_alt_count',
@@ -675,7 +678,6 @@ def store_maf_files(syn,
     maf_ent = syn.get(centerMafSynIdsDf.id[0])
     headerdf = pd.read_csv(maf_ent.path, sep="\t", comment="#", nrows=0)
     column_order = headerdf.columns
-
     for _, mafSynId in enumerate(centerMafSynIdsDf.id):
         maf_ent = syn.get(mafSynId)
         logger.info(maf_ent.path)
@@ -1345,6 +1347,8 @@ def stagingToCbio(syn, processingDate, genieVersion,
     # Remove patients without any sample or patient ids
     clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isnull()]
     clinicalDf = clinicalDf[~clinicalDf['PATIENT_ID'].isnull()]
+    # Make sure to remove any null ONCOTREE_CODE
+    clinicalDf = clinicalDf[~clinicalDf['ONCOTREE_CODE'].isnull()]
 
     remove_mafInBed_variants, \
         removeForMergedConsortiumSamples, \
