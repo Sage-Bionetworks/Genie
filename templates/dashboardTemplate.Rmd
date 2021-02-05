@@ -493,7 +493,7 @@ kable(table(na_cancer_type_subset$CANCER_TYPE, na_cancer_type_subset$CENTER))
 
 <!-- Only display if vital status exists -->
 
-`r if(!is.null(this_samples$YEAR_CONTACT)) { "### Vital Status ('Missing' values)\nThese are the centers with 'missing' vital status values: "Unknown", "Not Collected" for:\n\n"}`
+`r if(!is.null(this_samples$YEAR_CONTACT)) { "### Vital Status ('Missing' values)\nThese are the centers with 'missing' vital status values: 'Unknown', 'Not Collected' for:\n\n"}`
 
 <!-- ### Vital Status ('Missing' values) -->
 
