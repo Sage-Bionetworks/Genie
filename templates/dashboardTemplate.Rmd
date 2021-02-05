@@ -479,6 +479,7 @@ check_seq_year = "SEQ_YEAR" %in% colnames(this_samples)
 <!-- } -->
 <!-- ``` -->
 
+
 ### Cancer Type (Null)
 This will show NULL or UNKNOWN cancer types.
 
@@ -490,56 +491,84 @@ na_cancer_type_subset = this_samples[unknown_cancer_type | null_cancer_type, ]
 kable(table(na_cancer_type_subset$CANCER_TYPE, na_cancer_type_subset$CENTER))
 ```
 
-### Vital Status ('Missing' values)
+<!-- Only display if vital status exists -->
 
-These are the centers with 'missing' vital status
-values: "Unknown", "Not Collected" for:
+`r if(!is.null(this_samples$YEAR_CONTACT)) { "### Vital Status ('Missing' values)\nThese are the centers with 'missing' vital status values: "Unknown", "Not Collected" for:\n\n"}`
 
-* YEAR_CONTACT
+<!-- ### Vital Status ('Missing' values) -->
+
+<!-- These are the centers with 'missing' vital status -->
+<!-- values: "Unknown", "Not Collected" for: -->
+
+`r if(!is.null(this_samples$YEAR_CONTACT)) { "* YEAR_CONTACT\n"}`
+
 
 ```{r yearcontact}
-missing_vs = this_patient$YEAR_CONTACT %in% c("Unknown", 'Not Collected')
+if(!is.null(this_samples$YEAR_CONTACT)) {
+  missing_vs = this_patient$YEAR_CONTACT %in% c("Unknown", 'Not Collected')
 
-missing_subset = this_patient[missing_vs, ]
-kable(table(missing_subset$YEAR_CONTACT, missing_subset$CENTER))
+  missing_subset = this_patient[missing_vs, ]
+  kable(table(missing_subset$YEAR_CONTACT, missing_subset$CENTER))
+}
 ```
 
+`r if(!is.null(this_samples$YEAR_CONTACT)) { "* INT_CONTACT\n"}`
 
-* INT_CONTACT
+<!-- * INT_CONTACT -->
 
 
 ```{r intcontact}
-missing_vs = this_patient$INT_CONTACT %in% c("Unknown", 'Not Collected')
+if(!is.null(this_samples$YEAR_CONTACT)) {
 
-missing_subset = this_patient[missing_vs, ]
-kable(table(missing_subset$INT_CONTACT, missing_subset$CENTER))
+  missing_vs = this_patient$INT_CONTACT %in% c("Unknown", 'Not Collected')
+
+  missing_subset = this_patient[missing_vs, ]
+  kable(table(missing_subset$INT_CONTACT, missing_subset$CENTER))
+}
 ```
 
-* YEAR_DEATH
+`r if(!is.null(this_samples$YEAR_CONTACT)) { "* YEAR_DEATH\n"}`
+
+<!-- * YEAR_DEATH -->
 
 ```{r yeardeath}
-missing_vs = this_patient$YEAR_DEATH %in% c("Unknown", 'Not Collected')
+if(!is.null(this_samples$YEAR_CONTACT)) {
 
-missing_subset = this_patient[missing_vs, ]
-kable(table(missing_subset$YEAR_DEATH, missing_subset$CENTER))
+  missing_vs = this_patient$YEAR_DEATH %in% c("Unknown", 'Not Collected')
+
+  missing_subset = this_patient[missing_vs, ]
+  kable(table(missing_subset$YEAR_DEATH, missing_subset$CENTER))
+}
 ```
 
-* INT_DOD
+
+`r if(!is.null(this_samples$YEAR_CONTACT)) { "* INT_DOD\n"}`
+
+<!-- * INT_DOD -->
 
 ```{r intdod}
-missing_vs = this_patient$INT_DOD %in% c("Unknown", 'Not Collected')
+if(!is.null(this_samples$YEAR_CONTACT)) {
 
-missing_subset = this_patient[missing_vs, ]
-kable(table(missing_subset$INT_DOD, missing_subset$CENTER))
+  missing_vs = this_patient$INT_DOD %in% c("Unknown", 'Not Collected')
+
+  missing_subset = this_patient[missing_vs, ]
+  kable(table(missing_subset$INT_DOD, missing_subset$CENTER))
+}
 ```
 
-* DEAD
+
+`r if(!is.null(this_samples$YEAR_CONTACT)) { "* DEAD\n"}`
+
+<!-- * DEAD -->
 
 ```{r dead}
-missing_vs = this_patient$DEAD %in% c("Unknown", 'Not Collected')
+if(!is.null(this_samples$YEAR_CONTACT)) {
 
-missing_subset = this_patient[missing_vs, ]
-kable(table(missing_subset$DEAD, missing_subset$CENTER))
+  missing_vs = this_patient$DEAD %in% c("Unknown", 'Not Collected')
+
+  missing_subset = this_patient[missing_vs, ]
+  kable(table(missing_subset$DEAD, missing_subset$CENTER))
+}
 ```
 
 
