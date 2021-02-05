@@ -495,11 +495,6 @@ kable(table(na_cancer_type_subset$CANCER_TYPE, na_cancer_type_subset$CENTER))
 
 `r if(!is.null(this_samples$YEAR_CONTACT)) { "### Vital Status ('Missing' values)\nThese are the centers with 'missing' vital status values: 'Unknown', 'Not Collected' for:\n\n"}`
 
-<!-- ### Vital Status ('Missing' values) -->
-
-<!-- These are the centers with 'missing' vital status -->
-<!-- values: "Unknown", "Not Collected" for: -->
-
 `r if(!is.null(this_samples$YEAR_CONTACT)) { "* YEAR_CONTACT\n"}`
 
 
@@ -514,9 +509,6 @@ if(!is.null(this_samples$YEAR_CONTACT)) {
 
 `r if(!is.null(this_samples$YEAR_CONTACT)) { "* INT_CONTACT\n"}`
 
-<!-- * INT_CONTACT -->
-
-
 ```{r intcontact}
 if(!is.null(this_samples$YEAR_CONTACT)) {
 
@@ -529,8 +521,6 @@ if(!is.null(this_samples$YEAR_CONTACT)) {
 
 `r if(!is.null(this_samples$YEAR_CONTACT)) { "* YEAR_DEATH\n"}`
 
-<!-- * YEAR_DEATH -->
-
 ```{r yeardeath}
 if(!is.null(this_samples$YEAR_CONTACT)) {
 
@@ -541,10 +531,7 @@ if(!is.null(this_samples$YEAR_CONTACT)) {
 }
 ```
 
-
 `r if(!is.null(this_samples$YEAR_CONTACT)) { "* INT_DOD\n"}`
-
-<!-- * INT_DOD -->
 
 ```{r intdod}
 if(!is.null(this_samples$YEAR_CONTACT)) {
@@ -556,10 +543,7 @@ if(!is.null(this_samples$YEAR_CONTACT)) {
 }
 ```
 
-
 `r if(!is.null(this_samples$YEAR_CONTACT)) { "* DEAD\n"}`
-
-<!-- * DEAD -->
 
 ```{r dead}
 if(!is.null(this_samples$YEAR_CONTACT)) {
@@ -570,7 +554,6 @@ if(!is.null(this_samples$YEAR_CONTACT)) {
   kable(table(missing_subset$DEAD, missing_subset$CENTER))
 }
 ```
-
 
 
 ```{r, include=F, echo=F}
