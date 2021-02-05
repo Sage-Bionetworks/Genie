@@ -266,10 +266,27 @@ def configure_maf(mafdf, remove_variants, flagged_variants):
     fillnas = ['t_depth', 't_ref_count', 't_alt_count',
                'n_depth', 'n_ref_count', 'n_alt_count']
     for col in fillnas:
-        mafdf[col][mafdf[col].astype(str) == "."] = ""
+        mafdf[col][mafdf[col].astype(str) == "."]
     n_depth_ind = mafdf['n_depth'].astype(str).isin(["NA", "0.0", "0"])
     mafdf['Match_Norm_Seq_Allele2'][n_depth_ind] = ''
     mafdf['Match_Norm_Seq_Allele1'][n_depth_ind] = ''
+
+    # Calculate missing t_depth, t_ref_count, t_alt_count
+    # t_depth = t_ref_count + t_alt_count
+    null_depth = mafdf['t_depth'].isnull()
+    t_ref = mafdf['t_ref_count'][null_depth]
+    t_alt = mafdf['t_alt_count'][null_depth]
+    mafdf['t_depth'][null_depth] = t_ref + t_alt
+    # t_ref_count = t_depth - t_alt_count
+    null_ref = mafdf['t_ref_count'].isnull()
+    t_depth = mafdf['t_depth'][null_ref]
+    t_alt = mafdf['t_alt_count'][null_ref]
+    mafdf['t_ref_count'][null_ref] = t_depth - t_alt
+    # t_alt_count = t_depth - t_ref_count
+    null_alt = mafdf['t_alt_count'].isnull()
+    t_depth = mafdf['t_depth'][null_alt]
+    t_ref = mafdf['t_ref_count'][null_alt]
+    mafdf['t_alt_count'][null_ref] = t_depth - t_ref
 
     return mafdf
 
