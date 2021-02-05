@@ -695,7 +695,7 @@ def store_maf_files(syn,
                 # Configure maf
                 configured_mafdf = configure_maf(
                     mafchunk, remove_mafinbed_variants,
-                    flagged_mutationInCis_variants,
+                    flagged_mutationInCis_variants
                 )
                 # Create maf for release
                 merged_mafdf = remove_maf_samples(
