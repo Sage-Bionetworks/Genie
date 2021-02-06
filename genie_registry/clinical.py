@@ -636,6 +636,7 @@ class clinical(FileTypeFormat):
                             filename="Patient Clinical File",
                             allowed_string_values=['Unknown', 'Not Collected',
                                                    'Not Applicable',
+                                                   "Not Released",
                                                    '>89', '<18'])
         total_error += error
 
@@ -644,6 +645,7 @@ class clinical(FileTypeFormat):
                             year_col="YEAR_CONTACT",
                             filename="Patient Clinical File",
                             allowed_string_values=['Unknown', 'Not Collected',
+                                                   "Not Released",
                                                    '>89', '<18'])
         total_error += error
 
@@ -652,7 +654,8 @@ class clinical(FileTypeFormat):
         if haveColumn:
             if not all([process_functions.checkInt(i)
                         for i in clinicaldf.INT_CONTACT if i not in
-                        ['>32485', '<6570', 'Unknown', 'Not Collected']]):
+                        ['>32485', '<6570', 'Unknown', 'Not Collected',
+                         "Not Released"]]):
 
                 total_error += (
                     "Patient Clinical File: Please double check your "
@@ -668,7 +671,7 @@ class clinical(FileTypeFormat):
             if not all([process_functions.checkInt(i)
                         for i in clinicaldf.INT_DOD if i not in
                         ['>32485', '<6570', 'Unknown',
-                         'Not Collected', 'Not Applicable']]):
+                         'Not Collected', 'Not Applicable', "Not Released"]]):
 
                 total_error += (
                     "Patient Clinical File: Please double check your INT_DOD "
@@ -684,7 +687,7 @@ class clinical(FileTypeFormat):
             if not all([
                     str(i).upper() in ['TRUE', 'FALSE']
                     for i in clinicaldf.DEAD if i not in
-                    ['Unknown', 'Not Collected']]):
+                    ['Unknown', 'Not Collected', "Not Released"]]):
                 total_error += (
                     "Patient Clinical File: Please double check your "
                     "DEAD column, it must be True, False, 'Unknown' or "
