@@ -276,17 +276,17 @@ def configure_maf(mafdf, remove_variants, flagged_variants):
     null_depth = mafdf['t_depth'].isnull()
     t_ref = mafdf['t_ref_count'][null_depth]
     t_alt = mafdf['t_alt_count'][null_depth]
-    mafdf['t_depth'][null_depth] = t_ref + t_alt
+    mafdf.loc[null_depth, 't_depth'] = t_ref + t_alt
     # t_ref_count = t_depth - t_alt_count
     null_ref = mafdf['t_ref_count'].isnull()
     t_depth = mafdf['t_depth'][null_ref]
     t_alt = mafdf['t_alt_count'][null_ref]
-    mafdf['t_ref_count'][null_ref] = t_depth - t_alt
+    mafdf.loc[null_ref, 't_ref_count'] = t_depth - t_alt
     # t_alt_count = t_depth - t_ref_count
     null_alt = mafdf['t_alt_count'].isnull()
     t_depth = mafdf['t_depth'][null_alt]
     t_ref = mafdf['t_ref_count'][null_alt]
-    mafdf['t_alt_count'][null_ref] = t_depth - t_ref
+    mafdf.loc[null_alt, 't_alt_count'] = t_depth - t_ref
 
     return mafdf
 
