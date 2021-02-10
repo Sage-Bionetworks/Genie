@@ -956,9 +956,9 @@ def store_clinical_files(syn,
         if code.upper() in oncotree_dict.keys() else float('nan')
         for code in clinicaldf['ONCOTREE_CODE']]
 
-    # All cancer types that are null should have null oncotree codes
-    clinicaldf['ONCOTREE_CODE'][
-        clinicaldf['CANCER_TYPE'].isnull()] = float('nan')
+    # All cancer types that are null contain deprecated oncotree codes
+    # And should be removed
+    clinicaldf = clinicaldf[~clinicaldf['CANCER_TYPE'].isnull()]
     # Suggest using AGE_AT_SEQ_REPORT_DAYS instead so that the
     # descriptions can match
     clinicaldf['AGE_AT_SEQ_REPORT_DAYS'] = clinicaldf['AGE_AT_SEQ_REPORT']
@@ -1401,8 +1401,6 @@ def stagingToCbio(syn, processingDate, genieVersion,
     # Remove patients without any sample or patient ids
     clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isnull()]
     clinicalDf = clinicalDf[~clinicalDf['PATIENT_ID'].isnull()]
-    # Make sure to remove any null ONCOTREE_CODE
-    clinicalDf = clinicalDf[~clinicalDf['ONCOTREE_CODE'].isnull()]
 
     remove_mafInBed_variants, \
         removeForMergedConsortiumSamples, \
