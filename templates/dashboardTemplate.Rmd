@@ -836,7 +836,7 @@ if (nrow(non_somatic) > 0) {
 
 ```
 
-`r if(nrow(non_somatic) > 0) {paste0("---\n\n### Non-somatic Mutations\nThese mutations should be removed from the data.: ", "https://www.synapse.org/#!Synapse:", non_somatic_ent$properties$id))}`
+`r if(nrow(non_somatic) > 0) {paste0("---\n\n### Non-somatic Mutations\nThese mutations should be removed from the data.: ", "https://www.synapse.org/#!Synapse:", non_somatic_ent$properties$id)}`
 
 
 ```{r invalid_variant_type, echo=F, include=F}
