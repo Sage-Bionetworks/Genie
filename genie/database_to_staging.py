@@ -322,8 +322,8 @@ def calculate_missing_variant_counts(depth: pd.Series, alt_count: pd.Series,
     ref_count[null_ref] = null_ref_depth - null_ref_alt
     # t_alt_count = t_depth - t_ref_count
     null_alt = alt_count.isnull()
-    null_alt_depth = depth[null_ref]
-    null_alt_ref = ref_count[null_ref]
+    null_alt_depth = depth[null_alt]
+    null_alt_ref = ref_count[null_alt]
     alt_count[null_alt] = null_alt_depth - null_alt_ref
     return {'depth': depth, 'ref_count': ref_count, 'alt_count': alt_count}
 
