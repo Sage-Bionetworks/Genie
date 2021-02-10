@@ -262,16 +262,70 @@ def configure_maf(mafdf, remove_variants, flagged_variants):
 
     mafdf = mafdf.loc[(~common_variants_idx &
                        ~to_remove_variants & success),]
-
-    fillnas = ['t_depth', 't_ref_count', 't_alt_count',
-               'n_depth', 'n_ref_count', 'n_alt_count']
-    for col in fillnas:
-        mafdf[col][mafdf[col].astype(str) == "."] = ""
-    n_depth_ind = mafdf['n_depth'].astype(str).isin(["NA", "0.0", "0"])
-    mafdf['Match_Norm_Seq_Allele2'][n_depth_ind] = ''
-    mafdf['Match_Norm_Seq_Allele1'][n_depth_ind] = ''
+    # May not need to do this because these columns are always
+    # returned as numerical values now
+    # fillnas = ['t_depth', 't_ref_count', 't_alt_count',
+    #            'n_depth', 'n_ref_count', 'n_alt_count']
+    # for col in fillnas:
+    #     mafdf[col][mafdf[col].astype(str) == "."] = float('nan')
+    n_depth_ind = mafdf['n_depth'].astype(str).isin(["NA", "0.0", "0", 'nan'])
+    mafdf.loc[n_depth_ind, 'Match_Norm_Seq_Allele2'] = ''
+    mafdf.loc[n_depth_ind, 'Match_Norm_Seq_Allele1'] = ''
+    # Calculate missing t_depth, t_ref_count, t_alt_count
+    t_counts = calculate_missing_variant_counts(
+        depth=mafdf['t_depth'], alt_count=mafdf['t_alt_count'],
+        ref_count=mafdf['t_ref_count']
+    )
+    mafdf['t_depth'] = t_counts['depth']
+    mafdf['t_ref_count'] = t_counts['ref_count']
+    mafdf['t_alt_count'] = t_counts['alt_count']
+    # Calculate missing n_depth, n_ref_count, n_alt_count
+    n_counts = calculate_missing_variant_counts(
+        depth=mafdf['n_depth'], alt_count=mafdf['n_alt_count'],
+        ref_count=mafdf['n_ref_count']
+    )
+    mafdf['n_depth'] = n_counts['depth']
+    mafdf['n_ref_count'] = n_counts['ref_count']
+    mafdf['n_alt_count'] = n_counts['alt_count']
 
     return mafdf
+
+
+def calculate_missing_variant_counts(depth: pd.Series, alt_count: pd.Series,
+                                     ref_count: pd.Series) -> dict:
+    """Calculate missing counts. t_depth = t_alt_count + t_ref_count
+
+    Args:
+        depth: Allele Depth
+        alt_count: Allele alt counts
+        ref_count: Allele ref counts
+
+    Returns:
+        filled in depth, alt_count and ref_count values
+
+    """
+    # Avoid SettingWithCopyWarning
+    depth = depth.copy()
+    alt_count = alt_count.copy()
+    ref_count = ref_count.copy()
+    # t_depth = t_ref_count + t_alt_count
+    null_depth = depth.isnull()
+    # The notation null_depth_ref means all the reference values for which
+    # depth is NA
+    null_depth_ref = ref_count[null_depth]
+    null_depth_alt = alt_count[null_depth]
+    depth.loc[null_depth] = null_depth_ref + null_depth_alt
+    # t_ref_count = t_depth - t_alt_count
+    null_ref = ref_count.isnull()
+    null_ref_depth = depth[null_ref]
+    null_ref_alt = alt_count[null_ref]
+    ref_count[null_ref] = null_ref_depth - null_ref_alt
+    # t_alt_count = t_depth - t_ref_count
+    null_alt = alt_count.isnull()
+    null_alt_depth = depth[null_alt]
+    null_alt_ref = ref_count[null_alt]
+    alt_count[null_alt] = null_alt_depth - null_alt_ref
+    return {'depth': depth, 'ref_count': ref_count, 'alt_count': alt_count}
 
 
 def runMAFinBED(syn,
@@ -902,9 +956,9 @@ def store_clinical_files(syn,
         if code.upper() in oncotree_dict.keys() else float('nan')
         for code in clinicaldf['ONCOTREE_CODE']]
 
-    # All cancer types that are null should have null oncotree codes
-    clinicaldf['ONCOTREE_CODE'][
-        clinicaldf['CANCER_TYPE'].isnull()] = float('nan')
+    # All cancer types that are null contain deprecated oncotree codes
+    # And should be removed
+    clinicaldf = clinicaldf[~clinicaldf['CANCER_TYPE'].isnull()]
     # Suggest using AGE_AT_SEQ_REPORT_DAYS instead so that the
     # descriptions can match
     clinicaldf['AGE_AT_SEQ_REPORT_DAYS'] = clinicaldf['AGE_AT_SEQ_REPORT']
@@ -1347,8 +1401,6 @@ def stagingToCbio(syn, processingDate, genieVersion,
     # Remove patients without any sample or patient ids
     clinicalDf = clinicalDf[~clinicalDf['SAMPLE_ID'].isnull()]
     clinicalDf = clinicalDf[~clinicalDf['PATIENT_ID'].isnull()]
-    # Make sure to remove any null ONCOTREE_CODE
-    clinicalDf = clinicalDf[~clinicalDf['ONCOTREE_CODE'].isnull()]
 
     remove_mafInBed_variants, \
         removeForMergedConsortiumSamples, \
