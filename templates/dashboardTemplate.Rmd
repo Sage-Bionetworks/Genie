@@ -792,12 +792,12 @@ if (length(largePanels) > 1) {
 }
 ```
 
+---
 
 ## Possible Non-center Related Data Issues
 
 This section includes QC issues that are mostly related to the Sage Bionetworks pipeline, Genome Nexus or _maybe_ center related issues..
 If empty, nothing is flagged.
-
 
 ```{r, include=F, echo=F}
 variant <- paste0(this_mut$Tumor_Sample_Barcode, "_",
@@ -821,7 +821,7 @@ if (duplicated_variants) {
 }
 ```
 
-```{r nonsomatic, echo=F}
+```{r nonsomatic, echo=F, include=F}
 non_somatic <- this_mut[this_mut$Reference_Allele==this_mut$Tumor_Seq_Allele2 &
                           this_mut$Reference_Allele==this_mut$Tumor_Seq_Allele1,]
 if (nrow(non_somatic) > 0) {
