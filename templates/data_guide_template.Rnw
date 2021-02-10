@@ -4,9 +4,8 @@
 \usepackage{longtable}
 \usepackage{tocloft}
 \usepackage{amssymb}
-\usepackage{blindtext}
- \cftpagenumbersoff{section}
- \cftpagenumbersoff{subsection}
+\cftpagenumbersoff{section}
+\cftpagenumbersoff{subsection}
 \usepackage{color}   %May be necessary if you want to color links
 \usepackage{hyperref}
 \usepackage{float}
