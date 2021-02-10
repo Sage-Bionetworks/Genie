@@ -610,13 +610,13 @@ filter_maf <- function(mafdf) {
   # Remove 5'Flank unless it is TERT
   mafdf[!flank_classification | tert_mutations, ]
 }
-this_mut <- filter_maf(this_mut)
+filtered_mafdf <- filter_maf(this_mut)
 
 ```
 
 
 ```{r top_5_mutated, echo=FALSE}
-mergeddf = merge.data.frame(this_mut[,c("Tumor_Sample_Barcode", "Hugo_Symbol")],
+mergeddf = merge.data.frame(filtered_mafdf[,c("Tumor_Sample_Barcode", "Hugo_Symbol")],
                             this_samples[,c("SAMPLE_ID", "SEQ_ASSAY_ID")],
                             by.x = "Tumor_Sample_Barcode",
                             by.y = "SAMPLE_ID")
