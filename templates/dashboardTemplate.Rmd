@@ -389,7 +389,11 @@ if (nrow(possible_retracted) > 0) {
 }
 ```
 
-These sample/patient IDs have been marked for retraction from GENIE: `r paste0("https://www.synapse.org/#!Synapse:", ent$properties$id)` and have been removed from the GENIE database. However, removal from public release files occurs according to the following fixed schedule. Please apprise your patients of this schedule so that they are aware of the timeline for retraction of their data.  If you see samples that should not be retracted, please upload a fix to your data or let Tom Yu from Sage know immediately.
+These `r paste0("[sample/patient IDs](https://www.synapse.org/#!Synapse:", ent$properties$id, "){target='_blank'}")`
+have been marked for retraction from GENIE and have been removed from the GENIE database.
+However, removal from public release files occurs according to the following fixed schedule.
+Please apprise your patients of this schedule so that they are aware of the timeline for retraction of their data.
+If you see samples that should not be retracted, please upload a fix to your data or let Tom Yu from Sage know immediately.
 
 
 For patient retractions submitted between these months, a new public release will be generated that removes the affected records. The new release will be issued no later than April or October, respectively:
@@ -836,7 +840,9 @@ if (nrow(non_somatic) > 0) {
 
 ```
 
-`r if(nrow(non_somatic) > 0) {paste0("---\n\n### Non-somatic Mutations\nThese mutations should be removed from the data.: ", "https://www.synapse.org/#!Synapse:", non_somatic_ent$properties$id)}`
+`r if(nrow(non_somatic) > 0) {paste0("---\n\n### Non-somatic Mutations\nThese [mutations](",
+                                     "https://www.synapse.org/#!Synapse:", non_somatic_ent$properties$id,
+                                     "){target='_blank'} should be removed from the data.")}`
 
 
 ```{r invalid_variant_type, echo=F, include=F}
@@ -874,6 +880,10 @@ if (nrow(not_onp) > 0) {
 
 ```
 
-`r if(nrow(not_dnp) > 0) {paste0("---\n\n### SNV labelled as DNP\nThese are variants that have variant type DNP that should be SNV: ", "https://www.synapse.org/#!Synapse:", dnp_ent$properties$id)}`
+`r if(nrow(not_dnp) > 0) {paste0("---\n\n### SNV labelled as DNP\nThese are [variants](",
+                                 "https://www.synapse.org/#!Synapse:", dnp_ent$properties$id,
+                                 "){target='_blank'} that have variant type DNP that should be SNV")}`
 
-`r if(nrow(not_onp) > 0) {paste0("---\n\n### SNV labelled as ONP\nThese are variants that have variant type ONP that should be SNV: ", "https://www.synapse.org/#!Synapse:", onp_ent$properties$id)}`
+`r if(nrow(not_onp) > 0) {paste0("---\n\n### SNV labelled as ONP\nThese are [variants](",
+                                 "https://www.synapse.org/#!Synapse:", onp_ent$properties$id,
+                                 "){target='_blank'} that have variant type ONP that should be SNV.")}`
