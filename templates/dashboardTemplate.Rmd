@@ -884,6 +884,6 @@ if (nrow(not_onp) > 0) {
                                  "https://www.synapse.org/#!Synapse:", dnp_ent$properties$id,
                                  "){target='_blank'} that have variant type DNP that should be SNV")}`
 
-`r if(nrow(not_onp) > 0) {paste0("---\n\n### SNV labelled as ONP\nThese are [variants]("
+`r if(nrow(not_onp) > 0) {paste0("---\n\n### SNV labelled as ONP\nThese are [variants](",
                                  "https://www.synapse.org/#!Synapse:", onp_ent$properties$id,
                                  "){target='_blank'} that have variant type ONP that should be SNV.")}`
