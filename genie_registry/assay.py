@@ -178,7 +178,7 @@ class Assayinfo(FileTypeFormat):
         total_error += error
 
         instrument_model = read_group_headers['instrument_model']['enum']
-        instrument_model.append(None)
+        instrument_model.extend(["Illumina NovaSeq 6000", None])
         warn, error = process_functions.check_col_and_values(
             assay_info_df,
             'instrument_model',
