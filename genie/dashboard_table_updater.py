@@ -640,12 +640,21 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
         database_mappingdf['Database'] == 'clinicalKeyDecrease'].values[0]
 
     release_folder = syn.tableQuery(
-        "select id,name from %s" % release_folder_fileview_synid +
-        " where name not like 'Release%' and name <> 'case_lists' " +
-        "and name not like '%.0.%' and name not like '%-public'")
+        f"select id,name from {release_folder_fileview_synid} "
+        "where name not like 'Release%' and name <> 'case_lists' "
+        "and name not like '%.0.%' and name not like '%-public' "
+        "and name <> 'potential_artifacts'"
+    )
 
     release_folderdf = release_folder.asDataFrame()
-    release_folderdf.sort_values("name", ascending=False, inplace=True)
+    # Set release number as a numerical value since string "10" < "9"
+    # Also can't set by created on date, because sometimes
+    # there are patch releases
+    release_folderdf['num_release'] = [
+        float(name.replace(".0", "").replace("-consortium", ""))
+        for name in release_folderdf['name']
+    ]
+    release_folderdf.sort_values("num_release", ascending=False, inplace=True)
     current_release = release_folderdf['id'][0]
     older_release = release_folderdf['id'][1]
 
