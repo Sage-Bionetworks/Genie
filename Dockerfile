@@ -45,7 +45,7 @@ COPY . .
 ENV CRYPTOGRAPHY_DONT_BUILD_RUST=true
 RUN Rscript R/install_packages.R
 
-RUN pip3 install --no-cache-entry -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 RUN pip3 install -e .
 # RUN python3 setup.py sdist
 # RUN python3 setup.py develop
