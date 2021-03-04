@@ -40,14 +40,13 @@ RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb
 # Only copy most recent changes in code are always installed
 # Do not build from local computer
 WORKDIR /root/Genie
-COPY ./ ./
-# This export must be added to install synapser
-RUN export CRYPTOGRAPHY_DONT_BUILD_RUST=true
+COPY . .
+
+ENV CRYPTOGRAPHY_DONT_BUILD_RUST=true
 RUN Rscript R/install_packages.R
 
-RUN pip3 install --upgrade pip
-RUN pip install -r requirements.txt
-RUN pip install -e .
+RUN pip3 install --no-cache-entry -r requirements.txt
+RUN pip3 install -e .
 # RUN python3 setup.py sdist
 # RUN python3 setup.py develop
 
