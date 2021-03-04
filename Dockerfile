@@ -34,13 +34,13 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated \
 	openjdk-8-jre
 
 RUN pip3 install --upgrade pip
-RUN pip install synapseclient httplib2 pycrypto PyYAML
-RUN pip install pandas numexpr --upgrade
+RUN pip install -r requirements.txt
 
 #install pandoc 1.19.2.1 (dashboard use)
 RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.1-1-amd64.deb
 RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb	
 
+RUN export CRYPTOGRAPHY_DONT_BUILD_RUST=true
 COPY R/install_packages.R /install_packages.R
 RUN Rscript /install_packages.R
 
