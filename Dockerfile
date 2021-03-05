@@ -33,23 +33,22 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated \
 # genome nexus
 	openjdk-8-jre
 
-RUN pip3 install --upgrade pip
-RUN pip install synapseclient httplib2 pycrypto PyYAML
-RUN pip install pandas numexpr --upgrade
-
 #install pandoc 1.19.2.1 (dashboard use)
 RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.1-1-amd64.deb
 RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb	
 
-COPY R/install_packages.R /install_packages.R
-RUN Rscript /install_packages.R
-
 # Only copy most recent changes in code are always installed
 # Do not build from local computer
 WORKDIR /root/Genie
-COPY ./ ./
-RUN python3 setup.py sdist
-RUN python3 setup.py develop
+COPY . .
+
+ENV CRYPTOGRAPHY_DONT_BUILD_RUST=true
+RUN Rscript R/install_packages.R
+
+RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install -e .
+# RUN python3 setup.py sdist
+# RUN python3 setup.py develop
 
 WORKDIR /root/
 # Must move this git clone to after the install of Genie,
