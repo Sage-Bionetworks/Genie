@@ -1,8 +1,8 @@
 *.txt
+!requirements.txt
 *.bed
 *.csv
 *.tsv
-.dockerignore
 Dockerfile
 db.sqlite3
 __pycache__
