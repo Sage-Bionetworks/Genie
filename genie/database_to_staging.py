@@ -10,6 +10,7 @@ import subprocess
 import time
 
 import pandas as pd
+import pyranges
 import synapseclient
 import synapseutils
 
@@ -215,6 +216,34 @@ def remove_maf_samples(mafdf: pd.DataFrame,
     return mafdf
 
 
+def get_whitelist_variants_idx(mafdf):
+    """Get boolean vector for variants that are known somatic sites
+    This is to override the germline filter
+    """
+    columns = ["Chromosome", "Start", "End", "Symbol"]
+    whitelist = pd.read_csv(
+        "https://raw.githubusercontent.com/mskcc/vcf2maf/v1.6.19/data/known_somatic_sites.bed",
+        sep="\t", comment="#", header=None, names=columns
+    )
+    rangesdf = mafdf[['Chromosome', 'Start_Position', 'End_Position',
+                      'Hugo_Symbol', 'HGVSp_Short']]
+    rangesdf = rangesdf.rename(
+        columns={"Start_Position": "Start", "End_Position": "End"}
+    )
+    maf_ranges = pyranges.PyRanges(rangesdf)
+    whitelist_ranges = pyranges.PyRanges(whitelist)
+    whitelisted_variants = maf_ranges.intersect(whitelist_ranges,
+                                                how="containment")
+    whitelist_variantsdf = whitelisted_variants.as_df()
+    variants = (
+        whitelist_variantsdf['Hugo_Symbol'] + ' ' +
+        whitelist_variantsdf['HGVSp_Short']
+    )
+    maf_variants = mafdf['Hugo_Symbol'] + ' ' + mafdf['HGVSp_Short']
+
+    return maf_variants.isin(variants)
+
+
 def configure_maf(mafdf, remove_variants, flagged_variants):
     """Configures each maf dataframe, does germline filtering
 
@@ -259,9 +288,14 @@ def configure_maf(mafdf, remove_variants, flagged_variants):
         mafdf['Annotation_Status'] = "SUCCESS"
     # Make sure to only get variants that were successfully annotated
     success = mafdf['Annotation_Status'] == "SUCCESS"
-
-    mafdf = mafdf.loc[(~common_variants_idx &
-                       ~to_remove_variants & success),]
+    # Get whitelisted variants
+    whitelist_variants_idx = get_whitelist_variants_idx(mafdf)
+    mafdf = mafdf.loc[
+        (
+            (~common_variants_idx | whitelist_variants_idx) &
+            ~to_remove_variants & success
+        ),
+    ]
     # May not need to do this because these columns are always
     # returned as numerical values now
     # fillnas = ['t_depth', 't_ref_count', 't_alt_count',
