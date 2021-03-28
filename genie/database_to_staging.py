@@ -235,10 +235,13 @@ def get_whitelist_variants_idx(mafdf):
     whitelisted_variants = maf_ranges.intersect(whitelist_ranges,
                                                 how="containment")
     whitelist_variantsdf = whitelisted_variants.as_df()
-    variants = (
-        whitelist_variantsdf['Hugo_Symbol'] + ' ' +
-        whitelist_variantsdf['HGVSp_Short']
-    )
+    if not whitelist_variantsdf.empty:
+        variants = (
+            whitelist_variantsdf['Hugo_Symbol'] + ' ' +
+            whitelist_variantsdf['HGVSp_Short']
+        )
+    else:
+        variants = []
     maf_variants = mafdf['Hugo_Symbol'] + ' ' + mafdf['HGVSp_Short']
     # For some reason intersect and overlap doesn't work when
     # Start and End are the same. Here is an example that won't be
@@ -318,17 +321,17 @@ def configure_maf(mafdf, remove_variants, flagged_variants):
         depth=mafdf['t_depth'], alt_count=mafdf['t_alt_count'],
         ref_count=mafdf['t_ref_count']
     )
-    mafdf['t_depth'] = t_counts['depth']
-    mafdf['t_ref_count'] = t_counts['ref_count']
-    mafdf['t_alt_count'] = t_counts['alt_count']
+    mafdf.loc[, 't_depth'] = t_counts['depth']
+    mafdf.loc[, 't_ref_count'] = t_counts['ref_count']
+    mafdf.loc[, 't_alt_count'] = t_counts['alt_count']
     # Calculate missing n_depth, n_ref_count, n_alt_count
     n_counts = calculate_missing_variant_counts(
         depth=mafdf['n_depth'], alt_count=mafdf['n_alt_count'],
         ref_count=mafdf['n_ref_count']
     )
-    mafdf['n_depth'] = n_counts['depth']
-    mafdf['n_ref_count'] = n_counts['ref_count']
-    mafdf['n_alt_count'] = n_counts['alt_count']
+    mafdf.loc[, 'n_depth'] = n_counts['depth']
+    mafdf.loc[, 'n_ref_count'] = n_counts['ref_count']
+    mafdf.loc[, 'n_alt_count'] = n_counts['alt_count']
 
     return mafdf
 
