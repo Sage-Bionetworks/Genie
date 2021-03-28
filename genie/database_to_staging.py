@@ -321,7 +321,7 @@ def configure_maf(mafdf, remove_variants, flagged_variants):
         depth=mafdf['t_depth'], alt_count=mafdf['t_alt_count'],
         ref_count=mafdf['t_ref_count']
     )
-    mafdf.loc[:,'t_depth'] = t_counts['depth']
+    mafdf.loc[:, 't_depth'] = t_counts['depth']
     mafdf.loc[:, 't_ref_count'] = t_counts['ref_count']
     mafdf.loc[:, 't_alt_count'] = t_counts['alt_count']
     # Calculate missing n_depth, n_ref_count, n_alt_count
