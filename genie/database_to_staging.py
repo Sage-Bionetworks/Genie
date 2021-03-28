@@ -240,8 +240,16 @@ def get_whitelist_variants_idx(mafdf):
         whitelist_variantsdf['HGVSp_Short']
     )
     maf_variants = mafdf['Hugo_Symbol'] + ' ' + mafdf['HGVSp_Short']
-
-    return maf_variants.isin(variants)
+    # For some reason intersect and overlap doesn't work when
+    # Start and End are the same. Here is an example that won't be
+    # matched by the intersect function
+    # variant: chr9-10-10
+    # Bed: chr9-9-10
+    match_start_end = (
+        mafdf['Start_Position'].isin(whitelist['Start']) |
+        mafdf['End_Position'].isin(whitelist['End'])
+    )
+    return maf_variants.isin(variants) | match_start_end
 
 
 def configure_maf(mafdf, remove_variants, flagged_variants):
