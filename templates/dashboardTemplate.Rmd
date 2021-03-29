@@ -848,9 +848,10 @@ if (nrow(non_somatic) > 0) {
 ```{r invalid_variant_type, echo=F, include=F}
 is_dnp <- nchar(this_mut$Reference_Allele) == nchar(this_mut$Tumor_Seq_Allele2) &
           nchar(this_mut$Reference_Allele)==2 & this_mut$Variant_Type == "DNP"
-not_dnp <- this_mut[
-  substr(this_mut$Reference_Allele[is_dnp], 1, 1) == substr(this_mut$Tumor_Seq_Allele2[is_dnp], 1, 1) |
-  substr(this_mut$Reference_Allele[is_dnp], 1, 2) == substr(this_mut$Tumor_Seq_Allele2[is_dnp], 1, 2),
+dnp <- this_mut[is_dnp, ]
+not_dnp <- dnp[
+  substr(dnp$Reference_Allele, 1, 1) == substr(dnp$Tumor_Seq_Allele2, 1, 1) |
+  substr(dnp$Reference_Allele, 1, 2) == substr(dnp$Tumor_Seq_Allele2, 1, 2),
 ]
 if (nrow(not_dnp) > 0) {
   write.csv(not_dnp[,c("Hugo_Symbol", "Chromosome", "Reference_Allele",
@@ -864,9 +865,10 @@ if (nrow(not_dnp) > 0) {
 
 is_onp <- nchar(this_mut$Reference_Allele) == nchar(this_mut$Tumor_Seq_Allele2) &
           nchar(this_mut$Reference_Allele) == 3 & this_mut$Variant_Type == "ONP"
-not_onp <- this_mut[
-  substr(this_mut$Reference_Allele[is_onp], 1, 1) == substr(this_mut$Tumor_Seq_Allele2[is_onp], 1, 1) |
-  substr(this_mut$Reference_Allele[is_onp], 1, 2) == substr(this_mut$Tumor_Seq_Allele2[is_onp], 1, 2),
+onp <- this_mut[is_onp, ]
+not_onp <- onp[
+  substr(onp$Reference_Allele, 1, 1) == substr(onp$Tumor_Seq_Allele2, 1, 1) |
+  substr(onp$Reference_Allele, 1, 2) == substr(onp$Tumor_Seq_Allele2, 1, 2),
 ]
 
 if (nrow(not_onp) > 0) {
