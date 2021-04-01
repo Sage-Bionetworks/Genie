@@ -36,6 +36,7 @@ genie validate data_clinical_supp_SAGE.txt SAGE
 3. Add a tag and release named the same as the version.
 
 # SAGE BIONETWORKS USE ONLY
+
 ## Batch Processing instructions
 1. Check docker hub builds to see if theres any failures
 2. Log into AWS Batch
