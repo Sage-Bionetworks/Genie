@@ -182,7 +182,10 @@ def consortiumToPublic(syn, processingDate, genie_version,
                                "data_clinical_patient.txt",
                                "data_guide.pdf",
                                "release_notes.pdf",
-                               "samples_to_retract.csv"]):
+                               "samples_to_retract.csv",
+                               "non_somatic.csv",
+                               "snv_as_dnp.csv",
+                               "snv_as_onp.csv"]):
             # data_gene_matrix was processed above because it had to be
             # used for generating caselists
             continue
