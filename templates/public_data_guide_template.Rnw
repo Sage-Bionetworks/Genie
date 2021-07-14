@@ -436,6 +436,16 @@ CANCER\_TYPE & Non-Small Cell Lung Cancer & The primary cancer diagnosis "main t
    \hline
 CANCER\_TYPE\_DETAILED & Lung Adenocarcinoma & The primary cancer diagnosis label, based on the \href{http://oncotree.mskcc.org}{OncoTree ontology}. For example, the OncoTree code of LUAD maps to the label: "Lung Adenocarcinoma (LUAD)". The version of Oncotree ontology that was used for GENIE {{release}} is \href{http://oncotree.mskcc.org/#/home?version={{oncotree}}}{{{oncotree}}}  \\
    \hline
+YEAR\_CONTACT & 1990  & Record the year that the patient is last known to be alive - data to be derived from information including and EHR, tumor registry, or other system. \\
+   \hline
+YEAR\_DEATH & 2010 & Year of death  \\
+   \hline
+INT\_CONTACT & 15000  &  Interval in days from DOB to date of last contact. \\
+   \hline
+INT\_DOD & 15000 & Interval in days from DOB to DOD.  \\
+   \hline
+DEAD & Yes \newline No  & Is this patient known to be deceased? \\
+   \hline
 \end{longtable}
 \end{center}
 
