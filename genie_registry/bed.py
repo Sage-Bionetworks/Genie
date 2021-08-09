@@ -357,7 +357,7 @@ class bed(FileTypeFormat):
         first_value = str(beddf[0][0])
         if not first_value.isdigit() and \
            not first_value.startswith("chr") and \
-           not first_value not in ["X", "Y"]:
+           first_value not in ["X", "Y"]:
             raise ValueError(
                 "Please make sure your bed file does not "
                 "contain a comment/header line")
