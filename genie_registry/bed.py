@@ -354,8 +354,10 @@ class bed(FileTypeFormat):
                 "Can't read in your bed file. "
                 "Please make sure the BED file is not binary and "
                 "does not contain a comment/header line")
-        if not str(beddf[0][0]).isdigit() and \
-           not str(beddf[0][0]).startswith("chr"):
+        first_value = str(beddf[0][0])
+        if not first_value.isdigit() and \
+           not first_value.startswith("chr") and \
+           not first_value not in ["X", "Y"]:
             raise ValueError(
                 "Please make sure your bed file does not "
                 "contain a comment/header line")
