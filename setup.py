@@ -31,4 +31,5 @@ setup(name='aacrgenie',
                         'synapseclient>=2.2.2',
                         'httplib2>=0.11.3',
                         'pycrypto>=2.6.1',
-                        'PyYAML>=5.1'])
+                        'PyYAML>=5.1',
+                        'chardet>=4.0.0'])
