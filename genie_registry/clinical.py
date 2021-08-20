@@ -719,6 +719,17 @@ class clinical(FileTypeFormat):
                 "Patient Clinical File: Must have DEAD column.\n"
             )
 
+        # CHECK: SAMPLE_CLASS is optional attribute
+        have_column = process_functions.checkColExist(clinicaldf,
+                                                      "SAMPLE_CLASS")
+        if have_column:
+            sample_class_vals = clinicaldf['SAMPLE_CLASS'].unique()
+            if not sample_class_vals.isin(['Tumor', 'cfDNA']).all():
+                total_error.write(
+                    "Sample Clinical File: SAMPLE_CLASS column must"
+                    "be 'Tumor', or 'cfDNA'"
+                )
+
         # CHECK: PRIMARY_RACE
         warn, error = process_functions.check_col_and_values(
             clinicaldf, "PRIMARY_RACE", race_mapping['CODE'].tolist(),
