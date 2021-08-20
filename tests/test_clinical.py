@@ -91,7 +91,6 @@ def test_correct_validatefilename():
 
 def test_patient_fillvs__process():
     '''
-    Test filling out of vital status values
     This will be removed once vital status values are required
     - capitalized column headers
     - remapping of values
@@ -108,16 +107,7 @@ def test_patient_fillvs__process():
         ETHNICITY=['Test', 'Why', 'foo', 'Me', 'Unknown'],
         BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
         CENTER=["SAGE", "SAGE", "SAGE", "SAGE", "SAGE"],
-        INT_DOD=['Not Collected', 'Not Collected', 'Not Collected',
-                 'Not Collected', 'Not Collected'],
-        INT_CONTACT=['Not Collected', 'Not Collected', 'Not Collected',
-                     'Not Collected', 'Not Collected'],
-        DEAD=['Not Collected', 'Not Collected', 'Not Collected',
-              'Not Collected', 'Not Collected'],
-        YEAR_DEATH=['Not Collected', 'Not Collected', 'Not Collected',
-                    'Not Collected', 'Not Collected'],
-        YEAR_CONTACT=['Not Collected', 'Not Collected', 'Not Collected',
-                      'Not Collected', 'Not Collected']))
+    ))
 
     patientdf = pd.DataFrame(dict(
         PATIENT_Id=["ID1", "ID2", "ID3", "ID4", "ID5"],
@@ -152,17 +142,8 @@ def test_patient_lesscoltemplate__process():
         TERTIARY_RACE=['Test', 'Why', 'foo', 'Me', 'Unknown'],
         ETHNICITY=['Test', 'Why', 'foo', 'Me', 'Unknown'],
         BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
-        CENTER=["SAGE", "SAGE", "SAGE", "SAGE", "SAGE"],
-        INT_DOD=['Not Collected', 'Not Collected', 'Not Collected',
-                 'Not Collected', 'Not Collected'],
-        INT_CONTACT=['Not Collected', 'Not Collected', 'Not Collected',
-                     'Not Collected', 'Not Collected'],
-        DEAD=['Not Collected', 'Not Collected', 'Not Collected',
-              'Not Collected', 'Not Collected'],
-        YEAR_DEATH=['Not Collected', 'Not Collected', 'Not Collected',
-                    'Not Collected', 'Not Collected'],
-        YEAR_CONTACT=['Not Collected', 'Not Collected', 'Not Collected',
-                      'Not Collected', 'Not Collected']))
+        CENTER=["SAGE", "SAGE", "SAGE", "SAGE", "SAGE"]
+    ))
     # TEST patient processing
     patientdf = pd.DataFrame(dict(
         PATIENT_Id=["ID1", "ID2", "ID3", "ID4", "ID5"],
@@ -181,52 +162,10 @@ def test_patient_lesscoltemplate__process():
     new_patientdf = clin_class._process(patientdf, clinical_template)
 
     assert new_patientdf.columns.isin(patient_cols).all()
-    assert expected_patientdf[patient_cols].equals(new_patientdf[patient_cols])
-
-
-def test_patient_fillcols__process():
-    '''
-    Filling in of RACE/ETHNITICY columns as some centers don't require them
-    '''
-    expected_patientdf = pd.DataFrame(dict(
-        PATIENT_ID=["GENIE-SAGE-ID1", "GENIE-SAGE-ID2", "GENIE-SAGE-ID3",
-                    "GENIE-SAGE-ID4", "GENIE-SAGE-ID5"],
-        SEX=['Male', 'Female', 'Male', 'Female', 'Unknown'],
-        PRIMARY_RACE=['Not Collected', 'Not Collected', 'Not Collected',
-                      'Not Collected', 'Not Collected'],
-        SECONDARY_RACE=['Not Collected', 'Not Collected', 'Not Collected',
-                        'Not Collected', 'Not Collected'],
-        TERTIARY_RACE=['Not Collected', 'Not Collected', 'Not Collected',
-                       'Not Collected', 'Not Collected'],
-        ETHNICITY=['Not Collected', 'Not Collected', 'Not Collected',
-                   'Not Collected', 'Not Collected'],
-        BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
-        CENTER=["SAGE", "SAGE", "SAGE", "SAGE", "SAGE"],
-        INT_DOD=['Not Collected', 'Not Collected', 'Not Collected',
-                 'Not Collected', 'Not Collected'],
-        INT_CONTACT=['Not Collected', 'Not Collected', 'Not Collected',
-                     'Not Collected', 'Not Collected'],
-        DEAD=['Not Collected', 'Not Collected', 'Not Collected',
-              'Not Collected', 'Not Collected'],
-        YEAR_DEATH=['Not Collected', 'Not Collected', 'Not Collected',
-                    'Not Collected', 'Not Collected'],
-        YEAR_CONTACT=['Not Collected', 'Not Collected', 'Not Collected',
-                      'Not Collected', 'Not Collected']))
-    # TEST patient processing
-    # Clinical file headers are capitalized prior to processing
-    patientdf = pd.DataFrame(dict(
-        PATIENT_Id=["ID1", "ID2", "ID3", "ID4", "ID5"],
-        sex=[1, 2, 1, 2, 99],
-        BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
-        CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"]))
-    patient_cols = [
-        "PATIENT_ID", "SEX", "PRIMARY_RACE", "SECONDARY_RACE",
-        "TERTIARY_RACE", "ETHNICITY", "BIRTH_YEAR", "CENTER",
-        'YEAR_CONTACT', 'YEAR_DEATH', 'INT_CONTACT', 'INT_DOD', 'DEAD']
-    clinical_template = pd.DataFrame(columns=patient_cols)
-    new_patientdf = clin_class._process(patientdf, clinical_template)
-    assert new_patientdf.columns.isin(expected_patientdf.columns).all()
-    assert expected_patientdf.equals(new_patientdf[expected_patientdf.columns])
+    assert (
+        expected_patientdf[expected_patientdf.columns]
+            .equals(new_patientdf[expected_patientdf.columns])
+    )
 
 
 def test_patient_vs__process():
