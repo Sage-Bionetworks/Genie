@@ -169,6 +169,11 @@ class clinical(FileTypeFormat):
         # ETHNICITY
         if x.get('ETHNICITY') is None:
             x['ETHNICITY'] = "Not Collected"
+
+        # SAMPLE_CLASS
+        if x.get('SAMPLE_CLASS') is None:
+            x['SAMPLE_CLASS'] = "Tumor"
+
         # BIRTH YEAR
         if x.get("BIRTH_YEAR") is not None:
             # BIRTH YEAR (Check if integer)
