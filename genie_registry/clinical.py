@@ -157,18 +157,7 @@ class clinical(FileTypeFormat):
         if x.get("PATIENT_ID") is not None:
             x['PATIENT_ID'] = process_functions.checkGenieId(
                 x['PATIENT_ID'], self.center)
-        # # RACE
-        if x.get('PRIMARY_RACE') is None:
-            x['PRIMARY_RACE'] = "Not Collected"
 
-        if x.get('SECONDARY_RACE') is None:
-            x['SECONDARY_RACE'] = "Not Collected"
-
-        if x.get('TERTIARY_RACE') is None:
-            x['TERTIARY_RACE'] = "Not Collected"
-        # ETHNICITY
-        if x.get('ETHNICITY') is None:
-            x['ETHNICITY'] = "Not Collected"
         # BIRTH YEAR
         if x.get("BIRTH_YEAR") is not None:
             # BIRTH YEAR (Check if integer)
@@ -197,26 +186,13 @@ class clinical(FileTypeFormat):
                 int(str(x['SEQ_DATE']).split("-")[1]) \
                 if str(x['SEQ_DATE']) != "Release" else float('nan')
 
-        if x.get('YEAR_CONTACT') is None:
-            x['YEAR_CONTACT'] = 'Not Collected'
-        else:
+        if x.get('YEAR_CONTACT') is not None:
             if process_functions.checkInt(x['YEAR_CONTACT']):
                 x['YEAR_CONTACT'] = int(x['YEAR_CONTACT'])
 
-        if x.get('YEAR_DEATH') is None:
-            x['YEAR_DEATH'] = 'Not Collected'
-        else:
+        if x.get('YEAR_DEATH') is not None:
             if process_functions.checkInt(x['YEAR_DEATH']):
                 x['YEAR_DEATH'] = int(x['YEAR_DEATH'])
-
-        if x.get('INT_CONTACT') is None:
-            x['INT_CONTACT'] = 'Not Collected'
-
-        if x.get('INT_DOD') is None:
-            x['INT_DOD'] = 'Not Collected'
-
-        if x.get('DEAD') is None:
-            x['DEAD'] = 'Not Collected'
 
         # TRIM EVERY COLUMN MAKE ALL DASHES
         for i in x.keys():
@@ -322,20 +298,28 @@ class clinical(FileTypeFormat):
         newClinicalDf = redact_phi(newClinicalDf)
 
         if patient:
-            patientClinical = newClinicalDf[
-                patientCols].drop_duplicates("PATIENT_ID")
+            cols = newClinicalDf.columns[
+                newClinicalDf.columns.isin(patientCols)
+            ]
+            patientClinical = (
+                newClinicalDf[cols].drop_duplicates("PATIENT_ID")
+            )
             self.uploadMissingData(patientClinical, "PATIENT_ID",
                                    patient_synid, parentId)
 
             process_functions.updateData(self.syn, patient_synid,
                                          patientClinical, self.center,
-                                         col=patientCols, toDelete=True)
+                                         col=cols.tolist(), toDelete=True)
         if sample:
+            cols = newClinicalDf.columns[
+                newClinicalDf.columns.isin(sampleCols)
+            ]
             if sum(newClinicalDf["SAMPLE_ID"].duplicated()) > 0:
                 logger.error("There are duplicated samples, "
                              "and the duplicates are removed")
-            sampleClinical = newClinicalDf[sampleCols].drop_duplicates(
-                "SAMPLE_ID")
+            sampleClinical = (
+                newClinicalDf[cols].drop_duplicates("SAMPLE_ID")
+            )
             # Exclude all clinical samples with wrong oncotree codes
             oncotree_mapping = pd.DataFrame()
             oncotree_mapping_dict = \
@@ -353,7 +337,7 @@ class clinical(FileTypeFormat):
             # ,retractedSampleSynId)
             process_functions.updateData(
                 self.syn, sample_synid, sampleClinical,
-                self.center, col=sampleCols, toDelete=True)
+                self.center, col=cols.tolist(), toDelete=True)
 
         newClinicalDf.to_csv(newPath, sep="\t", index=False)
         return(newPath)
@@ -718,6 +702,17 @@ class clinical(FileTypeFormat):
             total_error.write(
                 "Patient Clinical File: Must have DEAD column.\n"
             )
+
+        # CHECK: SAMPLE_CLASS is optional attribute
+        have_column = process_functions.checkColExist(clinicaldf,
+                                                      "SAMPLE_CLASS")
+        if have_column:
+            sample_class_vals = clinicaldf['SAMPLE_CLASS'].unique()
+            if not sample_class_vals.isin(['Tumor', 'cfDNA']).all():
+                total_error.write(
+                    "Sample Clinical File: SAMPLE_CLASS column must"
+                    "be 'Tumor', or 'cfDNA'"
+                )
 
         # CHECK: PRIMARY_RACE
         warn, error = process_functions.check_col_and_values(

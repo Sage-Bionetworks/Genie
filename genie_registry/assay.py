@@ -259,8 +259,10 @@ class Assayinfo(FileTypeFormat):
                  "gene_padding is by default 10 if not specified.\n")
 
         warn, error = process_functions.check_col_and_values(
-            assay_info_df, 'calling_strategy', ['tumor_only', 'tumor_normal'],
-            filename="Assay_information.yaml", required=True)
+            assay_info_df, 'calling_strategy',
+            ['tumor_only', 'tumor_normal', 'plasma_normal'],
+            filename="Assay_information.yaml", required=True
+        )
         warning += warn
         total_error += error
 
@@ -284,7 +286,7 @@ class Assayinfo(FileTypeFormat):
         warning += warn
         total_error += error
 
-        preservation_technique = ["FFPE", 'fresh_frozen']
+        preservation_technique = ["FFPE", 'fresh_frozen', 'NA']
         warn, error = process_functions.check_col_and_values(
             assay_info_df, 'preservation_technique', preservation_technique,
             filename="Assay_information.yaml", required=True, sep=";")
