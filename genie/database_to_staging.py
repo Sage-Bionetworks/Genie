@@ -918,7 +918,7 @@ def store_assay_info_files(syn, genie_version, assay_info_synid,
     logger.info("Creates assay information file")
     assay_info_path = os.path.join(GENIE_RELEASE_DIR,
                                    f'assay_information_{genie_version}.txt')
-    seq_assay_str = "','".join(clinicaldf['SEQ_ASSAY_ID'])
+    seq_assay_str = "','".join(clinicaldf['SEQ_ASSAY_ID'].unique())
     version = syn.create_snapshot_version(assay_info_synid,
                                           comment=genie_version)
     assay_infodf = process_functions.get_syntabledf(
