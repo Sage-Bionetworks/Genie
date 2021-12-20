@@ -54,7 +54,7 @@ RUN pip3 install -e .
 WORKDIR /root/
 # Must move this git clone to after the install of Genie,
 # because must update cbioportal
-RUN git clone https://github.com/cBioPortal/cbioportal.git
+RUN git clone -b v3.7.15 https://github.com/cBioPortal/cbioportal.git
 RUN git clone https://github.com/Sage-Bionetworks/annotation-tools.git
 
 WORKDIR /root/Genie
