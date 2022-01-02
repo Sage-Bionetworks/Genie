@@ -1,0 +1,109 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "$id": "https://example.com/product.schema.json",
+    "title": "Assay Information Json Schema",
+    "description": "Assay information json schema",
+    "type": "object",
+    "propertyNames": {
+        "pattern": "^(JHU|MSK).+"
+    },
+    "minProperties": 1,
+    "patternProperties": {
+        "^(JHU|MSK).+": {
+            "description": "foo",
+            "type": "object",
+            "properties": {
+                "assay_specific_info": {
+                    "description": "The unique identifier for a product",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "SEQ_ASSAY_ID": {
+                                "description": "The unique identifier for a product",
+                                "type": "string",
+                                "pattern": "^(JHU|MSK).+"
+                            },
+                            "number_of_genes": {
+                                "description": "The unique identifier for a product",
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "SEQ_ASSAY_ID",
+                            "number_of_genes"
+                        ]
+                    }
+
+                },
+                "is_paired_end": {
+                    "description": "The unique identifier for a product",
+                    "type": "boolean"
+                },
+                "library_selection": {
+                    "description": "The unique identifier for a product",
+                    "type": "string"
+                },
+                "library_strategy": {
+                    "description": "The unique identifier for a product",
+                    "type": "string"
+                },
+                "platform": {
+                    "description": "The unique identifier for a product",
+                    "type": "string"
+                },
+                "read_length": {
+                    "description": "The unique identifier for a product",
+                    "type": "integer"
+                },
+                "target_capture_kit": {
+                    "description": "The unique identifier for a product",
+                    "type": "string"
+                },
+                "instrument_model": {
+                    "description": "The unique identifier for a product",
+                    "type": [ "string", "null" ]
+                },
+                "alteration_types": {
+                    "description": "The unique identifier for a product",
+                    "type": "array"
+                },
+                "preservation_technique": {
+                    "description": "The unique identifier for a product",
+                    "type": "array"
+                },
+                "specimen_tumor_cellularity": {
+                    "description": "The unique identifier for a product",
+                    "type": "string"
+                },
+                "calling_strategy": {
+                    "description": "The unique identifier for a product",
+                    "type": "string"
+                },
+                "coverage": {
+                    "description": "The unique identifier for a product",
+                    "type": "array"
+                },
+                "variant_classifications": {
+                    "description": "The unique identifier for a product",
+                    "type": "array"
+                }
+            },
+            "required": [
+                "assay_specific_info",
+                "is_paired_end",
+                "library_selection",
+                "library_strategy",
+                "platform",
+                "read_length",
+                "target_capture_kit",
+                "instrument_model",
+                "alteration_types",
+                "preservation_technique",
+                "specimen_tumor_cellularity",
+                "calling_strategy",
+                "coverage"
+            ]
+        }
+    }
+}
