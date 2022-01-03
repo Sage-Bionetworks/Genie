@@ -77,6 +77,36 @@ def _check_year(clinicaldf: pd.DataFrame, year_col: int, filename: str,
     return error
 
 
+def _check_vital_status_consistentency(
+        clinicaldf: pd.DataFrame,
+        cols: list, missing_vals: list
+    ) ->  str:
+    """
+    Check if vital status columns are consistent in their values
+
+    Args:
+        clinicaldf: Clinical Data Frame
+        cols: Columns in the clinical data frame
+        missing_vals: String values that represent missing data
+
+    Returns:
+        Error message if values and inconsistent or blank string
+    """
+    for col in cols:
+        if not process_functions.checkColExist(clinicaldf, col):
+            return ""
+
+    # cols = ["YEAR_CONTACT", "INT_CONTACT"]
+    # missing_vals = ["Not Collected", "Unknown", "Not Applicable"]
+    # Get index of all rows that have 'missing' values
+    check_inconsistencies = clinicaldf[cols].isin(missing_vals)
+    # unique missing values per column
+    uniq_missing_values = check_inconsistencies.sum(axis=0).unique()
+    if len(uniq_missing_values) > 1:
+        return f"Patient: you have inconsistent values in {', '.join(cols)}\n"
+    return ""
+
+
 # PROCESSING
 def remap_clinical_values(clinicaldf: pd.DataFrame, sex_mapping: pd.DataFrame,
                           race_mapping: pd.DataFrame,
@@ -702,6 +732,21 @@ class clinical(FileTypeFormat):
             total_error.write(
                 "Patient Clinical File: Must have DEAD column.\n"
             )
+        # CHECK: contact vital status value consistency
+        contact_error = _check_vital_status_consistentency(
+            clinicaldf=clinicaldf,
+            cols=["YEAR_CONTACT", "INT_CONTACT"],
+            missing_vals=["Not Collected", "Unknown"]
+        )
+        total_error.write(contact_error)
+
+        # CHECK: death vital status value consistency
+        death_error = _check_vital_status_consistentency(
+            clinicaldf=clinicaldf,
+            cols=["YEAR_DEATH", "DEAD", "INT_DOD"],
+            missing_vals=["Not Collected", "Unknown", "Not Applicable"]
+        )
+        total_error.write(death_error)
 
         # CHECK: SAMPLE_CLASS is optional attribute
         have_column = process_functions.checkColExist(clinicaldf,
