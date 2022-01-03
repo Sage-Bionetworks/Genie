@@ -15,6 +15,8 @@ class Assayinfo(FileTypeFormat):
 
     _process_kwargs = ["newPath", "databaseSynId"]
 
+    _validation_kwargs = ["project_id"]
+
     def _validateFilename(self, filepath_list):
         """Validate assay information filename"""
         assert os.path.basename(filepath_list[0]) == "assay_information.yaml"
@@ -114,7 +116,7 @@ class Assayinfo(FileTypeFormat):
             all_panel_info = all_panel_info.append(assay_finaldf)
         return all_panel_info
 
-    def _validate(self, assay_info_df):
+    def _validate(self, assay_info_df, project_id):
         """
         Validates the values of assay information file
 
@@ -135,6 +137,26 @@ class Assayinfo(FileTypeFormat):
                 total_error += \
                     ("Assay_information.yaml: Please make sure your all your "
                      "SEQ_ASSAY_IDs start with your center abbreviation.\n")
+            db_to_syn_map_df = process_functions.get_synid_database_mappingdf(
+                self.syn, project_id
+            )
+            sample_synid = process_functions.getDatabaseSynId(
+                self.syn, "sample", databaseToSynIdMappingDf=db_to_syn_map_df
+            )
+            uniq_seq_table = self.syn.tableQuery(
+                f"select distinct(SEQ_ASSAY_ID) as uniq_seq from {sample_synid}"
+            )
+            uniq_seq_df = uniq_seq_table.asDataFrame()
+            # These are all the SEQ_ASSAY_IDs that are in the clinical database
+            # but not in the assay_information file
+            missing_seqs = uniq_seq_df['uniq_seq'][
+                ~uniq_seq_df['uniq_seq'].isin(all_seq_assays)
+            ]
+            if missing_seqs.to_list():
+                total_error += \
+                    ("Assay_information.yaml: You are missing SEQ_ASSAY_IDs: "
+                     ", ".join(missing_seqs))
+
         else:
             total_error += \
                 "Assay_information.yaml: Must have SEQ_ASSAY_ID column.\n"
