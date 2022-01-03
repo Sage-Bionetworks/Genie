@@ -705,8 +705,27 @@ def test__check_vital_status_consistentency_valid():
          "YEAR_1": [1, 4, "Unknown"],
          "FOO_3": [1, 3, "Unknown"]}
     )
-    genie_registry.clinical._check_vital_status_consistentency(
+    error = genie_registry.clinical._check_vital_status_consistentency(
         clinicaldf=testdf,
-        cols=['INT2', "YEAR1", "FOO_3"],
+        cols=['INT_2', "YEAR_1", "FOO_3"],
         missing_vals=["Unknown"]
+    )
+    assert error == ""
+
+
+def test__check_vital_status_consistentency_inconsistent():
+    """Test inconsistent vital status values"""
+    testdf = pd.DataFrame(
+        {"INT_2": [1, 2, 4],
+         "YEAR_1": [1, 4, "Unknown"],
+         "FOO_3": [1, 3, "Unknown"]}
+    )
+    error = genie_registry.clinical._check_vital_status_consistentency(
+        clinicaldf=testdf,
+        cols=['INT_2', "YEAR_1", "FOO_3"],
+        missing_vals=["Unknown"]
+    )
+    print(error)
+    assert error == (
+        "Patient: you have inconsistent values in INT_2, YEAR_1, FOO_3\n"
     )
