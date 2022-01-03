@@ -143,11 +143,11 @@ class Assayinfo(FileTypeFormat):
             sample_synid = process_functions.getDatabaseSynId(
                 self.syn, "sample", databaseToSynIdMappingDf=db_to_syn_map_df
             )
-            uniq_seq_table = self.syn.tableQuery(
+            uniq_seq_df = process_functions.get_syntabledf(
+                self.syn,
                 f"select distinct(SEQ_ASSAY_ID) as seq from {sample_synid} "
                 f"where CENTER = '{self.center}'"
             )
-            uniq_seq_df = uniq_seq_table.asDataFrame()
             # These are all the SEQ_ASSAY_IDs that are in the clinical database
             # but not in the assay_information file
             missing_seqs = uniq_seq_df['seq'][
