@@ -144,18 +144,20 @@ class Assayinfo(FileTypeFormat):
                 self.syn, "sample", databaseToSynIdMappingDf=db_to_syn_map_df
             )
             uniq_seq_table = self.syn.tableQuery(
-                f"select distinct(SEQ_ASSAY_ID) as uniq_seq from {sample_synid}"
+                f"select distinct(SEQ_ASSAY_ID) as seq from {sample_synid} "
+                f"where CENTER = '{self.center}'"
             )
             uniq_seq_df = uniq_seq_table.asDataFrame()
             # These are all the SEQ_ASSAY_IDs that are in the clinical database
             # but not in the assay_information file
-            missing_seqs = uniq_seq_df['uniq_seq'][
-                ~uniq_seq_df['uniq_seq'].isin(all_seq_assays)
+            missing_seqs = uniq_seq_df['seq'][
+                ~uniq_seq_df['seq'].isin(all_seq_assays)
             ]
+            missing_seqs_str = ", ".join(missing_seqs)
             if missing_seqs.to_list():
                 total_error += \
                     ("Assay_information.yaml: You are missing SEQ_ASSAY_IDs: "
-                     ", ".join(missing_seqs))
+                     f"{missing_seqs_str}\n")
 
         else:
             total_error += \
