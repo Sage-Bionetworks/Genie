@@ -124,7 +124,13 @@
             "YEAR_DEATH",
             "INT_CONTACT",
             "INT_DOD",
-            "DEAD"
+            "DEAD",
+            "SAMPLE_ID",
+            "AGE_AT_SEQ_REPORT",
+            "ONCOTREE_CODE",
+            "SAMPLE_TYPE",
+            "SEQ_ASSAY_ID",
+            "SEQ_DATE"
         ]
     }
 }
