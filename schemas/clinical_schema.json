@@ -10,7 +10,7 @@
             "PATIENT_ID": {
                 "description": "The unique patient identifier for the GENIE project.",
                 "type": "string",
-                "pattern": "^GENIE-(MSK|NKI)-.+"
+                "pattern": "^GENIE-(CHOP|COLU|CRUK|DFCI|DUKE|GRCC|JHU|MDA|MSK|NKI|PHS|SCI|UCHI|UCSF|UHN|VHIO|VICC|WAKE|YALE)-.+"
             },
             "SEX": {
                 "description": "The sex code for the patient",
@@ -79,7 +79,42 @@
                 "description": "Is this patient known to be deceased",
                 "type": "string",
                 "pattern": "^True$|^Not Collected$|^Unknown$|^False$|^Not Applicable$"
+            },
+            "SAMPLE_ID": {
+                "description": "The unique sample identifier for the GENIE project.",
+                "type": "string",
+                "pattern": "^GENIE-(CHOP|COLU|CRUK|DFCI|DUKE|GRCC|JHU|MDA|MSK|NKI|PHS|SCI|UCHI|UCSF|UHN|VHIO|VICC|WAKE|YALE)-.+-.+"
+            },
+            "AGE_AT_SEQ_REPORT": {
+                "description": "The interval in days between the patient's date of birth and the date of the sequencing report that is associated with the sample.",
+                "type": "string",
+                "pattern": "^[\\d]{4,5}$|^Unknown$|>32485|<6570"
+            },
+            "ONCOTREE_CODE": {
+                "description": "The OncoTree diagnosis code using the format found in parenthesis, from the posted Oncotree version. (ie. Adrenal Gland (ADRENAL_GLAND), use ADRENAL_GLAND)",
+                "type": "string"
+            },
+            "SAMPLE_TYPE": {
+                "description": "The specimen's type based on its location, including primary site, site of local recurrence, or distant metastasis.",
+                "type": "integer",
+                "enum": [-1, 1, 2, 3, 4, 5, 6, 7]
+            },
+            "SEQ_ASSAY_ID": {
+                "description": "The institutional assay identifier for genomic testing platform",
+                "type": "string",
+                "pattern": "^(CHOP|COLU|CRUK|DFCI|DUKE|GRCC|JHU|MDA|MSK|NKI|PHS|SCI|UCHI|UCSF|UHN|VHIO|VICC|WAKE|YALE)-.+"
+            },
+            "SEQ_DATE": {
+                "description": "Each record has a date of sequencing including a month and year (this should be anonymized following the procedure below). For Jan-March: use Jan-YEAR. For Apr-June: use Apr-YEAR. For July-Sep: use Jul-YEAR. For Oct-Dec: use Oct-YEAR. Legacy data that does not have SEQ_DATE that can be released should be labelled as 'release'.",
+                "type": "string",
+                "pattern": "^(Jan|Apr|Jul|Oct)-(19|20)\\d{2}$|^release$"
+            },
+            "SAMPLE_CLASS": {
+                "description": "Tumor or cfDNA",
+                "type": "string",
+                "enum": ["Tumor", "cfDNA"]
             }
+
         },
         "required": [
             "PATIENT_ID",
