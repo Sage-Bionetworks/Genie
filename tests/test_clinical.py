@@ -275,10 +275,9 @@ def test_perfect__validate():
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
         YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 1990, 1990],
         YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 1990],
-        INT_CONTACT=['>32485', '<6570', 'Unknown', 'Not Collected', 2000],
-        INT_DOD=['>32485', '<6570', 'Unknown',
-                 'Not Collected', 'Not Applicable'],
-        DEAD=[True, False, 'Unknown', 'Not Collected', True]))
+        INT_CONTACT=["Unknown", "Not Collected", '>32485', '<6570', 2000],
+        INT_DOD=["Unknown", "Not Collected", 'Unknown', '>32485', '<6570'],
+        DEAD=['Unknown', 'Not Collected', 'Unknown', False,  True]))
 
     sampledf = pd.DataFrame(dict(
         SAMPLE_ID=["ID1-1", "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
@@ -312,12 +311,14 @@ def test_nonull__validate():
         ETHNICITY=[1, 2, 3, 4, float('nan')],
         BIRTH_YEAR=[float('nan'), "Unknown", 1920, 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
-        YEAR_DEATH=["Unknown", "Not Collected", float('nan'), 1990, 1990],
+        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable",
+                    1990, float('nan')],
         YEAR_CONTACT=["Unknown", "Not Collected", float('nan'), 1990, 1990],
-        INT_CONTACT=['>32485', '<6570', 'Unknown', float('nan'), 2000],
-        INT_DOD=['>32485', '<6570', 'Unknown',
-                 'Not Collected', float('nan')],
-        DEAD=[True, False, float('nan'), 'Not Collected', True]))
+        INT_CONTACT=["Unknown", "Not Collected", '>32485', float('nan'),
+                     2000],
+        INT_DOD=["Unknown", "Not Collected", 'Unknown', float('nan'),
+                 '<6570'],
+        DEAD=['Unknown', 'Not Collected', 'Unknown', float('nan'),  True]))
 
     sampledf = pd.DataFrame(dict(
         SAMPLE_ID=["ID1-1", "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
@@ -429,7 +430,7 @@ def test_errors__validate():
         SEQ_DATE=['Jane-2013', 'Jan-2013', 'Jan-2013', 'Jan-2013', 'Jan-2013'],
         YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 19930, 1990],
         YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 19940],
-        INT_CONTACT=['>32485', '<6570', 'Unknown', 'Not Collected', ">foobar"],
+        INT_CONTACT=['>32485', '<6570', 1990, 'Not Collected', ">foobar"],
         INT_DOD=['>32485', '<6570', 'Unknown', 'Not Collected', '<dense'],
         DEAD=[1, False, 'Unknown', 'Not Collected', 'Not Applicable']))
 
@@ -493,6 +494,8 @@ def test_errors__validate():
             "Patient Clinical File: Please double check your DEAD column, "
             "it must be True, False, 'Unknown', "
             "'Not Released' or 'Not Collected'.\n"
+            "Patient: you have inconsistent values in YEAR_CONTACT, INT_CONTACT\n"
+            "Patient: you have inconsistent values in YEAR_DEATH, DEAD, INT_DOD\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your SECONDARY_RACE "
@@ -529,13 +532,11 @@ def test_duplicated__validate():
         ETHNICITY=[1, 2, 3, 4, 99],
         BIRTH_YEAR=["Unknown", 1990, 1990, 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
-        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable",
-                    1990, 1990],
+        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 1990, 1990],
         YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 1990],
-        INT_CONTACT=['>32485', '<6570', 'Unknown', 'Not Collected', 2000],
-        INT_DOD=['>32485', '<6570', 'Unknown', 'Not Collected',
-                 'Not Applicable'],
-        DEAD=[True, False, 'Unknown', 'Not Collected', True]))
+        INT_CONTACT=["Unknown", "Not Collected", '>32485', '<6570', 2000],
+        INT_DOD=["Unknown", "Not Collected", 'Unknown', '>32485', '<6570'],
+        DEAD=['Unknown', 'Not Collected', 'Unknown', False,  True]))
 
     sampleDf = pd.DataFrame(dict(
         SAMPLE_ID=["ID1-1", "ID3-1", "ID4-1", "ID5-1"],
@@ -695,3 +696,17 @@ def test_remap_clinical_values(col):
         testdf, sexdf, sexdf, sexdf, sexdf
     )
     assert expecteddf.equals(remappeddf)
+
+
+def test__check_vital_status_consistentency_valid():
+    """Test valid vital status consistency"""
+    testdf = pd.DataFrame(
+        {"INT_2": [1, 2, "Unknown"],
+         "YEAR_1": [1, 4, "Unknown"],
+         "FOO_3": [1, 3, "Unknown"]}
+    )
+    genie_registry.clinical._check_vital_status_consistentency(
+        clinicaldf=testdf,
+        cols=['INT2', "YEAR1", "FOO_3"],
+        missing_vals=["Unknown"]
+    )

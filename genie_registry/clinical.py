@@ -96,8 +96,6 @@ def _check_vital_status_consistentency(
         if not process_functions.checkColExist(clinicaldf, col):
             return ""
 
-    # cols = ["YEAR_CONTACT", "INT_CONTACT"]
-    # missing_vals = ["Not Collected", "Unknown", "Not Applicable"]
     # Get index of all rows that have 'missing' values
     check_inconsistencies = clinicaldf[cols].isin(missing_vals)
     # unique missing values per column
