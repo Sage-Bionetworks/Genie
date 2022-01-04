@@ -92,15 +92,35 @@ def _check_vital_status_consistentency(
     Returns:
         Error message if values and inconsistent or blank string
     """
+    interval_col = ''
+    year_col = ''
     for col in cols:
+        # This is assuming that interval and year columns start with
+        # INT/YEAR
+        interval_col = col if col.startswith("INT") else interval_col
+        year_col = col if col.startswith("YEAR") else year_col
+        # Return empty string is columns don't exist because this error
+        # is already handled.
         if not process_functions.checkColExist(clinicaldf, col):
             return ""
 
     # Get index of all rows that have 'missing' values
-    check_inconsistencies = clinicaldf[cols].isin(missing_vals)
-    # unique missing values per column
-    uniq_missing_values = check_inconsistencies.sum(axis=0).unique()
-    if len(uniq_missing_values) > 1:
+    for missing_val in missing_vals:
+        check_inconsistencies = clinicaldf[cols] == missing_val
+        # unique missing values per column
+        uniq_missing_values = check_inconsistencies.sum(axis=0).unique()
+        if len(uniq_missing_values) > 1:
+            return f"Patient: you have inconsistent values in {', '.join(cols)}\n"
+
+    # Check that the redacted values are consistent
+    is_redacted_int = clinicaldf[interval_col] == ">32485"
+    is_redacted_year = clinicaldf[year_col] == ">89"
+    if is_redacted_int is is_redacted_year:
+        return f"Patient: you have inconsistent values in {', '.join(cols)}\n"
+
+    is_redacted_int = clinicaldf[interval_col] == "<6570"
+    is_redacted_year = clinicaldf[year_col] == "<18"
+    if is_redacted_int is is_redacted_year:
         return f"Patient: you have inconsistent values in {', '.join(cols)}\n"
     return ""
 
