@@ -135,7 +135,7 @@ class Assayinfo(FileTypeFormat):
             if not all([assay.startswith(self.center)
                         for assay in all_seq_assays]):
                 total_error += \
-                    ("Assay_information.yaml: Please make sure your all your "
+                    ("Assay_information.yaml: Please make sure all your "
                      "SEQ_ASSAY_IDs start with your center abbreviation.\n")
             db_to_syn_map_df = process_functions.get_synid_database_mappingdf(
                 self.syn, project_id
