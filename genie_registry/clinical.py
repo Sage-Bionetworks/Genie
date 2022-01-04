@@ -103,24 +103,25 @@ def _check_vital_status_consistentency(
         # is already handled.
         if not process_functions.checkColExist(clinicaldf, col):
             return ""
-
+    is_inconsistent = False
     # Get index of all rows that have 'missing' values
     for missing_val in missing_vals:
         check_inconsistencies = clinicaldf[cols] == missing_val
         # unique missing values per column
         uniq_missing_values = check_inconsistencies.sum(axis=0).unique()
         if len(uniq_missing_values) > 1:
-            return f"Patient: you have inconsistent values in {', '.join(cols)}\n"
+            is_inconsistent = True
 
     # Check that the redacted values are consistent
-    is_redacted_int = clinicaldf[interval_col] == ">32485"
-    is_redacted_year = clinicaldf[year_col] == ">89"
-    if is_redacted_int is is_redacted_year:
-        return f"Patient: you have inconsistent values in {', '.join(cols)}\n"
-
+    is_redacted_int_89 = clinicaldf[interval_col] == ">32485"
+    is_redacted_year_89 = clinicaldf[year_col] == ">89"
     is_redacted_int = clinicaldf[interval_col] == "<6570"
     is_redacted_year = clinicaldf[year_col] == "<18"
-    if is_redacted_int is is_redacted_year:
+    if ( is_redacted_int is is_redacted_year or
+         is_redacted_int_89 is is_redacted_year_89):
+        is_inconsistent = True
+
+    if is_inconsistent:
         return f"Patient: you have inconsistent values in {', '.join(cols)}\n"
     return ""
 
