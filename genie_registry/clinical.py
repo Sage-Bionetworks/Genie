@@ -117,8 +117,8 @@ def _check_vital_status_consistentency(
     is_redacted_year_89 = clinicaldf[year_col] == ">89"
     is_redacted_int = clinicaldf[interval_col] == "<6570"
     is_redacted_year = clinicaldf[year_col] == "<18"
-    if ( is_redacted_int is is_redacted_year or
-         is_redacted_int_89 is is_redacted_year_89):
+    if (is_redacted_int is is_redacted_year or
+            is_redacted_int_89 is is_redacted_year_89):
         is_inconsistent = True
 
     if is_inconsistent:
