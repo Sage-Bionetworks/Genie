@@ -161,7 +161,7 @@ def test_default10__process():
 
 def test_invalid__validate():
     assay_info_dict = {
-        'SEQ_ASSAY_ID': ['SAGE-1', 'SAGE-3'],
+        'SEQ_ASSAY_ID': ['SAGE-1', 'SAG-2'],
         'is_paired_end': [True, "foo"],
         'library_strategy': ['foo', 'ChIP-Seq'],
         'library_selection': ['foo', 'PCR'],
@@ -193,6 +193,9 @@ def test_invalid__validate():
                       return_value=test_dict) as patch_get_gdc:
         error, warning = ASSAY_INFO._validate(assay_info_df, "syn9999")
         expected_errors = (
+            "Assay_information.yaml: "
+            "Please make sure all your SEQ_ASSAY_IDs start with your "
+            "center abbreviation.\n"
             "Assay_information.yaml: You are missing SEQ_ASSAY_IDs: SAGE-2\n"
             "Assay_information.yaml: "
             "Please double check your is_paired_end column.  "
