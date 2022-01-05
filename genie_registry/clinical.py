@@ -77,17 +77,18 @@ def _check_year(clinicaldf: pd.DataFrame, year_col: int, filename: str,
     return error
 
 
-def _check_vital_status_consistentency(
+def _check_int_year_consistency(
         clinicaldf: pd.DataFrame,
-        cols: list, missing_vals: list
+        cols: list, string_vals: list
     ) ->  str:
     """
-    Check if vital status columns are consistent in their values
+    Check if vital status interval and year columns are consistent in
+    their values
 
     Args:
         clinicaldf: Clinical Data Frame
         cols: Columns in the clinical data frame
-        missing_vals: String values that represent missing data
+        string_vals: String values that aren't integers
 
     Returns:
         Error message if values and inconsistent or blank string
@@ -103,13 +104,13 @@ def _check_vital_status_consistentency(
         # is already handled.
         if not process_functions.checkColExist(clinicaldf, col):
             return ""
+
     is_inconsistent = False
     # Get index of all rows that have 'missing' values
-    for missing_val in missing_vals:
-        check_inconsistencies = clinicaldf[cols] == missing_val
-        # unique missing values per column
-        uniq_missing_values = check_inconsistencies.sum(axis=0).unique()
-        if len(uniq_missing_values) > 1:
+    for str_val in string_vals:
+        # n string values per row
+        n_str = (clinicaldf[cols] == str_val).sum(axis=1)
+        if n_str.between(0, len(cols), inclusive="neither").any():
             is_inconsistent = True
 
     # Check that the redacted values are consistent
@@ -117,10 +118,12 @@ def _check_vital_status_consistentency(
     is_redacted_year_89 = clinicaldf[year_col] == ">89"
     is_redacted_int = clinicaldf[interval_col] == "<6570"
     is_redacted_year = clinicaldf[year_col] == "<18"
-    if (is_redacted_int is is_redacted_year or
-            is_redacted_int_89 is is_redacted_year_89):
+    if (any(is_redacted_int != is_redacted_year) or
+            any(is_redacted_int_89 != is_redacted_year_89)):
         is_inconsistent = True
 
+    # TODO: Add logic to make sure if DEAD is False, that INT_DOD and YEAR_DEATH
+    # Is Not Applicable.
     if is_inconsistent:
         return f"Patient: you have inconsistent values in {', '.join(cols)}\n"
     return ""
@@ -752,18 +755,19 @@ class clinical(FileTypeFormat):
                 "Patient Clinical File: Must have DEAD column.\n"
             )
         # CHECK: contact vital status value consistency
-        contact_error = _check_vital_status_consistentency(
+        contact_error = _check_int_year_consistency(
             clinicaldf=clinicaldf,
             cols=["YEAR_CONTACT", "INT_CONTACT"],
-            missing_vals=["Not Collected", "Unknown"]
+            string_vals=["Not Collected", "Unknown", "Not Released"]
         )
         total_error.write(contact_error)
 
         # CHECK: death vital status value consistency
-        death_error = _check_vital_status_consistentency(
+        death_error = _check_int_year_consistency(
             clinicaldf=clinicaldf,
-            cols=["YEAR_DEATH", "DEAD", "INT_DOD"],
-            missing_vals=["Not Collected", "Unknown", "Not Applicable"]
+            cols=["YEAR_DEATH", "INT_DOD"],
+            string_vals=["Not Collected", "Unknown", "Not Applicable",
+                         "Not Released"]
         )
         total_error.write(death_error)
 

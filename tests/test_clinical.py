@@ -532,11 +532,11 @@ def test_duplicated__validate():
         ETHNICITY=[1, 2, 3, 4, 99],
         BIRTH_YEAR=["Unknown", 1990, 1990, 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
-        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 1990, 1990],
-        YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 1990],
+        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", '>89', '<18'],
+        YEAR_CONTACT=["Unknown", "Not Collected", '>89', '18', 1990],
         INT_CONTACT=["Unknown", "Not Collected", '>32485', '<6570', 2000],
         INT_DOD=["Unknown", "Not Collected", 'Unknown', '>32485', '<6570'],
-        DEAD=['Unknown', 'Not Collected', 'Unknown', False,  True]))
+        DEAD=['Unknown', 'Not Collected', 'Not Applicable', False,  True]))
 
     sampleDf = pd.DataFrame(dict(
         SAMPLE_ID=["ID1-1", "ID3-1", "ID4-1", "ID5-1"],
@@ -698,34 +698,52 @@ def test_remap_clinical_values(col):
     assert expecteddf.equals(remappeddf)
 
 
-def test__check_vital_status_consistentency_valid():
+def test__check_int_year_consistency_valid():
     """Test valid vital status consistency"""
     testdf = pd.DataFrame(
         {"INT_2": [1, 2, "Unknown"],
          "YEAR_1": [1, 4, "Unknown"],
          "FOO_3": [1, 3, "Unknown"]}
     )
-    error = genie_registry.clinical._check_vital_status_consistentency(
+    error = genie_registry.clinical._check_int_year_consistency(
         clinicaldf=testdf,
-        cols=['INT_2', "YEAR_1", "FOO_3"],
-        missing_vals=["Unknown"]
+        cols=['INT_2', "YEAR_1"],
+        string_vals=["Unknown"]
     )
     assert error == ""
 
-
-def test__check_vital_status_consistentency_inconsistent():
+@pytest.mark.parametrize(
+    "inconsistent_df",
+    [
+        pd.DataFrame(
+            {"INT_2": [1, ">32485", 4],
+             "YEAR_1": [1, 4, 4]}
+        ),
+        pd.DataFrame(
+            {"INT_2": [1, 3, "Unknown"],
+             "YEAR_1": [1, 4, "Not Applicable"]}
+        ),
+        pd.DataFrame(
+            {"INT_2": [1, "Unknown", "Unknown"],
+             "YEAR_1": [1, 4, "Unknown"]}
+        ),
+        pd.DataFrame(
+            {"INT_2": [1, 2, ">32485"],
+             "YEAR_1": [1, 4, "<18"]}
+        ),
+        pd.DataFrame(
+            {"INT_2": [1, 2, "<6570"],
+             "YEAR_1": [1, 4, ">89"]}
+        )
+    ]
+)
+def test__check_int_year_consistency_inconsistent(inconsistent_df):
     """Test inconsistent vital status values"""
-    testdf = pd.DataFrame(
-        {"INT_2": [1, 2, 4],
-         "YEAR_1": [1, 4, "Unknown"],
-         "FOO_3": [1, 3, "Unknown"]}
+    error = genie_registry.clinical._check_int_year_consistency(
+        clinicaldf=inconsistent_df,
+        cols=['INT_2', "YEAR_1"],
+        string_vals=["Unknown", "Not Applicable"]
     )
-    error = genie_registry.clinical._check_vital_status_consistentency(
-        clinicaldf=testdf,
-        cols=['INT_2', "YEAR_1", "FOO_3"],
-        missing_vals=["Unknown"]
-    )
-    print(error)
     assert error == (
-        "Patient: you have inconsistent values in INT_2, YEAR_1, FOO_3\n"
+        "Patient: you have inconsistent values in INT_2, YEAR_1\n"
     )
