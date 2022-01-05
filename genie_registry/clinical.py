@@ -77,6 +77,36 @@ def _check_year(clinicaldf: pd.DataFrame, year_col: int, filename: str,
     return error
 
 
+def _check_int_dead_consistency(clinicaldf: pd.DataFrame) ->  str:
+    """Check if vital status interval and dead column are consistent
+
+    Args:
+        clinicaldf: Clinical Data Frame
+
+    Returns:
+        Error message if values and inconsistent or blank string
+    """
+    cols = ["INT_DOD", "DEAD"]
+    for col in cols:
+        # Return empty string is columns don't exist because this error
+        # is already handled.
+        if not process_functions.checkColExist(clinicaldf, col):
+            return ''
+    is_dead = clinicaldf['DEAD'].astype(str) == "True"
+    is_alive = clinicaldf['DEAD'].astype(str) == "False"
+    allowed_str = ['Unknown', 'Not Collected', 'Not Applicable',
+                   "Not Released"]
+    # If dead, int column can't be Not Applicable
+    # If alive, int column can't have values
+    if (any(clinicaldf.loc[is_dead, 'INT_DOD'] == "Not Applicable") or
+            not all(clinicaldf.loc[is_alive, 'INT_DOD'].isin(allowed_str))):
+        return (
+            "Patient: you have inconsistent values in "
+            "INT_DOD, YEAR_DEATH, DEAD\n"
+        )
+    return ''
+
+
 def _check_int_year_consistency(
         clinicaldf: pd.DataFrame,
         cols: list, string_vals: list

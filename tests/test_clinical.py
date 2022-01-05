@@ -718,6 +718,7 @@ def test__check_int_year_consistency_valid():
     )
     assert error == ""
 
+
 @pytest.mark.parametrize(
     "inconsistent_df",
     [
@@ -752,4 +753,48 @@ def test__check_int_year_consistency_inconsistent(inconsistent_df):
     )
     assert error == (
         "Patient: you have inconsistent values in INT_2, YEAR_1\n"
+    )
+
+
+@pytest.mark.parametrize(
+    "valid_df",
+    [
+        pd.DataFrame(
+            {"INT_DOD": [11111, "Not Applicable"],
+             "DEAD": [True, False]}
+        ),
+        pd.DataFrame(
+            {"INT_DOD": [1111, "Not Released"],
+             "DEAD": [True, False]}
+        )
+    ]
+)
+def test__check_int_dead_consistency_valid(valid_df):
+    """Test valid vital status consistency"""
+    error = genie_registry.clinical._check_int_dead_consistency(
+        clinicaldf=valid_df
+    )
+    assert error == ""
+
+
+@pytest.mark.parametrize(
+    "inconsistent_df",
+    [
+        pd.DataFrame(
+            {"INT_DOD": ["Not Applicable", "Not Applicable"],
+             "DEAD": [True, False]}
+        ),
+        pd.DataFrame(
+            {"INT_DOD": [1111, 11111],
+             "DEAD": [True, False]}
+        )
+    ]
+)
+def test__check_int_dead_consistency_inconsistent(inconsistent_df):
+    """Test valid vital status consistency"""
+    error = genie_registry.clinical._check_int_dead_consistency(
+        clinicaldf=inconsistent_df
+    )
+    assert error == (
+        "Patient: you have inconsistent values in INT_DOD, YEAR_DEATH, DEAD\n"
     )
