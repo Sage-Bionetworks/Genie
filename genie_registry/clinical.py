@@ -122,8 +122,6 @@ def _check_int_year_consistency(
             any(is_redacted_int_89 != is_redacted_year_89)):
         is_inconsistent = True
 
-    # TODO: Add logic to make sure if DEAD is False, that INT_DOD and YEAR_DEATH
-    # Is Not Applicable.
     if is_inconsistent:
         return f"Patient: you have inconsistent values in {', '.join(cols)}\n"
     return ""

@@ -273,11 +273,13 @@ def test_perfect__validate():
         ETHNICITY=[1, 2, 3, 4, 99],
         BIRTH_YEAR=[1222, "Unknown", 1920, 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
-        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 1990, 1990],
-        YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 1990],
+        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable",
+                    '>89', '<18'],
+        YEAR_CONTACT=["Unknown", "Not Collected", '>89', '<18', 1990],
         INT_CONTACT=["Unknown", "Not Collected", '>32485', '<6570', 2000],
-        INT_DOD=["Unknown", "Not Collected", 'Unknown', '>32485', '<6570'],
-        DEAD=['Unknown', 'Not Collected', 'Unknown', False,  True]))
+        INT_DOD=["Unknown", "Not Collected", 'Not Applicable',
+                 '>32485', '<6570'],
+        DEAD=['Unknown', 'Not Collected', 'Unknown', False, True]))
 
     sampledf = pd.DataFrame(dict(
         SAMPLE_ID=["ID1-1", "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
@@ -318,7 +320,7 @@ def test_nonull__validate():
                      2000],
         INT_DOD=["Unknown", "Not Collected", 'Unknown', float('nan'),
                  '<6570'],
-        DEAD=['Unknown', 'Not Collected', 'Unknown', float('nan'),  True]))
+        DEAD=['Unknown', 'Not Collected', 'Unknown', float('nan'), True]))
 
     sampledf = pd.DataFrame(dict(
         SAMPLE_ID=["ID1-1", "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
@@ -360,6 +362,8 @@ def test_nonull__validate():
             "Patient Clinical File: Please double check your DEAD column, "
             "it must be True, False, 'Unknown', "
             "'Not Released' or 'Not Collected'.\n"
+            "Patient: you have inconsistent values in YEAR_CONTACT, INT_CONTACT\n"
+            "Patient: you have inconsistent values in YEAR_DEATH, INT_DOD\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your SECONDARY_RACE "
@@ -495,7 +499,7 @@ def test_errors__validate():
             "it must be True, False, 'Unknown', "
             "'Not Released' or 'Not Collected'.\n"
             "Patient: you have inconsistent values in YEAR_CONTACT, INT_CONTACT\n"
-            "Patient: you have inconsistent values in YEAR_DEATH, DEAD, INT_DOD\n"
+            "Patient: you have inconsistent values in YEAR_DEATH, INT_DOD\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your SECONDARY_RACE "
@@ -532,11 +536,13 @@ def test_duplicated__validate():
         ETHNICITY=[1, 2, 3, 4, 99],
         BIRTH_YEAR=["Unknown", 1990, 1990, 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
-        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", '>89', '<18'],
-        YEAR_CONTACT=["Unknown", "Not Collected", '>89', '18', 1990],
+        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable",
+                    '>89', '<18'],
+        YEAR_CONTACT=["Unknown", "Not Collected", '>89', '<18', 1990],
         INT_CONTACT=["Unknown", "Not Collected", '>32485', '<6570', 2000],
-        INT_DOD=["Unknown", "Not Collected", 'Unknown', '>32485', '<6570'],
-        DEAD=['Unknown', 'Not Collected', 'Not Applicable', False,  True]))
+        INT_DOD=["Unknown", "Not Collected", 'Not Applicable',
+                 '>32485', '<6570'],
+        DEAD=['Unknown', 'Not Collected', 'Unknown', False, True]))
 
     sampleDf = pd.DataFrame(dict(
         SAMPLE_ID=["ID1-1", "ID3-1", "ID4-1", "ID5-1"],
