@@ -96,10 +96,16 @@ def _check_int_dead_consistency(clinicaldf: pd.DataFrame) ->  str:
     is_alive = clinicaldf['DEAD'].astype(str) == "False"
     allowed_str = ['Unknown', 'Not Collected', 'Not Applicable',
                    "Not Released"]
+    is_str = clinicaldf['DEAD'].isin(allowed_str)
+    # Check that all string values are equal each other
+    is_equal = all(
+        clinicaldf.loc[is_str, "DEAD"] == clinicaldf.loc[is_str, "INT_DOD"]
+    )
     # If dead, int column can't be Not Applicable
     # If alive, int column can't have values
     if (any(clinicaldf.loc[is_dead, 'INT_DOD'] == "Not Applicable") or
-            not all(clinicaldf.loc[is_alive, 'INT_DOD'].isin(allowed_str))):
+            not all(clinicaldf.loc[is_alive, 'INT_DOD'].isin(allowed_str)) or
+            not is_equal):
         return (
             "Patient: you have inconsistent values in "
             "INT_DOD, YEAR_DEATH, DEAD\n"
@@ -797,6 +803,8 @@ class clinical(FileTypeFormat):
             string_vals=["Not Collected", "Unknown", "Not Applicable",
                          "Not Released"]
         )
+        total_error.write(death_error)
+        death_error = _check_int_dead_consistency(clinicaldf=clinicaldf)
         total_error.write(death_error)
 
         # CHECK: SAMPLE_CLASS is optional attribute
