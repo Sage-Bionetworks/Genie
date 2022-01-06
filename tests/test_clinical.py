@@ -362,8 +362,10 @@ def test_nonull__validate():
             "Patient Clinical File: Please double check your DEAD column, "
             "it must be True, False, 'Unknown', "
             "'Not Released' or 'Not Collected'.\n"
-            "Patient: you have inconsistent values in YEAR_CONTACT, INT_CONTACT\n"
-            "Patient: you have inconsistent values in YEAR_DEATH, INT_DOD\n"
+            "Patient: you have inconsistent redaction values in "
+            "YEAR_CONTACT, INT_CONTACT.\n"
+            "Patient: you have inconsistent redaction and text values in "
+            "YEAR_DEATH, INT_DOD.\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your SECONDARY_RACE "
@@ -498,8 +500,10 @@ def test_errors__validate():
             "Patient Clinical File: Please double check your DEAD column, "
             "it must be True, False, 'Unknown', "
             "'Not Released' or 'Not Collected'.\n"
-            "Patient: you have inconsistent values in YEAR_CONTACT, INT_CONTACT\n"
-            "Patient: you have inconsistent values in YEAR_DEATH, INT_DOD\n"
+            "Patient: you have inconsistent redaction and text values in "
+            "YEAR_CONTACT, INT_CONTACT.\n"
+            "Patient: you have inconsistent redaction and text values in "
+            "YEAR_DEATH, INT_DOD.\n"
             "Patient Clinical File: DEAD value is inconsistent with "
             "INT_DOD for at least one patient.\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
@@ -722,40 +726,61 @@ def test__check_int_year_consistency_valid():
 
 
 @pytest.mark.parametrize(
-    "inconsistent_df",
+    ("inconsistent_df", "expected_err"),
     [
-        pd.DataFrame(
-            {"INT_2": [1, ">32485", 4],
-             "YEAR_1": [1, 4, 4]}
+        (
+            pd.DataFrame(
+                {"INT_2": [1, ">32485", 4],
+                 "YEAR_1": [1, 4, 4]}
+            ),
+            "Patient: you have inconsistent redaction values in INT_2, YEAR_1.\n"
         ),
-        pd.DataFrame(
-            {"INT_2": [1, 3, "Unknown"],
-             "YEAR_1": [1, 4, "Not Applicable"]}
+        (
+            pd.DataFrame(
+                {"INT_2": [1, 3, "Unknown"],
+                 "YEAR_1": [1, 4, "Not Applicable"]}
+            ),
+            "Patient: you have inconsistent text values in INT_2, YEAR_1.\n"
         ),
-        pd.DataFrame(
-            {"INT_2": [1, "Unknown", "Unknown"],
-             "YEAR_1": [1, 4, "Unknown"]}
+        (
+            pd.DataFrame(
+                {"INT_2": [1, "Unknown", "Unknown"],
+                 "YEAR_1": [1, 4, "Unknown"]}
+            ),
+            "Patient: you have inconsistent text values in INT_2, YEAR_1.\n"
         ),
-        pd.DataFrame(
-            {"INT_2": [1, 2, ">32485"],
-             "YEAR_1": [1, 4, "<18"]}
+        (
+            pd.DataFrame(
+                {"INT_2": [1, 2, ">32485"],
+                 "YEAR_1": [1, 4, "<18"]}
+            ),
+            "Patient: you have inconsistent redaction values in INT_2, YEAR_1.\n"
         ),
-        pd.DataFrame(
-            {"INT_2": [1, 2, "<6570"],
-             "YEAR_1": [1, 4, ">89"]}
+        (
+            pd.DataFrame(
+                {"INT_2": [1, 2, "<6570"],
+                 "YEAR_1": [1, 4, ">89"]}
+            ),
+            "Patient: you have inconsistent redaction values in INT_2, YEAR_1.\n"
+        ),
+        (
+            pd.DataFrame(
+                {"INT_2": ["<6570", "Unknown", "Unknown"],
+                 "YEAR_1": [1, 3, "Unknown"]}
+            ),
+            "Patient: you have inconsistent redaction and text values in INT_2, YEAR_1.\n"
         )
     ]
 )
-def test__check_int_year_consistency_inconsistent(inconsistent_df):
+def test__check_int_year_consistency_inconsistent(inconsistent_df,
+                                                  expected_err):
     """Test inconsistent vital status values"""
     error = genie_registry.clinical._check_int_year_consistency(
         clinicaldf=inconsistent_df,
         cols=['INT_2', "YEAR_1"],
         string_vals=["Unknown", "Not Applicable"]
     )
-    assert error == (
-        "Patient: you have inconsistent values in INT_2, YEAR_1\n"
-    )
+    assert error == expected_err
 
 
 @pytest.mark.parametrize(

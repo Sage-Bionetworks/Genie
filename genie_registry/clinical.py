@@ -141,14 +141,15 @@ def _check_int_year_consistency(
         if not process_functions.checkColExist(clinicaldf, col):
             return ""
 
-    is_inconsistent = False
+    is_text_inconsistent = False
     # Get index of all rows that have 'missing' values
     for str_val in string_vals:
         # n string values per row
         n_str = (clinicaldf[cols] == str_val).sum(axis=1)
         if n_str.between(0, len(cols), inclusive="neither").any():
-            is_inconsistent = True
+            is_text_inconsistent = True
 
+    is_redaction_inconsistent = False
     # Check that the redacted values are consistent
     is_redacted_int_89 = clinicaldf[interval_col] == ">32485"
     is_redacted_year_89 = clinicaldf[year_col] == ">89"
@@ -156,10 +157,19 @@ def _check_int_year_consistency(
     is_redacted_year = clinicaldf[year_col] == "<18"
     if (any(is_redacted_int != is_redacted_year) or
             any(is_redacted_int_89 != is_redacted_year_89)):
-        is_inconsistent = True
+        is_redaction_inconsistent = True
 
-    if is_inconsistent:
-        return f"Patient: you have inconsistent values in {', '.join(cols)}\n"
+    col_strs = ', '.join(cols)
+    if is_text_inconsistent and is_redaction_inconsistent:
+        return (
+            "Patient: you have inconsistent redaction and text "
+            f"values in {col_strs}.\n"
+        )
+    if is_redaction_inconsistent:
+        return f"Patient: you have inconsistent redaction values in {col_strs}.\n"
+    if is_text_inconsistent:
+        return f"Patient: you have inconsistent text values in {col_strs}.\n"
+
     return ""
 
 
