@@ -500,7 +500,8 @@ def test_errors__validate():
             "'Not Released' or 'Not Collected'.\n"
             "Patient: you have inconsistent values in YEAR_CONTACT, INT_CONTACT\n"
             "Patient: you have inconsistent values in YEAR_DEATH, INT_DOD\n"
-            "Patient: you have inconsistent values in INT_DOD, YEAR_DEATH, DEAD\n"
+            "Patient Clinical File: DEAD value is inconsistent with "
+            "INT_DOD for at least one patient.\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your SECONDARY_RACE "
@@ -801,5 +802,6 @@ def test__check_int_dead_consistency_inconsistent(inconsistent_df):
         clinicaldf=inconsistent_df
     )
     assert error == (
-        "Patient: you have inconsistent values in INT_DOD, YEAR_DEATH, DEAD\n"
+        "Patient Clinical File: DEAD value is inconsistent with "
+        "INT_DOD for at least one patient.\n"
     )

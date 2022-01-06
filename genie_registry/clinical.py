@@ -107,8 +107,8 @@ def _check_int_dead_consistency(clinicaldf: pd.DataFrame) ->  str:
             not all(clinicaldf.loc[is_alive, 'INT_DOD'].isin(allowed_str)) or
             not is_equal):
         return (
-            "Patient: you have inconsistent values in "
-            "INT_DOD, YEAR_DEATH, DEAD\n"
+            "Patient Clinical File: DEAD value is inconsistent with INT_DOD "
+            "for at least one patient.\n"
         )
     return ''
 
@@ -328,7 +328,7 @@ class clinical(FileTypeFormat):
         # remove unwanted columns again
         keep_cols_idx = remapped_clindf.columns.isin(clinicalTemplate.columns)
         remapped_clindf = remapped_clindf.drop(
-            remapped_clindf.columns[~keep_cols_idx], 1
+            columns=remapped_clindf.columns[~keep_cols_idx]
         )
         remapped_clindf['CENTER'] = self.center
         return remapped_clindf
