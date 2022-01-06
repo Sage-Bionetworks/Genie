@@ -2,6 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+data/
 *.csv
 *.txt
 *.pyc
@@ -9,3 +10,19 @@
 *.png
 *.bed
 *.gtf
+data_guide-004.pdf
+data_guide-concordance.tex
+data_guide.Rnw
+data_guide.log
+data_guide.pdf
+data_guide.synctex.gz
+data_guide.tex
+data_guide.toc
+data_guide.aux
+data_guide.out
+*consortium.Rmd
+*consortium.html
+.vscode/
+Genie.Rproj
+build/
+dist/
