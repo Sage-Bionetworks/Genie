@@ -77,6 +77,102 @@ def _check_year(clinicaldf: pd.DataFrame, year_col: int, filename: str,
     return error
 
 
+def _check_int_dead_consistency(clinicaldf: pd.DataFrame) ->  str:
+    """Check if vital status interval and dead column are consistent
+
+    Args:
+        clinicaldf: Clinical Data Frame
+
+    Returns:
+        Error message if values and inconsistent or blank string
+    """
+    cols = ["INT_DOD", "DEAD"]
+    for col in cols:
+        # Return empty string is columns don't exist because this error
+        # is already handled.
+        if not process_functions.checkColExist(clinicaldf, col):
+            return ''
+    is_dead = clinicaldf['DEAD'].astype(str) == "True"
+    is_alive = clinicaldf['DEAD'].astype(str) == "False"
+    allowed_str = ['Unknown', 'Not Collected', 'Not Applicable',
+                   "Not Released"]
+    is_str = clinicaldf['DEAD'].isin(allowed_str)
+    # Check that all string values are equal each other
+    is_equal = all(
+        clinicaldf.loc[is_str, "DEAD"] == clinicaldf.loc[is_str, "INT_DOD"]
+    )
+    # If dead, int column can't be Not Applicable
+    # If alive, int column can't have values
+    if (any(clinicaldf.loc[is_dead, 'INT_DOD'] == "Not Applicable") or
+            not all(clinicaldf.loc[is_alive, 'INT_DOD'].isin(allowed_str)) or
+            not is_equal):
+        return (
+            "Patient Clinical File: DEAD value is inconsistent with INT_DOD "
+            "for at least one patient.\n"
+        )
+    return ''
+
+
+def _check_int_year_consistency(
+        clinicaldf: pd.DataFrame,
+        cols: list, string_vals: list
+    ) ->  str:
+    """
+    Check if vital status interval and year columns are consistent in
+    their values
+
+    Args:
+        clinicaldf: Clinical Data Frame
+        cols: Columns in the clinical data frame
+        string_vals: String values that aren't integers
+
+    Returns:
+        Error message if values and inconsistent or blank string
+    """
+    interval_col = ''
+    year_col = ''
+    for col in cols:
+        # This is assuming that interval and year columns start with
+        # INT/YEAR
+        interval_col = col if col.startswith("INT") else interval_col
+        year_col = col if col.startswith("YEAR") else year_col
+        # Return empty string is columns don't exist because this error
+        # is already handled.
+        if not process_functions.checkColExist(clinicaldf, col):
+            return ""
+
+    is_text_inconsistent = False
+    # Get index of all rows that have 'missing' values
+    for str_val in string_vals:
+        # n string values per row
+        n_str = (clinicaldf[cols] == str_val).sum(axis=1)
+        if n_str.between(0, len(cols), inclusive="neither").any():
+            is_text_inconsistent = True
+
+    is_redaction_inconsistent = False
+    # Check that the redacted values are consistent
+    is_redacted_int_89 = clinicaldf[interval_col] == ">32485"
+    is_redacted_year_89 = clinicaldf[year_col] == ">89"
+    is_redacted_int = clinicaldf[interval_col] == "<6570"
+    is_redacted_year = clinicaldf[year_col] == "<18"
+    if (any(is_redacted_int != is_redacted_year) or
+            any(is_redacted_int_89 != is_redacted_year_89)):
+        is_redaction_inconsistent = True
+
+    col_strs = ', '.join(cols)
+    if is_text_inconsistent and is_redaction_inconsistent:
+        return (
+            "Patient: you have inconsistent redaction and text "
+            f"values in {col_strs}.\n"
+        )
+    if is_redaction_inconsistent:
+        return f"Patient: you have inconsistent redaction values in {col_strs}.\n"
+    if is_text_inconsistent:
+        return f"Patient: you have inconsistent text values in {col_strs}.\n"
+
+    return ""
+
+
 # PROCESSING
 def remap_clinical_values(clinicaldf: pd.DataFrame, sex_mapping: pd.DataFrame,
                           race_mapping: pd.DataFrame,
@@ -242,7 +338,7 @@ class clinical(FileTypeFormat):
         # remove unwanted columns again
         keep_cols_idx = remapped_clindf.columns.isin(clinicalTemplate.columns)
         remapped_clindf = remapped_clindf.drop(
-            remapped_clindf.columns[~keep_cols_idx], 1
+            columns=remapped_clindf.columns[~keep_cols_idx]
         )
         remapped_clindf['CENTER'] = self.center
         return remapped_clindf
@@ -702,6 +798,24 @@ class clinical(FileTypeFormat):
             total_error.write(
                 "Patient Clinical File: Must have DEAD column.\n"
             )
+        # CHECK: contact vital status value consistency
+        contact_error = _check_int_year_consistency(
+            clinicaldf=clinicaldf,
+            cols=["YEAR_CONTACT", "INT_CONTACT"],
+            string_vals=["Not Collected", "Unknown", "Not Released"]
+        )
+        total_error.write(contact_error)
+
+        # CHECK: death vital status value consistency
+        death_error = _check_int_year_consistency(
+            clinicaldf=clinicaldf,
+            cols=["YEAR_DEATH", "INT_DOD"],
+            string_vals=["Not Collected", "Unknown", "Not Applicable",
+                         "Not Released"]
+        )
+        total_error.write(death_error)
+        death_error = _check_int_dead_consistency(clinicaldf=clinicaldf)
+        total_error.write(death_error)
 
         # CHECK: SAMPLE_CLASS is optional attribute
         have_column = process_functions.checkColExist(clinicaldf,
