@@ -403,7 +403,7 @@ def runMAFinBED(syn,
         command.extend(['--syn_user', genie_user, '--syn_pass', genie_pass])
     if test:
         command.append('--testing')
-    subprocess.check_call(command)
+    subprocess.run(command, check=True)
 
     # mutationSynId = databaseSynIdMappingDf['Id'][
     #     databaseSynIdMappingDf['Database'] == "vcf2maf"][0]
@@ -488,7 +488,7 @@ def mutation_in_cis_filter(syn,
                             '--syn_pass', genie_pass])
         if test:
             command.append('--testing')
-        subprocess.check_call(command)
+        subprocess.run(command, check=True)
         # Store each centers mutations in cis to their staging folder
         mergeCheck = syn.tableQuery(
             "select * from {} where Center in ('{}')".format(
@@ -1182,7 +1182,7 @@ def store_cna_files(syn, flatfiles_view_synid,
             # Join CNA file
             cna_samples.extend(merged_cna.columns[1:].tolist())
             linux_join_command = ["join", cna_path, CNA_CENTER_PATH % center]
-            output = subprocess.check_output(linux_join_command)
+            output = subprocess.run(linux_join_command, capture_output=True)
             with open(cna_path, "w") as cna_file:
                 cna_file.write(output.decode("utf-8").replace(" ", "\t"))
 
@@ -1755,3 +1755,75 @@ def create_link_version(syn, genie_version, case_list_entities,
 
     return {"release_folder": release_folder_synid,
             "caselist_folder": caselist_folder_synid}
+
+
+# TODO: Move to genie.database_to_staging.py
+def generate_dashboard_html(genie_version, staging=False,
+                            genie_user=None,
+                            genie_pass=None):
+    """Generates dashboard html writeout that gets uploaded to the
+    release folder
+
+    Args:
+        syn: Synapse connection
+        genie_version: GENIE release
+        staging: Use staging files. Default is False
+        genie_user: GENIE synapse username
+        genie_pass: GENIE synapse password
+
+    """
+    markdown_render_cmd = [
+        'Rscript', os.path.join(process_functions.SCRIPT_DIR,
+                                '../R/dashboard_markdown_generator.R'),
+        genie_version, '--template_path',
+        os.path.join(process_functions.SCRIPT_DIR,
+                     '../templates/dashboardTemplate.Rmd')
+    ]
+
+    if genie_user is not None and genie_pass is not None:
+        markdown_render_cmd.extend(['--syn_user', genie_user,
+                                    '--syn_pass', genie_pass])
+    if staging:
+        markdown_render_cmd.append('--staging')
+    subprocess.run(markdown_render_cmd, check=True)
+
+
+# TODO: Move to genie.database_to_staging.py
+def generate_data_guide(genie_version, oncotree_version=None,
+                        database_mapping=None, genie_user=None,
+                        genie_pass=None):
+    """Generates the GENIE data guide"""
+
+    template_path = os.path.join(
+        process_functions.SCRIPT_DIR,
+        '../templates/public_data_guide_template.Rnw'
+    )
+    with open(template_path, 'r') as template_file:
+        template_str = template_file.read()
+
+    replacements = {
+        "{{release}}": genie_version,
+        "{{database_synid}}": database_mapping,
+        "{{oncotree}}": oncotree_version.replace("_", "\\_"),
+        "{{username}}": genie_user,
+        "{{password}}": genie_pass,
+        "{{genie_banner}}": os.path.join(process_functions.SCRIPT_DIR,
+                                         "../genie_banner.png")
+    }
+
+    for search in replacements:
+        replacement = replacements[search]
+        # If no replacement value is passed in, don't replace
+        if replacement is not None:
+            template_str = template_str.replace(search, replacement)
+
+    with open(os.path.join(process_functions.SCRIPT_DIR,
+                           "data_guide.Rnw"), "w") as data_guide_file:
+        data_guide_file.write(template_str)
+
+    subprocess.run(
+        ['R', 'CMD', 'Sweave', '--pdf',
+         os.path.join(process_functions.SCRIPT_DIR, "data_guide.Rnw")],
+        check=True
+    )
+    return "data_guide.pdf"
