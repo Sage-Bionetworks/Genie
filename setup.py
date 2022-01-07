@@ -30,6 +30,6 @@ setup(name='aacrgenie',
       install_requires=['pandas>=1.0',
                         'synapseclient==2.4.0',
                         'httplib2>=0.11.3',
-                        'pycrypto>=2.6.1',
+                        'pycryptodome>=3.12.0',
                         'PyYAML>=5.1',
                         'chardet>=4.0.0'])
