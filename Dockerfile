@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		dos2unix \
 		python3 \
 		python3-pip \
+		python3-dev \
 		git \
 		r-base \
 		r-base-dev \
