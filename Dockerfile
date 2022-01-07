@@ -1,4 +1,4 @@
-FROM ubuntu:impish-20211102
+FROM ubuntu:hirsute-20211107
 ENV DEBIAN_FRONTEND=noninteractive 
 
 # Must install this because gpg not installed
