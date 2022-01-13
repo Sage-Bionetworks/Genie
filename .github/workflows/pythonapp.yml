@@ -34,6 +34,12 @@ jobs:
     - name: Test with pytest
       run: |
         pytest tests/ --cov=genie --cov=genie_registry --cov-report=html
+    - name: Lint with black
+      uses: psf/black@stable
+      with:
+        options: "--check --verbose"
+        src: "."
+        version: "21.5b1"
     - name: Upload pytest test results
       uses: actions/upload-artifact@v2
       with:
