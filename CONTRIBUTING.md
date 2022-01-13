@@ -1,7 +1,7 @@
 
 ## Contributing
 
-We welcome all contributions!  Please head to [issues](https://github.com/Sage-Bionetworks/challengeutils/issues) to either file any bugs/feature requests or find a task you want to assist with.  Make sure to assign yourself the task if you decide to work on it.
+We welcome all contributions!  Please head to [issues](https://github.com/Sage-Bionetworks/Genie/issues) to either file any bugs/feature requests or find a task you want to assist with.  Make sure to assign yourself the task if you decide to work on it.
 
 
 ### Fork and clone this repository
