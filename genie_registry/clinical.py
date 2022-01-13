@@ -77,7 +77,7 @@ def _check_year(clinicaldf: pd.DataFrame, year_col: int, filename: str,
     return error
 
 
-def _check_int_dead_consistency(clinicaldf: pd.DataFrame) ->  str:
+def _check_int_dead_consistency(clinicaldf: pd.DataFrame) -> str:
     """Check if vital status interval and dead column are consistent
 
     Args:
@@ -114,9 +114,9 @@ def _check_int_dead_consistency(clinicaldf: pd.DataFrame) ->  str:
 
 
 def _check_int_year_consistency(
-        clinicaldf: pd.DataFrame,
-        cols: list, string_vals: list
-    ) ->  str:
+    clinicaldf: pd.DataFrame,
+    cols: list, string_vals: list
+) -> str:
     """
     Check if vital status interval and year columns are consistent in
     their values
@@ -456,6 +456,15 @@ class clinical(FileTypeFormat):
         warning = StringIO()
 
         clinicaldf.columns = [col.upper() for col in clinicaldf.columns]
+        # CHECK: for empty rows
+        empty_rows = clinicaldf.isnull().values.all(axis=1)
+        if empty_rows.any():
+            total_error.write(
+                "Clinical file(s): No empty rows allowed.\n"
+            )
+            # Remove completely empty rows to speed up processing
+            clinicaldf = clinicaldf[~empty_rows]
+
         clinicaldf = clinicaldf.fillna("")
 
         oncotree_mapping_dict = \
@@ -475,15 +484,6 @@ class clinical(FileTypeFormat):
 
         sex_mapping = \
             process_functions.getGenieMapping(self.syn, "syn7434222")
-
-        # CHECK: for empty rows
-        empty_rows = clinicaldf.isnull().values.all(axis=1)
-        if any(empty_rows):
-            total_error.write(
-                "Clinical file(s): No empty rows allowed.\n"
-            )
-            # Remove completely empty rows to speed up processing
-            clinicaldf = clinicaldf[~empty_rows]
 
         # CHECK: SAMPLE_ID
         sample_id = 'SAMPLE_ID'
