@@ -29,9 +29,7 @@ def storeFile(syn, filePath, parentId, genie_version, name=None):
     """
     if name is None:
         name = os.path.basename(filePath)
-    file_ent = synapseclient.File(
-        filePath, name=name, parent=parentId, versionComment=genie_version
-    )
+    file_ent = synapseclient.File(filePath, name=name, parent=parentId, versionComment=genie_version)
     file_ent = syn.store(file_ent)
     return file_ent
 
