@@ -38,7 +38,7 @@ The GENIE project follows the standard [git flow](https://www.atlassian.com/git/
 
 > *A code maintainer must review and accept your pull request.* A code review (which happens with both the contributor and the reviewer present) is required for contributing. This can be performed remotely (e.g., Zoom, Hangout, or other video or phone conference).
 
-This package uses [semantic versioning](https://semver.org/) for releasing new versions. The version should be updated on the `develop` branch as changes are reviewed and merged in by a code maintainer. The version for the package is maintained in the [genie/__version__.py](genie/__version__.py) file.  A github release should also occur every time `develop` is pushed into `master` and it should match the version for the package.
+This package uses [semantic versioning](https://semver.org/) for releasing new versions. The version should be updated on the `develop` branch as changes are reviewed and merged in by a code maintainer. The version for the package is maintained in the [genie/__version__.py](genie/__version__.py) file.  A github release should also occur every time `develop` is pushed into `main` and it should match the version for the package.
 
 ### Testing
 
@@ -64,4 +64,4 @@ Follow gitflow best practices as linked above.
     * update `genie/__version__.py`
 * Merge `release-X.X` branch into `main`
 * Create release tag (`v...`) and include release notes.  Also include any known bugs for each release here.
-* Merge `master` back into `develop`
+* Merge `main` back into `develop`
