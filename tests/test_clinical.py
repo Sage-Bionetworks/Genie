@@ -534,30 +534,30 @@ def test_duplicated__validate():
     are uploaded, it could be a duplicated PATIENT_ID error
     '''
     patientDf = pd.DataFrame(dict(
-        PATIENT_ID=["ID1", "ID1", "ID3", "ID4", "ID5"],
-        SEX=[1, 2, 1, 2, 99],
-        PRIMARY_RACE=[1, 2, 3, 4, 99],
-        SECONDARY_RACE=[1, 2, 3, 4, 99],
-        TERTIARY_RACE=[1, 2, 3, 4, 99],
-        ETHNICITY=[1, 2, 3, 4, 99],
-        BIRTH_YEAR=["Unknown", 1990, 1990, 1990, 1990],
-        CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
-        YEAR_CONTACT=["Unknown", "Not Collected", '>89', '<18', 1990],
-        INT_CONTACT=["Unknown", "Not Collected", '>32485', '<6570', 2000],
+        PATIENT_ID=["ID1", "ID1", "ID3", "ID4", float('nan')],
+        SEX=[1, 2, 1, 2, float('nan')],
+        PRIMARY_RACE=[1, 2, 3, 4, float('nan')],
+        SECONDARY_RACE=[1, 2, 3, 4, float('nan')],
+        TERTIARY_RACE=[1, 2, 3, 4, float('nan')],
+        ETHNICITY=[1, 2, 3, 4, float('nan')],
+        BIRTH_YEAR=["Unknown", 1990, 1990, 1990, float('nan')],
+        CENTER=["FOO", "FOO", "FOO", "FOO", float('nan')],
+        YEAR_CONTACT=["Unknown", "Not Collected", '>89', '<18', float('nan')],
+        INT_CONTACT=["Unknown", "Not Collected", '>32485', '<6570', float('nan')],
         YEAR_DEATH=["Unknown", "Not Collected", "Unknown",
-                    'Not Applicable', '<18'],
+                    'Not Applicable', float('nan')],
         INT_DOD=["Unknown", "Not Collected", 'Unknown',
-                 'Not Applicable', '<6570'],
-        DEAD=['Unknown', 'Not Collected', 'Unknown', False, True]))
+                 'Not Applicable', float('nan')],
+        DEAD=['Unknown', 'Not Collected', 'Unknown', False, float('nan')]))
 
     sampleDf = pd.DataFrame(dict(
-        SAMPLE_ID=["ID1-1", "ID3-1", "ID4-1", "ID5-1"],
-        PATIENT_ID=["ID1", "ID3", "ID4", "ID5"],
-        AGE_AT_SEQ_REPORT=[100000, 100000, 100000, 100000],
-        ONCOTREE_CODE=['AMPCA', 'UNKNOWN', 'AMPCA', 'AMPCA'],
-        SAMPLE_TYPE=[1, 3, 4, 4],
-        SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-1', 'SAGE-1', 'SAGE-1'],
-        SEQ_DATE=['Jan-2013', 'Jul-2013', 'Oct-2013', 'release']))
+        SAMPLE_ID=["ID1-1", "ID3-1", "ID4-1", float('nan')],
+        PATIENT_ID=["ID1", "ID3", "ID4", float('nan')],
+        AGE_AT_SEQ_REPORT=[100000, 100000, 100000, float('nan')],
+        ONCOTREE_CODE=['AMPCA', 'UNKNOWN', 'AMPCA', float('nan')],
+        SAMPLE_TYPE=[1, 3, 4, float('nan')],
+        SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-1', 'SAGE-1', float('nan')],
+        SEQ_DATE=['Jan-2013', 'Jul-2013', 'Oct-2013', float('nan')]))
 
     clinicalDf = patientDf.merge(sampleDf, on="PATIENT_ID")
     with mock.patch(
@@ -566,6 +566,7 @@ def test_duplicated__validate():
         error, warning = clin_class._validate(clinicalDf, json_oncotreeurl)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         expectedErrors = (
+            "Clinical file(s): No empty rows allowed.\n"
             "Sample Clinical File: No duplicated SAMPLE_ID allowed.\n"
             "If there are no duplicated SAMPLE_IDs, and both sample and "
             "patient files are uploaded, then please check to make sure no "

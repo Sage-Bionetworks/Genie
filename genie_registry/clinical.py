@@ -483,6 +483,15 @@ class Clinical(FileTypeFormat):
         warning = StringIO()
 
         clinicaldf.columns = [col.upper() for col in clinicaldf.columns]
+        # CHECK: for empty rows
+        empty_rows = clinicaldf.isnull().values.all(axis=1)
+        if empty_rows.any():
+            total_error.write(
+                "Clinical file(s): No empty rows allowed.\n"
+            )
+            # Remove completely empty rows to speed up processing
+            clinicaldf = clinicaldf[~empty_rows]
+
         clinicaldf = clinicaldf.fillna("")
 
         oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(
