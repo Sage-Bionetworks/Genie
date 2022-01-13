@@ -77,7 +77,7 @@ def _check_year(clinicaldf: pd.DataFrame, year_col: int, filename: str,
     return error
 
 
-def _check_int_dead_consistency(clinicaldf: pd.DataFrame) ->  str:
+def _check_int_dead_consistency(clinicaldf: pd.DataFrame) -> str:
     """Check if vital status interval and dead column are consistent
 
     Args:
@@ -114,9 +114,9 @@ def _check_int_dead_consistency(clinicaldf: pd.DataFrame) ->  str:
 
 
 def _check_int_year_consistency(
-        clinicaldf: pd.DataFrame,
-        cols: list, string_vals: list
-    ) ->  str:
+    clinicaldf: pd.DataFrame,
+    cols: list, string_vals: list
+) -> str:
     """
     Check if vital status interval and year columns are consistent in
     their values
@@ -456,10 +456,17 @@ class clinical(FileTypeFormat):
         warning = StringIO()
 
         clinicaldf.columns = [col.upper() for col in clinicaldf.columns]
+        # CHECK: for empty rows
+        empty_rows = clinicaldf.isnull().values.all(axis=1)
+        if empty_rows.any():
+            total_error.write(
+                "Clinical file(s): No empty rows allowed.\n"
+            )
+            # Remove completely empty rows to speed up processing
+            clinicaldf = clinicaldf[~empty_rows]
+
         clinicaldf = clinicaldf.fillna("")
 
-        # oncotree_mapping = process_functions.get_oncotree_codes(oncotree_link)
-        # if oncotree_mapping.empty:
         oncotree_mapping_dict = \
             process_functions.get_oncotree_code_mappings(oncotree_link)
         oncotree_mapping = pd.DataFrame(
@@ -479,16 +486,16 @@ class clinical(FileTypeFormat):
             process_functions.getGenieMapping(self.syn, "syn7434222")
 
         # CHECK: SAMPLE_ID
-        sampleId = 'SAMPLE_ID'
+        sample_id = 'SAMPLE_ID'
         haveSampleColumn = \
-            process_functions.checkColExist(clinicaldf, sampleId)
+            process_functions.checkColExist(clinicaldf, sample_id)
 
         if not haveSampleColumn:
             total_error.write(
                 "Sample Clinical File: Must have SAMPLE_ID column.\n"
             )
         else:
-            if sum(clinicaldf[sampleId].duplicated()) > 0:
+            if sum(clinicaldf[sample_id].duplicated()) > 0:
                 total_error.write(
                     "Sample Clinical File: No duplicated SAMPLE_ID "
                     "allowed.\nIf there are no duplicated "
@@ -511,11 +518,11 @@ class clinical(FileTypeFormat):
         # the patient ids
         if haveSampleColumn and havePatientColumn:
             # Make sure sample and patient ids are string cols
-            clinicaldf[sampleId] = clinicaldf[sampleId].astype(str)
+            clinicaldf[sample_id] = clinicaldf[sample_id].astype(str)
             clinicaldf[patientId] = clinicaldf[patientId].astype(str)
             if not all([patient in sample
                         for sample, patient in
-                        zip(clinicaldf[sampleId], clinicaldf[patientId])]):
+                        zip(clinicaldf[sample_id], clinicaldf[patientId])]):
 
                 total_error.write(
                     "Sample Clinical File: PATIENT_ID's much be contained in "
@@ -528,18 +535,19 @@ class clinical(FileTypeFormat):
                     "Patient Clinical File: All samples must have associated "
                     "patient information and no null patient ids allowed. "
                     "These samples are missing patient data: {}\n".format(
-                        ", ".join(clinicaldf[sampleId][
-                                  clinicaldf[patientId] == ""]))
+                        ", ".join(clinicaldf[sample_id][
+                                  clinicaldf[patientId] == ""].unique()))
                 )
+
             # CHECK: All patients should have associated sample data
-            if not all(clinicaldf[sampleId] != ""):
+            if not all(clinicaldf[sample_id] != ""):
                 # ## MAKE WARNING FOR NOW###
                 warning.write(
                     "Sample Clinical File: All patients must have associated "
                     "sample information. These patients are missing sample "
                     "data: {}\n".format(
                         ", ".join(clinicaldf[patientId][
-                                  clinicaldf[sampleId] == ""]))
+                                  clinicaldf[sample_id] == ""].unique()))
                 )
 
         # CHECK: AGE_AT_SEQ_REPORT
