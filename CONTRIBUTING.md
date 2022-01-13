@@ -36,7 +36,7 @@ The GENIE project follows the standard [git flow](https://www.atlassian.com/git/
 1. After completing work and testing locally (see below), push to your fork.
 1. In Github, create a pull request from the feature branch of your fork to the `develop` branch of the central repository.
 
-> *A code maintainer must review and accept your pull request.* A code review (which happens with both the contributor and the reviewer present) is required for contributing. This can be performed remotely (e.g., Skype, Hangout, or other video or phone conference).
+> *A code maintainer must review and accept your pull request.* A code review (which happens with both the contributor and the reviewer present) is required for contributing. This can be performed remotely (e.g., Zoom, Hangout, or other video or phone conference).
 
 This package uses [semantic versioning](https://semver.org/) for releasing new versions. The version should be updated on the `develop` branch as changes are reviewed and merged in by a code maintainer. The version for the package is maintained in the [genie/__version__.py](genie/__version__.py) file.  A github release should also occur every time `develop` is pushed into `master` and it should match the version for the package.
 
