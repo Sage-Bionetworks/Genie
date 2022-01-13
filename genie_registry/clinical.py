@@ -486,9 +486,7 @@ class Clinical(FileTypeFormat):
         # CHECK: for empty rows
         empty_rows = clinicaldf.isnull().values.all(axis=1)
         if empty_rows.any():
-            total_error.write(
-                "Clinical file(s): No empty rows allowed.\n"
-            )
+            total_error.write("Clinical file(s): No empty rows allowed.\n")
             # Remove completely empty rows to speed up processing
             clinicaldf = clinicaldf[~empty_rows]
 
