@@ -80,7 +80,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 #     :params gene:               Gene symbol
 #     :params returnMapping:      Return mapping of old gene to new gene
 
-#     :returns:                   Check if the provided gene name is a correct symbol and print out genes 
+#     :returns:                   Check if the provided gene name is a correct symbol and print out genes
 #                                 that need to be remapped or can't be mapped to anything
 #     """
 #     path = '/fetch/symbol/%s' %  gene
@@ -90,7 +90,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 #         verified, symbol = hgncRestCall(path)
 #     if not verified:
 #         path = '/fetch/alias_symbol/%s' %  gene
-#         verified, symbol = hgncRestCall(path)       
+#         verified, symbol = hgncRestCall(path)
 #     if gene in symbol:
 #         return(True)
 #     else:
@@ -127,8 +127,9 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 #             DF[col][DF[col] == key] = value
 #     return(DF, nonmapped)
 
+
 def retry_get_url(url):
-    '''
+    """
     Implement retry logic when getting urls.
     Timesout at 3 seconds, retries 5 times.
 
@@ -137,22 +138,22 @@ def retry_get_url(url):
 
     Returns:
         requests.get()
-    '''
+    """
     s = requests.Session()
     retries = Retry(total=5, backoff_factor=1)
-    s.mount('http://', HTTPAdapter(max_retries=retries))
-    s.mount('https://', HTTPAdapter(max_retries=retries))
+    s.mount("http://", HTTPAdapter(max_retries=retries))
+    s.mount("https://", HTTPAdapter(max_retries=retries))
     response = s.get(url, timeout=3)
-    return(response)
+    return response
 
 
 def checkUrl(url):
-    '''
+    """
     Check if URL link is live
 
     Args:
         url: web URL
-    '''
+    """
     temp = retry_get_url(url)
     assert temp.status_code == 200, "%s site is down" % url
 
@@ -167,10 +168,10 @@ def getGenieMapping(syn, synId):
     Returns:
         df: Table dataframe
     """
-    table_ent = syn.tableQuery('SELECT * FROM %s' % synId)
+    table_ent = syn.tableQuery("SELECT * FROM %s" % synId)
     table = table_ent.asDataFrame()
     table = table.fillna("")
-    return(table)
+    return table
 
 
 def checkColExist(DF, key):
@@ -185,7 +186,7 @@ def checkColExist(DF, key):
         bool:  True if column exists
     """
     result = False if DF.get(key) is None else True
-    return(result)
+    return result
 
 
 # def get_oncotree_codes(oncotree_url):
@@ -218,7 +219,7 @@ def checkColExist(DF, key):
 
 
 def lookup_dataframe_value(df, col, query):
-    '''
+    """
     Look up dataframe value given query and column
 
     Args:
@@ -228,14 +229,14 @@ def lookup_dataframe_value(df, col, query):
 
     Returns:
         value
-    '''
+    """
     query = df.query(query)
     query_val = query[col].iloc[0]
-    return(query_val)
+    return query_val
 
 
 def get_syntabledf(syn, query_string):
-    '''
+    """
     Get dataframe from table query
 
     Args:
@@ -244,14 +245,14 @@ def get_syntabledf(syn, query_string):
 
     Returns:
         pandas dataframe with query results
-    '''
+    """
     table = syn.tableQuery(query_string)
     tabledf = table.asDataFrame()
-    return(tabledf)
+    return tabledf
 
 
 def get_synid_database_mappingdf(syn, project_id):
-    '''
+    """
     Get database to synapse id mapping dataframe
 
     Args:
@@ -260,17 +261,17 @@ def get_synid_database_mappingdf(syn, project_id):
 
     Returns:
         database to synapse id mapping dataframe
-    '''
+    """
 
     project = syn.get(project_id)
-    database_mapping_synid = project.annotations['dbMapping'][0]
+    database_mapping_synid = project.annotations["dbMapping"][0]
     database_map_query = "SELECT * FROM {}".format(database_mapping_synid)
     mappingdf = get_syntabledf(syn, database_map_query)
     return mappingdf
 
 
 def getDatabaseSynId(syn, tableName, project_id=None, databaseToSynIdMappingDf=None):
-    '''
+    """
     Get database synapse id from database to synapse id mapping table
 
     Args:
@@ -282,24 +283,26 @@ def getDatabaseSynId(syn, tableName, project_id=None, databaseToSynIdMappingDf=N
 
     Returns:
         str:  Synapse id of wanted database
-    '''
+    """
     if databaseToSynIdMappingDf is None:
-        databaseToSynIdMappingDf = get_synid_database_mappingdf(syn,
-                                                                project_id=project_id)
+        databaseToSynIdMappingDf = get_synid_database_mappingdf(
+            syn, project_id=project_id
+        )
 
-    synId = lookup_dataframe_value(databaseToSynIdMappingDf, "Id",
-                                   'Database == "{}"'.format(tableName))
-    return(synId)
+    synId = lookup_dataframe_value(
+        databaseToSynIdMappingDf, "Id", 'Database == "{}"'.format(tableName)
+    )
+    return synId
 
 
 def rmFiles(folderPath, recursive=True):
-    '''
+    """
     Convenience function to remove all files in dir
 
     Args:
         folderPath: Path to folder
         recursive:  Removes all files recursively
-    '''
+    """
     for dirPath, dirNames, filePaths in os.walk(folderPath):
         for filePath in filePaths:
             os.unlink(os.path.join(dirPath, filePath))
@@ -308,7 +311,7 @@ def rmFiles(folderPath, recursive=True):
 
 
 def removeStringFloat(string):
-    '''
+    """
     remove string float in tsv file
 
     Args:
@@ -316,14 +319,14 @@ def removeStringFloat(string):
 
     Return:
         string: string with float removed
-    '''
+    """
     string = string.replace(".0\t", "\t")
     string = string.replace(".0\n", "\n")
-    return(string)
+    return string
 
 
 def removePandasDfFloat(df, header=True):
-    '''
+    """
     Remove decimal for integers due to pandas
 
     Args:
@@ -331,30 +334,30 @@ def removePandasDfFloat(df, header=True):
 
     Return:
         str: tsv in text
-    '''
+    """
     if header:
         text = df.to_csv(sep="\t", index=False)
     else:
         text = df.to_csv(sep="\t", index=False, header=None)
 
     text = removeStringFloat(text)
-    return(text)
+    return text
 
 
 def removeFloat(df):
-    '''
+    """
     Need to remove this function
     as it calls another function
-    '''
+    """
     # text = df.to_csv(sep="\t",index=False)
     # text = text.replace(".0\t","\t")
     # text = text.replace(".0\n","\n")
     text = removePandasDfFloat(df)
-    return(text)
+    return text
 
 
 def checkGenieId(ID, center):
-    '''
+    """
     Checks if GENIE ID is labelled correctly
     and reformats the GENIE ID
 
@@ -364,32 +367,37 @@ def checkGenieId(ID, center):
 
     Return:
         str: Formatted GENIE ID string
-    '''
+    """
     if str(ID).startswith("%s-" % center):
-        return('GENIE-%s' % str(ID))
-    elif not str(ID).startswith('GENIE-%s-' % center):
-        return('GENIE-%s-%s' % (center, str(ID)))
+        return "GENIE-%s" % str(ID)
+    elif not str(ID).startswith("GENIE-%s-" % center):
+        return "GENIE-%s-%s" % (center, str(ID))
     else:
-        return(str(ID))
+        return str(ID)
 
 
 def storeFile(
-        syn, fileName, parentId,
-        center, fileFormat, dataSubType,
-        platform=None,
-        cBioFileFormat=None,
-        used=None):
-    '''
+    syn,
+    fileName,
+    parentId,
+    center,
+    fileFormat,
+    dataSubType,
+    platform=None,
+    cBioFileFormat=None,
+    used=None,
+):
+    """
     # Storing Files along with annotations
-    '''
+    """
     logger.info("STORING FILES")
     fileEnt = synapseclient.File(fileName, parent=parentId)
     fileEnt.center = center
     fileEnt.species = "Human"
-    fileEnt.consortium = 'GENIE'
+    fileEnt.consortium = "GENIE"
     fileEnt.dataType = "genomicVariants"
     fileEnt.fundingAgency = "AACR"
-    fileEnt.assay = 'targetGeneSeq'
+    fileEnt.assay = "targetGeneSeq"
     fileEnt.fileFormat = fileFormat
     fileEnt.dataSubType = dataSubType
     fileEnt.fileStage = "staging"
@@ -399,11 +407,11 @@ def storeFile(
     if cBioFileFormat is not None:
         fileEnt.cBioFileFormat = cBioFileFormat
     ent = syn.store(fileEnt, used=used)
-    return(ent)
+    return ent
 
 
 def seqDateFilter(clinicalDf, processingDate, days):
-    '''
+    """
     SEQ_DATE filter
     SEQ_DATE - Clinical data (6 and 12 as parameters)
     Jan-2017 , given processing date (today) ->
@@ -412,33 +420,29 @@ def seqDateFilter(clinicalDf, processingDate, days):
         consortium release (processing date - July-2016 between
         6 months - 12 months)
 
-    '''
+    """
     copyClinicalDf = clinicalDf.copy()
     # copyClinicalDf['SEQ_DATE'][copyClinicalDf['SEQ_DATE'].astype(str) == '999'] = "Jan-1988"
     # copyClinicalDf['SEQ_DATE'][copyClinicalDf['SEQ_DATE'].astype(str) == '999.0'] = "Jan-1988"
     if not isinstance(processingDate, datetime.datetime):
-        processingDate = datetime.datetime.strptime(processingDate, '%b-%Y')
+        processingDate = datetime.datetime.strptime(processingDate, "%b-%Y")
     # Remove this null statement after clinical files have been re-validated
     # copyClinicalDf['SEQ_DATE'][copyClinicalDf['SEQ_DATE'].isnull()] = "Jan-1900"
-    copyClinicalDf['SEQ_DATE'][
-        copyClinicalDf['SEQ_DATE'] == "Release"] = "Jan-1900"
+    copyClinicalDf["SEQ_DATE"][copyClinicalDf["SEQ_DATE"] == "Release"] = "Jan-1900"
     # clinicalDf['SEQ_DATE'][clinicalDf['SEQ_DATE'] == '999'] = "Jan-1988"
-    dates = copyClinicalDf['SEQ_DATE'].apply(
-        lambda date: datetime.datetime.strptime(date, '%b-%Y'))
+    dates = copyClinicalDf["SEQ_DATE"].apply(
+        lambda date: datetime.datetime.strptime(date, "%b-%Y")
+    )
     keep = processingDate - dates > datetime.timedelta(days)
-    keepSamples = copyClinicalDf['SAMPLE_ID'][~keep]
+    keepSamples = copyClinicalDf["SAMPLE_ID"][~keep]
     # copyClinicalDf.SEQ_DATE[keep].unique()
-    return(keepSamples)
+    return keepSamples
 
 
 def addClinicalHeaders(
-        clinicalDf,
-        mapping,
-        patientCols,
-        sampleCols,
-        samplePath,
-        patientPath):
-    '''
+    clinicalDf, mapping, patientCols, sampleCols, samplePath, patientPath
+):
+    """
     Add clinical file headers
 
     Args:
@@ -449,36 +453,41 @@ def addClinicalHeaders(
         sampleCols: list of sample columns
         samplePath: clinical sample path
         patientPath: clinical patient path
-    '''
-    patientLabels = [str(mapping['labels'][mapping['cbio'] == i].values[0])
-                     for i in patientCols]
-    sampleLabels = [str(mapping['labels'][mapping['cbio'] == i].values[0])
-                    for i in sampleCols]
-    patientDesc = [str(mapping['description'][mapping['cbio'] == i].values[0])
-                   for i in patientCols]
-    sampleDesc = [str(mapping['description'][mapping['cbio'] == i].values[0])
-                  for i in sampleCols]
-    patientType = [str(mapping['colType'][mapping['cbio'] == i].values[0])
-                   for i in patientCols]
-    sampleType = [str(mapping['colType'][mapping['cbio'] == i].values[0])
-                  for i in sampleCols]
+    """
+    patientLabels = [
+        str(mapping["labels"][mapping["cbio"] == i].values[0]) for i in patientCols
+    ]
+    sampleLabels = [
+        str(mapping["labels"][mapping["cbio"] == i].values[0]) for i in sampleCols
+    ]
+    patientDesc = [
+        str(mapping["description"][mapping["cbio"] == i].values[0]) for i in patientCols
+    ]
+    sampleDesc = [
+        str(mapping["description"][mapping["cbio"] == i].values[0]) for i in sampleCols
+    ]
+    patientType = [
+        str(mapping["colType"][mapping["cbio"] == i].values[0]) for i in patientCols
+    ]
+    sampleType = [
+        str(mapping["colType"][mapping["cbio"] == i].values[0]) for i in sampleCols
+    ]
 
     with open(patientPath, "w+") as patientFile:
         patientFile.write("#%s\n" % "\t".join(patientLabels))
         patientFile.write("#%s\n" % "\t".join(patientDesc))
         patientFile.write("#%s\n" % "\t".join(patientType))
-        patientFile.write("#%s\n" % "\t".join(['1']*len(patientLabels)))
-        text = removeFloat(
-            clinicalDf[patientCols].drop_duplicates('PATIENT_ID'))
+        patientFile.write("#%s\n" % "\t".join(["1"] * len(patientLabels)))
+        text = removeFloat(clinicalDf[patientCols].drop_duplicates("PATIENT_ID"))
         patientFile.write(text)
     with open(samplePath, "w+") as sampleFile:
         sampleFile.write("#%s\n" % "\t".join(sampleLabels))
         sampleFile.write("#%s\n" % "\t".join(sampleDesc))
         sampleFile.write("#%s\n" % "\t".join(sampleType))
-        sampleFile.write("#%s\n" % "\t".join(['1']*len(sampleLabels)))
-        text = removeFloat(
-            clinicalDf[sampleCols].drop_duplicates("SAMPLE_ID"))
+        sampleFile.write("#%s\n" % "\t".join(["1"] * len(sampleLabels)))
+        text = removeFloat(clinicalDf[sampleCols].drop_duplicates("SAMPLE_ID"))
         sampleFile.write(text)
+
 
 ########################################################################
 # CENTER ANONYMIZING
@@ -520,22 +529,21 @@ def addClinicalHeaders(
 
 
 def _check_valid_df(df, col):
-    '''
+    """
     Checking if variable is a pandas dataframe and column specified exist
 
     Args:
         df: Pandas dataframe
         col: Column name
-    '''
+    """
     if not isinstance(df, pd.DataFrame):
         raise ValueError("Must pass in pandas dataframe")
     if df.get(col) is None:
-        raise ValueError("'{}' column must exist in dataframe".format(
-            col))
+        raise ValueError("'{}' column must exist in dataframe".format(col))
 
 
 def _get_left_diff_df(left, right, checkby):
-    '''
+    """
     Subset the dataframe based on 'checkby' by taking values in the left df
     that arent in the right df
 
@@ -546,15 +554,15 @@ def _get_left_diff_df(left, right, checkby):
 
     Return:
         Dataframe: Subset of dataframe from left that don't exist in the right
-    '''
+    """
     _check_valid_df(left, checkby)
     _check_valid_df(right, checkby)
     diffdf = left[~left[checkby].isin(right[checkby])]
-    return(diffdf)
+    return diffdf
 
 
 def _get_left_union_df(left, right, checkby):
-    '''
+    """
     Subset the dataframe based on 'checkby' by taking the union of
     values in the left df with the right df
 
@@ -565,15 +573,15 @@ def _get_left_union_df(left, right, checkby):
 
     Return:
         Dataframe: Subset of dataframe from left that also exist in the right
-    '''
+    """
     _check_valid_df(left, checkby)
     _check_valid_df(right, checkby)
     uniondf = left[left[checkby].isin(right[checkby])]
-    return(uniondf)
+    return uniondf
 
 
 def _append_rows(new_datasetdf, databasedf, checkby):
-    '''
+    """
     Compares the dataset from the database and determines which rows to
     append from the dataset
 
@@ -584,9 +592,9 @@ def _append_rows(new_datasetdf, databasedf, checkby):
 
     Return:
         Dataframe: Dataframe of rows to append
-    '''
-    databasedf.fillna('', inplace=True)
-    new_datasetdf.fillna('', inplace=True)
+    """
+    databasedf.fillna("", inplace=True)
+    new_datasetdf.fillna("", inplace=True)
 
     appenddf = _get_left_diff_df(new_datasetdf, databasedf, checkby)
     if not appenddf.empty:
@@ -595,11 +603,11 @@ def _append_rows(new_datasetdf, databasedf, checkby):
         logger.info("No new rows")
     del appenddf[checkby]
     appenddf.reset_index(drop=True, inplace=True)
-    return(appenddf)
+    return appenddf
 
 
 def _delete_rows(new_datasetdf, databasedf, checkby):
-    '''
+    """
     Compares the dataset from the database and determines which rows to
     delete from the dataset
 
@@ -610,29 +618,28 @@ def _delete_rows(new_datasetdf, databasedf, checkby):
 
     Return:
         Dataframe: Dataframe of rows to delete
-    '''
+    """
 
-    databasedf.fillna('', inplace=True)
-    new_datasetdf.fillna('', inplace=True)
+    databasedf.fillna("", inplace=True)
+    new_datasetdf.fillna("", inplace=True)
     # If the new dataset is empty, delete everything in the database
     deletedf = _get_left_diff_df(databasedf, new_datasetdf, checkby)
     if not deletedf.empty:
         logger.info("Deleting Rows")
-        delete_rowid_version = pd.DataFrame([[
-            rowid.split("_")[0], rowid.split("_")[1]]
-            for rowid in deletedf.index])
+        delete_rowid_version = pd.DataFrame(
+            [[rowid.split("_")[0], rowid.split("_")[1]] for rowid in deletedf.index]
+        )
         delete_rowid_version.reset_index(drop=True, inplace=True)
     else:
         delete_rowid_version = pd.DataFrame()
         logger.info("No deleted rows")
 
     # del deletedf[checkby]
-    return(delete_rowid_version)
+    return delete_rowid_version
 
 
-def _create_update_rowsdf(
-        updating_databasedf, updatesetdf, rowids, differentrows):
-    '''
+def _create_update_rowsdf(updating_databasedf, updatesetdf, rowids, differentrows):
+    """
     Create the update dataset dataframe
 
     Args:
@@ -644,25 +651,29 @@ def _create_update_rowsdf(
 
     Returns:
         dataframe: Update dataframe
-    '''
+    """
     if sum(differentrows) > 0:
         updating_databasedf.loc[differentrows] = updatesetdf.loc[differentrows]
         toupdatedf = updating_databasedf.loc[differentrows]
         logger.info("Updating rows")
-        rowid_version = pd.DataFrame([[
-            rowid.split("_")[0], rowid.split("_")[1]]
-            for rowid, row in zip(rowids, differentrows) if row])
-        toupdatedf['ROW_ID'] = rowid_version[0].values
-        toupdatedf['ROW_VERSION'] = rowid_version[1].values
+        rowid_version = pd.DataFrame(
+            [
+                [rowid.split("_")[0], rowid.split("_")[1]]
+                for rowid, row in zip(rowids, differentrows)
+                if row
+            ]
+        )
+        toupdatedf["ROW_ID"] = rowid_version[0].values
+        toupdatedf["ROW_VERSION"] = rowid_version[1].values
         toupdatedf.reset_index(drop=True, inplace=True)
     else:
         toupdatedf = pd.DataFrame()
         logger.info("No updated rows")
-    return(toupdatedf)
+    return toupdatedf
 
 
 def _update_rows(new_datasetdf, databasedf, checkby):
-    '''
+    """
     Compares the dataset from the database and determines which rows to
     update from the dataset
 
@@ -673,13 +684,12 @@ def _update_rows(new_datasetdf, databasedf, checkby):
 
     Return:
         Dataframe: Dataframe of rows to update
-    '''
+    """
     # initial_database = databasedf.copy()
-    databasedf.fillna('', inplace=True)
-    new_datasetdf.fillna('', inplace=True)
+    databasedf.fillna("", inplace=True)
+    new_datasetdf.fillna("", inplace=True)
     updatesetdf = _get_left_union_df(new_datasetdf, databasedf, checkby)
-    updating_databasedf = _get_left_union_df(
-        databasedf, new_datasetdf, checkby)
+    updating_databasedf = _get_left_union_df(databasedf, new_datasetdf, checkby)
 
     # If you input the exact same dataframe theres nothing to update
     # must save row version and ids for later
@@ -699,32 +709,40 @@ def _update_rows(new_datasetdf, databasedf, checkby):
     differentrows = differences.apply(sum, axis=1) > 0
 
     toupdatedf = _create_update_rowsdf(
-        updating_databasedf, updatesetdf, rowids, differentrows)
+        updating_databasedf, updatesetdf, rowids, differentrows
+    )
 
-    return(toupdatedf)
+    return toupdatedf
 
 
 def updateData(
-        syn, databaseSynId, newData,
-        filterBy, filterByColumn="CENTER",
-        col=None, toDelete=False):
+    syn,
+    databaseSynId,
+    newData,
+    filterBy,
+    filterByColumn="CENTER",
+    col=None,
+    toDelete=False,
+):
     databaseEnt = syn.get(databaseSynId)
     database = syn.tableQuery(
         "SELECT * FROM {} where {} ='{}'".format(
-            databaseSynId, filterByColumn, filterBy))
+            databaseSynId, filterByColumn, filterBy
+        )
+    )
     database = database.asDataFrame()
     if col is not None:
         database = database[col]
     else:
         newData = newData[database.columns]
     updateDatabase(
-        syn, database, newData, databaseSynId,
-        databaseEnt.primaryKey, toDelete)
+        syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete
+    )
 
 
 def updateDatabase(
-        syn, database, new_dataset, database_synid,
-        primary_key_cols, to_delete=False):
+    syn, database, new_dataset, database_synid, primary_key_cols, to_delete=False
+):
     """
     Updates synapse tables by a row identifier with another
     dataset that has the same number and order of columns
@@ -740,21 +758,23 @@ def updateDatabase(
     Returns:
         Nothing
     """
-    primary_key = 'UNIQUE_KEY'
+    primary_key = "UNIQUE_KEY"
     database = database.fillna("")
     orig_database_cols = database.columns
-    col_order = ['ROW_ID', 'ROW_VERSION']
+    col_order = ["ROW_ID", "ROW_VERSION"]
     col_order.extend(orig_database_cols.tolist())
     new_dataset = new_dataset.fillna("")
     # Columns must be in the same order
     new_dataset = new_dataset[orig_database_cols]
     database[primary_key_cols] = database[primary_key_cols].applymap(str)
-    database[primary_key] = database[
-        primary_key_cols].apply(lambda x: ' '.join(x), axis=1)
+    database[primary_key] = database[primary_key_cols].apply(
+        lambda x: " ".join(x), axis=1
+    )
 
     new_dataset[primary_key_cols] = new_dataset[primary_key_cols].applymap(str)
-    new_dataset[primary_key] = new_dataset[
-        primary_key_cols].apply(lambda x: ' '.join(x), axis=1)
+    new_dataset[primary_key] = new_dataset[primary_key_cols].apply(
+        lambda x: " ".join(x), axis=1
+    )
 
     allupdates = pd.DataFrame(columns=col_order)
     to_append_rows = _append_rows(new_dataset, database, primary_key)
@@ -767,30 +787,30 @@ def updateDatabase(
     allupdates = allupdates.append(to_update_rows, sort=False)
 
     storedatabase = False
-    update_all_file = tempfile.NamedTemporaryFile(dir=SCRIPT_DIR,
-                                                  delete=False)
+    update_all_file = tempfile.NamedTemporaryFile(dir=SCRIPT_DIR, delete=False)
 
     with open(update_all_file.name, "w") as updatefile:
         # Must write out the headers in case there are no appends or updates
         updatefile.write(",".join(col_order) + "\n")
         if not allupdates.empty:
-            '''
+            """
             This is done because of pandas typing.
             An integer column with one NA/blank value
             will be cast as a double.
-            '''
+            """
             updatefile.write(
                 allupdates[col_order]
                 .to_csv(index=False, header=None)
                 .replace(".0,", ",")
-                .replace(".0\n", "\n"))
+                .replace(".0\n", "\n")
+            )
             storedatabase = True
         if not to_delete_rows.empty:
             updatefile.write(
-                to_delete_rows
-                .to_csv(index=False, header=None)
+                to_delete_rows.to_csv(index=False, header=None)
                 .replace(".0,", ",")
-                .replace(".0\n", "\n"))
+                .replace(".0\n", "\n")
+            )
             storedatabase = True
     if storedatabase:
         syn.store(synapseclient.Table(database_synid, update_all_file.name))
@@ -799,7 +819,7 @@ def updateDatabase(
 
 
 def checkInt(element):
-    '''
+    """
     Check if an item can become an integer
 
     Args:
@@ -807,17 +827,18 @@ def checkInt(element):
 
     Returns:
         boolean: True/False
-    '''
+    """
     try:
         element = float(element)
-        return(element.is_integer())
+        return element.is_integer()
     except (ValueError, TypeError):
-        return(False)
+        return False
 
 
-def check_col_and_values(df, col, possible_values, filename, na_allowed=False,
-                         required=False, sep=None):
-    '''
+def check_col_and_values(
+    df, col, possible_values, filename, na_allowed=False, required=False, sep=None
+):
+    """
     This function checks if the column exists then checks if the values in the
     column have the correct values
 
@@ -830,19 +851,20 @@ def check_col_and_values(df, col, possible_values, filename, na_allowed=False,
 
     Returns:
         tuple: warning, error
-    '''
+    """
     warning = ""
     error = ""
     have_column = checkColExist(df, col)
     if not have_column:
         if required:
             error = "{filename}: Must have {col} column.\n".format(
-                filename=filename, col=col)
+                filename=filename, col=col
+            )
         else:
             warning = (
                 "{filename}: Doesn't have {col} column. "
-                "This column will be added\n".format(
-                    filename=filename, col=col))
+                "This column will be added\n".format(filename=filename, col=col)
+            )
     else:
         if na_allowed:
             check_values = df[col].dropna()
@@ -856,74 +878,81 @@ def check_col_and_values(df, col, possible_values, filename, na_allowed=False,
         if not check_values.isin(possible_values).all():
             error = (
                 "{filename}: Please double check your {col} column.  "
-                "This column must only be these values: {possible_vals}\n"
-                .format(filename=filename,
-                        col=col,
-                        possible_vals=', '.join([
+                "This column must only be these values: {possible_vals}\n".format(
+                    filename=filename,
+                    col=col,
+                    possible_vals=", ".join(
+                        [
                             # This is done because of pandas typing.
                             # An integer column with one NA/blank value
                             # will be cast as a double.
                             str(value).replace(".0", "")
-                            for value in possible_values])))
-    return(warning, error)
+                            for value in possible_values
+                        ]
+                    ),
+                )
+            )
+    return (warning, error)
 
 
 def extract_oncotree_code_mappings_from_oncotree_json(
-        oncotree_json, primary, secondary):
+    oncotree_json, primary, secondary
+):
     oncotree_code_to_info = {}
-    data = oncotree_json['children']
+    data = oncotree_json["children"]
     for node in data:
         # if not node['code']:
         #     sys.stderr.write('Encountered oncotree node without '
         #                       'oncotree code : ' + node + '\n')
         #     continue
-        if data[node]['level'] == 1:
+        if data[node]["level"] == 1:
             primary = node
-            secondary = ''
-        elif data[node]['level'] == 2:
+            secondary = ""
+        elif data[node]["level"] == 2:
             secondary = node
-        cancer_type = data[node]['mainType']
-        cancer_type_detailed = data[node]['name']
+        cancer_type = data[node]["mainType"]
+        cancer_type_detailed = data[node]["name"]
         if not cancer_type_detailed:
-            cancer_type_detailed = ''
+            cancer_type_detailed = ""
         oncotree_code_to_info[node.upper()] = {
-            'CANCER_TYPE': cancer_type,
-            'CANCER_TYPE_DETAILED': cancer_type_detailed,
-            'ONCOTREE_PRIMARY_NODE': primary,
-            'ONCOTREE_SECONDARY_NODE': secondary}
+            "CANCER_TYPE": cancer_type,
+            "CANCER_TYPE_DETAILED": cancer_type_detailed,
+            "ONCOTREE_PRIMARY_NODE": primary,
+            "ONCOTREE_SECONDARY_NODE": secondary,
+        }
 
-        if len(data[node]['children']) > 0:
+        if len(data[node]["children"]) > 0:
             recurseDict = extract_oncotree_code_mappings_from_oncotree_json(
-                data[node], primary, secondary)
+                data[node], primary, secondary
+            )
             oncotree_code_to_info.update(recurseDict)
     return oncotree_code_to_info
 
 
 def get_oncotree_code_mappings(oncotree_tumortype_api_endpoint_url):
-    '''
+    """
     CREATE ONCOTREE DICTIONARY MAPPING TO PRIMARY, SECONDARY,
     CANCER TYPE, AND CANCER DESCRIPTION
-    '''
+    """
     # oncotree_raw_response = urlopen(oncotree_tumortype_api_endpoint_url).text
     # with requests.get(oncotree_tumortype_api_endpoint_url) as oncotreeUrl:
     oncotreeUrl = retry_get_url(oncotree_tumortype_api_endpoint_url)
     oncotree_raw_response = oncotreeUrl.text
     oncotree_response = json.loads(oncotree_raw_response)
-    oncotree_response = oncotree_response['TISSUE']
-    return extract_oncotree_code_mappings_from_oncotree_json(
-        oncotree_response, '', '')
+    oncotree_response = oncotree_response["TISSUE"]
+    return extract_oncotree_code_mappings_from_oncotree_json(oncotree_response, "", "")
 
 
 # Get mapping code #Add USE DESCRIPTION sampletypedetailed -> public
 def getCODE(mapping, key, useDescription=False):
     if useDescription:
-        value = mapping['DESCRIPTION'][mapping['CODE'] == key].values
+        value = mapping["DESCRIPTION"][mapping["CODE"] == key].values
     else:
-        value = mapping['CBIO_LABEL'][mapping['CODE'] == key].values
+        value = mapping["CBIO_LABEL"][mapping["CODE"] == key].values
     if len(value) > 0:
-        return(value[0])
+        return value[0]
     else:
-        return("")
+        return ""
 
 
 def getPrimary(code, oncotreeDict, primary):
@@ -936,7 +965,7 @@ def getPrimary(code, oncotreeDict, primary):
                 toAdd = code
     else:
         toAdd = "NOT_ANNOTATED"
-    return(toAdd)
+    return toAdd
 
 
 # def create_key():
@@ -956,7 +985,7 @@ def getPrimary(code, oncotreeDict, primary):
 
 
 def read_key(pemfile_path):
-    '''
+    """
     Obtain key from pemfile
 
     Args:
@@ -964,14 +993,14 @@ def read_key(pemfile_path):
 
     Returns:
         RSA key
-    '''
-    with open(pemfile_path, 'r') as pemfile_f:
+    """
+    with open(pemfile_path, "r") as pemfile_f:
         key = RSA.importKey(pemfile_f.read())
     return key
 
 
 def decrypt_message(message, key):
-    '''
+    """
     Decrypt message with a pem key from
     func read_key
 
@@ -981,7 +1010,7 @@ def decrypt_message(message, key):
 
     Returns:
         Decrypted message
-    '''
+    """
     # Use module Crypto.Cipher.PKCS1_OAEP instead
     decryptor = PKCS1_OAEP.new(key)
     decrypted = decryptor.decrypt(ast.literal_eval(str(message)))
@@ -989,7 +1018,7 @@ def decrypt_message(message, key):
 
 
 def get_password(pemfile_path):
-    '''
+    """
     Get password using pemfile
 
     Args:
@@ -997,18 +1026,18 @@ def get_password(pemfile_path):
 
     Return:
         Password
-    '''
+    """
     if not os.path.exists(pemfile_path):
         raise ValueError(
-            "Path to pemFile must be specified if there "
-            "is no cached credentials")
+            "Path to pemFile must be specified if there " "is no cached credentials"
+        )
     key = read_key(pemfile_path)
-    genie_pass = decrypt_message(os.environ['GENIE_PASS'], key)
-    return(genie_pass)
+    genie_pass = decrypt_message(os.environ["GENIE_PASS"], key)
+    return genie_pass
 
 
 def synLogin(pemfile_path, debug=False):
-    '''
+    """
     Use pem file to log into synapse if credentials aren't cached
 
     Args:
@@ -1017,19 +1046,19 @@ def synLogin(pemfile_path, debug=False):
 
     Returns:
         Synapse object logged in
-    '''
+    """
     try:
         syn = synapseclient.Synapse(debug=debug)
         syn.login()
     except Exception:
         genie_pass = get_password(pemfile_path)
         syn = synapseclient.Synapse(debug=debug)
-        syn.login(os.environ['GENIE_USER'], genie_pass)
-    return(syn)
+        syn.login(os.environ["GENIE_USER"], genie_pass)
+    return syn
 
 
 def get_gdc_data_dictionary(filetype):
-    '''
+    """
     Use the GDC API to get the values allowed for columns of
     different filetypes (ie. disease_type in the case file)
 
@@ -1039,12 +1068,14 @@ def get_gdc_data_dictionary(filetype):
     Return:
         json:  Dictionary of allowed columns for the filetype and
                allowed values for those columns
-    '''
+    """
     gdc_dict = retry_get_url(
-        "https://api.gdc.cancer.gov/v0/submission/_dictionary/{filetype}"
-        .format(filetype=filetype))
+        "https://api.gdc.cancer.gov/v0/submission/_dictionary/{filetype}".format(
+            filetype=filetype
+        )
+    )
     gdc_response = json.loads(gdc_dict.text)
-    return(gdc_response)
+    return gdc_response
 
 
 def _create_schema(syn, table_name, parentid, columns=None, annotations=None):
@@ -1060,17 +1091,16 @@ def _create_schema(syn, table_name, parentid, columns=None, annotations=None):
     Returns:
         Schema
     """
-    schema = synapseclient.Schema(name=table_name,
-                                  columns=columns,
-                                  parent=parentid,
-                                  annotations=annotations)
+    schema = synapseclient.Schema(
+        name=table_name, columns=columns, parent=parentid, annotations=annotations
+    )
     new_schema = syn.store(schema)
     return new_schema
 
 
-def _update_database_mapping(syn, database_synid_mappingdf,
-                             database_mapping_synid,
-                             fileformat, new_tableid):
+def _update_database_mapping(
+    syn, database_synid_mappingdf, database_mapping_synid, fileformat, new_tableid
+):
     """Updates database to synapse id mapping table
 
     Args:
@@ -1083,14 +1113,15 @@ def _update_database_mapping(syn, database_synid_mappingdf,
     Returns:
         Updated Table object
     """
-    fileformat_ind = database_synid_mappingdf['Database'] == fileformat
+    fileformat_ind = database_synid_mappingdf["Database"] == fileformat
     # Store in the new database synid
-    database_synid_mappingdf['Id'][fileformat_ind] = new_tableid
+    database_synid_mappingdf["Id"][fileformat_ind] = new_tableid
     # Only update the one row
     to_update_row = database_synid_mappingdf[fileformat_ind]
 
-    updated_table = syn.store(synapseclient.Table(database_mapping_synid,
-                                                  to_update_row))
+    updated_table = syn.store(
+        synapseclient.Table(database_mapping_synid, to_update_row)
+    )
     return database_synid_mappingdf
 
 
@@ -1129,17 +1160,18 @@ def get_dbmapping(syn: Synapse, projectid: str) -> dict:
     """
     project_ent = syn.get(projectid)
     dbmapping_synid = project_ent.annotations.get("dbMapping", "")[0]
-    database_mapping = syn.tableQuery(f'select * from {dbmapping_synid}')
+    database_mapping = syn.tableQuery(f"select * from {dbmapping_synid}")
     database_mappingdf = database_mapping.asDataFrame()
-    return {'synid': dbmapping_synid,
-            'df': database_mappingdf}
+    return {"synid": dbmapping_synid, "df": database_mappingdf}
 
 
-def create_new_fileformat_table(syn: Synapse,
-                                file_format: str,
-                                newdb_name: str,
-                                projectid: str,
-                                archive_projectid: str) -> dict:
+def create_new_fileformat_table(
+    syn: Synapse,
+    file_format: str,
+    newdb_name: str,
+    projectid: str,
+    archive_projectid: str,
+) -> dict:
     """Creates new database table based on old database table and archives
     old database table
 
@@ -1156,28 +1188,33 @@ def create_new_fileformat_table(syn: Synapse,
          "moved_ent": old database synpaseclient.Table}
     """
     db_info = get_dbmapping(syn, projectid)
-    database_mappingdf = db_info['df']
-    dbmapping_synid = db_info['synid']
+    database_mappingdf = db_info["df"]
+    dbmapping_synid = db_info["synid"]
 
-    olddb_synid = getDatabaseSynId(syn, file_format,
-                                   databaseToSynIdMappingDf=database_mappingdf)
+    olddb_synid = getDatabaseSynId(
+        syn, file_format, databaseToSynIdMappingDf=database_mappingdf
+    )
     olddb_ent = syn.get(olddb_synid)
     olddb_columns = list(syn.getTableColumns(olddb_synid))
 
-    newdb_ent = _create_schema(syn, table_name=newdb_name,
-                               columns=olddb_columns,
-                               parentid=projectid,
-                               annotations=olddb_ent.annotations)
+    newdb_ent = _create_schema(
+        syn,
+        table_name=newdb_name,
+        columns=olddb_columns,
+        parentid=projectid,
+        annotations=olddb_ent.annotations,
+    )
 
-    newdb_mappingdf = _update_database_mapping(syn, database_mappingdf,
-                                               dbmapping_synid,
-                                               file_format, newdb_ent.id)
+    newdb_mappingdf = _update_database_mapping(
+        syn, database_mappingdf, dbmapping_synid, file_format, newdb_ent.id
+    )
     # Automatically rename the archived entity with ARCHIVED
     # This will attempt to resolve any issues if the table already exists at
     # location
     new_table_name = f"ARCHIVED {time.time()}-{olddb_ent.name}"
-    moved_ent = _move_entity(syn, olddb_ent, archive_projectid,
-                             name=new_table_name)
-    return {"newdb_ent": newdb_ent,
-            "newdb_mappingdf": newdb_mappingdf,
-            "moved_ent": moved_ent}
+    moved_ent = _move_entity(syn, olddb_ent, archive_projectid, name=new_table_name)
+    return {
+        "newdb_ent": newdb_ent,
+        "newdb_mappingdf": newdb_mappingdf,
+        "moved_ent": moved_ent,
+    }
