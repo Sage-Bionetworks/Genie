@@ -3,11 +3,17 @@
 
 name: build
 
-on: [pull_request]
+on:
+
+  pull_request:
+
+  release:
+    types:
+      - 'published'
 
 jobs:
-  build:
 
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -41,3 +47,25 @@ jobs:
         path: htmlcov
       # Use always() to always run this step to publish test results when there are test failures
       if: ${{ always() }}
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel twine
+    - name: Build and publish
+      env:
+        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        python setup.py sdist bdist_wheel
+        twine upload dist/*
