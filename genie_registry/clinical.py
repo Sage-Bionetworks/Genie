@@ -507,13 +507,6 @@ class Clinical(FileTypeFormat):
 
         sex_mapping = process_functions.getGenieMapping(self.syn, "syn7434222")
 
-        # CHECK: for empty rows
-        empty_rows = clinicaldf.isnull().values.all(axis=1)
-        if any(empty_rows):
-            total_error.write("Clinical file(s): No empty rows allowed.\n")
-            # Remove completely empty rows to speed up processing
-            clinicaldf = clinicaldf[~empty_rows]
-
         # CHECK: SAMPLE_ID
         sample_id = "SAMPLE_ID"
         haveSampleColumn = process_functions.checkColExist(clinicaldf, sample_id)
@@ -581,8 +574,7 @@ class Clinical(FileTypeFormat):
                         )
                     )
                 )
-            # make sure to remove all nulls
-            clinicaldf = clinicaldf[clinicaldf[patientId] != ""]
+
         # CHECK: AGE_AT_SEQ_REPORT
         age = "AGE_AT_SEQ_REPORT"
         haveColumn = process_functions.checkColExist(clinicaldf, age)
