@@ -7,7 +7,7 @@ import pytest
 import synapseclient
 
 import genie_registry
-from genie_registry.clinical import clinical
+from genie_registry.clinical import Clinical
 
 
 def createMockTable(dataframe):
@@ -38,7 +38,7 @@ table_query_results_map = {
 
 syn = mock.create_autospec(synapseclient.Synapse)
 syn.tableQuery.side_effect = table_query_results
-clin_class = clinical(syn, "SAGE")
+clin_class = Clinical(syn, "SAGE")
 
 # oncotree_url = \
 #  'http://oncotree.mskcc.org/api/tumor_types.txt?version=oncotree_latest_stable'
