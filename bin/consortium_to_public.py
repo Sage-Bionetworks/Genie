@@ -56,7 +56,7 @@ def generate_data_guide(
 ):
     """Generates the GENIE data guide"""
 
-    template_path = os.path.join(PWD, "../templates/public_data_guide_template.Rnw")
+    template_path = os.path.join(PWD, "../templates/data_guide_template.Rnw")
     with open(template_path, "r") as template_file:
         template_str = template_file.read()
 
