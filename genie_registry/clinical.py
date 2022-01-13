@@ -549,8 +549,7 @@ class clinical(FileTypeFormat):
                         ", ".join(clinicaldf[patientId][
                                   clinicaldf[sample_id] == ""].unique()))
                 )
-            # make sure to remove all nulls
-            clinicaldf = clinicaldf[clinicaldf[patientId] != ""]
+
         # CHECK: AGE_AT_SEQ_REPORT
         age = "AGE_AT_SEQ_REPORT"
         haveColumn = process_functions.checkColExist(clinicaldf, age)
