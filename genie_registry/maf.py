@@ -151,7 +151,7 @@ class maf(FileTypeFormat):
             # Find samples with duplicated variants
             duplicated_variants = mutationDF['TUMOR_SAMPLE_BARCODE'][
                 duplicated_idx
-            ].unique().tolist()
+            ].unique().astype(str).tolist()
 
             if duplicated_idx.any():
                 total_error.write(

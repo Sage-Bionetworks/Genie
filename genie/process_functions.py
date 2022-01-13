@@ -10,6 +10,7 @@ import tempfile
 import time
 
 import ast
+from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 import pandas as pd
 import synapseclient
@@ -938,21 +939,20 @@ def getPrimary(code, oncotreeDict, primary):
     return(toAdd)
 
 
-# def createKey():
-#   import Crypto
+# def create_key():
 #   from Crypto.PublicKey import RSA
 #   from Crypto import Random
-
+#   from Crypto.Cipher import PKCS1_OAEP
+#
 #   random_generator = Random.new().read
 #   generate public and private keys
 #   key = RSA.generate(1024, random_generator)
-
-#   #publickey = key.publickey # pub key export for exchange
-#   encrypted = key.encrypt(geniePassword, 32)
+#   key_cryptor = PKCS1_OAEP.new(key)
+#   encrypted = key_cryptor.encrypt(geniePassword)
 #   #message to encrypt is in the above line 'encrypt this message'
-#   descrypted = key.decrypt(encrypted)
-#   with open("genie.pem","w") as geniePem:
-#       geniePem.write(key.exportKey(format='PEM'))
+#   decrypted = key_cryptor.decrypt(encrypted)
+#   with open("genie.pem","wb") as geniepem_f:
+#       geniepem_f.write(key.exportKey(format='PEM'))
 
 
 def read_key(pemfile_path):
@@ -965,9 +965,9 @@ def read_key(pemfile_path):
     Returns:
         RSA key
     '''
-    f = open(pemfile_path, 'r')
-    key = RSA.importKey(f.read())
-    return(key)
+    with open(pemfile_path, 'r') as pemfile_f:
+        key = RSA.importKey(pemfile_f.read())
+    return key
 
 
 def decrypt_message(message, key):
@@ -982,8 +982,10 @@ def decrypt_message(message, key):
     Returns:
         Decrypted message
     '''
-    decrypted = key.decrypt(ast.literal_eval(str(message)))
-    return(decrypted.decode("utf-8"))
+    # Use module Crypto.Cipher.PKCS1_OAEP instead
+    decryptor = PKCS1_OAEP.new(key)
+    decrypted = decryptor.decrypt(ast.literal_eval(str(message)))
+    return decrypted.decode("utf-8")
 
 
 def get_password(pemfile_path):

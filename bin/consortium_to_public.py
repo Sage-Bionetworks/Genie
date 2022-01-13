@@ -153,7 +153,7 @@ def main(args):
     logger.info("CBIO VALIDATION")
     # Must be exit 0 because the validator sometimes fails,
     # but we still want to capture the output
-    command = ['python', cbioValidatorPath, '-s',
+    command = [cbioValidatorPath, '-s',
                database_to_staging.GENIE_RELEASE_DIR, '-n', '; exit 0']
     cbio_output = subprocess.check_output(" ".join(command), shell=True)
     cbio_decoded_output = cbio_output.decode("utf-8")

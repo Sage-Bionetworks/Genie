@@ -94,7 +94,7 @@ for (seq_assay in unique(genieBedData$SEQ_ASSAY_ID)) {
 # read aggregated MAF file
 # FILTERED OUT COMMON VARIANTS HERE
 #genieMut = synTableQuery(sprintf('SELECT * FROM %s where FILTER <> "common_variant"', mafSynId))
-genieMut = synTableQuery(sprintf("SELECT * FROM %s where Center in ('%s')",
+genieMut = synTableQuery(sprintf("SELECT * FROM %s where Center in ('%s') and Annotation_Status = 'SUCCESS'",
                                  mafSynId, process_centers))
 genieMutData = synapser::as.data.frame(genieMut)
 #Only use samples that exist in the clinical sample data pool
@@ -138,7 +138,7 @@ bedGR = lapply(bedGR, function(x) {
 })
 
 # all inclusive list of samples should be from the clinical data file
-# therefore factor levels for Tumor_Sample_Barcode in the MAF should be set to that of SAMPLE_ID of clinical data table 
+# therefore factor levels for Tumor_Sample_Barcode in the MAF should be set to that of SAMPLE_ID of clinical data table
 # check that no samples are listed in the MAF that are not listed in the clinical data file
 # reversing the order of the inputs would tell you which samples are submitted that have no entries (no mutations) in the MAF
 #if (length(setdiff(levels(genieMutData$Tumor_Sample_Barcode),levels(genieClinData$SAMPLE_ID)))==0) {
@@ -171,7 +171,7 @@ genieMutData$t_alt_count_num <- NULL
 #Compare old inBED with new inBED column
 #If there are differences, update only the diffs
 # updateMutData = genieMutData[genieMutData$inBED != oldInBed,]
-# if (nrow(updateMutData) > 0) { 
+# if (nrow(updateMutData) > 0) {
 #   #write.csv(updateMutData[c("ROW_ID","ROW_VERSION","inBED")],"update_inbed.csv",row.names = F)
 #   #Need to chunk the upload
 

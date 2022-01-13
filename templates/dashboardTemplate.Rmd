@@ -561,6 +561,18 @@ if(!is.null(this_samples$YEAR_CONTACT)) {
 
 ---
 
+## Missing assay information
+These are the SEQ_ASSAY_IDs that are present in the clinical file but not in the assay information file.  If your center's SEQ_ASSAY_ID is shown in this table, please add the panel to your assay information file.
+
+```{r missingassay, echo=F}
+missing_assays = this_assays[!this_assays %in% assay_infodf$SEQ_ASSAY_ID]
+if (length(missing_assays) > 0) {
+  knitr::kable(missing_assays, col.names=c("SEQ_ASSAY_ID"))
+}
+```
+
+---
+
 ## Missing Variant Counts
 These are the sites with missing `t_depth`, `t_alt_count` and `t_ref_count` values.
 ```{r variantcounts, echo=F}
