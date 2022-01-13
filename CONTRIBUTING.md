@@ -65,3 +65,7 @@ Follow gitflow best practices as linked above.
 * Merge `release-X.X` branch into `main`
 * Create release tag (`v...`) and include release notes.  Also include any known bugs for each release here.
 * Merge `main` back into `develop`
+
+### DockerHub
+
+This repository does not use github actions to push docker images.  By adding the `sagebiodockerhub` github user as an Admin to this GitHub repository, we can configure an automated build in DockerHub.  You can view the builds [here](https://hub.docker.com/repository/docker/sagebionetworks/genie/builds).  To get admin access to the DockerHub repository, ask Sage IT to be added to the `genieadmin` DockerHub team.
