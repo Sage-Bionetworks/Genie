@@ -44,7 +44,7 @@ This package uses [semantic versioning](https://semver.org/) for releasing new v
 
 Please add tests for new code. These might include unit tests (to test specific functionality of code that was added to support fixing the bug or feature), integration tests (to test that the feature is usable - e.g., it should have complete the expected behavior as reported in the feature request or bug report), or both.
 
-This package uses [`pytest`](https://pytest.org/en/latest/) to run tests. The test code is located in the [test](./test) subdirectory.
+This package uses [`pytest`](https://pytest.org/en/latest/) to run tests. The test code is located in the [tests](./tests) subdirectory.
 
 Here's how to run the test suite:
 
