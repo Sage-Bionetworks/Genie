@@ -32,4 +32,4 @@ setup(name='aacrgenie',
                         'httplib2>=0.11.3',
                         'pycryptodome>=3.12.0',
                         'PyYAML>=5.1',
-                        'chardet>=4.0.0'])
+                        'chardet>=3.0.4'])
