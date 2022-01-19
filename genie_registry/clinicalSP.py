@@ -16,21 +16,22 @@ class clinicalSP(FileTypeFormat):
         assert os.path.basename(filePath[0]) == "nonGENIE_data_clinical.txt"
 
     def _process(self, clinicalSPDf):
-        clinicalSPDf['SAMPLE_ID'] = [
+        clinicalSPDf["SAMPLE_ID"] = [
             process_functions.checkGenieId(sample, self.center)
-            for sample in clinicalSPDf['SAMPLE_ID']]
-        clinicalSPDf['CENTER'] = self.center
-        clinicalSPDf['PATIENT_ID'] = [
+            for sample in clinicalSPDf["SAMPLE_ID"]
+        ]
+        clinicalSPDf["CENTER"] = self.center
+        clinicalSPDf["PATIENT_ID"] = [
             process_functions.checkGenieId(sample, self.center)
-            for sample in clinicalSPDf['PATIENT_ID']]
-        return(clinicalSPDf)
+            for sample in clinicalSPDf["PATIENT_ID"]
+        ]
+        return clinicalSPDf
 
     def process_steps(self, clinicalSPDf, newPath, databaseSynId):
         clinicalSPDf = self._process(clinicalSPDf)
-        process_functions.updateData(
-            self.syn, databaseSynId, clinicalSPDf, self.center)
+        process_functions.updateData(self.syn, databaseSynId, clinicalSPDf, self.center)
         clinicalSPDf.to_csv(newPath, sep="\t", index=False)
-        return(newPath)
+        return newPath
 
     def _validate(self, clinicalDF):
         clinicalDF.columns = [col.upper() for col in clinicalDF.columns]
@@ -39,39 +40,41 @@ class clinicalSP(FileTypeFormat):
         warning = ""
 
         # CHECK: SAMPLE_ID
-        haveColumn = process_functions.checkColExist(clinicalDF, 'SAMPLE_ID')
+        haveColumn = process_functions.checkColExist(clinicalDF, "SAMPLE_ID")
         if not haveColumn:
             total_error += (
-                "nonGENIE_data_clinical.txt: "
-                "File must have SAMPLE_ID column.\n")
+                "nonGENIE_data_clinical.txt: " "File must have SAMPLE_ID column.\n"
+            )
         else:
-            if sum(clinicalDF['SAMPLE_ID'].isnull()) > 0:
+            if sum(clinicalDF["SAMPLE_ID"].isnull()) > 0:
                 total_error += (
                     "nonGENIE_data_clinical.txt: "
-                    "There can't be any blank values for SAMPLE_ID\n")
+                    "There can't be any blank values for SAMPLE_ID\n"
+                )
 
         # CHECK: SEQ_ASSAY_ID
-        haveColumn = process_functions.checkColExist(
-            clinicalDF, "SEQ_ASSAY_ID")
+        haveColumn = process_functions.checkColExist(clinicalDF, "SEQ_ASSAY_ID")
         if haveColumn:
-            if sum(clinicalDF['SEQ_ASSAY_ID'].isnull()) > 0:
+            if sum(clinicalDF["SEQ_ASSAY_ID"].isnull()) > 0:
                 warning += (
                     "nonGENIE_data_clinical.txt: Please double check "
-                    "your SEQ_ASSAY_ID columns, there are empty rows.\n")
+                    "your SEQ_ASSAY_ID columns, there are empty rows.\n"
+                )
         else:
             total_error += (
-                "nonGENIE_data_clinical.txt: "
-                "File must have SEQ_ASSAY_ID column.\n")
+                "nonGENIE_data_clinical.txt: " "File must have SEQ_ASSAY_ID column.\n"
+            )
 
         # CHECK: PATIENT_ID
-        haveColumn = process_functions.checkColExist(clinicalDF, 'PATIENT_ID')
+        haveColumn = process_functions.checkColExist(clinicalDF, "PATIENT_ID")
         if not haveColumn:
             total_error += (
-                "nonGENIE_data_clinical.txt: "
-                "File must have PATIENT_ID column.\n")
+                "nonGENIE_data_clinical.txt: " "File must have PATIENT_ID column.\n"
+            )
         else:
-            if sum(clinicalDF['PATIENT_ID'].isnull()) > 0:
+            if sum(clinicalDF["PATIENT_ID"].isnull()) > 0:
                 total_error += (
                     "nonGENIE_data_clinical.txt: "
-                    "There can't be any blank values for PATIENT_ID\n")
-        return(total_error, warning)
+                    "There can't be any blank values for PATIENT_ID\n"
+                )
+        return (total_error, warning)

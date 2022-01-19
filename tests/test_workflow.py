@@ -16,7 +16,7 @@ def test_processing():
 @pytest.fixture(params=[
     (["foo"]),
     (["SAGE-test.txt"])
-    ])
+])
 def filename_fileformat_map(request):
     return request.param
 
