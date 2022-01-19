@@ -7,7 +7,7 @@ import pytest
 import synapseclient
 
 import genie_registry
-from genie_registry.clinical import clinical
+from genie_registry.clinical import Clinical
 
 
 def createMockTable(dataframe):
@@ -38,29 +38,33 @@ table_query_results_map = {
 
 syn = mock.create_autospec(synapseclient.Synapse)
 syn.tableQuery.side_effect = table_query_results
-clin_class = clinical(syn, "SAGE")
+clin_class = Clinical(syn, "SAGE")
 
 # oncotree_url = \
 #  'http://oncotree.mskcc.org/api/tumor_types.txt?version=oncotree_latest_stable'
 json_oncotreeurl = \
- "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
+    "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
 
 onco_map_dict = {
-  "AMPCA": {
-    'CANCER_TYPE': "Ampullary Cancer",
-    'CANCER_TYPE_DETAILED': "Ampullary Carcinoma",
-    'ONCOTREE_PRIMARY_NODE': "AMPULLA_OF_VATER",
-    'ONCOTREE_SECONDARY_NODE': "AMPCA"},
-  "TESTIS": {
-    'CANCER_TYPE': "Testicular Cancer, NOS",
-    'CANCER_TYPE_DETAILED': "Testis",
-    'ONCOTREE_PRIMARY_NODE': "TESTIS",
-    'ONCOTREE_SECONDARY_NODE': ''},
-  "UCEC": {
-    'CANCER_TYPE': "Endometrial Cancer",
-    'CANCER_TYPE_DETAILED': "Endometrial Carcinoma",
-    'ONCOTREE_PRIMARY_NODE': "UTERUS",
-    'ONCOTREE_SECONDARY_NODE': "UCEC"}}
+    "AMPCA": {
+        'CANCER_TYPE': "Ampullary Cancer",
+        'CANCER_TYPE_DETAILED': "Ampullary Carcinoma",
+        'ONCOTREE_PRIMARY_NODE': "AMPULLA_OF_VATER",
+        'ONCOTREE_SECONDARY_NODE': "AMPCA"
+    },
+    "TESTIS": {
+        'CANCER_TYPE': "Testicular Cancer, NOS",
+        'CANCER_TYPE_DETAILED': "Testis",
+        'ONCOTREE_PRIMARY_NODE': "TESTIS",
+        'ONCOTREE_SECONDARY_NODE': ''
+    },
+    "UCEC": {
+        'CANCER_TYPE': "Endometrial Cancer",
+        'CANCER_TYPE_DETAILED': "Endometrial Carcinoma",
+        'ONCOTREE_PRIMARY_NODE': "UTERUS",
+        'ONCOTREE_SECONDARY_NODE': "UCEC"
+    }
+}
 
 
 def test_filetype():
@@ -70,7 +74,7 @@ def test_filetype():
 @pytest.fixture(params=[
     (["foo"]),
     (["foo", "data_clinical_supp_sample_SAGE.txt"])
-    ])
+])
 def filename_fileformat_map(request):
     return request.param
 
@@ -163,8 +167,9 @@ def test_patient_lesscoltemplate__process():
 
     assert new_patientdf.columns.isin(patient_cols).all()
     assert (
-        expected_patientdf[expected_patientdf.columns]
-            .equals(new_patientdf[expected_patientdf.columns])
+        expected_patientdf[expected_patientdf.columns].equals(
+            new_patientdf[expected_patientdf.columns]
+        )
     )
 
 
@@ -642,8 +647,10 @@ def test__check_year_no_errors():
     perfectdf = pd.DataFrame(
         {"BIRTH_YEAR": ["Unknown", 1990, 1990, 1990, 1990]}
     )
-    error = genie_registry.clinical._check_year(perfectdf, "BIRTH_YEAR", "Filename",
-                                       allowed_string_values = ["Unknown"])
+    error = genie_registry.clinical._check_year(
+        clinicaldf=perfectdf, year_col="BIRTH_YEAR", filename="Filename",
+        allowed_string_values=["Unknown"]
+    )
     assert error == ''
 
 
@@ -652,11 +659,11 @@ def test__check_year_too_big_year():
     year_now = datetime.datetime.utcnow().year
 
     errordf = pd.DataFrame(
-        {"BIRTH_YEAR": ["Unknown", year_now+1, 1990, 1990, 1990]}
+        {"BIRTH_YEAR": ["Unknown", year_now + 1, 1990, 1990, 1990]}
     )
     error = genie_registry.clinical._check_year(
         errordf, "BIRTH_YEAR", "Filename",
-        allowed_string_values = ["Unknown"]
+        allowed_string_values=["Unknown"]
     )
     assert error == (
         "Filename: Please double check your BIRTH_YEAR column, "
@@ -769,7 +776,8 @@ def test__check_int_year_consistency_valid():
                 {"INT_2": ["<6570", "Unknown", "Unknown"],
                  "YEAR_1": [1, 3, "Unknown"]}
             ),
-            "Patient: you have inconsistent redaction and text values in INT_2, YEAR_1.\n"
+            "Patient: you have inconsistent redaction and text values in "
+            "INT_2, YEAR_1.\n"
         )
     ]
 )

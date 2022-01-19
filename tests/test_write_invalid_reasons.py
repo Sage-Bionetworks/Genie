@@ -1,8 +1,7 @@
 """Test write invalid reasons module"""
 from unittest import mock
-from unittest.mock import create_autospec, Mock, patch
+from unittest.mock import create_autospec, patch
 
-import genie
 from genie import write_invalid_reasons
 import pandas as pd
 import synapseclient
@@ -45,7 +44,7 @@ def test_get_center_invalid_errors():
          patch.object(write_invalid_reasons, "_combine_center_file_errors",
                       return_value="errors") as patch_combine:
         center_invalid = write_invalid_reasons.get_center_invalid_errors(
-           SYN, "syn3333"
+            SYN, "syn3333"
         )
         assert center_invalid == {'SAGE': 'errors', 'TEST': 'errors'}
         patch_query.assert_called_once_with("SELECT * FROM syn3333")

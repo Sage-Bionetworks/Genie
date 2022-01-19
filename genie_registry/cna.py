@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def validateSymbol(gene, bedDf, returnMappedDf=True):
-    '''
+    """
     Validate gene symbol
 
     Args:
@@ -21,30 +21,32 @@ def validateSymbol(gene, bedDf, returnMappedDf=True):
 
     Returns:
         gene name or boolean for whether a gene is valid
-    '''
+    """
     valid = False
-    if sum(bedDf['Hugo_Symbol'] == gene) > 0:
+    if sum(bedDf["Hugo_Symbol"] == gene) > 0:
         valid = True
-    elif sum(bedDf['ID'] == gene) > 0:
-        mismatch = bedDf[bedDf['ID'] == gene]
+    elif sum(bedDf["ID"] == gene) > 0:
+        mismatch = bedDf[bedDf["ID"] == gene]
         mismatch.drop_duplicates(inplace=True)
-        logger.info("{} will be remapped to {}".format(
-            gene, mismatch['Hugo_Symbol'].values[0]))
-        gene = mismatch['Hugo_Symbol'].values[0]
+        logger.info(
+            "{} will be remapped to {}".format(gene, mismatch["Hugo_Symbol"].values[0])
+        )
+        gene = mismatch["Hugo_Symbol"].values[0]
     else:
         logger.warning(
             "{} cannot be remapped and will not be released. The symbol "
             "must exist in your seq assay ids (bed files) and must be "
-            "mappable to a gene.".format(gene))
-        gene = float('nan')
+            "mappable to a gene.".format(gene)
+        )
+        gene = float("nan")
     if returnMappedDf:
-        return(gene)
+        return gene
     else:
-        return(valid)
+        return valid
 
 
 def makeCNARow(row, symbols):
-    '''
+    """
     Make CNA Row (Deprecated function)
 
     CNA values are no longer stored in the database
@@ -52,12 +54,12 @@ def makeCNARow(row, symbols):
     Args:
         row: one row in the CNA file
         symbols:  list of Gene symbols
-    '''
+    """
     totalrow = "{symbols}\n{values}".format(
-        symbols=",".join(symbols),
-        values=",".join(row.astype(str)))
+        symbols=",".join(symbols), values=",".join(row.astype(str))
+    )
     totalrow = totalrow.replace(".0", "")
-    return(totalrow)
+    return totalrow
 
 
 def mergeCNAvalues(x):
@@ -76,10 +78,10 @@ def mergeCNAvalues(x):
         if len(uniqueValues) == 1:
             returnVal = list(uniqueValues)[0]
         else:
-            returnVal = float('nan')
+            returnVal = float("nan")
     else:
-        returnVal = float('nan')
-    return(returnVal)
+        returnVal = float("nan")
+    return returnVal
 
 
 def checkIfOneZero(x):
@@ -90,72 +92,79 @@ class cna(FileTypeFormat):
 
     _fileType = "cna"
 
-    _process_kwargs = ["newPath", 'databaseToSynIdMappingDf']
+    _process_kwargs = ["newPath", "databaseToSynIdMappingDf"]
 
-    _validation_kwargs = ['nosymbol_check', 'project_id']
+    _validation_kwargs = ["nosymbol_check", "project_id"]
 
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
-        assert os.path.basename(filePath[0]) == \
-            "data_CNA_{}.txt".format(self.center)
+        assert os.path.basename(filePath[0]) == "data_CNA_{}.txt".format(self.center)
 
     def _process(self, cnaDf, databaseToSynIdMappingDf):
-        cnaDf.rename(columns={
-            cnaDf.columns[0]: cnaDf.columns[0].upper()}, inplace=True)
-        cnaDf.rename(columns={
-            "HUGO_SYMBOL": "Hugo_Symbol"}, inplace=True)
+        cnaDf.rename(columns={cnaDf.columns[0]: cnaDf.columns[0].upper()}, inplace=True)
+        cnaDf.rename(columns={"HUGO_SYMBOL": "Hugo_Symbol"}, inplace=True)
 
-        index = [i for i, col in enumerate(cnaDf.columns)
-                 if col.upper() == "ENTREZ_GENE_ID"]
+        index = [
+            i for i, col in enumerate(cnaDf.columns) if col.upper() == "ENTREZ_GENE_ID"
+        ]
         if len(index) > 0:
             del cnaDf[cnaDf.columns[index][0]]
 
         bedSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == "bed"][0]
+            databaseToSynIdMappingDf["Database"] == "bed"
+        ][0]
         bed = self.syn.tableQuery(
-            "select Hugo_Symbol, ID from {} where CENTER = '{}'" .format(
-                bedSynId, self.center))
+            "select Hugo_Symbol, ID from {} where CENTER = '{}'".format(
+                bedSynId, self.center
+            )
+        )
         bedDf = bed.asDataFrame()
-        cnaDf['Hugo_Symbol'] = \
-            cnaDf['Hugo_Symbol'].apply(lambda x: validateSymbol(x, bedDf))
+        cnaDf["Hugo_Symbol"] = cnaDf["Hugo_Symbol"].apply(
+            lambda x: validateSymbol(x, bedDf)
+        )
         order = cnaDf.columns
-        cnaDf = cnaDf[~cnaDf['Hugo_Symbol'].isnull()]
+        cnaDf = cnaDf[~cnaDf["Hugo_Symbol"].isnull()]
         # cnaDf = cnaDf.applymap(str)
         duplicatedGenes = pd.DataFrame()
-        duplicated_symbols = cnaDf['Hugo_Symbol'][
-            cnaDf['Hugo_Symbol'].duplicated()].unique()
+        duplicated_symbols = cnaDf["Hugo_Symbol"][
+            cnaDf["Hugo_Symbol"].duplicated()
+        ].unique()
         for i in duplicated_symbols:
-            dups = cnaDf[cnaDf['Hugo_Symbol'] == i]
+            dups = cnaDf[cnaDf["Hugo_Symbol"] == i]
             newVal = dups[dups.columns[dups.columns != "Hugo_Symbol"]].apply(
-                mergeCNAvalues)
+                mergeCNAvalues
+            )
             temp = pd.DataFrame(newVal).transpose()
-            temp['Hugo_Symbol'] = i
+            temp["Hugo_Symbol"] = i
             duplicatedGenes = duplicatedGenes.append(temp, sort=False)
-        cnaDf.drop_duplicates('Hugo_Symbol', keep=False, inplace=True)
+        cnaDf.drop_duplicates("Hugo_Symbol", keep=False, inplace=True)
         cnaDf = cnaDf.append(duplicatedGenes, sort=False)
         cnaDf = cnaDf[order]
         cnaDf.columns = [
-            process_functions.checkGenieId(i, self.center)
-            if i != "Hugo_Symbol" else i for i in cnaDf.columns]
+            process_functions.checkGenieId(i, self.center) if i != "Hugo_Symbol" else i
+            for i in cnaDf.columns
+        ]
 
-        return(cnaDf)
+        return cnaDf
 
     def process_steps(self, cnaDf, newPath, databaseToSynIdMappingDf):
         newCNA = self._process(cnaDf, databaseToSynIdMappingDf)
 
         centerMafSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf['Database'] == "centerMaf"][0]
+            databaseToSynIdMappingDf["Database"] == "centerMaf"
+        ][0]
         if not newCNA.empty:
             cnaText = process_functions.removePandasDfFloat(newCNA)
             # Replace blank with NA's
-            cnaText = cnaText.replace(
-                "\t\t", "\tNA\t").replace(
-                "\t\t", "\tNA\t").replace(
-                '\t\n', "\tNA\n")
+            cnaText = (
+                cnaText.replace("\t\t", "\tNA\t")
+                .replace("\t\t", "\tNA\t")
+                .replace("\t\n", "\tNA\n")
+            )
             with open(newPath, "w") as cnaFile:
                 cnaFile.write(cnaText)
             self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
-        return(newPath)
+        return newPath
 
     def _validate(self, cnvDF, nosymbol_check, project_id):
         total_error = ""
@@ -173,37 +182,58 @@ class cna(FileTypeFormat):
         #   total_error += "Your cnv file must not have any empty values\n"
 
         if process_functions.checkColExist(cnvDF, "ENTREZ_GENE_ID"):
-            del cnvDF['ENTREZ_GENE_ID']
+            del cnvDF["ENTREZ_GENE_ID"]
 
         # cnvDF = cnvDF.fillna('')
-        allowed_values = ['-2.0', '-2', '-1.5', '-1.0', '-1',
-                          '0.0', '0', '0.5', '1.0', '1', '1.5',
-                          '2', '2.0', 'nan']
+        allowed_values = [
+            "-2.0",
+            "-2",
+            "-1.5",
+            "-1.0",
+            "-1",
+            "0.0",
+            "0",
+            "0.5",
+            "1.0",
+            "1",
+            "1.5",
+            "2",
+            "2.0",
+            "nan",
+        ]
         if not all(cnvDF.applymap(lambda x: str(x) in allowed_values).all()):
             total_error += (
                 "All values must be NA/blank, -2, -1.5, -1, -0.5, "
-                "0, 0.5, 1, 1.5, or 2.\n")
+                "0, 0.5, 1, 1.5, or 2.\n"
+            )
         else:
-            cnvDF['HUGO_SYMBOL'] = keepSymbols
+            cnvDF["HUGO_SYMBOL"] = keepSymbols
             if haveColumn and not nosymbol_check:
-                databaseToSynIdMappingDf = process_functions.get_synid_database_mappingdf(self.syn, project_id)
-                bedSynId = process_functions.getDatabaseSynId(self.syn, "bed",
-                                                              databaseToSynIdMappingDf=databaseToSynIdMappingDf)
+                databaseToSynIdMappingDf = (
+                    process_functions.get_synid_database_mappingdf(self.syn, project_id)
+                )
+                bedSynId = process_functions.getDatabaseSynId(
+                    self.syn, "bed", databaseToSynIdMappingDf=databaseToSynIdMappingDf
+                )
                 bed = self.syn.tableQuery(
                     "select Hugo_Symbol, ID from {} where "
-                    "CENTER = '{}'".format(bedSynId, self.center))
+                    "CENTER = '{}'".format(bedSynId, self.center)
+                )
                 bedDf = bed.asDataFrame()
-                cnvDF['remapped'] = cnvDF['HUGO_SYMBOL'].apply(
-                    lambda x: validateSymbol(x, bedDf))
-                cnvDF = cnvDF[~cnvDF['remapped'].isnull()]
+                cnvDF["remapped"] = cnvDF["HUGO_SYMBOL"].apply(
+                    lambda x: validateSymbol(x, bedDf)
+                )
+                cnvDF = cnvDF[~cnvDF["remapped"].isnull()]
 
                 # Do not allow any duplicated genes after symbols
                 # have been remapped
-                if sum(cnvDF['remapped'].duplicated()) > 0:
-                    duplicated = cnvDF['remapped'].duplicated(keep=False)
+                if sum(cnvDF["remapped"].duplicated()) > 0:
+                    duplicated = cnvDF["remapped"].duplicated(keep=False)
                     total_error += (
                         "Your CNA file has duplicated Hugo_Symbols "
                         "(After remapping of genes): {} -> {}.\n".format(
-                            ",".join(cnvDF['HUGO_SYMBOL'][duplicated]),
-                            ",".join(cnvDF['remapped'][duplicated])))
-        return(total_error, warning)
+                            ",".join(cnvDF["HUGO_SYMBOL"][duplicated]),
+                            ",".join(cnvDF["remapped"][duplicated]),
+                        )
+                    )
+        return (total_error, warning)

@@ -25,8 +25,8 @@ sys.path.append(os.path.join(SCRIPT_DIR, "../../genie"))
 # syn = synapseclient.login()
 def test_seqassayfilter():
     # SEQ ASSAY ID filter, only seq assay ids with more than
-    sagetest = ["SAGE-TEST-1"]*51
-    sagetest.extend(["SAGE-TEST-2"]*10)
+    sagetest = ["SAGE-TEST-1"] * 51
+    sagetest.extend(["SAGE-TEST-2"] * 10)
 
     clinicalDf = pd.DataFrame(sagetest)
     clinicalDf.rename(columns={0: "SEQ_ASSAY_ID"}, inplace=True)
@@ -225,14 +225,14 @@ def test_no_genepanel_filter():
     Tests the filter to remove samples
     with no bed files
     '''
-    sagetest = ["SAGE-TEST-1"]*51
+    sagetest = ["SAGE-TEST-1"] * 51
     beddf = pd.DataFrame(sagetest)
     beddf.rename(columns={0: "SEQ_ASSAY_ID"}, inplace=True)
-    sagetest.extend(["SAGE-TEST-2"]*10)
+    sagetest.extend(["SAGE-TEST-2"] * 10)
 
     clinicaldf = pd.DataFrame(sagetest)
     clinicaldf.rename(columns={0: "SEQ_ASSAY_ID"}, inplace=True)
     clinicaldf['SAMPLE_ID'] = sagetest
 
     remove_samples = no_genepanel_filter(clinicaldf, beddf)
-    assert all(remove_samples == ["SAGE-TEST-2"]*10)
+    assert all(remove_samples == ["SAGE-TEST-2"] * 10)
