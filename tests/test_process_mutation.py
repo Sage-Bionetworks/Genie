@@ -95,15 +95,15 @@ class TestDtype():
         """Test moving mafs when maf column headers need to be remapped"""
         testdf = pd.DataFrame({"CHROMOSOME": [1]})
         with patch.object(pd, "read_csv", return_value=testdf),\
-            patch.object(process_mutation,
-                         "determine_dtype",
-                         return_value=self.column_types) as patch_determine,\
-            patch.object(process_mutation,
-                         "_convert_to_str_dtype",
-                         return_value=self.column_types) as patch_convert,\
-            patch.object(process_mutation,
-                         "_rename_column_headers") as patch_rename,\
-            patch.object(testdf, "to_csv"):
+             patch.object(process_mutation,
+                          "determine_dtype",
+                          return_value=self.column_types) as patch_determine,\
+             patch.object(process_mutation,
+                          "_convert_to_str_dtype",
+                          return_value=self.column_types) as patch_convert,\
+             patch.object(process_mutation,
+                          "_rename_column_headers") as patch_rename,\
+             patch.object(testdf, "to_csv"):
             process_mutation.move_maf(self.mutation_path, self.input_dir)
             patch_determine.assert_called_once_with(self.mutation_path)
             patch_convert.assert_called_once_with(
@@ -126,6 +126,7 @@ class TestDtype():
             process_mutation.move_mutation(self.mutation_path, self.input_dir)
             patch_move.assert_called_once_with(self.mutation_path,
                                                self.input_dir)
+
 
 def test_process_mutation_workflow():
     """Integration test to make sure workflow runs"""
@@ -184,7 +185,7 @@ def test_annotate_mutation():
     mutation_files = ["path/to/vcf"]
     genie_annotation_pkg = "annotation/pkg/path"
     workdir = "working/dir/path"
-    mktemp_calls = [call(dir=workdir)]*2
+    mktemp_calls = [call(dir=workdir)] * 2
     input_dir = "input/dir"
     with patch.object(tempfile, "mkdtemp",
                       return_value=input_dir) as patch_mktemp,\
@@ -291,16 +292,11 @@ def test_split_and_store_maf():
             "colC": [2, 3]
         }
     )
-    subsetdf = pd.DataFrame(
-        {
-            "colA": ['test', 'foo'],
-            "colB": ["bar", "baz"],
-        }
-    )
     annotated_maf_path = "maf/path"
     center = "SAGE"
     full_maf_path = "workdir/path/SAGE/staging/data_mutations_extended_SAGE.txt"
-    narrow_maf_path = "workdir/path/SAGE/staging/data_mutations_extended_SAGE_MAF_narrow.txt"
+    narrow_maf_path = \
+        "workdir/path/SAGE/staging/data_mutations_extended_SAGE_MAF_narrow.txt"
 
     with patch.object(SYN, "getTableColumns",
                       return_value=columns) as patch_getcols,\

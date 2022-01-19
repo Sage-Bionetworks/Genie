@@ -121,10 +121,12 @@ def test_valid_validate_single_file():
                                     warning_string)) as mock_genie_class,\
          patch.object(validate, "collect_errors_and_warnings",
                       return_value=expected_message) as mock_determine:
-        validator = validate.GenieValidationHelper(syn, project_id="syn1234",
-                                                   center=CENTER,
-                                                   entitylist=entitylist,
-                                                   format_registry={'clinical': FileFormat})
+        validator = validate.GenieValidationHelper(
+            syn, project_id="syn1234",
+            center=CENTER,
+            entitylist=entitylist,
+            format_registry={'clinical': FileFormat}
+        )
         valid, message = validator.validate_single_file(oncotree_link=None,
                                                         nosymbol_check=False)
 

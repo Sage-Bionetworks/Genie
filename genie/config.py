@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 
 # BASE_CLASS = example_filetype_format.FileTypeFormat
 
+
 def make_format_registry_dict(cls_list):
     """Use an object's _fileType attribute to make a class lookup dictionary.
 
@@ -47,7 +48,7 @@ def find_subclasses(package_names, base_class):
     for cls in get_subclasses(base_class):
         logger.debug("checking {cls}.".format(cls=cls))
         cls_module_name = cls.__module__
-        cls_pkg = cls_module_name.split('.')[0]
+        cls_pkg = cls_module_name.split(".")[0]
         if cls_pkg in package_names:
             matching_classes.append(cls)
     return matching_classes
@@ -65,10 +66,12 @@ def collect_format_types(package_names):
         example_filetype_format.FileTypeFormat.
 
     """
-    file_format_list = find_subclasses(package_names,
-                                       example_filetype_format.FileTypeFormat)
+    file_format_list = find_subclasses(
+        package_names, example_filetype_format.FileTypeFormat
+    )
     file_format_dict = make_format_registry_dict(file_format_list)
     return file_format_dict
+
 
 # PROCESS_FILES_LIST = [x for x in get_subclasses(BASE_CLASS)]
 # PROCESS_FILES = make_format_registry_dict(cls_list=PROCESS_FILES_LIST)
