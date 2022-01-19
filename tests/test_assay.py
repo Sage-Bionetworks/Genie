@@ -82,6 +82,7 @@ def test_validinput__validate():
         error, warning = ASSAY_INFO._validate(assay_info_df, "syn9999")
         assert error == ''
         assert warning == ''
+        patch_get_gdc.assert_called()
 
 
 def test__missingcols__validate():
@@ -115,6 +116,7 @@ def test__missingcols__validate():
         "Assay_information.yaml: gene_padding is "
         "by default 10 if not specified.\n")
     assert warning == expected_warnings
+    patch_get_gdc.assert_called()
 
 
 def test_fillcols__process():

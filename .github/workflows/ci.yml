@@ -48,8 +48,14 @@ jobs:
       # Use always() to always run this step to publish test results when there are test failures
       if: ${{ always() }}
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: psf/black@stable
+
   deploy:
-    needs: test
+    needs: [test, lint]
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
     steps:
@@ -69,3 +75,4 @@ jobs:
       run: |
         python setup.py sdist bdist_wheel
         twine upload dist/*
+

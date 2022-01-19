@@ -49,6 +49,7 @@ mutCis = mutationsInCis(syn, "SAGE")
 ENTITY = synapseclient.Project("testing",
                                annotations={'dbMapping': ["syn10967259"]})
 
+
 def test_processing():
     pass
 
