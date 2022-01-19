@@ -293,7 +293,8 @@ def test_perfect__validate():
         ONCOTREE_CODE=['AMPCA', 'AMPCA', 'Unknown', 'AMPCA', 'AMPCA'],
         SAMPLE_TYPE=[1, 2, 3, 4, 4],
         SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-SAGE-1', 'SAGE-1', 'SAGE-1', 'SAGE-1'],
-        SEQ_DATE=['Jan-2013', 'ApR-2013', 'Jul-2013', 'Oct-2013', 'release']))
+        SEQ_DATE=['Jan-2013', 'ApR-2013', 'Jul-2013', 'Oct-2013', 'release'],
+        SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", "cfDNA", "cfDNA"]))
 
     clinicaldf = patientdf.merge(sampledf, on="PATIENT_ID")
     with mock.patch(
@@ -334,7 +335,9 @@ def test_nonull__validate():
         ONCOTREE_CODE=['AMPCA', 'AMPCA', 'Unknown', 'AMPCA', 'AMPCA'],
         SAMPLE_TYPE=[1, 2, 3, 4, float('nan')],
         SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-SAGE-1', 'SAGE-1', 'SAGE-1', 'SAGE-1'],
-        SEQ_DATE=['Jan-2013', 'ApR-2013', 'Jul-2013', 'Oct-2013', 'release']))
+        SEQ_DATE=['Jan-2013', 'ApR-2013', 'Jul-2013', 'Oct-2013', 'release'],
+        SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", "cfDNA", float('nan')]
+    ))
 
     clinicaldf = patientdf.merge(sampledf, on="PATIENT_ID")
     with mock.patch(
@@ -371,6 +374,7 @@ def test_nonull__validate():
             "YEAR_CONTACT, INT_CONTACT.\n"
             "Patient: you have inconsistent redaction and text values in "
             "YEAR_DEATH, INT_DOD.\n"
+            "Sample Clinical File: SAMPLE_CLASS column must be 'Tumor', or 'cfDNA'\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your SECONDARY_RACE "

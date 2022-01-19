@@ -901,8 +901,8 @@ class Clinical(FileTypeFormat):
             sample_class_vals = pd.Series(clinicaldf["SAMPLE_CLASS"].unique().tolist())
             if not sample_class_vals.isin(["Tumor", "cfDNA"]).all():
                 total_error.write(
-                    "Sample Clinical File: SAMPLE_CLASS column must"
-                    "be 'Tumor', or 'cfDNA'"
+                    "Sample Clinical File: SAMPLE_CLASS column must "
+                    "be 'Tumor', or 'cfDNA'\n"
                 )
 
         # CHECK: PRIMARY_RACE
