@@ -829,7 +829,7 @@ class clinical(FileTypeFormat):
         have_column = process_functions.checkColExist(clinicaldf,
                                                       "SAMPLE_CLASS")
         if have_column:
-            sample_class_vals = clinicaldf['SAMPLE_CLASS'].unique()
+            sample_class_vals = pd.Series(clinicaldf['SAMPLE_CLASS'].unique().tolist())
             if not sample_class_vals.isin(['Tumor', 'cfDNA']).all():
                 total_error.write(
                     "Sample Clinical File: SAMPLE_CLASS column must"
