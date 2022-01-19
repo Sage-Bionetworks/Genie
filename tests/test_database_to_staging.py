@@ -24,8 +24,6 @@ class Tablequerydf():
 
 
 def test_store_gene_panel_files():
-    current_release_staging = False
-
     data_gene_panel = pd.DataFrame({'mutations': ['PANEL1']})
     gene_paneldf = pd.DataFrame({'id': ['syn3333']})
 

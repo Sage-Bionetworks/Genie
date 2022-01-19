@@ -41,3 +41,9 @@ jobs:
         path: htmlcov
       # Use always() to always run this step to publish test results when there are test failures
       if: ${{ always() }}
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: psf/black@stable
