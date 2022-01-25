@@ -58,9 +58,9 @@ RUN Rscript R/install_packages.R
 
 RUN python3 -m pip install --no-cache-dir cython
 RUN python3 -m pip install --no-cache-dir -r requirements.txt
-RUN python3 -m pip install .
+# RUN python3 -m pip install -e .
 # RUN python3 setup.py sdist
-# RUN python3 setup.py develop
+RUN python3 setup.py develop
 
 WORKDIR /root/
 # Must move this git clone to after the install of Genie,
