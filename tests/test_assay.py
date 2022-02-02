@@ -10,22 +10,12 @@ from genie_registry.assay import Assayinfo
 from genie import process_functions
 
 GDC_DATA_DICT = {
-    'properties': {
-        'library_strategy': {
-            'enum': ['value1', 'value2']
-        },
-        'library_selection': {
-            'enum': ['value1', 'value2']
-        },
-        'platform': {
-            'enum': ['value1', 'value2']
-        },
-        'instrument_model': {
-            'enum': ['value1', 'value2']
-        },
-        'target_capture_kit': {
-            'enum': ['value1', 'value2']
-        }
+    "properties": {
+        "library_strategy": {"enum": ["value1", "value2"]},
+        "library_selection": {"enum": ["value1", "value2"]},
+        "platform": {"enum": ["value1", "value2"]},
+        "instrument_model": {"enum": ["value1", "value2"]},
+        "target_capture_kit": {"enum": ["value1", "value2"]},
     }
 }
 
@@ -40,48 +30,87 @@ def test_filetype():
 def test_invalidname__validatefilename():
     """Assertion error thrown for wrong filename"""
     with pytest.raises(AssertionError):
-        ASSAY_INFO.validateFilename(['foo'])
+        ASSAY_INFO.validateFilename(["foo"])
 
 
 def test_correct__validatefilename():
     """Filetype returned when filename valid"""
-    assert ASSAY_INFO.validateFilename(
-        ["assay_information.yaml"]) == "assayinfo"
+    assert ASSAY_INFO.validateFilename(["assay_information.yaml"]) == "assayinfo"
 
 
 def test_validinput__validate():
     """Valid input should have no errors or warnings"""
     assay_info_dict = {
-        'SEQ_ASSAY_ID': ['SAGE-1', 'SAGE-3'],
-        'is_paired_end': [True, False],
-        'library_strategy': ['value1', 'value2'],
-        'library_selection': ['value1', 'value2'],
-        'platform': ['value1', 'value2'],
-        'instrument_model': ['value1', 'value2'],
-        'target_capture_kit': ['value1', 'value2'],
-        'variant_classifications': ['Frame_Shift_Ins', 'Frame_Shift_Ins'],
-        'read_length': [22, float('nan')],
-        'number_of_genes': [5, 20],
-        'gene_padding': [10, None],
-        'calling_strategy': ['tumor_only', 'tumor_normal'],
-        'specimen_tumor_cellularity': ['>10%', '>20%'],
-        'alteration_types': ['snv;small_indels', 'intragenic_cna'],
-        'preservation_technique': ['FFPE', 'FFPE;fresh_frozen'],
-        'coverage': ['hotspot_regions;introns', 'introns']}
+        "SEQ_ASSAY_ID": ["SAGE-1", "SAGE-3"],
+        "is_paired_end": [True, False],
+        "library_strategy": ["value1", "value2"],
+        "library_selection": ["value1", "value2"],
+        "platform": ["value1", "value2"],
+        "instrument_model": ["value1", "value2"],
+        "target_capture_kit": ["value1", "value2"],
+        "variant_classifications": ["Frame_Shift_Ins", "Frame_Shift_Ins"],
+        "read_length": [22, float("nan")],
+        "number_of_genes": [5, 20],
+        "gene_padding": [10, None],
+        "calling_strategy": ["tumor_only", "tumor_normal"],
+        "specimen_tumor_cellularity": [">10%", ">20%"],
+        "alteration_types": ["snv;small_indels", "intragenic_cna"],
+        "preservation_technique": ["FFPE", "FFPE;fresh_frozen"],
+        "coverage": ["hotspot_regions;introns", "introns"],
+    }
     uniq_seq_df = pd.DataFrame({"seq": ["SAGE-1", "SAGE-3"]})
     assay_info_df = pd.DataFrame(assay_info_dict)
     test_dict = copy.deepcopy(GDC_DATA_DICT)
-    with patch.object(process_functions, "get_synid_database_mappingdf",
-                      return_value="syn123"),\
-         patch.object(process_functions, "getDatabaseSynId",
-                      return_value="syn1234"),\
-         patch.object(process_functions, "get_syntabledf",
-                      return_value=uniq_seq_df),\
-         patch.object(process_functions, "get_gdc_data_dictionary",
-                      return_value=test_dict) as patch_get_gdc:
+    with patch.object(
+        process_functions, "get_synid_database_mappingdf", return_value="syn123"
+    ), patch.object(
+        process_functions, "getDatabaseSynId", return_value="syn1234"
+    ), patch.object(
+        process_functions, "get_syntabledf", return_value=uniq_seq_df
+    ), patch.object(
+        process_functions, "get_gdc_data_dictionary", return_value=test_dict
+    ) as patch_get_gdc:
         error, warning = ASSAY_INFO._validate(assay_info_df, "syn9999")
-        assert error == ''
-        assert warning == ''
+        assert error == ""
+        assert warning == ""
+        patch_get_gdc.assert_called()
+
+
+def test_case__validate():
+    """Valid input should have no errors or warnings"""
+    assay_info_dict = {
+        "SEQ_ASSAY_ID": ["sage-1", "SAGE-3"],
+        "is_paired_end": [True, False],
+        "library_strategy": ["value1", "value2"],
+        "library_selection": ["value1", "value2"],
+        "platform": ["value1", "value2"],
+        "instrument_model": ["value1", "value2"],
+        "target_capture_kit": ["value1", "value2"],
+        "variant_classifications": ["Frame_Shift_Ins", "Frame_Shift_Ins"],
+        "read_length": [22, float("nan")],
+        "number_of_genes": [5, 20],
+        "gene_padding": [10, None],
+        "calling_strategy": ["tumor_only", "tumor_normal"],
+        "specimen_tumor_cellularity": [">10%", ">20%"],
+        "alteration_types": ["snv;small_indels", "intragenic_cna"],
+        "preservation_technique": ["FFPE", "FFPE;fresh_frozen"],
+        "coverage": ["hotspot_regions;introns", "introns"],
+    }
+    uniq_seq_df = pd.DataFrame({"seq": ["SAGE-1", "SAGE-3"]})
+    assay_info_df = pd.DataFrame(assay_info_dict)
+    test_dict = copy.deepcopy(GDC_DATA_DICT)
+    with patch.object(
+        process_functions, "get_synid_database_mappingdf", return_value="syn123"
+    ), patch.object(
+        process_functions, "getDatabaseSynId", return_value="syn1234"
+    ), patch.object(
+        process_functions, "get_syntabledf", return_value=uniq_seq_df
+    ), patch.object(
+        process_functions, "get_gdc_data_dictionary", return_value=test_dict
+    ) as patch_get_gdc:
+        error, warning = ASSAY_INFO._validate(assay_info_df, "syn9999")
+        assert error == ""
+        assert warning == ""
         patch_get_gdc.assert_called()
 
 
@@ -89,110 +118,120 @@ def test__missingcols__validate():
     """Test missing columns"""
     assay_info_df = pd.DataFrame()
     test_dict = copy.deepcopy(GDC_DATA_DICT)
-    with patch.object(process_functions, "get_gdc_data_dictionary",
-                      return_value=test_dict) as patch_get_gdc:
+    with patch.object(
+        process_functions, "get_gdc_data_dictionary", return_value=test_dict
+    ) as patch_get_gdc:
         error, warning = ASSAY_INFO._validate(assay_info_df, "syn99999")
     expected_errors = (
-        'Assay_information.yaml: Must have SEQ_ASSAY_ID column.\n'
-        'Assay_information.yaml: Must have is_paired_end column.\n'
-        'Assay_information.yaml: Must have library_selection column.\n'
-        'Assay_information.yaml: Must have library_strategy column.\n'
-        'Assay_information.yaml: Must have platform column.\n'
-        'Assay_information.yaml: Must have instrument_model column.\n'
-        'Assay_information.yaml: Must have target_capture_kit column.\n'
-        'Assay_information.yaml: Must have read_length column.\n'
-        'Assay_information.yaml: Must have number_of_genes column.\n'
-        'Assay_information.yaml: Must have calling_strategy column.\n'
-        'Assay_information.yaml: '
-        'Must have specimen_tumor_cellularity column.\n'
-        'Assay_information.yaml: Must have alteration_types column.\n'
-        'Assay_information.yaml: Must have preservation_technique column.\n'
-        'Assay_information.yaml: Must have coverage column.\n')
+        "Assay_information.yaml: Must have SEQ_ASSAY_ID column.\n"
+        "Assay_information.yaml: Must have is_paired_end column.\n"
+        "Assay_information.yaml: Must have library_selection column.\n"
+        "Assay_information.yaml: Must have library_strategy column.\n"
+        "Assay_information.yaml: Must have platform column.\n"
+        "Assay_information.yaml: Must have instrument_model column.\n"
+        "Assay_information.yaml: Must have target_capture_kit column.\n"
+        "Assay_information.yaml: Must have read_length column.\n"
+        "Assay_information.yaml: Must have number_of_genes column.\n"
+        "Assay_information.yaml: Must have calling_strategy column.\n"
+        "Assay_information.yaml: "
+        "Must have specimen_tumor_cellularity column.\n"
+        "Assay_information.yaml: Must have alteration_types column.\n"
+        "Assay_information.yaml: Must have preservation_technique column.\n"
+        "Assay_information.yaml: Must have coverage column.\n"
+    )
     assert error == expected_errors
 
     expected_warnings = (
         "Assay_information.yaml: Doesn't have variant_classifications column. "
         "This column will be added\n"
         "Assay_information.yaml: gene_padding is "
-        "by default 10 if not specified.\n")
+        "by default 10 if not specified.\n"
+    )
     assert warning == expected_warnings
     patch_get_gdc.assert_called()
 
 
 def test_fillcols__process():
-    '''
+    """
     Standardization of SEQ_ASSAY_ID
     Add in CENTER, gene_padding, and variant_classifications if missing
-    '''
+    """
 
-    assay_info_dict = {'SEQ_ASSAY_ID': ['SAGE-Foo_1'],
-                       'SEQ_PIPELINE_ID': ['SAGE_Foo']}
+    assay_info_dict = {"SEQ_ASSAY_ID": ["SAGE-Foo_1"], "SEQ_PIPELINE_ID": ["SAGE_Foo"]}
     assay_info_df = pd.DataFrame(assay_info_dict)
     processed_assay_df = ASSAY_INFO._process(assay_info_df)
     expected_assay_df = pd.DataFrame(
-        {'SEQ_ASSAY_ID': ['SAGE-FOO-1'],
-         'SEQ_PIPELINE_ID': ['SAGE-FOO'],
-         'gene_padding': [10],
-         'variant_classifications': [float('nan')],
-         'CENTER': ['SAGE']})
+        {
+            "SEQ_ASSAY_ID": ["SAGE-FOO-1"],
+            "SEQ_PIPELINE_ID": ["SAGE-FOO"],
+            "gene_padding": [10],
+            "variant_classifications": [float("nan")],
+            "CENTER": ["SAGE"],
+        }
+    )
 
-    assert expected_assay_df.equals(
-        processed_assay_df[expected_assay_df.columns])
+    assert expected_assay_df.equals(processed_assay_df[expected_assay_df.columns])
 
 
 def test_default10__process():
-    '''
+    """
     gene_padding default 10
-    '''
+    """
 
-    assay_info_dict = {'SEQ_ASSAY_ID': ['SAGE-1', 'SAGE-2'],
-                       'SEQ_PIPELINE_ID': ['SAGE-1', 'SAGE-2'],
-                       'gene_padding': [20, float('nan')],
-                       'variant_classifications': ['test', 'test']}
+    assay_info_dict = {
+        "SEQ_ASSAY_ID": ["SAGE-1", "SAGE-2"],
+        "SEQ_PIPELINE_ID": ["SAGE-1", "SAGE-2"],
+        "gene_padding": [20, float("nan")],
+        "variant_classifications": ["test", "test"],
+    }
     assay_info_df = pd.DataFrame(assay_info_dict)
     processed_assay_df = ASSAY_INFO._process(assay_info_df)
     expected_assay_df = pd.DataFrame(
-        {'SEQ_ASSAY_ID': ['SAGE-1', 'SAGE-2'],
-         'SEQ_PIPELINE_ID': ['SAGE-1', 'SAGE-2'],
-         'gene_padding': [20, 10],
-         'variant_classifications': ['test', 'test'],
-         'CENTER': ['SAGE', 'SAGE']})
-    assert expected_assay_df.equals(
-        processed_assay_df[expected_assay_df.columns])
+        {
+            "SEQ_ASSAY_ID": ["SAGE-1", "SAGE-2"],
+            "SEQ_PIPELINE_ID": ["SAGE-1", "SAGE-2"],
+            "gene_padding": [20, 10],
+            "variant_classifications": ["test", "test"],
+            "CENTER": ["SAGE", "SAGE"],
+        }
+    )
+    assert expected_assay_df.equals(processed_assay_df[expected_assay_df.columns])
 
 
 def test_invalid__validate():
     assay_info_dict = {
-        'SEQ_ASSAY_ID': ['SAGE-1', 'SAG-2'],
-        'is_paired_end': [True, "foo"],
-        'library_strategy': ['foo', 'ChIP-Seq'],
-        'library_selection': ['foo', 'PCR'],
-        'platform': ['foo', 'Illumina'],
-        'instrument_model': ['foo', 'Illumina HiSeq 4000'],
-        'variant_classifications': ['foo', 'Frame_Shift_Ins'],
-        'target_capture_kit': ['foo', 'doo'],
-        'read_length': [22, 'foo'],
-        'number_of_genes': [5, 'foo'],
-        'gene_padding': [10, 'foo'],
-        'calling_strategy': ['tumor_ony', 'tumor_normal'],
-        'specimen_tumor_cellularity': ['>10', '>20%'],
-        'alteration_types': ['snv;small_indel', 'intragenic_cna'],
-        'preservation_technique': ['FPE', 'FFPE;fresh_frozen'],
-        'coverage': ['hotsot_regions;introns', 'introns']}
+        "SEQ_ASSAY_ID": ["SAGE-1", "SAG-2"],
+        "is_paired_end": [True, "foo"],
+        "library_strategy": ["foo", "ChIP-Seq"],
+        "library_selection": ["foo", "PCR"],
+        "platform": ["foo", "Illumina"],
+        "instrument_model": ["foo", "Illumina HiSeq 4000"],
+        "variant_classifications": ["foo", "Frame_Shift_Ins"],
+        "target_capture_kit": ["foo", "doo"],
+        "read_length": [22, "foo"],
+        "number_of_genes": [5, "foo"],
+        "gene_padding": [10, "foo"],
+        "calling_strategy": ["tumor_ony", "tumor_normal"],
+        "specimen_tumor_cellularity": [">10", ">20%"],
+        "alteration_types": ["snv;small_indel", "intragenic_cna"],
+        "preservation_technique": ["FPE", "FFPE;fresh_frozen"],
+        "coverage": ["hotsot_regions;introns", "introns"],
+    }
     assay_info_df = pd.DataFrame(assay_info_dict)
     uniq_seq_df = pd.DataFrame({"seq": ["SAGE-1", "SAGE-2"]})
 
     # Must use deepcopy because a dict.copy is a shallow copy
     # Which just points to reference keys
     test_dict = copy.deepcopy(GDC_DATA_DICT)
-    with patch.object(process_functions, "get_synid_database_mappingdf",
-                      return_value="syn123"),\
-         patch.object(process_functions, "getDatabaseSynId",
-                      return_value="syn1234"),\
-         patch.object(process_functions, "get_syntabledf",
-                      return_value=uniq_seq_df),\
-         patch.object(process_functions, "get_gdc_data_dictionary",
-                      return_value=test_dict) as patch_get_gdc:
+    with patch.object(
+        process_functions, "get_synid_database_mappingdf", return_value="syn123"
+    ), patch.object(
+        process_functions, "getDatabaseSynId", return_value="syn1234"
+    ), patch.object(
+        process_functions, "get_syntabledf", return_value=uniq_seq_df
+    ), patch.object(
+        process_functions, "get_gdc_data_dictionary", return_value=test_dict
+    ) as patch_get_gdc:
         error, warning = ASSAY_INFO._validate(assay_info_df, "syn9999")
         expected_errors = (
             "Assay_information.yaml: "
@@ -248,8 +287,9 @@ def test_invalid__validate():
             "Assay_information.yaml: "
             "Please double check your coverage column.  "
             "This column must only be these values: "
-            "hotspot_regions, coding_exons, introns, promoters\n")
+            "hotspot_regions, coding_exons, introns, promoters\n"
+        )
 
         patch_get_gdc.called_once_with("read_group")
         assert error == expected_errors
-        assert warning == ''
+        assert warning == ""
