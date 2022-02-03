@@ -85,6 +85,42 @@ def test_validinput__validate():
         patch_get_gdc.assert_called()
 
 
+def test_validinput__validate():
+    """Valid input should have no errors or warnings"""
+    assay_info_dict = {
+        'SEQ_ASSAY_ID': ['sage-1', 'SAGE-3'],
+        'is_paired_end': [True, False],
+        'library_strategy': ['value1', 'value2'],
+        'library_selection': ['value1', 'value2'],
+        'platform': ['value1', 'value2'],
+        'instrument_model': ['value1', 'value2'],
+        'target_capture_kit': ['value1', 'value2'],
+        'variant_classifications': ['Frame_Shift_Ins', 'Frame_Shift_Ins'],
+        'read_length': [22, float('nan')],
+        'number_of_genes': [5, 20],
+        'gene_padding': [10, None],
+        'calling_strategy': ['tumor_only', 'tumor_normal'],
+        'specimen_tumor_cellularity': ['>10%', '>20%'],
+        'alteration_types': ['snv;small_indels', 'intragenic_cna'],
+        'preservation_technique': ['FFPE', 'FFPE;fresh_frozen'],
+        'coverage': ['hotspot_regions;introns', 'introns']}
+    uniq_seq_df = pd.DataFrame({"seq": ["SAGE-1", "SAGE-3"]})
+    assay_info_df = pd.DataFrame(assay_info_dict)
+    test_dict = copy.deepcopy(GDC_DATA_DICT)
+    with patch.object(process_functions, "get_synid_database_mappingdf",
+                      return_value="syn123"),\
+         patch.object(process_functions, "getDatabaseSynId",
+                      return_value="syn1234"),\
+         patch.object(process_functions, "get_syntabledf",
+                      return_value=uniq_seq_df),\
+         patch.object(process_functions, "get_gdc_data_dictionary",
+                      return_value=test_dict) as patch_get_gdc:
+        error, warning = ASSAY_INFO._validate(assay_info_df, "syn9999")
+        assert error == ''
+        assert warning == ''
+        patch_get_gdc.assert_called()
+
+
 def test__missingcols__validate():
     """Test missing columns"""
     assay_info_df = pd.DataFrame()
