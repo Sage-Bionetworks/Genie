@@ -160,7 +160,9 @@ class Assayinfo(FileTypeFormat):
             )
             # These are all the SEQ_ASSAY_IDs that are in the clinical database
             # but not in the assay_information file
-            missing_seqs = uniq_seq_df["seq"][~uniq_seq_df["seq"].str.upper().isin(all_seq_assays)]
+            missing_seqs = uniq_seq_df["seq"][
+                ~uniq_seq_df["seq"].str.upper().isin(all_seq_assays)
+            ]
             missing_seqs_str = ", ".join(missing_seqs)
             if missing_seqs.to_list():
                 total_error += (
