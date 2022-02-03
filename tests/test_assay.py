@@ -85,7 +85,7 @@ def test_validinput__validate():
         patch_get_gdc.assert_called()
 
 
-def test_validinput__validate():
+def test_case__validate():
     """Valid input should have no errors or warnings"""
     assay_info_dict = {
         'SEQ_ASSAY_ID': ['sage-1', 'SAGE-3'],
