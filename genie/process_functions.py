@@ -876,18 +876,21 @@ def check_col_and_values(
                 final.extend(value.split(sep))
             check_values = pd.Series(final)
         if not check_values.isin(possible_values).all():
-            error = "{filename}: Please double check your {col} column.  " "This column must only be these values: {possible_vals}\n".format(
-                filename=filename,
-                col=col,
-                possible_vals=", ".join(
-                    [
-                        # This is done because of pandas typing.
-                        # An integer column with one NA/blank value
-                        # will be cast as a double.
-                        str(value).replace(".0", "")
-                        for value in possible_values
-                    ]
-                ),
+            error = (
+                "{filename}: Please double check your {col} column.  "
+                "This column must only be these values: {possible_vals}\n".format(
+                    filename=filename,
+                    col=col,
+                    possible_vals=", ".join(
+                        [
+                            # This is done because of pandas typing.
+                            # An integer column with one NA/blank value
+                            # will be cast as a double.
+                            str(value).replace(".0", "")
+                            for value in possible_values
+                        ]
+                    ),
+                )
             )
     return (warning, error)
 
