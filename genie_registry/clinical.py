@@ -7,6 +7,8 @@ import os
 
 import pandas as pd
 from pandas import DataFrame
+import pandera as pa
+from pandera import DataFrameSchema, Column
 import synapseclient
 
 from genie.example_filetype_format import FileTypeFormat
@@ -218,6 +220,91 @@ def remap_clinical_values(
     )
 
     return clinicaldf
+
+
+###### PA validation rules #######
+def _check_seq_date(value):
+    if value == "Release":
+        return True
+    try:
+        datetime.datetime.strptime(value, "%b-%Y")
+    except ValueError:
+        return False
+    if value.startswith(("Jan", "Apr", "Jul", "Oct")):
+        return True
+    return False
+
+
+check_seq_date = pa.Check(lambda s: _check_seq_date(s), element_wise=True, title="Check seq date")
+
+
+def _check_interval_values(value, allowed_values=["Unknown", ">32485", "<6570"]) -> bool:
+    """_summary_
+
+    Args:
+        value (_type_): _description_
+        allowed_values (list, optional): _description_. Defaults to ["Unknown", ">32485", "<6570"].
+
+    Returns:
+        bool: _description_
+    """
+    if value in allowed_values or process_functions.checkInt(value):
+        return True
+    return False
+
+
+check_interval_median = pa.Check(lambda s: s[~s.isin(["Unknown", ">32485", "<6570"])].astype(int).median() > 100, title="Check seq date median")
+check_interval_values = pa.Check(lambda s: _check_interval_values(s), title="Check seq date values", element_wise=True)
+
+check_contact_interval_values = pa.Check(
+    lambda s: _check_interval_values(s, allowed_values=[
+        ">32485",
+        "<6570",
+        "Unknown",
+        "Not Collected",
+        "Not Released",
+    ]), title="Check seq date values", element_wise=True
+)
+check_death_interval_values = pa.Check(
+    lambda s: _check_interval_values(s, allowed_values=[
+        ">32485",
+        "<6570",
+        "Unknown",
+        "Not Collected",
+        "Not Applicable",
+        "Not Released",
+    ]), title="Check seq date values", element_wise=True
+)
+
+
+def _check_year_values(value, allowed_values=["Unknown", ">32485", "<6570"]) -> bool:
+    if value in allowed_values:
+        return True
+    year_now = datetime.datetime.utcnow().year
+    try:
+        if datetime.datetime.strptime(str(int(value)), "%Y").year < year_now:
+            return True
+    except Exception:
+        return False
+    return False
+
+
+check_birth_year_values = pa.Check(lambda s: _check_year_values(s), error="YEAR values invalid", element_wise=True)
+check_contact_year_values = pa.Check(lambda s: _check_year_values(
+    s, allowed_values=["Unknown", "Not Collected", "Not Released", ">89", "<18"]),
+    error="YEAR values invalid", element_wise=True
+)
+check_death_year_values = pa.Check(lambda s: _check_year_values(
+    s, allowed_values=[
+        "Unknown",
+        "Not Collected",
+        "Not Applicable",
+        "Not Released",
+        ">89",
+        "<18",
+    ]),
+    error="YEAR values invalid", element_wise=True
+)
 
 
 class Clinical(FileTypeFormat):
@@ -482,21 +569,31 @@ class Clinical(FileTypeFormat):
         total_error = StringIO()
         warning = StringIO()
 
+        # HACK: helper transformations
         clinicaldf.columns = [col.upper() for col in clinicaldf.columns]
-        # CHECK: for empty rows
-        empty_rows = clinicaldf.isnull().values.all(axis=1)
-        if empty_rows.any():
-            total_error.write("Clinical file(s): No empty rows allowed.\n")
-            # Remove completely empty rows to speed up processing
-            clinicaldf = clinicaldf[~empty_rows]
+        if process_functions.checkColExist(clinicaldf, "ONCOTREE_CODE"):
+            clinicaldf["ONCOTREE_CODE"] = (
+                clinicaldf["ONCOTREE_CODE"].astype(str).str.upper()
+            )
+        if process_functions.checkColExist(clinicaldf, "DEAD"):
+            clinicaldf['DEAD'] = clinicaldf['DEAD'].str.upper()
 
-        clinicaldf = clinicaldf.fillna("")
+        # CHECK: for empty rows
+        # empty_rows = clinicaldf.isnull().values.all(axis=1)
+        # if empty_rows.any():
+        #     total_error.write("Clinical file(s): No empty rows allowed.\n")
+        #     # Remove completely empty rows to speed up processing
+        #     clinicaldf = clinicaldf[~empty_rows]
+
+        # clinicaldf = clinicaldf.fillna("")
 
         oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(
             oncotree_link
         )
+        onctoree_list = list(oncotree_mapping_dict.keys())
+        onctoree_list.append("UNKNOWN")
         oncotree_mapping = pd.DataFrame(
-            {"ONCOTREE_CODE": list(oncotree_mapping_dict.keys())}
+            {"ONCOTREE_CODE": onctoree_list}
         )
 
         sampletype_mapping = process_functions.getGenieMapping(self.syn, "syn7434273")
@@ -506,455 +603,547 @@ class Clinical(FileTypeFormat):
         race_mapping = process_functions.getGenieMapping(self.syn, "syn7434236")
 
         sex_mapping = process_functions.getGenieMapping(self.syn, "syn7434222")
-
-        # CHECK: SAMPLE_ID
-        sample_id = "SAMPLE_ID"
-        haveSampleColumn = process_functions.checkColExist(clinicaldf, sample_id)
-
-        if not haveSampleColumn:
-            total_error.write("Sample Clinical File: Must have SAMPLE_ID column.\n")
-        else:
-            if sum(clinicaldf[sample_id].duplicated()) > 0:
-                total_error.write(
-                    "Sample Clinical File: No duplicated SAMPLE_ID "
-                    "allowed.\nIf there are no duplicated "
-                    "SAMPLE_IDs, and both sample and patient files are "
-                    "uploaded, then please check to make sure no duplicated "
-                    "PATIENT_IDs exist in the patient clinical file.\n"
+        schema = DataFrameSchema(
+            coerce=False,
+            strict=False,
+            name=None,
+            columns={
+                "SAMPLE_ID": Column(
+                    dtype=str,
+                    unique=True,
+                ),
+                "PATIENT_ID": Column(
+                    dtype=str
+                ),
+                "SEQ_DATE": Column(
+                    dtype=str,
+                    checks=check_seq_date
+                ),
+                "ONCOTREE_CODE": Column(
+                    dtype=str,
+                    checks=pa.Check.isin(onctoree_list)
+                ),
+                "SAMPLE_TYPE": Column(
+                    dtype=int,
+                    checks=pa.Check.isin(sampletype_mapping['CODE'].to_list()),
+                ),
+                "SEQ_ASSAY_ID": Column(
+                    dtype=str,
+                    checks=pa.Check.str_startswith(f"{self.center}-"),
+                ),
+                "AGE_AT_SEQ_REPORT": Column(
+                    dtype=str,
+                    checks=[
+                        check_interval_values,
+                        check_interval_median
+                    ],
+                ),
+                "SEX": Column(
+                    dtype=int,
+                    checks=pa.Check.isin(sex_mapping['CODE'].to_list())
+                ),
+                "PRIMARY_RACE": Column(
+                    dtype=int,
+                    checks=pa.Check.isin(race_mapping['CODE'].to_list()),
+                    required=False
+                ),
+                "SECONDARY_RACE": Column(
+                    dtype=int,
+                    checks=pa.Check.isin(race_mapping['CODE'].to_list()),
+                    required=False
+                ),
+                "TERTIARY_RACE": Column(
+                    dtype=int,
+                    checks=pa.Check.isin(race_mapping['CODE'].to_list()),
+                    required=False
+                ),
+                "ETHNICITY": Column(
+                    dtype=int,
+                    checks=pa.Check.isin(ethnicity_mapping['CODE'].to_list()),
+                    required=False
+                ),
+                "BIRTH_YEAR": Column(
+                    dtype=str,
+                    checks=check_birth_year_values
+                ),
+                "YEAR_CONTACT": Column(
+                    dtype=str,
+                    checks=check_contact_year_values
+                ),
+                "YEAR_DEATH": Column(
+                    dtype=str,
+                    checks=check_death_year_values
+                ),
+                "INT_CONTACT": Column(
+                    dtype=str,
+                    checks=check_contact_interval_values
+                ),
+                "INT_DOD": Column(
+                    dtype=str,
+                    checks=check_death_interval_values
+                ),
+                "DEAD": Column(
+                    dtype=str,
+                    checks=pa.Check.isin(["TRUE", "FALSE", "UNKNOWN", "NOT COLLECTED", "NOT RELEASED"])
                 )
-        # CHECK: PATIENT_ID
-        patientId = "PATIENT_ID"
-        # #CHECK: PATIENT_ID IN SAMPLE FILE
-        havePatientColumn = process_functions.checkColExist(clinicaldf, patientId)
-
-        if not havePatientColumn:
-            total_error.write("Patient Clinical File: Must have PATIENT_ID column.\n")
-
-        # CHECK: within the sample file that the sample ids match
-        # the patient ids
-        if haveSampleColumn and havePatientColumn:
-            # Make sure sample and patient ids are string cols
-            clinicaldf[sample_id] = clinicaldf[sample_id].astype(str)
-            clinicaldf[patientId] = clinicaldf[patientId].astype(str)
-            if not all(
-                [
-                    patient in sample
-                    for sample, patient in zip(
-                        clinicaldf[sample_id], clinicaldf[patientId]
-                    )
-                ]
-            ):
-
-                total_error.write(
-                    "Sample Clinical File: PATIENT_ID's much be contained in "
-                    "the SAMPLE_ID's (ex. SAGE-1 <-> SAGE-1-2)\n"
-                )
-            # #CHECK: All samples must have associated patient data
-            # (GENIE requires patient data)
-            if not all(clinicaldf[patientId] != ""):
-                total_error.write(
-                    "Patient Clinical File: All samples must have associated "
-                    "patient information and no null patient ids allowed. "
-                    "These samples are missing patient data: {}\n".format(
-                        ", ".join(
-                            clinicaldf[sample_id][clinicaldf[patientId] == ""].unique()
-                        )
-                    )
-                )
-
-            # CHECK: All patients should have associated sample data
-            if not all(clinicaldf[sample_id] != ""):
-                # ## MAKE WARNING FOR NOW###
-                warning.write(
-                    "Sample Clinical File: All patients must have associated "
-                    "sample information. These patients are missing sample "
-                    "data: {}\n".format(
-                        ", ".join(
-                            clinicaldf[patientId][clinicaldf[sample_id] == ""].unique()
-                        )
-                    )
-                )
-
-        # CHECK: AGE_AT_SEQ_REPORT
-        age = "AGE_AT_SEQ_REPORT"
-        haveColumn = process_functions.checkColExist(clinicaldf, age)
-        if haveColumn:
-            # Deal with HIPAA converted rows from DFCI
-            # First for loop can't int(text) because there
-            # are instances that have <3435
-            age_seq_report_df = clinicaldf[
-                ~clinicaldf[age].isin(["Unknown", ">32485", "<6570"])
-            ]
-
-            # age_seq_report_df[age] = \
-            #     remove_greaterthan_lessthan_str(age_seq_report_df[age])
-
-            if not all([process_functions.checkInt(i) for i in age_seq_report_df[age]]):
-                total_error.write(
-                    "Sample Clinical File: Please double check your "
-                    "AGE_AT_SEQ_REPORT. It must be an integer, 'Unknown', "
-                    "'>32485', '<6570'.\n"
-                )
-            else:
-                age_seq_report_df[age] = age_seq_report_df[age].astype(int)
-                median_age = age_seq_report_df[age].median()
-                if median_age < 100:
-                    total_error.write(
-                        "Sample Clinical File: Please double check your "
-                        "AGE_AT_SEQ_REPORT. You may be reporting this value "
-                        "in YEARS, please report in DAYS.\n"
-                    )
-        else:
-            total_error.write(
-                "Sample Clinical File: Must have AGE_AT_SEQ_REPORT column.\n"
-            )
-
-        # CHECK: ONCOTREE_CODE
-        haveColumn = process_functions.checkColExist(clinicaldf, "ONCOTREE_CODE")
-        maleOncoCodes = ["TESTIS", "PROSTATE", "PENIS"]
-        womenOncoCodes = ["CERVIX", "VULVA", "UTERUS", "OVARY"]
-        if haveColumn:
-            # Make oncotree codes uppercase (SpCC/SPCC)
-            clinicaldf["ONCOTREE_CODE"] = (
-                clinicaldf["ONCOTREE_CODE"].astype(str).str.upper()
-            )
-
-            oncotree_codes = clinicaldf["ONCOTREE_CODE"][
-                clinicaldf["ONCOTREE_CODE"] != "UNKNOWN"
-            ]
-
-            if not all(oncotree_codes.isin(oncotree_mapping["ONCOTREE_CODE"])):
-                unmapped_oncotrees = oncotree_codes[
-                    ~oncotree_codes.isin(oncotree_mapping["ONCOTREE_CODE"])
-                ]
-                total_error.write(
-                    "Sample Clinical File: Please double check that all your "
-                    "ONCOTREE CODES exist in the mapping. You have {} samples "
-                    "that don't map. These are the codes that "
-                    "don't map: {}\n".format(
-                        len(unmapped_oncotrees),
-                        ",".join(set(unmapped_oncotrees)),
-                    )
-                )
-            # Should add the SEX mismatch into the dashboard file
-            if (
-                process_functions.checkColExist(clinicaldf, "SEX")
-                and "oncotree_mapping_dict" in locals()
-                and havePatientColumn
-                and haveSampleColumn
-            ):
-
-                wrongCodeSamples = []
-                # This is to check if oncotree codes match the sex,
-                # returns list of samples that have conflicting codes and sex
-                for code, patient, sample in zip(
-                    clinicaldf["ONCOTREE_CODE"],
-                    clinicaldf["PATIENT_ID"],
-                    clinicaldf["SAMPLE_ID"],
-                ):
-
-                    if (
-                        oncotree_mapping_dict.get(code) is not None
-                        and sum(clinicaldf["PATIENT_ID"] == patient) > 0
-                    ):
-
-                        primaryCode = oncotree_mapping_dict[code][
-                            "ONCOTREE_PRIMARY_NODE"
-                        ]
-
-                        sex = clinicaldf["SEX"][
-                            clinicaldf["PATIENT_ID"] == patient
-                        ].values[0]
-                        sex = float("nan") if sex == "" else float(sex)
-                        if (
-                            oncotree_mapping_dict[code]["ONCOTREE_PRIMARY_NODE"]
-                            in maleOncoCodes
-                            and sex != 1.0
-                        ):
-
-                            wrongCodeSamples.append(sample)
-                        if (
-                            oncotree_mapping_dict[code]["ONCOTREE_PRIMARY_NODE"]
-                            in womenOncoCodes
-                            and sex != 2.0
-                        ):
-
-                            wrongCodeSamples.append(sample)
-                if len(wrongCodeSamples) > 0:
-                    warning.write(
-                        "Sample Clinical File: Some SAMPLE_IDs have "
-                        "conflicting SEX and ONCOTREE_CODES: {}\n".format(
-                            ",".join(wrongCodeSamples)
-                        )
-                    )
-        else:
-            total_error.write("Sample Clinical File: Must have ONCOTREE_CODE column.\n")
-
-        warn, error = process_functions.check_col_and_values(
-            clinicaldf,
-            "SAMPLE_TYPE",
-            sampletype_mapping["CODE"].tolist(),
-            "Sample Clinical File",
-            required=True,
+            }
         )
-        total_error.write(error)
+        try:
+            schema.validate(clinicaldf, lazy=True)
+        except pa.errors.SchemaErrors as err:
+            print("Schema errors and failure cases:")
+            failed_cases = err.failure_cases
+            print("\nDataFrame object that failed validation:")
+            print(err.data)
+        failed_cases.to_csv("failed.csv")
+        # # CHECK: SAMPLE_ID
+        # sample_id = "SAMPLE_ID"
+        # haveSampleColumn = process_functions.checkColExist(clinicaldf, sample_id)
 
-        # CHECK: SEQ_ASSAY_ID
-        haveColumn = process_functions.checkColExist(clinicaldf, "SEQ_ASSAY_ID")
-        if haveColumn:
-            if not all([i != "" for i in clinicaldf["SEQ_ASSAY_ID"]]):
-                total_error.write(
-                    "Sample Clinical File: Please double check your "
-                    "SEQ_ASSAY_ID columns, there are empty rows.\n"
-                )
-            # must remove empty seq assay ids first
-            # Checking if seq assay ids start with the center name
-            empty_seq_idx = clinicaldf.SEQ_ASSAY_ID != ""
-            seqassay_ids = clinicaldf.SEQ_ASSAY_ID[empty_seq_idx]
-            uniq_seqassay_ids = seqassay_ids.unique()
-            invalid_seqassay = []
-            for seqassay in uniq_seqassay_ids:
-                # SEQ Ids are all capitalized now, so no need to check
-                # for differences in case
-                if not seqassay.upper().startswith(self.center):
-                    invalid_seqassay.append(seqassay)
-            if invalid_seqassay:
-                total_error.write(
-                    "Sample Clinical File: Please make sure your "
-                    "SEQ_ASSAY_IDs start with your center "
-                    "abbreviation: {}.\n".format(", ".join(invalid_seqassay))
-                )
-        else:
-            total_error.write("Sample Clinical File: Must have SEQ_ASSAY_ID column.\n")
+        # if not haveSampleColumn:
+        #     total_error.write("Sample Clinical File: Must have SAMPLE_ID column.\n")
+        # else:
+        #     if sum(clinicaldf[sample_id].duplicated()) > 0:
+        #         total_error.write(
+        #             "Sample Clinical File: No duplicated SAMPLE_ID "
+        #             "allowed.\nIf there are no duplicated "
+        #             "SAMPLE_IDs, and both sample and patient files are "
+        #             "uploaded, then please check to make sure no duplicated "
+        #             "PATIENT_IDs exist in the patient clinical file.\n"
+        #         )
+        # # CHECK: PATIENT_ID
+        # patientId = "PATIENT_ID"
+        # # #CHECK: PATIENT_ID IN SAMPLE FILE
+        # havePatientColumn = process_functions.checkColExist(clinicaldf, patientId)
 
-        haveColumn = process_functions.checkColExist(clinicaldf, "SEQ_DATE")
-        seq_date_error = (
-            "Sample Clinical File: SEQ_DATE must be one of five values- "
-            "For Jan-March: use Jan-YEAR. "
-            "For Apr-June: use Apr-YEAR. "
-            "For July-Sep: use Jul-YEAR. "
-            "For Oct-Dec: use Oct-YEAR. (ie. Apr-2017) "
-            "For values that don't have SEQ_DATES that "
-            "you want released use 'release'.\n"
-        )
+        # if not havePatientColumn:
+        #     total_error.write("Patient Clinical File: Must have PATIENT_ID column.\n")
 
-        if haveColumn:
-            clinicaldf["SEQ_DATE"] = [
-                i.title() for i in clinicaldf["SEQ_DATE"].astype(str)
-            ]
+        # # CHECK: within the sample file that the sample ids match
+        # # the patient ids
+        # if haveSampleColumn and havePatientColumn:
+        #     # Make sure sample and patient ids are string cols
+        #     clinicaldf[sample_id] = clinicaldf[sample_id].astype(str)
+        #     clinicaldf[patientId] = clinicaldf[patientId].astype(str)
+        #     if not all(
+        #         [
+        #             patient in sample
+        #             for sample, patient in zip(
+        #                 clinicaldf[sample_id], clinicaldf[patientId]
+        #             )
+        #         ]
+        #     ):
 
-            seqdate = clinicaldf["SEQ_DATE"][clinicaldf["SEQ_DATE"] != "Release"]
-            if sum(clinicaldf["SEQ_DATE"] == "") > 0:
-                total_error.write(
-                    "Sample Clinical File: Samples without SEQ_DATEs will "
-                    "NOT be released.\n"
-                )
-            try:
-                if not seqdate.empty:
-                    seqdate.apply(
-                        lambda date: datetime.datetime.strptime(date, "%b-%Y")
-                    )
-                    if not seqdate.str.startswith(("Jan", "Apr", "Jul", "Oct")).all():
-                        total_error.write(seq_date_error)
-            except ValueError:
-                total_error.write(seq_date_error)
-        else:
-            total_error.write("Sample Clinical File: Must have SEQ_DATE column.\n")
+        #         total_error.write(
+        #             "Sample Clinical File: PATIENT_ID's much be contained in "
+        #             "the SAMPLE_ID's (ex. SAGE-1 <-> SAGE-1-2)\n"
+        #         )
+        #     # #CHECK: All samples must have associated patient data
+        #     # (GENIE requires patient data)
+        #     if not all(clinicaldf[patientId] != ""):
+        #         total_error.write(
+        #             "Patient Clinical File: All samples must have associated "
+        #             "patient information and no null patient ids allowed. "
+        #             "These samples are missing patient data: {}\n".format(
+        #                 ", ".join(
+        #                     clinicaldf[sample_id][clinicaldf[patientId] == ""].unique()
+        #                 )
+        #             )
+        #         )
 
-        # CHECK: BIRTH_YEAR
-        error = _check_year(
-            clinicaldf=clinicaldf,
-            year_col="BIRTH_YEAR",
-            filename="Patient Clinical File",
-            allowed_string_values=["Unknown", ">89", "<18"],
-        )
-        total_error.write(error)
+        #     # CHECK: All patients should have associated sample data
+        #     if not all(clinicaldf[sample_id] != ""):
+        #         # ## MAKE WARNING FOR NOW###
+        #         warning.write(
+        #             "Sample Clinical File: All patients must have associated "
+        #             "sample information. These patients are missing sample "
+        #             "data: {}\n".format(
+        #                 ", ".join(
+        #                     clinicaldf[patientId][clinicaldf[sample_id] == ""].unique()
+        #                 )
+        #             )
+        #         )
 
-        # CHECK: YEAR DEATH
-        error = _check_year(
-            clinicaldf=clinicaldf,
-            year_col="YEAR_DEATH",
-            filename="Patient Clinical File",
-            allowed_string_values=[
-                "Unknown",
-                "Not Collected",
-                "Not Applicable",
-                "Not Released",
-                ">89",
-                "<18",
-            ],
-        )
-        total_error.write(error)
+        # # CHECK: AGE_AT_SEQ_REPORT
+        # age = "AGE_AT_SEQ_REPORT"
+        # haveColumn = process_functions.checkColExist(clinicaldf, age)
+        # if haveColumn:
+        #     # Deal with HIPAA converted rows from DFCI
+        #     # First for loop can't int(text) because there
+        #     # are instances that have <3435
+        #     age_seq_report_df = clinicaldf[
+        #         ~clinicaldf[age].isin(["Unknown", ">32485", "<6570"])
+        #     ]
 
-        # CHECK: YEAR CONTACT
-        error = _check_year(
-            clinicaldf=clinicaldf,
-            year_col="YEAR_CONTACT",
-            filename="Patient Clinical File",
-            allowed_string_values=[
-                "Unknown",
-                "Not Collected",
-                "Not Released",
-                ">89",
-                "<18",
-            ],
-        )
-        total_error.write(error)
+        #     # age_seq_report_df[age] = \
+        #     #     remove_greaterthan_lessthan_str(age_seq_report_df[age])
 
-        # CHECK: INT CONTACT
-        haveColumn = process_functions.checkColExist(clinicaldf, "INT_CONTACT")
-        if haveColumn:
-            if not all(
-                [
-                    process_functions.checkInt(i)
-                    for i in clinicaldf.INT_CONTACT
-                    if i
-                    not in [
-                        ">32485",
-                        "<6570",
-                        "Unknown",
-                        "Not Collected",
-                        "Not Released",
-                    ]
-                ]
-            ):
+        #     if not all([process_functions.checkInt(i) for i in age_seq_report_df[age]]):
+        #         total_error.write(
+        #             "Sample Clinical File: Please double check your "
+        #             "AGE_AT_SEQ_REPORT. It must be an integer, 'Unknown', "
+        #             "'>32485', '<6570'.\n"
+        #         )
+        #     else:
+        #         age_seq_report_df[age] = age_seq_report_df[age].astype(int)
+        #         median_age = age_seq_report_df[age].median()
+        #         if median_age < 100:
+        #             total_error.write(
+        #                 "Sample Clinical File: Please double check your "
+        #                 "AGE_AT_SEQ_REPORT. You may be reporting this value "
+        #                 "in YEARS, please report in DAYS.\n"
+        #             )
+        # else:
+        #     total_error.write(
+        #         "Sample Clinical File: Must have AGE_AT_SEQ_REPORT column.\n"
+        #     )
 
-                total_error.write(
-                    "Patient Clinical File: Please double check your "
-                    "INT_CONTACT column, it must be an integer, '>32485', "
-                    "'<6570', 'Unknown', 'Not Released' or 'Not Collected'.\n"
-                )
-        else:
-            total_error.write("Patient Clinical File: Must have INT_CONTACT column.\n")
+        # # CHECK: ONCOTREE_CODE
+        # haveColumn = process_functions.checkColExist(clinicaldf, "ONCOTREE_CODE")
+        # maleOncoCodes = ["TESTIS", "PROSTATE", "PENIS"]
+        # womenOncoCodes = ["CERVIX", "VULVA", "UTERUS", "OVARY"]
+        # if haveColumn:
+        #     # Make oncotree codes uppercase (SpCC/SPCC)
+        #     clinicaldf["ONCOTREE_CODE"] = (
+        #         clinicaldf["ONCOTREE_CODE"].astype(str).str.upper()
+        #     )
 
-        # INT DOD
-        haveColumn = process_functions.checkColExist(clinicaldf, "INT_DOD")
-        if haveColumn:
-            if not all(
-                [
-                    process_functions.checkInt(i)
-                    for i in clinicaldf.INT_DOD
-                    if i
-                    not in [
-                        ">32485",
-                        "<6570",
-                        "Unknown",
-                        "Not Collected",
-                        "Not Applicable",
-                        "Not Released",
-                    ]
-                ]
-            ):
+        #     oncotree_codes = clinicaldf["ONCOTREE_CODE"][
+        #         clinicaldf["ONCOTREE_CODE"] != "UNKNOWN"
+        #     ]
 
-                total_error.write(
-                    "Patient Clinical File: Please double check your INT_DOD "
-                    "column, it must be an integer, '>32485', '<6570', "
-                    "'Unknown', 'Not Collected', 'Not Released' or "
-                    "'Not Applicable'.\n"
-                )
-        else:
-            total_error.write("Patient Clinical File: Must have INT_DOD column.\n")
+        #     if not all(oncotree_codes.isin(oncotree_mapping["ONCOTREE_CODE"])):
+        #         unmapped_oncotrees = oncotree_codes[
+        #             ~oncotree_codes.isin(oncotree_mapping["ONCOTREE_CODE"])
+        #         ]
+        #         total_error.write(
+        #             "Sample Clinical File: Please double check that all your "
+        #             "ONCOTREE CODES exist in the mapping. You have {} samples "
+        #             "that don't map. These are the codes that "
+        #             "don't map: {}\n".format(
+        #                 len(unmapped_oncotrees),
+        #                 ",".join(set(unmapped_oncotrees)),
+        #             )
+        #         )
+        #     # Should add the SEX mismatch into the dashboard file
+        #     if (
+        #         process_functions.checkColExist(clinicaldf, "SEX")
+        #         and "oncotree_mapping_dict" in locals()
+        #         and havePatientColumn
+        #         and haveSampleColumn
+        #     ):
 
-        haveColumn = process_functions.checkColExist(clinicaldf, "DEAD")
-        if haveColumn:
-            # Need to have check_bool function
-            if not all(
-                [
-                    str(i).upper() in ["TRUE", "FALSE"]
-                    for i in clinicaldf.DEAD
-                    if i not in ["Unknown", "Not Collected", "Not Released"]
-                ]
-            ):
-                total_error.write(
-                    "Patient Clinical File: Please double check your "
-                    "DEAD column, it must be True, False, 'Unknown', "
-                    "'Not Released' or 'Not Collected'.\n"
-                )
-        else:
-            total_error.write("Patient Clinical File: Must have DEAD column.\n")
-        # CHECK: contact vital status value consistency
-        contact_error = _check_int_year_consistency(
-            clinicaldf=clinicaldf,
-            cols=["YEAR_CONTACT", "INT_CONTACT"],
-            string_vals=["Not Collected", "Unknown", "Not Released"],
-        )
-        total_error.write(contact_error)
+        #         wrongCodeSamples = []
+        #         # This is to check if oncotree codes match the sex,
+        #         # returns list of samples that have conflicting codes and sex
+        #         for code, patient, sample in zip(
+        #             clinicaldf["ONCOTREE_CODE"],
+        #             clinicaldf["PATIENT_ID"],
+        #             clinicaldf["SAMPLE_ID"],
+        #         ):
 
-        # CHECK: death vital status value consistency
-        death_error = _check_int_year_consistency(
-            clinicaldf=clinicaldf,
-            cols=["YEAR_DEATH", "INT_DOD"],
-            string_vals=[
-                "Not Collected",
-                "Unknown",
-                "Not Applicable",
-                "Not Released",
-            ],
-        )
-        total_error.write(death_error)
-        death_error = _check_int_dead_consistency(clinicaldf=clinicaldf)
-        total_error.write(death_error)
+        #             if (
+        #                 oncotree_mapping_dict.get(code) is not None
+        #                 and sum(clinicaldf["PATIENT_ID"] == patient) > 0
+        #             ):
 
-        # CHECK: SAMPLE_CLASS is optional attribute
-        have_column = process_functions.checkColExist(clinicaldf, "SAMPLE_CLASS")
-        if have_column:
-            sample_class_vals = pd.Series(clinicaldf["SAMPLE_CLASS"].unique().tolist())
-            if not sample_class_vals.isin(["Tumor", "cfDNA"]).all():
-                total_error.write(
-                    "Sample Clinical File: SAMPLE_CLASS column must "
-                    "be 'Tumor', or 'cfDNA'\n"
-                )
+        #                 primaryCode = oncotree_mapping_dict[code][
+        #                     "ONCOTREE_PRIMARY_NODE"
+        #                 ]
 
-        # CHECK: PRIMARY_RACE
-        warn, error = process_functions.check_col_and_values(
-            clinicaldf,
-            "PRIMARY_RACE",
-            race_mapping["CODE"].tolist(),
-            "Patient Clinical File",
-        )
-        warning.write(warn)
-        total_error.write(error)
+        #                 sex = clinicaldf["SEX"][
+        #                     clinicaldf["PATIENT_ID"] == patient
+        #                 ].values[0]
+        #                 sex = float("nan") if sex == "" else float(sex)
+        #                 if (
+        #                     oncotree_mapping_dict[code]["ONCOTREE_PRIMARY_NODE"]
+        #                     in maleOncoCodes
+        #                     and sex != 1.0
+        #                 ):
 
-        # CHECK: SECONDARY_RACE
-        warn, error = process_functions.check_col_and_values(
-            clinicaldf,
-            "SECONDARY_RACE",
-            race_mapping["CODE"].tolist(),
-            "Patient Clinical File",
-        )
-        warning.write(warn)
-        total_error.write(error)
+        #                     wrongCodeSamples.append(sample)
+        #                 if (
+        #                     oncotree_mapping_dict[code]["ONCOTREE_PRIMARY_NODE"]
+        #                     in womenOncoCodes
+        #                     and sex != 2.0
+        #                 ):
 
-        # CHECK: TERTIARY_RACE
-        warn, error = process_functions.check_col_and_values(
-            clinicaldf,
-            "TERTIARY_RACE",
-            race_mapping["CODE"].tolist(),
-            "Patient Clinical File",
-        )
-        warning.write(warn)
-        total_error.write(error)
+        #                     wrongCodeSamples.append(sample)
+        #         if len(wrongCodeSamples) > 0:
+        #             warning.write(
+        #                 "Sample Clinical File: Some SAMPLE_IDs have "
+        #                 "conflicting SEX and ONCOTREE_CODES: {}\n".format(
+        #                     ",".join(wrongCodeSamples)
+        #                 )
+        #             )
+        # else:
+        #     total_error.write("Sample Clinical File: Must have ONCOTREE_CODE column.\n")
 
-        # CHECK: SEX
-        warn, error = process_functions.check_col_and_values(
-            clinicaldf,
-            "SEX",
-            sex_mapping["CODE"].tolist(),
-            "Patient Clinical File",
-            required=True,
-        )
-        warning.write(warn)
-        total_error.write(error)
+        # warn, error = process_functions.check_col_and_values(
+        #     clinicaldf,
+        #     "SAMPLE_TYPE",
+        #     sampletype_mapping["CODE"].tolist(),
+        #     "Sample Clinical File",
+        #     required=True,
+        # )
+        # total_error.write(error)
 
-        # CHECK: ETHNICITY
-        warn, error = process_functions.check_col_and_values(
-            clinicaldf,
-            "ETHNICITY",
-            ethnicity_mapping["CODE"].tolist(),
-            "Patient Clinical File",
-        )
-        warning.write(warn)
-        total_error.write(error)
+        # # CHECK: SEQ_ASSAY_ID
+        # haveColumn = process_functions.checkColExist(clinicaldf, "SEQ_ASSAY_ID")
+        # if haveColumn:
+        #     if not all([i != "" for i in clinicaldf["SEQ_ASSAY_ID"]]):
+        #         total_error.write(
+        #             "Sample Clinical File: Please double check your "
+        #             "SEQ_ASSAY_ID columns, there are empty rows.\n"
+        #         )
+        #     # must remove empty seq assay ids first
+        #     # Checking if seq assay ids start with the center name
+        #     empty_seq_idx = clinicaldf.SEQ_ASSAY_ID != ""
+        #     seqassay_ids = clinicaldf.SEQ_ASSAY_ID[empty_seq_idx]
+        #     uniq_seqassay_ids = seqassay_ids.unique()
+        #     invalid_seqassay = []
+        #     for seqassay in uniq_seqassay_ids:
+        #         # SEQ Ids are all capitalized now, so no need to check
+        #         # for differences in case
+        #         if not seqassay.upper().startswith(self.center):
+        #             invalid_seqassay.append(seqassay)
+        #     if invalid_seqassay:
+        #         total_error.write(
+        #             "Sample Clinical File: Please make sure your "
+        #             "SEQ_ASSAY_IDs start with your center "
+        #             "abbreviation: {}.\n".format(", ".join(invalid_seqassay))
+        #         )
+        # else:
+        #     total_error.write("Sample Clinical File: Must have SEQ_ASSAY_ID column.\n")
+
+        # haveColumn = process_functions.checkColExist(clinicaldf, "SEQ_DATE")
+        # seq_date_error = (
+        #     "Sample Clinical File: SEQ_DATE must be one of five values- "
+        #     "For Jan-March: use Jan-YEAR. "
+        #     "For Apr-June: use Apr-YEAR. "
+        #     "For July-Sep: use Jul-YEAR. "
+        #     "For Oct-Dec: use Oct-YEAR. (ie. Apr-2017) "
+        #     "For values that don't have SEQ_DATES that "
+        #     "you want released use 'release'.\n"
+        # )
+
+        # if haveColumn:
+        #     clinicaldf["SEQ_DATE"] = [
+        #         i.title() for i in clinicaldf["SEQ_DATE"].astype(str)
+        #     ]
+
+        #     seqdate = clinicaldf["SEQ_DATE"][clinicaldf["SEQ_DATE"] != "Release"]
+        #     if sum(clinicaldf["SEQ_DATE"] == "") > 0:
+        #         total_error.write(
+        #             "Sample Clinical File: Samples without SEQ_DATEs will "
+        #             "NOT be released.\n"
+        #         )
+        #     try:
+        #         if not seqdate.empty:
+        #             seqdate.apply(
+        #                 lambda date: datetime.datetime.strptime(date, "%b-%Y")
+        #             )
+        #             if not seqdate.str.startswith(("Jan", "Apr", "Jul", "Oct")).all():
+        #                 total_error.write(seq_date_error)
+        #     except ValueError:
+        #         total_error.write(seq_date_error)
+        # else:
+        #     total_error.write("Sample Clinical File: Must have SEQ_DATE column.\n")
+
+        # # CHECK: BIRTH_YEAR
+        # error = _check_year(
+        #     clinicaldf=clinicaldf,
+        #     year_col="BIRTH_YEAR",
+        #     filename="Patient Clinical File",
+        #     allowed_string_values=["Unknown", ">89", "<18"],
+        # )
+        # total_error.write(error)
+
+        # # CHECK: YEAR DEATH
+        # error = _check_year(
+        #     clinicaldf=clinicaldf,
+        #     year_col="YEAR_DEATH",
+        #     filename="Patient Clinical File",
+        #     allowed_string_values=[
+        #         "Unknown",
+        #         "Not Collected",
+        #         "Not Applicable",
+        #         "Not Released",
+        #         ">89",
+        #         "<18",
+        #     ],
+        # )
+        # total_error.write(error)
+
+        # # CHECK: YEAR CONTACT
+        # error = _check_year(
+        #     clinicaldf=clinicaldf,
+        #     year_col="YEAR_CONTACT",
+        #     filename="Patient Clinical File",
+        #     allowed_string_values=[
+        #         "Unknown",
+        #         "Not Collected",
+        #         "Not Released",
+        #         ">89",
+        #         "<18",
+        #     ],
+        # )
+        # total_error.write(error)
+
+        # # CHECK: INT CONTACT
+        # haveColumn = process_functions.checkColExist(clinicaldf, "INT_CONTACT")
+        # if haveColumn:
+        #     if not all(
+        #         [
+        #             process_functions.checkInt(i)
+        #             for i in clinicaldf.INT_CONTACT
+        #             if i
+        #             not in [
+        #                 ">32485",
+        #                 "<6570",
+        #                 "Unknown",
+        #                 "Not Collected",
+        #                 "Not Released",
+        #             ]
+        #         ]
+        #     ):
+
+        #         total_error.write(
+        #             "Patient Clinical File: Please double check your "
+        #             "INT_CONTACT column, it must be an integer, '>32485', "
+        #             "'<6570', 'Unknown', 'Not Released' or 'Not Collected'.\n"
+        #         )
+        # else:
+        #     total_error.write("Patient Clinical File: Must have INT_CONTACT column.\n")
+
+        # # INT DOD
+        # haveColumn = process_functions.checkColExist(clinicaldf, "INT_DOD")
+        # if haveColumn:
+        #     if not all(
+        #         [
+        #             process_functions.checkInt(i)
+        #             for i in clinicaldf.INT_DOD
+        #             if i
+        #             not in [
+        #                 ">32485",
+        #                 "<6570",
+        #                 "Unknown",
+        #                 "Not Collected",
+        #                 "Not Applicable",
+        #                 "Not Released",
+        #             ]
+        #         ]
+        #     ):
+
+        #         total_error.write(
+        #             "Patient Clinical File: Please double check your INT_DOD "
+        #             "column, it must be an integer, '>32485', '<6570', "
+        #             "'Unknown', 'Not Collected', 'Not Released' or "
+        #             "'Not Applicable'.\n"
+        #         )
+        # else:
+        #     total_error.write("Patient Clinical File: Must have INT_DOD column.\n")
+
+        # haveColumn = process_functions.checkColExist(clinicaldf, "DEAD")
+        # if haveColumn:
+        #     # Need to have check_bool function
+        #     if not all(
+        #         [
+        #             str(i).upper() in ["TRUE", "FALSE"]
+        #             for i in clinicaldf.DEAD
+        #             if i not in ["Unknown", "Not Collected", "Not Released"]
+        #         ]
+        #     ):
+        #         total_error.write(
+        #             "Patient Clinical File: Please double check your "
+        #             "DEAD column, it must be True, False, 'Unknown', "
+        #             "'Not Released' or 'Not Collected'.\n"
+        #         )
+        # else:
+        #     total_error.write("Patient Clinical File: Must have DEAD column.\n")
+        # # CHECK: contact vital status value consistency
+        # contact_error = _check_int_year_consistency(
+        #     clinicaldf=clinicaldf,
+        #     cols=["YEAR_CONTACT", "INT_CONTACT"],
+        #     string_vals=["Not Collected", "Unknown", "Not Released"],
+        # )
+        # total_error.write(contact_error)
+
+        # # CHECK: death vital status value consistency
+        # death_error = _check_int_year_consistency(
+        #     clinicaldf=clinicaldf,
+        #     cols=["YEAR_DEATH", "INT_DOD"],
+        #     string_vals=[
+        #         "Not Collected",
+        #         "Unknown",
+        #         "Not Applicable",
+        #         "Not Released",
+        #     ],
+        # )
+        # total_error.write(death_error)
+        # death_error = _check_int_dead_consistency(clinicaldf=clinicaldf)
+        # total_error.write(death_error)
+
+        # # CHECK: SAMPLE_CLASS is optional attribute
+        # have_column = process_functions.checkColExist(clinicaldf, "SAMPLE_CLASS")
+        # if have_column:
+        #     sample_class_vals = pd.Series(clinicaldf["SAMPLE_CLASS"].unique().tolist())
+        #     if not sample_class_vals.isin(["Tumor", "cfDNA"]).all():
+        #         total_error.write(
+        #             "Sample Clinical File: SAMPLE_CLASS column must "
+        #             "be 'Tumor', or 'cfDNA'\n"
+        #         )
+
+        # # CHECK: PRIMARY_RACE
+        # warn, error = process_functions.check_col_and_values(
+        #     clinicaldf,
+        #     "PRIMARY_RACE",
+        #     race_mapping["CODE"].tolist(),
+        #     "Patient Clinical File",
+        # )
+        # warning.write(warn)
+        # total_error.write(error)
+
+        # # CHECK: SECONDARY_RACE
+        # warn, error = process_functions.check_col_and_values(
+        #     clinicaldf,
+        #     "SECONDARY_RACE",
+        #     race_mapping["CODE"].tolist(),
+        #     "Patient Clinical File",
+        # )
+        # warning.write(warn)
+        # total_error.write(error)
+
+        # # CHECK: TERTIARY_RACE
+        # warn, error = process_functions.check_col_and_values(
+        #     clinicaldf,
+        #     "TERTIARY_RACE",
+        #     race_mapping["CODE"].tolist(),
+        #     "Patient Clinical File",
+        # )
+        # warning.write(warn)
+        # total_error.write(error)
+
+        # # CHECK: SEX
+        # warn, error = process_functions.check_col_and_values(
+        #     clinicaldf,
+        #     "SEX",
+        #     sex_mapping["CODE"].tolist(),
+        #     "Patient Clinical File",
+        #     required=True,
+        # )
+        # warning.write(warn)
+        # total_error.write(error)
+
+        # # CHECK: ETHNICITY
+        # warn, error = process_functions.check_col_and_values(
+        #     clinicaldf,
+        #     "ETHNICITY",
+        #     ethnicity_mapping["CODE"].tolist(),
+        #     "Patient Clinical File",
+        # )
+        # warning.write(warn)
+        # total_error.write(error)
 
         return total_error.getvalue(), warning.getvalue()
 
