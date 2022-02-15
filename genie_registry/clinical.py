@@ -508,6 +508,18 @@ class Clinical(FileTypeFormat):
 
         sex_mapping = process_functions.getGenieMapping(self.syn, "syn7434222")
 
+        # CHECK: required columns:
+        row_errors = validate.check_required_columns(
+            df=clinicaldf,
+            cols=[
+                "BIRTH_YEAR", "YEAR_DEATH"
+            ]
+        )
+        if row_errors:
+            row_error_df = pd.DataFrame(row_errors)
+            # The summary is different depending on the row
+            total_error.write("\n".join(row_error_df['summary'].unique()) + "\n")
+
         # CHECK: SAMPLE_ID
         sample_id = "SAMPLE_ID"
         haveSampleColumn = process_functions.checkColExist(clinicaldf, sample_id)
@@ -772,28 +784,20 @@ class Clinical(FileTypeFormat):
             row_error_df = pd.DataFrame(row_error)
             # The summary is always the same so take the first
             total_error.write(row_error_df['summary'][0])
-        # error = _check_year(
-        #     clinicaldf=clinicaldf,
-        #     year_col="BIRTH_YEAR",
-        #     filename="Patient Clinical File",
-        #     allowed_string_values=["Unknown", ">89", "<18"],
-        # )
 
-        # CHECK: YEAR DEATH
-        error = _check_year(
-            clinicaldf=clinicaldf,
-            year_col="YEAR_DEATH",
-            filename="Patient Clinical File",
+        # CHECK: YEAR_DEATH
+        row_error = validate.check_year(
+            df=clinicaldf,
+            col="YEAR_DEATH",
             allowed_string_values=[
-                "Unknown",
-                "Not Collected",
-                "Not Applicable",
-                "Not Released",
-                ">89",
-                "<18",
-            ],
+                "Unknown", "Not Collected", "Not Applicable", "Not Released",
+                ">89", "<18"
+            ]
         )
-        total_error.write(error)
+        if row_error:
+            row_error_df = pd.DataFrame(row_error)
+            # The summary is always the same so take the first
+            total_error.write(row_error_df['summary'][0])
 
         # CHECK: YEAR CONTACT
         error = _check_year(

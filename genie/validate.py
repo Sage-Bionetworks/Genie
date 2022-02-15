@@ -6,6 +6,7 @@ import logging
 from typing import List
 
 import pandas as pd
+from py import process
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
@@ -306,7 +307,7 @@ def check_year(
                                                 Defaults to None.
 
     Returns:
-        List of dict: Dict = (row index, summary, detailed, error or warning)
+        List[dict]: (row index, summary, detailed, error or warning)
     """
     year_now = datetime.datetime.utcnow().year
     # Generate summary error
@@ -349,4 +350,35 @@ def check_year(
                         "check_level": "error"
                     }
                 )
+    return row_errors
+
+
+def check_required_columns(
+    df: pd.DataFrame,
+    cols: List[int],
+    center: str = None,
+    allowed_string_values: list = None
+) -> List[dict]:
+    """_summary_
+
+    Args:
+        df (pd.DataFrame): _description_
+        cols List[int]: List of required columns
+        center (str, optional): _description_. Defaults to None.
+        allowed_string_values (list, optional): _description_. Defaults to None.
+
+    Returns:
+        List[dict]: _description_
+    """
+    row_errors = []
+    for col in cols:
+        if not process_functions.checkColExist(df, col):
+            row_errors.append(
+                {
+                    "index": None,
+                    "summary": f"Must have {col} column.",
+                    "detailed": None,
+                    "check_level": "error"
+                }
+            )
     return row_errors
