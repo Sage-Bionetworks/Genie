@@ -483,14 +483,21 @@ class Clinical(FileTypeFormat):
         total_error = StringIO()
         warning = StringIO()
         all_row_errors_df = pd.DataFrame()
-
+        # Will upper case column headers for people
         clinicaldf.columns = [col.upper() for col in clinicaldf.columns]
+
         # CHECK: for empty rows
-        empty_rows = clinicaldf.isnull().values.all(axis=1)
-        if empty_rows.any():
-            total_error.write("Clinical file(s): No empty rows allowed.\n")
-            # Remove completely empty rows to speed up processing
-            clinicaldf = clinicaldf[~empty_rows]
+        row_error = validate.check_empty_rows(
+            df=clinicaldf,
+            cols=None
+        )
+        if row_error:
+            row_error_df = pd.DataFrame(row_error)
+            # The summary is always the same so take the first
+            total_error.write(row_error_df['summary'][0])
+            all_row_errors_df = pd.concat([all_row_errors_df, row_error_df])
+            # This is a hard stop.  Don't alter code for people
+            return total_error.getvalue(), warning.getvalue()
 
         clinicaldf = clinicaldf.fillna("")
 

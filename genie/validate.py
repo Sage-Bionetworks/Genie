@@ -382,3 +382,24 @@ def check_required_columns(
                 }
             )
     return row_errors
+
+
+def check_empty_rows(
+    df: pd.DataFrame,
+    cols: List[int],
+    center: str = None,
+    allowed_string_values: list = None
+) -> List[tuple]:
+    row_errors = []
+    empty_rows = df.isnull().sum(axis=1) == len(df.columns)
+    for index, value in empty_rows[empty_rows].iteritems():
+        # Remove completely empty rows to speed up processing
+        row_errors.append(
+            {
+                "index": index,
+                "summary": "No empty rows allowed.\n",
+                "detailed": "No empty rows allowed.\n",
+                "check_level": "error"
+            }
+        )
+    return row_errors
