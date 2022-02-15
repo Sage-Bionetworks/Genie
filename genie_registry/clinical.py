@@ -110,6 +110,64 @@ def _check_int_dead_consistency(clinicaldf: DataFrame) -> str:
     return ""
 
 
+# def _check_int_year_consistency(
+#     clinicaldf: DataFrame, cols: list, string_vals: list
+# ) -> str:
+#     """
+#     Check if vital status interval and year columns are consistent in
+#     their values
+
+#     Args:
+#         clinicaldf: Clinical Data Frame
+#         cols: Columns in the clinical data frame
+#         string_vals: String values that aren't integers
+
+#     Returns:
+#         Error message if values and inconsistent or blank string
+#     """
+#     interval_col = ""
+#     year_col = ""
+#     for col in cols:
+#         # This is assuming that interval and year columns start with
+#         # INT/YEAR
+#         interval_col = col if col.startswith("INT") else interval_col
+#         year_col = col if col.startswith("YEAR") else year_col
+#         # Return empty string is columns don't exist because this error
+#         # is already handled.
+#         if not process_functions.checkColExist(clinicaldf, col):
+#             return ""
+
+#     is_text_inconsistent = False
+#     # Get index of all rows that have 'missing' values
+#     for str_val in string_vals:
+#         # n string values per row
+#         n_str = (clinicaldf[cols] == str_val).sum(axis=1)
+#         if n_str.between(0, len(cols), inclusive="neither").any():
+#             is_text_inconsistent = True
+
+#     is_redaction_inconsistent = False
+#     # Check that the redacted values are consistent
+#     is_redacted_int_89 = clinicaldf[interval_col] == ">32485"
+#     is_redacted_year_89 = clinicaldf[year_col] == ">89"
+#     is_redacted_int = clinicaldf[interval_col] == "<6570"
+#     is_redacted_year = clinicaldf[year_col] == "<18"
+#     if any(is_redacted_int != is_redacted_year) or any(
+#         is_redacted_int_89 != is_redacted_year_89
+#     ):
+#         is_redaction_inconsistent = True
+
+#     col_strs = ", ".join(cols)
+#     if is_text_inconsistent and is_redaction_inconsistent:
+#         return (
+#             "Patient: you have inconsistent redaction and text "
+#             f"values in {col_strs}.\n"
+#         )
+#     if is_redaction_inconsistent:
+#         return f"Patient: you have inconsistent redaction values in {col_strs}.\n"
+#     if is_text_inconsistent:
+#         return f"Patient: you have inconsistent text values in {col_strs}.\n"
+
+#     return ""
 def _check_int_year_consistency(
     clinicaldf: DataFrame, cols: list, string_vals: list
 ) -> str:
@@ -135,7 +193,7 @@ def _check_int_year_consistency(
         # Return empty string is columns don't exist because this error
         # is already handled.
         if not process_functions.checkColExist(clinicaldf, col):
-            return ""
+            return True
 
     is_text_inconsistent = False
     # Get index of all rows that have 'missing' values
@@ -158,17 +216,18 @@ def _check_int_year_consistency(
 
     col_strs = ", ".join(cols)
     if is_text_inconsistent and is_redaction_inconsistent:
-        return (
-            "Patient: you have inconsistent redaction and text "
-            f"values in {col_strs}.\n"
-        )
+        return False
+        # return (
+        #     "Patient: you have inconsistent redaction and text "
+        #     f"values in {col_strs}.\n"
+        # )
     if is_redaction_inconsistent:
-        return f"Patient: you have inconsistent redaction values in {col_strs}.\n"
+        return False
+        # return f"Patient: you have inconsistent redaction values in {col_strs}.\n"
     if is_text_inconsistent:
-        return f"Patient: you have inconsistent text values in {col_strs}.\n"
-
-    return ""
-
+        return False
+        # return f"Patient: you have inconsistent text values in {col_strs}.\n"
+    return True
 
 # PROCESSING
 def remap_clinical_values(
@@ -685,8 +744,20 @@ class Clinical(FileTypeFormat):
                 "DEAD": Column(
                     dtype=str,
                     checks=pa.Check.isin(["TRUE", "FALSE", "UNKNOWN", "NOT COLLECTED", "NOT RELEASED"])
+                ),
+                "SAMPLE_CLASS": Column(
+                    dtype=str,
+                    checks=pa.Check.isin(["Tumor", "cfDNA"]),
+                    required=False
                 )
-            }
+            },
+            checks=[
+                pa.Check(lambda df: _check_int_year_consistency(
+                    clinicaldf=df,
+                    cols=["YEAR_CONTACT", "INT_CONTACT"],
+                    string_vals=["Not Collected", "Unknown", "Not Released"],
+                ), error="interval year inconsistency")
+            ]
         )
         try:
             schema.validate(clinicaldf, lazy=True)
@@ -696,28 +767,6 @@ class Clinical(FileTypeFormat):
             print("\nDataFrame object that failed validation:")
             print(err.data)
         failed_cases.to_csv("failed.csv")
-        # # CHECK: SAMPLE_ID
-        # sample_id = "SAMPLE_ID"
-        # haveSampleColumn = process_functions.checkColExist(clinicaldf, sample_id)
-
-        # if not haveSampleColumn:
-        #     total_error.write("Sample Clinical File: Must have SAMPLE_ID column.\n")
-        # else:
-        #     if sum(clinicaldf[sample_id].duplicated()) > 0:
-        #         total_error.write(
-        #             "Sample Clinical File: No duplicated SAMPLE_ID "
-        #             "allowed.\nIf there are no duplicated "
-        #             "SAMPLE_IDs, and both sample and patient files are "
-        #             "uploaded, then please check to make sure no duplicated "
-        #             "PATIENT_IDs exist in the patient clinical file.\n"
-        #         )
-        # # CHECK: PATIENT_ID
-        # patientId = "PATIENT_ID"
-        # # #CHECK: PATIENT_ID IN SAMPLE FILE
-        # havePatientColumn = process_functions.checkColExist(clinicaldf, patientId)
-
-        # if not havePatientColumn:
-        #     total_error.write("Patient Clinical File: Must have PATIENT_ID column.\n")
 
         # # CHECK: within the sample file that the sample ids match
         # # the patient ids
@@ -751,52 +800,6 @@ class Clinical(FileTypeFormat):
         #             )
         #         )
 
-        #     # CHECK: All patients should have associated sample data
-        #     if not all(clinicaldf[sample_id] != ""):
-        #         # ## MAKE WARNING FOR NOW###
-        #         warning.write(
-        #             "Sample Clinical File: All patients must have associated "
-        #             "sample information. These patients are missing sample "
-        #             "data: {}\n".format(
-        #                 ", ".join(
-        #                     clinicaldf[patientId][clinicaldf[sample_id] == ""].unique()
-        #                 )
-        #             )
-        #         )
-
-        # # CHECK: AGE_AT_SEQ_REPORT
-        # age = "AGE_AT_SEQ_REPORT"
-        # haveColumn = process_functions.checkColExist(clinicaldf, age)
-        # if haveColumn:
-        #     # Deal with HIPAA converted rows from DFCI
-        #     # First for loop can't int(text) because there
-        #     # are instances that have <3435
-        #     age_seq_report_df = clinicaldf[
-        #         ~clinicaldf[age].isin(["Unknown", ">32485", "<6570"])
-        #     ]
-
-        #     # age_seq_report_df[age] = \
-        #     #     remove_greaterthan_lessthan_str(age_seq_report_df[age])
-
-        #     if not all([process_functions.checkInt(i) for i in age_seq_report_df[age]]):
-        #         total_error.write(
-        #             "Sample Clinical File: Please double check your "
-        #             "AGE_AT_SEQ_REPORT. It must be an integer, 'Unknown', "
-        #             "'>32485', '<6570'.\n"
-        #         )
-        #     else:
-        #         age_seq_report_df[age] = age_seq_report_df[age].astype(int)
-        #         median_age = age_seq_report_df[age].median()
-        #         if median_age < 100:
-        #             total_error.write(
-        #                 "Sample Clinical File: Please double check your "
-        #                 "AGE_AT_SEQ_REPORT. You may be reporting this value "
-        #                 "in YEARS, please report in DAYS.\n"
-        #             )
-        # else:
-        #     total_error.write(
-        #         "Sample Clinical File: Must have AGE_AT_SEQ_REPORT column.\n"
-        #     )
 
         # # CHECK: ONCOTREE_CODE
         # haveColumn = process_functions.checkColExist(clinicaldf, "ONCOTREE_CODE")
@@ -879,188 +882,6 @@ class Clinical(FileTypeFormat):
         # else:
         #     total_error.write("Sample Clinical File: Must have ONCOTREE_CODE column.\n")
 
-        # warn, error = process_functions.check_col_and_values(
-        #     clinicaldf,
-        #     "SAMPLE_TYPE",
-        #     sampletype_mapping["CODE"].tolist(),
-        #     "Sample Clinical File",
-        #     required=True,
-        # )
-        # total_error.write(error)
-
-        # # CHECK: SEQ_ASSAY_ID
-        # haveColumn = process_functions.checkColExist(clinicaldf, "SEQ_ASSAY_ID")
-        # if haveColumn:
-        #     if not all([i != "" for i in clinicaldf["SEQ_ASSAY_ID"]]):
-        #         total_error.write(
-        #             "Sample Clinical File: Please double check your "
-        #             "SEQ_ASSAY_ID columns, there are empty rows.\n"
-        #         )
-        #     # must remove empty seq assay ids first
-        #     # Checking if seq assay ids start with the center name
-        #     empty_seq_idx = clinicaldf.SEQ_ASSAY_ID != ""
-        #     seqassay_ids = clinicaldf.SEQ_ASSAY_ID[empty_seq_idx]
-        #     uniq_seqassay_ids = seqassay_ids.unique()
-        #     invalid_seqassay = []
-        #     for seqassay in uniq_seqassay_ids:
-        #         # SEQ Ids are all capitalized now, so no need to check
-        #         # for differences in case
-        #         if not seqassay.upper().startswith(self.center):
-        #             invalid_seqassay.append(seqassay)
-        #     if invalid_seqassay:
-        #         total_error.write(
-        #             "Sample Clinical File: Please make sure your "
-        #             "SEQ_ASSAY_IDs start with your center "
-        #             "abbreviation: {}.\n".format(", ".join(invalid_seqassay))
-        #         )
-        # else:
-        #     total_error.write("Sample Clinical File: Must have SEQ_ASSAY_ID column.\n")
-
-        # haveColumn = process_functions.checkColExist(clinicaldf, "SEQ_DATE")
-        # seq_date_error = (
-        #     "Sample Clinical File: SEQ_DATE must be one of five values- "
-        #     "For Jan-March: use Jan-YEAR. "
-        #     "For Apr-June: use Apr-YEAR. "
-        #     "For July-Sep: use Jul-YEAR. "
-        #     "For Oct-Dec: use Oct-YEAR. (ie. Apr-2017) "
-        #     "For values that don't have SEQ_DATES that "
-        #     "you want released use 'release'.\n"
-        # )
-
-        # if haveColumn:
-        #     clinicaldf["SEQ_DATE"] = [
-        #         i.title() for i in clinicaldf["SEQ_DATE"].astype(str)
-        #     ]
-
-        #     seqdate = clinicaldf["SEQ_DATE"][clinicaldf["SEQ_DATE"] != "Release"]
-        #     if sum(clinicaldf["SEQ_DATE"] == "") > 0:
-        #         total_error.write(
-        #             "Sample Clinical File: Samples without SEQ_DATEs will "
-        #             "NOT be released.\n"
-        #         )
-        #     try:
-        #         if not seqdate.empty:
-        #             seqdate.apply(
-        #                 lambda date: datetime.datetime.strptime(date, "%b-%Y")
-        #             )
-        #             if not seqdate.str.startswith(("Jan", "Apr", "Jul", "Oct")).all():
-        #                 total_error.write(seq_date_error)
-        #     except ValueError:
-        #         total_error.write(seq_date_error)
-        # else:
-        #     total_error.write("Sample Clinical File: Must have SEQ_DATE column.\n")
-
-        # # CHECK: BIRTH_YEAR
-        # error = _check_year(
-        #     clinicaldf=clinicaldf,
-        #     year_col="BIRTH_YEAR",
-        #     filename="Patient Clinical File",
-        #     allowed_string_values=["Unknown", ">89", "<18"],
-        # )
-        # total_error.write(error)
-
-        # # CHECK: YEAR DEATH
-        # error = _check_year(
-        #     clinicaldf=clinicaldf,
-        #     year_col="YEAR_DEATH",
-        #     filename="Patient Clinical File",
-        #     allowed_string_values=[
-        #         "Unknown",
-        #         "Not Collected",
-        #         "Not Applicable",
-        #         "Not Released",
-        #         ">89",
-        #         "<18",
-        #     ],
-        # )
-        # total_error.write(error)
-
-        # # CHECK: YEAR CONTACT
-        # error = _check_year(
-        #     clinicaldf=clinicaldf,
-        #     year_col="YEAR_CONTACT",
-        #     filename="Patient Clinical File",
-        #     allowed_string_values=[
-        #         "Unknown",
-        #         "Not Collected",
-        #         "Not Released",
-        #         ">89",
-        #         "<18",
-        #     ],
-        # )
-        # total_error.write(error)
-
-        # # CHECK: INT CONTACT
-        # haveColumn = process_functions.checkColExist(clinicaldf, "INT_CONTACT")
-        # if haveColumn:
-        #     if not all(
-        #         [
-        #             process_functions.checkInt(i)
-        #             for i in clinicaldf.INT_CONTACT
-        #             if i
-        #             not in [
-        #                 ">32485",
-        #                 "<6570",
-        #                 "Unknown",
-        #                 "Not Collected",
-        #                 "Not Released",
-        #             ]
-        #         ]
-        #     ):
-
-        #         total_error.write(
-        #             "Patient Clinical File: Please double check your "
-        #             "INT_CONTACT column, it must be an integer, '>32485', "
-        #             "'<6570', 'Unknown', 'Not Released' or 'Not Collected'.\n"
-        #         )
-        # else:
-        #     total_error.write("Patient Clinical File: Must have INT_CONTACT column.\n")
-
-        # # INT DOD
-        # haveColumn = process_functions.checkColExist(clinicaldf, "INT_DOD")
-        # if haveColumn:
-        #     if not all(
-        #         [
-        #             process_functions.checkInt(i)
-        #             for i in clinicaldf.INT_DOD
-        #             if i
-        #             not in [
-        #                 ">32485",
-        #                 "<6570",
-        #                 "Unknown",
-        #                 "Not Collected",
-        #                 "Not Applicable",
-        #                 "Not Released",
-        #             ]
-        #         ]
-        #     ):
-
-        #         total_error.write(
-        #             "Patient Clinical File: Please double check your INT_DOD "
-        #             "column, it must be an integer, '>32485', '<6570', "
-        #             "'Unknown', 'Not Collected', 'Not Released' or "
-        #             "'Not Applicable'.\n"
-        #         )
-        # else:
-        #     total_error.write("Patient Clinical File: Must have INT_DOD column.\n")
-
-        # haveColumn = process_functions.checkColExist(clinicaldf, "DEAD")
-        # if haveColumn:
-        #     # Need to have check_bool function
-        #     if not all(
-        #         [
-        #             str(i).upper() in ["TRUE", "FALSE"]
-        #             for i in clinicaldf.DEAD
-        #             if i not in ["Unknown", "Not Collected", "Not Released"]
-        #         ]
-        #     ):
-        #         total_error.write(
-        #             "Patient Clinical File: Please double check your "
-        #             "DEAD column, it must be True, False, 'Unknown', "
-        #             "'Not Released' or 'Not Collected'.\n"
-        #         )
-        # else:
-        #     total_error.write("Patient Clinical File: Must have DEAD column.\n")
         # # CHECK: contact vital status value consistency
         # contact_error = _check_int_year_consistency(
         #     clinicaldf=clinicaldf,
@@ -1083,67 +904,6 @@ class Clinical(FileTypeFormat):
         # total_error.write(death_error)
         # death_error = _check_int_dead_consistency(clinicaldf=clinicaldf)
         # total_error.write(death_error)
-
-        # # CHECK: SAMPLE_CLASS is optional attribute
-        # have_column = process_functions.checkColExist(clinicaldf, "SAMPLE_CLASS")
-        # if have_column:
-        #     sample_class_vals = pd.Series(clinicaldf["SAMPLE_CLASS"].unique().tolist())
-        #     if not sample_class_vals.isin(["Tumor", "cfDNA"]).all():
-        #         total_error.write(
-        #             "Sample Clinical File: SAMPLE_CLASS column must "
-        #             "be 'Tumor', or 'cfDNA'\n"
-        #         )
-
-        # # CHECK: PRIMARY_RACE
-        # warn, error = process_functions.check_col_and_values(
-        #     clinicaldf,
-        #     "PRIMARY_RACE",
-        #     race_mapping["CODE"].tolist(),
-        #     "Patient Clinical File",
-        # )
-        # warning.write(warn)
-        # total_error.write(error)
-
-        # # CHECK: SECONDARY_RACE
-        # warn, error = process_functions.check_col_and_values(
-        #     clinicaldf,
-        #     "SECONDARY_RACE",
-        #     race_mapping["CODE"].tolist(),
-        #     "Patient Clinical File",
-        # )
-        # warning.write(warn)
-        # total_error.write(error)
-
-        # # CHECK: TERTIARY_RACE
-        # warn, error = process_functions.check_col_and_values(
-        #     clinicaldf,
-        #     "TERTIARY_RACE",
-        #     race_mapping["CODE"].tolist(),
-        #     "Patient Clinical File",
-        # )
-        # warning.write(warn)
-        # total_error.write(error)
-
-        # # CHECK: SEX
-        # warn, error = process_functions.check_col_and_values(
-        #     clinicaldf,
-        #     "SEX",
-        #     sex_mapping["CODE"].tolist(),
-        #     "Patient Clinical File",
-        #     required=True,
-        # )
-        # warning.write(warn)
-        # total_error.write(error)
-
-        # # CHECK: ETHNICITY
-        # warn, error = process_functions.check_col_and_values(
-        #     clinicaldf,
-        #     "ETHNICITY",
-        #     ethnicity_mapping["CODE"].tolist(),
-        #     "Patient Clinical File",
-        # )
-        # warning.write(warn)
-        # total_error.write(error)
 
         return total_error.getvalue(), warning.getvalue()
 
