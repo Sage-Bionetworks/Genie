@@ -295,7 +295,7 @@ def check_year(
     col: int,
     center: str = None,
     allowed_string_values: list = None,
-) -> List[tuple]:
+) -> List[dict]:
     """Check year values
 
     Args:
@@ -306,7 +306,7 @@ def check_year(
                                                 Defaults to None.
 
     Returns:
-        List of tuples: Tuple = (row index, summary, detailed, error or warning)
+        List of dict: Dict = (row index, summary, detailed, error or warning)
     """
     year_now = datetime.datetime.utcnow().year
     # Generate summary error
@@ -342,6 +342,11 @@ def check_year(
             if invalid_year:
                 detailed = f"{year} is not a valid year."
                 row_errors.append(
-                    (index, summary, detailed, "error")
+                    {
+                        "index": index,
+                        "summary": summary,
+                        "detailed": detailed,
+                        "check_level": "error"
+                    }
                 )
     return row_errors

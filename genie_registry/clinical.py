@@ -12,6 +12,7 @@ import synapseclient
 from genie.example_filetype_format import FileTypeFormat
 from genie import process_functions
 from genie.database_to_staging import redact_phi
+from genie import validate
 
 logger = logging.getLogger(__name__)
 
@@ -762,13 +763,21 @@ class Clinical(FileTypeFormat):
             total_error.write("Sample Clinical File: Must have SEQ_DATE column.\n")
 
         # CHECK: BIRTH_YEAR
-        error = _check_year(
-            clinicaldf=clinicaldf,
-            year_col="BIRTH_YEAR",
-            filename="Patient Clinical File",
-            allowed_string_values=["Unknown", ">89", "<18"],
+        row_error = validate.check_year(
+            df=clinicaldf,
+            col="BIRTH_YEAR",
+            allowed_string_values=["Unknown", ">89", "<18"]
         )
-        total_error.write(error)
+        if row_error:
+            row_error_df = pd.DataFrame(row_error)
+            # The summary is always the same so take the first
+            total_error.write(row_error_df['summary'][0])
+        # error = _check_year(
+        #     clinicaldf=clinicaldf,
+        #     year_col="BIRTH_YEAR",
+        #     filename="Patient Clinical File",
+        #     allowed_string_values=["Unknown", ">89", "<18"],
+        # )
 
         # CHECK: YEAR DEATH
         error = _check_year(
