@@ -1,13 +1,15 @@
-#!/usr/bin/env python3
-import importlib
-import inspect
+"""
+Validation helper functions
+"""
+import datetime
 import logging
-import sys
+from typing import List
 
+import pandas as pd
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from . import config, example_filetype_format, process_functions
+from . import config, process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -270,3 +272,76 @@ def _perform_validate(syn, args):
 
     # Upload to synapse if parentid is specified and valid
     _upload_to_synapse(syn, args.filepath, valid, parentid=args.parentid)
+
+
+# def _check_year(year: int) -> bool:
+#     """_summary_
+
+#     Args:
+#         year (int): _description_
+
+#     Returns:
+#         bool: _description_
+#     """
+#     try:
+#         year = datetime.datetime.strptime(str(int(year)), "%Y").year
+#         return year
+#     except Exception:
+#         return False
+
+
+def check_year(
+    df: pd.DataFrame,
+    col: int,
+    center: str = None,
+    allowed_string_values: list = None,
+) -> List[tuple]:
+    """_summary_
+
+    Args:
+        df (pd.DataFrame): Clinical dataframe
+        col (int): Column name
+        center (str, optional): Center name. Defaults to None.
+        allowed_string_values (list, optional): list of other allowed string values.
+                                                Defaults to None.
+
+    Returns:
+        List of tuples: Tuple = (row index, summary, detailed, error or warning)
+    """
+    year_now = datetime.datetime.utcnow().year
+    # Generate summary error
+    summary = (
+        f"Please double check your {col} "
+        "column, it must be an integer in YYYY format "
+        f"<= {year_now}"
+    )
+    # Tack on allowed string values
+    if allowed_string_values:
+        summary += " or '{}'.\n".format("', '".join(allowed_string_values))
+    else:
+        summary += ".\n"
+
+    row_errors = []
+    if allowed_string_values is None:
+        allowed_string_values = []
+    if process_functions.checkColExist(df, col):
+        # Deal with pre-redacted values and other allowed strings
+        # first because can't int(text) because there are
+        # instances that have <YYYY
+        year_series = df[col][~df[col].isin(allowed_string_values)]
+        for index, year in year_series.iteritems():
+            try:
+                # If year is greater than current year, it is invalid
+                invalid_year = datetime.datetime.strptime(
+                    str(int(year)), "%Y"
+                ).year > year_now
+                # Make sure that none of the years are greater than the current
+                # year.  It can be the same, but can't future years.
+            except Exception:
+                invalid_year = True
+            if invalid_year:
+                detailed = f"{year} is not a valid year."
+                row_errors.append(
+                    (index, summary, detailed, "error")
+                )
+    return row_errors
