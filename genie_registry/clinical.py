@@ -520,6 +520,7 @@ class Clinical(FileTypeFormat):
         row_errors = validate.check_required_columns(
             df=clinicaldf,
             cols=[
+                "SAMPLE_ID", "PATIENT_ID",
                 "BIRTH_YEAR", "YEAR_DEATH", "YEAR_CONTACT"
             ]
         )
@@ -530,20 +531,16 @@ class Clinical(FileTypeFormat):
             all_row_errors_df = pd.concat([all_row_errors_df, row_error_df])
 
         # CHECK: SAMPLE_ID
-        sample_id = "SAMPLE_ID"
-        haveSampleColumn = process_functions.checkColExist(clinicaldf, sample_id)
+        row_errors = validate.check_duplicated_values(
+            df=clinicaldf,
+            cols=['SAMPLE_ID']
+        )
+        if row_errors:
+            row_error_df = pd.DataFrame(row_errors)
+            # The summary is different depending on the row
+            total_error.write("\n".join(row_error_df['summary'].unique()) + "\n")
+            all_row_errors_df = pd.concat([all_row_errors_df, row_error_df])
 
-        if not haveSampleColumn:
-            total_error.write("Sample Clinical File: Must have SAMPLE_ID column.\n")
-        else:
-            if sum(clinicaldf[sample_id].duplicated()) > 0:
-                total_error.write(
-                    "Sample Clinical File: No duplicated SAMPLE_ID "
-                    "allowed.\nIf there are no duplicated "
-                    "SAMPLE_IDs, and both sample and patient files are "
-                    "uploaded, then please check to make sure no duplicated "
-                    "PATIENT_IDs exist in the patient clinical file.\n"
-                )
         # CHECK: PATIENT_ID
         patientId = "PATIENT_ID"
         # #CHECK: PATIENT_ID IN SAMPLE FILE

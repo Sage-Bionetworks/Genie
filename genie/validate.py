@@ -403,3 +403,41 @@ def check_empty_rows(
             }
         )
     return row_errors
+
+
+def check_duplicated_values(
+    df: pd.DataFrame,
+    cols: List[int],
+    center: str = None,
+    allowed_string_values: list = None
+) -> List[dict]:
+    """_summary_
+
+    Args:
+        df (pd.DataFrame): _description_
+        cols (List[int]): _description_
+        center (str, optional): _description_. Defaults to None.
+        allowed_string_values (list, optional): _description_. Defaults to None.
+
+    Returns:
+        List[dict]: _description_
+    """
+    row_errors = []
+    for col in cols:
+        is_duplicated = df[col][df[col].duplicated()]
+        for index, value in is_duplicated.iteritems():
+            row_errors.append(
+                {
+                    "index": index,
+                    "summary": (
+                        "No duplicated SAMPLE_ID "
+                        "allowed.\nIf there are no duplicated "
+                        "SAMPLE_IDs, and both sample and patient files are "
+                        "uploaded, then please check to make sure no duplicated "
+                        "PATIENT_IDs exist in the patient clinical file.\n"
+                    ),
+                    "detailed": f"{value} is duplicated!",
+                    "check_level": "error"
+                }
+            )
+    return row_errors
