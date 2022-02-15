@@ -296,7 +296,7 @@ def check_year(
     center: str = None,
     allowed_string_values: list = None,
 ) -> List[tuple]:
-    """_summary_
+    """Check year values
 
     Args:
         df (pd.DataFrame): Clinical dataframe
