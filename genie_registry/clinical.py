@@ -482,6 +482,7 @@ class Clinical(FileTypeFormat):
         """
         total_error = StringIO()
         warning = StringIO()
+        all_row_errors_df = pd.DataFrame()
 
         clinicaldf.columns = [col.upper() for col in clinicaldf.columns]
         # CHECK: for empty rows
@@ -512,13 +513,14 @@ class Clinical(FileTypeFormat):
         row_errors = validate.check_required_columns(
             df=clinicaldf,
             cols=[
-                "BIRTH_YEAR", "YEAR_DEATH"
+                "BIRTH_YEAR", "YEAR_DEATH", "YEAR_CONTACT"
             ]
         )
         if row_errors:
             row_error_df = pd.DataFrame(row_errors)
             # The summary is different depending on the row
             total_error.write("\n".join(row_error_df['summary'].unique()) + "\n")
+            all_row_errors_df = pd.concat([all_row_errors_df, row_error_df])
 
         # CHECK: SAMPLE_ID
         sample_id = "SAMPLE_ID"
@@ -784,6 +786,7 @@ class Clinical(FileTypeFormat):
             row_error_df = pd.DataFrame(row_error)
             # The summary is always the same so take the first
             total_error.write(row_error_df['summary'][0])
+            all_row_errors_df = pd.concat([all_row_errors_df, row_error_df])
 
         # CHECK: YEAR_DEATH
         row_error = validate.check_year(
@@ -798,21 +801,25 @@ class Clinical(FileTypeFormat):
             row_error_df = pd.DataFrame(row_error)
             # The summary is always the same so take the first
             total_error.write(row_error_df['summary'][0])
+            all_row_errors_df = pd.concat([all_row_errors_df, row_error_df])
 
-        # CHECK: YEAR CONTACT
-        error = _check_year(
-            clinicaldf=clinicaldf,
-            year_col="YEAR_CONTACT",
-            filename="Patient Clinical File",
+        # CHECK: YEAR_CONTACT
+        row_error = validate.check_year(
+            df=clinicaldf,
+            col="YEAR_CONTACT",
             allowed_string_values=[
                 "Unknown",
                 "Not Collected",
                 "Not Released",
                 ">89",
                 "<18",
-            ],
+            ]
         )
-        total_error.write(error)
+        if row_error:
+            row_error_df = pd.DataFrame(row_error)
+            # The summary is always the same so take the first
+            total_error.write(row_error_df['summary'][0])
+            all_row_errors_df = pd.concat([all_row_errors_df, row_error_df])
 
         # CHECK: INT CONTACT
         haveColumn = process_functions.checkColExist(clinicaldf, "INT_CONTACT")
