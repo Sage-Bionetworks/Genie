@@ -498,6 +498,19 @@ def seq_date_filter(clinicalDf, processingDate, consortiumReleaseCutOff):
     return removeSeqDateSamples
 
 
+def sample_class_filter(clinical_df: pd.DataFrame) -> list:
+    """Filter samples by SAMPLE_CLASS
+
+    Args:
+        clinical_df (pd.DataFrame): Clinical dataframe
+
+    Returns:
+        list: List of samples to filter out
+    """
+    remove_samples = clinical_df['SAMPLE_ID'][clinical_df['SAMPLE_CLASS'] == "cfDNA"]
+    return remove_samples
+
+
 def mutation_in_cis_filter(
     syn,
     skipMutationsInCis,
@@ -986,6 +999,10 @@ def run_genie_filters(
     remove_seqdate_samples = seq_date_filter(
         clinicaldf, processing_date, consortium_release_cutoff
     )
+    logger.info("SAMPLE CLASS FILTER")
+    remove_sc_samples = sample_class_filter(
+        clinical_df=clinicaldf
+    )
     # Only certain samples are removed for the files that go into
     # staging center folder
     remove_center_consortium_samples = set(remove_mutationincis_samples).union(
@@ -994,11 +1011,13 @@ def run_genie_filters(
     # Most filteres are applied for the files that go into the merged
     # consortium release
     remove_merged_consortium_samples = set(remove_seqdate_samples)
-    # set(remove_seqAssayId_samples)#.union(set(remove_seqDate_samples))
+
     remove_merged_consortium_samples = remove_merged_consortium_samples.union(
         remove_center_consortium_samples
     )
-
+    remove_merged_consortium_samples = remove_merged_consortium_samples.union(
+        remove_sc_samples
+    )
     return (
         remove_mafinbed_variants,
         remove_merged_consortium_samples,
