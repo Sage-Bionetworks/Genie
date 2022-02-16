@@ -507,7 +507,7 @@ def sample_class_filter(clinical_df: pd.DataFrame) -> list:
     Returns:
         list: List of samples to filter out
     """
-    remove_samples = clinical_df['SAMPLE_ID'][clinical_df['SAMPLE_CLASS'] == "cfDNA"]
+    remove_samples = clinical_df["SAMPLE_ID"][clinical_df["SAMPLE_CLASS"] == "cfDNA"]
     return remove_samples
 
 
@@ -1000,9 +1000,7 @@ def run_genie_filters(
         clinicaldf, processing_date, consortium_release_cutoff
     )
     logger.info("SAMPLE CLASS FILTER")
-    remove_sc_samples = sample_class_filter(
-        clinical_df=clinicaldf
-    )
+    remove_sc_samples = sample_class_filter(clinical_df=clinicaldf)
     # Only certain samples are removed for the files that go into
     # staging center folder
     remove_center_consortium_samples = set(remove_mutationincis_samples).union(
