@@ -507,7 +507,12 @@ def sample_class_filter(clinical_df: pd.DataFrame) -> list:
     Returns:
         list: List of samples to filter out
     """
-    remove_samples = clinical_df["SAMPLE_ID"][clinical_df["SAMPLE_CLASS"] == "cfDNA"]
+    if clinical_df.get("SAMPLE_CLASS") is not None:
+        remove_samples = clinical_df["SAMPLE_ID"][
+            clinical_df["SAMPLE_CLASS"] == "cfDNA"
+        ].tolist()
+    else:
+        remove_samples = []
     return remove_samples
 
 
