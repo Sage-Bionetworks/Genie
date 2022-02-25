@@ -522,6 +522,14 @@ class Clinical(FileTypeFormat):
                     "uploaded, then please check to make sure no duplicated "
                     "PATIENT_IDs exist in the patient clinical file.\n"
                 )
+            if not all(clinicaldf[sample_id].str.startswith(f"GENIE-{self.center}")):
+                total_error.write(
+                    "Sample Clinical File: SAMPLE_ID must start with GENIE-CENTER"
+                )
+            if any(clinicaldf[sample_id].str.len() > 50):
+                total_error.write(
+                    "Sample Clinical File: SAMPLE_ID must have less than 50 characters."
+                )
         # CHECK: PATIENT_ID
         patientId = "PATIENT_ID"
         # #CHECK: PATIENT_ID IN SAMPLE FILE
