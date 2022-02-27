@@ -1,4 +1,4 @@
-FROM ubuntu:hirsute-20211107
+FROM ubuntu:focal-20220113
 ENV DEBIAN_FRONTEND=noninteractive 
 
 # Must install this because gpg not installed
@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		git \
 		r-base \
 		r-base-dev \
+		cmake \
 		curl \
 		# synapser client dependencies
 		dpkg-dev \
