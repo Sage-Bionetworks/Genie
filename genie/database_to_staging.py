@@ -1832,7 +1832,7 @@ def update_process_trackingdf(
         )
     )
     process_trackerdf = process_tracker.asDataFrame()
-    process_trackerdf[column][0] = str(int(time.time() * 1000))
+    process_trackerdf[column].iloc[0] = str(int(time.time() * 1000))
     syn.store(synapseclient.Table(process_trackerdb_synid, process_trackerdf))
 
 

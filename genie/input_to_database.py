@@ -856,7 +856,9 @@ def center_input_to_database(
 
             syn.store(synapseclient.Table(processTrackerSynId, new_rows))
         else:
-            processTrackerDf["timeStartProcessing"][0] = str(int(time.time() * 1000))
+            processTrackerDf["timeStartProcessing"].iloc[0] = str(
+                int(time.time() * 1000)
+            )
             syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
         processfiles(
@@ -881,7 +883,7 @@ def center_input_to_database(
             )
         )
         processTrackerDf = processTracker.asDataFrame()
-        processTrackerDf["timeEndProcessing"][0] = str(int(time.time() * 1000))
+        processTrackerDf["timeEndProcessing"].iloc[0] = str(int(time.time() * 1000))
         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
         logger.info("SAMPLE/PATIENT RETRACTION")
