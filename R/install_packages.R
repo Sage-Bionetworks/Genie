@@ -5,6 +5,7 @@ install.packages("rmarkdown", repos = "http://cran.r-project.org")
 install.packages("UpSetR", repos = "http://cran.r-project.org")
 install.packages("testthat", repos = "http://cran.r-project.org")
 install.packages("xtable", repos = "http://cran.r-project.org")
+# ggpubr is used in the data guide generation
 install.packages("ggpubr", repos = "http://cran.r-project.org")
 install.packages("XML", repos = "http://cran.r-project.org")
 install.packages("BiocManager", repos = "http://cran.r-project.org")
