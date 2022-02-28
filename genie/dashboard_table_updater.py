@@ -46,7 +46,7 @@ def get_center_data_completion(center, df):
             ]
             completeness = float(sum(not_missing)) / int(total)
             returned = pd.DataFrame([[col, center, total, completeness]])
-            center_data = center_data.append(returned)
+            center_data = pd.concat([center_data, returned])
     return center_data
 
 
@@ -488,12 +488,12 @@ def update_sample_difference_table(syn, database_mappingdf):
         ]
 
         if not new_centers.empty:
-            prior_release = prior_release.append(pd.DataFrame(index=new_centers))
+            prior_release = pd.concat([prior_release, pd.DataFrame(index=new_centers)])
             prior_release = prior_release.fillna(0)
         difference = current_release - prior_release
         difference["Center"] = difference.index
         difference["Release"] = release_name
-        diff_between_releasesdf = diff_between_releasesdf.append(difference)
+        diff_between_releasesdf = pd.concat([diff_between_releasesdf, difference])
 
     difftable_db = syn.tableQuery("SELECT * FROM %s" % sample_diff_count_synid)
     difftable_dbdf = difftable_db.asDataFrame()
@@ -540,13 +540,13 @@ def update_data_completeness_table(syn, database_mappingdf):
         lambda center: get_center_data_completion(center, sampledf)
     )
     for center_info in center_infos:
-        data_completenessdf = data_completenessdf.append(center_info)
+        data_completenessdf = pd.concat([data_completenessdf, center_info])
 
     center_infos = patientdf.CENTER.drop_duplicates().apply(
         lambda center: get_center_data_completion(center, patientdf)
     )
     for center_info in center_infos:
-        data_completenessdf = data_completenessdf.append(center_info)
+        data_completenessdf = pd.concat([data_completenessdf, center_info])
 
     data_completeness_db = syn.tableQuery("select * from %s" % data_completion_synid)
     data_completeness_dbdf = data_completeness_db.asDataFrame()
