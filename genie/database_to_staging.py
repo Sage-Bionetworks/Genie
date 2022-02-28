@@ -1477,8 +1477,8 @@ def store_data_gene_matrix(
     )
     # Samples have already been removed
     data_gene_matrix = pd.DataFrame(columns=["SAMPLE_ID", "SEQ_ASSAY_ID"])
-    data_gene_matrix = data_gene_matrix.append(
-        clinicaldf[["SAMPLE_ID", "SEQ_ASSAY_ID"]]
+    data_gene_matrix = pd.concat(
+        data_gene_matrix, clinicaldf[["SAMPLE_ID", "SEQ_ASSAY_ID"]]
     )
     data_gene_matrix = data_gene_matrix.rename(columns={"SEQ_ASSAY_ID": "mutations"})
     data_gene_matrix = data_gene_matrix[data_gene_matrix["SAMPLE_ID"] != ""]
