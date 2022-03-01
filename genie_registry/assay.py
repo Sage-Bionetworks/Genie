@@ -103,9 +103,9 @@ class Assayinfo(FileTypeFormat):
 
             seq_assay_id_infodf = assay_info_transposeddf.loc[[assay]]
 
-            to_appenddf = [seq_assay_id_infodf] * (len(assay_specific_info) - 1)
-            if to_appenddf:
-                seq_assay_id_infodf = pd.concat([seq_assay_id_infodf, to_appenddf])
+            for i in range(0, len(assay_specific_info) - 1):
+                seq_assay_id_infodf = pd.concat([seq_assay_id_infodf, seq_assay_id_infodf])
+                # seq_assay_id_infodf = seq_assay_id_infodf.append(to_appenddf)
             seq_assay_id_infodf.reset_index(drop=True, inplace=True)
             assay_finaldf = pd.concat(
                 [assay_specific_infodf, seq_assay_id_infodf], axis=1
