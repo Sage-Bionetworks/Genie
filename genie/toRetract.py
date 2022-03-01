@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 import argparse
 
-import synapseclient
+import pandas as pd
 
 from . import process_functions
 
@@ -66,7 +66,7 @@ def retract(syn, project_id):
     )
     sampleRetractIds = sampleRetract.asDataFrame()
 
-    allRetractedSamples = sampleRetractIds["genieSampleId"].append(appendSamples)
+    allRetractedSamples = pd.concat([sampleRetractIds["genieSampleId"],appendSamples])
 
     # Only need to retract clinical data, because the rest of the data is filtered by clinical data
     # Sample Clinical Data
