@@ -2,4 +2,4 @@
 line-length = 88
 target-version = ['py37']
 include = '\.pyi?$'
-extend-exclude = 'tests'
+exclude = 'tests'
