@@ -1300,13 +1300,13 @@ def store_cna_files(
     cna_template.to_csv(cna_path, sep="\t", index=False)
     # Loop through to create finalized CNA file
     with_center_hugo_symbol = pd.Series("Hugo_Symbol")
-    with_center_hugo_symbol = with_center_hugo_symbol.append(
-        pd.Series(keep_for_center_consortium_samples)
+    with_center_hugo_symbol = pd.concat(
+        [with_center_hugo_symbol, pd.Series(keep_for_center_consortium_samples)]
     )
 
     with_merged_hugo_symbol = pd.Series("Hugo_Symbol")
-    with_merged_hugo_symbol = with_merged_hugo_symbol.append(
-        pd.Series(keep_for_merged_consortium_samples)
+    with_merged_hugo_symbol = pd.concat(
+        [with_merged_hugo_symbol, pd.Series(keep_for_merged_consortium_samples)]
     )
 
     cna_samples = []
