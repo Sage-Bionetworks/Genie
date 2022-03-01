@@ -66,7 +66,7 @@ def retract(syn, project_id):
     )
     sampleRetractIds = sampleRetract.asDataFrame()
 
-    allRetractedSamples = pd.concat([sampleRetractIds["genieSampleId"],appendSamples])
+    allRetractedSamples = pd.concat([sampleRetractIds["genieSampleId"], appendSamples])
 
     # Only need to retract clinical data, because the rest of the data is filtered by clinical data
     # Sample Clinical Data

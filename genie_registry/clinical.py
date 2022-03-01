@@ -339,11 +339,7 @@ class Clinical(FileTypeFormat):
         # Attach MSK to centers
         # clinicalMerged = clinicalMerged.fillna("")
         clinical = remap_clinical_values(
-            clinical,
-            sex_mapping,
-            race_mapping,
-            ethnicity_mapping,
-            sampletype_mapping,
+            clinical, sex_mapping, race_mapping, ethnicity_mapping, sampletype_mapping,
         )
         remapped_clindf = clinical.apply(self.update_clinical, axis=1)
         # Some columns may have been added during update,
@@ -632,8 +628,7 @@ class Clinical(FileTypeFormat):
                     "ONCOTREE CODES exist in the mapping. You have {} samples "
                     "that don't map. These are the codes that "
                     "don't map: {}\n".format(
-                        len(unmapped_oncotrees),
-                        ",".join(set(unmapped_oncotrees)),
+                        len(unmapped_oncotrees), ",".join(set(unmapped_oncotrees)),
                     )
                 )
             # Should add the SEX mismatch into the dashboard file
@@ -884,12 +879,7 @@ class Clinical(FileTypeFormat):
         death_error = _check_int_year_consistency(
             clinicaldf=clinicaldf,
             cols=["YEAR_DEATH", "INT_DOD"],
-            string_vals=[
-                "Not Collected",
-                "Unknown",
-                "Not Applicable",
-                "Not Released",
-            ],
+            string_vals=["Not Collected", "Unknown", "Not Applicable", "Not Released",],
         )
         total_error.write(death_error)
         death_error = _check_int_dead_consistency(clinicaldf=clinicaldf)
