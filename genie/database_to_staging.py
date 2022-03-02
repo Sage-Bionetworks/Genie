@@ -753,8 +753,10 @@ def store_fusion_files(
         f"DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME from {fusion_synid}",
     )
     version = syn.create_snapshot_version(fusion_synid, comment=genie_version)
-    # FusionsDf = Fusions.asDataFrame()
-    FusionsDf["ENTREZ_GENE_ID"][FusionsDf["ENTREZ_GENE_ID"] == 0] = float("nan")
+
+    FusionsDf["ENTREZ_GENE_ID"].mask(
+        FusionsDf["ENTREZ_GENE_ID"] == 0, float("nan"), inplace=True
+    )
 
     if not current_release_staging:
         FusionsStagingDf = FusionsDf[
