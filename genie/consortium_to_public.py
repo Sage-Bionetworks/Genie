@@ -301,7 +301,7 @@ def consortiumToPublic(
         elif "CNA" in entName:
             cna = syn.get(entId, followLink=True)
             cnaDf = pd.read_csv(cna.path, sep="\t")
-            cna_columns = publicReleaseSamples.append(pd.Series("Hugo_Symbol"))
+            cna_columns = pd.concat([publicReleaseSamples, pd.Series("Hugo_Symbol")])
             # parse out the CNA columns to keep
             cnaDf = cnaDf[cnaDf.columns[cnaDf.columns.isin(cna_columns)]]
             text = process_functions.removeFloat(cnaDf)

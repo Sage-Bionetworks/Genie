@@ -783,9 +783,7 @@ def updateDatabase(
         to_delete_rows = _delete_rows(new_dataset, database, primary_key)
     else:
         to_delete_rows = pd.DataFrame()
-    allupdates = allupdates.append(to_append_rows, sort=False)
-    allupdates = allupdates.append(to_update_rows, sort=False)
-
+    allupdates = pd.concat([allupdates, to_append_rows, to_update_rows], sort=False)
     storedatabase = False
     update_all_file = tempfile.NamedTemporaryFile(dir=SCRIPT_DIR, delete=False)
 
