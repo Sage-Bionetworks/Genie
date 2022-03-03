@@ -139,6 +139,9 @@ def consortiumToPublic(
     removeForPublicSamples = process_functions.seqDateFilter(
         clinicalDf, processingDate, publicReleaseCutOff
     )
+    logger.info("SAMPLE CLASS FILTER")
+    remove_sc_samples = database_to_staging.sample_class_filter(clinical_df=clinicalDf)
+    removeForPublicSamples = list(set(removeForPublicSamples).union(remove_sc_samples))
     # comment back in when public release filter back on
     # publicReleaseSamples = publicReleaseSamples.append(keepForPublicSamples)
     # Make sure all null oncotree codes are removed

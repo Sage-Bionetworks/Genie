@@ -141,7 +141,11 @@ class Assayinfo(FileTypeFormat):
         warning = ""
 
         if process_functions.checkColExist(assay_info_df, "SEQ_ASSAY_ID"):
-            all_seq_assays = assay_info_df.SEQ_ASSAY_ID.unique()
+            all_seq_assays = (
+                assay_info_df.SEQ_ASSAY_ID.replace({"_": "-"}, regex=True)
+                .str.upper()
+                .unique()
+            )
             if not all([assay.startswith(self.center) for assay in all_seq_assays]):
                 total_error += (
                     "Assay_information.yaml: Please make sure all your "
@@ -160,7 +164,12 @@ class Assayinfo(FileTypeFormat):
             )
             # These are all the SEQ_ASSAY_IDs that are in the clinical database
             # but not in the assay_information file
-            missing_seqs = uniq_seq_df["seq"][~uniq_seq_df["seq"].isin(all_seq_assays)]
+            missing_seqs = uniq_seq_df["seq"][
+                ~uniq_seq_df["seq"]
+                .replace({"_": "-"}, regex=True)
+                .str.upper()
+                .isin(all_seq_assays)
+            ]
             missing_seqs_str = ", ".join(missing_seqs)
             if missing_seqs.to_list():
                 total_error += (
