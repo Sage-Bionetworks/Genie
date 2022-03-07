@@ -95,10 +95,10 @@ def _check_int_dead_consistency(clinicaldf: DataFrame) -> str:
     # Check that all string values are equal each other
     is_equal = all(clinicaldf.loc[is_str, "DEAD"] == clinicaldf.loc[is_str, "INT_DOD"])
     # If dead, int column can't be Not Applicable
-    # If alive, int column can't have values
+    # If alive, int column must be Not Applicable
     if (
         any(clinicaldf.loc[is_dead, "INT_DOD"] == "Not Applicable")
-        or not all(clinicaldf.loc[is_alive, "INT_DOD"].isin(allowed_str))
+        or not all(clinicaldf.loc[is_alive, "INT_DOD"] == "Not Applicable")
         or not is_equal
     ):
         return (

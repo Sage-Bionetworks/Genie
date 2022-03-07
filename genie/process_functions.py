@@ -783,9 +783,7 @@ def updateDatabase(
         to_delete_rows = _delete_rows(new_dataset, database, primary_key)
     else:
         to_delete_rows = pd.DataFrame()
-    allupdates = allupdates.append(to_append_rows, sort=False)
-    allupdates = allupdates.append(to_update_rows, sort=False)
-
+    allupdates = pd.concat([allupdates, to_append_rows, to_update_rows], sort=False)
     storedatabase = False
     update_all_file = tempfile.NamedTemporaryFile(dir=SCRIPT_DIR, delete=False)
 
@@ -876,7 +874,7 @@ def check_col_and_values(
                 final.extend(value.split(sep))
             check_values = pd.Series(final)
         if not check_values.isin(possible_values).all():
-            error = "{filename}: Please double check your {col} column.  " "This column must only be these values: {possible_vals}\n".format(
+            error = "{filename}: Please double check your {col} column.  This column must only be these values: {possible_vals}\n".format(
                 filename=filename,
                 col=col,
                 possible_vals=", ".join(

@@ -804,8 +804,8 @@ def test__check_int_year_consistency_inconsistent(inconsistent_df,
              "DEAD": [True, False]}
         ),
         pd.DataFrame(
-            {"INT_DOD": [1111, "Not Released"],
-             "DEAD": [True, False]}
+            {"INT_DOD": ["Not Applicable", "Not Applicable"],
+             "DEAD": [False, False]}
         )
     ]
 )
@@ -822,6 +822,10 @@ def test__check_int_dead_consistency_valid(valid_df):
     [
         pd.DataFrame(
             {"INT_DOD": ["Not Applicable", "Not Applicable"],
+             "DEAD": [True, False]}
+        ),
+        pd.DataFrame(
+            {"INT_DOD": [1111, "Not Released"],
              "DEAD": [True, False]}
         ),
         pd.DataFrame(

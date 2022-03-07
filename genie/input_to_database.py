@@ -445,12 +445,12 @@ def get_duplicated_files(validation_statusdf):
     cbs_seg_index = filename_str.endswith(("cbs", "seg"))
     cbs_seg_files = validation_statusdf[cbs_seg_index]
     if len(cbs_seg_files) > 1:
-        duplicated_filesdf = duplicated_filesdf.append(cbs_seg_files)
+        duplicated_filesdf = pd.concat([duplicated_filesdf, cbs_seg_files])
     # clinical files should not be duplicated.
     clinical_index = filename_str.startswith("data_clinical_supp")
     clinical_files = validation_statusdf[clinical_index]
     if len(clinical_files) > 2:
-        duplicated_filesdf = duplicated_filesdf.append(clinical_files)
+        duplicated_filesdf = pd.concat([duplicated_filesdf, clinical_files])
     duplicated_filesdf.drop_duplicates("id", inplace=True)
     logger.info("THERE ARE {} DUPLICATED FILES".format(len(duplicated_filesdf)))
     duplicated_filesdf["errors"] = DUPLICATED_FILE_ERROR
@@ -611,8 +611,8 @@ def _update_tables_content(validation_statusdf, error_trackingdf):
 
     # Append duplicated file errors
     duplicated_filesdf["id"].isin(error_trackingdf["id"][duplicated_idx])
-    error_trackingdf = error_trackingdf.append(
-        duplicated_filesdf[error_trackingdf.columns]
+    error_trackingdf = pd.concat(
+        [error_trackingdf, duplicated_filesdf[error_trackingdf.columns]]
     )
     # Remove duplicates if theres already an error that exists for the file
     error_trackingdf.drop_duplicates("id", inplace=True)
@@ -822,7 +822,7 @@ def center_input_to_database(
         # Reorganize so BED file are always validated and processed first
         bed_files = validFiles["fileType"] == "bed"
         beds = validFiles[bed_files]
-        validFiles = beds.append(validFiles)
+        validFiles = pd.concat([beds, validFiles])
         validFiles.drop_duplicates(inplace=True)
         # merge clinical files into one row
         clinical_ind = validFiles["fileType"] == "clinical"
@@ -832,7 +832,7 @@ def center_input_to_database(
             merged_clinical = pd.DataFrame([clinical_files])
             merged_clinical["fileType"] = "clinical"
             merged_clinical["name"] = f"data_clinical_supp_{center}.txt"
-            validFiles = validFiles[~clinical_ind].append(merged_clinical)
+            validFiles = pd.concat([validFiles[~clinical_ind], merged_clinical])
 
         processTrackerSynId = process_functions.getDatabaseSynId(
             syn, "processTracker", databaseToSynIdMappingDf=database_to_synid_mappingdf
@@ -856,7 +856,9 @@ def center_input_to_database(
 
             syn.store(synapseclient.Table(processTrackerSynId, new_rows))
         else:
-            processTrackerDf["timeStartProcessing"][0] = str(int(time.time() * 1000))
+            processTrackerDf["timeStartProcessing"].iloc[0] = str(
+                int(time.time() * 1000)
+            )
             syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
         processfiles(
@@ -881,7 +883,7 @@ def center_input_to_database(
             )
         )
         processTrackerDf = processTracker.asDataFrame()
-        processTrackerDf["timeEndProcessing"][0] = str(int(time.time() * 1000))
+        processTrackerDf["timeEndProcessing"].iloc[0] = str(int(time.time() * 1000))
         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
         logger.info("SAMPLE/PATIENT RETRACTION")

@@ -498,6 +498,24 @@ def seq_date_filter(clinicalDf, processingDate, consortiumReleaseCutOff):
     return removeSeqDateSamples
 
 
+def sample_class_filter(clinical_df: pd.DataFrame) -> list:
+    """Filter samples by SAMPLE_CLASS
+
+    Args:
+        clinical_df (pd.DataFrame): Clinical dataframe
+
+    Returns:
+        list: List of samples to filter out
+    """
+    if clinical_df.get("SAMPLE_CLASS") is not None:
+        remove_samples = clinical_df["SAMPLE_ID"][
+            clinical_df["SAMPLE_CLASS"] == "cfDNA"
+        ].tolist()
+    else:
+        remove_samples = []
+    return remove_samples
+
+
 def mutation_in_cis_filter(
     syn,
     skipMutationsInCis,
@@ -735,8 +753,10 @@ def store_fusion_files(
         f"DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME from {fusion_synid}",
     )
     version = syn.create_snapshot_version(fusion_synid, comment=genie_version)
-    # FusionsDf = Fusions.asDataFrame()
-    FusionsDf["ENTREZ_GENE_ID"][FusionsDf["ENTREZ_GENE_ID"] == 0] = float("nan")
+
+    FusionsDf["ENTREZ_GENE_ID"].mask(
+        FusionsDf["ENTREZ_GENE_ID"] == 0, float("nan"), inplace=True
+    )
 
     if not current_release_staging:
         FusionsStagingDf = FusionsDf[
@@ -986,6 +1006,7 @@ def run_genie_filters(
     remove_seqdate_samples = seq_date_filter(
         clinicaldf, processing_date, consortium_release_cutoff
     )
+
     # Only certain samples are removed for the files that go into
     # staging center folder
     remove_center_consortium_samples = set(remove_mutationincis_samples).union(
@@ -994,7 +1015,7 @@ def run_genie_filters(
     # Most filteres are applied for the files that go into the merged
     # consortium release
     remove_merged_consortium_samples = set(remove_seqdate_samples)
-    # set(remove_seqAssayId_samples)#.union(set(remove_seqDate_samples))
+
     remove_merged_consortium_samples = remove_merged_consortium_samples.union(
         remove_center_consortium_samples
     )
@@ -1281,13 +1302,13 @@ def store_cna_files(
     cna_template.to_csv(cna_path, sep="\t", index=False)
     # Loop through to create finalized CNA file
     with_center_hugo_symbol = pd.Series("Hugo_Symbol")
-    with_center_hugo_symbol = with_center_hugo_symbol.append(
-        pd.Series(keep_for_center_consortium_samples)
+    with_center_hugo_symbol = pd.concat(
+        [with_center_hugo_symbol, pd.Series(keep_for_center_consortium_samples)]
     )
 
     with_merged_hugo_symbol = pd.Series("Hugo_Symbol")
-    with_merged_hugo_symbol = with_merged_hugo_symbol.append(
-        pd.Series(keep_for_merged_consortium_samples)
+    with_merged_hugo_symbol = pd.concat(
+        [with_merged_hugo_symbol, pd.Series(keep_for_merged_consortium_samples)]
     )
 
     cna_samples = []
@@ -1458,8 +1479,8 @@ def store_data_gene_matrix(
     )
     # Samples have already been removed
     data_gene_matrix = pd.DataFrame(columns=["SAMPLE_ID", "SEQ_ASSAY_ID"])
-    data_gene_matrix = data_gene_matrix.append(
-        clinicaldf[["SAMPLE_ID", "SEQ_ASSAY_ID"]]
+    data_gene_matrix = pd.concat(
+        [data_gene_matrix, clinicaldf[["SAMPLE_ID", "SEQ_ASSAY_ID"]]]
     )
     data_gene_matrix = data_gene_matrix.rename(columns={"SEQ_ASSAY_ID": "mutations"})
     data_gene_matrix = data_gene_matrix[data_gene_matrix["SAMPLE_ID"] != ""]
@@ -1813,7 +1834,7 @@ def update_process_trackingdf(
         )
     )
     process_trackerdf = process_tracker.asDataFrame()
-    process_trackerdf[column][0] = str(int(time.time() * 1000))
+    process_trackerdf[column].iloc[0] = str(int(time.time() * 1000))
     syn.store(synapseclient.Table(process_trackerdb_synid, process_trackerdf))
 
 

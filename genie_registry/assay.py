@@ -103,9 +103,11 @@ class Assayinfo(FileTypeFormat):
 
             seq_assay_id_infodf = assay_info_transposeddf.loc[[assay]]
 
-            to_appenddf = [seq_assay_id_infodf] * (len(assay_specific_info) - 1)
-            if to_appenddf:
-                seq_assay_id_infodf = seq_assay_id_infodf.append(to_appenddf)
+            for i in range(0, len(assay_specific_info) - 1):
+                seq_assay_id_infodf = pd.concat(
+                    [seq_assay_id_infodf, seq_assay_id_infodf]
+                )
+                # seq_assay_id_infodf = seq_assay_id_infodf.append(to_appenddf)
             seq_assay_id_infodf.reset_index(drop=True, inplace=True)
             assay_finaldf = pd.concat(
                 [assay_specific_infodf, seq_assay_id_infodf], axis=1
@@ -123,7 +125,7 @@ class Assayinfo(FileTypeFormat):
                 if assay_finaldf.get(col) is not None:
                     assay_finaldf[col] = [";".join(row) for row in assay_finaldf[col]]
             assay_finaldf["SEQ_PIPELINE_ID"] = assay
-            all_panel_info = all_panel_info.append(assay_finaldf)
+            all_panel_info = pd.concat([all_panel_info, assay_finaldf])
         return all_panel_info
 
     def _validate(self, assay_info_df, project_id):
@@ -141,7 +143,11 @@ class Assayinfo(FileTypeFormat):
         warning = ""
 
         if process_functions.checkColExist(assay_info_df, "SEQ_ASSAY_ID"):
-            all_seq_assays = assay_info_df.SEQ_ASSAY_ID.unique()
+            all_seq_assays = (
+                assay_info_df.SEQ_ASSAY_ID.replace({"_": "-"}, regex=True)
+                .str.upper()
+                .unique()
+            )
             if not all([assay.startswith(self.center) for assay in all_seq_assays]):
                 total_error += (
                     "Assay_information.yaml: Please make sure all your "
@@ -160,7 +166,12 @@ class Assayinfo(FileTypeFormat):
             )
             # These are all the SEQ_ASSAY_IDs that are in the clinical database
             # but not in the assay_information file
-            missing_seqs = uniq_seq_df["seq"][~uniq_seq_df["seq"].isin(all_seq_assays)]
+            missing_seqs = uniq_seq_df["seq"][
+                ~uniq_seq_df["seq"]
+                .replace({"_": "-"}, regex=True)
+                .str.upper()
+                .isin(all_seq_assays)
+            ]
             missing_seqs_str = ", ".join(missing_seqs)
             if missing_seqs.to_list():
                 total_error += (

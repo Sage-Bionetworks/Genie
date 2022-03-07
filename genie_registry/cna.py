@@ -136,9 +136,9 @@ class cna(FileTypeFormat):
             )
             temp = pd.DataFrame(newVal).transpose()
             temp["Hugo_Symbol"] = i
-            duplicatedGenes = duplicatedGenes.append(temp, sort=False)
+            duplicatedGenes = pd.concat([duplicatedGenes, temp], sort=False)
         cnaDf.drop_duplicates("Hugo_Symbol", keep=False, inplace=True)
-        cnaDf = cnaDf.append(duplicatedGenes, sort=False)
+        cnaDf = pd.concat([cnaDf, duplicatedGenes], sort=False)
         cnaDf = cnaDf[order]
         cnaDf.columns = [
             process_functions.checkGenieId(i, self.center) if i != "Hugo_Symbol" else i
