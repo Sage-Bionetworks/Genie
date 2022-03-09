@@ -6,6 +6,46 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
+class ValidationResults:
+    """Validation results
+    """
+    def __init__(self, errors: str, warnings: str, detailed: str = None) -> None:
+        """
+        Args:
+            errors (str): errors for the file
+            warnings (str): warning for the file
+            detailed_errors (pd.DataFrame, optional): Dataframe of detailed row based
+                                                      error messages. Defaults to None.
+        """
+        self.errors = errors
+        self.warnings = warnings
+        self.detailed = detailed
+        self.is_valid = errors == ""
+
+    def collect_errors_and_warnings(self) -> str:
+        """Aggregates error and warnings into a string.
+
+        Returns:
+            str: A message containing errors and warnings.
+        """
+        # Complete error message
+        message = "----------------ERRORS----------------\n"
+        if self.errors == "":
+            message = "YOUR FILE IS VALIDATED!\n"
+            logger.info(message)
+        else:
+            for error in self.errors.split("\n"):
+                if error != "":
+                    logger.error(error)
+            message += self.errors
+        if self.warnings != "":
+            for warning in self.warnings.split("\n"):
+                if warning != "":
+                    logger.warning(warning)
+            message += "-------------WARNINGS-------------\n" + self.warnings
+        return message
+
+
 class FileTypeFormat(object):
 
     _process_kwargs = ["newPath", "databaseSynId"]
@@ -125,13 +165,13 @@ class FileTypeFormat(object):
         path = self.process_steps(path_or_df, **mykwargs)
         return path
 
-    def _validate(self, df, **kwargs):
+    def _validate(self, df: pd.DataFrame, **kwargs) -> tuple:
         """
         This is the base validation function.
         By default, no validation occurs.
 
         Args:
-            df: A dataframe of the file
+            df (pd.DataFrame): A dataframe of the file
             kwargs: The kwargs are determined by self._validation_kwargs
 
         Returns:
@@ -141,9 +181,9 @@ class FileTypeFormat(object):
         errors = ""
         warnings = ""
         logger.info("NO VALIDATION for %s files" % self._fileType)
-        return (errors, warnings)
+        return errors, warnings
 
-    def validate(self, filePathList, **kwargs):
+    def validate(self, filePathList, **kwargs) -> ValidationResults:
         """
         This is the main validation function.
         Every file type calls self._validate, which is different.
@@ -167,15 +207,12 @@ class FileTypeFormat(object):
         try:
             df = self.read_file(filePathList)
         except Exception as e:
-            errors = "The file(s) ({filePathList}) cannot be read. Original error: {exception}".format(
-                filePathList=filePathList, exception=str(e)
-            )
+            errors = f"The file(s) ({filePathList}) cannot be read. Original error: {str(e)}"
             warnings = ""
 
         if not errors:
             logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
             errors, warnings = self._validate(df, **mykwargs)
 
-        valid = errors == ""
-
-        return valid, errors, warnings
+        result_cls = ValidationResults(errors=errors, warnings=warnings)
+        return result_cls
