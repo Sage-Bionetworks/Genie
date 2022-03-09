@@ -107,34 +107,6 @@ class GenieValidationHelper(ValidationHelper):
     _validate_kwargs = ["oncotree_link", "nosymbol_check"]
 
 
-def collect_errors_and_warnings(errors, warnings):
-    """Aggregates error and warnings into a string.
-
-    Args:
-        errors: string of file errors, separated by new lines.
-        warnings: string of file warnings, separated by new lines.
-
-    Returns:
-        message - errors + warnings
-    """
-    # Complete error message
-    message = "----------------ERRORS----------------\n"
-    if errors == "":
-        message = "YOUR FILE IS VALIDATED!\n"
-        logger.info(message)
-    else:
-        for error in errors.split("\n"):
-            if error != "":
-                logger.error(error)
-        message += errors
-    if warnings != "":
-        for warning in warnings.split("\n"):
-            if warning != "":
-                logger.warning(warning)
-        message += "-------------WARNINGS-------------\n" + warnings
-    return message
-
-
 def get_config(syn, synid):
     """Gets Synapse database to Table mapping in dict
 
