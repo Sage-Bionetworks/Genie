@@ -232,9 +232,8 @@ def validatefile(
     validation_status_table,
     error_tracker_table,
     center,
-    threads,
-    oncotree_link,
     format_registry=None,
+    genie_config=None,
 ):
     """Validate a list of entities.
 
@@ -255,7 +254,7 @@ def validatefile(
 
     """
 
-    filepaths = [entity.path for entity in entities]
+    # filepaths = [entity.path for entity in entities]
     filenames = [entity.name for entity in entities]
 
     logger.info("VALIDATING {filenames}".format(filenames=", ".join(filenames)))
@@ -280,11 +279,12 @@ def validatefile(
         center=center,
         entitylist=entities,
         format_registry=format_registry,
+        genie_config=genie_config
     )
     filetype = validator.file_type
     if check_file_status["to_validate"]:
         valid, message = validator.validate_single_file(
-            oncotree_link=oncotree_link, nosymbol_check=False
+            oncotree_link=genie_config['oncotreeLink'], nosymbol_check=False
         )
         logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
@@ -639,30 +639,26 @@ def validation(
     center,
     process,
     center_files,
-    database_synid_mappingdf,
-    oncotree_link,
     format_registry,
-):
+    genie_config
+) -> pd.DataFrame:
     """
     Validation of all center files
 
     Args:
         syn: Synapse object
         center: Center name
-        process: main, vcf, maf
-        center_mapping_df: center mapping dataframe
-        oncotree_link: Link to oncotree
+        process: main, mutation
+        center_files:
+        format_registry:
+        genie_config:
 
     Returns:
-        dataframe: Valid files
+        pd.DataFrame: Dataframe of valid GENIE files
     """
     logger.info(f"{center} has uploaded {len(center_files)} files.")
-    validation_status_synid = process_functions.getDatabaseSynId(
-        syn, "validationStatus", databaseToSynIdMappingDf=database_synid_mappingdf
-    )
-    error_tracker_synid = process_functions.getDatabaseSynId(
-        syn, "errorTracker", databaseToSynIdMappingDf=database_synid_mappingdf
-    )
+    validation_status_synid = genie_config['validationStatus']
+    error_tracker_synid = genie_config['errorTracker']
 
     # Make sure the vcf validation statuses don't get wiped away
     # If process is not vcf, the vcf files are not downloaded
@@ -688,15 +684,14 @@ def validation(
 
     for ents in center_files:
         status, errors, messages_to_send = validatefile(
-            syn,
-            project_id,
-            ents,
-            validation_status_table,
-            error_tracker_table,
+            syn=syn,
+            project_id=project_id,
+            entities=ents,
+            validation_status_table=validation_status_table,
+            error_tracker_table=error_tracker_table,
             center=center,
-            threads=1,
-            oncotree_link=oncotree_link,
             format_registry=format_registry,
+            genie_config=genie_config
         )
 
         input_valid_statuses.extend(status)
@@ -816,26 +811,23 @@ def center_input_to_database(
     if delete_old:
         process_functions.rmFiles(os.path.join(path_to_genie, center))
 
-    center_input_synid = center_mapping_df["inputSynId"][
-        center_mapping_df["center"] == center
-    ][0]
+    center_input_synid = genie_config['center_config'][center]['inputSynId']
     logger.info("Center: " + center)
     center_files = get_center_input_files(syn, center_input_synid, center, process)
 
     # only validate if there are center files
     if center_files:
         validFiles = validation(
-            syn,
-            project_id,
-            center,
-            process,
-            center_files,
-            database_to_synid_mappingdf,
-            oncotree_link,
-            format_registry,
+            syn=syn,
+            project_id=project_id,
+            center=center,
+            process=process,
+            center_files=center_files,
+            format_registry=format_registry,
+            genie_config=genie_config
         )
     else:
-        logger.info("{} has not uploaded any files".format(center))
+        logger.info(f"{center} has not uploaded any files")
         return
 
     if len(validFiles) > 0 and not only_validate:
@@ -854,17 +846,16 @@ def center_input_to_database(
             merged_clinical["name"] = f"data_clinical_supp_{center}.txt"
             validFiles = pd.concat([validFiles[~clinical_ind], merged_clinical])
 
-        processTrackerSynId = process_functions.getDatabaseSynId(
-            syn, "processTracker", databaseToSynIdMappingDf=database_to_synid_mappingdf
-        )
+        processTrackerSynId = genie_config['processTracker']
         # Add process tracker for time start
-        processTracker = syn.tableQuery(
-            "SELECT timeStartProcessing FROM {} "
-            "where center = '{}' and "
-            "processingType = '{}'".format(processTrackerSynId, center, process)
+        processTrackerDf = process_functions.get_syntabledf(
+            syn=syn, query_string=(
+                f"SELECT timeStartProcessing FROM {processTrackerSynId} "
+                f"where center = '{center}' and "
+                f"processingType = '{process}'"
+            )
         )
-        processTrackerDf = processTracker.asDataFrame()
-        if len(processTrackerDf) == 0:
+        if processTrackerDf.empty:
             new_rows = [
                 [
                     center,
@@ -894,15 +885,14 @@ def center_input_to_database(
             format_registry=format_registry,
         )
 
-        # Should add in this process end tracking
-        # before the deletion of samples
-        processTracker = syn.tableQuery(
-            "SELECT timeEndProcessing FROM {synid} where center = '{center}' "
-            "and processingType = '{processtype}'".format(
-                synid=processTrackerSynId, center=center, processtype=process
+        # Should add in this process end tracking before the deletion of samples
+        processTrackerDf = process_functions.get_syntabledf(
+            syn=syn, query_string=(
+                f"SELECT timeEndProcessing FROM {processTrackerSynId} "
+                f"where center = '{center}' and "
+                f"processingType = '{process}'"
             )
         )
-        processTrackerDf = processTracker.asDataFrame()
         processTrackerDf["timeEndProcessing"].iloc[0] = str(int(time.time() * 1000))
         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
@@ -911,16 +901,12 @@ def center_input_to_database(
 
     else:
         messageOut = (
-            "{} does not have any valid files"
-            if not only_validate
-            else "ONLY VALIDATION OCCURED FOR {}"
+            f"{center} does not have any valid files" if not only_validate
+            else f"ONLY VALIDATION OCCURED FOR {center}"
         )
-        logger.info(messageOut.format(center))
+        logger.info(messageOut)
 
     # Store log file
-    log_folder_synid = process_functions.getDatabaseSynId(
-        syn, "logs", databaseToSynIdMappingDf=database_to_synid_mappingdf
-    )
-    syn.store(synapseclient.File(log_path, parentId=log_folder_synid))
+    syn.store(synapseclient.File(log_path, parentId=genie_config['logs']))
     os.remove(log_path)
     logger.info("ALL PROCESSES COMPLETE")

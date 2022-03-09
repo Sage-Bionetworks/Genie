@@ -19,7 +19,8 @@ class ValidationHelper(object):
     _validate_kwargs = []
 
     def __init__(
-        self, syn, project_id, center, entitylist, format_registry=None, file_type=None
+        self, syn, project_id, center, entitylist, format_registry=None, file_type=None,
+        genie_config=None
     ):
         """A validator helper class for a center's files.
 
@@ -38,6 +39,7 @@ class ValidationHelper(object):
         self.center = center
         self._format_registry = format_registry
         self.file_type = self.determine_filetype() if file_type is None else file_type
+        self.genie_config = genie_config
 
     def determine_filetype(self):
         """Gets the file type of the file by validating its filename
