@@ -318,12 +318,10 @@ def processfiles(
     validfiles,
     center,
     path_to_genie,
-    center_mapping_df,
-    oncotree_link,
     databaseToSynIdMappingDf,
     processing="main",
-    genome_nexus_pkg="/root/annotation-tools",
     format_registry=None,
+    genie_config=None
 ):
     """Processing validated files
 
@@ -338,11 +336,9 @@ def processfiles(
         databaseToSynIdMappingDf: Database to synapse id mapping dataframe
         processing: Processing type. Defaults to main
     """
-    logger.info("PROCESSING {} FILES: {}".format(center, len(validfiles)))
+    logger.info(f"PROCESSING {center} FILES: {len(validfiles)}")
     center_staging_folder = os.path.join(path_to_genie, center)
-    center_staging_synid = center_mapping_df.query(
-        "center == '{}'".format(center)
-    ).stagingSynId.iloc[0]
+    center_staging_synid = genie_config['center_config'][center]['stagingSynId']
 
     if not os.path.exists(center_staging_folder):
         os.makedirs(center_staging_folder)
@@ -353,15 +349,8 @@ def processfiles(
             # filename = os.path.basename(filePath)
             newpath = os.path.join(center_staging_folder, row["name"])
             # store = True
-            tableid = databaseToSynIdMappingDf.Id[
-                databaseToSynIdMappingDf["Database"] == filetype
-            ]
-            # tableid is a series, so much check actual length
-            # Can't do `if tableid:`
-            if len(tableid) == 0:
-                tableid = None
-            else:
-                tableid = tableid[0]
+            # Table id can be None
+            tableid = genie_config.get(filetype)
 
             if filetype is not None:
                 processor = format_registry[filetype](syn, center)
@@ -370,7 +359,7 @@ def processfiles(
                     newPath=newpath,
                     parentId=center_staging_synid,
                     databaseSynId=tableid,
-                    oncotree_link=oncotree_link,
+                    oncotree_link=genie_config['oncotreeLink'],
                     fileSynId=row["id"],
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf,
                 )
@@ -379,7 +368,7 @@ def processfiles(
             syn=syn,
             center=center,
             validfiles=validfiles,
-            genie_annotation_pkg=genome_nexus_pkg,
+            genie_annotation_pkg=genie_config['genie_annotation_pkg'],
             database_mappingdf=databaseToSynIdMappingDf,
             workdir=path_to_genie,
         )
@@ -873,16 +862,14 @@ def center_input_to_database(
             syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
         processfiles(
-            syn,
-            validFiles,
-            center,
-            path_to_genie,
-            center_mapping_df,
-            oncotree_link,
-            database_to_synid_mappingdf,
+            syn=syn,
+            validfiles=validFiles,
+            center=center,
+            path_to_genie=path_to_genie,
+            databaseToSynIdMappingDf=database_to_synid_mappingdf,
             processing=process,
-            genome_nexus_pkg=genie_annotation_pkg,
             format_registry=format_registry,
+            genie_config=genie_config
         )
 
         # Should add in this process end tracking before the deletion of samples
