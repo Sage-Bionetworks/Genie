@@ -230,16 +230,12 @@ class Clinical(FileTypeFormat):
     _process_kwargs = [
         "newPath",
         "parentId",
-        "databaseToSynIdMappingDf",
-        "oncotree_link",
         "clinicalTemplate",
         "sample",
         "patient",
         "patientCols",
         "sampleCols",
     ]
-
-    _validation_kwargs = ["oncotree_link"]
 
     # VALIDATE FILE NAME
     def _validateFilename(self, filePath):
@@ -393,10 +389,8 @@ class Clinical(FileTypeFormat):
     def process_steps(
         self,
         clinicalDf,
-        databaseToSynIdMappingDf,
         newPath,
         parentId,
-        oncotree_link,
         clinicalTemplate,
         sample,
         patient,
@@ -406,10 +400,8 @@ class Clinical(FileTypeFormat):
         """Process clincial file, redact PHI values, upload to clinical
         database
         """
-        patientdb_idx = databaseToSynIdMappingDf["Database"] == "patient"
-        patient_synid = databaseToSynIdMappingDf.Id[patientdb_idx][0]
-        sampledb_idx = databaseToSynIdMappingDf["Database"] == "sample"
-        sample_synid = databaseToSynIdMappingDf.Id[sampledb_idx][0]
+        patient_synid = self.genie_config['patient']
+        sample_synid = self.genie_config['sample']
 
         newClinicalDf = self._process(clinicalDf, clinicalTemplate)
         newClinicalDf = redact_phi(newClinicalDf)
@@ -439,7 +431,7 @@ class Clinical(FileTypeFormat):
             # Exclude all clinical samples with wrong oncotree codes
             oncotree_mapping = pd.DataFrame()
             oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(
-                oncotree_link
+                self.genie_config['oncotreeLink']
             )
             # Add in unknown key for oncotree code
             oncotree_mapping_dict["UNKNOWN"] = {}
@@ -466,7 +458,7 @@ class Clinical(FileTypeFormat):
         return newPath
 
     # VALIDATION
-    def _validate(self, clinicaldf, oncotree_link):
+    def _validate(self, clinicaldf):
         """
         This function validates the clinical file to make sure it adhere
         to the clinical SOP.
@@ -474,7 +466,6 @@ class Clinical(FileTypeFormat):
         Args:
             clinicalDF: Merged clinical file with patient and sample
                         information
-            oncotree_link: Link to oncotree
 
         Returns:
             Error message
@@ -493,7 +484,7 @@ class Clinical(FileTypeFormat):
         clinicaldf = clinicaldf.fillna("")
 
         oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(
-            oncotree_link
+            self.genie_config['oncotreeLink']
         )
         oncotree_mapping = pd.DataFrame(
             {"ONCOTREE_CODE": list(oncotree_mapping_dict.keys())}

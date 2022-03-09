@@ -90,7 +90,10 @@ class ValidationHelper(object):
                 mykwargs["project_id"] = self._project.id
 
             validator_cls = self._format_registry[self.file_type]
-            validator = validator_cls(self._synapse_client, self.center)
+            validator = validator_cls(
+                syn=self._synapse_client, center=self.center,
+                genie_config=self.genie_config
+            )
             filepathlist = [entity.path for entity in self.entitylist]
             valid, errors, warnings = validator.validate(
                 filePathList=filepathlist, **mykwargs

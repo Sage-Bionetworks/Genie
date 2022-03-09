@@ -353,13 +353,14 @@ def processfiles(
             tableid = genie_config.get(filetype)
 
             if filetype is not None:
-                processor = format_registry[filetype](syn, center)
+                processor = format_registry[filetype](
+                    syn=syn, center=center, genie_config=genie_config
+                )
                 processor.process(
                     filePath=row["path"],
                     newPath=newpath,
                     parentId=center_staging_synid,
                     databaseSynId=tableid,
-                    oncotree_link=genie_config['oncotreeLink'],
                     fileSynId=row["id"],
                     databaseToSynIdMappingDf=databaseToSynIdMappingDf,
                 )
