@@ -261,11 +261,11 @@ class Clinical(FileTypeFormat):
         """Transform the values of each row of the clinical file"""
         # Must create copy or else it will overwrite the original row
         x = row.copy()
-        # # PATIENT ID
-        if x.get("PATIENT_ID") is not None:
-            x["PATIENT_ID"] = process_functions.checkGenieId(
-                x["PATIENT_ID"], self.center
-            )
+        # # # PATIENT ID
+        # if x.get("PATIENT_ID") is not None:
+        #     x["PATIENT_ID"] = process_functions.checkGenieId(
+        #         x["PATIENT_ID"], self.center
+        #     )
 
         # BIRTH YEAR
         if x.get("BIRTH_YEAR") is not None:
@@ -274,8 +274,8 @@ class Clinical(FileTypeFormat):
                 x["BIRTH_YEAR"] = int(x["BIRTH_YEAR"])
 
         # SAMPLE ID
-        if x.get("SAMPLE_ID") is not None:
-            x["SAMPLE_ID"] = process_functions.checkGenieId(x["SAMPLE_ID"], self.center)
+        # if x.get("SAMPLE_ID") is not None:
+        #     x["SAMPLE_ID"] = process_functions.checkGenieId(x["SAMPLE_ID"], self.center)
 
         # AGE AT SEQ REPORT
         if x.get("AGE_AT_SEQ_REPORT") is not None:
@@ -537,7 +537,16 @@ class Clinical(FileTypeFormat):
 
         if not havePatientColumn:
             total_error.write("Patient Clinical File: Must have PATIENT_ID column.\n")
-
+        else:
+            if not all(clinicaldf[patientId].str.startswith(f"GENIE-{self.center}")):
+                total_error.write(
+                    "Patient Clinical File: PATIENT_ID must start with GENIE-CENTER"
+                )
+            if any(clinicaldf[patientId].str.len() > 50):
+                total_error.write(
+                    "Patient Clinical File: PATIENT_ID must have less than "
+                    "50 characters."
+                )
         # CHECK: within the sample file that the sample ids match
         # the patient ids
         if haveSampleColumn and havePatientColumn:

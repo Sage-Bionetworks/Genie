@@ -140,10 +140,10 @@ class cna(FileTypeFormat):
         cnaDf.drop_duplicates("Hugo_Symbol", keep=False, inplace=True)
         cnaDf = cnaDf.append(duplicatedGenes, sort=False)
         cnaDf = cnaDf[order]
-        cnaDf.columns = [
-            process_functions.checkGenieId(i, self.center) if i != "Hugo_Symbol" else i
-            for i in cnaDf.columns
-        ]
+        # cnaDf.columns = [
+        #     process_functions.checkGenieId(i, self.center) if i != "Hugo_Symbol" else i
+        #     for i in cnaDf.columns
+        # ]
 
         return cnaDf
 
