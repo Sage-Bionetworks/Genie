@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 
 
 class ValidationResults:
-    """Validation results
-    """
+    """Validation results"""
+
     def __init__(self, errors: str, warnings: str, detailed: str = None) -> None:
         """
         Args:
@@ -207,7 +207,9 @@ class FileTypeFormat(object):
         try:
             df = self.read_file(filePathList)
         except Exception as e:
-            errors = f"The file(s) ({filePathList}) cannot be read. Original error: {str(e)}"
+            errors = (
+                f"The file(s) ({filePathList}) cannot be read. Original error: {str(e)}"
+            )
             warnings = ""
 
         if not errors:

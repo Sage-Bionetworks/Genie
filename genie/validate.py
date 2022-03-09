@@ -77,7 +77,7 @@ class ValidationHelper(object):
         if self.file_type not in self._format_registry:
             valid_result_cls = example_filetype_format.ValidationResults(
                 errors="Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally",
-                warnings=""
+                warnings="",
             )
         else:
             mykwargs = {}
@@ -91,9 +91,7 @@ class ValidationHelper(object):
             validator_cls = self._format_registry[self.file_type]
             validator = validator_cls(self._synapse_client, self.center)
             filepathlist = [entity.path for entity in self.entitylist]
-            valid_result_cls = validator.validate(
-                filePathList=filepathlist, **mykwargs
-            )
+            valid_result_cls = validator.validate(filePathList=filepathlist, **mykwargs)
 
         # Complete error message
         message = valid_result_cls.collect_errors_and_warnings()
