@@ -7,6 +7,7 @@ import time
 from typing import List
 
 import synapseclient
+from synapseclient import Synapse
 from synapseclient.core.utils import to_unix_epoch_time
 import synapseutils
 import pandas as pd
@@ -650,7 +651,6 @@ def validation(
         center: Center name
         process: main, vcf, maf
         center_mapping_df: center mapping dataframe
-        thread: Unused parameter for now
         oncotree_link: Link to oncotree
 
     Returns:
@@ -747,28 +747,47 @@ def validation(
     return valid_filesdf[["id", "path", "fileType", "name"]]
 
 
+# TODO: probably should rename this for clarity
 def center_input_to_database(
-    syn,
-    project_id,
-    center,
-    process,
-    only_validate,
-    database_to_synid_mappingdf,
-    center_mapping_df,
-    delete_old=False,
-    oncotree_link=None,
-    genie_annotation_pkg=None,
-    format_registry=None,
+    syn: Synapse,
+    project_id: str,
+    center: str,
+    process: str,
+    only_validate: bool,
+    database_to_synid_mappingdf: pd.DataFrame,
+    center_mapping_df: pd.DataFrame,
+    delete_old: bool = False,
+    oncotree_link: str = None,
+    genie_annotation_pkg: str = None,
+    format_registry: list = None,
+    genie_config: dict = None
 ):
+    """Processing per center
+
+    Args:
+        syn (Synapse): _description_
+        project_id (str): _description_
+        center (str): _description_
+        process (str): _description_
+        only_validate (bool): _description_
+        database_to_synid_mappingdf (pd.DataFrame): _description_
+        center_mapping_df (pd.DataFrame): _description_
+        delete_old (bool, optional): _description_. Defaults to False.
+        oncotree_link (str, optional): _description_. Defaults to None.
+        genie_annotation_pkg (str, optional): _description_. Defaults to None.
+        format_registry (typing.List, optional): _description_. Defaults to None.
+        genie_config (typing.Dict, optional): _description_. Defaults to None.
+    """
+
     if only_validate:
         log_path = os.path.join(
-            process_functions.SCRIPT_DIR, "{}_validation_log.txt".format(center)
+            process_functions.SCRIPT_DIR, f"{center}_validation_log.txt"
         )
     else:
         log_path = os.path.join(
-            process_functions.SCRIPT_DIR, "{}_{}_log.txt".format(center, process)
+            process_functions.SCRIPT_DIR, f"{center}_{process}_log.txt"
         )
-
+    # Set up logger to write to a log file as well as streaming logs
     logFormatter = logging.Formatter(
         "%(asctime)s [%(name)s][%(levelname)s] %(message)s"
     )
@@ -777,15 +796,16 @@ def center_input_to_database(
     logger.addHandler(fileHandler)
 
     # ----------------------------------------
-    # Start input to staging process
+    # Start processing
     # ----------------------------------------
-    """
-    # path_to_genie = os.path.realpath(os.path.join(
-    #    process_functions.SCRIPT_DIR, "../"))
-    Make the synapsecache dir the genie input folder for now
-    The main reason for this is because the .synaspecache dir
-    is mounted by batch
-    """
+
+    # path_to_genie = os.path.realpath(
+    #   os.path.join(process_functions.SCRIPT_DIR, "../")
+    # )
+    # HACK:
+    # Make the synapse cache dir the genie input folder for now
+    # The main reason for this is because the .synaspeCache dir
+    # is mounted by batch
     path_to_genie = os.path.expanduser("~/.synapseCache")
     # Create input and staging folders
     if not os.path.exists(os.path.join(path_to_genie, center, "input")):
