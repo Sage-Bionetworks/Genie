@@ -859,6 +859,7 @@ def center_input_to_database(
             )
             syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
+        # Start transformations
         processfiles(
             syn=syn,
             validfiles=validFiles,
@@ -891,7 +892,7 @@ def center_input_to_database(
         )
         logger.info(messageOut)
 
-    # Store log file
+    # Store and remove log file
     syn.store(synapseclient.File(log_path, parentId=genie_config['logs']))
     os.remove(log_path)
     logger.info("ALL PROCESSES COMPLETE")
