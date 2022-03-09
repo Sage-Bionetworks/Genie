@@ -328,6 +328,8 @@ class Clinical(FileTypeFormat):
         # Remove unwanted clinical columns prior to update
         # clinicalMerged = clinicalMerged.drop(clinicalMerged.columns[
         #    ~clinicalMerged.columns.isin(clinicalTemplate.columns)],1)
+        # TODO: add to genie config
+        # TODO: Use process_functions.get_syntabledf function
         ethnicity_mapping = process_functions.getGenieMapping(self.syn, "syn7434242")
         race_mapping = process_functions.getGenieMapping(self.syn, "syn7434236")
         sex_mapping = process_functions.getGenieMapping(self.syn, "syn7434222")
@@ -364,6 +366,7 @@ class Clinical(FileTypeFormat):
         """
         # These synapse ids for the clinical tier release scope is
         # hardcoded because it never changes
+        # TODO: Add clinical tier release scope to GENIE config
         patient_cols_table = self.syn.tableQuery(
             "select fieldName from syn8545211 where "
             "patient is True and inClinicalDb is True"
@@ -490,12 +493,10 @@ class Clinical(FileTypeFormat):
             {"ONCOTREE_CODE": list(oncotree_mapping_dict.keys())}
         )
 
+        # TODO: Use get_syntabledf function
         sampletype_mapping = process_functions.getGenieMapping(self.syn, "syn7434273")
-
         ethnicity_mapping = process_functions.getGenieMapping(self.syn, "syn7434242")
-
         race_mapping = process_functions.getGenieMapping(self.syn, "syn7434236")
-
         sex_mapping = process_functions.getGenieMapping(self.syn, "syn7434222")
 
         # CHECK: SAMPLE_ID
