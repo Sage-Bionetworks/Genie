@@ -229,6 +229,7 @@ def _check_int_year_consistency(
         # return f"Patient: you have inconsistent text values in {col_strs}.\n"
     return True
 
+
 # PROCESSING
 def remap_clinical_values(
     clinicaldf: DataFrame,
@@ -294,10 +295,14 @@ def _check_seq_date(value):
     return False
 
 
-check_seq_date = pa.Check(lambda s: _check_seq_date(s), element_wise=True, title="Check seq date")
+check_seq_date = pa.Check(
+    lambda s: _check_seq_date(s), element_wise=True, title="Check seq date"
+)
 
 
-def _check_interval_values(value, allowed_values=["Unknown", ">32485", "<6570"]) -> bool:
+def _check_interval_values(
+    value, allowed_values=["Unknown", ">32485", "<6570"]
+) -> bool:
     """_summary_
 
     Args:
@@ -312,27 +317,44 @@ def _check_interval_values(value, allowed_values=["Unknown", ">32485", "<6570"])
     return False
 
 
-check_interval_median = pa.Check(lambda s: s[~s.isin(["Unknown", ">32485", "<6570"])].astype(int).median() > 100, title="Check seq date median")
-check_interval_values = pa.Check(lambda s: _check_interval_values(s), title="Check seq date values", element_wise=True)
+check_interval_median = pa.Check(
+    lambda s: s[~s.isin(["Unknown", ">32485", "<6570"])].astype(int).median() > 100,
+    title="Check seq date median",
+)
+check_interval_values = pa.Check(
+    lambda s: _check_interval_values(s),
+    title="Check seq date values",
+    element_wise=True,
+)
 
 check_contact_interval_values = pa.Check(
-    lambda s: _check_interval_values(s, allowed_values=[
-        ">32485",
-        "<6570",
-        "Unknown",
-        "Not Collected",
-        "Not Released",
-    ]), title="Check seq date values", element_wise=True
+    lambda s: _check_interval_values(
+        s,
+        allowed_values=[
+            ">32485",
+            "<6570",
+            "Unknown",
+            "Not Collected",
+            "Not Released",
+        ],
+    ),
+    title="Check seq date values",
+    element_wise=True,
 )
 check_death_interval_values = pa.Check(
-    lambda s: _check_interval_values(s, allowed_values=[
-        ">32485",
-        "<6570",
-        "Unknown",
-        "Not Collected",
-        "Not Applicable",
-        "Not Released",
-    ]), title="Check seq date values", element_wise=True
+    lambda s: _check_interval_values(
+        s,
+        allowed_values=[
+            ">32485",
+            "<6570",
+            "Unknown",
+            "Not Collected",
+            "Not Applicable",
+            "Not Released",
+        ],
+    ),
+    title="Check seq date values",
+    element_wise=True,
 )
 
 
@@ -348,21 +370,30 @@ def _check_year_values(value, allowed_values=["Unknown", ">32485", "<6570"]) -> 
     return False
 
 
-check_birth_year_values = pa.Check(lambda s: _check_year_values(s), error="YEAR values invalid", element_wise=True)
-check_contact_year_values = pa.Check(lambda s: _check_year_values(
-    s, allowed_values=["Unknown", "Not Collected", "Not Released", ">89", "<18"]),
-    error="YEAR values invalid", element_wise=True
+check_birth_year_values = pa.Check(
+    lambda s: _check_year_values(s), error="YEAR values invalid", element_wise=True
 )
-check_death_year_values = pa.Check(lambda s: _check_year_values(
-    s, allowed_values=[
-        "Unknown",
-        "Not Collected",
-        "Not Applicable",
-        "Not Released",
-        ">89",
-        "<18",
-    ]),
-    error="YEAR values invalid", element_wise=True
+check_contact_year_values = pa.Check(
+    lambda s: _check_year_values(
+        s, allowed_values=["Unknown", "Not Collected", "Not Released", ">89", "<18"]
+    ),
+    error="YEAR values invalid",
+    element_wise=True,
+)
+check_death_year_values = pa.Check(
+    lambda s: _check_year_values(
+        s,
+        allowed_values=[
+            "Unknown",
+            "Not Collected",
+            "Not Applicable",
+            "Not Released",
+            ">89",
+            "<18",
+        ],
+    ),
+    error="YEAR values invalid",
+    element_wise=True,
 )
 
 
@@ -635,7 +666,7 @@ class Clinical(FileTypeFormat):
                 clinicaldf["ONCOTREE_CODE"].astype(str).str.upper()
             )
         if process_functions.checkColExist(clinicaldf, "DEAD"):
-            clinicaldf['DEAD'] = clinicaldf['DEAD'].str.upper()
+            clinicaldf["DEAD"] = clinicaldf["DEAD"].str.upper()
 
         # CHECK: for empty rows
         # empty_rows = clinicaldf.isnull().values.all(axis=1)
@@ -651,9 +682,7 @@ class Clinical(FileTypeFormat):
         )
         onctoree_list = list(oncotree_mapping_dict.keys())
         onctoree_list.append("UNKNOWN")
-        oncotree_mapping = pd.DataFrame(
-            {"ONCOTREE_CODE": onctoree_list}
-        )
+        oncotree_mapping = pd.DataFrame({"ONCOTREE_CODE": onctoree_list})
 
         sampletype_mapping = process_functions.getGenieMapping(self.syn, "syn7434273")
 
@@ -671,20 +700,12 @@ class Clinical(FileTypeFormat):
                     dtype=str,
                     unique=True,
                 ),
-                "PATIENT_ID": Column(
-                    dtype=str
-                ),
-                "SEQ_DATE": Column(
-                    dtype=str,
-                    checks=check_seq_date
-                ),
-                "ONCOTREE_CODE": Column(
-                    dtype=str,
-                    checks=pa.Check.isin(onctoree_list)
-                ),
+                "PATIENT_ID": Column(dtype=str),
+                "SEQ_DATE": Column(dtype=str, checks=check_seq_date),
+                "ONCOTREE_CODE": Column(dtype=str, checks=pa.Check.isin(onctoree_list)),
                 "SAMPLE_TYPE": Column(
                     dtype=int,
-                    checks=pa.Check.isin(sampletype_mapping['CODE'].to_list()),
+                    checks=pa.Check.isin(sampletype_mapping["CODE"].to_list()),
                 ),
                 "SEQ_ASSAY_ID": Column(
                     dtype=str,
@@ -692,72 +713,56 @@ class Clinical(FileTypeFormat):
                 ),
                 "AGE_AT_SEQ_REPORT": Column(
                     dtype=str,
-                    checks=[
-                        check_interval_values,
-                        check_interval_median
-                    ],
+                    checks=[check_interval_values, check_interval_median],
                 ),
                 "SEX": Column(
-                    dtype=int,
-                    checks=pa.Check.isin(sex_mapping['CODE'].to_list())
+                    dtype=int, checks=pa.Check.isin(sex_mapping["CODE"].to_list())
                 ),
                 "PRIMARY_RACE": Column(
                     dtype=int,
-                    checks=pa.Check.isin(race_mapping['CODE'].to_list()),
-                    required=False
+                    checks=pa.Check.isin(race_mapping["CODE"].to_list()),
+                    required=False,
                 ),
                 "SECONDARY_RACE": Column(
                     dtype=int,
-                    checks=pa.Check.isin(race_mapping['CODE'].to_list()),
-                    required=False
+                    checks=pa.Check.isin(race_mapping["CODE"].to_list()),
+                    required=False,
                 ),
                 "TERTIARY_RACE": Column(
                     dtype=int,
-                    checks=pa.Check.isin(race_mapping['CODE'].to_list()),
-                    required=False
+                    checks=pa.Check.isin(race_mapping["CODE"].to_list()),
+                    required=False,
                 ),
                 "ETHNICITY": Column(
                     dtype=int,
-                    checks=pa.Check.isin(ethnicity_mapping['CODE'].to_list()),
-                    required=False
+                    checks=pa.Check.isin(ethnicity_mapping["CODE"].to_list()),
+                    required=False,
                 ),
-                "BIRTH_YEAR": Column(
-                    dtype=str,
-                    checks=check_birth_year_values
-                ),
-                "YEAR_CONTACT": Column(
-                    dtype=str,
-                    checks=check_contact_year_values
-                ),
-                "YEAR_DEATH": Column(
-                    dtype=str,
-                    checks=check_death_year_values
-                ),
-                "INT_CONTACT": Column(
-                    dtype=str,
-                    checks=check_contact_interval_values
-                ),
-                "INT_DOD": Column(
-                    dtype=str,
-                    checks=check_death_interval_values
-                ),
+                "BIRTH_YEAR": Column(dtype=str, checks=check_birth_year_values),
+                "YEAR_CONTACT": Column(dtype=str, checks=check_contact_year_values),
+                "YEAR_DEATH": Column(dtype=str, checks=check_death_year_values),
+                "INT_CONTACT": Column(dtype=str, checks=check_contact_interval_values),
+                "INT_DOD": Column(dtype=str, checks=check_death_interval_values),
                 "DEAD": Column(
                     dtype=str,
-                    checks=pa.Check.isin(["TRUE", "FALSE", "UNKNOWN", "NOT COLLECTED", "NOT RELEASED"])
+                    checks=pa.Check.isin(
+                        ["TRUE", "FALSE", "UNKNOWN", "NOT COLLECTED", "NOT RELEASED"]
+                    ),
                 ),
                 "SAMPLE_CLASS": Column(
-                    dtype=str,
-                    checks=pa.Check.isin(["Tumor", "cfDNA"]),
-                    required=False
-                )
+                    dtype=str, checks=pa.Check.isin(["Tumor", "cfDNA"]), required=False
+                ),
             },
             checks=[
-                pa.Check(lambda df: _check_int_year_consistency(
-                    clinicaldf=df,
-                    cols=["YEAR_CONTACT", "INT_CONTACT"],
-                    string_vals=["Not Collected", "Unknown", "Not Released"],
-                ), error="interval year inconsistency")
-            ]
+                pa.Check(
+                    lambda df: _check_int_year_consistency(
+                        clinicaldf=df,
+                        cols=["YEAR_CONTACT", "INT_CONTACT"],
+                        string_vals=["Not Collected", "Unknown", "Not Released"],
+                    ),
+                    error="interval year inconsistency",
+                )
+            ],
         )
         try:
             schema.validate(clinicaldf, lazy=True)
@@ -799,7 +804,6 @@ class Clinical(FileTypeFormat):
         #                 )
         #             )
         #         )
-
 
         # # CHECK: ONCOTREE_CODE
         # haveColumn = process_functions.checkColExist(clinicaldf, "ONCOTREE_CODE")
