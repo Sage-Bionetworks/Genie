@@ -17,6 +17,7 @@ from genie import (
 
 logger = logging.getLogger(__name__)
 
+
 # TODO: Remove oncotree_link
 def main(
     process: str,
@@ -153,11 +154,8 @@ def main(
             process=process,
             only_validate=only_validate,
             database_to_synid_mappingdf=databaseToSynIdMappingDf,
-            center_mapping_df=center_mapping_df,
             delete_old=delete_old,
-            oncotree_link=oncotree_link,
             format_registry=format_registry,
-            genie_annotation_pkg=genie_annotation_pkg,
             genie_config=genie_config
         )
 

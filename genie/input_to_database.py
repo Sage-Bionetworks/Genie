@@ -739,10 +739,7 @@ def center_input_to_database(
     process: str,
     only_validate: bool,
     database_to_synid_mappingdf: pd.DataFrame,
-    center_mapping_df: pd.DataFrame,
     delete_old: bool = False,
-    oncotree_link: str = None,
-    genie_annotation_pkg: str = None,
     format_registry: list = None,
     genie_config: dict = None
 ):
@@ -760,7 +757,8 @@ def center_input_to_database(
         oncotree_link (str, optional): _description_. Defaults to None.
         genie_annotation_pkg (str, optional): _description_. Defaults to None.
         format_registry (typing.List, optional): _description_. Defaults to None.
-        genie_config (typing.Dict, optional): _description_. Defaults to None.
+        genie_config (typing.Dict, optional): See example of genie config at ./genie_config.json.
+                                              Defaults to None.
     """
 
     if only_validate:
