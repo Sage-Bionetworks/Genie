@@ -253,9 +253,7 @@ def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
             "Feature_Type",
         ]
     )
-    genie_combineddf = genie_combineddf.append(genie_exondf)
-    genie_combineddf = genie_combineddf.append(genie_introndf)
-    genie_combineddf = genie_combineddf.append(genie_intergenicdf)
+    genie_combineddf = pd.concat([genie_exondf, genie_introndf, genie_intergenicdf])
     return genie_combineddf
 
 
@@ -344,13 +342,13 @@ def _map_position_within_boundary(row, positiondf, boundary=0.9):
             # difference =  difference * -1.0
             max_overlap = _get_max_overlap_index(overlap, bed_length, boundary)
             if max_overlap is not None:
-                end_rows = end_rows.append(chrom_rows.loc[[max_overlap]])
+                end_rows = pd.concat([end_rows, chrom_rows.loc[[max_overlap]]])
         # End goes over end boundary, but start is contained in position
         if sum(chrom_rows["start_position"] <= row["Start_Position"]) > 0:
             overlap = chrom_rows["end_position"] - row["Start_Position"]
             max_overlap = _get_max_overlap_index(overlap, bed_length, boundary)
             if max_overlap is not None:
-                end_rows = end_rows.append(chrom_rows.loc[[max_overlap]])
+                end_rows = pd.concat([end_rows, chrom_rows.loc[[max_overlap]]])
         # Start and end go over position boundary
         check = chrom_rows[chrom_rows["start_position"] >= row["Start_Position"]]
         check = check[check["end_position"] <= row["End_Position"]]
@@ -358,7 +356,7 @@ def _map_position_within_boundary(row, positiondf, boundary=0.9):
             overlap = chrom_rows["end_position"] - chrom_rows["start_position"]
             max_overlap = _get_max_overlap_index(overlap, bed_length, boundary)
             if max_overlap is not None:
-                end_rows = end_rows.append(chrom_rows.loc[[max_overlap]])
+                end_rows = pd.concat([end_rows, chrom_rows.loc[[max_overlap]]])
     return end_rows
 
 

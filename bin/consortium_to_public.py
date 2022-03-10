@@ -143,7 +143,7 @@ def main(args):
             "and processingType = 'public'" % processTrackerSynId
         )
         processTrackerDf = processTracker.asDataFrame()
-        processTrackerDf["timeStartProcessing"][0] = str(int(time.time() * 1000))
+        processTrackerDf["timeStartProcessing"].iloc[0] = str(int(time.time() * 1000))
         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
     caseListEntities, genePanelEntities = consortium_to_public.consortiumToPublic(
@@ -206,7 +206,7 @@ def main(args):
             "processingType = 'public'" % processTrackerSynId
         )
         processTrackerDf = processTracker.asDataFrame()
-        processTrackerDf["timeEndProcessing"][0] = str(int(time.time() * 1000))
+        processTrackerDf["timeEndProcessing"].iloc[0] = str(int(time.time() * 1000))
         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
     if not args.test:
