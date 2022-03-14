@@ -83,7 +83,7 @@ class Assayinfo(FileTypeFormat):
             with open(filepath, "r") as yamlfile:
                 # https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation
                 # Must add this because yaml load deprecation
-                assay_info_dict = yaml.load(yamlfile, Loader=yaml.FullLoader)
+                assay_info_dict = yaml.safe_load(yamlfile)
         except Exception:
             raise ValueError(
                 "assay_information.yaml: Can't read in your file. "
@@ -101,13 +101,13 @@ class Assayinfo(FileTypeFormat):
             assay_specific_info = assay_info_dict[assay]["assay_specific_info"]
             assay_specific_infodf = pd.DataFrame(assay_specific_info)
 
-            seq_assay_id_infodf = assay_info_transposeddf.loc[[assay]]
+            intial_seq_id_infodf = assay_info_transposeddf.loc[[assay]]
 
-            for i in range(0, len(assay_specific_info) - 1):
-                seq_assay_id_infodf = pd.concat(
-                    [seq_assay_id_infodf, seq_assay_id_infodf]
-                )
-                # seq_assay_id_infodf = seq_assay_id_infodf.append(to_appenddf)
+            # for i in range(0, len(assay_specific_info) - 1):
+            seq_assay_id_infodf = pd.concat(
+                [intial_seq_id_infodf] * len(assay_specific_info)
+            )
+            # seq_assay_id_infodf = seq_assay_id_infodf.append(to_appenddf)
             seq_assay_id_infodf.reset_index(drop=True, inplace=True)
             assay_finaldf = pd.concat(
                 [assay_specific_infodf, seq_assay_id_infodf], axis=1
