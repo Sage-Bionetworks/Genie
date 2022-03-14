@@ -103,17 +103,17 @@ class Assayinfo(FileTypeFormat):
 
             intial_seq_id_infodf = assay_info_transposeddf.loc[[assay]]
 
-            # for i in range(0, len(assay_specific_info) - 1):
+            # make sure to create a skeleton for the number of seq assay ids
+            # in the seq pipeline
             seq_assay_id_infodf = pd.concat(
                 [intial_seq_id_infodf] * len(assay_specific_info)
             )
-            # seq_assay_id_infodf = seq_assay_id_infodf.append(to_appenddf)
             seq_assay_id_infodf.reset_index(drop=True, inplace=True)
             assay_finaldf = pd.concat(
                 [assay_specific_infodf, seq_assay_id_infodf], axis=1
             )
             del assay_finaldf["assay_specific_info"]
-
+            # Transform values containing lists to string concatenated values
             columns_containing_lists = [
                 "variant_classifications",
                 "alteration_types",
