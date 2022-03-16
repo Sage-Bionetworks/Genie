@@ -403,6 +403,6 @@ def get_public_to_consortium_synid_mapping(syn, releaseSynId, test=False):
                     if checkRelease[0] in ["1", "2"]:
                         public_release_name = str(int(checkRelease[0]) + 1) + ".0.0"
                     else:
-                        public_release_name = str(int(checkRelease[0])) + ".0-public"
+                        public_release_name = str(int(checkRelease[0])) + ".1-public"
                     officialPublic[public_release_name] = dirpath[1]
     return officialPublic
