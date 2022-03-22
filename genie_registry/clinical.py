@@ -524,11 +524,13 @@ class Clinical(FileTypeFormat):
                 )
             if not all(clinicaldf[sample_id].str.startswith(f"GENIE-{self.center}")):
                 total_error.write(
-                    "Sample Clinical File: SAMPLE_ID must start with GENIE-CENTER"
+                    "Sample Clinical File: "
+                    f"SAMPLE_ID must start with GENIE-{self.center}\n"
                 )
             if any(clinicaldf[sample_id].str.len() > 50):
                 total_error.write(
-                    "Sample Clinical File: SAMPLE_ID must have less than 50 characters."
+                    "Sample Clinical File: "
+                    "SAMPLE_ID must have less than 50 characters.\n"
                 )
         # CHECK: PATIENT_ID
         patientId = "PATIENT_ID"
@@ -540,12 +542,13 @@ class Clinical(FileTypeFormat):
         else:
             if not all(clinicaldf[patientId].str.startswith(f"GENIE-{self.center}")):
                 total_error.write(
-                    "Patient Clinical File: PATIENT_ID must start with GENIE-CENTER"
+                    "Patient Clinical File: "
+                    f"PATIENT_ID must start with GENIE-{self.center}\n"
                 )
             if any(clinicaldf[patientId].str.len() > 50):
                 total_error.write(
                     "Patient Clinical File: PATIENT_ID must have less than "
-                    "50 characters."
+                    "50 characters.\n"
                 )
         # CHECK: within the sample file that the sample ids match
         # the patient ids
