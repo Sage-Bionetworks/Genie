@@ -189,6 +189,31 @@ def checkColExist(DF, key):
     return result
 
 
+def validate_genie_identifier(
+    identifiers: pd.Series, center: str, filename: str, col: str
+) -> str:
+    """Validate GENIE sample and patient ids.
+
+    Args:
+        identifiers (pd.Series): Array of GENIE identifiers
+        center (str): GENIE center name
+        filename (str): name of file
+        col (str): Column with identifiers
+
+    return:
+        str: Errors
+    """
+    total_error = ""
+    if not all(identifiers.str.startswith(f"GENIE-{center}")):
+        total_error = total_error + (
+            f"{filename}: {col} must start with GENIE-{center}\n"
+        )
+    if any(identifiers.str.len() > 50):
+        total_error = total_error + (
+            f"{filename}: {col} must have less than 50 characters.\n"
+        )
+    return total_error
+
 # def get_oncotree_codes(oncotree_url):
 #     '''
 #     Deprecated
