@@ -203,15 +203,10 @@ class cna(FileTypeFormat):
         else:
             cnvDF["HUGO_SYMBOL"] = keepSymbols
             if haveColumn and not nosymbol_check:
-                databaseToSynIdMappingDf = (
-                    process_functions.get_synid_database_mappingdf(self.syn, project_id)
-                )
-                bedSynId = process_functions.getDatabaseSynId(
-                    self.syn, "bed", databaseToSynIdMappingDf=databaseToSynIdMappingDf
-                )
+                bedSynId = self.genie_config['bed']
                 bed = self.syn.tableQuery(
-                    "select Hugo_Symbol, ID from {} where "
-                    "CENTER = '{}'".format(bedSynId, self.center)
+                    f"select Hugo_Symbol, ID from {bedSynId} "
+                    f"where CENTER = '{self.center}'"
                 )
                 bedDf = bed.asDataFrame()
                 cnvDF["remapped"] = cnvDF["HUGO_SYMBOL"].apply(

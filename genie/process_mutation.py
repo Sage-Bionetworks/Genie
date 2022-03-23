@@ -173,8 +173,7 @@ def process_mutation_workflow(
     syn: Synapse,
     center: str,
     validfiles: pd.DataFrame,
-    genie_annotation_pkg: str,
-    database_mappingdf: str,
+    genie_config: dict,
     workdir: str,
 ) -> str:
     """Process vcf/maf workflow
@@ -183,8 +182,7 @@ def process_mutation_workflow(
         syn: Synapse connection
         center: Center name
         validfiles: Center validated files
-        genie_annotation_pkg: Genome Nexus annotation tools
-        database_mappingdf: Database to synapse id mapping dataframe
+        genie_config: GENIE configuration.
         workdir: Working directory
 
     Returns:
@@ -202,28 +200,24 @@ def process_mutation_workflow(
     syn.get(
         "syn22053204",
         ifcollision="overwrite.local",
-        downloadLocation=genie_annotation_pkg,
+        downloadLocation=genie_config['genie_annotation_pkg'],
     )
     # Genome Nexus Jar file
     syn.get(
         "syn22084320",
         ifcollision="overwrite.local",
-        downloadLocation=genie_annotation_pkg,
+        downloadLocation=genie_config['genie_annotation_pkg'],
     )
 
     annotated_maf_path = annotate_mutation(
         center=center,
         mutation_files=valid_mutation_files,
-        genie_annotation_pkg=genie_annotation_pkg,
+        genie_annotation_pkg=genie_config['genie_annotation_pkg'],
         workdir=workdir,
     )
 
-    maf_tableid = database_mappingdf.Id[
-        database_mappingdf["Database"] == "vcf2maf"
-    ].iloc[0]
-    flatfiles_synid = database_mappingdf.Id[
-        database_mappingdf["Database"] == "centerMaf"
-    ].iloc[0]
+    maf_tableid = genie_config["vcf2maf"]
+    flatfiles_synid = genie_config["centerMaf"]
     # Split into narrow maf and store into db / flat file
     split_and_store_maf(
         syn=syn,

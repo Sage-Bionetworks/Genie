@@ -103,8 +103,8 @@ class fusions(FileTypeFormat):
         return fusion
 
     # PROCESSING
-    def process_steps(self, fusion, databaseSynId, newPath, databaseToSynIdMappingDf):
-        fusion = self._process(fusion, databaseToSynIdMappingDf)
+    def process_steps(self, fusion, databaseSynId, newPath):
+        fusion = self._process(fusion)
         process_functions.updateData(
             self.syn, databaseSynId, fusion, self.center, toDelete=True
         )
@@ -146,17 +146,11 @@ class fusions(FileTypeFormat):
         ):
             # logger.info("VALIDATING %s GENE SYMBOLS" % os.path.basename(filePath))
             # invalidated_genes = fusionDF["HUGO_SYMBOL"].drop_duplicates().apply(validateSymbol)
-            databaseToSynIdMappingDf = process_functions.get_synid_database_mappingdf(
-                self.syn, project_id
-            )
-            bedSynId = process_functions.getDatabaseSynId(
-                self.syn, "bed", databaseToSynIdMappingDf=databaseToSynIdMappingDf
-            )
-            bed = self.syn.tableQuery(
-                "select Hugo_Symbol, ID from %s where CENTER = '%s'"
-                % (bedSynId, self.center)
-            )
-            bedDf = bed.asDataFrame()
+            # bedSynId = self.genie_config['bed']
+            # bed = self.syn.tableQuery(
+            #     f"select Hugo_Symbol, ID from {bedSynId} where CENTER = '{self.center}'"
+            # )
+            # bedDf = bed.asDataFrame()
             # invalidated_genes = self.pool.map(process_functions.validateSymbol, fusionDF["HUGO_SYMBOL"].drop_duplicates())
             if fusionDF["HUGO_SYMBOL"].isnull().any():
                 total_error += (
