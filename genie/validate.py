@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
-import importlib
-import inspect
 import logging
-import sys
 
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from . import config, example_filetype_format, process_functions
+from . import config, process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +113,7 @@ class ValidationHelper(object):
 class GenieValidationHelper(ValidationHelper):
     """A validator helper class for AACR Project Genie."""
 
-    _validate_kwargs = ["oncotree_link", "nosymbol_check"]
+    _validate_kwargs = ["nosymbol_check"]
 
 
 def collect_errors_and_warnings(errors, warnings):
@@ -180,26 +177,6 @@ def _check_center_input(center, center_list):
         )
 
 
-def _get_oncotreelink(syn, databasetosynid_mappingdf, oncotree_link=None):
-    """
-    Gets oncotree link unless a link is specified by the user
-
-    Args:
-        syn: Synapse object
-        databasetosynid_mappingdf: database to synid mapping
-        oncotree_link: link to oncotree. Default is None
-
-    Returns:
-        oncotree link
-
-    """
-    if oncotree_link is None:
-        oncolink = databasetosynid_mappingdf.query('Database == "oncotreeLink"').Id
-        oncolink_ent = syn.get(oncolink.iloc[0])
-        oncotree_link = oncolink_ent.externalURL
-    return oncotree_link
-
-
 def _upload_to_synapse(syn, filepaths, valid, parentid=None):
     """
     Upload to synapse if parentid is specified and valid
@@ -224,25 +201,21 @@ def _perform_validate(syn, args):
 
     # Check parentid argparse
     _check_parentid_permission_container(syn, args.parentid)
-
-    databasetosynid_mappingdf = process_functions.get_synid_database_mappingdf(
-        syn, project_id=args.project_id
+    genie_config = process_functions.get_genie_config(
+        syn=syn, project_id=args.project_id
     )
+    # HACK: Modify oncotree link config
+    if args.oncotree_link is None:
+        onco_link_ent = syn.get(genie_config["oncotreeLink"])
+        args.oncotree_link = onco_link_ent.externalURL
 
-    synid = databasetosynid_mappingdf.query('Database == "centerMapping"').Id
-
-    center_mapping = syn.tableQuery("select * from {}".format(synid.iloc[0]))
-    center_mapping_df = center_mapping.asDataFrame()
+    genie_config["oncotreeLink"] = args.oncotree_link
 
     # Check center argparse
-    _check_center_input(args.center, center_mapping_df.center.tolist())
-
-    args.oncotree_link = _get_oncotreelink(
-        syn, databasetosynid_mappingdf, oncotree_link=args.oncotree_link
-    )
+    _check_center_input(args.center, list(genie_config["center_config"].keys()))
 
     format_registry = config.collect_format_types(args.format_registry_packages)
-    logger.debug("Using {} file formats.".format(format_registry))
+    logger.debug(f"Using {format_registry} file formats.")
     entity_list = [
         synapseclient.File(name=filepath, path=filepath, parentId=None)
         for filepath in args.filepath
@@ -254,9 +227,9 @@ def _perform_validate(syn, args):
         entitylist=entity_list,
         format_registry=format_registry,
         file_type=args.filetype,
+        genie_config=genie_config,
     )
     mykwargs = dict(
-        oncotree_link=args.oncotree_link,
         nosymbol_check=args.nosymbol_check,
         project_id=args.project_id,
     )
