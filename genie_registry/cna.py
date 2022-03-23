@@ -110,7 +110,7 @@ class cna(FileTypeFormat):
         if len(index) > 0:
             del cnaDf[cnaDf.columns[index][0]]
 
-        bedSynId = self.genie_config['bed']
+        bedSynId = self.genie_config["bed"]
         bed = self.syn.tableQuery(
             f"select Hugo_Symbol, ID from {bedSynId} where CENTER = '{self.center}'"
         )
@@ -146,7 +146,7 @@ class cna(FileTypeFormat):
     def process_steps(self, cnaDf, newPath):
         newCNA = self._process(cnaDf)
 
-        centerMafSynId = self.genie_config['centerMaf']
+        centerMafSynId = self.genie_config["centerMaf"]
         if not newCNA.empty:
             cnaText = process_functions.removePandasDfFloat(newCNA)
             # Replace blank with NA's
@@ -203,7 +203,7 @@ class cna(FileTypeFormat):
         else:
             cnvDF["HUGO_SYMBOL"] = keepSymbols
             if haveColumn and not nosymbol_check:
-                bedSynId = self.genie_config['bed']
+                bedSynId = self.genie_config["bed"]
                 bed = self.syn.tableQuery(
                     f"select Hugo_Symbol, ID from {bedSynId} "
                     f"where CENTER = '{self.center}'"

@@ -42,7 +42,7 @@ class mutationsInCis(FileTypeFormat):
         return newPath
 
     def _validate(self, mutationInCisDf):
-        mutationInCisSynId = self.genie_config['mutationsInCis']
+        mutationInCisSynId = self.genie_config["mutationsInCis"]
         # Pull down the correct database
         existingMergeCheck = self.syn.tableQuery(
             "select * from {} where Center = '{}'".format(

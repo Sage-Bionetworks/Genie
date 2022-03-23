@@ -848,14 +848,10 @@ def test_main_processfile(genie_config, process, genieclass, filetype):
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    databaseToSynIdMapping = {'Database': [filetype],
-                              'Id': ['syn222']}
-    databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
     format_registry = {filetype: genieclass}
 
     input_to_database.processfiles(
         syn, validfilesdf, center, path_to_genie,
-        databaseToSynIdMappingDf,
         processing=process,
         format_registry=format_registry,
         genie_config=genie_config
@@ -872,15 +868,11 @@ def test_mainnone_processfile(genie_config):
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    databaseToSynIdMapping = {'Database': ["clinical"],
-                              'Id': ['syn222']}
-    databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
     process_cls = Mock()
 
     with patch.object(Clinical, "process") as patch_clin:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie,
-            databaseToSynIdMappingDf,
             processing="main",
             format_registry={"main": process_cls},
             genie_config=genie_config)
@@ -897,25 +889,19 @@ def test_mutation_processfile(genie_config):
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    databaseToSynIdMapping = {'Database': ['vcf'],
-                              'Id': ['syn222']}
-    databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
     process_cls = Mock()
 
     with patch.object(process_mutation,
                       "process_mutation_workflow") as patch_process:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie,
-            databaseToSynIdMappingDf,
             processing='mutation',
             format_registry={"vcf": process_cls},
             genie_config=genie_config)
-        # TODO: fix hardcoding
         patch_process.assert_called_once_with(
             syn=syn,
             center=center,
             validfiles=validfilesdf,
-            genie_annotation_pkg="/path/to/nexus",
-            database_mappingdf=databaseToSynIdMappingDf,
+            genie_config=genie_config,
             workdir=path_to_genie
         )

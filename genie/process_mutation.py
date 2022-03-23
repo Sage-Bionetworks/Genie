@@ -200,19 +200,19 @@ def process_mutation_workflow(
     syn.get(
         "syn22053204",
         ifcollision="overwrite.local",
-        downloadLocation=genie_config['genie_annotation_pkg'],
+        downloadLocation=genie_config["genie_annotation_pkg"],
     )
     # Genome Nexus Jar file
     syn.get(
         "syn22084320",
         ifcollision="overwrite.local",
-        downloadLocation=genie_config['genie_annotation_pkg'],
+        downloadLocation=genie_config["genie_annotation_pkg"],
     )
 
     annotated_maf_path = annotate_mutation(
         center=center,
         mutation_files=valid_mutation_files,
-        genie_annotation_pkg=genie_config['genie_annotation_pkg'],
+        genie_annotation_pkg=genie_config["genie_annotation_pkg"],
         workdir=workdir,
     )
 

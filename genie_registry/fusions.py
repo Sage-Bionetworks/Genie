@@ -56,7 +56,7 @@ class fusions(FileTypeFormat):
 
     _process_kwargs = ["newPath", "databaseSynId"]
 
-    _validation_kwargs = ["nosymbol_check", "project_id"]
+    _validation_kwargs = ["nosymbol_check"]
 
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
@@ -79,7 +79,7 @@ class fusions(FileTypeFormat):
         fusion["ENTREZ_GENE_ID"] = fusion["ENTREZ_GENE_ID"].fillna(0)
         fusion = fusion.drop_duplicates()
         fusion["ID"] = fusion["HUGO_SYMBOL"].copy()
-        bedSynId = self.genie_config['bed']
+        bedSynId = self.genie_config["bed"]
         bed = self.syn.tableQuery(
             f"select Hugo_Symbol, ID from {bedSynId} where CENTER = '{self.center}'"
         )
@@ -111,7 +111,7 @@ class fusions(FileTypeFormat):
         fusion.to_csv(newPath, sep="\t", index=False)
         return newPath
 
-    def _validate(self, fusionDF, nosymbol_check, project_id):
+    def _validate(self, fusionDF, nosymbol_check):
         total_error = ""
         warning = ""
 
