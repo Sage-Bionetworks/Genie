@@ -127,8 +127,7 @@ def test_valid_validate_single_file():
             entitylist=entitylist,
             format_registry={'clinical': FileFormat}
         )
-        valid, message = validator.validate_single_file(oncotree_link=None,
-                                                        nosymbol_check=False)
+        valid, message = validator.validate_single_file(nosymbol_check=False)
 
         assert valid == expected_valid
         assert message == expected_message
@@ -137,7 +136,6 @@ def test_valid_validate_single_file():
         mock_determine_ftype.assert_called_once_with()
 
         mock_genie_class.assert_called_once_with(filePathList=[CLIN_ENT.path],
-                                                 oncotree_link=None,
                                                  nosymbol_check=False,
                                                  project_id='syn1234')
 
@@ -262,26 +260,6 @@ class argparser:
         return databasetosynid_mappingdf
 
 
-def test_notnone_get_oncotree_link():
-    """Test link passed in by user is used"""
-    arg = argparser()
-    url = "https://www.synapse.org"
-    link = validate._get_oncotreelink(syn, arg.asDataFrame(),
-                                      oncotree_link=url)
-    assert link == url
-
-
-def test_none__getoncotreelink():
-    """Test oncotree link is gotten"""
-    arg = argparser()
-    url = "https://www.synapse.org"
-    link = synapseclient.File("foo", parentId="foo", externalURL=url)
-    with patch.object(syn, "get", return_value=link) as patch_synget:
-        oncolink = validate._get_oncotreelink(syn, arg.asDataFrame())
-        patch_synget.assert_called_once_with(ONCOTREE_ENT)
-        assert oncolink == url
-
-
 def test_valid__upload_to_synapse():
     """
     Test upload of file to synapse under right conditions
@@ -293,31 +271,27 @@ def test_valid__upload_to_synapse():
             synapseclient.File('foo', parent="syn123"))
 
 
-def test_perform_validate():
+def test_perform_validate(genie_config):
     """Make sure all functions are called"""
     arg = argparser()
     valid = True
     with patch.object(validate,
                       "_check_parentid_permission_container",
                       return_value=None) as patch_check_parentid,\
-         patch.object(process_functions, "get_synid_database_mappingdf",
-                      return_value=arg.asDataFrame()) as patch_getdb,\
-         patch.object(syn, "tableQuery",
-                      return_value=arg) as patch_syn_tablequery,\
+         patch.object(process_functions, "get_genie_config",
+                      return_value=genie_config) as patch_get_config,\
          patch.object(validate, "_check_center_input") as patch_check_center,\
-         patch.object(validate, "_get_oncotreelink") as patch_get_onco,\
+         patch.object(process_functions, "_get_oncotreelink") as patch_get_onco,\
          patch.object(validate.GenieValidationHelper,
                       "validate_single_file",
                       return_value=(valid, 'foo')) as patch_validate,\
          patch.object(validate, "_upload_to_synapse") as patch_syn_upload:
         validate._perform_validate(syn, arg)
-        patch_check_parentid.assert_called_once_with(syn, arg.parentid)
-        patch_getdb.assert_called_once_with(syn, project_id=arg.project_id)
-        patch_syn_tablequery.assert_called_once_with('select * from syn123')
-        patch_check_center.assert_called_once_with(arg.center, ["try", "foo"])
+        patch_check_parentid.assert_called_once_with(syn=syn, project_id=arg.parentid)
+        patch_get_config.assert_called_once_with(syn=syn, project_id=arg.project_id)
+        patch_check_center.assert_called_once_with(arg.center, ["SAGE", "TEST"])
         patch_get_onco.assert_called_once()
-        patch_validate.assert_called_once_with(oncotree_link=arg.oncotree_link,
-                                               nosymbol_check=arg.nosymbol_check,
+        patch_validate.assert_called_once_with(nosymbol_check=arg.nosymbol_check,
                                                project_id=arg.project_id)
         patch_syn_upload.assert_called_once_with(
             syn, arg.filepath, valid, parentid=arg.parentid)

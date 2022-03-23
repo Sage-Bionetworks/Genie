@@ -200,17 +200,14 @@ def _perform_validate(syn, args):
     """This is the main entry point to the genie command line tool."""
 
     # Check parentid argparse
-    _check_parentid_permission_container(syn, args.parentid)
+    _check_parentid_permission_container(syn=syn, project_id=args.parentid)
     genie_config = process_functions.get_genie_config(
         syn=syn, project_id=args.project_id
     )
     # HACK: Modify oncotree link config
-    if args.oncotree_link is None:
-        onco_link_ent = syn.get(genie_config["oncotreeLink"])
-        args.oncotree_link = onco_link_ent.externalURL
-
-    genie_config["oncotreeLink"] = args.oncotree_link
-
+    genie_config["oncotreeLink"] = process_functions._get_oncotreelink(
+        syn=syn, genie_config=genie_config, oncotree_link=args.oncotree_link
+    )
     # Check center argparse
     _check_center_input(args.center, list(genie_config["center_config"].keys()))
 

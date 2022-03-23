@@ -1269,3 +1269,22 @@ def get_genie_config(
     genie_config["center_config"] = center_mapping_df.to_dict("index")
 
     return genie_config
+
+
+def _get_oncotreelink(syn, genie_config, oncotree_link=None):
+    """
+    Gets oncotree link unless a link is specified by the user
+
+    Args:
+        syn: Synapse object
+        databasetosynid_mappingdf: database to synid mapping
+        oncotree_link: link to oncotree. Default is None
+
+    Returns:
+        oncotree link
+
+    """
+    if oncotree_link is None:
+        onco_link_ent = syn.get(genie_config["oncotreeLink"])
+        oncotree_link = onco_link_ent.externalURL
+    return oncotree_link
