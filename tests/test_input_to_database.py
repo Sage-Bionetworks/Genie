@@ -69,62 +69,6 @@ error_trackerdf = pd.DataFrame({
     'fileType': ['filetype1']})
 emptydf = pd.DataFrame(columns=['id'], dtype=str)
 
-GENIE_CONFIG = {
-    "vcf2maf": "syn22493903",
-    "cna": "syn11600835",
-    "bed": "syn11600834",
-    "seg": "syn11600836",
-    "fusions": "syn11600837",
-    "sample": "syn11600838",
-    "patient": "syn11600839",
-    "patientCounts": "syn11600832",
-    "mafSP": "syn11600810",
-    "mutationsInCis": "syn11601206",
-    "sampleRetraction": "syn11601155",
-    "patientRetraction": "syn11600807",
-    "vitalStatus": "syn11600808",
-    "bedSP": "syn11600809",
-    "validationStatus": "syn11601227",
-    "errorTracker": "syn11601244",
-    "centerMapping": "syn11601248",
-    "processTracker": "syn11604890",
-    "clinicalSP": "syn11600812",
-    "main": "syn7208886",
-    "dbMapping": "syn11600968",
-    "md": "syn11605077",
-    "consortium": "syn11605415",
-    "public": "syn11605416",
-    "release": "syn11607356",
-    "mafinbed": "syn11600814",
-    "fileview": "syn11608914",
-    "cbs": "syn11600836",
-    "vcf": "syn11608914",
-    "maf": "syn11608914",
-    "centerMaf": "syn12279903",
-    "centerMafView": "syn12292501",
-    "oncotreeLink": oncotree_link,
-    "releaseFolder": "syn17079016",
-    "assayinfo": "syn18404286",
-    "logs": "syn10155804",
-    "center_config": {
-        "SAGE": {
-            "center": "SAGE",
-            "inputSynId": "syn11601335",
-            "stagingSynId": "syn11601337",
-            "release": True,
-            "mutationInCisFilter": "ON"
-        },
-        "TEST": {
-            "center": "TEST",
-            "inputSynId": "syn11601340",
-            "stagingSynId": "syn11601342",
-            "release": True,
-            "mutationInCisFilter": "ON"
-        }
-    },
-    "genie_annotation_pkg": "/path/to/nexus"
-}
-
 
 class mock_csv_query_result(object):
 
@@ -397,7 +341,7 @@ def test_error_check_existing_file_status():
             emptydf, emptydf, entities)
 
 
-def test_valid_validatefile():
+def test_valid_validatefile(genie_config):
     '''
     Tests the behavior of a file that gets validated that becomes
     valid
@@ -437,7 +381,7 @@ def test_valid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, None, entities, validation_statusdf,
-            error_trackerdf, center, genie_config=GENIE_CONFIG
+            error_trackerdf, center, genie_config=genie_config
         )
 
         assert expected_results == validate_results
@@ -451,7 +395,7 @@ def test_valid_validatefile():
         patch_send_email.assert_not_called()
 
 
-def test_invalid_validatefile():
+def test_invalid_validatefile(genie_config):
     '''
     Tests the behavior of a file that gets validated that becomes
     invalid
@@ -506,7 +450,7 @@ def test_invalid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, None, entities, validation_statusdf,
-            error_trackerdf, center, genie_config=GENIE_CONFIG
+            error_trackerdf, center, genie_config=genie_config
         )
 
         assert expected_results == validate_results
@@ -833,15 +777,10 @@ class TestValidation:
         assert updated_tables['error_trackingdf'].empty
         assert updated_tables['validation_statusdf'].empty
 
-    def test_validation(self):
+    def test_validation(self, genie_config):
         """Test validation steps"""
         modified_on = 1561143558000
         process = "main"
-        databaseToSynIdMapping = {
-            'Database': ["clinical", 'validationStatus', 'errorTracker'],
-            'Id': ['syn222', 'syn333', 'syn444']
-        }
-        databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
         entity = synapseclient.Entity(id='syn1234', md5='44444',
                                       path='/path/to/foobar.txt',
                                       name='data_clinical_supp_SAGE.txt')
@@ -876,7 +815,7 @@ class TestValidation:
             valid_filedf = input_to_database.validation(
                 syn, "syn123", center, process,
                 entities, format_registry={"test": valiate_cls},
-                genie_config=GENIE_CONFIG
+                genie_config=genie_config
             )
             assert patch_query.call_count == 2
             patch_validatefile.assert_called_once_with(
@@ -887,7 +826,7 @@ class TestValidation:
                 error_tracker_table=errortracking_mock,
                 center='SAGE',
                 format_registry={"test": valiate_cls},
-                genie_config=GENIE_CONFIG
+                genie_config=genie_config
             )
 
             assert valid_filedf.equals(
@@ -901,7 +840,7 @@ class TestValidation:
         ('main', Mock(), 'maf'),
     ]
 )
-def test_main_processfile(process, genieclass, filetype):
+def test_main_processfile(genie_config, process, genieclass, filetype):
     validfiles = {'id': ['syn1'],
                   'path': ['/path/to/data_clinical_supp.txt'],
                   'fileType': [filetype],
@@ -919,12 +858,12 @@ def test_main_processfile(process, genieclass, filetype):
         databaseToSynIdMappingDf,
         processing=process,
         format_registry=format_registry,
-        genie_config=GENIE_CONFIG
+        genie_config=genie_config
     )
     genieclass.assert_called_once()
 
 
-def test_mainnone_processfile():
+def test_mainnone_processfile(genie_config):
     """If file type is None, the processing function is not called"""
     validfiles = {'id': ['syn1'],
                   'path': ['/path/to/data_clinical_supp_SAGE.txt'],
@@ -944,11 +883,11 @@ def test_mainnone_processfile():
             databaseToSynIdMappingDf,
             processing="main",
             format_registry={"main": process_cls},
-            genie_config=GENIE_CONFIG)
+            genie_config=genie_config)
         patch_clin.assert_not_called()
 
 
-def test_mutation_processfile():
+def test_mutation_processfile(genie_config):
     '''
     Make sure mutation is called correctly
     '''
@@ -970,7 +909,7 @@ def test_mutation_processfile():
             databaseToSynIdMappingDf,
             processing='mutation',
             format_registry={"vcf": process_cls},
-            genie_config=GENIE_CONFIG)
+            genie_config=genie_config)
         # TODO: fix hardcoding
         patch_process.assert_called_once_with(
             syn=syn,
