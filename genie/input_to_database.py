@@ -738,13 +738,14 @@ def center_input_to_database(
     """Processing per center
 
     Args:
-        syn (Synapse): _description_
-        project_id (str): _description_
-        center (str): _description_
-        process (str): _description_
-        only_validate (bool): _description_
-        delete_old (bool, optional): _description_. Defaults to False.
-        format_registry (typing.List, optional): _description_. Defaults to None.
+        syn (Synapse): Synapse connection
+        project_id (str): GENIE Synapse project id
+        center (str): GENIE center
+        process (str): main or mutation processing
+        only_validate (bool): Only validate or not
+        delete_old (bool, optional): Delete old files. Defaults to False.
+        format_registry (typing.List, optional): GENIE file format registry.
+                                                 Defaults to None.
         genie_config (typing.Dict, optional): See example of genie config at
                                               ./genie_config.json. Defaults to None.
     """
