@@ -1044,8 +1044,15 @@ def synLogin(pemfile_path, debug=False):
     """
     try:
         syn = synapseclient.Synapse(debug=debug)
-        syn.login()
+        # Get auth token via scheduled job secrets
+        if os.getenv("SCHEDULED_JOB_SECRETS") is not None:
+            secrets = json.loads(os.getenv("SCHEDULED_JOB_SECRETS"))
+            auth_token = secrets["SYNAPSE_AUTH_TOKEN"]
+        else:
+            auth_token = None
+        syn.login(authToken=auth_token)
     except Exception:
+        # TODO: deprecate this feature soon
         genie_pass = get_password(pemfile_path)
         syn = synapseclient.Synapse(debug=debug)
         syn.login(os.environ["GENIE_USER"], genie_pass)
