@@ -87,7 +87,7 @@ def main(
         raise ValueError("Must define genie annotation pkg if mutation processing")
     genie_config["genie_annotation_pkg"] = genie_annotation_pkg
 
-    # HACK: Not sure if this is needed anymore
+    # HACK: This is essential, because Synapse has concurrency update issues
     center_mapping_ent = syn.get(genie_config["centerMapping"])
     if center_mapping_ent.get("isProcessing", ["True"])[0] == "True":
         raise Exception(
