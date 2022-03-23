@@ -87,9 +87,7 @@ def main(
     if oncotree_link is None:
         onco_link_ent = syn.get(genie_config["oncotreeLink"])
         oncotree_link = onco_link_ent.externalURL
-        genie_config["oncotreeLink"] = onco_link_ent.externalURL
-    else:
-        genie_config["oncotreeLink"] = oncotree_link
+    genie_config["oncotreeLink"] = oncotree_link
     # Check if you can connect to oncotree link,
     # if not then don't run validation / processing
     process_functions.checkUrl(genie_config["oncotreeLink"])
