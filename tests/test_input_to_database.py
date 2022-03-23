@@ -69,6 +69,62 @@ error_trackerdf = pd.DataFrame({
     'fileType': ['filetype1']})
 emptydf = pd.DataFrame(columns=['id'], dtype=str)
 
+GENIE_CONFIG = {
+    "vcf2maf": "syn22493903",
+    "cna": "syn11600835",
+    "bed": "syn11600834",
+    "seg": "syn11600836",
+    "fusions": "syn11600837",
+    "sample": "syn11600838",
+    "patient": "syn11600839",
+    "patientCounts": "syn11600832",
+    "mafSP": "syn11600810",
+    "mutationsInCis": "syn11601206",
+    "sampleRetraction": "syn11601155",
+    "patientRetraction": "syn11600807",
+    "vitalStatus": "syn11600808",
+    "bedSP": "syn11600809",
+    "validationStatus": "syn11601227",
+    "errorTracker": "syn11601244",
+    "centerMapping": "syn11601248",
+    "processTracker": "syn11604890",
+    "clinicalSP": "syn11600812",
+    "main": "syn7208886",
+    "dbMapping": "syn11600968",
+    "md": "syn11605077",
+    "consortium": "syn11605415",
+    "public": "syn11605416",
+    "release": "syn11607356",
+    "mafinbed": "syn11600814",
+    "fileview": "syn11608914",
+    "cbs": "syn11600836",
+    "vcf": "syn11608914",
+    "maf": "syn11608914",
+    "centerMaf": "syn12279903",
+    "centerMafView": "syn12292501",
+    "oncotreeLink": "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2020_10_01",
+    "releaseFolder": "syn17079016",
+    "assayinfo": "syn18404286",
+    "logs": "syn10155804",
+    "center_config": {
+        "SAGE": {
+            "center": "SAGE",
+            "inputSynId": "syn11601335",
+            "stagingSynId": "syn11601337",
+            "release": True,
+            "mutationInCisFilter": "ON"
+        },
+        "TEST": {
+            "center": "TEST",
+            "inputSynId": "syn11601340",
+            "stagingSynId": "syn11601342",
+            "release": True,
+            "mutationInCisFilter": "ON"
+        }
+    },
+    "genie_annotation_pkg": "/path/to/nexus"
+}
+
 
 class mock_csv_query_result(object):
 
@@ -853,10 +909,6 @@ def test_main_processfile(process, genieclass, filetype):
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    oncotree_link = "www.google.com"
-    center_mapping = {'stagingSynId': ["syn123"],
-                      'center': [center]}
-    center_mapping_df = pd.DataFrame(center_mapping)
     databaseToSynIdMapping = {'Database': [filetype],
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
@@ -864,9 +916,10 @@ def test_main_processfile(process, genieclass, filetype):
 
     input_to_database.processfiles(
         syn, validfilesdf, center, path_to_genie,
-        center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
+        databaseToSynIdMappingDf,
         processing=process,
-        format_registry=format_registry
+        format_registry=format_registry,
+        genie_config=GENIE_CONFIG
     )
     genieclass.assert_called_once()
 
@@ -880,10 +933,6 @@ def test_mainnone_processfile():
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    oncotree_link = "www.google.com"
-    center_mapping = {'stagingSynId': ["syn123"],
-                      'center': [center]}
-    center_mapping_df = pd.DataFrame(center_mapping)
     databaseToSynIdMapping = {'Database': ["clinical"],
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
@@ -892,9 +941,10 @@ def test_mainnone_processfile():
     with patch.object(Clinical, "process") as patch_clin:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie,
-            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
+            databaseToSynIdMappingDf,
             processing="main",
-            format_registry={"main": process_cls})
+            format_registry={"main": process_cls},
+            genie_config=GENIE_CONFIG)
         patch_clin.assert_not_called()
 
 
@@ -908,10 +958,6 @@ def test_mutation_processfile():
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    oncotree_link = "www.google.com"
-    center_mapping = {'stagingSynId': ["syn123"],
-                      'center': [center]}
-    center_mapping_df = pd.DataFrame(center_mapping)
     databaseToSynIdMapping = {'Database': ['vcf'],
                               'Id': ['syn222']}
     databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
@@ -921,10 +967,10 @@ def test_mutation_processfile():
                       "process_mutation_workflow") as patch_process:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie,
-            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
+            databaseToSynIdMappingDf,
             processing='mutation',
-            genome_nexus_pkg="/path/to/nexus",
-            format_registry={"vcf": process_cls})
+            format_registry={"vcf": process_cls},
+            genie_config=GENIE_CONFIG)
         # TODO: fix hardcoding
         patch_process.assert_called_once_with(
             syn=syn,
