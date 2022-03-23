@@ -100,7 +100,7 @@ def test_warning_collect_errors_and_warnings():
         'warning\nnow')
 
 
-def test_valid_validate_single_file():
+def test_valid_validate_single_file(genie_config):
     """
     Tests that all the functions are run in validate single
     file workflow and all the right things are returned
@@ -125,7 +125,8 @@ def test_valid_validate_single_file():
             syn, project_id="syn1234",
             center=CENTER,
             entitylist=entitylist,
-            format_registry={'clinical': FileFormat}
+            format_registry={'clinical': FileFormat},
+            genie_config=genie_config
         )
         valid, message = validator.validate_single_file(nosymbol_check=False)
 
