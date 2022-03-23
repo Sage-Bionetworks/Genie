@@ -143,12 +143,10 @@ class cna(FileTypeFormat):
 
         return cnaDf
 
-    def process_steps(self, cnaDf, newPath, databaseToSynIdMappingDf):
-        newCNA = self._process(cnaDf, databaseToSynIdMappingDf)
+    def process_steps(self, cnaDf, newPath):
+        newCNA = self._process(cnaDf)
 
-        centerMafSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf["Database"] == "centerMaf"
-        ][0]
+        centerMafSynId = self.genie_config['centerMaf']
         if not newCNA.empty:
             cnaText = process_functions.removePandasDfFloat(newCNA)
             # Replace blank with NA's
