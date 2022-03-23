@@ -362,7 +362,6 @@ def processfiles(
                     parentId=center_staging_synid,
                     databaseSynId=tableid,
                     fileSynId=row["id"],
-                    databaseToSynIdMappingDf=databaseToSynIdMappingDf,
                 )
     else:
         process_mutation.process_mutation_workflow(

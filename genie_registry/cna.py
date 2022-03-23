@@ -92,7 +92,7 @@ class cna(FileTypeFormat):
 
     _fileType = "cna"
 
-    _process_kwargs = ["newPath", "databaseToSynIdMappingDf"]
+    _process_kwargs = ["newPath"]
 
     _validation_kwargs = ["nosymbol_check", "project_id"]
 
@@ -100,7 +100,7 @@ class cna(FileTypeFormat):
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "data_CNA_{}.txt".format(self.center)
 
-    def _process(self, cnaDf, databaseToSynIdMappingDf):
+    def _process(self, cnaDf):
         cnaDf.rename(columns={cnaDf.columns[0]: cnaDf.columns[0].upper()}, inplace=True)
         cnaDf.rename(columns={"HUGO_SYMBOL": "Hugo_Symbol"}, inplace=True)
 
@@ -110,13 +110,9 @@ class cna(FileTypeFormat):
         if len(index) > 0:
             del cnaDf[cnaDf.columns[index][0]]
 
-        bedSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf["Database"] == "bed"
-        ][0]
+        bedSynId = self.genie_config['bed']
         bed = self.syn.tableQuery(
-            "select Hugo_Symbol, ID from {} where CENTER = '{}'".format(
-                bedSynId, self.center
-            )
+            f"select Hugo_Symbol, ID from {bedSynId} where CENTER = '{self.center}'"
         )
         bedDf = bed.asDataFrame()
         cnaDf["Hugo_Symbol"] = cnaDf["Hugo_Symbol"].apply(

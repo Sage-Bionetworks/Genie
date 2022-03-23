@@ -62,7 +62,7 @@ class fusions(FileTypeFormat):
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "data_fusions_%s.txt" % self.center
 
-    def _process(self, fusion, databaseToSynIdMappingDf):
+    def _process(self, fusion):
         fusion.columns = [col.upper() for col in fusion.columns]
         fusion["CENTER"] = self.center
         newsamples = [
@@ -79,12 +79,9 @@ class fusions(FileTypeFormat):
         fusion["ENTREZ_GENE_ID"] = fusion["ENTREZ_GENE_ID"].fillna(0)
         fusion = fusion.drop_duplicates()
         fusion["ID"] = fusion["HUGO_SYMBOL"].copy()
-        bedSynId = process_functions.getDatabaseSynId(
-            self.syn, "bed", databaseToSynIdMappingDf=databaseToSynIdMappingDf
-        )
+        bedSynId = self.genie_config['bed']
         bed = self.syn.tableQuery(
-            "select Hugo_Symbol, ID from %s where CENTER = '%s'"
-            % (bedSynId, self.center)
+            f"select Hugo_Symbol, ID from {bedSynId} where CENTER = '{self.center}'"
         )
         bedDf = bed.asDataFrame()
         fusion = fusion.apply(lambda x: validateSymbol(x, bedDf), axis=1)
