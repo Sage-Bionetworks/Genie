@@ -102,7 +102,7 @@ GENIE_CONFIG = {
     "maf": "syn11608914",
     "centerMaf": "syn12279903",
     "centerMafView": "syn12292501",
-    "oncotreeLink": "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2020_10_01",
+    "oncotreeLink": oncotree_link,
     "releaseFolder": "syn17079016",
     "assayinfo": "syn18404286",
     "logs": "syn10155804",
@@ -412,7 +412,6 @@ def test_valid_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    threads = 0
     valid = True
     message = "Is valid"
     filetype = "clinical"
@@ -438,7 +437,8 @@ def test_valid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, None, entities, validation_statusdf,
-            error_trackerdf, center, threads, oncotree_link)
+            error_trackerdf, center, genie_config=GENIE_CONFIG
+        )
 
         assert expected_results == validate_results
         patch_validate.assert_called_once_with(
@@ -466,7 +466,6 @@ def test_invalid_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    threads = 0
     valid = False
     message = "Is invalid"
     filetype = "clinical"
@@ -507,7 +506,7 @@ def test_invalid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, None, entities, validation_statusdf,
-            error_trackerdf, center, threads, oncotree_link
+            error_trackerdf, center, genie_config=GENIE_CONFIG
         )
 
         assert expected_results == validate_results
