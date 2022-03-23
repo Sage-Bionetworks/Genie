@@ -158,22 +158,6 @@ def checkUrl(url):
     assert temp.status_code == 200, "%s site is down" % url
 
 
-def getGenieMapping(syn, synId):
-    """
-    This function gets the GENIE mapping tables
-
-    Args:
-        synId: Synapse Id of synapse table
-
-    Returns:
-        df: Table dataframe
-    """
-    table_ent = syn.tableQuery("SELECT * FROM %s" % synId)
-    table = table_ent.asDataFrame()
-    table = table.fillna("")
-    return table
-
-
 def checkColExist(DF, key):
     """
     This function checks if the column exists in a dataframe
