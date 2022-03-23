@@ -183,7 +183,13 @@ class cna(FileTypeFormat):
 
         if process_functions.checkColExist(cnvDF, "ENTREZ_GENE_ID"):
             del cnvDF["ENTREZ_GENE_ID"]
-
+        error = process_functions.validate_genie_identifier(
+            identifiers=cnvDF.columns,
+            center=self.center,
+            filename="cnv",
+            col="samples"
+        )
+        total_error += error
         # cnvDF = cnvDF.fillna('')
         allowed_values = [
             "-2.0",
