@@ -328,8 +328,6 @@ class Clinical(FileTypeFormat):
         # Remove unwanted clinical columns prior to update
         # clinicalMerged = clinicalMerged.drop(clinicalMerged.columns[
         #    ~clinicalMerged.columns.isin(clinicalTemplate.columns)],1)
-        # TODO: add to genie config
-        # TODO: Use process_functions.get_syntabledf function
         ethnicity_mapping = process_functions.get_syntabledf(
             self.syn, f"select * from {self.genie_config['ethnicity_mapping']}"
         )
