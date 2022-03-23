@@ -876,18 +876,19 @@ class TestValidation:
 
             valid_filedf = input_to_database.validation(
                 syn, "syn123", center, process,
-                entities, databaseToSynIdMappingDf,
-                oncotree_link,
-                format_registry={"test": valiate_cls}
+                entities, format_registry={"test": valiate_cls},
+                genie_config=GENIE_CONFIG
             )
             assert patch_query.call_count == 2
             patch_validatefile.assert_called_once_with(
-                syn, "syn123", entity,
-                validationstatus_mock,
-                errortracking_mock,
-                center='SAGE', threads=1,
-                oncotree_link=oncotree_link,
-                format_registry={"test": valiate_cls}
+                syn=syn,
+                project_id="syn123",
+                entities=entity,
+                validation_status_table=validationstatus_mock,
+                error_tracker_table=errortracking_mock,
+                center='SAGE',
+                format_registry={"test": valiate_cls},
+                genie_config=GENIE_CONFIG
             )
 
             assert valid_filedf.equals(
