@@ -279,12 +279,12 @@ def validatefile(
         center=center,
         entitylist=entities,
         format_registry=format_registry,
-        genie_config=genie_config
+        genie_config=genie_config,
     )
     filetype = validator.file_type
     if check_file_status["to_validate"]:
         valid, message = validator.validate_single_file(
-            oncotree_link=genie_config['oncotreeLink'], nosymbol_check=False
+            oncotree_link=genie_config["oncotreeLink"], nosymbol_check=False
         )
         logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
@@ -321,7 +321,7 @@ def processfiles(
     databaseToSynIdMappingDf,
     processing="main",
     format_registry=None,
-    genie_config=None
+    genie_config=None,
 ):
     """Processing validated files
 
@@ -338,7 +338,7 @@ def processfiles(
     """
     logger.info(f"PROCESSING {center} FILES: {len(validfiles)}")
     center_staging_folder = os.path.join(path_to_genie, center)
-    center_staging_synid = genie_config['center_config'][center]['stagingSynId']
+    center_staging_synid = genie_config["center_config"][center]["stagingSynId"]
 
     if not os.path.exists(center_staging_folder):
         os.makedirs(center_staging_folder)
@@ -369,7 +369,7 @@ def processfiles(
             syn=syn,
             center=center,
             validfiles=validfiles,
-            genie_annotation_pkg=genie_config['genie_annotation_pkg'],
+            genie_annotation_pkg=genie_config["genie_annotation_pkg"],
             database_mappingdf=databaseToSynIdMappingDf,
             workdir=path_to_genie,
         )
@@ -624,13 +624,7 @@ def _update_tables_content(validation_statusdf, error_trackingdf):
 
 
 def validation(
-    syn,
-    project_id,
-    center,
-    process,
-    center_files,
-    format_registry,
-    genie_config
+    syn, project_id, center, process, center_files, format_registry, genie_config
 ) -> pd.DataFrame:
     """
     Validation of all center files
@@ -647,8 +641,8 @@ def validation(
         pd.DataFrame: Dataframe of valid GENIE files
     """
     logger.info(f"{center} has uploaded {len(center_files)} files.")
-    validation_status_synid = genie_config['validationStatus']
-    error_tracker_synid = genie_config['errorTracker']
+    validation_status_synid = genie_config["validationStatus"]
+    error_tracker_synid = genie_config["errorTracker"]
 
     # Make sure the vcf validation statuses don't get wiped away
     # If process is not vcf, the vcf files are not downloaded
@@ -681,7 +675,7 @@ def validation(
             error_tracker_table=error_tracker_table,
             center=center,
             format_registry=format_registry,
-            genie_config=genie_config
+            genie_config=genie_config,
         )
 
         input_valid_statuses.extend(status)
@@ -742,7 +736,7 @@ def center_input_to_database(
     database_to_synid_mappingdf: pd.DataFrame,
     delete_old: bool = False,
     format_registry: list = None,
-    genie_config: dict = None
+    genie_config: dict = None,
 ):
     """Processing per center
 
@@ -799,7 +793,7 @@ def center_input_to_database(
     if delete_old:
         process_functions.rmFiles(os.path.join(path_to_genie, center))
 
-    center_input_synid = genie_config['center_config'][center]['inputSynId']
+    center_input_synid = genie_config["center_config"][center]["inputSynId"]
     logger.info("Center: " + center)
     center_files = get_center_input_files(syn, center_input_synid, center, process)
 
@@ -812,7 +806,7 @@ def center_input_to_database(
             process=process,
             center_files=center_files,
             format_registry=format_registry,
-            genie_config=genie_config
+            genie_config=genie_config,
         )
     else:
         logger.info(f"{center} has not uploaded any files")
@@ -834,14 +828,15 @@ def center_input_to_database(
             merged_clinical["name"] = f"data_clinical_supp_{center}.txt"
             validFiles = pd.concat([validFiles[~clinical_ind], merged_clinical])
 
-        processTrackerSynId = genie_config['processTracker']
+        processTrackerSynId = genie_config["processTracker"]
         # Add process tracker for time start
         processTrackerDf = process_functions.get_syntabledf(
-            syn=syn, query_string=(
+            syn=syn,
+            query_string=(
                 f"SELECT timeStartProcessing FROM {processTrackerSynId} "
                 f"where center = '{center}' and "
                 f"processingType = '{process}'"
-            )
+            ),
         )
         if processTrackerDf.empty:
             new_rows = [
@@ -869,16 +864,17 @@ def center_input_to_database(
             databaseToSynIdMappingDf=database_to_synid_mappingdf,
             processing=process,
             format_registry=format_registry,
-            genie_config=genie_config
+            genie_config=genie_config,
         )
 
         # Should add in this process end tracking before the deletion of samples
         processTrackerDf = process_functions.get_syntabledf(
-            syn=syn, query_string=(
+            syn=syn,
+            query_string=(
                 f"SELECT timeEndProcessing FROM {processTrackerSynId} "
                 f"where center = '{center}' and "
                 f"processingType = '{process}'"
-            )
+            ),
         )
         processTrackerDf["timeEndProcessing"].iloc[0] = str(int(time.time() * 1000))
         syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
@@ -888,12 +884,13 @@ def center_input_to_database(
 
     else:
         messageOut = (
-            f"{center} does not have any valid files" if not only_validate
+            f"{center} does not have any valid files"
+            if not only_validate
             else f"ONLY VALIDATION OCCURED FOR {center}"
         )
         logger.info(messageOut)
 
     # Store and remove log file
-    syn.store(synapseclient.File(log_path, parentId=genie_config['logs']))
+    syn.store(synapseclient.File(log_path, parentId=genie_config["logs"]))
     os.remove(log_path)
     logger.info("ALL PROCESSES COMPLETE")

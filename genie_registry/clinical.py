@@ -403,8 +403,8 @@ class Clinical(FileTypeFormat):
         """Process clincial file, redact PHI values, upload to clinical
         database
         """
-        patient_synid = self.genie_config['patient']
-        sample_synid = self.genie_config['sample']
+        patient_synid = self.genie_config["patient"]
+        sample_synid = self.genie_config["sample"]
 
         newClinicalDf = self._process(clinicalDf, clinicalTemplate)
         newClinicalDf = redact_phi(newClinicalDf)
@@ -434,7 +434,7 @@ class Clinical(FileTypeFormat):
             # Exclude all clinical samples with wrong oncotree codes
             oncotree_mapping = pd.DataFrame()
             oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(
-                self.genie_config['oncotreeLink']
+                self.genie_config["oncotreeLink"]
             )
             # Add in unknown key for oncotree code
             oncotree_mapping_dict["UNKNOWN"] = {}
@@ -487,7 +487,7 @@ class Clinical(FileTypeFormat):
         clinicaldf = clinicaldf.fillna("")
 
         oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(
-            self.genie_config['oncotreeLink']
+            self.genie_config["oncotreeLink"]
         )
         oncotree_mapping = pd.DataFrame(
             {"ONCOTREE_CODE": list(oncotree_mapping_dict.keys())}

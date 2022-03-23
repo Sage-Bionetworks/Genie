@@ -19,8 +19,14 @@ class ValidationHelper(object):
     _validate_kwargs = []
 
     def __init__(
-        self, syn, project_id, center, entitylist, format_registry=None, file_type=None,
-        genie_config=None
+        self,
+        syn,
+        project_id,
+        center,
+        entitylist,
+        format_registry=None,
+        file_type=None,
+        genie_config=None,
     ):
         """A validator helper class for a center's files.
 
@@ -91,8 +97,9 @@ class ValidationHelper(object):
 
             validator_cls = self._format_registry[self.file_type]
             validator = validator_cls(
-                syn=self._synapse_client, center=self.center,
-                genie_config=self.genie_config
+                syn=self._synapse_client,
+                center=self.center,
+                genie_config=self.genie_config,
             )
             filepathlist = [entity.path for entity in self.entitylist]
             valid, errors, warnings = validator.validate(
@@ -138,24 +145,6 @@ def collect_errors_and_warnings(errors, warnings):
                 logger.warning(warning)
         message += "-------------WARNINGS-------------\n" + warnings
     return message
-
-
-def get_config(syn, synid):
-    """Gets Synapse database to Table mapping in dict
-
-    Args:
-        syn: Synapse connection
-        synid: Synapse id of database mapping table
-
-    Returns:
-        dict: {'databasename': 'synid'}
-
-    """
-    config = syn.tableQuery("SELECT * FROM {}".format(synid))
-    configdf = config.asDataFrame()
-    configdf.index = configdf["Database"]
-    config_dict = configdf.to_dict()
-    return config_dict["Id"]
 
 
 def _check_parentid_permission_container(syn, parentid):

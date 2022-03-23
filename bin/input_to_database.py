@@ -12,13 +12,12 @@ from genie import (
     input_to_database,
     process_functions,
     write_invalid_reasons,
-    validate
+    validate,
 )
 
 logger = logging.getLogger(__name__)
 
 
-# TODO: Remove oncotree_link
 def main(
     process: str,
     project_id: str,
@@ -32,7 +31,7 @@ def main(
     debug=False,
     format_registry=None,
 ):
-    """_summary_
+    """Invoke the GENIE ETL pipeline from data input files to synapse tables
 
     Args:
         process (str): main or mutation processing
@@ -52,8 +51,8 @@ def main(
                                          Defaults to None.
 
     Raises:
-        ValueError: _description_
-        Exception: _description_
+        ValueError: If invalid center name is specified
+        Exception: If processing is already happening.
     """
 
     syn = process_functions.synLogin(pemfile, debug=debug)
@@ -64,72 +63,54 @@ def main(
 
     # Get project GENIE configurations
     database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
-    genie_config = validate.get_config(
-        syn=syn, synid=database_to_synid_mapping_synid[0]
-    )
 
     # TODO: remove this once code is using genie config
     databaseToSynIdMappingDf = process_functions.get_syntabledf(
         syn=syn, query_string=f"SELECT * FROM {database_to_synid_mapping_synid[0]}"
     )
-
-    center_mapping_id = genie_config['centerMapping']
-    center_mapping_df = process_functions.get_syntabledf(
-        syn=syn,
-        query_string=f"SELECT * FROM {center_mapping_id} where release is true"
-    )
+    genie_config = process_functions.get_genie_config(syn=syn, project_id=project_id)
 
     # Filter for specific center
     if center is not None:
-        if center not in center_mapping_df.center.tolist():
-            raise ValueError("Must specify one of these centers: {}".format(
-                ", ".join(center_mapping_df.center)
-            ))
-        center_mapping_df = center_mapping_df[center_mapping_df['center'] == center]
+        if center not in genie_config["center_config"].keys():
+            raise ValueError(
+                "Must specify one of these centers: {}".format(
+                    ", ".join(genie_config["center_config"].keys())
+                )
+            )
         centers = [center]
     else:
-        # exclude_sites = ['JHU', 'DFCI', 'GRCC', 'VICC', 'NKI', 'MSK',
-        #                  'UHN', 'MDA', 'WAKE', 'YALE', 'UCSF', 'CRUK',
-        #                  'CHOP', 'VHIO', 'SCI', 'PHS', 'COLU', 'UCHI']
-        # center_mapping_df = center_mapping_df[~center_mapping_df["inputSynId"].isnull()]
-        # release is a bool column
-        # center_mapping_df = center_mapping_df[center_mapping_df["release"]]
-        # center_mapping_df = center_mapping_df[
-        #     ~center_mapping_df['center'].isin(exclude_sites)
-        # ]
-        centers = center_mapping_df.center
-    center_mapping_df.index = center_mapping_df.center
-    # TODO: remove this after code uses genie_config
-    # del center_mapping_df['center']
-    # Add center configurations including input/staging synapse ids
-    genie_config['center_config'] = center_mapping_df.to_dict('index')
+        # TODO: add in logic to exclude sites from processing
+        centers = list(genie_config["center_config"].keys())
 
-    # Get actual oncotree link
+    # HACK: Modify oncotree link config
     if oncotree_link is None:
-        onco_link_ent = syn.get(genie_config['oncotreeLink'])
+        onco_link_ent = syn.get(genie_config["oncotreeLink"])
         oncotree_link = onco_link_ent.externalURL
-        genie_config['oncotreeLink'] = onco_link_ent.externalURL
+        genie_config["oncotreeLink"] = onco_link_ent.externalURL
     else:
-        genie_config['oncotreeLink'] = oncotree_link
+        genie_config["oncotreeLink"] = oncotree_link
     # Check if you can connect to oncotree link,
     # if not then don't run validation / processing
-    process_functions.checkUrl(genie_config['oncotreeLink'])
+    process_functions.checkUrl(genie_config["oncotreeLink"])
 
-    # Add genie annotation package to config
-    genie_config['genie_annotation_pkg'] = genie_annotation_pkg
+    # HACK: Add genie annotation package to config
+    genie_config["genie_annotation_pkg"] = genie_annotation_pkg
 
-    center_mapping_ent = syn.get(center_mapping_id)
+    # HACK: Not sure if this is needed anymore
+    center_mapping_ent = syn.get(genie_config["centerMapping"])
     if center_mapping_ent.get("isProcessing", ["True"])[0] == "True":
         raise Exception(
-            "Processing/validation is currently happening.  "
-            f"Please change/add the 'isProcessing' annotation on {center_mapping_id} "
+            "Processing/validation is currently happening.  Please change/add the "
+            f"'isProcessing' annotation on {genie_config['centerMapping']} "
             "to False to enable processing"
         )
     else:
         center_mapping_ent.isProcessing = "True"
         center_mapping_ent = syn.store(center_mapping_ent)
 
-    # Create new maf database, should only happen once if its specified
+    # HACK: Create new maf database, should only happen once if its specified
+    # Will modify genie configuration
     if create_new_maf_database:
         today = date.today()
         table_name = f"Narrow MAF Database - {today}"
@@ -140,7 +121,7 @@ def main(
         )
         syn.setPermissions(new_tables["newdb_ent"].id, 3326313, [])
         databaseToSynIdMappingDf = new_tables["newdb_mappingdf"]
-        genie_config['vcf2maf'] = new_tables["newdb_ent"].id
+        genie_config["vcf2maf"] = new_tables["newdb_ent"].id
 
     # Get file format classes
     format_registry = config.collect_format_types(args.format_registry_packages)
@@ -156,20 +137,22 @@ def main(
             database_to_synid_mappingdf=databaseToSynIdMappingDf,
             delete_old=delete_old,
             format_registry=format_registry,
-            genie_config=genie_config
+            genie_config=genie_config,
         )
 
-    # To ensure that this is the new entity
-    center_mapping_ent = syn.get(center_mapping_id)
+    # HACK: To ensure that this is the new entity
+    center_mapping_ent = syn.get(genie_config["centerMapping"])
     center_mapping_ent.isProcessing = "False"
     center_mapping_ent = syn.store(center_mapping_ent)
 
-    error_tracker_synid = genie_config['errorTracker']
+    error_tracker_synid = genie_config["errorTracker"]
     # Only write out invalid reasons if the center
     # isnt specified and if only validate
     if center is None and only_validate:
         logger.info("WRITING INVALID REASONS TO CENTER STAGING DIRS")
-        write_invalid_reasons.write(syn, center_mapping_df, error_tracker_synid)
+        write_invalid_reasons.write(
+            syn, genie_config["centerMapping"], error_tracker_synid
+        )
     logger.info("INPUT TO DATABASE COMPLETE")
 
 

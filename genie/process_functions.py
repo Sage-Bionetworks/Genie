@@ -1220,3 +1220,52 @@ def create_new_fileformat_table(
         "newdb_mappingdf": newdb_mappingdf,
         "moved_ent": moved_ent,
     }
+
+
+def get_database_mapping_config(syn: Synapse, synid: str) -> dict:
+    """Gets Synapse database to Table mapping in dict
+
+    Args:
+        syn: Synapse connection
+        synid: Synapse id of database mapping table
+
+    Returns:
+        dict: {'databasename': 'synid'}
+    """
+    config = syn.tableQuery(f"SELECT * FROM {synid}")
+    configdf = config.asDataFrame()
+    configdf.index = configdf["Database"]
+    config_dict = configdf.to_dict()
+    return config_dict["Id"]
+
+
+def get_genie_config(
+    syn: Synapse,
+    project_id: str,
+) -> dict:
+    """Get configurations needed for the GENIE codebase
+
+    Args:
+        syn (Synapse): Synapse connection
+        project_id (str): Synapse project id
+
+    Returns:
+        dict: _description_
+    """
+    project = syn.get(project_id)
+
+    # Get project GENIE configurations
+    database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
+    genie_config = get_database_mapping_config(
+        syn=syn, synid=database_to_synid_mapping_synid[0]
+    )
+    # Fill in GENIE center configurations
+    center_mapping_id = genie_config["centerMapping"]
+    center_mapping_df = get_syntabledf(
+        syn=syn, query_string=f"SELECT * FROM {center_mapping_id} where release is true"
+    )
+    center_mapping_df.index = center_mapping_df.center
+    # Add center configurations including input/staging synapse ids
+    genie_config["center_config"] = center_mapping_df.to_dict("index")
+
+    return genie_config
