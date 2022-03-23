@@ -83,6 +83,8 @@ def main(
     process_functions.checkUrl(genie_config["oncotreeLink"])
 
     # HACK: Add genie annotation package to config
+    if process == "mutation" and genie_annotation_pkg is None:
+        raise ValueError("Must define genie annotation pkg if mutation processing")
     genie_config["genie_annotation_pkg"] = genie_annotation_pkg
 
     # HACK: Not sure if this is needed anymore
