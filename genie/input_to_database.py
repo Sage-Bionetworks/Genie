@@ -318,7 +318,6 @@ def processfiles(
     validfiles,
     center,
     path_to_genie,
-    databaseToSynIdMappingDf,
     processing="main",
     format_registry=None,
     genie_config=None,
@@ -369,8 +368,7 @@ def processfiles(
             syn=syn,
             center=center,
             validfiles=validfiles,
-            genie_annotation_pkg=genie_config["genie_annotation_pkg"],
-            database_mappingdf=databaseToSynIdMappingDf,
+            genie_config=genie_config,
             workdir=path_to_genie,
         )
 
@@ -733,7 +731,6 @@ def center_input_to_database(
     center: str,
     process: str,
     only_validate: bool,
-    database_to_synid_mappingdf: pd.DataFrame,
     delete_old: bool = False,
     format_registry: list = None,
     genie_config: dict = None,
@@ -746,11 +743,7 @@ def center_input_to_database(
         center (str): _description_
         process (str): _description_
         only_validate (bool): _description_
-        database_to_synid_mappingdf (pd.DataFrame): _description_
-        center_mapping_df (pd.DataFrame): _description_
         delete_old (bool, optional): _description_. Defaults to False.
-        oncotree_link (str, optional): _description_. Defaults to None.
-        genie_annotation_pkg (str, optional): _description_. Defaults to None.
         format_registry (typing.List, optional): _description_. Defaults to None.
         genie_config (typing.Dict, optional): See example of genie config at
                                               ./genie_config.json. Defaults to None.
@@ -861,7 +854,6 @@ def center_input_to_database(
             validfiles=validFiles,
             center=center,
             path_to_genie=path_to_genie,
-            databaseToSynIdMappingDf=database_to_synid_mappingdf,
             processing=process,
             format_registry=format_registry,
             genie_config=genie_config,

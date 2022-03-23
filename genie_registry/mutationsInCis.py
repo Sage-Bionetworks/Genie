@@ -19,7 +19,7 @@ class mutationsInCis(FileTypeFormat):
 
     _fileType = "mutationsInCis"
 
-    _validation_kwargs = ["project_id"]
+    _validation_kwargs = []
 
     def _get_dataframe(self, filePathList):
         """
@@ -41,15 +41,8 @@ class mutationsInCis(FileTypeFormat):
         mutationInCis.to_csv(newPath, sep="\t", index=False)
         return newPath
 
-    def _validate(self, mutationInCisDf, project_id):
-        databaseToSynIdMappingDf = process_functions.get_synid_database_mappingdf(
-            self.syn, project_id
-        )
-        mutationInCisSynId = process_functions.getDatabaseSynId(
-            self.syn,
-            "mutationsInCis",
-            databaseToSynIdMappingDf=databaseToSynIdMappingDf,
-        )
+    def _validate(self, mutationInCisDf):
+        mutationInCisSynId = self.genie_config['mutationsInCis']
         # Pull down the correct database
         existingMergeCheck = self.syn.tableQuery(
             "select * from {} where Center = '{}'".format(

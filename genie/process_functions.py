@@ -1252,6 +1252,8 @@ def get_genie_config(
     Returns:
         dict: _description_
     """
+    # Get the Synapse Project where data is stored
+    # Should have annotations to find the table lookup
     project = syn.get(project_id)
 
     # Get project GENIE configurations

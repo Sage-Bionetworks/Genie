@@ -94,7 +94,7 @@ class cna(FileTypeFormat):
 
     _process_kwargs = ["newPath"]
 
-    _validation_kwargs = ["nosymbol_check", "project_id"]
+    _validation_kwargs = ["nosymbol_check"]
 
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
@@ -160,7 +160,7 @@ class cna(FileTypeFormat):
             self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
         return newPath
 
-    def _validate(self, cnvDF, nosymbol_check, project_id):
+    def _validate(self, cnvDF, nosymbol_check):
         total_error = ""
         warning = ""
         cnvDF.columns = [col.upper() for col in cnvDF.columns]

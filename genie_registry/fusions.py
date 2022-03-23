@@ -54,7 +54,7 @@ class fusions(FileTypeFormat):
 
     _fileType = "fusions"
 
-    _process_kwargs = ["newPath", "databaseSynId", "databaseToSynIdMappingDf"]
+    _process_kwargs = ["newPath", "databaseSynId"]
 
     _validation_kwargs = ["nosymbol_check", "project_id"]
 
