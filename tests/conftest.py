@@ -58,6 +58,10 @@ def genie_config():
                 "mutationInCisFilter": "ON"
             }
         },
-        "genie_annotation_pkg": "/path/to/nexus"
+        "genie_annotation_pkg": "/path/to/nexus",
+        "ethnicity_mapping": "syn7434242",
+        "race_mapping": "syn7434236",
+        "sex_mapping": "syn7434222",
+        "sampletype_mapping": "syn7434273",
     }
     return config

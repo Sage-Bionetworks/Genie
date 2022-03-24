@@ -31,10 +31,10 @@ sexdf = pd.DataFrame(dict(
     DESCRIPTION=['Male', 'Female', 'Not coded']))
 
 table_query_results_map = {
-    ("SELECT * FROM syn7434222",): createMockTable(sexdf),
-    ("SELECT * FROM syn7434236",): createMockTable(no_nan),
-    ("SELECT * FROM syn7434242",): createMockTable(no_nan),
-    ("SELECT * FROM syn7434273",): createMockTable(no_nan)}
+    ("select * from syn7434222",): createMockTable(sexdf),
+    ("select * from syn7434236",): createMockTable(no_nan),
+    ("select * from syn7434242",): createMockTable(no_nan),
+    ("select * from syn7434273",): createMockTable(no_nan)}
 
 syn = mock.create_autospec(synapseclient.Synapse)
 syn.tableQuery.side_effect = table_query_results

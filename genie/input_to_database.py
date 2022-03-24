@@ -318,7 +318,6 @@ def processfiles(
     validfiles,
     center,
     path_to_genie,
-    databaseToSynIdMappingDf,
     processing="main",
     format_registry=None,
     genie_config=None,
@@ -353,6 +352,7 @@ def processfiles(
             tableid = genie_config.get(filetype)
 
             if filetype is not None:
+                # Example GENIE config can be found in tests/conftest.py
                 processor = format_registry[filetype](
                     syn=syn, center=center, genie_config=genie_config
                 )
@@ -362,15 +362,13 @@ def processfiles(
                     parentId=center_staging_synid,
                     databaseSynId=tableid,
                     fileSynId=row["id"],
-                    databaseToSynIdMappingDf=databaseToSynIdMappingDf,
                 )
     else:
         process_mutation.process_mutation_workflow(
             syn=syn,
             center=center,
             validfiles=validfiles,
-            genie_annotation_pkg=genie_config["genie_annotation_pkg"],
-            database_mappingdf=databaseToSynIdMappingDf,
+            genie_config=genie_config,
             workdir=path_to_genie,
         )
 
@@ -733,7 +731,6 @@ def center_input_to_database(
     center: str,
     process: str,
     only_validate: bool,
-    database_to_synid_mappingdf: pd.DataFrame,
     delete_old: bool = False,
     format_registry: list = None,
     genie_config: dict = None,
@@ -741,17 +738,14 @@ def center_input_to_database(
     """Processing per center
 
     Args:
-        syn (Synapse): _description_
-        project_id (str): _description_
-        center (str): _description_
-        process (str): _description_
-        only_validate (bool): _description_
-        database_to_synid_mappingdf (pd.DataFrame): _description_
-        center_mapping_df (pd.DataFrame): _description_
-        delete_old (bool, optional): _description_. Defaults to False.
-        oncotree_link (str, optional): _description_. Defaults to None.
-        genie_annotation_pkg (str, optional): _description_. Defaults to None.
-        format_registry (typing.List, optional): _description_. Defaults to None.
+        syn (Synapse): Synapse connection
+        project_id (str): GENIE Synapse project id
+        center (str): GENIE center
+        process (str): main or mutation processing
+        only_validate (bool): Only validate or not
+        delete_old (bool, optional): Delete old files. Defaults to False.
+        format_registry (typing.List, optional): GENIE file format registry.
+                                                 Defaults to None.
         genie_config (typing.Dict, optional): See example of genie config at
                                               ./genie_config.json. Defaults to None.
     """
@@ -861,7 +855,6 @@ def center_input_to_database(
             validfiles=validFiles,
             center=center,
             path_to_genie=path_to_genie,
-            databaseToSynIdMappingDf=database_to_synid_mappingdf,
             processing=process,
             format_registry=format_registry,
             genie_config=genie_config,

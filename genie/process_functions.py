@@ -158,22 +158,6 @@ def checkUrl(url):
     assert temp.status_code == 200, "%s site is down" % url
 
 
-def getGenieMapping(syn, synId):
-    """
-    This function gets the GENIE mapping tables
-
-    Args:
-        synId: Synapse Id of synapse table
-
-    Returns:
-        df: Table dataframe
-    """
-    table_ent = syn.tableQuery("SELECT * FROM %s" % synId)
-    table = table_ent.asDataFrame()
-    table = table.fillna("")
-    return table
-
-
 def checkColExist(DF, key):
     """
     This function checks if the column exists in a dataframe
@@ -1252,6 +1236,8 @@ def get_genie_config(
     Returns:
         dict: _description_
     """
+    # Get the Synapse Project where data is stored
+    # Should have annotations to find the table lookup
     project = syn.get(project_id)
 
     # Get project GENIE configurations
@@ -1267,5 +1253,10 @@ def get_genie_config(
     center_mapping_df.index = center_mapping_df.center
     # Add center configurations including input/staging synapse ids
     genie_config["center_config"] = center_mapping_df.to_dict("index")
+
+    genie_config["ethnicity_mapping"] = "syn7434242"
+    genie_config["race_mapping"] = "syn7434236"
+    genie_config["sex_mapping"] = "syn7434222"
+    genie_config["sampletype_mapping"] = "syn7434273"
 
     return genie_config

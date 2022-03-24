@@ -328,12 +328,18 @@ class Clinical(FileTypeFormat):
         # Remove unwanted clinical columns prior to update
         # clinicalMerged = clinicalMerged.drop(clinicalMerged.columns[
         #    ~clinicalMerged.columns.isin(clinicalTemplate.columns)],1)
-        # TODO: add to genie config
-        # TODO: Use process_functions.get_syntabledf function
-        ethnicity_mapping = process_functions.getGenieMapping(self.syn, "syn7434242")
-        race_mapping = process_functions.getGenieMapping(self.syn, "syn7434236")
-        sex_mapping = process_functions.getGenieMapping(self.syn, "syn7434222")
-        sampletype_mapping = process_functions.getGenieMapping(self.syn, "syn7434273")
+        ethnicity_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['ethnicity_mapping']}"
+        )
+        race_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['race_mapping']}"
+        )
+        sex_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['sex_mapping']}"
+        )
+        sampletype_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['sampletype_mapping']}"
+        )
         # Attach MSK to centers
         # clinicalMerged = clinicalMerged.fillna("")
         clinical = remap_clinical_values(
@@ -493,12 +499,18 @@ class Clinical(FileTypeFormat):
             {"ONCOTREE_CODE": list(oncotree_mapping_dict.keys())}
         )
 
-        # TODO: Use get_syntabledf function
-        sampletype_mapping = process_functions.getGenieMapping(self.syn, "syn7434273")
-        ethnicity_mapping = process_functions.getGenieMapping(self.syn, "syn7434242")
-        race_mapping = process_functions.getGenieMapping(self.syn, "syn7434236")
-        sex_mapping = process_functions.getGenieMapping(self.syn, "syn7434222")
-
+        ethnicity_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['ethnicity_mapping']}"
+        )
+        race_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['race_mapping']}"
+        )
+        sex_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['sex_mapping']}"
+        )
+        sampletype_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['sampletype_mapping']}"
+        )
         # CHECK: SAMPLE_ID
         sample_id = "SAMPLE_ID"
         haveSampleColumn = process_functions.checkColExist(clinicaldf, sample_id)

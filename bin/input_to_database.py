@@ -5,14 +5,12 @@
 import argparse
 from datetime import date
 import logging
-import os
 
 from genie import (
     config,
     input_to_database,
     process_functions,
     write_invalid_reasons,
-    validate,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,17 +55,7 @@ def main(
 
     syn = process_functions.synLogin(pemfile, debug=debug)
 
-    # Get the Synapse Project where data is stored
-    # Should have annotations to find the table lookup
-    project = syn.get(project_id)
-
     # Get project GENIE configurations
-    database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
-
-    # TODO: remove this once code is using genie config
-    databaseToSynIdMappingDf = process_functions.get_syntabledf(
-        syn=syn, query_string=f"SELECT * FROM {database_to_synid_mapping_synid[0]}"
-    )
     genie_config = process_functions.get_genie_config(syn=syn, project_id=project_id)
 
     # Filter for specific center
@@ -93,9 +81,11 @@ def main(
     process_functions.checkUrl(genie_config["oncotreeLink"])
 
     # HACK: Add genie annotation package to config
+    if process == "mutation" and genie_annotation_pkg is None:
+        raise ValueError("Must define genie annotation pkg if mutation processing")
     genie_config["genie_annotation_pkg"] = genie_annotation_pkg
 
-    # HACK: Not sure if this is needed anymore
+    # HACK: This is essential, because Synapse has concurrency update issues
     center_mapping_ent = syn.get(genie_config["centerMapping"])
     if center_mapping_ent.get("isProcessing", ["True"])[0] == "True":
         raise Exception(
@@ -118,7 +108,6 @@ def main(
             syn, "vcf2maf", table_name, project_id, "syn7208886"
         )
         syn.setPermissions(new_tables["newdb_ent"].id, 3326313, [])
-        databaseToSynIdMappingDf = new_tables["newdb_mappingdf"]
         genie_config["vcf2maf"] = new_tables["newdb_ent"].id
 
     # Get file format classes
@@ -132,7 +121,6 @@ def main(
             center=process_center,
             process=process,
             only_validate=only_validate,
-            database_to_synid_mappingdf=databaseToSynIdMappingDf,
             delete_old=delete_old,
             format_registry=format_registry,
             genie_config=genie_config,
