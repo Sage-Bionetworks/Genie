@@ -1254,9 +1254,9 @@ def get_genie_config(
     # Add center configurations including input/staging synapse ids
     genie_config["center_config"] = center_mapping_df.to_dict("index")
 
-    genie_config['ethnicity_mapping'] = "syn7434242"
-    genie_config['race_mapping'] = "syn7434236"
-    genie_config['sex_mapping'] = "syn7434222"
-    genie_config['sampletype_mapping'] = "syn7434273"
+    genie_config["ethnicity_mapping"] = "syn7434242"
+    genie_config["race_mapping"] = "syn7434236"
+    genie_config["sex_mapping"] = "syn7434222"
+    genie_config["sampletype_mapping"] = "syn7434273"
 
     return genie_config
