@@ -18,15 +18,12 @@ def table_query_results(*args):
     return(table_query_results_map[args])
 
 
-databaseMapping = pd.DataFrame(dict(Database=['bed'],
-                                    Id=['syn8457748']))
 symbols = pd.DataFrame(dict(Hugo_Symbol=['AAK1', 'AAED1', 'AAAS'],
                             ID=['AAK1', 'AAED', 'AAAS']))
 
 # This is the gene positions that all bed dataframe will be processed against
 table_query_results_map = {
-    ("SELECT * FROM syn10967259",): createMockTable(databaseMapping),
-    ("select Hugo_Symbol, ID from syn8457748 where CENTER = 'SAGE'",):
+    ("select Hugo_Symbol, ID from syn11600834 where CENTER = 'SAGE'",):
         createMockTable(symbols),
 }
 ENTITY = synapseclient.Project("testing",
@@ -34,10 +31,14 @@ ENTITY = synapseclient.Project("testing",
 
 syn = mock.create_autospec(synapseclient.Synapse)
 syn.tableQuery.side_effect = table_query_results
-fusionClass = fusions(syn, "SAGE")
 
 
-def test_processing():
+@pytest.fixture
+def fusionClass(genie_config):
+    return fusions(syn, "SAGE", genie_config)
+
+
+def test_processing(fusionClass):
     expectedFusionDf = pd.DataFrame({
         "HUGO_SYMBOL": ['AAED1', 'AAK1', 'AAAS5'],
         "ENTREZ_GENE_ID": [0, 0, 0],
@@ -62,11 +63,11 @@ def test_processing():
         "METHOD": ["foo", 'foo', 'foo'],
         "FRAME": ["foo", 'foo', 'foo']})
 
-    newFusionDf = fusionClass._process(fusionDf, databaseMapping)
+    newFusionDf = fusionClass._process(fusionDf)
     assert expectedFusionDf.equals(newFusionDf[expectedFusionDf.columns])
 
 
-def test_validation():
+def test_validation(fusionClass):
     with pytest.raises(AssertionError):
         fusionClass.validateFilename(['foo'])
     assert fusionClass.validateFilename(["data_fusions_SAGE.txt"]) == "fusions"
@@ -82,7 +83,7 @@ def test_validation():
         "METHOD": ["foo", 'foo', 'foo'],
         "FRAME": ["foo", 'foo', 'foo']})
     with patch.object(syn, "get", return_value=ENTITY):
-        error, warning = fusionClass._validate(fusionDf, False, "syn1234")
+        error, warning = fusionClass._validate(fusionDf, False)
         assert error == ""
         assert warning == ""
 
@@ -96,7 +97,7 @@ def test_validation():
         "METHOD": ["foo", 'foo', 'foo'],
         "FRAME": ["foo", 'foo', 'foo']})
     with patch.object(syn, "get", return_value=ENTITY):
-        error, warning = fusionClass._validate(fusionDf, False, "syn1234")
+        error, warning = fusionClass._validate(fusionDf, False)
         expectedErrors = (
             "Your fusion file must at least have these headers: ENTREZ_GENE_ID.\n"
             "Your fusion file should not have any NA/blank Hugo Symbols.\n")
@@ -105,7 +106,7 @@ def test_validation():
         assert warning == ""
     # Do not check symbols
     with patch.object(syn, "get", return_value=ENTITY):
-        error, warning = fusionClass._validate(fusionDf, True, "syn1234")
+        error, warning = fusionClass._validate(fusionDf, True)
         expectedErrors = (
             "Your fusion file must at least have these headers: ENTREZ_GENE_ID.\n")
         assert error == expectedErrors

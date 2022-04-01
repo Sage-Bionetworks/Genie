@@ -92,15 +92,15 @@ class cna(FileTypeFormat):
 
     _fileType = "cna"
 
-    _process_kwargs = ["newPath", "databaseToSynIdMappingDf"]
+    _process_kwargs = ["newPath"]
 
-    _validation_kwargs = ["nosymbol_check", "project_id"]
+    _validation_kwargs = ["nosymbol_check"]
 
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "data_CNA_{}.txt".format(self.center)
 
-    def _process(self, cnaDf, databaseToSynIdMappingDf):
+    def _process(self, cnaDf):
         cnaDf.rename(columns={cnaDf.columns[0]: cnaDf.columns[0].upper()}, inplace=True)
         cnaDf.rename(columns={"HUGO_SYMBOL": "Hugo_Symbol"}, inplace=True)
 
@@ -110,13 +110,9 @@ class cna(FileTypeFormat):
         if len(index) > 0:
             del cnaDf[cnaDf.columns[index][0]]
 
-        bedSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf["Database"] == "bed"
-        ][0]
+        bedSynId = self.genie_config["bed"]
         bed = self.syn.tableQuery(
-            "select Hugo_Symbol, ID from {} where CENTER = '{}'".format(
-                bedSynId, self.center
-            )
+            f"select Hugo_Symbol, ID from {bedSynId} where CENTER = '{self.center}'"
         )
         bedDf = bed.asDataFrame()
         cnaDf["Hugo_Symbol"] = cnaDf["Hugo_Symbol"].apply(
@@ -147,12 +143,10 @@ class cna(FileTypeFormat):
 
         return cnaDf
 
-    def process_steps(self, cnaDf, newPath, databaseToSynIdMappingDf):
-        newCNA = self._process(cnaDf, databaseToSynIdMappingDf)
+    def process_steps(self, cnaDf, newPath):
+        newCNA = self._process(cnaDf)
 
-        centerMafSynId = databaseToSynIdMappingDf.Id[
-            databaseToSynIdMappingDf["Database"] == "centerMaf"
-        ][0]
+        centerMafSynId = self.genie_config["centerMaf"]
         if not newCNA.empty:
             cnaText = process_functions.removePandasDfFloat(newCNA)
             # Replace blank with NA's
@@ -166,7 +160,7 @@ class cna(FileTypeFormat):
             self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
         return newPath
 
-    def _validate(self, cnvDF, nosymbol_check, project_id):
+    def _validate(self, cnvDF, nosymbol_check):
         total_error = ""
         warning = ""
         cnvDF.columns = [col.upper() for col in cnvDF.columns]
@@ -209,15 +203,10 @@ class cna(FileTypeFormat):
         else:
             cnvDF["HUGO_SYMBOL"] = keepSymbols
             if haveColumn and not nosymbol_check:
-                databaseToSynIdMappingDf = (
-                    process_functions.get_synid_database_mappingdf(self.syn, project_id)
-                )
-                bedSynId = process_functions.getDatabaseSynId(
-                    self.syn, "bed", databaseToSynIdMappingDf=databaseToSynIdMappingDf
-                )
+                bedSynId = self.genie_config["bed"]
                 bed = self.syn.tableQuery(
-                    "select Hugo_Symbol, ID from {} where "
-                    "CENTER = '{}'".format(bedSynId, self.center)
+                    f"select Hugo_Symbol, ID from {bedSynId} "
+                    f"where CENTER = '{self.center}'"
                 )
                 bedDf = bed.asDataFrame()
                 cnvDF["remapped"] = cnvDF["HUGO_SYMBOL"].apply(

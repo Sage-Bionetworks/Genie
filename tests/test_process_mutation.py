@@ -128,7 +128,7 @@ class TestDtype():
                                                self.input_dir)
 
 
-def test_process_mutation_workflow():
+def test_process_mutation_workflow(genie_config):
     """Integration test to make sure workflow runs"""
     validfiles = pd.DataFrame(
         {
@@ -136,13 +136,7 @@ def test_process_mutation_workflow():
             "path": ["path/to/vcf", "path/to/maf"]
         }
     )
-    database_mapping = pd.DataFrame(
-        {
-            "Database": ['vcf2maf', 'centerMaf'],
-            "Id": ['syn123', 'syn234']
-        }
-    )
-    genie_annotation_pkg = "annotation/pkg/path"
+    genie_annotation_pkg = genie_config['genie_annotation_pkg']
     syn_get_calls = [call("syn22053204", ifcollision="overwrite.local",
                           downloadLocation=genie_annotation_pkg),
                      call("syn22084320", ifcollision="overwrite.local",
@@ -159,7 +153,7 @@ def test_process_mutation_workflow():
 
         maf = process_mutation.process_mutation_workflow(
             SYN, center, validfiles,
-            genie_annotation_pkg, database_mapping, workdir
+            genie_config, workdir
         )
         patch_synget.assert_has_calls(syn_get_calls)
         patch_annotation.assert_called_once_with(
@@ -171,9 +165,9 @@ def test_process_mutation_workflow():
         patch_split.assert_called_once_with(
             syn=SYN,
             center=center,
-            maf_tableid='syn123',
+            maf_tableid='syn22493903',
             annotated_maf_path=maf_path,
-            flatfiles_synid='syn234',
+            flatfiles_synid='syn12279903',
             workdir=workdir
         )
         assert maf == maf_path

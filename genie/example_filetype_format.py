@@ -14,9 +14,10 @@ class FileTypeFormat(object):
 
     _validation_kwargs = []
 
-    def __init__(self, syn, center, poolSize=1):
+    def __init__(self, syn, center, genie_config=None):
         self.syn = syn
         self.center = center
+        self.genie_config = genie_config
 
         # self.pool = multiprocessing.Pool(poolSize)
 

@@ -230,16 +230,12 @@ class Clinical(FileTypeFormat):
     _process_kwargs = [
         "newPath",
         "parentId",
-        "databaseToSynIdMappingDf",
-        "oncotree_link",
         "clinicalTemplate",
         "sample",
         "patient",
         "patientCols",
         "sampleCols",
     ]
-
-    _validation_kwargs = ["oncotree_link"]
 
     # VALIDATE FILE NAME
     def _validateFilename(self, filePath):
@@ -332,10 +328,18 @@ class Clinical(FileTypeFormat):
         # Remove unwanted clinical columns prior to update
         # clinicalMerged = clinicalMerged.drop(clinicalMerged.columns[
         #    ~clinicalMerged.columns.isin(clinicalTemplate.columns)],1)
-        ethnicity_mapping = process_functions.getGenieMapping(self.syn, "syn7434242")
-        race_mapping = process_functions.getGenieMapping(self.syn, "syn7434236")
-        sex_mapping = process_functions.getGenieMapping(self.syn, "syn7434222")
-        sampletype_mapping = process_functions.getGenieMapping(self.syn, "syn7434273")
+        ethnicity_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['ethnicity_mapping']}"
+        )
+        race_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['race_mapping']}"
+        )
+        sex_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['sex_mapping']}"
+        )
+        sampletype_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['sampletype_mapping']}"
+        )
         # Attach MSK to centers
         # clinicalMerged = clinicalMerged.fillna("")
         clinical = remap_clinical_values(
@@ -368,6 +372,7 @@ class Clinical(FileTypeFormat):
         """
         # These synapse ids for the clinical tier release scope is
         # hardcoded because it never changes
+        # TODO: Add clinical tier release scope to GENIE config
         patient_cols_table = self.syn.tableQuery(
             "select fieldName from syn8545211 where "
             "patient is True and inClinicalDb is True"
@@ -393,10 +398,8 @@ class Clinical(FileTypeFormat):
     def process_steps(
         self,
         clinicalDf,
-        databaseToSynIdMappingDf,
         newPath,
         parentId,
-        oncotree_link,
         clinicalTemplate,
         sample,
         patient,
@@ -406,10 +409,8 @@ class Clinical(FileTypeFormat):
         """Process clincial file, redact PHI values, upload to clinical
         database
         """
-        patientdb_idx = databaseToSynIdMappingDf["Database"] == "patient"
-        patient_synid = databaseToSynIdMappingDf.Id[patientdb_idx][0]
-        sampledb_idx = databaseToSynIdMappingDf["Database"] == "sample"
-        sample_synid = databaseToSynIdMappingDf.Id[sampledb_idx][0]
+        patient_synid = self.genie_config["patient"]
+        sample_synid = self.genie_config["sample"]
 
         newClinicalDf = self._process(clinicalDf, clinicalTemplate)
         newClinicalDf = redact_phi(newClinicalDf)
@@ -439,7 +440,7 @@ class Clinical(FileTypeFormat):
             # Exclude all clinical samples with wrong oncotree codes
             oncotree_mapping = pd.DataFrame()
             oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(
-                oncotree_link
+                self.genie_config["oncotreeLink"]
             )
             # Add in unknown key for oncotree code
             oncotree_mapping_dict["UNKNOWN"] = {}
@@ -466,7 +467,7 @@ class Clinical(FileTypeFormat):
         return newPath
 
     # VALIDATION
-    def _validate(self, clinicaldf, oncotree_link):
+    def _validate(self, clinicaldf):
         """
         This function validates the clinical file to make sure it adhere
         to the clinical SOP.
@@ -474,7 +475,6 @@ class Clinical(FileTypeFormat):
         Args:
             clinicalDF: Merged clinical file with patient and sample
                         information
-            oncotree_link: Link to oncotree
 
         Returns:
             Error message
@@ -493,20 +493,24 @@ class Clinical(FileTypeFormat):
         clinicaldf = clinicaldf.fillna("")
 
         oncotree_mapping_dict = process_functions.get_oncotree_code_mappings(
-            oncotree_link
+            self.genie_config["oncotreeLink"]
         )
         oncotree_mapping = pd.DataFrame(
             {"ONCOTREE_CODE": list(oncotree_mapping_dict.keys())}
         )
 
-        sampletype_mapping = process_functions.getGenieMapping(self.syn, "syn7434273")
-
-        ethnicity_mapping = process_functions.getGenieMapping(self.syn, "syn7434242")
-
-        race_mapping = process_functions.getGenieMapping(self.syn, "syn7434236")
-
-        sex_mapping = process_functions.getGenieMapping(self.syn, "syn7434222")
-
+        ethnicity_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['ethnicity_mapping']}"
+        )
+        race_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['race_mapping']}"
+        )
+        sex_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['sex_mapping']}"
+        )
+        sampletype_mapping = process_functions.get_syntabledf(
+            self.syn, f"select * from {self.genie_config['sampletype_mapping']}"
+        )
         # CHECK: SAMPLE_ID
         sample_id = "SAMPLE_ID"
         haveSampleColumn = process_functions.checkColExist(clinicaldf, sample_id)
