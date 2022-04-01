@@ -83,7 +83,7 @@ class Assayinfo(FileTypeFormat):
             with open(filepath, "r") as yamlfile:
                 # https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation
                 # Must add this because yaml load deprecation
-                assay_info_dict = yaml.load(yamlfile, Loader=yaml.FullLoader)
+                assay_info_dict = yaml.safe_load(yamlfile)
         except Exception:
             raise ValueError(
                 "assay_information.yaml: Can't read in your file. "
@@ -101,17 +101,19 @@ class Assayinfo(FileTypeFormat):
             assay_specific_info = assay_info_dict[assay]["assay_specific_info"]
             assay_specific_infodf = pd.DataFrame(assay_specific_info)
 
-            seq_assay_id_infodf = assay_info_transposeddf.loc[[assay]]
+            intial_seq_id_infodf = assay_info_transposeddf.loc[[assay]]
 
-            to_appenddf = [seq_assay_id_infodf] * (len(assay_specific_info) - 1)
-            if to_appenddf:
-                seq_assay_id_infodf = seq_assay_id_infodf.append(to_appenddf)
+            # make sure to create a skeleton for the number of seq assay ids
+            # in the seq pipeline
+            seq_assay_id_infodf = pd.concat(
+                [intial_seq_id_infodf] * len(assay_specific_info)
+            )
             seq_assay_id_infodf.reset_index(drop=True, inplace=True)
             assay_finaldf = pd.concat(
                 [assay_specific_infodf, seq_assay_id_infodf], axis=1
             )
             del assay_finaldf["assay_specific_info"]
-
+            # Transform values containing lists to string concatenated values
             columns_containing_lists = [
                 "variant_classifications",
                 "alteration_types",
@@ -123,7 +125,7 @@ class Assayinfo(FileTypeFormat):
                 if assay_finaldf.get(col) is not None:
                     assay_finaldf[col] = [";".join(row) for row in assay_finaldf[col]]
             assay_finaldf["SEQ_PIPELINE_ID"] = assay
-            all_panel_info = all_panel_info.append(assay_finaldf)
+            all_panel_info = pd.concat([all_panel_info, assay_finaldf])
         return all_panel_info
 
     def _validate(self, assay_info_df, project_id):

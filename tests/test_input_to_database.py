@@ -341,7 +341,7 @@ def test_error_check_existing_file_status():
             emptydf, emptydf, entities)
 
 
-def test_valid_validatefile():
+def test_valid_validatefile(genie_config):
     '''
     Tests the behavior of a file that gets validated that becomes
     valid
@@ -356,7 +356,6 @@ def test_valid_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    threads = 0
     valid = True
     message = "Is valid"
     filetype = "clinical"
@@ -382,7 +381,8 @@ def test_valid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, None, entities, validation_statusdf,
-            error_trackerdf, center, threads, oncotree_link)
+            error_trackerdf, center, genie_config=genie_config
+        )
 
         assert expected_results == validate_results
         patch_validate.assert_called_once_with(
@@ -395,7 +395,7 @@ def test_valid_validatefile():
         patch_send_email.assert_not_called()
 
 
-def test_invalid_validatefile():
+def test_invalid_validatefile(genie_config):
     '''
     Tests the behavior of a file that gets validated that becomes
     invalid
@@ -410,7 +410,6 @@ def test_invalid_validatefile():
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    threads = 0
     valid = False
     message = "Is invalid"
     filetype = "clinical"
@@ -451,7 +450,7 @@ def test_invalid_validatefile():
 
         validate_results = input_to_database.validatefile(
             syn, None, entities, validation_statusdf,
-            error_trackerdf, center, threads, oncotree_link
+            error_trackerdf, center, genie_config=genie_config
         )
 
         assert expected_results == validate_results
@@ -778,15 +777,10 @@ class TestValidation:
         assert updated_tables['error_trackingdf'].empty
         assert updated_tables['validation_statusdf'].empty
 
-    def test_validation(self):
+    def test_validation(self, genie_config):
         """Test validation steps"""
         modified_on = 1561143558000
         process = "main"
-        databaseToSynIdMapping = {
-            'Database': ["clinical", 'validationStatus', 'errorTracker'],
-            'Id': ['syn222', 'syn333', 'syn444']
-        }
-        databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
         entity = synapseclient.Entity(id='syn1234', md5='44444',
                                       path='/path/to/foobar.txt',
                                       name='data_clinical_supp_SAGE.txt')
@@ -820,18 +814,19 @@ class TestValidation:
 
             valid_filedf = input_to_database.validation(
                 syn, "syn123", center, process,
-                entities, databaseToSynIdMappingDf,
-                oncotree_link,
-                format_registry={"test": valiate_cls}
+                entities, format_registry={"test": valiate_cls},
+                genie_config=genie_config
             )
             assert patch_query.call_count == 2
             patch_validatefile.assert_called_once_with(
-                syn, "syn123", entity,
-                validationstatus_mock,
-                errortracking_mock,
-                center='SAGE', threads=1,
-                oncotree_link=oncotree_link,
-                format_registry={"test": valiate_cls}
+                syn=syn,
+                project_id="syn123",
+                entities=entity,
+                validation_status_table=validationstatus_mock,
+                error_tracker_table=errortracking_mock,
+                center='SAGE',
+                format_registry={"test": valiate_cls},
+                genie_config=genie_config
             )
 
             assert valid_filedf.equals(
@@ -845,7 +840,7 @@ class TestValidation:
         ('main', Mock(), 'maf'),
     ]
 )
-def test_main_processfile(process, genieclass, filetype):
+def test_main_processfile(genie_config, process, genieclass, filetype):
     validfiles = {'id': ['syn1'],
                   'path': ['/path/to/data_clinical_supp.txt'],
                   'fileType': [filetype],
@@ -853,25 +848,18 @@ def test_main_processfile(process, genieclass, filetype):
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    oncotree_link = "www.google.com"
-    center_mapping = {'stagingSynId': ["syn123"],
-                      'center': [center]}
-    center_mapping_df = pd.DataFrame(center_mapping)
-    databaseToSynIdMapping = {'Database': [filetype],
-                              'Id': ['syn222']}
-    databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
     format_registry = {filetype: genieclass}
 
     input_to_database.processfiles(
         syn, validfilesdf, center, path_to_genie,
-        center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
         processing=process,
-        format_registry=format_registry
+        format_registry=format_registry,
+        genie_config=genie_config
     )
     genieclass.assert_called_once()
 
 
-def test_mainnone_processfile():
+def test_mainnone_processfile(genie_config):
     """If file type is None, the processing function is not called"""
     validfiles = {'id': ['syn1'],
                   'path': ['/path/to/data_clinical_supp_SAGE.txt'],
@@ -880,25 +868,18 @@ def test_mainnone_processfile():
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    oncotree_link = "www.google.com"
-    center_mapping = {'stagingSynId': ["syn123"],
-                      'center': [center]}
-    center_mapping_df = pd.DataFrame(center_mapping)
-    databaseToSynIdMapping = {'Database': ["clinical"],
-                              'Id': ['syn222']}
-    databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
     process_cls = Mock()
 
     with patch.object(Clinical, "process") as patch_clin:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie,
-            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             processing="main",
-            format_registry={"main": process_cls})
+            format_registry={"main": process_cls},
+            genie_config=genie_config)
         patch_clin.assert_not_called()
 
 
-def test_mutation_processfile():
+def test_mutation_processfile(genie_config):
     '''
     Make sure mutation is called correctly
     '''
@@ -908,29 +889,19 @@ def test_mutation_processfile():
     validfilesdf = pd.DataFrame(validfiles)
     center = "SAGE"
     path_to_genie = "./"
-    oncotree_link = "www.google.com"
-    center_mapping = {'stagingSynId': ["syn123"],
-                      'center': [center]}
-    center_mapping_df = pd.DataFrame(center_mapping)
-    databaseToSynIdMapping = {'Database': ['vcf'],
-                              'Id': ['syn222']}
-    databaseToSynIdMappingDf = pd.DataFrame(databaseToSynIdMapping)
     process_cls = Mock()
 
     with patch.object(process_mutation,
                       "process_mutation_workflow") as patch_process:
         input_to_database.processfiles(
             syn, validfilesdf, center, path_to_genie,
-            center_mapping_df, oncotree_link, databaseToSynIdMappingDf,
             processing='mutation',
-            genome_nexus_pkg="/path/to/nexus",
-            format_registry={"vcf": process_cls})
-        # TODO: fix hardcoding
+            format_registry={"vcf": process_cls},
+            genie_config=genie_config)
         patch_process.assert_called_once_with(
             syn=syn,
             center=center,
             validfiles=validfilesdf,
-            genie_annotation_pkg="/path/to/nexus",
-            database_mappingdf=databaseToSynIdMappingDf,
+            genie_config=genie_config,
             workdir=path_to_genie
         )

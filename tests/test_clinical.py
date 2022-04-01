@@ -31,17 +31,14 @@ sexdf = pd.DataFrame(dict(
     DESCRIPTION=['Male', 'Female', 'Not coded']))
 
 table_query_results_map = {
-    ("SELECT * FROM syn7434222",): createMockTable(sexdf),
-    ("SELECT * FROM syn7434236",): createMockTable(no_nan),
-    ("SELECT * FROM syn7434242",): createMockTable(no_nan),
-    ("SELECT * FROM syn7434273",): createMockTable(no_nan)}
+    ("select * from syn7434222",): createMockTable(sexdf),
+    ("select * from syn7434236",): createMockTable(no_nan),
+    ("select * from syn7434242",): createMockTable(no_nan),
+    ("select * from syn7434273",): createMockTable(no_nan)}
 
 syn = mock.create_autospec(synapseclient.Synapse)
 syn.tableQuery.side_effect = table_query_results
-clin_class = Clinical(syn, "SAGE")
 
-# oncotree_url = \
-#  'http://oncotree.mskcc.org/api/tumor_types.txt?version=oncotree_latest_stable'
 json_oncotreeurl = \
     "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
 
@@ -67,7 +64,12 @@ onco_map_dict = {
 }
 
 
-def test_filetype():
+@pytest.fixture
+def clin_class(genie_config):
+    return Clinical(syn, "SAGE", genie_config=genie_config)
+
+
+def test_filetype(clin_class):
     assert clin_class._fileType == "clinical"
 
 
@@ -75,17 +77,17 @@ def test_filetype():
     (["foo"]),
     (["foo", "data_clinical_supp_sample_SAGE.txt"])
 ])
-def filename_fileformat_map(request):
+def filename_fileformat_map(clin_class, request):
     return request.param
 
 
-def test_incorrect_validatefilename(filename_fileformat_map):
+def test_incorrect_validatefilename(clin_class, filename_fileformat_map):
     filepath_list = filename_fileformat_map
     with pytest.raises(AssertionError):
         clin_class.validateFilename(filepath_list)
 
 
-def test_correct_validatefilename():
+def test_correct_validatefilename(clin_class):
     assert clin_class.validateFilename(
         ["data_clinical_supp_SAGE.txt"]) == "clinical"
     assert clin_class.validateFilename(
@@ -93,7 +95,7 @@ def test_correct_validatefilename():
          "data_clinical_supp_patient_SAGE.txt"]) == "clinical"
 
 
-def test_patient_fillvs__process():
+def test_patient_fillvs__process(clin_class):
     '''
     This will be removed once vital status values are required
     - capitalized column headers
@@ -133,7 +135,7 @@ def test_patient_fillvs__process():
     assert expected_patientdf.equals(new_patientdf[expected_patientdf.columns])
 
 
-def test_patient_lesscoltemplate__process():
+def test_patient_lesscoltemplate__process(clin_class):
     '''
     Test scope is excluding values.
     Only those value defined by the scope will be written out
@@ -175,7 +177,7 @@ def test_patient_lesscoltemplate__process():
     )
 
 
-def test_patient_vs__process():
+def test_patient_vs__process(clin_class):
     '''
     Test vital status columns being propogated with same data
     '''
@@ -223,7 +225,7 @@ def test_patient_vs__process():
     assert expected_patientdf.equals(new_patientdf[expected_patientdf.columns])
 
 
-def test_sample__process():
+def test_sample__process(clin_class):
     '''
     Test sample processing
     - column headers are capitalized
@@ -270,7 +272,7 @@ def test_sample__process():
     assert expected_sampledf.equals(new_sampledf[expected_sampledf.columns])
 
 
-def test_perfect__validate():
+def test_perfect__validate(clin_class):
     '''
     Test perfect validation
     '''
@@ -308,13 +310,13 @@ def test_perfect__validate():
     with mock.patch(
             "genie.process_functions.get_oncotree_code_mappings",
             return_value=onco_map_dict) as mock_get_onco_map:
-        error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
+        error, warning = clin_class._validate(clinicaldf)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         assert error == ""
         assert warning == ""
 
 
-def test_nonull__validate():
+def test_nonull__validate(clin_class):
     '''
     Test that no null values are allowed in the clinical dataframe
     '''
@@ -354,7 +356,7 @@ def test_nonull__validate():
     with mock.patch(
             "genie.process_functions.get_oncotree_code_mappings",
             return_value=onco_map_dict) as mock_get_onco_map:
-        error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
+        error, warning = clin_class._validate(clinicaldf)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         expected_errors = (
             "Sample Clinical File: Please double check your "
@@ -403,7 +405,7 @@ def test_nonull__validate():
         assert warning == ""
 
 
-def test_missingcols__validate():
+def test_missingcols__validate(clin_class):
     '''
     Test for missing column errors
     '''
@@ -411,7 +413,7 @@ def test_missingcols__validate():
     with mock.patch(
             "genie.process_functions.get_oncotree_code_mappings",
             return_value=onco_map_dict) as mock_get_onco_map:
-        error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
+        error, warning = clin_class._validate(clinicaldf)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         expected_errors = (
             "Sample Clinical File: Must have SAMPLE_ID column.\n"
@@ -442,7 +444,7 @@ def test_missingcols__validate():
         assert warning == expected_warnings
 
 
-def test_errors__validate():
+def test_errors__validate(clin_class):
     '''
     Test for validation errors
     '''
@@ -476,7 +478,7 @@ def test_errors__validate():
     with mock.patch(
             "genie.process_functions.get_oncotree_code_mappings",
             return_value=onco_map_dict) as mock_get_onco_map:
-        error, warning = clin_class._validate(clinicalDf, json_oncotreeurl)
+        error, warning = clin_class._validate(clinicalDf)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
 
         expectedErrors = (
@@ -552,7 +554,7 @@ def test_errors__validate():
         assert warning == expectedWarnings
 
 
-def test_duplicated__validate():
+def test_duplicated__validate(clin_class):
     '''
     Test for duplicated SAMPLE_ID error and and in the case that
     both sample and patient
@@ -590,7 +592,7 @@ def test_duplicated__validate():
     with mock.patch(
             "genie.process_functions.get_oncotree_code_mappings",
             return_value=onco_map_dict) as mock_get_onco_map:
-        error, warning = clin_class._validate(clinicalDf, json_oncotreeurl)
+        error, warning = clin_class._validate(clinicalDf)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         expectedErrors = (
             "Clinical file(s): No empty rows allowed.\n"
@@ -822,8 +824,8 @@ def test__check_int_year_consistency_inconsistent(inconsistent_df,
              "DEAD": [True, False]}
         ),
         pd.DataFrame(
-            {"INT_DOD": [1111, "Not Released"],
-             "DEAD": [True, False]}
+            {"INT_DOD": ["Not Applicable", "Not Applicable"],
+             "DEAD": [False, False]}
         )
     ]
 )
@@ -840,6 +842,10 @@ def test__check_int_dead_consistency_valid(valid_df):
     [
         pd.DataFrame(
             {"INT_DOD": ["Not Applicable", "Not Applicable"],
+             "DEAD": [True, False]}
+        ),
+        pd.DataFrame(
+            {"INT_DOD": [1111, "Not Released"],
              "DEAD": [True, False]}
         ),
         pd.DataFrame(

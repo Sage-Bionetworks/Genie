@@ -158,22 +158,6 @@ def checkUrl(url):
     assert temp.status_code == 200, "%s site is down" % url
 
 
-def getGenieMapping(syn, synId):
-    """
-    This function gets the GENIE mapping tables
-
-    Args:
-        synId: Synapse Id of synapse table
-
-    Returns:
-        df: Table dataframe
-    """
-    table_ent = syn.tableQuery("SELECT * FROM %s" % synId)
-    table = table_ent.asDataFrame()
-    table = table.fillna("")
-    return table
-
-
 def checkColExist(DF, key):
     """
     This function checks if the column exists in a dataframe
@@ -808,9 +792,7 @@ def updateDatabase(
         to_delete_rows = _delete_rows(new_dataset, database, primary_key)
     else:
         to_delete_rows = pd.DataFrame()
-    allupdates = allupdates.append(to_append_rows, sort=False)
-    allupdates = allupdates.append(to_update_rows, sort=False)
-
+    allupdates = pd.concat([allupdates, to_append_rows, to_update_rows], sort=False)
     storedatabase = False
     update_all_file = tempfile.NamedTemporaryFile(dir=SCRIPT_DIR, delete=False)
 
@@ -1071,8 +1053,15 @@ def synLogin(pemfile_path, debug=False):
     """
     try:
         syn = synapseclient.Synapse(debug=debug)
-        syn.login()
+        # Get auth token via scheduled job secrets
+        if os.getenv("SCHEDULED_JOB_SECRETS") is not None:
+            secrets = json.loads(os.getenv("SCHEDULED_JOB_SECRETS"))
+            auth_token = secrets["SYNAPSE_AUTH_TOKEN"]
+        else:
+            auth_token = None
+        syn.login(authToken=auth_token)
     except Exception:
+        # TODO: deprecate this feature soon
         genie_pass = get_password(pemfile_path)
         syn = synapseclient.Synapse(debug=debug)
         syn.login(os.environ["GENIE_USER"], genie_pass)
@@ -1240,3 +1229,78 @@ def create_new_fileformat_table(
         "newdb_mappingdf": newdb_mappingdf,
         "moved_ent": moved_ent,
     }
+
+
+def get_database_mapping_config(syn: Synapse, synid: str) -> dict:
+    """Gets Synapse database to Table mapping in dict
+
+    Args:
+        syn: Synapse connection
+        synid: Synapse id of database mapping table
+
+    Returns:
+        dict: {'databasename': 'synid'}
+    """
+    config = syn.tableQuery(f"SELECT * FROM {synid}")
+    configdf = config.asDataFrame()
+    configdf.index = configdf["Database"]
+    config_dict = configdf.to_dict()
+    return config_dict["Id"]
+
+
+def get_genie_config(
+    syn: Synapse,
+    project_id: str,
+) -> dict:
+    """Get configurations needed for the GENIE codebase
+
+    Args:
+        syn (Synapse): Synapse connection
+        project_id (str): Synapse project id
+
+    Returns:
+        dict: _description_
+    """
+    # Get the Synapse Project where data is stored
+    # Should have annotations to find the table lookup
+    project = syn.get(project_id)
+
+    # Get project GENIE configurations
+    database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
+    genie_config = get_database_mapping_config(
+        syn=syn, synid=database_to_synid_mapping_synid[0]
+    )
+    # Fill in GENIE center configurations
+    center_mapping_id = genie_config["centerMapping"]
+    center_mapping_df = get_syntabledf(
+        syn=syn, query_string=f"SELECT * FROM {center_mapping_id} where release is true"
+    )
+    center_mapping_df.index = center_mapping_df.center
+    # Add center configurations including input/staging synapse ids
+    genie_config["center_config"] = center_mapping_df.to_dict("index")
+
+    genie_config["ethnicity_mapping"] = "syn7434242"
+    genie_config["race_mapping"] = "syn7434236"
+    genie_config["sex_mapping"] = "syn7434222"
+    genie_config["sampletype_mapping"] = "syn7434273"
+
+    return genie_config
+
+
+def _get_oncotreelink(syn, genie_config, oncotree_link=None):
+    """
+    Gets oncotree link unless a link is specified by the user
+
+    Args:
+        syn: Synapse object
+        databasetosynid_mappingdf: database to synid mapping
+        oncotree_link: link to oncotree. Default is None
+
+    Returns:
+        oncotree link
+
+    """
+    if oncotree_link is None:
+        onco_link_ent = syn.get(genie_config["oncotreeLink"])
+        oncotree_link = onco_link_ent.externalURL
+    return oncotree_link
