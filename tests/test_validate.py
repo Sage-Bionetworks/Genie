@@ -288,7 +288,7 @@ def test_perform_validate(genie_config):
                       return_value=(valid, 'foo')) as patch_validate,\
          patch.object(validate, "_upload_to_synapse") as patch_syn_upload:
         validate._perform_validate(syn, arg)
-        patch_check_parentid.assert_called_once_with(syn=syn, project_id=arg.parentid)
+        patch_check_parentid.assert_called_once_with(syn=syn, parentid=arg.parentid)
         patch_get_config.assert_called_once_with(syn=syn, project_id=arg.project_id)
         patch_check_center.assert_called_once_with(arg.center, ["SAGE", "TEST"])
         patch_get_onco.assert_called_once()
