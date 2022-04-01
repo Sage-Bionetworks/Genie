@@ -211,8 +211,8 @@ def test_invalid__check_tsa1_tsa2():
     assert error == (
         "maf: Contains both "
         "TUMOR_SEQ_ALLELE1 and TUMOR_SEQ_ALLELE2 columns. "
-        "The values in TUMOR_SEQ_ALLELE1 must be the same as "
-        "all the values in REFERENCE_ALELLE OR TUMOR_SEQ_ALLELE2."
+        "All values in TUMOR_SEQ_ALLELE1 must match all values in "
+        "REFERENCE_ALLELE or all values in TUMOR_SEQ_ALLELE2.\n"
     )
 
 

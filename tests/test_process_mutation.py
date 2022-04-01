@@ -95,15 +95,15 @@ class TestDtype():
         """Test moving mafs when maf column headers need to be remapped"""
         testdf = pd.DataFrame({"CHROMOSOME": [1]})
         with patch.object(pd, "read_csv", return_value=testdf),\
-            patch.object(process_mutation,
-                         "determine_dtype",
-                         return_value=self.column_types) as patch_determine,\
-            patch.object(process_mutation,
-                         "_convert_to_str_dtype",
-                         return_value=self.column_types) as patch_convert,\
-            patch.object(process_mutation,
-                         "_rename_column_headers") as patch_rename,\
-            patch.object(testdf, "to_csv"):
+             patch.object(process_mutation,
+                          "determine_dtype",
+                          return_value=self.column_types) as patch_determine,\
+             patch.object(process_mutation,
+                          "_convert_to_str_dtype",
+                          return_value=self.column_types) as patch_convert,\
+             patch.object(process_mutation,
+                          "_rename_column_headers") as patch_rename,\
+             patch.object(testdf, "to_csv"):
             process_mutation.move_maf(self.mutation_path, self.input_dir)
             patch_determine.assert_called_once_with(self.mutation_path)
             patch_convert.assert_called_once_with(
@@ -127,7 +127,8 @@ class TestDtype():
             patch_move.assert_called_once_with(self.mutation_path,
                                                self.input_dir)
 
-def test_process_mutation_workflow():
+
+def test_process_mutation_workflow(genie_config):
     """Integration test to make sure workflow runs"""
     validfiles = pd.DataFrame(
         {
@@ -135,13 +136,7 @@ def test_process_mutation_workflow():
             "path": ["path/to/vcf", "path/to/maf"]
         }
     )
-    database_mapping = pd.DataFrame(
-        {
-            "Database": ['vcf2maf', 'centerMaf'],
-            "Id": ['syn123', 'syn234']
-        }
-    )
-    genie_annotation_pkg = "annotation/pkg/path"
+    genie_annotation_pkg = genie_config['genie_annotation_pkg']
     syn_get_calls = [call("syn22053204", ifcollision="overwrite.local",
                           downloadLocation=genie_annotation_pkg),
                      call("syn22084320", ifcollision="overwrite.local",
@@ -158,7 +153,7 @@ def test_process_mutation_workflow():
 
         maf = process_mutation.process_mutation_workflow(
             SYN, center, validfiles,
-            genie_annotation_pkg, database_mapping, workdir
+            genie_config, workdir
         )
         patch_synget.assert_has_calls(syn_get_calls)
         patch_annotation.assert_called_once_with(
@@ -170,9 +165,9 @@ def test_process_mutation_workflow():
         patch_split.assert_called_once_with(
             syn=SYN,
             center=center,
-            maf_tableid='syn123',
+            maf_tableid='syn22493903',
             annotated_maf_path=maf_path,
-            flatfiles_synid='syn234',
+            flatfiles_synid='syn12279903',
             workdir=workdir
         )
         assert maf == maf_path
@@ -184,7 +179,7 @@ def test_annotate_mutation():
     mutation_files = ["path/to/vcf"]
     genie_annotation_pkg = "annotation/pkg/path"
     workdir = "working/dir/path"
-    mktemp_calls = [call(dir=workdir)]*2
+    mktemp_calls = [call(dir=workdir)] * 2
     input_dir = "input/dir"
     with patch.object(tempfile, "mkdtemp",
                       return_value=input_dir) as patch_mktemp,\
@@ -291,16 +286,11 @@ def test_split_and_store_maf():
             "colC": [2, 3]
         }
     )
-    subsetdf = pd.DataFrame(
-        {
-            "colA": ['test', 'foo'],
-            "colB": ["bar", "baz"],
-        }
-    )
     annotated_maf_path = "maf/path"
     center = "SAGE"
     full_maf_path = "workdir/path/SAGE/staging/data_mutations_extended_SAGE.txt"
-    narrow_maf_path = "workdir/path/SAGE/staging/data_mutations_extended_SAGE_MAF_narrow.txt"
+    narrow_maf_path = \
+        "workdir/path/SAGE/staging/data_mutations_extended_SAGE_MAF_narrow.txt"
 
     with patch.object(SYN, "getTableColumns",
                       return_value=columns) as patch_getcols,\

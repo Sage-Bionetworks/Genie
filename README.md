@@ -14,7 +14,7 @@ This repository documents code used to gather, QC, standardize, and analyze data
 ## Dependencies
 
 These are tools or packages you will need, to be able to reproduce these results:
-- Python 3.6 or higher
+- Python 3.7 or higher
 - `pip install -r requirements.txt`
 - [bedtools](https://bedtools.readthedocs.io/en/latest/content/installation.html)
 
@@ -32,12 +32,6 @@ genie validate -h
 genie validate data_clinical_supp_SAGE.txt SAGE
 ```
 
-# Development
+## Contributing
 
-The GENIE project follows the standard [git flow](https://guides.github.com/introduction/flow/) development strategy.
-
-## Versioning
-
-1. Update the version in [genie/__version__.py](genie/__version__.py) based on semantic versioning. Use the suffix `-dev` for development branch versions.
-1. When releasing, remove the `-dev` from the version.
-1. Add a tag and release named the same as the version.
+Please view [contributing guide](CONTRIBUTING.md) to learn how to contribute to the GENIE package.

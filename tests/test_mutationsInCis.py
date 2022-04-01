@@ -36,24 +36,23 @@ mutCisDf = pd.DataFrame(dict(Flag=['mutationsInCis'],
 # This is the gene positions that all bed dataframe will be processed against
 table_query_results_map = {
     ("SELECT * FROM syn10967259",): createMockTable(databaseMapping),
-    ("select * from syn7765462 where Center = 'SAGE'",):
+    ("select * from syn11601206 where Center = 'SAGE'",):
         createMockTable(mutCisDf)
 }
 
 syn = mock.create_autospec(synapseclient.Synapse)
 syn.tableQuery.side_effect = table_query_results
 
-mutCis = mutationsInCis(syn, "SAGE")
+@pytest.fixture
+def mutCis(genie_config):
+    return mutationsInCis(syn, "SAGE", genie_config)
 
 
 ENTITY = synapseclient.Project("testing",
                                annotations={'dbMapping': ["syn10967259"]})
 
-def test_processing():
-    pass
 
-
-def test_validation():
+def test_validation(mutCis):
     with pytest.raises(AssertionError):
         mutCis.validateFilename(["foo"])
     assert mutCis.validateFilename(
@@ -72,7 +71,7 @@ def test_validation():
                                  t_alt_count_num=[3],
                                  t_depth=[234]))
     with patch.object(syn, "get", return_value=ENTITY):
-        error, warning = mutCis._validate(mutCisDf, "syn1234")
+        error, warning = mutCis._validate(mutCisDf)
         assert error == ""
         assert warning == ""
     mutCisDf = pd.DataFrame(dict(Flag=['mutationsInCis'],
@@ -86,7 +85,7 @@ def test_validation():
                                  t_alt_count_num=[3],
                                  t_depth=[234]))
     with patch.object(syn, "get", return_value=ENTITY):
-        error, warning = mutCis._validate(mutCisDf, "syn1234")
+        error, warning = mutCis._validate(mutCisDf)
         expectedErrors = (
             "Mutations In Cis Filter File: Must at least have these headers: "
             "Variant_Classification,Start_Position.\n")
@@ -105,7 +104,7 @@ def test_validation():
                                  t_alt_count_num=[3],
                                  t_depth=[234]))
     with patch.object(syn, "get", return_value=ENTITY):
-        error, warning = mutCis._validate(mutCisDf, "syn1234")
+        error, warning = mutCis._validate(mutCisDf)
         expectedErrors = (
             "Mutations In Cis Filter File: All variants must come from "
             "the original mutationInCis_filtered_samples.csv file in each "

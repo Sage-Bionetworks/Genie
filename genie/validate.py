@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
-import importlib
-import inspect
 import logging
-import sys
 
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from . import config, example_filetype_format, process_functions
+from . import config, process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +15,16 @@ class ValidationHelper(object):
     # Overload this per class
     _validate_kwargs = []
 
-    def __init__(self, syn, project_id, center, entitylist,
-                 format_registry=None,
-                 file_type=None):
+    def __init__(
+        self,
+        syn,
+        project_id,
+        center,
+        entitylist,
+        format_registry=None,
+        file_type=None,
+        genie_config=None,
+    ):
         """A validator helper class for a center's files.
 
         Args:
@@ -37,8 +41,8 @@ class ValidationHelper(object):
         self.entitylist = entitylist
         self.center = center
         self._format_registry = format_registry
-        self.file_type = (self.determine_filetype()
-                          if file_type is None else file_type)
+        self.file_type = self.determine_filetype() if file_type is None else file_type
+        self.genie_config = genie_config
 
     def determine_filetype(self):
         """Gets the file type of the file by validating its filename
@@ -54,7 +58,9 @@ class ValidationHelper(object):
         filetype = None
         # Loop through file formats
         for file_format in self._format_registry:
-            validator = self._format_registry[file_format](self._synapse_client, self.center)
+            validator = self._format_registry[file_format](
+                self._synapse_client, self.center
+            )
             try:
                 filenames = [entity.name for entity in self.entitylist]
                 filetype = validator.validateFilename(filenames)
@@ -80,16 +86,22 @@ class ValidationHelper(object):
         else:
             mykwargs = {}
             for required_parameter in self._validate_kwargs:
-                assert required_parameter in kwargs.keys(), \
+                assert required_parameter in kwargs.keys(), (
                     "%s not in parameter list" % required_parameter
+                )
                 mykwargs[required_parameter] = kwargs[required_parameter]
-                mykwargs['project_id'] = self._project.id
+                mykwargs["project_id"] = self._project.id
 
             validator_cls = self._format_registry[self.file_type]
-            validator = validator_cls(self._synapse_client, self.center)
+            validator = validator_cls(
+                syn=self._synapse_client,
+                center=self.center,
+                genie_config=self.genie_config,
+            )
             filepathlist = [entity.path for entity in self.entitylist]
-            valid, errors, warnings = validator.validate(filePathList=filepathlist,
-                                                         **mykwargs)
+            valid, errors, warnings = validator.validate(
+                filePathList=filepathlist, **mykwargs
+            )
 
         # Complete error message
         message = collect_errors_and_warnings(errors, warnings)
@@ -99,14 +111,13 @@ class ValidationHelper(object):
 
 # TODO: Remove this at some point
 class GenieValidationHelper(ValidationHelper):
-    """A validator helper class for AACR Project Genie.
-    """
+    """A validator helper class for AACR Project Genie."""
 
-    _validate_kwargs = ['oncotree_link', 'nosymbol_check']
+    _validate_kwargs = ["nosymbol_check"]
 
 
 def collect_errors_and_warnings(errors, warnings):
-    '''Aggregates error and warnings into a string.
+    """Aggregates error and warnings into a string.
 
     Args:
         errors: string of file errors, separated by new lines.
@@ -114,7 +125,7 @@ def collect_errors_and_warnings(errors, warnings):
 
     Returns:
         message - errors + warnings
-    '''
+    """
     # Complete error message
     message = "----------------ERRORS----------------\n"
     if errors == "":
@@ -122,33 +133,15 @@ def collect_errors_and_warnings(errors, warnings):
         logger.info(message)
     else:
         for error in errors.split("\n"):
-            if error != '':
+            if error != "":
                 logger.error(error)
         message += errors
     if warnings != "":
         for warning in warnings.split("\n"):
-            if warning != '':
+            if warning != "":
                 logger.warning(warning)
         message += "-------------WARNINGS-------------\n" + warnings
     return message
-
-
-def get_config(syn, synid):
-    """Gets Synapse database to Table mapping in dict
-
-    Args:
-        syn: Synapse connection
-        synid: Synapse id of database mapping table
-
-    Returns:
-        dict: {'databasename': 'synid'}
-
-    """
-    config = syn.tableQuery('SELECT * FROM {}'.format(synid))
-    configdf = config.asDataFrame()
-    configdf.index = configdf['Database']
-    config_dict = configdf.to_dict()
-    return config_dict['Id']
 
 
 def _check_parentid_permission_container(syn, parentid):
@@ -163,7 +156,8 @@ def _check_parentid_permission_container(syn, parentid):
         except (SynapseHTTPError, AssertionError):
             raise ValueError(
                 "Provided Synapse id must be your input folder Synapse id "
-                "or a Synapse Id of a folder inside your input directory")
+                "or a Synapse Id of a folder inside your input directory"
+            )
 
 
 def _check_center_input(center, center_list):
@@ -178,29 +172,9 @@ def _check_center_input(center, center_list):
 
     """
     if center not in center_list:
-        raise ValueError("Must specify one of these "
-                         f"centers: {', '.join(center_list)}")
-
-
-def _get_oncotreelink(syn, databasetosynid_mappingdf, oncotree_link=None):
-    """
-    Gets oncotree link unless a link is specified by the user
-
-    Args:
-        syn: Synapse object
-        databasetosynid_mappingdf: database to synid mapping
-        oncotree_link: link to oncotree. Default is None
-
-    Returns:
-        oncotree link
-
-    """
-    if oncotree_link is None:
-        oncolink = databasetosynid_mappingdf.query(
-            'Database == "oncotreeLink"').Id
-        oncolink_ent = syn.get(oncolink.iloc[0])
-        oncotree_link = oncolink_ent.externalURL
-    return oncotree_link
+        raise ValueError(
+            "Must specify one of these " f"centers: {', '.join(center_list)}"
+        )
 
 
 def _upload_to_synapse(syn, filepaths, valid, parentid=None):
@@ -226,37 +200,36 @@ def _perform_validate(syn, args):
     """This is the main entry point to the genie command line tool."""
 
     # Check parentid argparse
-    _check_parentid_permission_container(syn, args.parentid)
-
-    databasetosynid_mappingdf = process_functions.get_synid_database_mappingdf(
-        syn, project_id=args.project_id)
-
-    synid = databasetosynid_mappingdf.query('Database == "centerMapping"').Id
-
-    center_mapping = syn.tableQuery('select * from {}'.format(synid.iloc[0]))
-    center_mapping_df = center_mapping.asDataFrame()
-
-    # Check center argparse
-    _check_center_input(args.center, center_mapping_df.center.tolist())
-
-    args.oncotree_link = _get_oncotreelink(syn, databasetosynid_mappingdf,
-                                           oncotree_link=args.oncotree_link)
-
-    format_registry = config.collect_format_types(
-        args.format_registry_packages
+    _check_parentid_permission_container(syn=syn, parentid=args.parentid)
+    genie_config = process_functions.get_genie_config(
+        syn=syn, project_id=args.project_id
     )
-    logger.debug("Using {} file formats.".format(format_registry))
-    entity_list = [synapseclient.File(name=filepath, path=filepath,
-                                      parentId=None)
-                   for filepath in args.filepath]
-    validator = GenieValidationHelper(syn=syn, project_id=args.project_id,
-                                      center=args.center,
-                                      entitylist=entity_list,
-                                      format_registry=format_registry,
-                                      file_type=args.filetype)
-    mykwargs = dict(oncotree_link=args.oncotree_link,
-                    nosymbol_check=args.nosymbol_check,
-                    project_id=args.project_id)
+    # HACK: Modify oncotree link config
+    genie_config["oncotreeLink"] = process_functions._get_oncotreelink(
+        syn=syn, genie_config=genie_config, oncotree_link=args.oncotree_link
+    )
+    # Check center argparse
+    _check_center_input(args.center, list(genie_config["center_config"].keys()))
+
+    format_registry = config.collect_format_types(args.format_registry_packages)
+    logger.debug(f"Using {format_registry} file formats.")
+    entity_list = [
+        synapseclient.File(name=filepath, path=filepath, parentId=None)
+        for filepath in args.filepath
+    ]
+    validator = GenieValidationHelper(
+        syn=syn,
+        project_id=args.project_id,
+        center=args.center,
+        entitylist=entity_list,
+        format_registry=format_registry,
+        file_type=args.filetype,
+        genie_config=genie_config,
+    )
+    mykwargs = dict(
+        nosymbol_check=args.nosymbol_check,
+        project_id=args.project_id,
+    )
     valid, message = validator.validate_single_file(**mykwargs)
 
     # Upload to synapse if parentid is specified and valid

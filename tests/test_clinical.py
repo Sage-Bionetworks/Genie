@@ -7,7 +7,7 @@ import pytest
 import synapseclient
 
 import genie_registry
-from genie_registry.clinical import clinical
+from genie_registry.clinical import Clinical
 
 
 def createMockTable(dataframe):
@@ -31,57 +31,63 @@ sexdf = pd.DataFrame(dict(
     DESCRIPTION=['Male', 'Female', 'Not coded']))
 
 table_query_results_map = {
-    ("SELECT * FROM syn7434222",): createMockTable(sexdf),
-    ("SELECT * FROM syn7434236",): createMockTable(no_nan),
-    ("SELECT * FROM syn7434242",): createMockTable(no_nan),
-    ("SELECT * FROM syn7434273",): createMockTable(no_nan)}
+    ("select * from syn7434222",): createMockTable(sexdf),
+    ("select * from syn7434236",): createMockTable(no_nan),
+    ("select * from syn7434242",): createMockTable(no_nan),
+    ("select * from syn7434273",): createMockTable(no_nan)}
 
 syn = mock.create_autospec(synapseclient.Synapse)
 syn.tableQuery.side_effect = table_query_results
-clin_class = clinical(syn, "SAGE")
 
-# oncotree_url = \
-#  'http://oncotree.mskcc.org/api/tumor_types.txt?version=oncotree_latest_stable'
 json_oncotreeurl = \
- "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
+    "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
 
 onco_map_dict = {
-  "AMPCA": {
-    'CANCER_TYPE': "Ampullary Cancer",
-    'CANCER_TYPE_DETAILED': "Ampullary Carcinoma",
-    'ONCOTREE_PRIMARY_NODE': "AMPULLA_OF_VATER",
-    'ONCOTREE_SECONDARY_NODE': "AMPCA"},
-  "TESTIS": {
-    'CANCER_TYPE': "Testicular Cancer, NOS",
-    'CANCER_TYPE_DETAILED': "Testis",
-    'ONCOTREE_PRIMARY_NODE': "TESTIS",
-    'ONCOTREE_SECONDARY_NODE': ''},
-  "UCEC": {
-    'CANCER_TYPE': "Endometrial Cancer",
-    'CANCER_TYPE_DETAILED': "Endometrial Carcinoma",
-    'ONCOTREE_PRIMARY_NODE': "UTERUS",
-    'ONCOTREE_SECONDARY_NODE': "UCEC"}}
+    "AMPCA": {
+        'CANCER_TYPE': "Ampullary Cancer",
+        'CANCER_TYPE_DETAILED': "Ampullary Carcinoma",
+        'ONCOTREE_PRIMARY_NODE': "AMPULLA_OF_VATER",
+        'ONCOTREE_SECONDARY_NODE': "AMPCA"
+    },
+    "TESTIS": {
+        'CANCER_TYPE': "Testicular Cancer, NOS",
+        'CANCER_TYPE_DETAILED': "Testis",
+        'ONCOTREE_PRIMARY_NODE': "TESTIS",
+        'ONCOTREE_SECONDARY_NODE': ''
+    },
+    "UCEC": {
+        'CANCER_TYPE': "Endometrial Cancer",
+        'CANCER_TYPE_DETAILED': "Endometrial Carcinoma",
+        'ONCOTREE_PRIMARY_NODE': "UTERUS",
+        'ONCOTREE_SECONDARY_NODE': "UCEC"
+    }
+}
 
 
-def test_filetype():
+@pytest.fixture
+def clin_class(genie_config):
+    return Clinical(syn, "SAGE", genie_config=genie_config)
+
+
+def test_filetype(clin_class):
     assert clin_class._fileType == "clinical"
 
 
 @pytest.fixture(params=[
     (["foo"]),
     (["foo", "data_clinical_supp_sample_SAGE.txt"])
-    ])
-def filename_fileformat_map(request):
+])
+def filename_fileformat_map(clin_class, request):
     return request.param
 
 
-def test_incorrect_validatefilename(filename_fileformat_map):
+def test_incorrect_validatefilename(clin_class, filename_fileformat_map):
     filepath_list = filename_fileformat_map
     with pytest.raises(AssertionError):
         clin_class.validateFilename(filepath_list)
 
 
-def test_correct_validatefilename():
+def test_correct_validatefilename(clin_class):
     assert clin_class.validateFilename(
         ["data_clinical_supp_SAGE.txt"]) == "clinical"
     assert clin_class.validateFilename(
@@ -89,7 +95,7 @@ def test_correct_validatefilename():
          "data_clinical_supp_patient_SAGE.txt"]) == "clinical"
 
 
-def test_patient_fillvs__process():
+def test_patient_fillvs__process(clin_class):
     '''
     This will be removed once vital status values are required
     - capitalized column headers
@@ -128,7 +134,7 @@ def test_patient_fillvs__process():
     assert expected_patientdf.equals(new_patientdf[expected_patientdf.columns])
 
 
-def test_patient_lesscoltemplate__process():
+def test_patient_lesscoltemplate__process(clin_class):
     '''
     Test scope is excluding values.
     Only those value defined by the scope will be written out
@@ -163,12 +169,13 @@ def test_patient_lesscoltemplate__process():
 
     assert new_patientdf.columns.isin(patient_cols).all()
     assert (
-        expected_patientdf[expected_patientdf.columns]
-            .equals(new_patientdf[expected_patientdf.columns])
+        expected_patientdf[expected_patientdf.columns].equals(
+            new_patientdf[expected_patientdf.columns]
+        )
     )
 
 
-def test_patient_vs__process():
+def test_patient_vs__process(clin_class):
     '''
     Test vital status columns being propogated with same data
     '''
@@ -215,7 +222,7 @@ def test_patient_vs__process():
     assert expected_patientdf.equals(new_patientdf[expected_patientdf.columns])
 
 
-def test_sample__process():
+def test_sample__process(clin_class):
     '''
     Test sample processing
     - column headers are capitalized
@@ -260,7 +267,7 @@ def test_sample__process():
     assert expected_sampledf.equals(new_sampledf[expected_sampledf.columns])
 
 
-def test_perfect__validate():
+def test_perfect__validate(clin_class):
     '''
     Test perfect validation
     '''
@@ -273,12 +280,13 @@ def test_perfect__validate():
         ETHNICITY=[1, 2, 3, 4, 99],
         BIRTH_YEAR=[1222, "Unknown", 1920, 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
-        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 1990, 1990],
-        YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 1990],
-        INT_CONTACT=['>32485', '<6570', 'Unknown', 'Not Collected', 2000],
-        INT_DOD=['>32485', '<6570', 'Unknown',
-                 'Not Collected', 'Not Applicable'],
-        DEAD=[True, False, 'Unknown', 'Not Collected', True]))
+        YEAR_CONTACT=["Unknown", "Not Collected", '>89', '<18', 1990],
+        INT_CONTACT=["Unknown", "Not Collected", '>32485', '<6570', 2000],
+        YEAR_DEATH=["Unknown", "Not Collected", "Unknown",
+                    'Not Applicable', '<18'],
+        INT_DOD=["Unknown", "Not Collected", 'Unknown',
+                 'Not Applicable', '<6570'],
+        DEAD=['Unknown', 'Not Collected', 'Unknown', False, True]))
 
     sampledf = pd.DataFrame(dict(
         SAMPLE_ID=["ID1-1", "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
@@ -287,19 +295,20 @@ def test_perfect__validate():
         ONCOTREE_CODE=['AMPCA', 'AMPCA', 'Unknown', 'AMPCA', 'AMPCA'],
         SAMPLE_TYPE=[1, 2, 3, 4, 4],
         SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-SAGE-1', 'SAGE-1', 'SAGE-1', 'SAGE-1'],
-        SEQ_DATE=['Jan-2013', 'ApR-2013', 'Jul-2013', 'Oct-2013', 'release']))
+        SEQ_DATE=['Jan-2013', 'ApR-2013', 'Jul-2013', 'Oct-2013', 'release'],
+        SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", "cfDNA", "cfDNA"]))
 
     clinicaldf = patientdf.merge(sampledf, on="PATIENT_ID")
     with mock.patch(
             "genie.process_functions.get_oncotree_code_mappings",
             return_value=onco_map_dict) as mock_get_onco_map:
-        error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
+        error, warning = clin_class._validate(clinicaldf)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         assert error == ""
         assert warning == ""
 
 
-def test_nonull__validate():
+def test_nonull__validate(clin_class):
     '''
     Test that no null values are allowed in the clinical dataframe
     '''
@@ -312,12 +321,14 @@ def test_nonull__validate():
         ETHNICITY=[1, 2, 3, 4, float('nan')],
         BIRTH_YEAR=[float('nan'), "Unknown", 1920, 1990, 1990],
         CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
-        YEAR_DEATH=["Unknown", "Not Collected", float('nan'), 1990, 1990],
+        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable",
+                    1990, float('nan')],
         YEAR_CONTACT=["Unknown", "Not Collected", float('nan'), 1990, 1990],
-        INT_CONTACT=['>32485', '<6570', 'Unknown', float('nan'), 2000],
-        INT_DOD=['>32485', '<6570', 'Unknown',
-                 'Not Collected', float('nan')],
-        DEAD=[True, False, float('nan'), 'Not Collected', True]))
+        INT_CONTACT=["Unknown", "Not Collected", '>32485', float('nan'),
+                     2000],
+        INT_DOD=["Unknown", "Not Collected", 'Unknown', float('nan'),
+                 '<6570'],
+        DEAD=['Unknown', 'Not Collected', 'Unknown', float('nan'), True]))
 
     sampledf = pd.DataFrame(dict(
         SAMPLE_ID=["ID1-1", "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
@@ -326,13 +337,15 @@ def test_nonull__validate():
         ONCOTREE_CODE=['AMPCA', 'AMPCA', 'Unknown', 'AMPCA', 'AMPCA'],
         SAMPLE_TYPE=[1, 2, 3, 4, float('nan')],
         SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-SAGE-1', 'SAGE-1', 'SAGE-1', 'SAGE-1'],
-        SEQ_DATE=['Jan-2013', 'ApR-2013', 'Jul-2013', 'Oct-2013', 'release']))
+        SEQ_DATE=['Jan-2013', 'ApR-2013', 'Jul-2013', 'Oct-2013', 'release'],
+        SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", "cfDNA", float('nan')]
+    ))
 
     clinicaldf = patientdf.merge(sampledf, on="PATIENT_ID")
     with mock.patch(
             "genie.process_functions.get_oncotree_code_mappings",
             return_value=onco_map_dict) as mock_get_onco_map:
-        error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
+        error, warning = clin_class._validate(clinicaldf)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         expected_errors = (
             "Sample Clinical File: Please double check your "
@@ -359,6 +372,11 @@ def test_nonull__validate():
             "Patient Clinical File: Please double check your DEAD column, "
             "it must be True, False, 'Unknown', "
             "'Not Released' or 'Not Collected'.\n"
+            "Patient: you have inconsistent redaction values in "
+            "YEAR_CONTACT, INT_CONTACT.\n"
+            "Patient: you have inconsistent redaction and text values in "
+            "YEAR_DEATH, INT_DOD.\n"
+            "Sample Clinical File: SAMPLE_CLASS column must be 'Tumor', or 'cfDNA'\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your SECONDARY_RACE "
@@ -376,7 +394,7 @@ def test_nonull__validate():
         assert warning == ""
 
 
-def test_missingcols__validate():
+def test_missingcols__validate(clin_class):
     '''
     Test for missing column errors
     '''
@@ -384,7 +402,7 @@ def test_missingcols__validate():
     with mock.patch(
             "genie.process_functions.get_oncotree_code_mappings",
             return_value=onco_map_dict) as mock_get_onco_map:
-        error, warning = clin_class._validate(clinicaldf, json_oncotreeurl)
+        error, warning = clin_class._validate(clinicaldf)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         expected_errors = (
             "Sample Clinical File: Must have SAMPLE_ID column.\n"
@@ -415,7 +433,7 @@ def test_missingcols__validate():
         assert warning == expected_warnings
 
 
-def test_errors__validate():
+def test_errors__validate(clin_class):
     '''
     Test for validation errors
     '''
@@ -429,7 +447,7 @@ def test_errors__validate():
         SEQ_DATE=['Jane-2013', 'Jan-2013', 'Jan-2013', 'Jan-2013', 'Jan-2013'],
         YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 19930, 1990],
         YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 19940],
-        INT_CONTACT=['>32485', '<6570', 'Unknown', 'Not Collected', ">foobar"],
+        INT_CONTACT=['>32485', '<6570', 1990, 'Not Collected', ">foobar"],
         INT_DOD=['>32485', '<6570', 'Unknown', 'Not Collected', '<dense'],
         DEAD=[1, False, 'Unknown', 'Not Collected', 'Not Applicable']))
 
@@ -446,7 +464,7 @@ def test_errors__validate():
     with mock.patch(
             "genie.process_functions.get_oncotree_code_mappings",
             return_value=onco_map_dict) as mock_get_onco_map:
-        error, warning = clin_class._validate(clinicalDf, json_oncotreeurl)
+        error, warning = clin_class._validate(clinicalDf)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
 
         expectedErrors = (
@@ -493,6 +511,12 @@ def test_errors__validate():
             "Patient Clinical File: Please double check your DEAD column, "
             "it must be True, False, 'Unknown', "
             "'Not Released' or 'Not Collected'.\n"
+            "Patient: you have inconsistent redaction and text values in "
+            "YEAR_CONTACT, INT_CONTACT.\n"
+            "Patient: you have inconsistent redaction and text values in "
+            "YEAR_DEATH, INT_DOD.\n"
+            "Patient Clinical File: DEAD value is inconsistent with "
+            "INT_DOD for at least one patient.\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your SECONDARY_RACE "
@@ -514,45 +538,46 @@ def test_errors__validate():
         assert warning == expectedWarnings
 
 
-def test_duplicated__validate():
+def test_duplicated__validate(clin_class):
     '''
     Test for duplicated SAMPLE_ID error and and in the case that
     both sample and patient
     are uploaded, it could be a duplicated PATIENT_ID error
     '''
     patientDf = pd.DataFrame(dict(
-        PATIENT_ID=["ID1", "ID1", "ID3", "ID4", "ID5"],
-        SEX=[1, 2, 1, 2, 99],
-        PRIMARY_RACE=[1, 2, 3, 4, 99],
-        SECONDARY_RACE=[1, 2, 3, 4, 99],
-        TERTIARY_RACE=[1, 2, 3, 4, 99],
-        ETHNICITY=[1, 2, 3, 4, 99],
-        BIRTH_YEAR=["Unknown", 1990, 1990, 1990, 1990],
-        CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
-        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable",
-                    1990, 1990],
-        YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 1990],
-        INT_CONTACT=['>32485', '<6570', 'Unknown', 'Not Collected', 2000],
-        INT_DOD=['>32485', '<6570', 'Unknown', 'Not Collected',
-                 'Not Applicable'],
-        DEAD=[True, False, 'Unknown', 'Not Collected', True]))
+        PATIENT_ID=["ID1", "ID1", "ID3", "ID4", float('nan')],
+        SEX=[1, 2, 1, 2, float('nan')],
+        PRIMARY_RACE=[1, 2, 3, 4, float('nan')],
+        SECONDARY_RACE=[1, 2, 3, 4, float('nan')],
+        TERTIARY_RACE=[1, 2, 3, 4, float('nan')],
+        ETHNICITY=[1, 2, 3, 4, float('nan')],
+        BIRTH_YEAR=["Unknown", 1990, 1990, 1990, float('nan')],
+        CENTER=["FOO", "FOO", "FOO", "FOO", float('nan')],
+        YEAR_CONTACT=["Unknown", "Not Collected", '>89', '<18', float('nan')],
+        INT_CONTACT=["Unknown", "Not Collected", '>32485', '<6570', float('nan')],
+        YEAR_DEATH=["Unknown", "Not Collected", "Unknown",
+                    'Not Applicable', float('nan')],
+        INT_DOD=["Unknown", "Not Collected", 'Unknown',
+                 'Not Applicable', float('nan')],
+        DEAD=['Unknown', 'Not Collected', 'Unknown', False, float('nan')]))
 
     sampleDf = pd.DataFrame(dict(
-        SAMPLE_ID=["ID1-1", "ID3-1", "ID4-1", "ID5-1"],
-        PATIENT_ID=["ID1", "ID3", "ID4", "ID5"],
-        AGE_AT_SEQ_REPORT=[100000, 100000, 100000, 100000],
-        ONCOTREE_CODE=['AMPCA', 'UNKNOWN', 'AMPCA', 'AMPCA'],
-        SAMPLE_TYPE=[1, 3, 4, 4],
-        SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-1', 'SAGE-1', 'SAGE-1'],
-        SEQ_DATE=['Jan-2013', 'Jul-2013', 'Oct-2013', 'release']))
+        SAMPLE_ID=["ID1-1", "ID3-1", "ID4-1", float('nan')],
+        PATIENT_ID=["ID1", "ID3", "ID4", float('nan')],
+        AGE_AT_SEQ_REPORT=[100000, 100000, 100000, float('nan')],
+        ONCOTREE_CODE=['AMPCA', 'UNKNOWN', 'AMPCA', float('nan')],
+        SAMPLE_TYPE=[1, 3, 4, float('nan')],
+        SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-1', 'SAGE-1', float('nan')],
+        SEQ_DATE=['Jan-2013', 'Jul-2013', 'Oct-2013', float('nan')]))
 
     clinicalDf = patientDf.merge(sampleDf, on="PATIENT_ID")
     with mock.patch(
             "genie.process_functions.get_oncotree_code_mappings",
             return_value=onco_map_dict) as mock_get_onco_map:
-        error, warning = clin_class._validate(clinicalDf, json_oncotreeurl)
+        error, warning = clin_class._validate(clinicalDf)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         expectedErrors = (
+            "Clinical file(s): No empty rows allowed.\n"
             "Sample Clinical File: No duplicated SAMPLE_ID allowed.\n"
             "If there are no duplicated SAMPLE_IDs, and both sample and "
             "patient files are uploaded, then please check to make sure no "
@@ -628,8 +653,10 @@ def test__check_year_no_errors():
     perfectdf = pd.DataFrame(
         {"BIRTH_YEAR": ["Unknown", 1990, 1990, 1990, 1990]}
     )
-    error = genie_registry.clinical._check_year(perfectdf, "BIRTH_YEAR", "Filename",
-                                       allowed_string_values = ["Unknown"])
+    error = genie_registry.clinical._check_year(
+        clinicaldf=perfectdf, year_col="BIRTH_YEAR", filename="Filename",
+        allowed_string_values=["Unknown"]
+    )
     assert error == ''
 
 
@@ -638,11 +665,11 @@ def test__check_year_too_big_year():
     year_now = datetime.datetime.utcnow().year
 
     errordf = pd.DataFrame(
-        {"BIRTH_YEAR": ["Unknown", year_now+1, 1990, 1990, 1990]}
+        {"BIRTH_YEAR": ["Unknown", year_now + 1, 1990, 1990, 1990]}
     )
     error = genie_registry.clinical._check_year(
         errordf, "BIRTH_YEAR", "Filename",
-        allowed_string_values = ["Unknown"]
+        allowed_string_values=["Unknown"]
     )
     assert error == (
         "Filename: Please double check your BIRTH_YEAR column, "
@@ -695,3 +722,130 @@ def test_remap_clinical_values(col):
         testdf, sexdf, sexdf, sexdf, sexdf
     )
     assert expecteddf.equals(remappeddf)
+
+
+def test__check_int_year_consistency_valid():
+    """Test valid vital status consistency"""
+    testdf = pd.DataFrame(
+        {"INT_2": [1, 2, "Unknown"],
+         "YEAR_1": [1, 4, "Unknown"],
+         "FOO_3": [1, 3, "Unknown"]}
+    )
+    error = genie_registry.clinical._check_int_year_consistency(
+        clinicaldf=testdf,
+        cols=['INT_2', "YEAR_1"],
+        string_vals=["Unknown"]
+    )
+    assert error == ""
+
+
+@pytest.mark.parametrize(
+    ("inconsistent_df", "expected_err"),
+    [
+        (
+            pd.DataFrame(
+                {"INT_2": [1, ">32485", 4],
+                 "YEAR_1": [1, 4, 4]}
+            ),
+            "Patient: you have inconsistent redaction values in INT_2, YEAR_1.\n"
+        ),
+        (
+            pd.DataFrame(
+                {"INT_2": [1, 3, "Unknown"],
+                 "YEAR_1": [1, 4, "Not Applicable"]}
+            ),
+            "Patient: you have inconsistent text values in INT_2, YEAR_1.\n"
+        ),
+        (
+            pd.DataFrame(
+                {"INT_2": [1, "Unknown", "Unknown"],
+                 "YEAR_1": [1, 4, "Unknown"]}
+            ),
+            "Patient: you have inconsistent text values in INT_2, YEAR_1.\n"
+        ),
+        (
+            pd.DataFrame(
+                {"INT_2": [1, 2, ">32485"],
+                 "YEAR_1": [1, 4, "<18"]}
+            ),
+            "Patient: you have inconsistent redaction values in INT_2, YEAR_1.\n"
+        ),
+        (
+            pd.DataFrame(
+                {"INT_2": [1, 2, "<6570"],
+                 "YEAR_1": [1, 4, ">89"]}
+            ),
+            "Patient: you have inconsistent redaction values in INT_2, YEAR_1.\n"
+        ),
+        (
+            pd.DataFrame(
+                {"INT_2": ["<6570", "Unknown", "Unknown"],
+                 "YEAR_1": [1, 3, "Unknown"]}
+            ),
+            "Patient: you have inconsistent redaction and text values in "
+            "INT_2, YEAR_1.\n"
+        )
+    ]
+)
+def test__check_int_year_consistency_inconsistent(inconsistent_df,
+                                                  expected_err):
+    """Test inconsistent vital status values"""
+    error = genie_registry.clinical._check_int_year_consistency(
+        clinicaldf=inconsistent_df,
+        cols=['INT_2', "YEAR_1"],
+        string_vals=["Unknown", "Not Applicable"]
+    )
+    assert error == expected_err
+
+
+@pytest.mark.parametrize(
+    "valid_df",
+    [
+        pd.DataFrame(
+            {"INT_DOD": [11111, "Not Applicable"],
+             "DEAD": [True, False]}
+        ),
+        pd.DataFrame(
+            {"INT_DOD": ["Not Applicable", "Not Applicable"],
+             "DEAD": [False, False]}
+        )
+    ]
+)
+def test__check_int_dead_consistency_valid(valid_df):
+    """Test valid vital status consistency"""
+    error = genie_registry.clinical._check_int_dead_consistency(
+        clinicaldf=valid_df
+    )
+    assert error == ""
+
+
+@pytest.mark.parametrize(
+    "inconsistent_df",
+    [
+        pd.DataFrame(
+            {"INT_DOD": ["Not Applicable", "Not Applicable"],
+             "DEAD": [True, False]}
+        ),
+        pd.DataFrame(
+            {"INT_DOD": [1111, "Not Released"],
+             "DEAD": [True, False]}
+        ),
+        pd.DataFrame(
+            {"INT_DOD": [1111, 11111],
+             "DEAD": [True, False]}
+        ),
+        pd.DataFrame(
+            {"INT_DOD": [1111, "Not Released"],
+             "DEAD": [True, "Not Applicable"]}
+        )
+    ]
+)
+def test__check_int_dead_consistency_inconsistent(inconsistent_df):
+    """Test valid vital status consistency"""
+    error = genie_registry.clinical._check_int_dead_consistency(
+        clinicaldf=inconsistent_df
+    )
+    assert error == (
+        "Patient Clinical File: DEAD value is inconsistent with "
+        "INT_DOD for at least one patient.\n"
+    )
