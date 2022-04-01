@@ -200,7 +200,7 @@ def _perform_validate(syn, args):
     """This is the main entry point to the genie command line tool."""
 
     # Check parentid argparse
-    _check_parentid_permission_container(syn=syn, project_id=args.parentid)
+    _check_parentid_permission_container(syn=syn, parentid=args.parentid)
     genie_config = process_functions.get_genie_config(
         syn=syn, project_id=args.project_id
     )
