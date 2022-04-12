@@ -727,13 +727,13 @@ def test_remap_clinical_values(col):
 def test__check_int_year_consistency_valid():
     """Test valid vital status consistency"""
     testdf = pd.DataFrame(
-        {"INT_2": [1, 2, "Unknown"],
-         "YEAR_1": [1, 4, "Unknown"],
-         "FOO_3": [1, 3, "Unknown"]}
+        {"INT_2": [1, 2, "Unknown", "Unknown"],
+         "YEAR_1": [1, 4, "Unknown", 1],
+         "FOO_3": [1, 3, "Unknown", 1]}
     )
     error = genie_registry.clinical._check_int_year_consistency(
         clinicaldf=testdf,
-        cols=['INT_2', "YEAR_1"],
+        cols=["INT_2", "YEAR_1"],
         string_vals=["Unknown"]
     )
     assert error == ""
@@ -759,7 +759,7 @@ def test__check_int_year_consistency_valid():
         (
             pd.DataFrame(
                 {"INT_2": [1, "Unknown", "Unknown"],
-                 "YEAR_1": [1, 4, "Unknown"]}
+                 "YEAR_1": [1, "Not Applicable", "Unknown"]}
             ),
             "Patient: you have inconsistent text values in INT_2, YEAR_1.\n"
         ),
@@ -780,10 +780,17 @@ def test__check_int_year_consistency_valid():
         (
             pd.DataFrame(
                 {"INT_2": ["<6570", "Unknown", "Unknown"],
-                 "YEAR_1": [1, 3, "Unknown"]}
+                 "YEAR_1": [1, "Not Applicable", "Unknown"]}
             ),
             "Patient: you have inconsistent redaction and text values in "
             "INT_2, YEAR_1.\n"
+        ),
+        (
+            pd.DataFrame(
+                {"INT_2": ["12345", "Unknown", "Unknown"],
+                 "YEAR_1": ["Unknown", "Unknown", "Unknown"]}
+            ),
+            "Patient: you have inconsistent text values in INT_2, YEAR_1.\n"
         )
     ]
 )
