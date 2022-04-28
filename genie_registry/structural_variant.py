@@ -25,7 +25,7 @@ class StructuralVariant(FileTypeFormat):
 
     def _process(self, sv_df, databaseToSynIdMappingDf):
         sv_df.rename(columns={sv_df.columns: sv_df.columns.upper()}, inplace=True)
-       
+
         return sv_df
 
     def _validate(self, sv_df, nosymbol_check, project_id):
@@ -33,20 +33,21 @@ class StructuralVariant(FileTypeFormat):
         total_warning = StringIO()
         sv_df.columns = [col.upper() for col in sv_df.columns]
 
-        have_sample_col = process_functions.checkColExist(sv_df, 'SAMPLE_ID')
+        have_sample_col = process_functions.checkColExist(sv_df, "SAMPLE_ID")
         if not have_sample_col:
-            total_error.write(
-                "Structural Variant: Must have SAMPLE_ID column.\n"
-            )
+            total_error.write("Structural Variant: Must have SAMPLE_ID column.\n")
         else:
-            if sv_df['SAMPLE_ID'].duplicated().any():
+            if sv_df["SAMPLE_ID"].duplicated().any():
                 total_error.write(
                     "Structural Variant: No duplicated SAMPLE_ID allowed.\n"
                 )
 
         warn, error = process_functions.check_col_and_values(
-            sv_df, "SV_STATUS", ["SOMATIC", "GERMLINE"],
-            "Structural Variant", required=True
+            sv_df,
+            "SV_STATUS",
+            ["SOMATIC", "GERMLINE"],
+            "Structural Variant",
+            required=True,
         )
         total_warning.write(warn)
         total_error.write(error)
@@ -91,14 +92,12 @@ class StructuralVariant(FileTypeFormat):
             "COMMENTS",
         ]
         warn, error = process_functions.check_col_and_values(
-            sv_df, "DNA_SUPPORT", ["Yes", "No"],
-            "Structural Variant", required=False
+            sv_df, "DNA_SUPPORT", ["Yes", "No"], "Structural Variant", required=False
         )
         total_warning.write(warn)
         total_error.write(error)
         warn, error = process_functions.check_col_and_values(
-            sv_df, "RNA_SUPPORT", ["Yes", "No"],
-            "Structural Variant", required=False
+            sv_df, "RNA_SUPPORT", ["Yes", "No"], "Structural Variant", required=False
         )
         total_warning.write(warn)
         total_error.write(error)
