@@ -326,9 +326,9 @@ def format_maf(mafdf: pd.DataFrame, center: str) -> pd.DataFrame:
     Returns:
         Formatted mutation dataframe"""
     mafdf["Center"] = center
-    mafdf["Tumor_Sample_Barcode"] = [
-        process_functions.checkGenieId(i, center) for i in mafdf["Tumor_Sample_Barcode"]
-    ]
+    # mafdf["Tumor_Sample_Barcode"] = [
+    #     process_functions.checkGenieId(i, center) for i in mafdf["Tumor_Sample_Barcode"]
+    # ]
 
     mafdf["Sequence_Source"] = float("nan")
     mafdf["Sequencer"] = float("nan")

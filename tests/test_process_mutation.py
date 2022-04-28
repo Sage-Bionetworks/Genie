@@ -16,7 +16,9 @@ SYN = create_autospec(synapseclient.Synapse)
 def test_format_maf():
     maf_dict = {}
     maf_dict['Center'] = ["foo", "dsdf", "sdf"]
-    maf_dict['Tumor_Sample_Barcode'] = ["GENIE-SAGE-1-3", "1-2", "3-2"]
+    maf_dict['Tumor_Sample_Barcode'] = [
+        "GENIE-SAGE-1-3", "GENIE-SAGE-1-2", "GENIE-SAGE-3-2"
+    ]
     maf_dict['Sequence_Source'] = ["3", "e", "sd"]
     maf_dict['Sequencer'] = ["dsf", "sdf", "d"]
     maf_dict['Validation_Status'] = ["Unknown", "unknown", "f"]
