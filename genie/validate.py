@@ -4,7 +4,7 @@ import logging
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from . import config, process_functions
+from . import config, example_filetype_format, process_functions
 
 logger = logging.getLogger(__name__)
 

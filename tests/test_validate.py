@@ -69,7 +69,8 @@ def test_valid_collect_errors_and_warnings():
     Tests if no error and warning strings are passed that
     returned valid and message is correct
     '''
-    message = validate.collect_errors_and_warnings('', '')
+    results = example_filetype_format.ValidationResults(errors="", warnings="")
+    message = results.collect_errors_and_warnings()
     assert message == "YOUR FILE IS VALIDATED!\n"
 
 
@@ -78,8 +79,10 @@ def test_invalid_collect_errors_and_warnings():
     Tests if error and warnings strings are passed that
     returned valid and message is correct
     """
-    message = validate.collect_errors_and_warnings("error\nnow",
-                                                   'warning\nnow')
+    results = example_filetype_format.ValidationResults(
+        errors="error\nnow", warnings='warning\nnow'
+    )
+    message = results.collect_errors_and_warnings()
     assert message == (
         "----------------ERRORS----------------\n"
         "error\nnow"
@@ -92,8 +95,10 @@ def test_warning_collect_errors_and_warnings():
     Tests if no error but warnings strings are passed that
     returned valid and message is correct
     """
-    message = \
-        validate.collect_errors_and_warnings('', 'warning\nnow')
+    results = example_filetype_format.ValidationResults(
+        errors="", warnings='warning\nnow'
+    )
+    message = results.collect_errors_and_warnings()
     assert message == (
         "YOUR FILE IS VALIDATED!\n"
         "-------------WARNINGS-------------\n"
@@ -106,9 +111,7 @@ def test_valid_validate_single_file(genie_config):
     file workflow and all the right things are returned
     """
     entitylist = [CLIN_ENT]
-    error_string = ''
-    warning_string = ''
-    expected_valid = True
+    results = example_filetype_format.ValidationResults(errors='', warnings='')
     expected_message = "valid message here!"
     expected_filetype = "clinical"
     project_ent = Mock(id='syn1234')
@@ -117,9 +120,8 @@ def test_valid_validate_single_file(genie_config):
                       "determine_filetype",
                       return_value=expected_filetype) as mock_determine_ftype,\
          patch.object(FileFormat, "validate",
-                      return_value=(expected_valid, error_string,
-                                    warning_string)) as mock_genie_class,\
-         patch.object(validate, "collect_errors_and_warnings",
+                      return_value=results) as mock_genie_class,\
+         patch.object(results, "collect_errors_and_warnings",
                       return_value=expected_message) as mock_determine:
         validator = validate.GenieValidationHelper(
             syn, project_id="syn1234",
@@ -128,9 +130,9 @@ def test_valid_validate_single_file(genie_config):
             format_registry={'clinical': FileFormat},
             genie_config=genie_config
         )
-        valid, message = validator.validate_single_file(nosymbol_check=False)
+        valid_cls, message = validator.validate_single_file(nosymbol_check=False)
 
-        assert valid == expected_valid
+        assert valid_cls == results
         assert message == expected_message
         assert validator.file_type == expected_filetype
 
@@ -140,7 +142,7 @@ def test_valid_validate_single_file(genie_config):
                                                  nosymbol_check=False,
                                                  project_id='syn1234')
 
-        mock_determine.assert_called_once_with(error_string, warning_string)
+        mock_determine.assert_called_once_with()
 
 
 def test_filetype_validate_single_file():
@@ -161,9 +163,9 @@ def test_filetype_validate_single_file():
             format_registry={'wrong': FileFormat}
         )
 
-        valid, message = validator.validate_single_file()
+        valid_cls, message = validator.validate_single_file()
         assert message == expected_error
-        assert not valid
+        assert not valid_cls.is_valid
 
 
 def test_wrongfiletype_validate_single_file():
@@ -187,7 +189,7 @@ def test_wrongfiletype_validate_single_file():
         valid, message = validator.validate_single_file()
 
         assert message == expected_error
-        assert not valid
+        assert not valid.is_valid
         mock_determine_filetype.assert_called_once_with()
 
 
