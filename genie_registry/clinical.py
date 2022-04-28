@@ -530,7 +530,7 @@ class Clinical(FileTypeFormat):
                 identifiers=clinicaldf[sample_id],
                 center=self.center,
                 filename="Sample Clinical File",
-                col="SAMPLE_ID"
+                col="SAMPLE_ID",
             )
             total_error.write(error)
 

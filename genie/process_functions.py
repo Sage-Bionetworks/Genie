@@ -198,6 +198,7 @@ def validate_genie_identifier(
         )
     return total_error
 
+
 # def get_oncotree_codes(oncotree_url):
 #     '''
 #     Deprecated
