@@ -257,21 +257,12 @@ class Clinical(FileTypeFormat):
         """Transform the values of each row of the clinical file"""
         # Must create copy or else it will overwrite the original row
         x = row.copy()
-        # # # PATIENT ID
-        # if x.get("PATIENT_ID") is not None:
-        #     x["PATIENT_ID"] = process_functions.checkGenieId(
-        #         x["PATIENT_ID"], self.center
-        #     )
 
         # BIRTH YEAR
         if x.get("BIRTH_YEAR") is not None:
             # BIRTH YEAR (Check if integer)
             if process_functions.checkInt(x["BIRTH_YEAR"]):
                 x["BIRTH_YEAR"] = int(x["BIRTH_YEAR"])
-
-        # SAMPLE ID
-        # if x.get("SAMPLE_ID") is not None:
-        #     x["SAMPLE_ID"] = process_functions.checkGenieId(x["SAMPLE_ID"], self.center)
 
         # AGE AT SEQ REPORT
         if x.get("AGE_AT_SEQ_REPORT") is not None:
