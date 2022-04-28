@@ -104,8 +104,10 @@ class mutationsInCis(FileTypeFormat):
 
         if process_functions.checkColExist(mutationInCisDf, "Tumor_Sample_Barcode"):
             error = process_functions.validate_genie_identifier(
-                identifiers=mutationInCisDf['Tumor_Sample_Barcode'], center=self.center,
-                filename="Mutations In Cis Filter File", col="TUMOR_SAMPLE_BARCODE"
+                identifiers=mutationInCisDf["Tumor_Sample_Barcode"],
+                center=self.center,
+                filename="Mutations In Cis Filter File",
+                col="TUMOR_SAMPLE_BARCODE",
             )
             total_error += error
 

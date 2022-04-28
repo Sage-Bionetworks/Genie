@@ -155,8 +155,10 @@ class fusions(FileTypeFormat):
 
         if process_functions.checkColExist(fusionDF, "TUMOR_SAMPLE_BARCODE"):
             error = process_functions.validate_genie_identifier(
-                identifiers=fusionDF['TUMOR_SAMPLE_BARCODE'], center=self.center,
-                filename="fusion", col="TUMOR_SAMPLE_BARCODE"
+                identifiers=fusionDF["TUMOR_SAMPLE_BARCODE"],
+                center=self.center,
+                filename="fusion",
+                col="TUMOR_SAMPLE_BARCODE",
             )
             total_error += error
         # if process_functions.checkColExist(fusionDF, "DNA_SUPPORT"):

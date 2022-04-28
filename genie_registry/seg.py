@@ -81,8 +81,7 @@ class seg(FileTypeFormat):
 
         if process_functions.checkColExist(segDF, "ID"):
             error = process_functions.validate_genie_identifier(
-                identifiers=segDF['ID'], center=self.center,
-                filename="Seg", col="ID"
+                identifiers=segDF["ID"], center=self.center, filename="Seg", col="ID"
             )
             total_error += error
 

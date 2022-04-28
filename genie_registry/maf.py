@@ -263,8 +263,10 @@ class maf(FileTypeFormat):
 
         if process_functions.checkColExist(mutationDF, "TUMOR_SAMPLE_BARCODE"):
             error = process_functions.validate_genie_identifier(
-                identifiers=mutationDF['TUMOR_SAMPLE_BARCODE'], center=self.center,
-                filename="maf", col="TUMOR_SAMPLE_BARCODE"
+                identifiers=mutationDF["TUMOR_SAMPLE_BARCODE"],
+                center=self.center,
+                filename="maf",
+                col="TUMOR_SAMPLE_BARCODE",
             )
             total_error.write(error)
 
