@@ -140,8 +140,14 @@ def _check_int_year_consistency(
     for str_val in string_vals:
         # n string values per row
         n_str = (clinicaldf[cols] == str_val).sum(axis=1)
-        if n_str.between(0, len(cols), inclusive="neither").any():
-            is_text_inconsistent = True
+        # year can be known with unknown interval value
+        # otherwise must be all numeric or the same text value
+        if str_val == "Unknown":
+            if ((n_str == 1) & (clinicaldf[interval_col] != "Unknown")).any():
+                is_text_inconsistent = True
+        else:
+            if n_str.between(0, len(cols), inclusive="neither").any():
+                is_text_inconsistent = True
 
     is_redaction_inconsistent = False
     # Check that the redacted values are consistent
