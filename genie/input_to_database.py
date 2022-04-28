@@ -289,7 +289,7 @@ def validatefile(
 
         logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
-            valid_cls.is_valid, message, entities
+            valid_cls.is_valid(), message, entities
         )
         # Send email the first time the file is invalid
         if invalid_errors_list:

@@ -20,7 +20,10 @@ class ValidationResults:
         self.errors = errors
         self.warnings = warnings
         self.detailed = detailed
-        self.is_valid = errors == ""
+
+    def is_valid(self):
+        """True if file is valid"""
+        return self.errors == ""
 
     def collect_errors_and_warnings(self) -> str:
         """Aggregates error and warnings into a string.

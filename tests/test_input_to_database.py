@@ -393,7 +393,7 @@ def test_valid_validatefile(genie_config):
             validation_statusdf, error_trackerdf, entities)
         patch_determine_filetype.assert_called_once()
         patch_staterror_list.assert_called_once_with(
-            valid_results.is_valid, message, entities)
+            valid_results.is_valid(), message, entities)
         patch_send_email.assert_not_called()
 
 
@@ -464,7 +464,7 @@ def test_invalid_validatefile(genie_config):
             validation_statusdf, error_trackerdf, entities)
         patch_determine_filetype.assert_called_once()
         patch_staterror_list.assert_called_once_with(
-            valid_results.is_valid, message, entities)
+            valid_results.is_valid(), message, entities)
 
 
 def test_already_validated_validatefile():
