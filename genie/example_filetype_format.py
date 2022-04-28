@@ -21,7 +21,7 @@ class ValidationResults:
         self.warnings = warnings
         self.detailed = detailed
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
         """True if file is valid"""
         return self.errors == ""
 
