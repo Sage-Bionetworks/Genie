@@ -544,7 +544,7 @@ class Clinical(FileTypeFormat):
                     "Patient Clinical File: "
                     f"PATIENT_ID must start with GENIE-{self.center}\n"
                 )
-            if any(clinicaldf[patientId].str.len() > 50):
+            if any(clinicaldf[patientId].str.len() >= 50):
                 total_error.write(
                     "Patient Clinical File: PATIENT_ID must have less than "
                     "50 characters.\n"
