@@ -192,7 +192,7 @@ def validate_genie_identifier(
         total_error = total_error + (
             f"{filename}: {col} must start with GENIE-{center}\n"
         )
-    if any(identifiers.str.len() > 50):
+    if any(identifiers.str.len() >= 50):
         total_error = total_error + (
             f"{filename}: {col} must have less than 50 characters.\n"
         )
