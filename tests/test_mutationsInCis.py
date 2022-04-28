@@ -52,7 +52,7 @@ ENTITY = synapseclient.Project("testing",
                                annotations={'dbMapping': ["syn10967259"]})
 
 
-def test_validation(mutCis):
+def test_validation__perfect(mutCis):
     with pytest.raises(AssertionError):
         mutCis.validateFilename(["foo"])
     assert mutCis.validateFilename(
@@ -74,6 +74,9 @@ def test_validation(mutCis):
         error, warning = mutCis._validate(mutCisDf)
         assert error == ""
         assert warning == ""
+
+
+def test_validation__missing_col(mutCis):
     mutCisDf = pd.DataFrame(dict(Flag=['mutationsInCis'],
                                  Center=['SAGE'],
                                  Tumor_Sample_Barcode=["GENIE-SAGE-ID1-1"],
@@ -91,9 +94,11 @@ def test_validation(mutCis):
             "Variant_Classification,Start_Position.\n")
         assert error == expectedErrors
 
+
+def test_validation__invalid(mutCis):
     mutCisDf = pd.DataFrame(dict(Flag=['mutationsInCis'],
                                  Center=['SAGE'],
-                                 Tumor_Sample_Barcode=["GENIE-SAGE-ID1-1"],
+                                 Tumor_Sample_Barcode=["ID1-1"],
                                  Variant_Classification=["Nonsense_Mutation"],
                                  Hugo_Symbol=["AKT1"],
                                  HGVSp_Short=["foo"],
@@ -108,5 +113,7 @@ def test_validation(mutCis):
         expectedErrors = (
             "Mutations In Cis Filter File: All variants must come from "
             "the original mutationInCis_filtered_samples.csv file in each "
-            "institution's staging folder.\n")
+            "institution's staging folder.\n"
+            "Mutations In Cis Filter File: TUMOR_SAMPLE_BARCODE must "
+            "start with GENIE-SAGE\n")
         assert error == expectedErrors
