@@ -17,6 +17,7 @@ DATABASE_DF = pd.DataFrame({
     "baz": [float('nan'), float('nan'), float('nan')]})
 DATABASE_DF.index = ['1_3', '2_3', '3_5']
 ENTITY = synapseclient.Project("foo", annotations={"dbMapping": ["syn1234"]})
+ONCOTREE_ENT = 'syn222'
 
 @pytest.mark.parametrize("input_str,output", [
         ("1.0\t", "1\t"),
@@ -433,3 +434,22 @@ def test_create_new_fileformat_table():
         assert new_table == {"newdb_ent": new_table_ent,
                              "newdb_mappingdf": update_return,
                              "moved_ent": move_entity_return}
+
+
+def test_notnone_get_oncotree_link(genie_config):
+    """Test link passed in by user is used"""
+    url = "https://www.synapse.org"
+    link = process_functions._get_oncotreelink(
+        syn, genie_config, oncotree_link=url
+    )
+    assert link == url
+
+
+def test_none__getoncotreelink(genie_config):
+    """Test oncotree link is gotten"""
+    url = "https://www.synapse.org"
+    link = synapseclient.File("foo", parentId="foo", externalURL=url)
+    with patch.object(syn, "get", return_value=link) as patch_synget:
+        oncolink = process_functions._get_oncotreelink(syn, genie_config)
+        patch_synget.assert_called_once_with(genie_config['oncotreeLink'])
+        assert oncolink == url

@@ -6,10 +6,12 @@ import pandas as pd
 import synapseclient
 from synapseclient import Synapse
 
+from . import process_functions
+
 logger = logging.getLogger(__name__)
 
 
-def write(syn: Synapse, center_mapping_df: pd.DataFrame, error_tracker_synid: str):
+def write(syn: Synapse, center_mapping_synid: str, error_tracker_synid: str):
     """Write center errors to a file
 
     Args:
@@ -18,6 +20,10 @@ def write(syn: Synapse, center_mapping_df: pd.DataFrame, error_tracker_synid: st
         error_tracker_synid: Error tracking synapse id
 
     """
+    center_mapping_df = process_functions.get_syntabledf(
+        syn=syn,
+        query_string=f"SELECT * FROM {center_mapping_synid} where release is true",
+    )
     center_errors = get_center_invalid_errors(syn, error_tracker_synid)
     for center in center_mapping_df["center"]:
         logger.info(center)
