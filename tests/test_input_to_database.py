@@ -7,7 +7,9 @@ import pytest
 import synapseclient
 import synapseutils
 
-from genie import input_to_database, process_functions, process_mutation
+from genie import (
+    input_to_database, example_filetype_format, process_functions, process_mutation
+)
 from genie_registry.clinical import Clinical
 from genie.validate import GenieValidationHelper
 
@@ -356,7 +358,7 @@ def test_valid_validatefile(genie_config):
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    valid = True
+    valid_results = example_filetype_format.ValidationResults(errors='', warnings='')
     message = "Is valid"
     filetype = "clinical"
     # Only a list is returned as opposed a list of lists when there are
@@ -373,7 +375,7 @@ def test_valid_validatefile(genie_config):
                                     'error_list': [],
                                     'to_validate': True}) as patch_check, \
          patch.object(GenieValidationHelper, "validate_single_file",
-                      return_value=(valid, message)) as patch_validate,\
+                      return_value=(valid_results, message)) as patch_validate,\
          patch.object(input_to_database, "_get_status_and_error_list",
                       return_value=status_error_list_results) as patch_staterror_list,\
          patch.object(input_to_database,
@@ -391,7 +393,7 @@ def test_valid_validatefile(genie_config):
             validation_statusdf, error_trackerdf, entities)
         patch_determine_filetype.assert_called_once()
         patch_staterror_list.assert_called_once_with(
-            valid, message, entities)
+            valid_results.is_valid(), message, entities)
         patch_send_email.assert_not_called()
 
 
@@ -410,7 +412,9 @@ def test_invalid_validatefile(genie_config):
     entity.modifiedBy = '333'
     entity.createdBy = '444'
     entities = [entity]
-    valid = False
+    valid_results = example_filetype_format.ValidationResults(
+        errors='Is invalid', warnings=''
+    )
     message = "Is invalid"
     filetype = "clinical"
     status_error_list_results = ([{'entity': entity, 'status': 'INVALID'}],
@@ -444,7 +448,7 @@ def test_invalid_validatefile(genie_config):
                                     'error_list': [],
                                     'to_validate': True}) as patch_check, \
          patch.object(GenieValidationHelper, "validate_single_file",
-                      return_value=(valid, message)) as patch_validate,\
+                      return_value=(valid_results, message)) as patch_validate,\
          patch.object(input_to_database, "_get_status_and_error_list",
                       return_value=status_error_list_results) as patch_staterror_list:
 
@@ -460,7 +464,7 @@ def test_invalid_validatefile(genie_config):
             validation_statusdf, error_trackerdf, entities)
         patch_determine_filetype.assert_called_once()
         patch_staterror_list.assert_called_once_with(
-            valid, message, entities)
+            valid_results.is_valid(), message, entities)
 
 
 def test_already_validated_validatefile():
