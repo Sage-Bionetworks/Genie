@@ -3,7 +3,6 @@ import logging
 import os
 
 import pandas as pd
-import synapseclient
 
 from genie.example_filetype_format import FileTypeFormat
 from genie import process_functions
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class StructuralVariant(FileTypeFormat):
 
-    _fileType = "structural_variants"
+    _fileType = "sv"
 
     _process_kwargs = ["newPath", "databaseToSynIdMappingDf"]
 
