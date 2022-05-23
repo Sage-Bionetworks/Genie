@@ -11,6 +11,9 @@ class TestSv:
         sv_cls = StructuralVariant(syn, "SAGE")
         self.sv_cls = sv_cls
 
+    def test_filetype(self):
+        assert self.sv_cls._fileType == "sv"
+
     def test_processing(self):
         expected_df = pd.DataFrame({
             "SAMPLE_ID": ['GENIE-SAGE-ID1-1', 'GENIE-SAGE-ID2-1', 'GENIE-SAGE-ID3-1',
