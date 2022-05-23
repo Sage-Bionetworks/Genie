@@ -27,8 +27,10 @@ class StructuralVariant(FileTypeFormat):
 
     def process_steps(self, sv_df, newPath, databaseSynId):
         sv_df = self._process(sv_df)
+        # TODO: test the col parameter
         process_functions.updateData(
-            self.syn, databaseSynId, sv_df, self.center, toDelete=True
+            self.syn, databaseSynId, sv_df, self.center, toDelete=True,
+            col=sv_df.columns.to_list()
         )
         sv_df.to_csv(newPath, sep="\t", index=False)
         return newPath
