@@ -21,16 +21,20 @@ class StructuralVariant(FileTypeFormat):
     def _process(self, sv_df):
         sv_df.columns = [col.upper() for col in sv_df.columns]
         # Add center column
-        center = [sample_id.split("-")[1] for sample_id in sv_df['SAMPLE_ID']]
-        sv_df['CENTER'] = center
+        center = [sample_id.split("-")[1] for sample_id in sv_df["SAMPLE_ID"]]
+        sv_df["CENTER"] = center
         return sv_df
 
     def process_steps(self, sv_df, newPath, databaseSynId):
         sv_df = self._process(sv_df)
         # TODO: test the col parameter
         process_functions.updateData(
-            self.syn, databaseSynId, sv_df, self.center, toDelete=True,
-            col=sv_df.columns.to_list()
+            self.syn,
+            databaseSynId,
+            sv_df,
+            self.center,
+            toDelete=True,
+            col=sv_df.columns.to_list(),
         )
         sv_df.to_csv(newPath, sep="\t", index=False)
         return newPath
