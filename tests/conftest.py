@@ -1,4 +1,7 @@
+from unittest import mock
+
 import pytest
+import synapseclient
 
 
 @pytest.fixture
@@ -65,3 +68,8 @@ def genie_config():
         "sampletype_mapping": "syn7434273",
     }
     return config
+
+
+@pytest.fixture()
+def syn():
+    return mock.create_autospec(synapseclient.Synapse)
