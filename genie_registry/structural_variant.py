@@ -38,6 +38,13 @@ class StructuralVariant(FileTypeFormat):
                 total_error.write(
                     "Structural Variant: No duplicated SAMPLE_ID allowed.\n"
                 )
+            # TODO: switch to validate_genie_identifier function
+            # After GH-444 is merged
+            if not all(sv_df["SAMPLE_ID"].str.startswith(f"GENIE-{self.center}")):
+                total_error.write(
+                    "Structural Variant: SAMPLE_ID must start with "
+                    f"GENIE-{self.center}\n"
+                )
 
         warn, error = process_functions.check_col_and_values(
             sv_df,
@@ -49,45 +56,45 @@ class StructuralVariant(FileTypeFormat):
         total_warning.write(warn)
         total_error.write(error)
 
-        optional_columns = [
-            "SITE1_HUGO_SYMBOL",
-            "SITE2_HUGO_SYMBOL",
-            "SITE1_ENSEMBL_TRANSCRIPT_ID",
-            "SITE2_ENSEMBL_TRANSCRIPT_ID",
-            "SITE1_ENTREZ_GENE_ID",
-            "SITE2_ENTREZ_GENE_ID",
-            "SITE1_REGION_NUMBER",
-            "SITE2_REGION_NUMBER",
-            "SITE1_REGION",
-            "SITE2_REGION",
-            "SITE1_CHROMOSOME",
-            "SITE2_CHROMOSOME",
-            "SITE1_CONTIG",
-            "SITE2_CONTIG",
-            "SITE1_POSITION",
-            "SITE2_POSITION",
-            "SITE1_DESCRIPTION",
-            "SITE2_DESCRIPTION",
-            "SITE2_EFFECT_ON_FRAME",
-            "NCBI_BUILD",
-            "CLASS",
-            "TUMOR_SPLIT_READ_COUNT",
-            "TUMOR_PAIRED_END_READ_COUNT",
-            "EVENT_INFO",
-            "BREAKPOINT_TYPE",
-            "CONNECTION_TYPE",
-            "ANNOTATION",
-            "DNA_SUPPORT",
-            "RNA_SUPPORT",
-            "SV_LENGTH",
-            "NORMAL_READ_COUNT",
-            "TUMOR_READ_COUNT",
-            "NORMAL_VARIANT_COUNT",
-            "TUMOR_VARIANT_COUNT",
-            "NORMAL_PAIRED_END_READ_COUNT",
-            "NORMAL_SPLIT_READ_COUNT",
-            "COMMENTS",
-        ]
+        # optional_columns = [
+        #     "SITE1_HUGO_SYMBOL",
+        #     "SITE2_HUGO_SYMBOL",
+        #     "SITE1_ENSEMBL_TRANSCRIPT_ID",
+        #     "SITE2_ENSEMBL_TRANSCRIPT_ID",
+        #     "SITE1_ENTREZ_GENE_ID",
+        #     "SITE2_ENTREZ_GENE_ID",
+        #     "SITE1_REGION_NUMBER",
+        #     "SITE2_REGION_NUMBER",
+        #     "SITE1_REGION",
+        #     "SITE2_REGION",
+        #     "SITE1_CHROMOSOME",
+        #     "SITE2_CHROMOSOME",
+        #     "SITE1_CONTIG",
+        #     "SITE2_CONTIG",
+        #     "SITE1_POSITION",
+        #     "SITE2_POSITION",
+        #     "SITE1_DESCRIPTION",
+        #     "SITE2_DESCRIPTION",
+        #     "SITE2_EFFECT_ON_FRAME",
+        #     "NCBI_BUILD",
+        #     "CLASS",
+        #     "TUMOR_SPLIT_READ_COUNT",
+        #     "TUMOR_PAIRED_END_READ_COUNT",
+        #     "EVENT_INFO",
+        #     "BREAKPOINT_TYPE",
+        #     "CONNECTION_TYPE",
+        #     "ANNOTATION",
+        #     "DNA_SUPPORT",
+        #     "RNA_SUPPORT",
+        #     "SV_LENGTH",
+        #     "NORMAL_READ_COUNT",
+        #     "TUMOR_READ_COUNT",
+        #     "NORMAL_VARIANT_COUNT",
+        #     "TUMOR_VARIANT_COUNT",
+        #     "NORMAL_PAIRED_END_READ_COUNT",
+        #     "NORMAL_SPLIT_READ_COUNT",
+        #     "COMMENTS",
+        # ]
         # Check for columns that should be integar columsn
         int_cols = [
             "SITE1_REGION_NUMBER",
