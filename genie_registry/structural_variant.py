@@ -12,18 +12,26 @@ class StructuralVariant(FileTypeFormat):
 
     _fileType = "sv"
 
-    _process_kwargs = ["newPath", "databaseToSynIdMappingDf"]
-
     _validation_kwargs = ["nosymbol_check", "project_id"]
 
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "data_sv.txt"
 
-    def _process(self, sv_df, databaseToSynIdMappingDf):
-        sv_df.rename(columns={sv_df.columns: sv_df.columns.upper()}, inplace=True)
-
+    def _process(self, sv_df):
+        sv_df.columns = [col.upper() for col in sv_df.columns]
+        # Add center column
+        center = [sample_id.split("-")[1] for sample_id in sv_df['SAMPLE_ID']]
+        sv_df['CENTER'] = center
         return sv_df
+
+    def process_steps(self, sv_df, newPath, databaseSynId):
+        sv_df = self._process(sv_df)
+        process_functions.updateData(
+            self.syn, databaseSynId, sv_df, self.center, toDelete=True
+        )
+        sv_df.to_csv(newPath, sep="\t", index=False)
+        return newPath
 
     def _validate(self, sv_df, nosymbol_check, project_id):
         total_error = StringIO()

@@ -351,7 +351,7 @@ def processfiles(
             # Table id can be None
             tableid = genie_config.get(filetype)
 
-            if filetype is not None:
+            if filetype is not None and filetype != "other":
                 # Example GENIE config can be found in tests/conftest.py
                 processor = format_registry[filetype](
                     syn=syn, center=center, genie_config=genie_config
