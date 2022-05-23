@@ -26,7 +26,19 @@ logger = logging.getLogger(__name__)
 logging.getLogger("keyring").setLevel(logging.WARNING)
 
 __all__ = [
-    "__version__", "assay", "bed", "cbs", "clinical", "cna", "fusions", "maf",
-    "mutationsInCis", "patientRetraction", "sampleRetraction", "seg",
-    "structural_variant", "vcf", "workflow",
+    "__version__",
+    "assay",
+    "bed",
+    "cbs",
+    "clinical",
+    "cna",
+    "fusions",
+    "maf",
+    "mutationsInCis",
+    "patientRetraction",
+    "sampleRetraction",
+    "seg",
+    "structural_variant",
+    "vcf",
+    "workflow",
 ]

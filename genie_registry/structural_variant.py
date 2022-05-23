@@ -90,16 +90,24 @@ class StructuralVariant(FileTypeFormat):
         ]
         # Check for columns that should be integar columsn
         int_cols = [
-            "SITE1_REGION_NUMBER", "SITE2_REGION_NUMBER",
-            "SITE1_POSITION", "SITE2_POSITION",
-            "TUMOR_SPLIT_READ_COUNT", "TUMOR_PAIRED_END_READ_COUNT",
-            "SV_LENGTH", "NORMAL_READ_COUNT", "TUMOR_READ_COUNT",
-            "NORMAL_VARIANT_COUNT", "TUMOR_VARIANT_COUNT",
-            "NORMAL_PAIRED_END_READ_COUNT", "NORMAL_SPLIT_READ_COUNT"
+            "SITE1_REGION_NUMBER",
+            "SITE2_REGION_NUMBER",
+            "SITE1_POSITION",
+            "SITE2_POSITION",
+            "TUMOR_SPLIT_READ_COUNT",
+            "TUMOR_PAIRED_END_READ_COUNT",
+            "SV_LENGTH",
+            "NORMAL_READ_COUNT",
+            "TUMOR_READ_COUNT",
+            "NORMAL_VARIANT_COUNT",
+            "TUMOR_VARIANT_COUNT",
+            "NORMAL_PAIRED_END_READ_COUNT",
+            "NORMAL_SPLIT_READ_COUNT",
         ]
         # Get all columns that are non integers.
         non_ints = [
-            col for col in int_cols
+            col
+            for col in int_cols
             if sv_df.get(col) is not None and sv_df[col].dtype != int
         ]
         if len(non_ints) > 0:
@@ -120,22 +128,31 @@ class StructuralVariant(FileTypeFormat):
         #     "Structural Variant", required=False
         # )
         warn, error = process_functions.check_col_and_values(
-            sv_df, "NCBI_BUILD", ["GRCh37", "GRCh38"],
-            "Structural Variant", required=False
+            sv_df,
+            "NCBI_BUILD",
+            ["GRCh37", "GRCh38"],
+            "Structural Variant",
+            required=False,
         )
         total_warning.write(warn)
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
-            sv_df, "BREAKPOINT_TYPE", ["PRECISE", "IMPRECISE"],
-            "Structural Variant", required=False
+            sv_df,
+            "BREAKPOINT_TYPE",
+            ["PRECISE", "IMPRECISE"],
+            "Structural Variant",
+            required=False,
         )
         total_warning.write(warn)
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
-            sv_df, "CONNECTION_TYPE", ["3to5", "5to3", "5to5", "3to3"],
-            "Structural Variant", required=False
+            sv_df,
+            "CONNECTION_TYPE",
+            ["3to5", "5to3", "5to5", "3to3"],
+            "Structural Variant",
+            required=False,
         )
         total_warning.write(warn)
         total_error.write(error)
