@@ -12,7 +12,7 @@ class StructuralVariant(FileTypeFormat):
 
     _fileType = "sv"
 
-    _validation_kwargs = ["nosymbol_check", "project_id"]
+    # _validation_kwargs = ["nosymbol_check", "project_id"]
 
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
@@ -39,7 +39,8 @@ class StructuralVariant(FileTypeFormat):
         sv_df.to_csv(newPath, sep="\t", index=False)
         return newPath
 
-    def _validate(self, sv_df, nosymbol_check, project_id):
+    # def _validate(self, sv_df, nosymbol_check, project_id):
+    def _validate(self, sv_df):
         total_error = StringIO()
         total_warning = StringIO()
         sv_df.columns = [col.upper() for col in sv_df.columns]
@@ -133,7 +134,7 @@ class StructuralVariant(FileTypeFormat):
         ]
         if len(non_ints) > 0:
             total_error.write(
-                "Structural Variant: Only integars allowed in these "
+                "Structural Variant: Only integers allowed in these "
                 "column(s): {}.\n".format(", ".join(non_ints))
             )
 
@@ -155,7 +156,7 @@ class StructuralVariant(FileTypeFormat):
             "Structural Variant",
             required=False,
         )
-        total_warning.write(warn)
+        # total_warning.write(warn)
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
@@ -165,7 +166,7 @@ class StructuralVariant(FileTypeFormat):
             "Structural Variant",
             required=False,
         )
-        total_warning.write(warn)
+        # total_warning.write(warn)
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
@@ -175,19 +176,19 @@ class StructuralVariant(FileTypeFormat):
             "Structural Variant",
             required=False,
         )
-        total_warning.write(warn)
+        # total_warning.write(warn)
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
             sv_df, "DNA_SUPPORT", ["Yes", "No"], "Structural Variant", required=False
         )
-        total_warning.write(warn)
+        # total_warning.write(warn)
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
             sv_df, "RNA_SUPPORT", ["Yes", "No"], "Structural Variant", required=False
         )
-        total_warning.write(warn)
+        # total_warning.write(warn)
         total_error.write(error)
 
         return total_error.getvalue(), total_warning.getvalue()
