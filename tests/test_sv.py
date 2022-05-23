@@ -1,15 +1,12 @@
 from unittest import mock
 
 import pandas as pd
-from py import process
-import pytest
-import synapseclient
 
 from genie_registry.structural_variant import StructuralVariant
 
 
+class TestSv:
 
-class TestSv():
     def setup_method(self, syn):
         sv_cls = StructuralVariant(syn, "SAGE")
         self.sv_cls = sv_cls
