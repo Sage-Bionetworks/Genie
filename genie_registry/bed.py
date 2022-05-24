@@ -106,22 +106,23 @@ def _add_feature_type_tobeddf(filepath, featuretype):
     Returns:
         df: empty dataframe or dataframe with appended feature type
     """
+    bed_columns = [
+        "Chromosome",
+        "Start_Position",
+        "End_Position",
+        "Hugo_Symbol",
+        "includeInPanel",
+        "clinicalReported",
+        "ID",
+        "SEQ_ASSAY_ID",
+    ]
     # No need to add anything if the dataframe is empty
     if os.stat(filepath).st_size != 0:
         beddf = pd.read_csv(filepath, sep="\t", header=None)
-        beddf.columns = [
-            "Chromosome",
-            "Start_Position",
-            "End_Position",
-            "Hugo_Symbol",
-            "includeInPanel",
-            "clinicalReported",
-            "ID",
-            "SEQ_ASSAY_ID",
-        ]
+        beddf.columns = bed_columns
         beddf["Feature_Type"] = featuretype
     else:
-        beddf = pd.DataFrame()
+        beddf = pd.DataFrame(columns=bed_columns)
     return beddf
 
 
@@ -239,20 +240,6 @@ def add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path):
     genie_exondf = _add_feature_type_tobeddf(genie_exon_path, "exon")
     genie_introndf = _add_feature_type_tobeddf(genie_intron_path, "intron")
     genie_intergenicdf = _add_feature_type_tobeddf(genie_intergenic_path, "intergenic")
-    # Specify the combined df in case there no bed hits at all
-    genie_combineddf = pd.DataFrame(
-        columns=[
-            "Chromosome",
-            "Start_Position",
-            "End_Position",
-            "Hugo_Symbol",
-            "includeInPanel",
-            "clinicalReported",
-            "ID",
-            "SEQ_ASSAY_ID",
-            "Feature_Type",
-        ]
-    )
     genie_combineddf = pd.concat([genie_exondf, genie_introndf, genie_intergenicdf])
     return genie_combineddf
 
