@@ -18,6 +18,7 @@ from . import (
     vcf,
     workflow,
 )
+
 # Set genie registry to be the same as main genie codebase
 from genie import __version__
 
