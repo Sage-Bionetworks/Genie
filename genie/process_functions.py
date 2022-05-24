@@ -1121,9 +1121,7 @@ def _update_database_mapping(
     # Only update the one row
     to_update_row = database_synid_mappingdf[fileformat_ind]
 
-    syn.store(
-        synapseclient.Table(database_mapping_synid, to_update_row)
-    )
+    syn.store(synapseclient.Table(database_mapping_synid, to_update_row))
     return database_synid_mappingdf
 
 
