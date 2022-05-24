@@ -75,7 +75,8 @@ def update_samples_in_release_table(
         )
         new_column = syn.store(syn_col)
         schema.addColumn(new_column)
-        schema = syn.store(schema)
+        # no need to return schema variable because it isn't used
+        syn.store(schema)
     # Columns of samples in release
     samples_per_release = syn.tableQuery(
         'SELECT SAMPLE_ID, "{}" FROM {}'.format(release, samples_in_release_synid)
