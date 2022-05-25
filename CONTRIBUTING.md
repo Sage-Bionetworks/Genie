@@ -61,7 +61,7 @@ Follow gitflow best practices as linked above.
 
 * Always merge all new features into `develop` branch first (unless it is a documentation, readme, or github action patch into `main`)
 * After initial features are ready in the `develop` branch, create a `release-X.X` branch to prepare for the release.
-    * update `genie/__version__.py`
+    * update the `__version__` parameter in `genie/__init__.py`
 * Merge `release-X.X` branch into `main`
 * Create release tag (`v...`) and include release notes.  Also include any known bugs for each release here.
 * Merge `main` back into `develop`
