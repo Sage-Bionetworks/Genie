@@ -85,16 +85,20 @@ def test_validation__perfect(mutCis):
 
 
 def test_validation__missing_col(mutCis):
-    mutCisDf = pd.DataFrame(dict(Flag=['mutationsInCis'],
-                                 Center=['SAGE'],
-                                 Tumor_Sample_Barcode=["GENIE-SAGE-ID1-1"],
-                                 Hugo_Symbol=["AKT1"],
-                                 HGVSp_Short=["p.1234"],
-                                 Chromosome=["1"],
-                                 Reference_Allele=["AGC"],
-                                 Tumor_Seq_Allele2=["GCCCT"],
-                                 t_alt_count_num=[3],
-                                 t_depth=[234]))
+    mutCisDf = pd.DataFrame(
+        dict(
+            Flag=["mutationsInCis"],
+            Center=["SAGE"],
+            Tumor_Sample_Barcode=["GENIE-SAGE-ID1-1"],
+            Hugo_Symbol=["AKT1"],
+            HGVSp_Short=["p.1234"],
+            Chromosome=["1"],
+            Reference_Allele=["AGC"],
+            Tumor_Seq_Allele2=["GCCCT"],
+            t_alt_count_num=[3],
+            t_depth=[234],
+        )
+    )
     with patch.object(syn, "get", return_value=ENTITY):
         error, warning = mutCis._validate(mutCisDf)
         expectedErrors = (
@@ -105,18 +109,22 @@ def test_validation__missing_col(mutCis):
 
 
 def test_validation__invalid(mutCis):
-    mutCisDf = pd.DataFrame(dict(Flag=['mutationsInCis'],
-                                 Center=['SAGE'],
-                                 Tumor_Sample_Barcode=["ID1-1"],
-                                 Variant_Classification=["Nonsense_Mutation"],
-                                 Hugo_Symbol=["AKT1"],
-                                 HGVSp_Short=["foo"],
-                                 Chromosome=["1"],
-                                 Start_Position=[324234],
-                                 Reference_Allele=["AGC"],
-                                 Tumor_Seq_Allele2=["GCCCT"],
-                                 t_alt_count_num=[3],
-                                 t_depth=[234]))
+    mutCisDf = pd.DataFrame(
+        dict(
+            Flag=["mutationsInCis"],
+            Center=["SAGE"],
+            Tumor_Sample_Barcode=["ID1-1"],
+            Variant_Classification=["Nonsense_Mutation"],
+            Hugo_Symbol=["AKT1"],
+            HGVSp_Short=["foo"],
+            Chromosome=["1"],
+            Start_Position=[324234],
+            Reference_Allele=["AGC"],
+            Tumor_Seq_Allele2=["GCCCT"],
+            t_alt_count_num=[3],
+            t_depth=[234],
+        )
+    )
     with patch.object(syn, "get", return_value=ENTITY):
         error, warning = mutCis._validate(mutCisDf)
         expectedErrors = (
@@ -124,5 +132,6 @@ def test_validation__invalid(mutCis):
             "the original mutationInCis_filtered_samples.csv file in each "
             "institution's staging folder.\n"
             "Mutations In Cis Filter File: TUMOR_SAMPLE_BARCODE must "
-            "start with GENIE-SAGE\n")
+            "start with GENIE-SAGE\n"
+        )
         assert error == expectedErrors

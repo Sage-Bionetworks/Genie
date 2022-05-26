@@ -25,20 +25,27 @@ def test_valid_validateFilename():
 
 
 def test_perfect_validation():
-    mafDf = pd.DataFrame(dict(
-        CHROMOSOME=[1, 2, 3, 4, 5],
-        START_POSITION=[1, 2, 3, 4, 2],
-        REFERENCE_ALLELE=["A", "A", "A", "A", "A"],
-        TUMOR_SAMPLE_BARCODE=["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1",
-                              "GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1",
-                              "GENIE-SAGE-ID1-1"],
-        T_ALT_COUNT=[1, 2, 3, 4, 3],
-        T_DEPTH=[1, 2, 3, 4, 3],
-        T_REF_COUNT=[1, 2, 3, 4, 3],
-        N_DEPTH=[1, 2, 3, float('nan'), 3],
-        N_REF_COUNT=[1, 2, 3, 4, 3],
-        N_ALT_COUNT=[1, 2, 3, 4, 3],
-        TUMOR_SEQ_ALLELE2=["A", "A", "A", "A", "A"]))
+    mafDf = pd.DataFrame(
+        dict(
+            CHROMOSOME=[1, 2, 3, 4, 5],
+            START_POSITION=[1, 2, 3, 4, 2],
+            REFERENCE_ALLELE=["A", "A", "A", "A", "A"],
+            TUMOR_SAMPLE_BARCODE=[
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+            ],
+            T_ALT_COUNT=[1, 2, 3, 4, 3],
+            T_DEPTH=[1, 2, 3, 4, 3],
+            T_REF_COUNT=[1, 2, 3, 4, 3],
+            N_DEPTH=[1, 2, 3, float("nan"), 3],
+            N_REF_COUNT=[1, 2, 3, 4, 3],
+            N_ALT_COUNT=[1, 2, 3, 4, 3],
+            TUMOR_SEQ_ALLELE2=["A", "A", "A", "A", "A"],
+        )
+    )
 
     error, warning = maf_class._validate(mafDf)
     assert error == ""
@@ -50,24 +57,40 @@ def test_perfect_validation():
 
 def test_firstcolumn_validation():
     """Tests if first column isn't correct"""
-    mafDf = pd.DataFrame({
-        'REFERENCE_ALLELE': ["A", "B", "C", "D", "E"],
-        "START_POSITION": [1, 2, 3, 4, 2],
-        "CHROMOSOME": ["A", "A", "A", "A", "A"],
-        "TUMOR_SAMPLE_BARCODE": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1",
-                                 "GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1",
-                                 "GENIE-SAGE-ID1-1"],
-        "T_ALT_COUNT": [1, 2, 3, 4, 3],
-        "T_DEPTH": [1, 2, 3, 4, 3],
-        "T_REF_COUNT": [1, 2, 3, 4, 3],
-        "N_DEPTH": [1, 2, 3, 4, 3],
-        "N_REF_COUNT": [1, 2, 3, 4, 3],
-        "N_ALT_COUNT": [1, 2, 3, 4, 3],
-        "TUMOR_SEQ_ALLELE2": ["A", "A", "A", "A", "A"]})
-    order = ['REFERENCE_ALLELE', 'START_POSITION', 'CHROMOSOME',
-             'TUMOR_SAMPLE_BARCODE', 'T_ALT_COUNT', 'T_DEPTH',
-             'T_REF_COUNT', 'N_DEPTH', 'N_REF_COUNT', 'N_ALT_COUNT',
-             'TUMOR_SEQ_ALLELE2']
+    mafDf = pd.DataFrame(
+        {
+            "REFERENCE_ALLELE": ["A", "B", "C", "D", "E"],
+            "START_POSITION": [1, 2, 3, 4, 2],
+            "CHROMOSOME": ["A", "A", "A", "A", "A"],
+            "TUMOR_SAMPLE_BARCODE": [
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+            ],
+            "T_ALT_COUNT": [1, 2, 3, 4, 3],
+            "T_DEPTH": [1, 2, 3, 4, 3],
+            "T_REF_COUNT": [1, 2, 3, 4, 3],
+            "N_DEPTH": [1, 2, 3, 4, 3],
+            "N_REF_COUNT": [1, 2, 3, 4, 3],
+            "N_ALT_COUNT": [1, 2, 3, 4, 3],
+            "TUMOR_SEQ_ALLELE2": ["A", "A", "A", "A", "A"],
+        }
+    )
+    order = [
+        "REFERENCE_ALLELE",
+        "START_POSITION",
+        "CHROMOSOME",
+        "TUMOR_SAMPLE_BARCODE",
+        "T_ALT_COUNT",
+        "T_DEPTH",
+        "T_REF_COUNT",
+        "N_DEPTH",
+        "N_REF_COUNT",
+        "N_ALT_COUNT",
+        "TUMOR_SEQ_ALLELE2",
+    ]
     error, warning = maf_class._validate(mafDf[order])
     expectedErrors = (
         "maf: First column header must be "

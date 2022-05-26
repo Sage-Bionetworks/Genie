@@ -35,9 +35,17 @@ def test_processing():
         )
     )
 
-    srDf = pd.DataFrame({0: ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID2-1",
-                             "GENIE-SAGE-ID3-1", "GENIE-SAGE-ID4-1",
-                             "GENIE-SAGE-ID5-1"]})
+    srDf = pd.DataFrame(
+        {
+            0: [
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID2-1",
+                "GENIE-SAGE-ID3-1",
+                "GENIE-SAGE-ID4-1",
+                "GENIE-SAGE-ID5-1",
+            ]
+        }
+    )
 
     newsrDf = sr._process(srDf, "2018-04-06T18:30:00")
     assert expectedsrDf.equals(newsrDf[expectedsrDf.columns])
@@ -62,9 +70,17 @@ def test_processing():
         )
     )
 
-    prDf = pd.DataFrame({0: ["GENIE-SAGE-ID1", "GENIE-SAGE-ID2",
-                             "GENIE-SAGE-ID3", "GENIE-SAGE-ID4",
-                             "GENIE-SAGE-ID5"]})
+    prDf = pd.DataFrame(
+        {
+            0: [
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ]
+        }
+    )
 
     newprDf = pr._process(prDf, "2018-04-07T18:30:00")
     assert expectedprDf.equals(newprDf[expectedprDf.columns])

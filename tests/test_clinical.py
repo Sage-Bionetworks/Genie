@@ -113,28 +113,43 @@ def test_patient_fillvs__process(clin_class):
     - Fill out CENTER column
     - Append GENIE-CENTER-..
     """
-    expected_patientdf = pd.DataFrame(dict(
-        PATIENT_ID=["GENIE-SAGE-ID1", "GENIE-SAGE-ID2", "GENIE-SAGE-ID3",
-                    "GENIE-SAGE-ID4", "GENIE-SAGE-ID5"],
-        SEX=['Male', 'Female', 'Male', 'Female', 'Unknown'],
-        PRIMARY_RACE=['Test', 'Why', 'foo', 'Me', 'Unknown'],
-        SECONDARY_RACE=['Test', 'Why', 'foo', 'Me', 'Unknown'],
-        TERTIARY_RACE=['Test', 'Why', 'foo', 'Me', 'Unknown'],
-        ETHNICITY=['Test', 'Why', 'foo', 'Me', 'Unknown'],
-        BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
-        CENTER=["SAGE", "SAGE", "SAGE", "SAGE", "SAGE"],
-    ))
+    expected_patientdf = pd.DataFrame(
+        dict(
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
+            SEX=["Male", "Female", "Male", "Female", "Unknown"],
+            PRIMARY_RACE=["Test", "Why", "foo", "Me", "Unknown"],
+            SECONDARY_RACE=["Test", "Why", "foo", "Me", "Unknown"],
+            TERTIARY_RACE=["Test", "Why", "foo", "Me", "Unknown"],
+            ETHNICITY=["Test", "Why", "foo", "Me", "Unknown"],
+            BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
+            CENTER=["SAGE", "SAGE", "SAGE", "SAGE", "SAGE"],
+        )
+    )
 
-    patientdf = pd.DataFrame(dict(
-        PATIENT_Id=["GENIE-SAGE-ID1", "GENIE-SAGE-ID2", "GENIE-SAGE-ID3",
-                    "GENIE-SAGE-ID4", "GENIE-SAGE-ID5"],
-        sex=[1, 2, 1, 2, 99],
-        PRIMARY_RACE=[1, 2, 3, 4, 99],
-        Secondary_RACE=[1, 2, 3, 4, 99],
-        TERTIARY_RACE=[1, 2, 3, 4, 99],
-        ETHNICITY=[1, 2, 3, 4, 99],
-        BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
-        CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"]))
+    patientdf = pd.DataFrame(
+        dict(
+            PATIENT_Id=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
+            sex=[1, 2, 1, 2, 99],
+            PRIMARY_RACE=[1, 2, 3, 4, 99],
+            Secondary_RACE=[1, 2, 3, 4, 99],
+            TERTIARY_RACE=[1, 2, 3, 4, 99],
+            ETHNICITY=[1, 2, 3, 4, 99],
+            BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
+            CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
+        )
+    )
     patient_cols = [
         "PATIENT_ID",
         "SEX",
@@ -180,16 +195,24 @@ def test_patient_lesscoltemplate__process(clin_class):
         )
     )
     # TEST patient processing
-    patientdf = pd.DataFrame(dict(
-        PATIENT_Id=["GENIE-SAGE-ID1", "GENIE-SAGE-ID2", "GENIE-SAGE-ID3",
-                    "GENIE-SAGE-ID4", "GENIE-SAGE-ID5"],
-        sex=[1, 2, 1, 2, 99],
-        PRIMARY_RACE=[1, 2, 3, 4, 99],
-        Secondary_RACE=[1, 2, 3, 4, 99],
-        TERTIARY_RACE=[1, 2, 3, 4, 99],
-        ETHNICITY=[1, 2, 3, 4, 99],
-        BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
-        CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"]))
+    patientdf = pd.DataFrame(
+        dict(
+            PATIENT_Id=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
+            sex=[1, 2, 1, 2, 99],
+            PRIMARY_RACE=[1, 2, 3, 4, 99],
+            Secondary_RACE=[1, 2, 3, 4, 99],
+            TERTIARY_RACE=[1, 2, 3, 4, 99],
+            ETHNICITY=[1, 2, 3, 4, 99],
+            BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
+            CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
+        )
+    )
     patient_cols = [
         "PATIENT_ID",
         "SEX",
@@ -240,23 +263,29 @@ def test_patient_vs__process(clin_class):
     )
     # TEST patient processing
     # Clinical file headers are capitalized prior to processing
-    patientdf = pd.DataFrame(dict(
-        PATIENT_Id=["GENIE-SAGE-ID1", "GENIE-SAGE-ID2", "GENIE-SAGE-ID3",
-                    "GENIE-SAGE-ID4", "GENIE-SAGE-ID5"],
-        sex=[1, 2, 1, 2, 99],
-        PRIMARY_RACE=[1, 2, 3, 4, 99],
-        Secondary_RACE=[1, 2, 3, 4, 99],
-        TERTIARY_RACE=[1, 2, 3, 4, 99],
-        ETHNICITY=[1, 2, 3, 4, 99],
-        BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
-        CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
-        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable",
-                    1990, 1990],
-        YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 1990],
-        INT_CONTACT=['>32485', '<6570', 'Unknown', 'Not Collected', 2000],
-        INT_DOD=['>32485', '<6570', 'Unknown', 'Not Collected',
-                 'Not Applicable'],
-        DEAD=[True, False, 'Unknown', 'Not Collected', True]))
+    patientdf = pd.DataFrame(
+        dict(
+            PATIENT_Id=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
+            sex=[1, 2, 1, 2, 99],
+            PRIMARY_RACE=[1, 2, 3, 4, 99],
+            Secondary_RACE=[1, 2, 3, 4, 99],
+            TERTIARY_RACE=[1, 2, 3, 4, 99],
+            ETHNICITY=[1, 2, 3, 4, 99],
+            BIRTH_YEAR=[1990, 1990, 1990, 1990, 1990],
+            CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
+            YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 1990, 1990],
+            YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 1990],
+            INT_CONTACT=[">32485", "<6570", "Unknown", "Not Collected", 2000],
+            INT_DOD=[">32485", "<6570", "Unknown", "Not Collected", "Not Applicable"],
+            DEAD=[True, False, "Unknown", "Not Collected", True],
+        )
+    )
     patient_cols = [
         "PATIENT_ID",
         "SEX",
@@ -328,16 +357,29 @@ def test_sample__process(clin_class):
 
     clinical_template = pd.DataFrame(columns=sample_cols)
     # patient = False
-    sampledf = pd.DataFrame(dict(
-        SAMPLE_ID=["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID2-1", "GENIE-SAGE-ID3-1",
-                   "GENIE-SAGE-ID4-1", "GENIE-SAGE-ID5-1"],
-        PATIENT_ID=["GENIE-SAGE-ID1", "GENIE-SAGE-ID2", "GENIE-SAGE-ID3",
-                    "GENIE-SAGE-ID4", "GENIE-SAGE-ID5"],
-        Age_AT_SEQ_REPORT=[100000, 100000, 100000, 100000, 100000],
-        ONCOTree_CODE=['AMPCA', ' UNKNOWN', 'AMPCA', 'AMPCA', 'AMPCA'],
-        SAMPLE_TYPE=[1, 2, 3, 4, 4],
-        SEQ_ASSAY_ID=['SAGE-1', 'SAGE-1', 'SAGE-1', 'SAGE-1', 'SAGE-1'],
-        SEQ_DATE=['Jan-2012', 'Apr-2013', 'JUL-2014', 'Oct-2015', 'release']))
+    sampledf = pd.DataFrame(
+        dict(
+            SAMPLE_ID=[
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID2-1",
+                "GENIE-SAGE-ID3-1",
+                "GENIE-SAGE-ID4-1",
+                "GENIE-SAGE-ID5-1",
+            ],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
+            Age_AT_SEQ_REPORT=[100000, 100000, 100000, 100000, 100000],
+            ONCOTree_CODE=["AMPCA", " UNKNOWN", "AMPCA", "AMPCA", "AMPCA"],
+            SAMPLE_TYPE=[1, 2, 3, 4, 4],
+            SEQ_ASSAY_ID=["SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1"],
+            SEQ_DATE=["Jan-2012", "Apr-2013", "JUL-2014", "Oct-2015", "release"],
+        )
+    )
 
     new_sampledf = clin_class._process(sampledf, clinical_template)
     assert new_sampledf.columns.isin(expected_sampledf.columns).all()
@@ -348,35 +390,54 @@ def test_perfect__validate(clin_class):
     """
     Test perfect validation
     """
-    patientdf = pd.DataFrame(dict(
-        PATIENT_ID=["GENIE-SAGE-ID1", "GENIE-SAGE-ID2", "GENIE-SAGE-ID3",
-                    "GENIE-SAGE-ID4", "GENIE-SAGE-ID5"],
-        SEX=[1, 2, 1, 2, 99],
-        PRIMARY_RACE=[1, 2, 3, 4, 99],
-        SECONDARY_RACE=[1, 2, 3, 4, 99],
-        TERTIARY_RACE=[1, 2, 3, 4, 99],
-        ETHNICITY=[1, 2, 3, 4, 99],
-        BIRTH_YEAR=[1222, "Unknown", 1920, 1990, 1990],
-        CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
-        YEAR_CONTACT=["Unknown", "Not Collected", '>89', '<18', 1990],
-        INT_CONTACT=["Unknown", "Not Collected", '>32485', '<6570', 2000],
-        YEAR_DEATH=["Unknown", "Not Collected", "Unknown",
-                    'Not Applicable', '<18'],
-        INT_DOD=["Unknown", "Not Collected", 'Unknown',
-                 'Not Applicable', '<6570'],
-        DEAD=['Unknown', 'Not Collected', 'Unknown', False, True]))
+    patientdf = pd.DataFrame(
+        dict(
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
+            SEX=[1, 2, 1, 2, 99],
+            PRIMARY_RACE=[1, 2, 3, 4, 99],
+            SECONDARY_RACE=[1, 2, 3, 4, 99],
+            TERTIARY_RACE=[1, 2, 3, 4, 99],
+            ETHNICITY=[1, 2, 3, 4, 99],
+            BIRTH_YEAR=[1222, "Unknown", 1920, 1990, 1990],
+            CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
+            YEAR_CONTACT=["Unknown", "Not Collected", ">89", "<18", 1990],
+            INT_CONTACT=["Unknown", "Not Collected", ">32485", "<6570", 2000],
+            YEAR_DEATH=["Unknown", "Not Collected", "Unknown", "Not Applicable", "<18"],
+            INT_DOD=["Unknown", "Not Collected", "Unknown", "Not Applicable", "<6570"],
+            DEAD=["Unknown", "Not Collected", "Unknown", False, True],
+        )
+    )
 
-    sampledf = pd.DataFrame(dict(
-        SAMPLE_ID=["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID2-1", "GENIE-SAGE-ID3-1",
-                   "GENIE-SAGE-ID4-1", "GENIE-SAGE-ID5-1"],
-        PATIENT_ID=["GENIE-SAGE-ID1", "GENIE-SAGE-ID2", "GENIE-SAGE-ID3",
-                    "GENIE-SAGE-ID4", "GENIE-SAGE-ID5"],
-        AGE_AT_SEQ_REPORT=[">32485", "Unknown", "<6570", 20000, 100000],
-        ONCOTREE_CODE=['AMPCA', 'AMPCA', 'Unknown', 'AMPCA', 'AMPCA'],
-        SAMPLE_TYPE=[1, 2, 3, 4, 4],
-        SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-SAGE-1', 'SAGE-1', 'SAGE-1', 'SAGE-1'],
-        SEQ_DATE=['Jan-2013', 'ApR-2013', 'Jul-2013', 'Oct-2013', 'release'],
-        SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", "cfDNA", "cfDNA"]))
+    sampledf = pd.DataFrame(
+        dict(
+            SAMPLE_ID=[
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID2-1",
+                "GENIE-SAGE-ID3-1",
+                "GENIE-SAGE-ID4-1",
+                "GENIE-SAGE-ID5-1",
+            ],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
+            AGE_AT_SEQ_REPORT=[">32485", "Unknown", "<6570", 20000, 100000],
+            ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"],
+            SAMPLE_TYPE=[1, 2, 3, 4, 4],
+            SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1"],
+            SEQ_DATE=["Jan-2013", "ApR-2013", "Jul-2013", "Oct-2013", "release"],
+            SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", "cfDNA", "cfDNA"],
+        )
+    )
 
     clinicaldf = patientdf.merge(sampledf, on="PATIENT_ID")
     with mock.patch(
@@ -392,37 +453,60 @@ def test_nonull__validate(clin_class):
     """
     Test that no null values are allowed in the clinical dataframe
     """
-    patientdf = pd.DataFrame(dict(
-        PATIENT_ID=["GENIE-SAGE-ID1", "GENIE-SAGE-ID2", "GENIE-SAGE-ID3",
-                    "GENIE-SAGE-ID4", "GENIE-SAGE-ID5"],
-        SEX=[1, 2, 1, 2, float('nan')],
-        PRIMARY_RACE=[1, 2, 3, 4, float('nan')],
-        SECONDARY_RACE=[1, 2, 3, 4, float('nan')],
-        TERTIARY_RACE=[1, 2, 3, 4, float('nan')],
-        ETHNICITY=[1, 2, 3, 4, float('nan')],
-        BIRTH_YEAR=[float('nan'), "Unknown", 1920, 1990, 1990],
-        CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
-        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable",
-                    1990, float('nan')],
-        YEAR_CONTACT=["Unknown", "Not Collected", float('nan'), 1990, 1990],
-        INT_CONTACT=["Unknown", "Not Collected", '>32485', float('nan'),
-                     2000],
-        INT_DOD=["Unknown", "Not Collected", 'Unknown', float('nan'),
-                 '<6570'],
-        DEAD=['Unknown', 'Not Collected', 'Unknown', float('nan'), True]))
+    patientdf = pd.DataFrame(
+        dict(
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
+            SEX=[1, 2, 1, 2, float("nan")],
+            PRIMARY_RACE=[1, 2, 3, 4, float("nan")],
+            SECONDARY_RACE=[1, 2, 3, 4, float("nan")],
+            TERTIARY_RACE=[1, 2, 3, 4, float("nan")],
+            ETHNICITY=[1, 2, 3, 4, float("nan")],
+            BIRTH_YEAR=[float("nan"), "Unknown", 1920, 1990, 1990],
+            CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
+            YEAR_DEATH=[
+                "Unknown",
+                "Not Collected",
+                "Not Applicable",
+                1990,
+                float("nan"),
+            ],
+            YEAR_CONTACT=["Unknown", "Not Collected", float("nan"), 1990, 1990],
+            INT_CONTACT=["Unknown", "Not Collected", ">32485", float("nan"), 2000],
+            INT_DOD=["Unknown", "Not Collected", "Unknown", float("nan"), "<6570"],
+            DEAD=["Unknown", "Not Collected", "Unknown", float("nan"), True],
+        )
+    )
 
-    sampledf = pd.DataFrame(dict(
-        SAMPLE_ID=["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID2-1", "GENIE-SAGE-ID3-1",
-                   "GENIE-SAGE-ID4-1", "GENIE-SAGE-ID5-1"],
-        PATIENT_ID=["GENIE-SAGE-ID1", "GENIE-SAGE-ID2", "GENIE-SAGE-ID3",
-                    "GENIE-SAGE-ID4", "GENIE-SAGE-ID5"],
-        AGE_AT_SEQ_REPORT=[100000, "Unknown", 20000, float('nan'), 100000],
-        ONCOTREE_CODE=['AMPCA', 'AMPCA', 'Unknown', 'AMPCA', 'AMPCA'],
-        SAMPLE_TYPE=[1, 2, 3, 4, float('nan')],
-        SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-SAGE-1', 'SAGE-1', 'SAGE-1', 'SAGE-1'],
-        SEQ_DATE=['Jan-2013', 'ApR-2013', 'Jul-2013', 'Oct-2013', 'release'],
-        SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", "cfDNA", float('nan')]
-    ))
+    sampledf = pd.DataFrame(
+        dict(
+            SAMPLE_ID=[
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID2-1",
+                "GENIE-SAGE-ID3-1",
+                "GENIE-SAGE-ID4-1",
+                "GENIE-SAGE-ID5-1",
+            ],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
+            AGE_AT_SEQ_REPORT=[100000, "Unknown", 20000, float("nan"), 100000],
+            ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"],
+            SAMPLE_TYPE=[1, 2, 3, 4, float("nan")],
+            SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1"],
+            SEQ_DATE=["Jan-2013", "ApR-2013", "Jul-2013", "Oct-2013", "release"],
+            SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", "cfDNA", float("nan")],
+        )
+    )
 
     clinicaldf = patientdf.merge(sampledf, on="PATIENT_ID")
     with mock.patch(
@@ -520,32 +604,53 @@ def test_errors__validate(clin_class):
     """
     Test for validation errors
     """
-    sampleDf = pd.DataFrame(dict(
-        SAMPLE_ID=[float('nan'), "GENIE-SAGE-ID2-1", "GENIE-SAGE-ID3-1",
-                   "GENIE-SAGE-ID4-1", "GENIE-SAGE-ID5-1"],
-        PATIENT_ID=["GENIE-SAGE-ID6", "GENIE-SAGE-ID2", "GENIE-SAGE-ID3",
-                    float('nan'), "GENIE-SAGE-ID5"],
-        AGE_AT_SEQ_REPORT=[10, 100000, ">doo", 100000, 100000],
-        ONCOTREE_CODE=['AMPCAD', 'TESTIS', 'AMPCA', 'AMPCA', 'UCEC'],
-        SAMPLE_TYPE=[1, 2, 3, 4, 6],
-        SEQ_ASSAY_ID=[float('nan'), 'Sage-1', 'SAGE-1', 'S-SAGE-1', 'SAGE-1'],
-        SEQ_DATE=['Jane-2013', 'Jan-2013', 'Jan-2013', 'Jan-2013', 'Jan-2013'],
-        YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 19930, 1990],
-        YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 19940],
-        INT_CONTACT=['>32485', '<6570', 1990, 'Not Collected', ">foobar"],
-        INT_DOD=['>32485', '<6570', 'Unknown', 'Not Collected', '<dense'],
-        DEAD=[1, False, 'Unknown', 'Not Collected', 'Not Applicable']))
+    sampleDf = pd.DataFrame(
+        dict(
+            SAMPLE_ID=[
+                float("nan"),
+                "GENIE-SAGE-ID2-1",
+                "GENIE-SAGE-ID3-1",
+                "GENIE-SAGE-ID4-1",
+                "GENIE-SAGE-ID5-1",
+            ],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID6",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                float("nan"),
+                "GENIE-SAGE-ID5",
+            ],
+            AGE_AT_SEQ_REPORT=[10, 100000, ">doo", 100000, 100000],
+            ONCOTREE_CODE=["AMPCAD", "TESTIS", "AMPCA", "AMPCA", "UCEC"],
+            SAMPLE_TYPE=[1, 2, 3, 4, 6],
+            SEQ_ASSAY_ID=[float("nan"), "Sage-1", "SAGE-1", "S-SAGE-1", "SAGE-1"],
+            SEQ_DATE=["Jane-2013", "Jan-2013", "Jan-2013", "Jan-2013", "Jan-2013"],
+            YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 19930, 1990],
+            YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 19940],
+            INT_CONTACT=[">32485", "<6570", 1990, "Not Collected", ">foobar"],
+            INT_DOD=[">32485", "<6570", "Unknown", "Not Collected", "<dense"],
+            DEAD=[1, False, "Unknown", "Not Collected", "Not Applicable"],
+        )
+    )
 
-    patientDf = pd.DataFrame(dict(
-        PATIENT_ID=["GENIE-SAGE-ID6", "GENIE-SAGE-ID2", "GENIE-SAGE-ID3",
-                    float("nan"), "GENIE-SAGE-ID5"],
-        SEX=[1, 2, 1, 5, float('nan')],
-        PRIMARY_RACE=[1, 2, 3, 6, float('nan')],
-        SECONDARY_RACE=[1, 2, 3, 6, float('nan')],
-        TERTIARY_RACE=[1, 2, 3, 6, float('nan')],
-        ETHNICITY=[1, 2, 3, 6, float('nan')],
-        BIRTH_YEAR=[1990, 1990, ">90", 1990, 1990],
-        CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"]))
+    patientDf = pd.DataFrame(
+        dict(
+            PATIENT_ID=[
+                "GENIE-SAGE-ID6",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                float("nan"),
+                "GENIE-SAGE-ID5",
+            ],
+            SEX=[1, 2, 1, 5, float("nan")],
+            PRIMARY_RACE=[1, 2, 3, 6, float("nan")],
+            SECONDARY_RACE=[1, 2, 3, 6, float("nan")],
+            TERTIARY_RACE=[1, 2, 3, 6, float("nan")],
+            ETHNICITY=[1, 2, 3, 6, float("nan")],
+            BIRTH_YEAR=[1990, 1990, ">90", 1990, 1990],
+            CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
+        )
+    )
     clinicalDf = patientDf.merge(sampleDf, on="PATIENT_ID")
     with mock.patch(
         "genie.process_functions.get_oncotree_code_mappings", return_value=onco_map_dict
@@ -620,9 +725,9 @@ def test_errors__validate(clin_class):
             "Sample Clinical File: All patients must have associated sample "
             "information. These patients are missing sample data: GENIE-SAGE-ID6\n"
             "Sample Clinical File: Some SAMPLE_IDs have conflicting SEX and "
-            "ONCOTREE_CODES: GENIE-SAGE-ID2-1,GENIE-SAGE-ID5-1\n")
-        assert error == expectedErrors.format(
-            year=datetime.datetime.utcnow().year)
+            "ONCOTREE_CODES: GENIE-SAGE-ID2-1,GENIE-SAGE-ID5-1\n"
+        )
+        assert error == expectedErrors.format(year=datetime.datetime.utcnow().year)
         assert warning == expectedWarnings
 
 
@@ -632,33 +737,63 @@ def test_duplicated__validate(clin_class):
     both sample and patient
     are uploaded, it could be a duplicated PATIENT_ID error
     """
-    patientDf = pd.DataFrame(dict(
-        PATIENT_ID=["GENIE-SAGE-ID1", "GENIE-SAGE-ID1", "GENIE-SAGE-ID3",
-                    "GENIE-SAGE-ID4", float('nan')],
-        SEX=[1, 2, 1, 2, float('nan')],
-        PRIMARY_RACE=[1, 2, 3, 4, float('nan')],
-        SECONDARY_RACE=[1, 2, 3, 4, float('nan')],
-        TERTIARY_RACE=[1, 2, 3, 4, float('nan')],
-        ETHNICITY=[1, 2, 3, 4, float('nan')],
-        BIRTH_YEAR=["Unknown", 1990, 1990, 1990, float('nan')],
-        CENTER=["FOO", "FOO", "FOO", "FOO", float('nan')],
-        YEAR_CONTACT=["Unknown", "Not Collected", '>89', '<18', float('nan')],
-        INT_CONTACT=["Unknown", "Not Collected", '>32485', '<6570', float('nan')],
-        YEAR_DEATH=["Unknown", "Not Collected", "Unknown",
-                    'Not Applicable', float('nan')],
-        INT_DOD=["Unknown", "Not Collected", 'Unknown',
-                 'Not Applicable', float('nan')],
-        DEAD=['Unknown', 'Not Collected', 'Unknown', False, float('nan')]))
+    patientDf = pd.DataFrame(
+        dict(
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                float("nan"),
+            ],
+            SEX=[1, 2, 1, 2, float("nan")],
+            PRIMARY_RACE=[1, 2, 3, 4, float("nan")],
+            SECONDARY_RACE=[1, 2, 3, 4, float("nan")],
+            TERTIARY_RACE=[1, 2, 3, 4, float("nan")],
+            ETHNICITY=[1, 2, 3, 4, float("nan")],
+            BIRTH_YEAR=["Unknown", 1990, 1990, 1990, float("nan")],
+            CENTER=["FOO", "FOO", "FOO", "FOO", float("nan")],
+            YEAR_CONTACT=["Unknown", "Not Collected", ">89", "<18", float("nan")],
+            INT_CONTACT=["Unknown", "Not Collected", ">32485", "<6570", float("nan")],
+            YEAR_DEATH=[
+                "Unknown",
+                "Not Collected",
+                "Unknown",
+                "Not Applicable",
+                float("nan"),
+            ],
+            INT_DOD=[
+                "Unknown",
+                "Not Collected",
+                "Unknown",
+                "Not Applicable",
+                float("nan"),
+            ],
+            DEAD=["Unknown", "Not Collected", "Unknown", False, float("nan")],
+        )
+    )
 
-    sampleDf = pd.DataFrame(dict(
-        SAMPLE_ID=["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID3-1", "GENIE-SAGE-ID4-1",
-                   float('nan')],
-        PATIENT_ID=["GENIE-SAGE-ID1", "GENIE-SAGE-ID3", "GENIE-SAGE-ID4", float('nan')],
-        AGE_AT_SEQ_REPORT=[100000, 100000, 100000, float('nan')],
-        ONCOTREE_CODE=['AMPCA', 'UNKNOWN', 'AMPCA', float('nan')],
-        SAMPLE_TYPE=[1, 3, 4, float('nan')],
-        SEQ_ASSAY_ID=['SAGE-1-1', 'SAGE-1', 'SAGE-1', float('nan')],
-        SEQ_DATE=['Jan-2013', 'Jul-2013', 'Oct-2013', float('nan')]))
+    sampleDf = pd.DataFrame(
+        dict(
+            SAMPLE_ID=[
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID3-1",
+                "GENIE-SAGE-ID4-1",
+                float("nan"),
+            ],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                float("nan"),
+            ],
+            AGE_AT_SEQ_REPORT=[100000, 100000, 100000, float("nan")],
+            ONCOTREE_CODE=["AMPCA", "UNKNOWN", "AMPCA", float("nan")],
+            SAMPLE_TYPE=[1, 3, 4, float("nan")],
+            SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-1", "SAGE-1", float("nan")],
+            SEQ_DATE=["Jan-2013", "Jul-2013", "Oct-2013", float("nan")],
+        )
+    )
 
     clinicalDf = patientDf.merge(sampleDf, on="PATIENT_ID")
     with mock.patch(
