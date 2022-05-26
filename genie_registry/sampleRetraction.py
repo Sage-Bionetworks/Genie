@@ -3,7 +3,6 @@ import logging
 import os
 
 import pandas as pd
-import synapseclient
 from synapseclient.core.utils import to_unix_epoch_time
 
 from genie.example_filetype_format import FileTypeFormat

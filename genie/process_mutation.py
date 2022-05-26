@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 
 import pandas as pd
-import synapseclient
+import synapseclient  # lgtm [py/import-and-import-from]
 from synapseclient import Synapse
 from synapseclient.core.exceptions import SynapseTimeoutError
 
