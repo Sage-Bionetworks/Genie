@@ -1,8 +1,6 @@
-#!/usr/bin/env python
 """
 Creates case lists per cancer type
 """
-import argparse
 from collections import defaultdict
 import csv
 import os

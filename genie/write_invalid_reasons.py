@@ -3,7 +3,7 @@ import logging
 import os
 
 import pandas as pd
-import synapseclient
+import synapseclient  # lgtm [py/import-and-import-from]
 from synapseclient import Synapse
 
 from . import process_functions

@@ -7,7 +7,7 @@ import logging
 import synapseclient
 
 from . import create_case_lists, validate, write_invalid_reasons
-from .__version__ import __version__
+from . import __version__
 
 
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ def build_parser():
     parser.add_argument("--syn_pass", type=str, help="Synapse password")
 
     parser.add_argument(
-        "-v", "--version", action="version", version="genie {}".format(__version__)
+        "-v", "--version", action="version", version=f"genie {__version__}"
     )
 
     subparsers = parser.add_subparsers(

@@ -6,7 +6,7 @@ import os
 import time
 from typing import List
 
-import synapseclient
+import synapseclient  # lgtm [py/import-and-import-from]
 from synapseclient import Synapse
 from synapseclient.core.utils import to_unix_epoch_time
 import synapseutils
