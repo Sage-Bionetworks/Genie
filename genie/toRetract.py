@@ -17,8 +17,7 @@ def retract_samples(syn, database_synid, col, remove_values):
         col: column in database
         remove_values: list of values to remove from the column
     """
-
-    schema = syn.get(database_synid)
+    # schema = syn.get(database_synid)
     remove_values_query = "','".join(remove_values)
     remove_rows = syn.tableQuery(
         "select %s from %s where %s in ('%s')"

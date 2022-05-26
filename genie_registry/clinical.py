@@ -6,7 +6,6 @@ import logging
 import os
 
 import pandas as pd
-from pandas import DataFrame
 import synapseclient
 
 from genie.example_filetype_format import FileTypeFormat
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def _check_year(
-    clinicaldf: DataFrame,
+    clinicaldf: pd.DataFrame,
     year_col: int,
     filename: str,
     allowed_string_values: list = None,
@@ -68,7 +67,7 @@ def _check_year(
     return error
 
 
-def _check_int_dead_consistency(clinicaldf: DataFrame) -> str:
+def _check_int_dead_consistency(clinicaldf: pd.DataFrame) -> str:
     """Check if vital status interval and dead column are consistent
 
     Args:
@@ -109,7 +108,7 @@ def _check_int_dead_consistency(clinicaldf: DataFrame) -> str:
 
 
 def _check_int_year_consistency(
-    clinicaldf: DataFrame, cols: list, string_vals: list
+    clinicaldf: pd.DataFrame, cols: list, string_vals: list
 ) -> str:
     """
     Check if vital status interval and year columns are consistent in
@@ -176,12 +175,12 @@ def _check_int_year_consistency(
 
 # PROCESSING
 def remap_clinical_values(
-    clinicaldf: DataFrame,
-    sex_mapping: DataFrame,
-    race_mapping: DataFrame,
-    ethnicity_mapping: DataFrame,
-    sampletype_mapping: DataFrame,
-) -> DataFrame:
+    clinicaldf: pd.DataFrame,
+    sex_mapping: pd.DataFrame,
+    race_mapping: pd.DataFrame,
+    ethnicity_mapping: pd.DataFrame,
+    sampletype_mapping: pd.DataFrame,
+) -> pd.DataFrame:
     """Remap clinical attributes from integer to string values
 
     Args:

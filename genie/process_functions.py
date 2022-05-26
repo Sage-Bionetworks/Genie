@@ -14,7 +14,7 @@ import ast
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 import pandas as pd
-import synapseclient
+import synapseclient  # lgtm [py/import-and-import-from]
 from synapseclient import Synapse
 
 # try:
@@ -1121,9 +1121,7 @@ def _update_database_mapping(
     # Only update the one row
     to_update_row = database_synid_mappingdf[fileformat_ind]
 
-    updated_table = syn.store(
-        synapseclient.Table(database_mapping_synid, to_update_row)
-    )
+    syn.store(synapseclient.Table(database_mapping_synid, to_update_row))
     return database_synid_mappingdf
 
 

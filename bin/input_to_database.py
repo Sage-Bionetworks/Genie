@@ -129,7 +129,8 @@ def main(
     # HACK: To ensure that this is the new entity
     center_mapping_ent = syn.get(genie_config["centerMapping"])
     center_mapping_ent.isProcessing = "False"
-    center_mapping_ent = syn.store(center_mapping_ent)
+    # No need to return ent variable because it is unused
+    syn.store(center_mapping_ent)
 
     error_tracker_synid = genie_config["errorTracker"]
     # Only write out invalid reasons if the center
