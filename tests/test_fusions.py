@@ -11,23 +11,24 @@ from genie_registry.fusions import fusions
 def createMockTable(dataframe):
     table = mock.create_autospec(synapseclient.table.CsvFileTable)
     table.asDataFrame.return_value = dataframe
-    return(table)
+    return table
 
 
 def table_query_results(*args):
-    return(table_query_results_map[args])
+    return table_query_results_map[args]
 
 
-symbols = pd.DataFrame(dict(Hugo_Symbol=['AAK1', 'AAED1', 'AAAS'],
-                            ID=['AAK1', 'AAED', 'AAAS']))
+symbols = pd.DataFrame(
+    dict(Hugo_Symbol=["AAK1", "AAED1", "AAAS"], ID=["AAK1", "AAED", "AAAS"])
+)
 
 # This is the gene positions that all bed dataframe will be processed against
 table_query_results_map = {
-    ("select Hugo_Symbol, ID from syn11600834 where CENTER = 'SAGE'",):
-        createMockTable(symbols),
+    ("select Hugo_Symbol, ID from syn11600834 where CENTER = 'SAGE'",): createMockTable(
+        symbols
+    ),
 }
-ENTITY = synapseclient.Project("testing",
-                               annotations={'dbMapping': ["syn10967259"]})
+ENTITY = synapseclient.Project("testing", annotations={"dbMapping": ["syn10967259"]})
 
 syn = mock.create_autospec(synapseclient.Synapse)
 syn.tableQuery.side_effect = table_query_results
@@ -70,7 +71,7 @@ def test_processing(fusionClass):
 
 def test_validation__fail_name(fusionClass):
     with pytest.raises(AssertionError):
-        fusionClass.validateFilename(['foo'])
+        fusionClass.validateFilename(["foo"])
     assert fusionClass.validateFilename(["data_fusions_SAGE.txt"]) == "fusions"
 
 

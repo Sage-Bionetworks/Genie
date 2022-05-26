@@ -4,7 +4,7 @@ import logging
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from . import config, process_functions
+from . import config, example_filetype_format, process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +80,10 @@ class ValidationHelper(object):
         """
 
         if self.file_type not in self._format_registry:
-            valid = False
-            errors = "Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally"
-            warnings = ""
+            valid_result_cls = example_filetype_format.ValidationResults(
+                errors="Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally",
+                warnings="",
+            )
         else:
             mykwargs = {}
             for required_parameter in self._validate_kwargs:
@@ -99,14 +100,11 @@ class ValidationHelper(object):
                 genie_config=self.genie_config,
             )
             filepathlist = [entity.path for entity in self.entitylist]
-            valid, errors, warnings = validator.validate(
-                filePathList=filepathlist, **mykwargs
-            )
+            valid_result_cls = validator.validate(filePathList=filepathlist, **mykwargs)
 
         # Complete error message
-        message = collect_errors_and_warnings(errors, warnings)
-
-        return (valid, message)
+        message = valid_result_cls.collect_errors_and_warnings()
+        return (valid_result_cls, message)
 
 
 # TODO: Remove this at some point
@@ -116,32 +114,22 @@ class GenieValidationHelper(ValidationHelper):
     _validate_kwargs = ["nosymbol_check"]
 
 
-def collect_errors_and_warnings(errors, warnings):
-    """Aggregates error and warnings into a string.
+def get_config(syn, synid):
+    """Gets Synapse database to Table mapping in dict
 
     Args:
-        errors: string of file errors, separated by new lines.
-        warnings: string of file warnings, separated by new lines.
+        syn: Synapse connection
+        synid: Synapse id of database mapping table
 
     Returns:
-        message - errors + warnings
+        dict: {'databasename': 'synid'}
+
     """
-    # Complete error message
-    message = "----------------ERRORS----------------\n"
-    if errors == "":
-        message = "YOUR FILE IS VALIDATED!\n"
-        logger.info(message)
-    else:
-        for error in errors.split("\n"):
-            if error != "":
-                logger.error(error)
-        message += errors
-    if warnings != "":
-        for warning in warnings.split("\n"):
-            if warning != "":
-                logger.warning(warning)
-        message += "-------------WARNINGS-------------\n" + warnings
-    return message
+    config = syn.tableQuery("SELECT * FROM {}".format(synid))
+    configdf = config.asDataFrame()
+    configdf.index = configdf["Database"]
+    config_dict = configdf.to_dict()
+    return config_dict["Id"]
 
 
 def _check_parentid_permission_container(syn, parentid):

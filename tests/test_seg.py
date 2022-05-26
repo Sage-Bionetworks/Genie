@@ -82,13 +82,16 @@ def test_valdation_invalid():
     assert error == expectedErrors
     assert warning == ""
 
-    segDf = pd.DataFrame({
-        "ID": ['ID1', 'ID2', 'ID3', 'ID4', 'ID5'],
-        "CHROM": [1, 2, 3, 4, 5],
-        "LOC.START": [1, 2, 3, 4.3, 3],
-        "LOC.END": [1, 2, 3.4, 4, 3],
-        "NUM.MARK": [1, 2, 3, 33.3, 3],
-        "SEG.MEAN": [1, 2, 'f.d', 4, 3]})
+    segDf = pd.DataFrame(
+        {
+            "ID": ["ID1", "ID2", "ID3", "ID4", "ID5"],
+            "CHROM": [1, 2, 3, 4, 5],
+            "LOC.START": [1, 2, 3, 4.3, 3],
+            "LOC.END": [1, 2, 3.4, 4, 3],
+            "NUM.MARK": [1, 2, 3, 33.3, 3],
+            "SEG.MEAN": [1, 2, "f.d", 4, 3],
+        }
+    )
     error, warning = segClass._validate(segDf)
     expectedErrors = (
         "Seg: Only integars allowed in these column(s): "

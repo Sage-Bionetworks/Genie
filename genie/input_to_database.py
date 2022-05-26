@@ -283,12 +283,13 @@ def validatefile(
     )
     filetype = validator.file_type
     if check_file_status["to_validate"]:
-        valid, message = validator.validate_single_file(
+        valid_cls, message = validator.validate_single_file(
             oncotree_link=genie_config["oncotreeLink"], nosymbol_check=False
         )
+
         logger.info("VALIDATION COMPLETE")
         input_status_list, invalid_errors_list = _get_status_and_error_list(
-            valid, message, entities
+            valid_cls.is_valid(), message, entities
         )
         # Send email the first time the file is invalid
         if invalid_errors_list:
@@ -351,7 +352,7 @@ def processfiles(
             # Table id can be None
             tableid = genie_config.get(filetype)
 
-            if filetype is not None:
+            if filetype is not None and filetype != "other":
                 # Example GENIE config can be found in tests/conftest.py
                 processor = format_registry[filetype](
                     syn=syn, center=center, genie_config=genie_config
