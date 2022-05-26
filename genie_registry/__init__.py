@@ -19,7 +19,8 @@ from . import (
     workflow,
 )
 
-from genie.__version__ import __version__
+# Set genie registry to be the same as main genie codebase
+from genie import __version__
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
