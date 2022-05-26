@@ -115,12 +115,13 @@ def _add_feature_type_tobeddf(filepath, featuretype):
         "clinicalReported",
         "ID",
         "SEQ_ASSAY_ID",
+        "Feature_Type",
     ]
     # No need to add anything if the dataframe is empty
     if os.stat(filepath).st_size != 0:
         beddf = pd.read_csv(filepath, sep="\t", header=None)
-        beddf.columns = bed_columns
         beddf["Feature_Type"] = featuretype
+        beddf.columns = bed_columns
     else:
         beddf = pd.DataFrame(columns=bed_columns)
     return beddf
