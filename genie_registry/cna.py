@@ -136,11 +136,6 @@ class cna(FileTypeFormat):
         cnaDf.drop_duplicates("Hugo_Symbol", keep=False, inplace=True)
         cnaDf = pd.concat([cnaDf, duplicatedGenes], sort=False)
         cnaDf = cnaDf[order]
-        cnaDf.columns = [
-            process_functions.checkGenieId(i, self.center) if i != "Hugo_Symbol" else i
-            for i in cnaDf.columns
-        ]
-
         return cnaDf
 
     def process_steps(self, cnaDf, newPath):
@@ -177,7 +172,10 @@ class cna(FileTypeFormat):
 
         if process_functions.checkColExist(cnvDF, "ENTREZ_GENE_ID"):
             del cnvDF["ENTREZ_GENE_ID"]
-
+        error = process_functions.validate_genie_identifier(
+            identifiers=cnvDF.columns, center=self.center, filename="cnv", col="samples"
+        )
+        total_error += error
         # cnvDF = cnvDF.fillna('')
         allowed_values = [
             "-2.0",

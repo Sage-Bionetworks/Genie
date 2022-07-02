@@ -30,7 +30,13 @@ def test_perfect_validation():
             CHROMOSOME=[1, 2, 3, 4, 5],
             START_POSITION=[1, 2, 3, 4, 2],
             REFERENCE_ALLELE=["A", "A", "A", "A", "A"],
-            TUMOR_SAMPLE_BARCODE=["ID1-1", "ID1-1", "ID1-1", "ID1-1", "ID1-1"],
+            TUMOR_SAMPLE_BARCODE=[
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+            ],
             T_ALT_COUNT=[1, 2, 3, 4, 3],
             T_DEPTH=[1, 2, 3, 4, 3],
             T_REF_COUNT=[1, 2, 3, 4, 3],
@@ -56,7 +62,13 @@ def test_firstcolumn_validation():
             "REFERENCE_ALLELE": ["A", "B", "C", "D", "E"],
             "START_POSITION": [1, 2, 3, 4, 2],
             "CHROMOSOME": ["A", "A", "A", "A", "A"],
-            "TUMOR_SAMPLE_BARCODE": ["ID1-1", "ID1-1", "ID1-1", "ID1-1", "ID1-1"],
+            "TUMOR_SAMPLE_BARCODE": [
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID1-1",
+            ],
             "T_ALT_COUNT": [1, 2, 3, 4, 3],
             "T_DEPTH": [1, 2, 3, 4, 3],
             "T_REF_COUNT": [1, 2, 3, 4, 3],
@@ -135,6 +147,7 @@ def test_errors_validation():
         "maf: "
         "CHROMOSOME column cannot have any values that start "
         "with 'chr' or any 'WT' values.\n"
+        "maf: TUMOR_SAMPLE_BARCODE must start with GENIE-SAGE\n"
     )
     expectedWarnings = (
         "maf: "
@@ -179,6 +192,7 @@ def test_invalid_validation():
         "maf: N_REF_COUNT must be a numerical column.\n"
         "maf: "
         "TUMOR_SEQ_ALLELE2 can't have any blank or null values.\n"
+        "maf: TUMOR_SAMPLE_BARCODE must start with GENIE-SAGE\n"
     )
     expectedWarnings = (
         "maf: TUMOR_SEQ_ALLELE2 column contains 'NA' values, "

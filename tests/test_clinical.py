@@ -134,7 +134,13 @@ def test_patient_fillvs__process(clin_class):
 
     patientdf = pd.DataFrame(
         dict(
-            PATIENT_Id=["ID1", "ID2", "ID3", "ID4", "ID5"],
+            PATIENT_Id=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
             sex=[1, 2, 1, 2, 99],
             PRIMARY_RACE=[1, 2, 3, 4, 99],
             Secondary_RACE=[1, 2, 3, 4, 99],
@@ -191,7 +197,13 @@ def test_patient_lesscoltemplate__process(clin_class):
     # TEST patient processing
     patientdf = pd.DataFrame(
         dict(
-            PATIENT_Id=["ID1", "ID2", "ID3", "ID4", "ID5"],
+            PATIENT_Id=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
             sex=[1, 2, 1, 2, 99],
             PRIMARY_RACE=[1, 2, 3, 4, 99],
             Secondary_RACE=[1, 2, 3, 4, 99],
@@ -253,7 +265,13 @@ def test_patient_vs__process(clin_class):
     # Clinical file headers are capitalized prior to processing
     patientdf = pd.DataFrame(
         dict(
-            PATIENT_Id=["ID1", "ID2", "ID3", "ID4", "ID5"],
+            PATIENT_Id=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
             sex=[1, 2, 1, 2, 99],
             PRIMARY_RACE=[1, 2, 3, 4, 99],
             Secondary_RACE=[1, 2, 3, 4, 99],
@@ -341,8 +359,20 @@ def test_sample__process(clin_class):
     # patient = False
     sampledf = pd.DataFrame(
         dict(
-            SAMPLE_ID=["ID1-1", "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
-            PATIENT_ID=["ID1", "ID2", "ID3", "ID4", "ID5"],
+            SAMPLE_ID=[
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID2-1",
+                "GENIE-SAGE-ID3-1",
+                "GENIE-SAGE-ID4-1",
+                "GENIE-SAGE-ID5-1",
+            ],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
             Age_AT_SEQ_REPORT=[100000, 100000, 100000, 100000, 100000],
             ONCOTree_CODE=["AMPCA", " UNKNOWN", "AMPCA", "AMPCA", "AMPCA"],
             SAMPLE_TYPE=[1, 2, 3, 4, 4],
@@ -362,7 +392,13 @@ def test_perfect__validate(clin_class):
     """
     patientdf = pd.DataFrame(
         dict(
-            PATIENT_ID=["ID1", "ID2", "ID3", "ID4", "ID5"],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
             SEX=[1, 2, 1, 2, 99],
             PRIMARY_RACE=[1, 2, 3, 4, 99],
             SECONDARY_RACE=[1, 2, 3, 4, 99],
@@ -380,8 +416,20 @@ def test_perfect__validate(clin_class):
 
     sampledf = pd.DataFrame(
         dict(
-            SAMPLE_ID=["ID1-1", "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
-            PATIENT_ID=["ID1", "ID2", "ID3", "ID4", "ID5"],
+            SAMPLE_ID=[
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID2-1",
+                "GENIE-SAGE-ID3-1",
+                "GENIE-SAGE-ID4-1",
+                "GENIE-SAGE-ID5-1",
+            ],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
             AGE_AT_SEQ_REPORT=[">32485", "Unknown", "<6570", 20000, 100000],
             ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"],
             SAMPLE_TYPE=[1, 2, 3, 4, 4],
@@ -407,7 +455,13 @@ def test_nonull__validate(clin_class):
     """
     patientdf = pd.DataFrame(
         dict(
-            PATIENT_ID=["ID1", "ID2", "ID3", "ID4", "ID5"],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
             SEX=[1, 2, 1, 2, float("nan")],
             PRIMARY_RACE=[1, 2, 3, 4, float("nan")],
             SECONDARY_RACE=[1, 2, 3, 4, float("nan")],
@@ -431,8 +485,20 @@ def test_nonull__validate(clin_class):
 
     sampledf = pd.DataFrame(
         dict(
-            SAMPLE_ID=["ID1-1", "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
-            PATIENT_ID=["ID1", "ID2", "ID3", "ID4", "ID5"],
+            SAMPLE_ID=[
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID2-1",
+                "GENIE-SAGE-ID3-1",
+                "GENIE-SAGE-ID4-1",
+                "GENIE-SAGE-ID5-1",
+            ],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
             AGE_AT_SEQ_REPORT=[100000, "Unknown", 20000, float("nan"), 100000],
             ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"],
             SAMPLE_TYPE=[1, 2, 3, 4, float("nan")],
@@ -540,8 +606,20 @@ def test_errors__validate(clin_class):
     """
     sampleDf = pd.DataFrame(
         dict(
-            SAMPLE_ID=[float("nan"), "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
-            PATIENT_ID=["ID6", "ID2", "ID3", float("nan"), "ID5"],
+            SAMPLE_ID=[
+                float("nan"),
+                "GENIE-SAGE-ID2-1",
+                "GENIE-SAGE-ID3-1",
+                "GENIE-SAGE-ID4-1",
+                "GENIE-SAGE-ID5-1",
+            ],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID6",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                float("nan"),
+                "GENIE-SAGE-ID5",
+            ],
             AGE_AT_SEQ_REPORT=[10, 100000, ">doo", 100000, 100000],
             ONCOTREE_CODE=["AMPCAD", "TESTIS", "AMPCA", "AMPCA", "UCEC"],
             SAMPLE_TYPE=[1, 2, 3, 4, 6],
@@ -557,7 +635,13 @@ def test_errors__validate(clin_class):
 
     patientDf = pd.DataFrame(
         dict(
-            PATIENT_ID=["ID6", "ID2", "ID3", float("nan"), "ID5"],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID6",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                float("nan"),
+                "GENIE-SAGE-ID5",
+            ],
             SEX=[1, 2, 1, 5, float("nan")],
             PRIMARY_RACE=[1, 2, 3, 6, float("nan")],
             SECONDARY_RACE=[1, 2, 3, 6, float("nan")],
@@ -575,11 +659,13 @@ def test_errors__validate(clin_class):
         mock_get_onco_map.called_once_with(json_oncotreeurl)
 
         expectedErrors = (
+            "Sample Clinical File: SAMPLE_ID must start with GENIE-SAGE\n"
+            "Patient Clinical File: PATIENT_ID must start with GENIE-SAGE\n"
             "Sample Clinical File: PATIENT_ID's much be contained in the "
             "SAMPLE_ID's (ex. SAGE-1 <-> SAGE-1-2)\n"
             "Patient Clinical File: All samples must have associated patient "
             "information and no null patient ids allowed. "
-            "These samples are missing patient data: ID4-1\n"
+            "These samples are missing patient data: GENIE-SAGE-ID4-1\n"
             "Sample Clinical File: Please double check your "
             "AGE_AT_SEQ_REPORT. It must be an integer, 'Unknown', "
             "'>32485', '<6570'.\n"
@@ -637,9 +723,9 @@ def test_errors__validate(clin_class):
         )
         expectedWarnings = (
             "Sample Clinical File: All patients must have associated sample "
-            "information. These patients are missing sample data: ID6\n"
+            "information. These patients are missing sample data: GENIE-SAGE-ID6\n"
             "Sample Clinical File: Some SAMPLE_IDs have conflicting SEX and "
-            "ONCOTREE_CODES: ID2-1,ID5-1\n"
+            "ONCOTREE_CODES: GENIE-SAGE-ID2-1,GENIE-SAGE-ID5-1\n"
         )
         assert error == expectedErrors.format(year=datetime.datetime.utcnow().year)
         assert warning == expectedWarnings
@@ -653,7 +739,13 @@ def test_duplicated__validate(clin_class):
     """
     patientDf = pd.DataFrame(
         dict(
-            PATIENT_ID=["ID1", "ID1", "ID3", "ID4", float("nan")],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                float("nan"),
+            ],
             SEX=[1, 2, 1, 2, float("nan")],
             PRIMARY_RACE=[1, 2, 3, 4, float("nan")],
             SECONDARY_RACE=[1, 2, 3, 4, float("nan")],
@@ -683,8 +775,18 @@ def test_duplicated__validate(clin_class):
 
     sampleDf = pd.DataFrame(
         dict(
-            SAMPLE_ID=["ID1-1", "ID3-1", "ID4-1", float("nan")],
-            PATIENT_ID=["ID1", "ID3", "ID4", float("nan")],
+            SAMPLE_ID=[
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID3-1",
+                "GENIE-SAGE-ID4-1",
+                float("nan"),
+            ],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                float("nan"),
+            ],
             AGE_AT_SEQ_REPORT=[100000, 100000, 100000, float("nan")],
             ONCOTREE_CODE=["AMPCA", "UNKNOWN", "AMPCA", float("nan")],
             SAMPLE_TYPE=[1, 3, 4, float("nan")],

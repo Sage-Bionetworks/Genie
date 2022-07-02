@@ -34,7 +34,13 @@ def test_processing():
 
     segDf = pd.DataFrame(
         {
-            "ID": ["ID1-1", "ID2-1", "ID3-1", "ID4-1", "ID5-1"],
+            "ID": [
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID2-1",
+                "GENIE-SAGE-ID3-1",
+                "GENIE-SAGE-ID4-1",
+                "GENIE-SAGE-ID5-1",
+            ],
             "CHROM": ["chr1", 2, 3, 4, 5],
             "LOC.START": [1, 2, 3, 4, 3],
             "LOC.END": [1, 2, 3, 4, 2],
@@ -50,15 +56,23 @@ def test_processing():
     assert expectedSegDf.equals(newSegDf[expectedSegDf.columns])
 
 
-def test_validation():
+def test_validation_filename():
     with pytest.raises(AssertionError):
         segClass.validateFilename(["foo"])
     assert segClass.validateFilename(["genie_data_cna_hg19_SAGE.seg"]) == "seg"
     assert cbsClass.validateFilename(["genie_data_cna_hg19_SAGE.cbs"]) == "cbs"
 
+
+def test_validation_perfect():
     segDf = pd.DataFrame(
         {
-            "ID": ["ID1", "ID2", "ID3", "ID4", "ID5"],
+            "ID": [
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
             "CHROM": [1, 2, 3, 4, 5],
             "LOC.START": [1, 2, 3, 4, 3],
             "LOC.END": [1, 2, 3, 4, 3],
@@ -71,6 +85,8 @@ def test_validation():
     assert error == ""
     assert warning == ""
 
+
+def test_valdation_invalid():
     segDf = pd.DataFrame(
         {
             "ID": ["ID1", "ID2", "ID3", "ID4", "ID5"],
@@ -84,6 +100,7 @@ def test_validation():
         "Your seg file is missing these headers: SEG.MEAN.\n"
         "Seg: No null or empty values allowed in column(s): "
         "CHROM, LOC.END, LOC.START.\n"
+        "Seg: ID must start with GENIE-SAGE\n"
     )
     error, warning = segClass._validate(segDf)
     assert error == expectedErrors
@@ -108,6 +125,7 @@ def test_validation():
         "Seg: Only integars allowed in these column(s): "
         "LOC.END, LOC.START, NUM.MARK.\n"
         "Seg: Only numerical values allowed in SEG.MEAN.\n"
+        "Seg: ID must start with GENIE-SAGE\n"
     )
     assert error == expectedErrors
     assert warning == ""

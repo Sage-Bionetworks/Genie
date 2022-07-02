@@ -23,8 +23,6 @@ class seg(FileTypeFormat):
 
     def _process(self, seg):
         seg.columns = [col.upper() for col in seg.columns]
-        newsamples = [process_functions.checkGenieId(i, self.center) for i in seg["ID"]]
-        seg["ID"] = newsamples
         seg = seg.drop_duplicates()
         seg = seg.rename(
             columns={
@@ -80,5 +78,11 @@ class seg(FileTypeFormat):
                 "Seg: No null or empty values allowed in column(s): %s.\n"
                 % ", ".join(sorted(nullCols))
             )
+
+        if process_functions.checkColExist(segDF, "ID"):
+            error = process_functions.validate_genie_identifier(
+                identifiers=segDF["ID"], center=self.center, filename="Seg", col="ID"
+            )
+            total_error += error
 
         return (total_error, warning)

@@ -45,7 +45,7 @@ def cna_class(genie_config):
 
 def test_processing(cna_class):
 
-    order = ["Hugo_Symbol", "Entrez_gene_id", "Id1-1", "Id2-1"]
+    order = ["Hugo_Symbol", "Entrez_gene_id", "GENIE-SAGE-Id1-1", "GENIE-SAGE-Id2-1"]
 
     expected_cnadf = pd.DataFrame(
         {
@@ -59,8 +59,8 @@ def test_processing(cna_class):
         {
             "Hugo_Symbol": ["AAED", "AAK1", "AAAS"],
             "Entrez_gene_id": [0, 0, 0],
-            "Id1-1": [-0.5, 2, 0.5],
-            "Id2-1": [1, 1.5, -1.5],
+            "GENIE-SAGE-Id1-1": [-0.5, 2, 0.5],
+            "GENIE-SAGE-Id2-1": [1, 1.5, -1.5],
         }
     )
     cnadf = cnadf[order]

@@ -64,11 +64,6 @@ class fusions(FileTypeFormat):
     def _process(self, fusion):
         fusion.columns = [col.upper() for col in fusion.columns]
         fusion["CENTER"] = self.center
-        newsamples = [
-            process_functions.checkGenieId(i, self.center)
-            for i in fusion["TUMOR_SAMPLE_BARCODE"]
-        ]
-        fusion["TUMOR_SAMPLE_BARCODE"] = newsamples
 
         # This is temporary, because comments column will be removed
         # if fusion.get("COMMENTS") is None:
@@ -157,6 +152,14 @@ class fusions(FileTypeFormat):
                 )
             # fusionDF = fusionDF.drop_duplicates("HUGO_SYMBOL").apply(lambda x: validateSymbol(x, bedDf), axis=1)
 
+        if process_functions.checkColExist(fusionDF, "TUMOR_SAMPLE_BARCODE"):
+            error = process_functions.validate_genie_identifier(
+                identifiers=fusionDF["TUMOR_SAMPLE_BARCODE"],
+                center=self.center,
+                filename="fusion",
+                col="TUMOR_SAMPLE_BARCODE",
+            )
+            total_error += error
         # if process_functions.checkColExist(fusionDF, "DNA_SUPPORT"):
         #     if not fusionDF.DNA_SUPPORT.isin(["yes","no","unknown"]).all():
         #         total_error += "Your fusion file's DNA_SUPPORT column must be 'yes', 'no', or 'unknown'"
