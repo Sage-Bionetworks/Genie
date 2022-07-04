@@ -13,10 +13,7 @@ def test_processing():
     pass
 
 
-@pytest.fixture(params=[
-    (["foo"]),
-    (["SAGE-test.txt"])
-])
+@pytest.fixture(params=[(["foo"]), (["SAGE-test.txt"])])
 def filename_fileformat_map(request):
     return request.param
 

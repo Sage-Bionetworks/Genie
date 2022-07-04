@@ -6,7 +6,7 @@ import os
 import time
 from typing import List
 
-import synapseclient
+import synapseclient  # lgtm [py/import-and-import-from]
 from synapseclient import Synapse
 from synapseclient.core.utils import to_unix_epoch_time
 import synapseutils
@@ -352,7 +352,7 @@ def processfiles(
             # Table id can be None
             tableid = genie_config.get(filetype)
 
-            if filetype is not None:
+            if filetype is not None and filetype != "other":
                 # Example GENIE config can be found in tests/conftest.py
                 processor = format_registry[filetype](
                     syn=syn, center=center, genie_config=genie_config

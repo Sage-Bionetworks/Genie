@@ -6,7 +6,6 @@ import logging
 import os
 
 import pandas as pd
-from pandas import DataFrame
 import synapseclient
 
 from genie.example_filetype_format import FileTypeFormat
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def _check_year(
-    clinicaldf: DataFrame,
+    clinicaldf: pd.DataFrame,
     year_col: int,
     filename: str,
     allowed_string_values: list = None,
@@ -68,7 +67,7 @@ def _check_year(
     return error
 
 
-def _check_int_dead_consistency(clinicaldf: DataFrame) -> str:
+def _check_int_dead_consistency(clinicaldf: pd.DataFrame) -> str:
     """Check if vital status interval and dead column are consistent
 
     Args:
@@ -109,7 +108,7 @@ def _check_int_dead_consistency(clinicaldf: DataFrame) -> str:
 
 
 def _check_int_year_consistency(
-    clinicaldf: DataFrame, cols: list, string_vals: list
+    clinicaldf: pd.DataFrame, cols: list, string_vals: list
 ) -> str:
     """
     Check if vital status interval and year columns are consistent in
@@ -176,12 +175,12 @@ def _check_int_year_consistency(
 
 # PROCESSING
 def remap_clinical_values(
-    clinicaldf: DataFrame,
-    sex_mapping: DataFrame,
-    race_mapping: DataFrame,
-    ethnicity_mapping: DataFrame,
-    sampletype_mapping: DataFrame,
-) -> DataFrame:
+    clinicaldf: pd.DataFrame,
+    sex_mapping: pd.DataFrame,
+    race_mapping: pd.DataFrame,
+    ethnicity_mapping: pd.DataFrame,
+    sampletype_mapping: pd.DataFrame,
+) -> pd.DataFrame:
     """Remap clinical attributes from integer to string values
 
     Args:
@@ -263,21 +262,12 @@ class Clinical(FileTypeFormat):
         """Transform the values of each row of the clinical file"""
         # Must create copy or else it will overwrite the original row
         x = row.copy()
-        # # PATIENT ID
-        if x.get("PATIENT_ID") is not None:
-            x["PATIENT_ID"] = process_functions.checkGenieId(
-                x["PATIENT_ID"], self.center
-            )
 
         # BIRTH YEAR
         if x.get("BIRTH_YEAR") is not None:
             # BIRTH YEAR (Check if integer)
             if process_functions.checkInt(x["BIRTH_YEAR"]):
                 x["BIRTH_YEAR"] = int(x["BIRTH_YEAR"])
-
-        # SAMPLE ID
-        if x.get("SAMPLE_ID") is not None:
-            x["SAMPLE_ID"] = process_functions.checkGenieId(x["SAMPLE_ID"], self.center)
 
         # AGE AT SEQ REPORT
         if x.get("AGE_AT_SEQ_REPORT") is not None:
@@ -532,6 +522,14 @@ class Clinical(FileTypeFormat):
                     "uploaded, then please check to make sure no duplicated "
                     "PATIENT_IDs exist in the patient clinical file.\n"
                 )
+            error = process_functions.validate_genie_identifier(
+                identifiers=clinicaldf[sample_id],
+                center=self.center,
+                filename="Sample Clinical File",
+                col="SAMPLE_ID",
+            )
+            total_error.write(error)
+
         # CHECK: PATIENT_ID
         patientId = "PATIENT_ID"
         # #CHECK: PATIENT_ID IN SAMPLE FILE
@@ -539,7 +537,17 @@ class Clinical(FileTypeFormat):
 
         if not havePatientColumn:
             total_error.write("Patient Clinical File: Must have PATIENT_ID column.\n")
-
+        else:
+            if not all(clinicaldf[patientId].str.startswith(f"GENIE-{self.center}")):
+                total_error.write(
+                    "Patient Clinical File: "
+                    f"PATIENT_ID must start with GENIE-{self.center}\n"
+                )
+            if any(clinicaldf[patientId].str.len() >= 50):
+                total_error.write(
+                    "Patient Clinical File: PATIENT_ID must have less than "
+                    "50 characters.\n"
+                )
         # CHECK: within the sample file that the sample ids match
         # the patient ids
         if haveSampleColumn and havePatientColumn:

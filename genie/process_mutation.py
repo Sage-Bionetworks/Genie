@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 
 import pandas as pd
-import synapseclient
+import synapseclient  # lgtm [py/import-and-import-from]
 from synapseclient import Synapse
 from synapseclient.core.exceptions import SynapseTimeoutError
 
@@ -326,10 +326,10 @@ def format_maf(mafdf: pd.DataFrame, center: str) -> pd.DataFrame:
     Returns:
         Formatted mutation dataframe"""
     mafdf["Center"] = center
+    # Leaving here for safe guarding.
     mafdf["Tumor_Sample_Barcode"] = [
         process_functions.checkGenieId(i, center) for i in mafdf["Tumor_Sample_Barcode"]
     ]
-
     mafdf["Sequence_Source"] = float("nan")
     mafdf["Sequencer"] = float("nan")
     mafdf["Validation_Status"][

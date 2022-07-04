@@ -9,14 +9,14 @@
 
 # def test_processing():
 
-#   syn = mock.create_autospec(synapseclient.Synapse) 
+#   syn = mock.create_autospec(synapseclient.Synapse)
 
 #   cbsClass = cbs(cbs, "SAGE")
 #   pass
 
 # def test_validation():
 
-#   syn = mock.create_autospec(synapseclient.Synapse) 
+#   syn = mock.create_autospec(synapseclient.Synapse)
 
 #   cbsClass = cbs(cbs, "SAGE")
 
@@ -57,4 +57,3 @@
 #                     "cbs: Only numerical values allowed in Log2Ratio.\n")
 #   assert error == expectedErrors
 #   assert warning == ""
-

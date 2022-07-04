@@ -1,10 +1,14 @@
+from unittest import mock
+
 import pytest
+import synapseclient
 
 
 @pytest.fixture
 def genie_config():
-    oncotree_link = \
+    oncotree_link = (
         "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
+    )
     config = {
         "vcf2maf": "syn22493903",
         "cna": "syn11600835",
@@ -48,15 +52,15 @@ def genie_config():
                 "inputSynId": "syn11601335",
                 "stagingSynId": "syn11601337",
                 "release": True,
-                "mutationInCisFilter": "ON"
+                "mutationInCisFilter": "ON",
             },
             "TEST": {
                 "center": "TEST",
                 "inputSynId": "syn11601340",
                 "stagingSynId": "syn11601342",
                 "release": True,
-                "mutationInCisFilter": "ON"
-            }
+                "mutationInCisFilter": "ON",
+            },
         },
         "genie_annotation_pkg": "/path/to/nexus",
         "ethnicity_mapping": "syn7434242",
@@ -65,3 +69,8 @@ def genie_config():
         "sampletype_mapping": "syn7434273",
     }
     return config
+
+
+@pytest.fixture()
+def syn():
+    return mock.create_autospec(synapseclient.Synapse)

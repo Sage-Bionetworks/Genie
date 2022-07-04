@@ -8,12 +8,13 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 import tempfile
 import time
+from typing import List
 
 import ast
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 import pandas as pd
-import synapseclient
+import synapseclient  # lgtm [py/import-and-import-from]
 from synapseclient import Synapse
 
 # try:
@@ -171,6 +172,32 @@ def checkColExist(DF, key):
     """
     result = False if DF.get(key) is None else True
     return result
+
+
+def validate_genie_identifier(
+    identifiers: pd.Series, center: str, filename: str, col: str
+) -> str:
+    """Validate GENIE sample and patient ids.
+
+    Args:
+        identifiers (pd.Series): Array of GENIE identifiers
+        center (str): GENIE center name
+        filename (str): name of file
+        col (str): Column with identifiers
+
+    return:
+        str: Errors
+    """
+    total_error = ""
+    if not all(identifiers.str.startswith(f"GENIE-{center}")):
+        total_error = total_error + (
+            f"{filename}: {col} must start with GENIE-{center}\n"
+        )
+    if any(identifiers.str.len() >= 50):
+        total_error = total_error + (
+            f"{filename}: {col} must have less than 50 characters.\n"
+        )
+    return total_error
 
 
 # def get_oncotree_codes(oncotree_url):
@@ -700,23 +727,38 @@ def _update_rows(new_datasetdf, databasedf, checkby):
 
 
 def updateData(
-    syn,
-    databaseSynId,
-    newData,
-    filterBy,
-    filterByColumn="CENTER",
-    col=None,
-    toDelete=False,
-):
+    syn: Synapse,
+    databaseSynId: str,
+    newData: pd.DataFrame,
+    filterBy: str,
+    filterByColumn: str = "CENTER",
+    col: List[str] = None,
+    toDelete: bool = False,
+) -> None:
+    """Update Synapse table given a new dataframe
+
+    Args:
+        syn (Synapse): Synapse connection
+        databaseSynId (str): Synapse Id of Synapse Table
+        newData (pd.DataFrame): New data in a dataframe
+        filterBy (str): Value to filter new data by
+        filterByColumn (str, optional): Column to filter values by. Defaults to "CENTER".
+        col (List[str], optional): List of columns to ingest. Defaults to None.
+        toDelete (bool, optional): Delete rows given the primary key. Defaults to False.
+    """
     databaseEnt = syn.get(databaseSynId)
     database = syn.tableQuery(
-        "SELECT * FROM {} where {} ='{}'".format(
-            databaseSynId, filterByColumn, filterBy
-        )
+        f"SELECT * FROM {databaseSynId} where {filterByColumn} ='{filterBy}'"
     )
     database = database.asDataFrame()
+    db_cols = set(database.columns)
     if col is not None:
-        database = database[col]
+        new_data_cols = set(col)
+        # Make sure columns from file exists in database columns
+        use_cols = db_cols.intersection(new_data_cols)
+        # No need to fail, because there is bound to be at least one
+        # column that will exist in the database
+        database = database[list(use_cols)]
     else:
         newData = newData[database.columns]
     updateDatabase(
@@ -1105,9 +1147,7 @@ def _update_database_mapping(
     # Only update the one row
     to_update_row = database_synid_mappingdf[fileformat_ind]
 
-    updated_table = syn.store(
-        synapseclient.Table(database_mapping_synid, to_update_row)
-    )
+    syn.store(synapseclient.Table(database_mapping_synid, to_update_row))
     return database_synid_mappingdf
 
 
