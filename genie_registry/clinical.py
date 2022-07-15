@@ -978,8 +978,12 @@ class Clinical(FileTypeFormat):
 
     def _get_dataframe(self, filePathList):
         clinicaldf = pd.read_csv(filePathList[0], sep="\t", comment="#")
+        clinicaldf.columns = [col.upper() for col in clinicaldf.columns]
+
         if len(filePathList) > 1:
             other_clinicaldf = pd.read_csv(filePathList[1], sep="\t", comment="#")
+            other_clinicaldf.columns = [col.upper() for col in other_clinicaldf.columns]
+
             try:
                 clinicaldf = clinicaldf.merge(other_clinicaldf, on="PATIENT_ID")
             except Exception:
