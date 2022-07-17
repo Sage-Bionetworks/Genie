@@ -128,13 +128,16 @@ def determine_dtype(path: str):
     return column_types
 
 
-def move_and_configure_maf(mutation_path: str, input_files_dir: str):
-    """ Moves maf files into processing directory. Maf file's column headers
+def move_and_configure_maf(mutation_path: str, input_files_dir: str) -> str:
+    """Moves maf files into processing directory. Maf file's column headers
     are renamed if necessary and .0 are stripped.
 
     Args:
         mutation_path (str): Mutation file path
         input_files_dir (str): Input file directory
+
+    Returns:
+        str: Filepath to moved and configured maf
     """
     filename = os.path.basename(mutation_path)
     new_filepath = os.path.join(input_files_dir, filename)
@@ -143,12 +146,11 @@ def move_and_configure_maf(mutation_path: str, input_files_dir: str):
     mafdf = pd.read_csv(mutation_path, sep="\t", dtype=new_column_types)
     # If any column headers need to be remapped, remap
     mafdf = mafdf.rename(columns=MAF_COL_MAPPING)
-    # If any column headers need to be remapped, remap
+    # Must remove floating .0 or else processing will fail for genome nexus
     maf_text = process_functions.removePandasDfFloat(mafdf)
     with open(new_filepath, "w") as new_maf_f:
         new_maf_f.write(maf_text)
-    # else:
-    #     shutil.copy(mutation_path, input_files_dir)
+    return new_filepath
 
 
 def move_mutation(mutation_path, input_files_dir):
