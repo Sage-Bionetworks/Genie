@@ -106,22 +106,8 @@ KNOWN_STRING_COLS = [
     "HGNC_ID",
     "PUBMED",
     "PICK",
+    "Exon_Number",
 ]
-
-
-def _rename_column_headers(dataframe: pd.DataFrame, col_map: dict) -> pd.DataFrame:
-    """Rename dataframe column headers
-
-    Args:
-        dataframe: pandas dataframe
-        col_map: Column Mapping {column_name: new_column_name,}
-
-    Returns:
-        Dataframe with new columns
-
-    """
-    dataframe = dataframe.rename(columns=col_map)
-    return dataframe
 
 
 def _convert_to_str_dtype(column_types, known_string_cols):
@@ -136,28 +122,35 @@ def _convert_to_str_dtype(column_types, known_string_cols):
 
 def determine_dtype(path: str):
     """Reads in a dataframe partially and determines the dtype of columns"""
-    subset_df = pd.read_csv(path, nrows=100, sep="\t")
-    dtypes = subset_df.dtypes
-    colnames = dtypes.index
-    types = [i.name for i in dtypes.values]
-    column_types = dict(zip(colnames, types))
+    # Change this nrows to 5000 so that it better encapsulates the types
+    subset_df = pd.read_csv(path, nrows=5000, sep="\t")
+    column_types = subset_df.dtypes.to_dict()
     return column_types
 
 
-def move_maf(mutation_path, input_files_dir):
+def move_and_configure_maf(mutation_path: str, input_files_dir: str) -> str:
     """Moves maf files into processing directory. Maf file's column headers
-    are renamed if necessary"""
-    header_df = pd.read_csv(mutation_path, sep="\t", index_col=0, nrows=1, comment="#")
+    are renamed if necessary and .0 are stripped.
+
+    Args:
+        mutation_path (str): Mutation file path
+        input_files_dir (str): Input file directory
+
+    Returns:
+        str: Filepath to moved and configured maf
+    """
+    filename = os.path.basename(mutation_path)
+    new_filepath = os.path.join(input_files_dir, filename)
+    column_types = determine_dtype(mutation_path)
+    new_column_types = _convert_to_str_dtype(column_types, KNOWN_STRING_COLS)
+    mafdf = pd.read_csv(mutation_path, sep="\t", dtype=new_column_types)
     # If any column headers need to be remapped, remap
-    if sum(header_df.columns.isin(MAF_COL_MAPPING.keys())) > 0:
-        filename = os.path.basename(mutation_path)
-        column_types = determine_dtype(mutation_path)
-        new_column_types = _convert_to_str_dtype(column_types, KNOWN_STRING_COLS)
-        mafdf = pd.read_csv(mutation_path, sep="\t", dtype=new_column_types)
-        mafdf = _rename_column_headers(mafdf, col_map=MAF_COL_MAPPING)
-        mafdf.to_csv(os.path.join(input_files_dir, filename), sep="\t", index=False)
-    else:
-        shutil.copy(mutation_path, input_files_dir)
+    mafdf = mafdf.rename(columns=MAF_COL_MAPPING)
+    # Must remove floating .0 or else processing will fail for genome nexus
+    maf_text = process_functions.removePandasDfFloat(mafdf)
+    with open(new_filepath, "w") as new_maf_f:
+        new_maf_f.write(maf_text)
+    return new_filepath
 
 
 def move_mutation(mutation_path, input_files_dir):
@@ -166,7 +159,7 @@ def move_mutation(mutation_path, input_files_dir):
     if mutation_path.endswith(".vcf"):
         shutil.copy(mutation_path, input_files_dir)
     else:
-        move_maf(mutation_path, input_files_dir)
+        move_and_configure_maf(mutation_path, input_files_dir)
 
 
 def process_mutation_workflow(
