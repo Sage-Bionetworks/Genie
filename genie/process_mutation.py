@@ -136,7 +136,8 @@ def _convert_to_str_dtype(column_types, known_string_cols):
 
 def determine_dtype(path: str):
     """Reads in a dataframe partially and determines the dtype of columns"""
-    subset_df = pd.read_csv(path, nrows=100, sep="\t")
+    # Change this nrows to 5000 so that it better encapsulates the types
+    subset_df = pd.read_csv(path, nrows=5000, sep="\t")
     dtypes = subset_df.dtypes
     colnames = dtypes.index
     types = [i.name for i in dtypes.values]
