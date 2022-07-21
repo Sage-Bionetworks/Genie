@@ -123,7 +123,7 @@ def _convert_to_str_dtype(column_types, known_string_cols):
 def determine_dtype(path: str):
     """Reads in a dataframe partially and determines the dtype of columns"""
     # Change this nrows to 5000 so that it better encapsulates the types
-    subset_df = pd.read_csv(path, nrows=5000, sep="\t")
+    subset_df = pd.read_csv(path, nrows=5000, sep="\t", comment="#")
     column_types = subset_df.dtypes.to_dict()
     return column_types
 
@@ -143,7 +143,7 @@ def move_and_configure_maf(mutation_path: str, input_files_dir: str) -> str:
     new_filepath = os.path.join(input_files_dir, filename)
     column_types = determine_dtype(mutation_path)
     new_column_types = _convert_to_str_dtype(column_types, KNOWN_STRING_COLS)
-    mafdf = pd.read_csv(mutation_path, sep="\t", dtype=new_column_types)
+    mafdf = pd.read_csv(mutation_path, sep="\t", dtype=new_column_types, comment="#")
     # If any column headers need to be remapped, remap
     mafdf = mafdf.rename(columns=MAF_COL_MAPPING)
     # Must remove floating .0 or else processing will fail for genome nexus
@@ -361,7 +361,9 @@ def split_and_store_maf(
     narrow_maf_path = os.path.join(
         workdir, center, "staging", f"data_mutations_extended_{center}_MAF_narrow.txt"
     )
-    maf_chunks = pd.read_csv(annotated_maf_path, sep="\t", chunksize=100000)
+    maf_chunks = pd.read_csv(
+        annotated_maf_path, sep="\t", chunksize=100000, comment="#"
+    )
 
     for maf_chunk in maf_chunks:
         maf_chunk = format_maf(maf_chunk, center)
