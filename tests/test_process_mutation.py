@@ -283,7 +283,7 @@ def test_split_and_store_maf():
         )
         patch_getcols.assert_called_once_with("sy12345")
         patch_readcsv.assert_called_once_with(
-            annotated_maf_path, sep="\t", chunksize=100000
+            annotated_maf_path, sep="\t", chunksize=100000, comment="#"
         )
         patch_format.assert_called_once_with(exampledf, center)
 
