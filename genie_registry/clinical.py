@@ -308,11 +308,22 @@ class Clinical(FileTypeFormat):
         path = os.path.join(
             process_functions.SCRIPT_DIR, f"{self._fileType}_missing_{col}.csv"
         )
-        missing = self.syn.tableQuery(
+        # PLFM-7428 - commenting out for now.
+        # missing = self.syn.tableQuery(
+        #     f"select {col} from {dbSynId} where "
+        #     f"CENTER='{self.center}' and {col} not in ('{samples}')"
+        # )
+        # missing.asDataFrame().to_csv(path, index=False)
+
+        center_samples = self.syn.tableQuery(
             f"select {col} from {dbSynId} where "
-            f"CENTER='{self.center}' and {col} not in ('{samples}')"
+            f"CENTER='{self.center}'"
         )
-        missing.asDataFrame().to_csv(path, index=False)
+        center_samples_df = center_samples.asDataFrame()
+        # Get all the samples that are in the database but missing from
+        # the input file
+        missing_df = center_samples_df[col][~center_samples_df[col].isin(df[col])]
+        missing_df.to_csv(path, index=False)
         self.syn.store(synapseclient.File(path, parent=stagingSynId))
         os.remove(path)
 
