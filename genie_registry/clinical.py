@@ -308,13 +308,7 @@ class Clinical(FileTypeFormat):
         path = os.path.join(
             process_functions.SCRIPT_DIR, f"{self._fileType}_missing_{col}.csv"
         )
-        # PLFM-7428 - commenting out for now.
-        # missing = self.syn.tableQuery(
-        #     f"select {col} from {dbSynId} where "
-        #     f"CENTER='{self.center}' and {col} not in ('{samples}')"
-        # )
-        # missing.asDataFrame().to_csv(path, index=False)
-
+        # PLFM-7428 - there are limits on a "not in" function on Synapse tables
         center_samples = self.syn.tableQuery(
             f"select {col} from {dbSynId} where "
             f"CENTER='{self.center}'"
