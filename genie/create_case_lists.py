@@ -116,7 +116,7 @@ def create_sequenced_samples(seq_assay_map, assay_info_file_name):
         for row in reader:
             if "cna" in row["alteration_types"]:
                 cna_samples.extend(seq_assay_map[row["SEQ_ASSAY_ID"]])
-            if "structural_variants" in row['alteration_types']:
+            if "structural_variants" in row["alteration_types"]:
                 fusion_samples.extend(seq_assay_map[row["SEQ_ASSAY_ID"]])
     return cna_samples, fusion_samples
 
