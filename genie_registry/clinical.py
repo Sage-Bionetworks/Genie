@@ -302,17 +302,29 @@ class Clinical(FileTypeFormat):
                 x[i] = x[i].strip(" ")
         return x
 
-    def uploadMissingData(self, df, col, dbSynId, stagingSynId, retractionSynId=None):
-        """Uploads missing clinical samples / patients"""
-        samples = "','".join(df[col])
+    def uploadMissingData(
+        self, df: pd.DataFrame, col: str, dbSynId: str, stagingSynId: str
+    ):
+        """Uploads missing clinical samples / patients
+
+        Args:
+            df (pd.DataFrame): dataframe with clinical data
+            col (str): column in dataframe. Usually SAMPLE_ID or PATIENT_ID.
+            dbSynId (str): Synapse table Synapse id
+            stagingSynId (str): Center Synapse staging Id
+        """
         path = os.path.join(
             process_functions.SCRIPT_DIR, f"{self._fileType}_missing_{col}.csv"
         )
-        missing = self.syn.tableQuery(
-            f"select {col} from {dbSynId} where "
-            f"CENTER='{self.center}' and {col} not in ('{samples}')"
+        # PLFM-7428 - there are limits on a "not in" function on Synapse tables
+        center_samples = self.syn.tableQuery(
+            f"select {col} from {dbSynId} where " f"CENTER='{self.center}'"
         )
-        missing.asDataFrame().to_csv(path, index=False)
+        center_samples_df = center_samples.asDataFrame()
+        # Get all the samples that are in the database but missing from
+        # the input file
+        missing_df = center_samples_df[col][~center_samples_df[col].isin(df[col])]
+        missing_df.to_csv(path, index=False)
         self.syn.store(synapseclient.File(path, parent=stagingSynId))
         os.remove(path)
 
@@ -449,7 +461,6 @@ class Clinical(FileTypeFormat):
                 sampleClinical["ONCOTREE_CODE"].isin(oncotree_mapping["ONCOTREE_CODE"])
             ]
             self.uploadMissingData(sampleClinical, "SAMPLE_ID", sample_synid, parentId)
-            # ,retractedSampleSynId)
             process_functions.updateData(
                 self.syn,
                 sample_synid,
