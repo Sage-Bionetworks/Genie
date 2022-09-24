@@ -1,5 +1,6 @@
 from io import StringIO
 import logging
+from operator import or_
 import os
 
 from genie.example_filetype_format import FileTypeFormat
@@ -49,17 +50,17 @@ class StructuralVariant(FileTypeFormat):
         if not have_sample_col:
             total_error.write("Structural Variant: Must have SAMPLE_ID column.\n")
         else:
-            if sv_df["SAMPLE_ID"].duplicated().any():
-                total_error.write(
-                    "Structural Variant: No duplicated SAMPLE_ID allowed.\n"
-                )
+            # if sv_df["SAMPLE_ID"].duplicated().any():
+            #     total_error.write(
+            #         "Structural Variant: No duplicated SAMPLE_ID allowed.\n"
+            #     )
             # TODO: switch to validate_genie_identifier function
             # After GH-444 is merged
-            if not all(sv_df["SAMPLE_ID"].str.startswith(f"GENIE-{self.center}")):
-                total_error.write(
-                    "Structural Variant: SAMPLE_ID must start with "
-                    f"GENIE-{self.center}\n"
-                )
+            errors = process_functions.validate_genie_identifier(
+                identifiers=sv_df["SAMPLE_ID"], center=self.center,
+                filename="Structural Variant", col="SAMPLE_ID"
+            )
+            total_error.write(errors)
 
         warn, error = process_functions.check_col_and_values(
             sv_df,
@@ -71,13 +72,18 @@ class StructuralVariant(FileTypeFormat):
         total_warning.write(warn)
         total_error.write(error)
 
+        have_hugo_1 = process_functions.checkColExist(sv_df, "SITE1_HUGO_SYMBOL")
+        have_hugo_2 = process_functions.checkColExist(sv_df, "SITE2_HUGO_SYMBOL")
+        have_entrez_1 = process_functions.checkColExist(sv_df, "SITE1_ENTREZ_GENE_ID")
+        have_entrez_2 = process_functions.checkColExist(sv_df, "SITE2_ENTREZ_GENE_ID")
+
+        if not ((have_hugo_1 or have_entrez_1) and (have_hugo_2 or have_entrez_2)):
+            total_error.write(
+                "Structural Variant: Either SITE1_HUGO_SYMBOL/SITE1_ENTREZ_GENE_ID "
+                "or SITE2_HUGO_SYMBOL/SITE2_ENTREZ_GENE_ID is required.\n"
+            )
+
         # optional_columns = [
-        #     "SITE1_HUGO_SYMBOL",
-        #     "SITE2_HUGO_SYMBOL",
-        #     "SITE1_ENSEMBL_TRANSCRIPT_ID",
-        #     "SITE2_ENSEMBL_TRANSCRIPT_ID",
-        #     "SITE1_ENTREZ_GENE_ID",
-        #     "SITE2_ENTREZ_GENE_ID",
         #     "SITE1_REGION_NUMBER",
         #     "SITE2_REGION_NUMBER",
         #     "SITE1_REGION",
@@ -138,17 +144,17 @@ class StructuralVariant(FileTypeFormat):
                 "column(s): {}.\n".format(", ".join(non_ints))
             )
 
-        # region_allow_vals = [
-        #     "5_PRIME_UTR", "3_PRIME_UTR", "PROMOTER", "EXON", "INTRON"
-        # ]
-        # warn, error = process_functions.check_col_and_values(
-        #     sv_df, "SITE1_REGION", region_allow_vals,
-        #     "Structural Variant", required=False
-        # )
-        # warn, error = process_functions.check_col_and_values(
-        #     sv_df, "SITE2_REGION", region_allow_vals,
-        #     "Structural Variant", required=False
-        # )
+        region_allow_vals = [
+            "5_PRIME_UTR", "3_PRIME_UTR", "PROMOTER", "EXON", "INTRON"
+        ]
+        warn, error = process_functions.check_col_and_values(
+            sv_df, "SITE1_REGION", region_allow_vals,
+            "Structural Variant", required=False
+        )
+        warn, error = process_functions.check_col_and_values(
+            sv_df, "SITE2_REGION", region_allow_vals,
+            "Structural Variant", required=False
+        )
         warn, error = process_functions.check_col_and_values(
             sv_df,
             "NCBI_BUILD",
@@ -180,13 +186,13 @@ class StructuralVariant(FileTypeFormat):
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
-            sv_df, "DNA_SUPPORT", ["Yes", "No"], "Structural Variant", required=False
+            sv_df, "DNA_SUPPORT", ["yes", "no"], "Structural Variant", required=False
         )
         # total_warning.write(warn)
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
-            sv_df, "RNA_SUPPORT", ["Yes", "No"], "Structural Variant", required=False
+            sv_df, "RNA_SUPPORT", ["yes", "no"], "Structural Variant", required=False
         )
         # total_warning.write(warn)
         total_error.write(error)
