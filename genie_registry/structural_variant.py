@@ -62,6 +62,11 @@ class StructuralVariant(FileTypeFormat):
             )
             total_error.write(errors)
 
+        if sv_df.duplicated().any():
+            total_error.write(
+                "Structural Variant: No duplicated rows allowed.\n"
+            )
+
         warn, error = process_functions.check_col_and_values(
             sv_df,
             "SV_STATUS",
