@@ -48,13 +48,17 @@ def test_store_gene_panel_files():
             CONSORTIUM_SYNID,
             ["TEST"],
         )
-
-        patch_syn_table_query.assert_called_once_with(
-            "select id from %s where cBioFileFormat = 'genePanel' "
-            "and fileStage = 'staging' and "
-            "name not in ('data_gene_panel_TEST.txt')" % FILEVIEW_SYNID
+        patch_syn_table_query.assert_has_calls(
+            [
+                mock.call('select * from syn12345 limit 1'),
+                mock.call(
+                    "select id from %s where cBioFileFormat = 'genePanel' "
+                    "and fileStage = 'staging' and "
+                    "name not in ('data_gene_panel_TEST.txt')" % FILEVIEW_SYNID
+                )
+            ]
         )
-
+        assert patch_syn_table_query.call_count == 2
         patch_storefile.assert_called_once_with(
             SYN,
             os.path.join(database_to_staging.GENIE_RELEASE_DIR, "PANEL1_vTEST.txt"),
