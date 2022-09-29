@@ -839,8 +839,7 @@ def store_sv_files(
     """
     logger.info("MERING, FILTERING, STORING FUSION FILES")
     sv_df = process_functions.get_syntabledf(
-        syn,
-        "select * from {synid}",
+        syn, f"select * from {synid}",
     )
     version = syn.create_snapshot_version(sv_df, comment=genie_version)
 
