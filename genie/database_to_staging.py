@@ -841,7 +841,7 @@ def store_sv_files(
     sv_df = process_functions.get_syntabledf(
         syn, f"select * from {synid}",
     )
-    version = syn.create_snapshot_version(sv_df, comment=genie_version)
+    version = syn.create_snapshot_version(synid, comment=genie_version)
 
     # sv_df["ENTREZ_GENE_ID"].mask(
     #     sv_df["ENTREZ_GENE_ID"] == 0, float("nan"), inplace=True
