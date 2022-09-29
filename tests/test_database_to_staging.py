@@ -50,12 +50,12 @@ def test_store_gene_panel_files():
         )
         patch_syn_table_query.assert_has_calls(
             [
-                mock.call('select * from syn12345 limit 1'),
+                mock.call("select * from syn12345 limit 1"),
                 mock.call(
                     "select id from %s where cBioFileFormat = 'genePanel' "
                     "and fileStage = 'staging' and "
                     "name not in ('data_gene_panel_TEST.txt')" % FILEVIEW_SYNID
-                )
+                ),
             ]
         )
         assert patch_syn_table_query.call_count == 2
