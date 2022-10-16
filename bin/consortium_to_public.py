@@ -120,9 +120,9 @@ def main(args):
     public_synid = databaseSynIdMappingDf["Id"][
         databaseSynIdMappingDf["Database"] == "public"
     ].values[0]
-
+    # Use release folder fileview
     releaseSynId = databaseSynIdMappingDf["Id"][
-        databaseSynIdMappingDf["Database"] == "release"
+        databaseSynIdMappingDf["Database"] == "releaseFolder"
     ].values[0]
     # TEST run of the infrastructure will always
     # Map to a specific folder
@@ -132,10 +132,11 @@ def main(args):
         officialPublic = consortium_to_public.get_public_to_consortium_synid_mapping(
             syn, releaseSynId
         )
-
-    assert (
-        args.genieVersion in officialPublic.keys()
-    ), "genieVersion must be one of these: {}.".format(", ".join(officialPublic.keys()))
+    if args.genieVersion not in officialPublic.keys():
+        allowed_public_release_names = ", ".join(officialPublic.keys())
+        raise ValueError(
+            f"genieVersion must be one of these: {allowed_public_release_names}."
+        )
 
     args.releaseId = officialPublic[args.genieVersion]
     if not args.test and not args.staging:

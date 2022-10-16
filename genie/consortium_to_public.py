@@ -421,9 +421,9 @@ def get_public_to_consortium_synid_mapping(syn: synapseclient.Synapse,
         major_release = release_info['major_release']
         # add support for potential patch releases
         for num in [0, 1, 2, 3]:
-            # This has to exist because the the first two GENIE releases
+            # This has to exist because the the first three GENIE releases
             # used semantic versioning
-            if release_info['major_release'] in ["1", "2"]:
+            if release_info['major_release'] in ["0", "1", "2"]:
                 public_release_name = f"{int(major_release) + 1}.{num}.0"
                 public_to_consortium_map[public_release_name] = release_info['id']
             else:
