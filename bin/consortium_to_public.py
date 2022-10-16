@@ -124,10 +124,14 @@ def main(args):
     releaseSynId = databaseSynIdMappingDf["Id"][
         databaseSynIdMappingDf["Database"] == "release"
     ].values[0]
-
-    officialPublic = consortium_to_public.get_public_to_consortium_synid_mapping(
-        syn, releaseSynId, test=args.test
-    )
+    # TEST run of the infrastructure will always
+    # Map to a specific folder
+    if args.test:
+        officialPublic = {"TESTPublic": "syn12299959"}
+    else:
+        officialPublic = consortium_to_public.get_public_to_consortium_synid_mapping(
+            syn, releaseSynId
+        )
 
     assert (
         args.genieVersion in officialPublic.keys()
