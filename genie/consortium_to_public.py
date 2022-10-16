@@ -381,8 +381,9 @@ def consortiumToPublic(
     return caseListEntities, genePanelEntities
 
 
-def get_public_to_consortium_synid_mapping(syn: synapseclient.Synapse,
-                                           release_synid: str) -> dict:
+def get_public_to_consortium_synid_mapping(
+    syn: synapseclient.Synapse, release_synid: str
+) -> dict:
     """
     Gets the mapping between potential public release names and
     the consortium release folder
@@ -409,24 +410,24 @@ def get_public_to_consortium_synid_mapping(syn: synapseclient.Synapse,
     )
     consortium_release_folders_df = consortium_release_folders.asDataFrame()
     # Get major release version
-    consortium_release_folders_df['major_release'] = [
-        release.split(".")[0] for release in consortium_release_folders_df['name']
+    consortium_release_folders_df["major_release"] = [
+        release.split(".")[0] for release in consortium_release_folders_df["name"]
     ]
     # only keep the latest consortium release for the public release
     consortium_release_folders_df.drop_duplicates(
-        'major_release', keep="last", inplace=True
+        "major_release", keep="last", inplace=True
     )
 
     for _, release_info in consortium_release_folders_df.iterrows():
-        major_release = release_info['major_release']
+        major_release = release_info["major_release"]
         # add support for potential patch releases
         for num in [0, 1, 2, 3]:
             # This has to exist because the the first three GENIE releases
             # used semantic versioning
-            if release_info['major_release'] in ["0", "1", "2"]:
+            if release_info["major_release"] in ["0", "1", "2"]:
                 public_release_name = f"{int(major_release) + 1}.{num}.0"
-                public_to_consortium_map[public_release_name] = release_info['id']
+                public_to_consortium_map[public_release_name] = release_info["id"]
             else:
                 public_release_name = f"{major_release}.{num}-public"
-                public_to_consortium_map[public_release_name] = release_info['id']
+                public_to_consortium_map[public_release_name] = release_info["id"]
     return public_to_consortium_map
