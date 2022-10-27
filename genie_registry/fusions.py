@@ -155,7 +155,7 @@ class fusions(FileTypeFormat):
         if process_functions.checkColExist(fusionDF, "ENTREZ_GENE_ID"):
             if fusionDF["ENTREZ_GENE_ID"].dtype not in [int, float]:
                 total_error += (
-                    "Your fusion file must have integers for ENTREZ_GENE_ID\n"
+                    "Your fusion file must have integers for ENTREZ_GENE_ID.\n"
                 )
 
         if process_functions.checkColExist(fusionDF, "TUMOR_SAMPLE_BARCODE"):
