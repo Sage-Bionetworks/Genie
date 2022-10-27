@@ -115,7 +115,7 @@ def test_validation_perfect_invalid(fusionClass):
     fusionDf = pd.DataFrame(
         {
             "HUGO_SYMBOL": [float("nan"), "AAK1", "AAAS"],
-            "ENTREZ_GENE_ID": ['asdfa', 1, 2],
+            "ENTREZ_GENE_ID": ["asdfa", 1, 2],
             "CENTER": ["SAGE", "SAGE", "SAGE"],
             "TUMOR_SAMPLE_BARCODE": ["ID1-1", "ID2-1", "ID1-3"],
             "FUSION": ["AAED-AAK1", "AAAS-AAK1", "AAAS-AAK1"],
