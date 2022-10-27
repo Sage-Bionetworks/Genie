@@ -57,15 +57,15 @@ class StructuralVariant(FileTypeFormat):
             # TODO: switch to validate_genie_identifier function
             # After GH-444 is merged
             errors = process_functions.validate_genie_identifier(
-                identifiers=sv_df["SAMPLE_ID"], center=self.center,
-                filename="Structural Variant", col="SAMPLE_ID"
+                identifiers=sv_df["SAMPLE_ID"],
+                center=self.center,
+                filename="Structural Variant",
+                col="SAMPLE_ID",
             )
             total_error.write(errors)
 
         if sv_df.duplicated().any():
-            total_error.write(
-                "Structural Variant: No duplicated rows allowed.\n"
-            )
+            total_error.write("Structural Variant: No duplicated rows allowed.\n")
 
         warn, error = process_functions.check_col_and_values(
             sv_df,
@@ -149,16 +149,20 @@ class StructuralVariant(FileTypeFormat):
                 "column(s): {}.\n".format(", ".join(non_ints))
             )
 
-        region_allow_vals = [
-            "5_PRIME_UTR", "3_PRIME_UTR", "PROMOTER", "EXON", "INTRON"
-        ]
+        region_allow_vals = ["5_PRIME_UTR", "3_PRIME_UTR", "PROMOTER", "EXON", "INTRON"]
         warn, error = process_functions.check_col_and_values(
-            sv_df, "SITE1_REGION", region_allow_vals,
-            "Structural Variant", required=False
+            sv_df,
+            "SITE1_REGION",
+            region_allow_vals,
+            "Structural Variant",
+            required=False,
         )
         warn, error = process_functions.check_col_and_values(
-            sv_df, "SITE2_REGION", region_allow_vals,
-            "Structural Variant", required=False
+            sv_df,
+            "SITE2_REGION",
+            region_allow_vals,
+            "Structural Variant",
+            required=False,
         )
         warn, error = process_functions.check_col_and_values(
             sv_df,

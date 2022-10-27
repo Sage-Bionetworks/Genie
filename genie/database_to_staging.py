@@ -839,7 +839,8 @@ def store_sv_files(
     """
     logger.info("MERING, FILTERING, STORING FUSION FILES")
     sv_df = process_functions.get_syntabledf(
-        syn, f"select * from {synid}",
+        syn,
+        f"select * from {synid}",
     )
     version = syn.create_snapshot_version(synid, comment=genie_version)
 
@@ -854,9 +855,7 @@ def store_sv_files(
         for center in center_mappingdf.center:
             center_fusion = sv_staging_df[sv_staging_df["CENTER"] == center]
             if not center_fusion.empty:
-                center_fusion.to_csv(
-                    SV_CENTER_PATH % center, sep="\t", index=False
-                )
+                center_fusion.to_csv(SV_CENTER_PATH % center, sep="\t", index=False)
                 store_file(
                     syn,
                     SV_CENTER_PATH % center,
@@ -866,9 +865,7 @@ def store_sv_files(
                     ][0],
                 )
 
-    sv_df = sv_df[
-        sv_df["SAMPLE_ID"].isin(keep_for_merged_consortium_samples)
-    ]
+    sv_df = sv_df[sv_df["SAMPLE_ID"].isin(keep_for_merged_consortium_samples)]
     # sv_df = sv_df.rename(
     #     columns={
     #         "HUGO_SYMBOL": "Hugo_Symbol",
@@ -1717,9 +1714,9 @@ def stagingToCbio(
     fusionSynId = databaseSynIdMappingDf["Id"][
         databaseSynIdMappingDf["Database"] == "fusions"
     ][0]
-    sv_synid = databaseSynIdMappingDf["Id"][
-        databaseSynIdMappingDf["Database"] == "sv"
-    ][0]
+    sv_synid = databaseSynIdMappingDf["Id"][databaseSynIdMappingDf["Database"] == "sv"][
+        0
+    ]
     # Grab assay information
     assay_info_ind = databaseSynIdMappingDf["Database"] == "assayinfo"
     assay_info_synid = databaseSynIdMappingDf["Id"][assay_info_ind][0]
