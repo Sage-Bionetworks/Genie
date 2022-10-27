@@ -46,7 +46,7 @@ class TestSv:
                 "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
                 "SV_STATUS": ["SOMATIC", "SOMATIC", "GERMLINE"],
                 "SITE1_HUGO_SYMBOL": ["af", "af", "ff"],
-                "SITE2_HUGO_SYMBOL": ["af", "af", "ff"]
+                "SITE2_HUGO_SYMBOL": ["af", "af", "ff"],
             }
         )
         error, warning = self.sv_cls._validate(sv_df)
