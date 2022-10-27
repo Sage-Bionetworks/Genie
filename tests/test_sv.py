@@ -45,26 +45,31 @@ class TestSv:
             {
                 "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
                 "SV_STATUS": ["SOMATIC", "SOMATIC", "GERMLINE"],
+                "SITE1_HUGO_SYMBOL": ["af", "af", "ff"],
+                "SITE2_HUGO_SYMBOL": ["af", "af", "ff"]
             }
         )
         error, warning = self.sv_cls._validate(sv_df)
         assert error == (
-            "Structural Variant: No duplicated SAMPLE_ID allowed.\n"
             "Structural Variant: SAMPLE_ID must start with GENIE-SAGE\n"
+            "Structural Variant: No duplicated rows allowed.\n"
         )
         assert warning == ""
 
     def test_validation_missing_required_cols(self):
         sv_df = pd.DataFrame(
             {
-                "test": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
+                "test": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-2", "ID3-1"],
                 "foo": ["SOMATIC", "SOMATIC", "GERMLINE"],
             }
         )
         error, warning = self.sv_cls._validate(sv_df)
+        print(error)
         assert error == (
             "Structural Variant: Must have SAMPLE_ID column.\n"
             "Structural Variant: Must have SV_STATUS column.\n"
+            "Structural Variant: Either SITE1_HUGO_SYMBOL/SITE1_ENTREZ_GENE_ID or "
+            "SITE2_HUGO_SYMBOL/SITE2_ENTREZ_GENE_ID is required.\n"
         )
         assert warning == ""
 
@@ -73,6 +78,8 @@ class TestSv:
             {
                 "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID2-1"],
                 "SV_STATUS": ["SOMATIC", "GERMLINE"],
+                "SITE1_ENTREZ_GENE_ID": [1, "foo"],
+                "SITE2_ENTREZ_GENE_ID": [1, "foo"],
                 "SITE1_REGION_NUMBER": [1, "foo"],
                 "SITE2_REGION_NUMBER": [1, "foo"],
                 "SITE1_POSITION": [1, "foo"],
@@ -91,6 +98,7 @@ class TestSv:
         error, warning = self.sv_cls._validate(sv_df)
         assert error == (
             "Structural Variant: Only integers allowed in these column(s): "
+            "SITE1_ENTREZ_GENE_ID, SITE2_ENTREZ_GENE_ID, "
             "SITE1_REGION_NUMBER, SITE2_REGION_NUMBER, SITE1_POSITION, SITE2_POSITION, "
             "TUMOR_SPLIT_READ_COUNT, TUMOR_PAIRED_END_READ_COUNT, SV_LENGTH, "
             "NORMAL_READ_COUNT, TUMOR_READ_COUNT, NORMAL_VARIANT_COUNT, "
@@ -104,12 +112,14 @@ class TestSv:
             {
                 "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID2-1"],
                 "SV_STATUS": ["SOMATIC", "GERMLINE"],
+                "SITE1_ENTREZ_GENE_ID": [1, 2],
+                "SITE2_ENTREZ_GENE_ID": [1, 3],
                 "SITE1_REGION_NUMBER": [1, 2],
                 "NCBI_BUILD": ["GRCh38", "GRCh37"],
                 "BREAKPOINT_TYPE": ["PRECISE", "IMPRECISE"],
                 "CONNECTION_TYPE": ["3to5", "5to5"],
-                "DNA_SUPPORT": ["Yes", "No"],
-                "RNA_Support": ["No", "No"],
+                "DNA_SUPPORT": ["yes", "no"],
+                "RNA_Support": ["yes", "no"],
             }
         )
         error, warning = self.sv_cls._validate(sv_df)

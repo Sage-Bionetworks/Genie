@@ -123,6 +123,8 @@ class StructuralVariant(FileTypeFormat):
         # ]
         # Check for columns that should be integar columsn
         int_cols = [
+            "SITE1_ENTREZ_GENE_ID",
+            "SITE2_ENTREZ_GENE_ID",
             "SITE1_REGION_NUMBER",
             "SITE2_REGION_NUMBER",
             "SITE1_POSITION",
