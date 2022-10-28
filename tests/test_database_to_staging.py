@@ -81,9 +81,7 @@ def test_store_assay_info_files():
     assay_infodf = pd.DataFrame({"library_strategy": ["WXS"], "SEQ_ASSAY_ID": ["A"]})
     clinicaldf = pd.DataFrame({"SEQ_ASSAY_ID": ["A"]})
     database_to_staging.GENIE_RELEASE_DIR = "./"
-    path = os.path.join(
-        database_to_staging.GENIE_RELEASE_DIR, "assay_information.txt"
-    )
+    path = os.path.join(database_to_staging.GENIE_RELEASE_DIR, "assay_information.txt")
     with patch.object(
         SYN, "create_snapshot_version", return_value=2
     ) as patch_create_version, patch.object(
