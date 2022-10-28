@@ -238,13 +238,14 @@ def main(
 
     logger.info("REMOVING UNNECESSARY FILES")
     genie_files = os.listdir(database_to_staging.GENIE_RELEASE_DIR)
-    for genie_file in genie_files:
-        if (
-            "meta" not in genie_file
-            and "case_lists" not in genie_file
-        ):
-            os.remove(os.path.join(database_to_staging.GENIE_RELEASE_DIR, genie_file))
-    os.remove(clinical_path)
+    # for genie_file in genie_files:
+    #     if (
+    #         genie_version not in genie_file
+    #         and "meta" not in genie_file
+    #         and "case_lists" not in genie_file
+    #     ):
+    #         os.remove(os.path.join(database_to_staging.GENIE_RELEASE_DIR, genie_file))
+    # os.remove(clinical_path)
 
     logger.info("REVISE METADATA FILES")
     database_to_staging.revise_metadata_files(
