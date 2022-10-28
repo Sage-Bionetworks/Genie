@@ -240,8 +240,7 @@ def main(
     genie_files = os.listdir(database_to_staging.GENIE_RELEASE_DIR)
     for genie_file in genie_files:
         if (
-            genie_version not in genie_file
-            and "meta" not in genie_file
+            "meta" not in genie_file
             and "case_lists" not in genie_file
         ):
             os.remove(os.path.join(database_to_staging.GENIE_RELEASE_DIR, genie_file))
