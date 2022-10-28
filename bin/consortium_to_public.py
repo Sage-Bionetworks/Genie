@@ -85,6 +85,9 @@ def generate_data_guide(
 
 
 def main(args):
+    # HACK: Delete all existing files first
+    process_functions.rmFiles(database_to_staging.GENIE_RELEASE_DIR)
+
     cbioValidatorPath = os.path.join(
         args.cbioportalPath, "core/src/main/scripts/importer/validateData.py"
     )
@@ -187,13 +190,13 @@ def main(args):
             cbioLog.write(cbio_decoded_output)
         syn.store(synapseclient.File(cbio_log_file, parentId=log_folder_synid))
         os.remove(cbio_log_file)
-    logger.info("REMOVING OLD FILES")
-    process_functions.rmFiles(database_to_staging.CASE_LIST_PATH)
-    seg_meta_file = "{}/genie_public_meta_cna_hg19_seg.txt".format(
-        database_to_staging.GENIE_RELEASE_DIR
-    )
-    if os.path.exists(seg_meta_file):
-        os.unlink(seg_meta_file)
+    # logger.info("REMOVING OLD FILES")
+    # process_functions.rmFiles(database_to_staging.CASE_LIST_PATH)
+    # seg_meta_file = "{}/genie_public_meta_cna_hg19_seg.txt".format(
+    #     database_to_staging.GENIE_RELEASE_DIR
+    # )
+    # if os.path.exists(seg_meta_file):
+    #     os.unlink(seg_meta_file)
 
     logger.info("CREATING LINK VERSION")
     folders = database_to_staging.create_link_version(
