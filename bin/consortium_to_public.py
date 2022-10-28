@@ -127,7 +127,7 @@ def main(args):
     # TEST run of the infrastructure will always
     # Map to a specific folder
     if args.test:
-        officialPublic = {"TESTPublic": "syn12299959"}
+        officialPublic = {"TESTpublic": "syn12299959"}
     else:
         officialPublic = consortium_to_public.get_public_to_consortium_synid_mapping(
             syn, releaseSynId
