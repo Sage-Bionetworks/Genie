@@ -237,7 +237,7 @@ def main(
         )
 
     logger.info("REMOVING UNNECESSARY FILES")
-    genie_files = os.listdir(database_to_staging.GENIE_RELEASE_DIR)
+    # genie_files = os.listdir(database_to_staging.GENIE_RELEASE_DIR)
     # for genie_file in genie_files:
     #     if (
     #         genie_version not in genie_file
@@ -276,14 +276,15 @@ def main(
             cbio_log.write(cbioOutput.decode("utf-8"))
         syn.store(synapseclient.File(cbio_validator_log, parentId=log_folder_synid))
         os.remove(cbio_validator_log)
-    logger.info("REMOVING OLD FILES")
+    # Instead of doing this, files should be written to a tempdir...
+    # logger.info("REMOVING OLD FILES")
 
-    process_functions.rmFiles(database_to_staging.CASE_LIST_PATH)
-    private_cna_meta_path = os.path.join(
-        database_to_staging.GENIE_RELEASE_DIR, "genie_private_meta_cna_hg19_seg.txt"
-    )
-    if os.path.exists(private_cna_meta_path):
-        os.unlink(private_cna_meta_path)
+    # process_functions.rmFiles(database_to_staging.CASE_LIST_PATH)
+    # private_cna_meta_path = os.path.join(
+    #     database_to_staging.GENIE_RELEASE_DIR, "genie_private_meta_cna_hg19_seg.txt"
+    # )
+    # if os.path.exists(private_cna_meta_path):
+    #     os.unlink(private_cna_meta_path)
 
     logger.info("CREATING LINK VERSION")
     # Returns release and case list folder

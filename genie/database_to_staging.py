@@ -1880,9 +1880,9 @@ def revise_metadata_files(syn, consortiumid, genie_version=None):
                 meta.seek(0)
                 meta.write(meta_text)
                 meta.truncate()
-                store_file(
-                    syn, meta_ent.path, parent=consortiumid, genieVersion=genie_version
-                )
+        store_file(
+            syn, meta_ent.path, parent=consortiumid, genieVersion=genie_version
+        )
 
 
 def search_and_create_folder(syn, parentid, folder_name):
