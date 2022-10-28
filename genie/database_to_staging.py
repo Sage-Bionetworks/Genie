@@ -1839,13 +1839,12 @@ def update_process_trackingdf(
     syn.store(synapseclient.Table(process_trackerdb_synid, process_trackerdf))
 
 
-def revise_metadata_files(syn, staging, consortiumid, genie_version=None):
+def revise_metadata_files(syn, consortiumid, genie_version=None):
     """
     Rewrite metadata files with the correct GENIE version
 
     Args:
         syn: Synapse object
-        staging: staging flag
         consortiumid: Synapse id of consortium release folder
         genie_version: GENIE version, Default to None
     """
@@ -1867,11 +1866,6 @@ def revise_metadata_files(syn, staging, consortiumid, genie_version=None):
                 version = re.search(".+GENIE.+v(.+)", meta_text).group(1)
             # Fix this line
             genie_version = version if genie_version is None else genie_version
-            version_on_file = re.search(".+data_(.+)[.]txt", meta_text)
-            if version_on_file is None:
-                version_on_file = re.search(".+data_(.+)[.]seg", meta_text)
-            if version_on_file is not None:
-                version_on_file = version_on_file.group(1).split("_")[-1]
 
             if version != genie_version:
                 meta_text = meta_text.replace(
@@ -1883,9 +1877,6 @@ def revise_metadata_files(syn, staging, consortiumid, genie_version=None):
                     "GENIE v{}".format(version), "GENIE v{}".format(genie_version)
                 )
 
-                if version_on_file is not None:
-                    meta_text = meta_text.replace(version_on_file, genie_version)
-                    meta_text = meta_text.replace(version_on_file, genie_version)
                 meta.seek(0)
                 meta.write(meta_text)
                 meta.truncate()

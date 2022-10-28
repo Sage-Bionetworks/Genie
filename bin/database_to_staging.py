@@ -249,7 +249,7 @@ def main(
 
     logger.info("REVISE METADATA FILES")
     database_to_staging.revise_metadata_files(
-        syn, staging, consortiumSynId, genie_version
+        syn, consortiumSynId, genie_version
     )
 
     logger.info("CBIO VALIDATION")
