@@ -704,13 +704,11 @@ def store_gene_panel_files(
         genePanel = syn.get(synId)
         genePanelName = os.path.basename(genePanel.path)
         newGenePanelPath = os.path.join(
-            GENIE_RELEASE_DIR, genePanelName.replace(".txt", f"_{genieVersion}.txt")
+            GENIE_RELEASE_DIR, genePanelName
         )
-        print(genePanelName.replace(".txt", "").replace("data_gene_panel_", ""))
-        if (
-            genePanelName.replace(".txt", "").replace("data_gene_panel_", "")
-            in panelNames
-        ):
+        gene_panel = genePanelName.replace(".txt", "").replace("data_gene_panel_", "")
+        print(gene_panel)
+        if gene_panel in panelNames:
             os.rename(genePanel.path, newGenePanelPath)
             genePanelEntities.append(
                 store_file(
@@ -802,7 +800,7 @@ def store_fusion_files(
     ]
     # FusionsDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
     fusionText = process_functions.removePandasDfFloat(FusionsDf)
-    fusions_path = os.path.join(GENIE_RELEASE_DIR, f"data_fusions_{genie_version}.txt")
+    fusions_path = os.path.join(GENIE_RELEASE_DIR, "data_fusions.txt")
     with open(fusions_path, "w") as fusion_file:
         fusion_file.write(fusionText)
     store_file(
@@ -869,7 +867,7 @@ def store_maf_files(
     )
     centerMafSynIdsDf = centerMafSynIds.asDataFrame()
     mutations_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_mutations_extended_%s.txt" % genie_version
+        GENIE_RELEASE_DIR, "data_mutations_extended.txt"
     )
     with open(mutations_path, "w"):
         pass
@@ -1048,7 +1046,7 @@ def store_assay_info_files(
     """
     logger.info("Creates assay information file")
     assay_info_path = os.path.join(
-        GENIE_RELEASE_DIR, f"assay_information_{genie_version}.txt"
+        GENIE_RELEASE_DIR, "assay_information.txt"
     )
     seq_assay_str = "','".join(clinicaldf["SEQ_ASSAY_ID"].unique())
     version = syn.create_snapshot_version(assay_info_synid, comment=genie_version)
@@ -1217,13 +1215,13 @@ def store_clinical_files(
     mapping_table = syn.tableQuery("SELECT * FROM syn9621600")
     mapping = mapping_table.asDataFrame()
     clinical_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_clinical_%s.txt" % genie_version
+        GENIE_RELEASE_DIR, "data_clinical.txt"
     )
     clinical_sample_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_clinical_sample_%s.txt" % genie_version
+        GENIE_RELEASE_DIR, "data_clinical_sample.txt"
     )
     clinical_patient_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_clinical_patient_%s.txt" % genie_version
+        GENIE_RELEASE_DIR, "data_clinical_patient.txt"
     )
     process_functions.addClinicalHeaders(
         clinicaldf,
@@ -1284,7 +1282,7 @@ def store_cna_files(
         list: CNA samples
     """
     logger.info("MERING, FILTERING, STORING CNA FILES")
-    cna_path = os.path.join(GENIE_RELEASE_DIR, f"data_CNA_{genie_version}.txt")
+    cna_path = os.path.join(GENIE_RELEASE_DIR, "data_CNA.txt")
     query_str = ("select id from {} " "where name like 'data_CNA%'").format(
         flatfiles_view_synid
     )
@@ -1405,7 +1403,7 @@ def store_seg_files(
     """
     logger.info("MERING, FILTERING, STORING SEG FILES")
     seg_path = os.path.join(
-        GENIE_RELEASE_DIR, f"genie_private_data_cna_hg19_{genie_version}.seg"
+        GENIE_RELEASE_DIR, "genie_private_data_cna_hg19.seg"
     )
     version = syn.create_snapshot_version(seg_synid, comment=genie_version)
 
@@ -1478,7 +1476,7 @@ def store_data_gene_matrix(
     """
     logger.info("STORING DATA GENE MATRIX FILE")
     data_gene_matrix_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_gene_matrix_%s.txt" % genie_version
+        GENIE_RELEASE_DIR, "data_gene_matrix.txt"
     )
     # Samples have already been removed
     data_gene_matrix = pd.DataFrame(columns=["SAMPLE_ID", "SEQ_ASSAY_ID"])
@@ -1537,7 +1535,7 @@ def store_bed_files(
     """
     logger.info("STORING COMBINED BED FILE")
     combined_bed_path = os.path.join(
-        GENIE_RELEASE_DIR, f"genomic_information_{genie_version}.txt"
+        GENIE_RELEASE_DIR, "genomic_information.txt"
     )
     if not current_release_staging:
         for seq_assay in beddf["SEQ_ASSAY_ID"].unique():
