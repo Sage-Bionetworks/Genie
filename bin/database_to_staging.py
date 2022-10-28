@@ -214,11 +214,11 @@ def main(
         os.remove(os.path.join(database_to_staging.CASE_LIST_PATH, caselist))
     clinical_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
-        "data_clinical_{}.txt".format(genie_version),
+        "data_clinical.txt",
     )
     assay_information_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
-        "assay_information_{}.txt".format(genie_version),
+        "assay_information.txt",
     )
     create_case_lists.main(
         clinical_path,
