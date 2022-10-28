@@ -161,7 +161,7 @@ def main(args):
     )
 
     database_to_staging.revise_metadata_files(
-        syn, args.staging, public_synid, args.genieVersion
+        syn, public_synid, args.genieVersion
     )
 
     logger.info("CBIO VALIDATION")
