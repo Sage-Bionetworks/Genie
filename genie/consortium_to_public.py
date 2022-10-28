@@ -80,7 +80,7 @@ def consortiumToPublic(
     )
     seg_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
-        "genie_public_data_cna_hg19.seg",
+        "data_cna_hg19.seg",
     )
     combined_bed_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR, "genie_combined.bed"
@@ -329,7 +329,7 @@ def consortiumToPublic(
                 seg_path,
                 public_release_preview,
                 genie_version,
-                name="genie_public_data_cna_hg19.seg",
+                name="data_cna_hg19.seg",
             )
         elif entName == "genomic_information.txt":
             bed = syn.get(entId, followLink=True)

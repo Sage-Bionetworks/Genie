@@ -33,7 +33,7 @@ MUTATIONS_CENTER_PATH = os.path.join(
     GENIE_RELEASE_DIR, "data_mutations_extended_%s.txt"
 )
 FUSIONS_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_fusions_%s.txt")
-SEG_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "genie_data_cna_hg19_%s.seg")
+SEG_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_cna_hg19_%s.seg")
 BED_DIFFS_SEQASSAY_PATH = os.path.join(GENIE_RELEASE_DIR, "diff_%s.csv")
 
 
@@ -1390,7 +1390,7 @@ def store_seg_files(
         current_release_staging: Staging flag
     """
     logger.info("MERING, FILTERING, STORING SEG FILES")
-    seg_path = os.path.join(GENIE_RELEASE_DIR, "genie_private_data_cna_hg19.seg")
+    seg_path = os.path.join(GENIE_RELEASE_DIR, "data_cna_hg19.seg")
     version = syn.create_snapshot_version(seg_synid, comment=genie_version)
 
     seg = syn.tableQuery(
@@ -1433,7 +1433,7 @@ def store_seg_files(
         seg_path,
         parent=release_synid,
         genieVersion=genie_version,
-        name="genie_private_data_cna_hg19.seg",
+        name="data_cna_hg19.seg",
         used=f"{seg_synid}.{version}",
     )
 
