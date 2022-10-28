@@ -56,9 +56,7 @@ def consortiumToPublic(
     databaseSynIdMappingDf,
     publicReleaseCutOff=365,
 ):
-    cna_path = os.path.join(
-        database_to_staging.GENIE_RELEASE_DIR, "data_CNA.txt"
-    )
+    cna_path = os.path.join(database_to_staging.GENIE_RELEASE_DIR, "data_CNA.txt")
     clinical_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR, "data_clinical.txt"
     )

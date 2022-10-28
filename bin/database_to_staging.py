@@ -251,9 +251,7 @@ def main(
     # os.remove(clinical_path)
 
     logger.info("REVISE METADATA FILES")
-    database_to_staging.revise_metadata_files(
-        syn, consortiumSynId, genie_version
-    )
+    database_to_staging.revise_metadata_files(syn, consortiumSynId, genie_version)
 
     logger.info("CBIO VALIDATION")
 

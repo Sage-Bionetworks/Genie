@@ -163,9 +163,7 @@ def main(args):
         publicReleaseCutOff=args.publicReleaseCutOff,
     )
 
-    database_to_staging.revise_metadata_files(
-        syn, public_synid, args.genieVersion
-    )
+    database_to_staging.revise_metadata_files(syn, public_synid, args.genieVersion)
 
     logger.info("CBIO VALIDATION")
     # Must be exit 0 because the validator sometimes fails,

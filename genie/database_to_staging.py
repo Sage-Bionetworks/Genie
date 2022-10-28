@@ -703,9 +703,7 @@ def store_gene_panel_files(
     for synId in genePanelDf["id"]:
         genePanel = syn.get(synId)
         genePanelName = os.path.basename(genePanel.path)
-        newGenePanelPath = os.path.join(
-            GENIE_RELEASE_DIR, genePanelName
-        )
+        newGenePanelPath = os.path.join(GENIE_RELEASE_DIR, genePanelName)
         gene_panel = genePanelName.replace(".txt", "").replace("data_gene_panel_", "")
         print(gene_panel)
         if gene_panel in panelNames:
@@ -866,9 +864,7 @@ def store_maf_files(
         "select id from {} where name like '%mutation%'".format(flatfiles_view_synid)
     )
     centerMafSynIdsDf = centerMafSynIds.asDataFrame()
-    mutations_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_mutations_extended.txt"
-    )
+    mutations_path = os.path.join(GENIE_RELEASE_DIR, "data_mutations_extended.txt")
     with open(mutations_path, "w"):
         pass
     # Create maf file per center for their staging directory
@@ -1045,9 +1041,7 @@ def store_assay_info_files(
         List of whole exome sequencing SEQ_ASSAY_IDs
     """
     logger.info("Creates assay information file")
-    assay_info_path = os.path.join(
-        GENIE_RELEASE_DIR, "assay_information.txt"
-    )
+    assay_info_path = os.path.join(GENIE_RELEASE_DIR, "assay_information.txt")
     seq_assay_str = "','".join(clinicaldf["SEQ_ASSAY_ID"].unique())
     version = syn.create_snapshot_version(assay_info_synid, comment=genie_version)
     assay_infodf = process_functions.get_syntabledf(
@@ -1214,15 +1208,9 @@ def store_clinical_files(
     # mapping to generate the headers of the clinical file
     mapping_table = syn.tableQuery("SELECT * FROM syn9621600")
     mapping = mapping_table.asDataFrame()
-    clinical_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_clinical.txt"
-    )
-    clinical_sample_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_clinical_sample.txt"
-    )
-    clinical_patient_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_clinical_patient.txt"
-    )
+    clinical_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical.txt")
+    clinical_sample_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical_sample.txt")
+    clinical_patient_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical_patient.txt")
     process_functions.addClinicalHeaders(
         clinicaldf,
         mapping,
@@ -1402,9 +1390,7 @@ def store_seg_files(
         current_release_staging: Staging flag
     """
     logger.info("MERING, FILTERING, STORING SEG FILES")
-    seg_path = os.path.join(
-        GENIE_RELEASE_DIR, "genie_private_data_cna_hg19.seg"
-    )
+    seg_path = os.path.join(GENIE_RELEASE_DIR, "genie_private_data_cna_hg19.seg")
     version = syn.create_snapshot_version(seg_synid, comment=genie_version)
 
     seg = syn.tableQuery(
@@ -1475,9 +1461,7 @@ def store_data_gene_matrix(
         pandas.DataFrame: data gene matrix dataframe
     """
     logger.info("STORING DATA GENE MATRIX FILE")
-    data_gene_matrix_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_gene_matrix.txt"
-    )
+    data_gene_matrix_path = os.path.join(GENIE_RELEASE_DIR, "data_gene_matrix.txt")
     # Samples have already been removed
     data_gene_matrix = pd.DataFrame(columns=["SAMPLE_ID", "SEQ_ASSAY_ID"])
     data_gene_matrix = pd.concat(
@@ -1534,9 +1518,7 @@ def store_bed_files(
         release_synid: Synapse id to store release file
     """
     logger.info("STORING COMBINED BED FILE")
-    combined_bed_path = os.path.join(
-        GENIE_RELEASE_DIR, "genomic_information.txt"
-    )
+    combined_bed_path = os.path.join(GENIE_RELEASE_DIR, "genomic_information.txt")
     if not current_release_staging:
         for seq_assay in beddf["SEQ_ASSAY_ID"].unique():
             bed_seq_df = beddf[beddf["SEQ_ASSAY_ID"] == seq_assay]
@@ -1880,9 +1862,7 @@ def revise_metadata_files(syn, consortiumid, genie_version=None):
                 meta.seek(0)
                 meta.write(meta_text)
                 meta.truncate()
-        store_file(
-            syn, meta_ent.path, parent=consortiumid, genieVersion=genie_version
-        )
+        store_file(syn, meta_ent.path, parent=consortiumid, genieVersion=genie_version)
 
 
 def search_and_create_folder(syn, parentid, folder_name):
