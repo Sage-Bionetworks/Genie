@@ -129,7 +129,7 @@ def main(
         genie_pass = process_functions.get_password(pemfile)
     else:
         genie_pass = None
-
+    # HACK: Use project id instead of this...
     if test:
         databaseSynIdMappingId = "syn11600968"
         genie_version = "TESTING"
@@ -279,7 +279,7 @@ def main(
             cbio_log.write(cbioOutput.decode("utf-8"))
         syn.store(synapseclient.File(cbio_validator_log, parentId=log_folder_synid))
         os.remove(cbio_validator_log)
-    # Instead of doing this, files should be written to a tempdir...
+    # HACK: Instead of doing this, files should be written to a tempdir...
     # logger.info("REMOVING OLD FILES")
 
     # process_functions.rmFiles(database_to_staging.CASE_LIST_PATH)
