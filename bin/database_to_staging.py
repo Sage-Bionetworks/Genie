@@ -120,6 +120,9 @@ def main(
         debug:  Synapse debug flag
         skip_mutationsincis: Skip mutation in cis filter
     """
+    # HACK: Delete all existing files first
+    process_functions.rmFiles(database_to_staging.GENIE_RELEASE_DIR)
+
     syn = process_functions.synLogin(pemfile, debug=debug)
     genie_user = os.environ.get("GENIE_USER")
     if pemfile is not None:
