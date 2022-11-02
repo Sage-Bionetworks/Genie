@@ -151,6 +151,12 @@ class fusions(FileTypeFormat):
                     "Your fusion file should not have any NA/blank Hugo Symbols.\n"
                 )
             # fusionDF = fusionDF.drop_duplicates("HUGO_SYMBOL").apply(lambda x: validateSymbol(x, bedDf), axis=1)
+        # Check if ENTREZ_GENE_ID is
+        if process_functions.checkColExist(fusionDF, "ENTREZ_GENE_ID"):
+            if fusionDF["ENTREZ_GENE_ID"].dtype not in [int, float]:
+                total_error += (
+                    "Your fusion file must have integers for ENTREZ_GENE_ID.\n"
+                )
 
         if process_functions.checkColExist(fusionDF, "TUMOR_SAMPLE_BARCODE"):
             error = process_functions.validate_genie_identifier(

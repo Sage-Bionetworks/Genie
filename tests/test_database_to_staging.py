@@ -61,7 +61,7 @@ def test_store_gene_panel_files():
         assert patch_syn_table_query.call_count == 2
         patch_storefile.assert_called_once_with(
             SYN,
-            os.path.join(database_to_staging.GENIE_RELEASE_DIR, "PANEL1_vTEST.txt"),
+            os.path.join(database_to_staging.GENIE_RELEASE_DIR, "PANEL1.txt"),
             parent=CONSORTIUM_SYNID,
             genieVersion=GENIE_VERSION,
             name="PANEL1.txt",
@@ -72,7 +72,7 @@ def test_store_gene_panel_files():
         patch_syn_get.assert_called_once_with("syn3333")
         patch_os_rename.assert_called_once_with(
             "/foo/bar/PANEL1.txt",
-            os.path.join(database_to_staging.GENIE_RELEASE_DIR, "PANEL1_vTEST.txt"),
+            os.path.join(database_to_staging.GENIE_RELEASE_DIR, "PANEL1.txt"),
         )
 
 
@@ -81,9 +81,7 @@ def test_store_assay_info_files():
     assay_infodf = pd.DataFrame({"library_strategy": ["WXS"], "SEQ_ASSAY_ID": ["A"]})
     clinicaldf = pd.DataFrame({"SEQ_ASSAY_ID": ["A"]})
     database_to_staging.GENIE_RELEASE_DIR = "./"
-    path = os.path.join(
-        database_to_staging.GENIE_RELEASE_DIR, "assay_information_vTEST.txt"
-    )
+    path = os.path.join(database_to_staging.GENIE_RELEASE_DIR, "assay_information.txt")
     with patch.object(
         SYN, "create_snapshot_version", return_value=2
     ) as patch_create_version, patch.object(

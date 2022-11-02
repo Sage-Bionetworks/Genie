@@ -56,36 +56,34 @@ def consortiumToPublic(
     databaseSynIdMappingDf,
     publicReleaseCutOff=365,
 ):
-    cna_path = os.path.join(
-        database_to_staging.GENIE_RELEASE_DIR, "data_CNA_%s.txt" % genie_version
-    )
+    cna_path = os.path.join(database_to_staging.GENIE_RELEASE_DIR, "data_CNA.txt")
     clinical_path = os.path.join(
-        database_to_staging.GENIE_RELEASE_DIR, "data_clinical_%s.txt" % genie_version
+        database_to_staging.GENIE_RELEASE_DIR, "data_clinical.txt"
     )
     clinical_sample_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
-        "data_clinical_sample_%s.txt" % genie_version,
+        "data_clinical_sample.txt",
     )
     clinicl_patient_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
-        "data_clinical_patient_%s.txt" % genie_version,
+        "data_clinical_patient.txt",
     )
     data_gene_panel_path = os.path.join(
-        database_to_staging.GENIE_RELEASE_DIR, "data_gene_matrix_%s.txt" % genie_version
+        database_to_staging.GENIE_RELEASE_DIR, "data_gene_matrix.txt"
     )
     mutations_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
-        "data_mutations_extended_%s.txt" % genie_version,
+        "data_mutations_extended.txt",
     )
     fusions_path = os.path.join(
-        database_to_staging.GENIE_RELEASE_DIR, "data_fusions_%s.txt" % genie_version
+        database_to_staging.GENIE_RELEASE_DIR, "data_fusions.txt"
     )
     seg_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
-        "genie_public_data_cna_hg19_%s.seg" % genie_version,
+        "data_cna_hg19.seg",
     )
     combined_bed_path = os.path.join(
-        database_to_staging.GENIE_RELEASE_DIR, "genie_combined_%s.bed" % genie_version
+        database_to_staging.GENIE_RELEASE_DIR, "genie_combined.bed"
     )
 
     if not os.path.exists(database_to_staging.GENIE_RELEASE_DIR):
@@ -331,7 +329,7 @@ def consortiumToPublic(
                 seg_path,
                 public_release_preview,
                 genie_version,
-                name="genie_public_data_cna_hg19.seg",
+                name="data_cna_hg19.seg",
             )
         elif entName == "genomic_information.txt":
             bed = syn.get(entId, followLink=True)
@@ -345,24 +343,24 @@ def consortiumToPublic(
                 genie_version,
                 name="genomic_information.txt",
             )
-        elif entName.startswith("data_gene_panel"):
-            genePanel = syn.get(entId, followLink=True)
-            # Create new gene panel naming and store
-            fileName = os.path.basename(genePanel.path)
-            newFileList = fileName.split("_")
-            newFileList[-1] = genie_version + ".txt"
-            newFileName = "_".join(newFileList)
-            genePanelPath = os.path.join(
-                database_to_staging.GENIE_RELEASE_DIR, newFileName
-            )
-            shutil.copy(genePanel.path, genePanelPath)
-            del newFileList[-1]
-            entName = "_".join(newFileList)
-            entName = entName + ".txt"
-            genepanel_ent = storeFile(
-                syn, genePanelPath, public_release_preview, genie_version, name=entName
-            )
-            genePanelEntities.append(genepanel_ent)
+        # elif entName.startswith("data_gene_panel"):
+        #     genePanel = syn.get(entId, followLink=True)
+        #     # Create new gene panel naming and store
+        #     fileName = os.path.basename(genePanel.path)
+        #     # newFileList = fileName.split("_")
+        #     # newFileList[-1] = genie_version + ".txt"
+        #     # newFileName = "_".join(newFileList)
+        #     genePanelPath = os.path.join(
+        #         database_to_staging.GENIE_RELEASE_DIR, fileName
+        #     )
+        #     shutil.copy(genePanel.path, genePanelPath)
+        #     # del newFileList[-1]
+        #     # entName = "_".join(newFileList)
+        #     # entName = entName + ".txt"
+        #     genepanel_ent = storeFile(
+        #         syn, genePanelPath, public_release_preview, genie_version, name=entName
+        #     )
+        #     genePanelEntities.append(genepanel_ent)
         else:
             ent = syn.get(entId, followLink=True, downloadFile=False)
             copiedId = synapseutils.copy(
@@ -377,32 +375,64 @@ def consortiumToPublic(
             copiedEnt = syn.get(copiedId[ent.id], downloadFile=False)
             # Set version comment
             copiedEnt.versionComment = genie_version
-            syn.store(copiedEnt, forceVersion=False)
+            copiedEnt = syn.store(copiedEnt, forceVersion=False)
+            # There was a time when gene panel files had to be renamed
+            # with an appended genie version. But... GEN-76
+            # No longer appending genie verison to release files
+            # So just need to track gene panel entities
+            if entName.startswith("data_gene_panel"):
+                genePanelEntities.append(copiedEnt)
+
     return caseListEntities, genePanelEntities
 
 
-def get_public_to_consortium_synid_mapping(syn, releaseSynId, test=False):
+def get_public_to_consortium_synid_mapping(
+    syn: synapseclient.Synapse, release_synid: str
+) -> dict:
     """
-    Gets the mapping between public version name
-    and its Synapse ids (Can probably be replaced with folder view)
+    Gets the mapping between potential public release names and
+    the consortium release folder
+
+    Args:
+        syn (Synapse): Synapse connection
+        release_synid (str): Release folder fileview
+
+    Returns:
+        dict: Mapping between potential public release and consortium
+              release synapse id
     """
-    temp = synapseutils.walk(syn, releaseSynId)
-    officialPublic = dict()
-    for dirpath, dirnames, filenames in temp:
-        release = os.path.basename(dirpath[0])
-        # checkRelease = release.split(".")
-        final = [i.split("-") for i in release.split(".")]
-        checkRelease = []
-        for i in final:
-            checkRelease.extend(i)
-        if test:
-            officialPublic["TESTpublic"] = "syn12299959"
-        else:
-            if len(checkRelease) == 3 and checkRelease[0] != "0":
-                if int(checkRelease[1]) > 0:
-                    if checkRelease[0] in ["1", "2"]:
-                        public_release_name = str(int(checkRelease[0]) + 1) + ".0.0"
-                    else:
-                        public_release_name = str(int(checkRelease[0])) + ".0-public"
-                    officialPublic[public_release_name] = dirpath[1]
-    return officialPublic
+    # This dict contains the mapping between public release name and
+    # consortium release folder
+    public_to_consortium_map = dict()
+    # release_files = synapseutils.walk(syn, releaseSynId)
+    # TODO: fix the database to mapping table
+    consortium_release_folders = syn.tableQuery(
+        f"SELECT name, id FROM {release_synid} WHERE "
+        "name NOT LIKE 'Release %' "
+        "and name NOT LIKE '%-public' "
+        "and name NOT IN ('case_lists', 'potential_artifacts')"
+        "ORDER BY name"
+    )
+    consortium_release_folders_df = consortium_release_folders.asDataFrame()
+    # Get major release version
+    consortium_release_folders_df["major_release"] = [
+        release.split(".")[0] for release in consortium_release_folders_df["name"]
+    ]
+    # only keep the latest consortium release for the public release
+    consortium_release_folders_df.drop_duplicates(
+        "major_release", keep="last", inplace=True
+    )
+
+    for _, release_info in consortium_release_folders_df.iterrows():
+        major_release = release_info["major_release"]
+        # add support for potential patch releases
+        for num in [0, 1, 2, 3]:
+            # This has to exist because the the first three GENIE releases
+            # used semantic versioning
+            if release_info["major_release"] in ["0", "1", "2"]:
+                public_release_name = f"{int(major_release) + 1}.{num}.0"
+                public_to_consortium_map[public_release_name] = release_info["id"]
+            else:
+                public_release_name = f"{major_release}.{num}-public"
+                public_to_consortium_map[public_release_name] = release_info["id"]
+    return public_to_consortium_map
