@@ -1,6 +1,5 @@
 from io import StringIO
 import logging
-from operator import or_
 import os
 
 from genie.example_filetype_format import FileTypeFormat
