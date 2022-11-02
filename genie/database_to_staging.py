@@ -689,6 +689,9 @@ def store_gene_panel_files(
     wes_genepanel_str = "','".join(wes_genepanel_filenames)
     # Only need to upload these files once
     logger.info("STORING GENE PANELS FILES")
+    # This line of code is required to make sure any new files are
+    # pulled into the file view.
+    syn.tableQuery(f"select * from {fileviewSynId} limit 1")
     genePanelDf = process_functions.get_syntabledf(
         syn,
         f"select id from {fileviewSynId} where "
