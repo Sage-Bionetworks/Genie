@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import time
+from typing import List
 
 import pandas as pd
 import pyranges
@@ -34,6 +35,7 @@ MUTATIONS_CENTER_PATH = os.path.join(
 )
 FUSIONS_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_fusions_%s.txt")
 SEG_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_cna_hg19_%s.seg")
+SV_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_sv_%s.txt")
 BED_DIFFS_SEQASSAY_PATH = os.path.join(GENIE_RELEASE_DIR, "diff_%s.csv")
 
 
@@ -808,6 +810,87 @@ def store_fusion_files(
         genieVersion=genie_version,
         name="data_fusions.txt",
         used=f"{fusion_synid}.{version}",
+    )
+
+
+def store_sv_files(
+    syn: synapseclient.Synapse,
+    release_synid: str,
+    genie_version: str,
+    synid: str,
+    keep_for_center_consortium_samples: List[str],
+    keep_for_merged_consortium_samples: List[str],
+    current_release_staging: str,
+    center_mappingdf: pd.DataFrame,
+):
+    """
+    Create, filter, configure, and store structural variant file
+
+    Args:
+        syn: Synapse object
+        release_synid: Synapse id to store release file
+        genie_version: GENIE version (ie. v6.1-consortium)
+        synid: SV database synid
+        keep_for_center_consortium_samples: Samples to keep for center files
+        keep_for_merged_consortium_samples: Samples to keep for merged file
+        current_release_staging: Staging flag
+        center_mappingdf: Center mapping dataframe
+    """
+    logger.info("MERING, FILTERING, STORING FUSION FILES")
+    sv_df = process_functions.get_syntabledf(
+        syn,
+        f"select * from {synid}",
+    )
+    version = syn.create_snapshot_version(synid, comment=genie_version)
+
+    # sv_df["ENTREZ_GENE_ID"].mask(
+    #     sv_df["ENTREZ_GENE_ID"] == 0, float("nan"), inplace=True
+    # )
+
+    if not current_release_staging:
+        sv_staging_df = sv_df[
+            sv_df["SAMPLE_ID"].isin(keep_for_center_consortium_samples)
+        ]
+        for center in center_mappingdf.center:
+            center_fusion = sv_staging_df[sv_staging_df["CENTER"] == center]
+            if not center_fusion.empty:
+                center_fusion.to_csv(SV_CENTER_PATH % center, sep="\t", index=False)
+                store_file(
+                    syn,
+                    SV_CENTER_PATH % center,
+                    genieVersion=genie_version,
+                    parent=center_mappingdf["stagingSynId"][
+                        center_mappingdf["center"] == center
+                    ][0],
+                )
+
+    sv_df = sv_df[sv_df["SAMPLE_ID"].isin(keep_for_merged_consortium_samples)]
+    # sv_df = sv_df.rename(
+    #     columns={
+    #         "HUGO_SYMBOL": "Hugo_Symbol",
+    #         "ENTREZ_GENE_ID": "Entrez_Gene_Id",
+    #         "CENTER": "Center",
+    #         "TUMOR_SAMPLE_BARCODE": "Tumor_Sample_Barcode",
+    #         "FUSION": "Fusion",
+    #         "DNA_SUPPORT": "DNA_support",
+    #         "RNA_SUPPORT": "RNA_support",
+    #         "METHOD": "Method",
+    #         "FRAME": "Frame",
+    #     }
+    # )
+
+    # FusionsDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
+    sv_text = process_functions.removePandasDfFloat(sv_df)
+    sv_path = os.path.join(GENIE_RELEASE_DIR, "data_sv.txt")
+    with open(sv_path, "w") as sv_file:
+        sv_file.write(sv_text)
+    store_file(
+        syn,
+        sv_path,
+        parent=release_synid,
+        genieVersion=genie_version,
+        name="data_sv.txt",
+        used=f"{synid}.{version}",
     )
 
 
@@ -1614,6 +1697,9 @@ def stagingToCbio(
     fusionSynId = databaseSynIdMappingDf["Id"][
         databaseSynIdMappingDf["Database"] == "fusions"
     ][0]
+    sv_synid = databaseSynIdMappingDf["Id"][databaseSynIdMappingDf["Database"] == "sv"][
+        0
+    ]
     # Grab assay information
     assay_info_ind = databaseSynIdMappingDf["Database"] == "assayinfo"
     assay_info_synid = databaseSynIdMappingDf["Id"][assay_info_ind][0]
@@ -1761,6 +1847,17 @@ def stagingToCbio(
         consortiumReleaseSynId,
         genieVersion,
         fusionSynId,
+        keepForCenterConsortiumSamples,
+        keepForMergedConsortiumSamples,
+        current_release_staging,
+        CENTER_MAPPING_DF,
+    )
+
+    store_sv_files(
+        syn,
+        consortiumReleaseSynId,
+        genieVersion,
+        sv_synid,
         keepForCenterConsortiumSamples,
         keepForMergedConsortiumSamples,
         current_release_staging,
