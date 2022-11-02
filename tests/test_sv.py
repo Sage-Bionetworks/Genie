@@ -64,7 +64,6 @@ class TestSv:
             }
         )
         error, warning = self.sv_cls._validate(sv_df)
-        print(error)
         assert error == (
             "Structural Variant: Must have SAMPLE_ID column.\n"
             "Structural Variant: Must have SV_STATUS column.\n"
