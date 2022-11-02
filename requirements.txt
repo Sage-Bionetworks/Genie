@@ -1,5 +1,5 @@
 synapseclient>=2.3.0
-pandas>=1.0
+pandas>=1.0,<1.5.0
 httplib2>=0.11.3
 pycryptodome>=3.12.0
 PyYAML>=5.1
