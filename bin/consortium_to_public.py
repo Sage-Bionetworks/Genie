@@ -85,6 +85,9 @@ def generate_data_guide(
 
 
 def main(args):
+    # HACK: Delete all existing files first
+    process_functions.rmFiles(database_to_staging.GENIE_RELEASE_DIR)
+
     cbioValidatorPath = os.path.join(
         args.cbioportalPath, "core/src/main/scripts/importer/validateData.py"
     )
@@ -120,18 +123,23 @@ def main(args):
     public_synid = databaseSynIdMappingDf["Id"][
         databaseSynIdMappingDf["Database"] == "public"
     ].values[0]
-
+    # Use release folder fileview
     releaseSynId = databaseSynIdMappingDf["Id"][
-        databaseSynIdMappingDf["Database"] == "release"
+        databaseSynIdMappingDf["Database"] == "releaseFolder"
     ].values[0]
-
-    officialPublic = consortium_to_public.get_public_to_consortium_synid_mapping(
-        syn, releaseSynId, test=args.test
-    )
-
-    assert (
-        args.genieVersion in officialPublic.keys()
-    ), "genieVersion must be one of these: {}.".format(", ".join(officialPublic.keys()))
+    # TEST run of the infrastructure will always
+    # Map to a specific folder
+    if args.test:
+        officialPublic = {"TESTpublic": "syn12299959"}
+    else:
+        officialPublic = consortium_to_public.get_public_to_consortium_synid_mapping(
+            syn, releaseSynId
+        )
+    if args.genieVersion not in officialPublic.keys():
+        allowed_public_release_names = ", ".join(officialPublic.keys())
+        raise ValueError(
+            f"genieVersion must be one of these: {allowed_public_release_names}."
+        )
 
     args.releaseId = officialPublic[args.genieVersion]
     if not args.test and not args.staging:
@@ -155,9 +163,7 @@ def main(args):
         publicReleaseCutOff=args.publicReleaseCutOff,
     )
 
-    database_to_staging.revise_metadata_files(
-        syn, args.staging, public_synid, args.genieVersion
-    )
+    database_to_staging.revise_metadata_files(syn, public_synid, args.genieVersion)
 
     logger.info("CBIO VALIDATION")
     # Must be exit 0 because the validator sometimes fails,
@@ -182,13 +188,13 @@ def main(args):
             cbioLog.write(cbio_decoded_output)
         syn.store(synapseclient.File(cbio_log_file, parentId=log_folder_synid))
         os.remove(cbio_log_file)
-    logger.info("REMOVING OLD FILES")
-    process_functions.rmFiles(database_to_staging.CASE_LIST_PATH)
-    seg_meta_file = "{}/genie_public_meta_cna_hg19_seg.txt".format(
-        database_to_staging.GENIE_RELEASE_DIR
-    )
-    if os.path.exists(seg_meta_file):
-        os.unlink(seg_meta_file)
+    # logger.info("REMOVING OLD FILES")
+    # process_functions.rmFiles(database_to_staging.CASE_LIST_PATH)
+    # seg_meta_file = "{}/genie_public_meta_cna_hg19_seg.txt".format(
+    #     database_to_staging.GENIE_RELEASE_DIR
+    # )
+    # if os.path.exists(seg_meta_file):
+    #     os.unlink(seg_meta_file)
 
     logger.info("CREATING LINK VERSION")
     folders = database_to_staging.create_link_version(

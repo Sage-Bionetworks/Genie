@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import time
+from typing import List
 
 import pandas as pd
 import pyranges
@@ -33,7 +34,8 @@ MUTATIONS_CENTER_PATH = os.path.join(
     GENIE_RELEASE_DIR, "data_mutations_extended_%s.txt"
 )
 FUSIONS_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_fusions_%s.txt")
-SEG_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "genie_data_cna_hg19_%s.seg")
+SEG_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_cna_hg19_%s.seg")
+SV_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_sv_%s.txt")
 BED_DIFFS_SEQASSAY_PATH = os.path.join(GENIE_RELEASE_DIR, "diff_%s.csv")
 
 
@@ -703,14 +705,10 @@ def store_gene_panel_files(
     for synId in genePanelDf["id"]:
         genePanel = syn.get(synId)
         genePanelName = os.path.basename(genePanel.path)
-        newGenePanelPath = os.path.join(
-            GENIE_RELEASE_DIR, genePanelName.replace(".txt", f"_{genieVersion}.txt")
-        )
-        print(genePanelName.replace(".txt", "").replace("data_gene_panel_", ""))
-        if (
-            genePanelName.replace(".txt", "").replace("data_gene_panel_", "")
-            in panelNames
-        ):
+        newGenePanelPath = os.path.join(GENIE_RELEASE_DIR, genePanelName)
+        gene_panel = genePanelName.replace(".txt", "").replace("data_gene_panel_", "")
+        print(gene_panel)
+        if gene_panel in panelNames:
             os.rename(genePanel.path, newGenePanelPath)
             genePanelEntities.append(
                 store_file(
@@ -802,7 +800,7 @@ def store_fusion_files(
     ]
     # FusionsDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
     fusionText = process_functions.removePandasDfFloat(FusionsDf)
-    fusions_path = os.path.join(GENIE_RELEASE_DIR, f"data_fusions_{genie_version}.txt")
+    fusions_path = os.path.join(GENIE_RELEASE_DIR, "data_fusions.txt")
     with open(fusions_path, "w") as fusion_file:
         fusion_file.write(fusionText)
     store_file(
@@ -812,6 +810,87 @@ def store_fusion_files(
         genieVersion=genie_version,
         name="data_fusions.txt",
         used=f"{fusion_synid}.{version}",
+    )
+
+
+def store_sv_files(
+    syn: synapseclient.Synapse,
+    release_synid: str,
+    genie_version: str,
+    synid: str,
+    keep_for_center_consortium_samples: List[str],
+    keep_for_merged_consortium_samples: List[str],
+    current_release_staging: str,
+    center_mappingdf: pd.DataFrame,
+):
+    """
+    Create, filter, configure, and store structural variant file
+
+    Args:
+        syn: Synapse object
+        release_synid: Synapse id to store release file
+        genie_version: GENIE version (ie. v6.1-consortium)
+        synid: SV database synid
+        keep_for_center_consortium_samples: Samples to keep for center files
+        keep_for_merged_consortium_samples: Samples to keep for merged file
+        current_release_staging: Staging flag
+        center_mappingdf: Center mapping dataframe
+    """
+    logger.info("MERING, FILTERING, STORING FUSION FILES")
+    sv_df = process_functions.get_syntabledf(
+        syn,
+        f"select * from {synid}",
+    )
+    version = syn.create_snapshot_version(synid, comment=genie_version)
+
+    # sv_df["ENTREZ_GENE_ID"].mask(
+    #     sv_df["ENTREZ_GENE_ID"] == 0, float("nan"), inplace=True
+    # )
+
+    if not current_release_staging:
+        sv_staging_df = sv_df[
+            sv_df["SAMPLE_ID"].isin(keep_for_center_consortium_samples)
+        ]
+        for center in center_mappingdf.center:
+            center_fusion = sv_staging_df[sv_staging_df["CENTER"] == center]
+            if not center_fusion.empty:
+                center_fusion.to_csv(SV_CENTER_PATH % center, sep="\t", index=False)
+                store_file(
+                    syn,
+                    SV_CENTER_PATH % center,
+                    genieVersion=genie_version,
+                    parent=center_mappingdf["stagingSynId"][
+                        center_mappingdf["center"] == center
+                    ][0],
+                )
+
+    sv_df = sv_df[sv_df["SAMPLE_ID"].isin(keep_for_merged_consortium_samples)]
+    # sv_df = sv_df.rename(
+    #     columns={
+    #         "HUGO_SYMBOL": "Hugo_Symbol",
+    #         "ENTREZ_GENE_ID": "Entrez_Gene_Id",
+    #         "CENTER": "Center",
+    #         "TUMOR_SAMPLE_BARCODE": "Tumor_Sample_Barcode",
+    #         "FUSION": "Fusion",
+    #         "DNA_SUPPORT": "DNA_support",
+    #         "RNA_SUPPORT": "RNA_support",
+    #         "METHOD": "Method",
+    #         "FRAME": "Frame",
+    #     }
+    # )
+
+    # FusionsDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
+    sv_text = process_functions.removePandasDfFloat(sv_df)
+    sv_path = os.path.join(GENIE_RELEASE_DIR, "data_sv.txt")
+    with open(sv_path, "w") as sv_file:
+        sv_file.write(sv_text)
+    store_file(
+        syn,
+        sv_path,
+        parent=release_synid,
+        genieVersion=genie_version,
+        name="data_sv.txt",
+        used=f"{synid}.{version}",
     )
 
 
@@ -868,9 +947,7 @@ def store_maf_files(
         "select id from {} where name like '%mutation%'".format(flatfiles_view_synid)
     )
     centerMafSynIdsDf = centerMafSynIds.asDataFrame()
-    mutations_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_mutations_extended_%s.txt" % genie_version
-    )
+    mutations_path = os.path.join(GENIE_RELEASE_DIR, "data_mutations_extended.txt")
     with open(mutations_path, "w"):
         pass
     # Create maf file per center for their staging directory
@@ -1047,9 +1124,7 @@ def store_assay_info_files(
         List of whole exome sequencing SEQ_ASSAY_IDs
     """
     logger.info("Creates assay information file")
-    assay_info_path = os.path.join(
-        GENIE_RELEASE_DIR, f"assay_information_{genie_version}.txt"
-    )
+    assay_info_path = os.path.join(GENIE_RELEASE_DIR, "assay_information.txt")
     seq_assay_str = "','".join(clinicaldf["SEQ_ASSAY_ID"].unique())
     version = syn.create_snapshot_version(assay_info_synid, comment=genie_version)
     assay_infodf = process_functions.get_syntabledf(
@@ -1216,15 +1291,9 @@ def store_clinical_files(
     # mapping to generate the headers of the clinical file
     mapping_table = syn.tableQuery("SELECT * FROM syn9621600")
     mapping = mapping_table.asDataFrame()
-    clinical_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_clinical_%s.txt" % genie_version
-    )
-    clinical_sample_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_clinical_sample_%s.txt" % genie_version
-    )
-    clinical_patient_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_clinical_patient_%s.txt" % genie_version
-    )
+    clinical_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical.txt")
+    clinical_sample_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical_sample.txt")
+    clinical_patient_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical_patient.txt")
     process_functions.addClinicalHeaders(
         clinicaldf,
         mapping,
@@ -1284,7 +1353,7 @@ def store_cna_files(
         list: CNA samples
     """
     logger.info("MERING, FILTERING, STORING CNA FILES")
-    cna_path = os.path.join(GENIE_RELEASE_DIR, f"data_CNA_{genie_version}.txt")
+    cna_path = os.path.join(GENIE_RELEASE_DIR, "data_CNA.txt")
     query_str = ("select id from {} " "where name like 'data_CNA%'").format(
         flatfiles_view_synid
     )
@@ -1404,9 +1473,7 @@ def store_seg_files(
         current_release_staging: Staging flag
     """
     logger.info("MERING, FILTERING, STORING SEG FILES")
-    seg_path = os.path.join(
-        GENIE_RELEASE_DIR, f"genie_private_data_cna_hg19_{genie_version}.seg"
-    )
+    seg_path = os.path.join(GENIE_RELEASE_DIR, "data_cna_hg19.seg")
     version = syn.create_snapshot_version(seg_synid, comment=genie_version)
 
     seg = syn.tableQuery(
@@ -1449,7 +1516,7 @@ def store_seg_files(
         seg_path,
         parent=release_synid,
         genieVersion=genie_version,
-        name="genie_private_data_cna_hg19.seg",
+        name="data_cna_hg19.seg",
         used=f"{seg_synid}.{version}",
     )
 
@@ -1477,9 +1544,7 @@ def store_data_gene_matrix(
         pandas.DataFrame: data gene matrix dataframe
     """
     logger.info("STORING DATA GENE MATRIX FILE")
-    data_gene_matrix_path = os.path.join(
-        GENIE_RELEASE_DIR, "data_gene_matrix_%s.txt" % genie_version
-    )
+    data_gene_matrix_path = os.path.join(GENIE_RELEASE_DIR, "data_gene_matrix.txt")
     # Samples have already been removed
     data_gene_matrix = pd.DataFrame(columns=["SAMPLE_ID", "SEQ_ASSAY_ID"])
     data_gene_matrix = pd.concat(
@@ -1536,9 +1601,7 @@ def store_bed_files(
         release_synid: Synapse id to store release file
     """
     logger.info("STORING COMBINED BED FILE")
-    combined_bed_path = os.path.join(
-        GENIE_RELEASE_DIR, f"genomic_information_{genie_version}.txt"
-    )
+    combined_bed_path = os.path.join(GENIE_RELEASE_DIR, "genomic_information.txt")
     if not current_release_staging:
         for seq_assay in beddf["SEQ_ASSAY_ID"].unique():
             bed_seq_df = beddf[beddf["SEQ_ASSAY_ID"] == seq_assay]
@@ -1634,6 +1697,9 @@ def stagingToCbio(
     fusionSynId = databaseSynIdMappingDf["Id"][
         databaseSynIdMappingDf["Database"] == "fusions"
     ][0]
+    sv_synid = databaseSynIdMappingDf["Id"][databaseSynIdMappingDf["Database"] == "sv"][
+        0
+    ]
     # Grab assay information
     assay_info_ind = databaseSynIdMappingDf["Database"] == "assayinfo"
     assay_info_synid = databaseSynIdMappingDf["Id"][assay_info_ind][0]
@@ -1787,6 +1853,17 @@ def stagingToCbio(
         CENTER_MAPPING_DF,
     )
 
+    store_sv_files(
+        syn,
+        consortiumReleaseSynId,
+        genieVersion,
+        sv_synid,
+        keepForCenterConsortiumSamples,
+        keepForMergedConsortiumSamples,
+        current_release_staging,
+        CENTER_MAPPING_DF,
+    )
+
     store_seg_files(
         syn,
         genieVersion,
@@ -1841,13 +1918,12 @@ def update_process_trackingdf(
     syn.store(synapseclient.Table(process_trackerdb_synid, process_trackerdf))
 
 
-def revise_metadata_files(syn, staging, consortiumid, genie_version=None):
+def revise_metadata_files(syn, consortiumid, genie_version=None):
     """
     Rewrite metadata files with the correct GENIE version
 
     Args:
         syn: Synapse object
-        staging: staging flag
         consortiumid: Synapse id of consortium release folder
         genie_version: GENIE version, Default to None
     """
@@ -1869,11 +1945,6 @@ def revise_metadata_files(syn, staging, consortiumid, genie_version=None):
                 version = re.search(".+GENIE.+v(.+)", meta_text).group(1)
             # Fix this line
             genie_version = version if genie_version is None else genie_version
-            version_on_file = re.search(".+data_(.+)[.]txt", meta_text)
-            if version_on_file is None:
-                version_on_file = re.search(".+data_(.+)[.]seg", meta_text)
-            if version_on_file is not None:
-                version_on_file = version_on_file.group(1).split("_")[-1]
 
             if version != genie_version:
                 meta_text = meta_text.replace(
@@ -1885,15 +1956,10 @@ def revise_metadata_files(syn, staging, consortiumid, genie_version=None):
                     "GENIE v{}".format(version), "GENIE v{}".format(genie_version)
                 )
 
-                if version_on_file is not None:
-                    meta_text = meta_text.replace(version_on_file, genie_version)
-                    meta_text = meta_text.replace(version_on_file, genie_version)
                 meta.seek(0)
                 meta.write(meta_text)
                 meta.truncate()
-                store_file(
-                    syn, meta_ent.path, parent=consortiumid, genieVersion=genie_version
-                )
+        store_file(syn, meta_ent.path, parent=consortiumid, genieVersion=genie_version)
 
 
 def search_and_create_folder(syn, parentid, folder_name):
