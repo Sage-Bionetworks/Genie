@@ -105,9 +105,7 @@ class vcf(FileTypeFormat):
         # No white spaces
         white_space = vcfdf.apply(lambda x: contains_whitespace(x), axis=1)
         if sum(white_space) > 0:
-            warning += (
-                "vcf: Should not have any white spaces in any of the columns.\n"
-            )
+            warning += "vcf: Should not have any white spaces in any of the columns.\n"
 
         # I can also recommend a `bcftools query` command that
         # will parse a VCF in a detailed way,
