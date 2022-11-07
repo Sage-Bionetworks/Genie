@@ -86,7 +86,7 @@ class vcf(FileTypeFormat):
         if len(vcfdf.columns) > 8:
             if "FORMAT" not in vcfdf.columns:
                 total_error += (
-                    "vcf: Must have FORMAT header " "if genotype columns exist.\n"
+                    "vcf: Must have FORMAT header if genotype columns exist.\n"
                 )
 
         # Require that they report variants mapped to
@@ -97,17 +97,15 @@ class vcf(FileTypeFormat):
             nochr = ["chr" in i for i in vcfdf["#CHROM"] if isinstance(i, str)]
             if sum(nochr) > 0:
                 warning += (
-                    "vcf: Should not have the chr prefix " "in front of chromosomes.\n"
+                    "vcf: Should not have the chr prefix in front of chromosomes.\n"
                 )
-            if sum(vcfdf["#CHROM"].isin(["chrM"])) > 0:
+            if sum(vcfdf["#CHROM"].isin(["chrM", "M"])) > 0:
                 total_error += "vcf: Must not have variants on chrM.\n"
 
         # No white spaces
         white_space = vcfdf.apply(lambda x: contains_whitespace(x), axis=1)
         if sum(white_space) > 0:
-            warning += (
-                "vcf: Should not have any " "white spaces in any of the columns.\n"
-            )
+            warning += "vcf: Should not have any white spaces in any of the columns.\n"
 
         # I can also recommend a `bcftools query` command that
         # will parse a VCF in a detailed way,

@@ -117,8 +117,8 @@ class TestSv:
                 "NCBI_BUILD": ["GRCh38", "GRCh37"],
                 "BREAKPOINT_TYPE": ["PRECISE", "IMPRECISE"],
                 "CONNECTION_TYPE": ["3to5", "5to5"],
-                "DNA_SUPPORT": ["yes", "no"],
-                "RNA_Support": ["yes", "no"],
+                "DNA_SUPPORT": ["Yes", "No"],
+                "RNA_Support": ["Yes", "No"],
             }
         )
         error, warning = self.sv_cls._validate(sv_df)
