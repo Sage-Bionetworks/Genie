@@ -12,7 +12,7 @@ from synapseclient.core.utils import to_unix_epoch_time
 import synapseutils
 import pandas as pd
 
-from . import process_functions, process_mutation, toRetract, validate
+from genie import extract, process_functions, process_mutation, toRetract, validate
 
 logger = logging.getLogger(__name__)
 
@@ -53,58 +53,6 @@ def entity_date_to_timestamp(entity_date_time):
     date_and_time = entity_date_time.split(".")[0]
     date_time_obj = datetime.datetime.strptime(date_and_time, "%Y-%m-%dT%H:%M:%S")
     return to_unix_epoch_time(date_time_obj)
-
-
-def get_center_input_files(syn, synid, center, process="main", downloadFile=True):
-    """
-    This function walks through each center's input directory
-    to get a list of tuples of center files
-
-    Args:
-        syn: Synapse object
-        synid: Center input folder synid
-        center: Center name
-        process: Process type includes, main, vcf, maf and mafSP.
-                 Defaults to main such that the vcf
-
-    Returns:
-        List of entities with the correct format to pass into validation
-    """
-    logger.info("GETTING {center} INPUT FILES".format(center=center))
-    clinical_pair_name = [
-        "data_clinical_supp_sample_{center}.txt".format(center=center),
-        "data_clinical_supp_patient_{center}.txt".format(center=center),
-    ]
-
-    center_files = synapseutils.walk(syn, synid)
-    clinicalpair_entities = []
-    prepared_center_file_list = []
-
-    for _, _, entities in center_files:
-        for name, ent_synid in entities:
-            # This is to remove vcfs from being validated during main
-            # processing. Often there are too many vcf files, and it is
-            # not necessary for them to be run everytime.
-            if name.endswith(".vcf") and process != "mutation":
-                continue
-
-            ent = syn.get(ent_synid, downloadFile=downloadFile)
-
-            # Clinical file can come as two files.
-            # The two files need to be merged together which is
-            # why there is this format
-
-            if name in clinical_pair_name:
-                clinicalpair_entities.append(ent)
-                continue
-
-            prepared_center_file_list.append([ent])
-
-    if clinicalpair_entities:
-        # clinicalpair_entities = [x for x in clinicalpair]
-        prepared_center_file_list.append(clinicalpair_entities)
-
-    return prepared_center_file_list
 
 
 def check_existing_file_status(validation_status_table, error_tracker_table, entities):
@@ -790,7 +738,7 @@ def center_input_to_database(
 
     center_input_synid = genie_config["center_config"][center]["inputSynId"]
     logger.info("Center: " + center)
-    center_files = get_center_input_files(syn, center_input_synid, center, process)
+    center_files = extract.get_center_input_files(syn, center_input_synid, center, process)
 
     # only validate if there are center files
     if center_files:
