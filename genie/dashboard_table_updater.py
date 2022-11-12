@@ -8,7 +8,7 @@ import pandas as pd
 import synapseclient
 from synapseclient.core.utils import to_unix_epoch_time
 
-from genie import process_functions
+from genie import extract, process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ def update_samples_in_release_table(
         release:  GENIE release number (ie. 5.3-consortium)
         samples_in_release_synid: Synapse Id of 'samples in release' Table
     """
-    clinical_ent = syn.get(file_mapping["clinical"], followLink=True)
+    clinical_ent = syn.get(file_mapping["sample"], followLink=True)
     clinicaldf = pd.read_csv(clinical_ent.path, sep="\t", comment="#")
     cols = [i["name"] for i in list(syn.getTableColumns(samples_in_release_synid))]
 
@@ -125,7 +125,7 @@ def update_cumulative_sample_table(
     )
     sample_count_per_rounddf = sample_count_per_round.asDataFrame()
 
-    clinical_ent = syn.get(file_mapping["clinical"], followLink=True)
+    clinical_ent = syn.get(file_mapping["sample"], followLink=True)
     clinicaldf = pd.read_csv(clinical_ent.path, sep="\t", comment="#")
     clinicaldf.columns = [i.upper() for i in clinicaldf.columns]
     if clinicaldf.get("CENTER") is None:
@@ -174,33 +174,6 @@ def update_cumulative_sample_table(
     )
 
 
-def get_file_mapping(syn, release_folder_synid):
-    """
-    Get file mapping between important files needed for dashboard and
-    their synapse ids
-
-    Args:
-        syn:  synapse object
-        release_folder_synid: synapse id of release
-
-    """
-    files = syn.getChildren(release_folder_synid)
-    file_mapping = dict()
-    for metadata in files:
-        filename = metadata["name"]
-        synid = metadata["id"]
-        if not filename.startswith("meta"):
-            if filename.startswith("data_clinical_sample"):
-                file_mapping["clinical"] = synid
-            elif filename.endswith("fusions.txt"):
-                file_mapping["fusion"] = synid
-            elif filename.endswith("CNA.txt"):
-                file_mapping["cna"] = synid
-            elif filename.endswith(".seg"):
-                file_mapping["seg"] = synid
-    return file_mapping
-
-
 def update_release_numbers(syn, database_mappingdf, release=None):
     """
     Updates all release dashboard numbers or specific release number
@@ -229,7 +202,7 @@ def update_release_numbers(syn, database_mappingdf, release=None):
     release_folderdf = release_folder.asDataFrame()
 
     for rel_synid, rel_name in zip(release_folderdf.id, release_folderdf.name):
-        file_mapping = get_file_mapping(syn, rel_synid)
+        file_mapping = extract.get_file_mapping(syn, rel_synid)
         # If release is specified, only process on that,
         # otherwise process for all
         if release is None or release == rel_name:
