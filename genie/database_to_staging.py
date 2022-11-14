@@ -538,18 +538,19 @@ def mutation_in_cis_filter(
             os.path.dirname(os.path.abspath(__file__)), "../R/mergeCheck.R"
         )
         command = ["Rscript", mergeCheck_script]
+        # TODO: deprecate genie password soon
         if genie_user is not None and genie_pass is not None:
             command.extend(["--syn_user", genie_user, "--syn_pass", genie_pass])
         if test:
             command.append("--testing")
+        # TODO: use subprocess.run instead
         subprocess.check_call(command)
         # Store each centers mutations in cis to their staging folder
-        mergeCheck = syn.tableQuery(
-            "select * from {} where Center in ('{}')".format(
-                variant_filtering_synId, "','".join(center_mappingdf.center)
-            )
+        center_str = "','".join(center_mappingdf.center)
+        query_str = (
+            f"select * from {variant_filtering_synId} where Center in ('{center_str}')"
         )
-        mergeCheckDf = mergeCheck.asDataFrame()
+        mergeCheckDf = extract.get_syntabledf(syn=syn, query_string=query_str)
         for center in mergeCheckDf.Center.unique():
             if not pd.isnull(center):
                 stagingSynId = center_mappingdf.stagingSynId[
@@ -565,21 +566,19 @@ def mutation_in_cis_filter(
                     genieVersion=genieVersion,
                 )
                 os.unlink("mutationsInCis_filtered_samples.csv")
-    sample_filtering = syn.tableQuery(
-        "SELECT Tumor_Sample_Barcode FROM {} where Flag = 'TOSS' and "
-        "Tumor_Sample_Barcode is not null".format(variant_filtering_synId)
+    query_str = (
+        f"SELECT Tumor_Sample_Barcode FROM {variant_filtering_synId} where "
+        "Flag = 'TOSS' and Tumor_Sample_Barcode is not null"
     )
-
-    filtered_samplesdf = sample_filtering.asDataFrame()
+    filtered_samplesdf = extract.get_syntabledf(syn=syn, query_string=query_str)
     # #Alex script #1 removed patients
     remove_samples = filtered_samplesdf["Tumor_Sample_Barcode"].drop_duplicates()
 
-    # Find variants to flag
-    variant_flagging = syn.tableQuery(
-        "SELECT * FROM {} where Flag = 'FLAG' and "
-        "Tumor_Sample_Barcode is not null".format(variant_filtering_synId)
+    query_str = (
+        f"SELECT * FROM {variant_filtering_synId} where "
+        "Flag = 'Flag' and Tumor_Sample_Barcode is not null"
     )
-    flag_variantsdf = variant_flagging.asDataFrame()
+    flag_variantsdf = extract.get_syntabledf(syn=syn, query_string=query_str)
 
     flag_variantsdf["flaggedVariants"] = (
         flag_variantsdf["Chromosome"].astype(str)
@@ -917,10 +916,10 @@ def store_maf_files(
     """
 
     logger.info("FILTERING, STORING MUTATION FILES")
-    centerMafSynIds = syn.tableQuery(
-        "select id from {} where name like '%mutation%'".format(flatfiles_view_synid)
+    centerMafSynIdsDf = extract.get_syntabledf(
+        syn=syn,
+        query_string=f"select id from {flatfiles_view_synid} where name like '%mutation%'",
     )
-    centerMafSynIdsDf = centerMafSynIds.asDataFrame()
     mutations_path = os.path.join(GENIE_RELEASE_DIR, "data_mutations_extended.txt")
     with open(mutations_path, "w"):
         pass
@@ -1266,8 +1265,7 @@ def store_clinical_files(
     keep_merged_consortium_samples = clinicaldf.SAMPLE_ID
     # This mapping table is the GENIE clinical code to description
     # mapping to generate the headers of the clinical file
-    mapping_table = syn.tableQuery("SELECT * FROM syn9621600")
-    mapping = mapping_table.asDataFrame()
+    mapping = extract.get_syntabledf(syn=syn, query_string="SELECT * FROM syn9621600")
     clinical_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical.txt")
     clinical_sample_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical_sample.txt")
     clinical_patient_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical_patient.txt")
@@ -1454,10 +1452,10 @@ def store_seg_files(
     seg_path = os.path.join(GENIE_RELEASE_DIR, "data_cna_hg19.seg")
     version = syn.create_snapshot_version(seg_synid, comment=genie_version)
 
-    seg = syn.tableQuery(
-        "SELECT ID,CHROM,LOCSTART,LOCEND,NUMMARK,SEGMEAN" f",CENTER FROM {seg_synid}"
+    segdf = extract.get_syntabledf(
+        syn=syn,
+        query_string=f"SELECT ID,CHROM,LOCSTART,LOCEND,NUMMARK,SEGMEAN,CENTER FROM {seg_synid}",
     )
-    segdf = seg.asDataFrame()
     segdf = segdf.rename(
         columns={
             "CHROM": "chrom",
@@ -1884,16 +1882,11 @@ def update_process_trackingdf(
     """
     logger.info("UPDATE PROCESS TRACKING TABLE")
     column = "timeStartProcessing" if start else "timeEndProcessing"
-    process_tracker = syn.tableQuery(
-        "SELECT {col} FROM {tableid} where center = '{center}' "
-        "and processingType = '{process_type}'".format(
-            col=column,
-            tableid=process_trackerdb_synid,
-            center=center,
-            process_type=process_type,
-        )
+    query_str = (
+        f"SELECT {column} FROM {process_trackerdb_synid} where center = '{center}' "
+        f"and processingType = '{process_type}'"
     )
-    process_trackerdf = process_tracker.asDataFrame()
+    process_trackerdf = extract.get_syntabledf(syn=syn, query_string=query_str)
     process_trackerdf[column].iloc[0] = str(int(time.time() * 1000))
     syn.store(synapseclient.Table(process_trackerdb_synid, process_trackerdf))
 
