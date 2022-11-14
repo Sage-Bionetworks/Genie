@@ -147,6 +147,7 @@ def _check_center_input(center, center_list):
         )
 
 
+# TODO: why this instead of storeFile, move to load.py
 def _upload_to_synapse(syn, filepaths, valid, parentid=None):
     """
     Upload to synapse if parentid is specified and valid
@@ -166,7 +167,8 @@ def _upload_to_synapse(syn, filepaths, valid, parentid=None):
             logger.info("Stored to {}".format(ent.id))
 
 
-# TODO: specify all the arguments
+# TODO: specify all the arguments instead of using args.
+# TODO: This is a cli function...
 def _perform_validate(syn, args):
     """This is the main entry point to the genie command line tool."""
 
