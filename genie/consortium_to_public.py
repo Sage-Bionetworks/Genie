@@ -15,6 +15,7 @@ from . import create_case_lists
 logger = logging.getLogger(__name__)
 
 
+# TODO: Add to load.py
 def storeFile(syn, filePath, parentId, genie_version, name=None):
     """Stores file with genie version as comment
 
@@ -35,6 +36,7 @@ def storeFile(syn, filePath, parentId, genie_version, name=None):
     return file_ent
 
 
+# TODO: Add to transform.py
 def commonVariantFilter(mafDf):
     """
     This filter returns variants to keep
@@ -48,6 +50,7 @@ def commonVariantFilter(mafDf):
     return mafDf
 
 
+# TODO: Add to load.py
 def consortiumToPublic(
     syn,
     processingDate,
@@ -384,55 +387,3 @@ def consortiumToPublic(
                 genePanelEntities.append(copiedEnt)
 
     return caseListEntities, genePanelEntities
-
-
-def get_public_to_consortium_synid_mapping(
-    syn: synapseclient.Synapse, release_synid: str
-) -> dict:
-    """
-    Gets the mapping between potential public release names and
-    the consortium release folder
-
-    Args:
-        syn (Synapse): Synapse connection
-        release_synid (str): Release folder fileview
-
-    Returns:
-        dict: Mapping between potential public release and consortium
-              release synapse id
-    """
-    # This dict contains the mapping between public release name and
-    # consortium release folder
-    public_to_consortium_map = dict()
-    # release_files = synapseutils.walk(syn, releaseSynId)
-    # TODO: fix the database to mapping table
-    consortium_release_folders = syn.tableQuery(
-        f"SELECT name, id FROM {release_synid} WHERE "
-        "name NOT LIKE 'Release %' "
-        "and name NOT LIKE '%-public' "
-        "and name NOT IN ('case_lists', 'potential_artifacts')"
-        "ORDER BY name"
-    )
-    consortium_release_folders_df = consortium_release_folders.asDataFrame()
-    # Get major release version
-    consortium_release_folders_df["major_release"] = [
-        release.split(".")[0] for release in consortium_release_folders_df["name"]
-    ]
-    # only keep the latest consortium release for the public release
-    consortium_release_folders_df.drop_duplicates(
-        "major_release", keep="last", inplace=True
-    )
-
-    for _, release_info in consortium_release_folders_df.iterrows():
-        major_release = release_info["major_release"]
-        # add support for potential patch releases
-        for num in [0, 1, 2, 3]:
-            # This has to exist because the the first three GENIE releases
-            # used semantic versioning
-            if release_info["major_release"] in ["0", "1", "2"]:
-                public_release_name = f"{int(major_release) + 1}.{num}.0"
-                public_to_consortium_map[public_release_name] = release_info["id"]
-            else:
-                public_release_name = f"{major_release}.{num}-public"
-                public_to_consortium_map[public_release_name] = release_info["id"]
-    return public_to_consortium_map

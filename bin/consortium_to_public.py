@@ -10,6 +10,7 @@ from genie import dashboard_table_updater
 from genie import process_functions
 from genie import consortium_to_public
 from genie import database_to_staging
+from genie import extract
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +133,7 @@ def main(args):
     if args.test:
         officialPublic = {"TESTpublic": "syn12299959"}
     else:
-        officialPublic = consortium_to_public.get_public_to_consortium_synid_mapping(
+        officialPublic = extract.get_public_to_consortium_synid_mapping(
             syn, releaseSynId
         )
     if args.genieVersion not in officialPublic.keys():
