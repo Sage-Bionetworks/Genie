@@ -114,24 +114,6 @@ class GenieValidationHelper(ValidationHelper):
     _validate_kwargs = ["nosymbol_check"]
 
 
-def get_config(syn, synid):
-    """Gets Synapse database to Table mapping in dict
-
-    Args:
-        syn: Synapse connection
-        synid: Synapse id of database mapping table
-
-    Returns:
-        dict: {'databasename': 'synid'}
-
-    """
-    config = syn.tableQuery("SELECT * FROM {}".format(synid))
-    configdf = config.asDataFrame()
-    configdf.index = configdf["Database"]
-    config_dict = configdf.to_dict()
-    return config_dict["Id"]
-
-
 def _check_parentid_permission_container(syn, parentid):
     """Checks permission / container
     # TODO: Currently only checks if a user has READ permissions
