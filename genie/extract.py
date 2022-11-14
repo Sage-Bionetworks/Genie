@@ -226,3 +226,79 @@ def getDatabaseSynId(syn, tableName, project_id=None, databaseToSynIdMappingDf=N
         databaseToSynIdMappingDf, "Id", f'Database == "{tableName}"'
     )
     return synId
+
+
+def _get_database_mapping_config(syn: synapseclient.Synapse, synid: str) -> dict:
+    """Gets Synapse database to Table mapping in dict
+
+    Args:
+        syn (synapseclient.Synapse): Synapse connection
+        synid (str): Synapse id of database mapping table
+
+    Returns:
+        dict: {'databasename': 'synid'}
+    """
+    configdf = get_syntabledf(syn=syn, query_string=f"SELECT * FROM {synid}")
+    configdf.index = configdf["Database"]
+    config_dict = configdf.to_dict()
+    return config_dict["Id"]
+
+
+def get_genie_config(
+    syn: synapseclient.Synapse,
+    project_id: str,
+) -> dict:
+    """Get configurations needed for the GENIE codebase
+
+    Args:
+        syn (synapseclient.Synapse): Synapse connection
+        project_id (str): Synapse project id
+
+    Returns:
+        dict: GENIE table type/name to Synapse Id
+    """
+    # Get the Synapse Project where data is stored
+    # Should have annotations to find the table lookup
+    project = syn.get(project_id)
+
+    # Get project GENIE configurations
+    database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
+    genie_config = _get_database_mapping_config(
+        syn=syn, synid=database_to_synid_mapping_synid[0]
+    )
+    # Fill in GENIE center configurations
+    center_mapping_id = genie_config["centerMapping"]
+    center_mapping_df = get_syntabledf(
+        syn=syn, query_string=f"SELECT * FROM {center_mapping_id} where release is true"
+    )
+    center_mapping_df.index = center_mapping_df.center
+    # Add center configurations including input/staging synapse ids
+    genie_config["center_config"] = center_mapping_df.to_dict("index")
+
+    genie_config["ethnicity_mapping"] = "syn7434242"
+    genie_config["race_mapping"] = "syn7434236"
+    genie_config["sex_mapping"] = "syn7434222"
+    genie_config["sampletype_mapping"] = "syn7434273"
+
+    return genie_config
+
+
+# TODO: Remove oncotree_link parameter from this function
+def _get_oncotreelink(
+    syn: synapseclient.Synapse, genie_config: dict, oncotree_link: str = None
+) -> str:
+    """
+    Gets oncotree link unless a link is specified by the user
+
+    Args:
+        syn (synapseclient.Synapse): Synapse connection
+        genie_config (dict): database name to synid mapping
+        oncotree_link (str): link to oncotree. Default is None
+
+    Returns:
+        str: oncotree link
+    """
+    if oncotree_link is None:
+        onco_link_ent = syn.get(genie_config["oncotreeLink"])
+        oncotree_link = onco_link_ent.externalURL
+    return oncotree_link

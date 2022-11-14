@@ -42,8 +42,7 @@ def retract(syn, project_id):
         syn=syn, tableName="patientRetraction", project_id=project_id
     )
     patientRetractIds = extract.get_syntabledf(
-        syn=syn,
-        query_string=f"select * from {pat_retraction_synid}"
+        syn=syn, query_string=f"select * from {pat_retraction_synid}"
     )
     # grab all clinical samples that belong to patients in the patient
     # clinical file and append to sample list
@@ -51,8 +50,7 @@ def retract(syn, project_id):
         syn=syn, tableName="sample", project_id=project_id
     )
     sampleClinicalDf = extract.get_syntabledf(
-        syn=syn,
-        query_string=f"select * from {sample_synid}"
+        syn=syn, query_string=f"select * from {sample_synid}"
     )
 
     appendSamples = sampleClinicalDf["SAMPLE_ID"][
@@ -63,8 +61,7 @@ def retract(syn, project_id):
         syn=syn, tableName="sampleRetraction", project_id=project_id
     )
     sampleRetractIds = extract.get_syntabledf(
-        syn=syn,
-        query_string=f"select * from {sample_retract_synid}"
+        syn=syn, query_string=f"select * from {sample_retract_synid}"
     )
     allRetractedSamples = pd.concat([sampleRetractIds["genieSampleId"], appendSamples])
 

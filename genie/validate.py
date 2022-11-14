@@ -4,7 +4,7 @@ import logging
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from . import config, example_filetype_format, process_functions
+from genie import config, example_filetype_format, extract, process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -184,16 +184,16 @@ def _upload_to_synapse(syn, filepaths, valid, parentid=None):
             logger.info("Stored to {}".format(ent.id))
 
 
+# TODO: specify all the arguments
 def _perform_validate(syn, args):
     """This is the main entry point to the genie command line tool."""
 
     # Check parentid argparse
     _check_parentid_permission_container(syn=syn, parentid=args.parentid)
-    genie_config = process_functions.get_genie_config(
-        syn=syn, project_id=args.project_id
-    )
+    genie_config = extract.get_genie_config(syn=syn, project_id=args.project_id)
     # HACK: Modify oncotree link config
-    genie_config["oncotreeLink"] = process_functions._get_oncotreelink(
+    # TODO: Remove oncotree_link parameter from this function
+    genie_config["oncotreeLink"] = extract._get_oncotreelink(
         syn=syn, genie_config=genie_config, oncotree_link=args.oncotree_link
     )
     # Check center argparse
