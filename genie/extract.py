@@ -184,7 +184,7 @@ def get_syntabledf(syn: synapseclient.Synapse, query_string: str) -> pd.DataFram
     return tabledf
 
 
-def get_synid_database_mappingdf(syn, project_id):
+def _get_synid_database_mappingdf(syn, project_id):
     """
     Get database to synapse id mapping dataframe
 
@@ -218,11 +218,11 @@ def getDatabaseSynId(syn, tableName, project_id=None, databaseToSynIdMappingDf=N
         str:  Synapse id of wanted database
     """
     if databaseToSynIdMappingDf is None:
-        databaseToSynIdMappingDf = get_synid_database_mappingdf(
+        databaseToSynIdMappingDf = _get_synid_database_mappingdf(
             syn, project_id=project_id
         )
 
     synId = process_functions.lookup_dataframe_value(
-        databaseToSynIdMappingDf, "Id", 'Database == "{}"'.format(tableName)
+        databaseToSynIdMappingDf, "Id", f'Database == "{tableName}"'
     )
     return synId

@@ -17,6 +17,7 @@ import pandas as pd
 import synapseclient  # lgtm [py/import-and-import-from]
 from synapseclient import Synapse
 
+from genie import extract
 # try:
 #   from urllib.request import urlopen
 # except ImportError:
@@ -1029,7 +1030,7 @@ def create_new_fileformat_table(
     database_mappingdf = db_info["df"]
     dbmapping_synid = db_info["synid"]
 
-    olddb_synid = getDatabaseSynId(
+    olddb_synid = extract.getDatabaseSynId(
         syn, file_format, databaseToSynIdMappingDf=database_mappingdf
     )
     olddb_ent = syn.get(olddb_synid)
