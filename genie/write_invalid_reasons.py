@@ -4,7 +4,6 @@ import os
 
 import pandas as pd
 import synapseclient
-from synapseclient import Synapse
 
 from genie import extract
 
