@@ -22,9 +22,12 @@ logger = logging.getLogger(__name__)
 
 
 def get_center_input_files(
-        syn: synapseclient.Synapse, synid: str,
-        center: str, process: str = "main", downloadFile: bool = True
-    ) -> List[List[synapseclient.Entity]]:
+    syn: synapseclient.Synapse,
+    synid: str,
+    center: str,
+    process: str = "main",
+    downloadFile: bool = True,
+) -> List[List[synapseclient.Entity]]:
     """Walks through each center's input directory
     to get a list of tuples of center files
 
@@ -112,8 +115,10 @@ def get_file_mapping(syn: synapseclient.Synapse, synid: str) -> dict:
         dict: mapping between Synapse Entity name and Id
     """
     files = syn.getChildren(synid)
-    file_mapping = {_map_name_to_filetype(name=metadata["name"]): metadata["id"]
-                    for metadata in files}
+    file_mapping = {
+        _map_name_to_filetype(name=metadata["name"]): metadata["id"]
+        for metadata in files
+    }
     return file_mapping
 
 

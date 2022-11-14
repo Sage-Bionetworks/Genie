@@ -738,7 +738,9 @@ def center_input_to_database(
 
     center_input_synid = genie_config["center_config"][center]["inputSynId"]
     logger.info("Center: " + center)
-    center_files = extract.get_center_input_files(syn, center_input_synid, center, process)
+    center_files = extract.get_center_input_files(
+        syn, center_input_synid, center, process
+    )
 
     # only validate if there are center files
     if center_files:
