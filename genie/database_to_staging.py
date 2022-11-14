@@ -1944,7 +1944,9 @@ def revise_metadata_files(syn, consortiumid, genie_version=None):
 
 
 # TODO: Add to load.py
-def search_or_create_folder(syn: synapseclient.Synapse, parentid: str, folder_name: str) -> str:
+def search_or_create_folder(
+    syn: synapseclient.Synapse, parentid: str, folder_name: str
+) -> str:
     """
     Searches for an existing Synapse Folder given a parent id
     and creates the Synapse folder if it doesn't exist
