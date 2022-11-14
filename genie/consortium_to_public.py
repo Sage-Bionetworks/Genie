@@ -2,15 +2,18 @@
 
 import logging
 import os
-import shutil
 
 import synapseclient
 import synapseutils
 import pandas as pd
 
-from . import process_functions
-from . import database_to_staging
-from . import create_case_lists
+from genie import (
+    create_case_lists,
+    database_to_staging,
+    extract,
+    process_functions,
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -162,10 +165,10 @@ def consortiumToPublic(
 
     # Clinical release scope filter
     # If consortium -> Don't release to public
-    clinicalReleaseScope = syn.tableQuery(
-        "SELECT * FROM syn8545211 where releaseScope = 'public'"
+    # TODO: check why this synapse id is hard coded?
+    publicRelease = extract.get_syntabledf(
+        syn=syn, query_string="SELECT * FROM syn8545211 where releaseScope = 'public'"
     )
-    publicRelease = clinicalReleaseScope.asDataFrame()
 
     allClin = clinicalDf[clinicalDf["SAMPLE_ID"].isin(publicReleaseSamples)]
     allClin.to_csv(clinical_path, sep="\t", index=False)
@@ -203,8 +206,7 @@ def consortiumToPublic(
         )
 
     # Grab mapping table to fill in clinical headers
-    mapping_table = syn.tableQuery("SELECT * FROM syn9621600")
-    mapping = mapping_table.asDataFrame()
+    mapping = extract.get_syntabledf(syn=syn, query_string="SELECT * FROM syn9621600")
     genePanelEntities = []
     for entName, entId in consortiumRelease[2]:
         # skip files to convert
