@@ -770,7 +770,7 @@ def center_input_to_database(
 
         processTrackerSynId = genie_config["processTracker"]
         # Add process tracker for time start
-        processTrackerDf = process_functions.get_syntabledf(
+        processTrackerDf = extract.get_syntabledf(
             syn=syn,
             query_string=(
                 f"SELECT timeStartProcessing FROM {processTrackerSynId} "
@@ -807,7 +807,7 @@ def center_input_to_database(
         )
 
         # Should add in this process end tracking before the deletion of samples
-        processTrackerDf = process_functions.get_syntabledf(
+        processTrackerDf = extract.get_syntabledf(
             syn=syn,
             query_string=(
                 f"SELECT timeEndProcessing FROM {processTrackerSynId} "
