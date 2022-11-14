@@ -1,3 +1,7 @@
+"""TODO: Rename this to model.py
+This contains the GENIE model objects
+"""
+from abc import ABCMeta
 import logging
 import os
 
@@ -49,7 +53,7 @@ class ValidationResults:
         return message
 
 
-class FileTypeFormat(object):
+class FileTypeFormat(metaclass=ABCMeta):
 
     _process_kwargs = ["newPath", "databaseSynId"]
 
