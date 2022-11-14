@@ -1100,7 +1100,7 @@ def get_genie_config(
     )
     # Fill in GENIE center configurations
     center_mapping_id = genie_config["centerMapping"]
-    center_mapping_df = get_syntabledf(
+    center_mapping_df = extract.get_syntabledf(
         syn=syn, query_string=f"SELECT * FROM {center_mapping_id} where release is true"
     )
     center_mapping_df.index = center_mapping_df.center
