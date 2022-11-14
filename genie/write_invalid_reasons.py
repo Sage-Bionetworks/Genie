@@ -3,10 +3,10 @@ import logging
 import os
 
 import pandas as pd
-import synapseclient  # lgtm [py/import-and-import-from]
+import synapseclient
 from synapseclient import Synapse
 
-from . import process_functions
+from genie import extract
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ def write(syn: Synapse, center_mapping_synid: str, error_tracker_synid: str):
         error_tracker_synid: Error tracking synapse id
 
     """
-    center_mapping_df = process_functions.get_syntabledf(
+    center_mapping_df = extract.get_syntabledf(
         syn=syn,
         query_string=f"SELECT * FROM {center_mapping_synid} where release is true",
     )

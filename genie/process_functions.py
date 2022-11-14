@@ -29,106 +29,6 @@ logger = logging.getLogger(__name__)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-# try:
-#   from urlparse import urlparse
-# except ImportError:
-#   from urllib.parse import urlparse
-
-# Create merged dictionary of remapped genes
-# def createDict(invalidated_genes):
-#     toRemapRemove = {}
-#     invalidated_genes = pd.Series(invalidated_genes)
-#     for i in invalidated_genes[invalidated_genes!=True]:
-#         toRemapRemove.update(i)
-#     return(toRemapRemove)
-
-# Validate genes
-# def hgncRestCall(path):
-#     """
-#     This function does the rest call to the genenames website
-
-#     :params path:     The gene symbol url path to add to the base uri
-
-#     :returns:         If the symbol exists, returns True and the corrected symbol, otherwise returns False and None.
-#     """
-#     headers = {'Accept': 'application/json',}
-
-#     uri = 'http://rest.genenames.org'
-
-#     target = urlparse(uri+path)
-#     method = 'GET'
-#     body = ''
-#     h = http.Http()
-#     response, content = h.request(target.geturl(),
-#                                   method,
-#                                   body,
-#                                   headers)
-#     if response['status'] == '200':
-#         data = json.loads(content)
-#         if len(data['response']['docs']) == 0:
-#             return(False, [None])
-#         else:
-#             mapped = [symbol['symbol'] for symbol in data['response']['docs']]
-#             return(True, mapped)
-#     else:
-#         return(False, [None])
-
-# Validation of gene names
-# def validateSymbol(gene, returnMapping=False):
-#     """
-#     This function does validation of symbols
-
-#     :params gene:               Gene symbol
-#     :params returnMapping:      Return mapping of old gene to new gene
-
-#     :returns:                   Check if the provided gene name is a correct symbol and print out genes
-#                                 that need to be remapped or can't be mapped to anything
-#     """
-#     path = '/fetch/symbol/%s' %  gene
-#     verified, symbol = hgncRestCall(path)
-#     if not verified:
-#         path = '/fetch/prev_symbol/%s' %  gene
-#         verified, symbol = hgncRestCall(path)
-#     if not verified:
-#         path = '/fetch/alias_symbol/%s' %  gene
-#         verified, symbol = hgncRestCall(path)
-#     if gene in symbol:
-#         return(True)
-#     else:
-#         if symbol[0] is None:
-#             #logger.error("%s cannot be remapped. Please correct." % gene)
-#             logger.warning("%s cannot be remapped. These rows will have an empty gene symbol" % gene)
-#         else:
-#             #if "MLL4", then the HUGO symbol should be KMT2D and KMT2B
-#             if len(symbol) > 1:
-#                 #logger.error("%s can be mapped to different symbols: %s. Please correct." % (gene, ", ".join(symbol)))
-#                 logger.warning("%s can be mapped to different symbols: %s. Please correct or it will be removed." % (gene, ", ".join(symbol)))
-#             else:
-#                 logger.info("%s will be remapped to %s" % (gene, symbol[0]))
-#                 if returnMapping:
-#                     return({gene: symbol[0]})
-#                 else:
-#                     return(True)
-#         if returnMapping:
-#             return({gene: float('nan')})
-#         else:
-#             return(False)
-#         #return(True)
-
-# # Remap and remove genes in dataframes given a column
-# def remapGenes(invalidated_genes, DF, col,isBedFile=False):
-#     nonmapped = []
-#     gene_dict = createDict(invalidated_genes)
-#     for key in gene_dict:
-#         value = gene_dict[key]
-#         if isBedFile:
-#         #     nonmapped.append(key)
-#         #     DF = DF[DF[col] != key]
-#         # else:
-#             DF[col][DF[col] == key] = value
-#     return(DF, nonmapped)
-
-
 def retry_get_url(url):
     """
     Implement retry logic when getting urls.
@@ -174,6 +74,7 @@ def checkColExist(DF, key):
     return result
 
 
+# TODO: Add to validation.py
 def validate_genie_identifier(
     identifiers: pd.Series, center: str, filename: str, col: str
 ) -> str:
@@ -200,35 +101,6 @@ def validate_genie_identifier(
     return total_error
 
 
-# def get_oncotree_codes(oncotree_url):
-#     '''
-#     Deprecated
-#     Gets the oncotree data from the specified url.
-
-#     Args:
-#         oncotree_url: Oncotree url
-
-#     Returns:
-#         dataframe: oncotree codes
-#     '''
-#     # PATTERN = re.compile('([A-Za-z\' ,-/]*) \\(([A-Za-z_]*)\\)')
-#     PATTERN = re.compile('.*[(](.*)[)]')
-#     # with requests.get(oncotree_url) as oncotreeUrl:
-#     #   oncotree = oncotreeUrl.text.split("\n")
-#     oncotreeUrl = retry_get_url(oncotree_url)
-#     oncotree = oncotreeUrl.text.split("\n")
-
-#     # oncotree = urlopen(oncotree_url).read().split('\n')
-#     allCodes = []
-#     for row in oncotree[:-1]:
-#         data = row.split("\t")
-#         allCodes.extend([
-#             PATTERN.match(i).group(1)
-#             for i in data[0:5] if PATTERN.match(i)])
-#     codes = pd.DataFrame({"ONCOTREE_CODE": list(set(allCodes))})
-#     return(codes)
-
-
 def lookup_dataframe_value(df, col, query):
     """
     Look up dataframe value given query and column
@@ -244,66 +116,6 @@ def lookup_dataframe_value(df, col, query):
     query = df.query(query)
     query_val = query[col].iloc[0]
     return query_val
-
-
-def get_syntabledf(syn, query_string):
-    """
-    Get dataframe from table query
-
-    Args:
-        syn: Synapse object
-        query_string: Table query
-
-    Returns:
-        pandas dataframe with query results
-    """
-    table = syn.tableQuery(query_string)
-    tabledf = table.asDataFrame()
-    return tabledf
-
-
-def get_synid_database_mappingdf(syn, project_id):
-    """
-    Get database to synapse id mapping dataframe
-
-    Args:
-        syn: Synapse object
-        project_id: Synapse Project ID with a 'dbMapping' annotation.
-
-    Returns:
-        database to synapse id mapping dataframe
-    """
-
-    project = syn.get(project_id)
-    database_mapping_synid = project.annotations["dbMapping"][0]
-    database_map_query = "SELECT * FROM {}".format(database_mapping_synid)
-    mappingdf = get_syntabledf(syn, database_map_query)
-    return mappingdf
-
-
-def getDatabaseSynId(syn, tableName, project_id=None, databaseToSynIdMappingDf=None):
-    """
-    Get database synapse id from database to synapse id mapping table
-
-    Args:
-        syn: Synapse object
-        project_id: Synapse Project ID with a database mapping table.
-        tableName: Name of synapse table
-        databaseToSynIdMappingDf: Avoid calling rest call to download table
-                                  if the mapping table is already downloaded
-
-    Returns:
-        str:  Synapse id of wanted database
-    """
-    if databaseToSynIdMappingDf is None:
-        databaseToSynIdMappingDf = get_synid_database_mappingdf(
-            syn, project_id=project_id
-        )
-
-    synId = lookup_dataframe_value(
-        databaseToSynIdMappingDf, "Id", 'Database == "{}"'.format(tableName)
-    )
-    return synId
 
 
 def rmFiles(folderPath, recursive=True):

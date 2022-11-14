@@ -662,7 +662,7 @@ def store_gene_panel_files(
     # This line of code is required to make sure any new files are
     # pulled into the file view.
     syn.tableQuery(f"select * from {fileviewSynId} limit 1")
-    genePanelDf = process_functions.get_syntabledf(
+    genePanelDf = extract.get_syntabledf(
         syn,
         f"select id from {fileviewSynId} where "
         "cBioFileFormat = 'genePanel' and "
@@ -719,7 +719,7 @@ def store_fusion_files(
         center_mappingdf: Center mapping dataframe
     """
     logger.info("MERING, FILTERING, STORING FUSION FILES")
-    FusionsDf = process_functions.get_syntabledf(
+    FusionsDf = extract.get_syntabledf(
         syn,
         "select HUGO_SYMBOL,ENTREZ_GENE_ID,CENTER,TUMOR_SAMPLE_BARCODE,FUSION,"
         f"DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME from {fusion_synid}",
@@ -809,7 +809,7 @@ def store_sv_files(
         center_mappingdf: Center mapping dataframe
     """
     logger.info("MERING, FILTERING, STORING FUSION FILES")
-    sv_df = process_functions.get_syntabledf(
+    sv_df = extract.get_syntabledf(
         syn,
         f"select * from {synid}",
     )
@@ -1103,7 +1103,7 @@ def store_assay_info_files(
     assay_info_path = os.path.join(GENIE_RELEASE_DIR, "assay_information.txt")
     seq_assay_str = "','".join(clinicaldf["SEQ_ASSAY_ID"].unique())
     version = syn.create_snapshot_version(assay_info_synid, comment=genie_version)
-    assay_infodf = process_functions.get_syntabledf(
+    assay_infodf = extract.get_syntabledf(
         syn,
         f"select * from {assay_info_synid} where SEQ_ASSAY_ID "
         f"in ('{seq_assay_str}')",
@@ -1335,7 +1335,7 @@ def store_cna_files(
     query_str = ("select id from {} " "where name like 'data_CNA%'").format(
         flatfiles_view_synid
     )
-    center_cna_synidsdf = process_functions.get_syntabledf(syn, query_str)
+    center_cna_synidsdf = extract.get_syntabledf(syn, query_str)
     # Grab all unique symbols and form cna_template
     all_symbols = set()
     for cna_synid in center_cna_synidsdf["id"]:
@@ -1689,17 +1689,17 @@ def stagingToCbio(
     center_query_str = "','".join(CENTER_MAPPING_DF.center)
     patient_snapshot = syn.create_snapshot_version(patientSynId, comment=genieVersion)
     patient_used = f"{patientSynId}.{patient_snapshot}"
-    patientDf = process_functions.get_syntabledf(
+    patientDf = extract.get_syntabledf(
         syn, f"SELECT * FROM {patientSynId} where CENTER in ('{center_query_str}')"
     )
     sample_snapshot = syn.create_snapshot_version(sampleSynId, comment=genieVersion)
     sample_used = f"{sampleSynId}.{sample_snapshot}"
-    sampleDf = process_functions.get_syntabledf(
+    sampleDf = extract.get_syntabledf(
         syn, f"SELECT * FROM {sampleSynId} where CENTER in ('{center_query_str}')"
     )
     bed_snapshot = syn.create_snapshot_version(bedSynId, comment=genieVersion)
     bed_used = f"{bedSynId}.{bed_snapshot}"
-    bedDf = process_functions.get_syntabledf(
+    bedDf = extract.get_syntabledf(
         syn,
         "SELECT Chromosome,Start_Position,End_Position,Hugo_Symbol,ID,"
         "SEQ_ASSAY_ID,Feature_Type,includeInPanel,clinicalReported FROM"
@@ -1708,7 +1708,7 @@ def stagingToCbio(
 
     # Clinical release scope filter
     # If private -> Don't release to public
-    clinicalReleaseScopeDf = process_functions.get_syntabledf(
+    clinicalReleaseScopeDf = extract.get_syntabledf(
         syn, "SELECT * FROM syn8545211 where releaseScope <> 'private'"
     )
 

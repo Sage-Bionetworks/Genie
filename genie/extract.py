@@ -1,22 +1,16 @@
 """
-This module contains all the functions to extract data
+This module contains all the functions that extract data
 from Synapse
 """
 
-from collections import defaultdict
-import datetime
 import logging
-import os
-import time
 from typing import List
 
-import synapseclient  # lgtm [py/import-and-import-from]
-from synapseclient import Synapse
-from synapseclient.core.utils import to_unix_epoch_time
+import synapseclient
 import synapseutils
 import pandas as pd
 
-from . import process_functions, process_mutation, toRetract, validate
+from genie import process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -172,3 +166,63 @@ def get_public_to_consortium_synid_mapping(
                 public_release_name = f"{major_release}.{num}-public"
                 public_to_consortium_map[public_release_name] = release_info["id"]
     return public_to_consortium_map
+
+
+def get_syntabledf(syn: synapseclient.Synapse, query_string: str) -> pd.DataFrame:
+    """
+    Get dataframe from Synapse Table query
+
+    Args:
+        syn (synapseclient.Synapse): Synapse connection
+        query_string (str): Table query
+
+    Returns:
+        pd.DataFrame: Query results in a dataframe
+    """
+    table = syn.tableQuery(query_string)
+    tabledf = table.asDataFrame()
+    return tabledf
+
+
+def get_synid_database_mappingdf(syn, project_id):
+    """
+    Get database to synapse id mapping dataframe
+
+    Args:
+        syn: Synapse object
+        project_id: Synapse Project ID with a 'dbMapping' annotation.
+
+    Returns:
+        database to synapse id mapping dataframe
+    """
+
+    project = syn.get(project_id)
+    database_mapping_synid = project.annotations["dbMapping"][0]
+    database_map_query = f"SELECT * FROM {database_mapping_synid}"
+    mappingdf = get_syntabledf(syn, database_map_query)
+    return mappingdf
+
+
+def getDatabaseSynId(syn, tableName, project_id=None, databaseToSynIdMappingDf=None):
+    """
+    Get database synapse id from database to synapse id mapping table
+
+    Args:
+        syn: Synapse object
+        project_id: Synapse Project ID with a database mapping table.
+        tableName: Name of synapse table
+        databaseToSynIdMappingDf: Avoid calling rest call to download table
+                                  if the mapping table is already downloaded
+
+    Returns:
+        str:  Synapse id of wanted database
+    """
+    if databaseToSynIdMappingDf is None:
+        databaseToSynIdMappingDf = get_synid_database_mappingdf(
+            syn, project_id=project_id
+        )
+
+    synId = process_functions.lookup_dataframe_value(
+        databaseToSynIdMappingDf, "Id", 'Database == "{}"'.format(tableName)
+    )
+    return synId
