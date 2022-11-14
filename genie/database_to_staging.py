@@ -15,7 +15,7 @@ import pyranges
 import synapseclient
 import synapseutils
 
-from . import process_functions
+from . import extract, process_functions
 from . import __version__
 
 logger = logging.getLogger(__name__)
@@ -39,28 +39,26 @@ SV_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_sv_%s.txt")
 BED_DIFFS_SEQASSAY_PATH = os.path.join(GENIE_RELEASE_DIR, "diff_%s.csv")
 
 
-def find_caselistid(syn, parentid):
-    """
-    Search for case_lists folder based on parentId given
+# TODO: add to load.py
+def create_case_list_folder(syn: synapseclient.Synapse, parentid: str) -> str:
+    """Create case_list folder if the folder doesn't exist
 
     Args:
-        syn: Synapse object
-        parentid: Synapse Id of Folder or Project
+        syn (synapseclient.Synapse): Synapse connection
+        parentid (str): Synapse Folder/Project Id
 
     Returns:
-        string: Synapse id of case list
+        str: Synapse Id of case_lists folder
     """
-    release_ents = synapseutils.walk(syn, parentid)
-    release_folders = next(release_ents)
-    # if list is empty
-    if not release_folders[1]:
+    caselist_id = syn.findEntityId(name="case_lists", parent=parentid)
+    # if case_lists doesn't exist
+    if caselist_id is None:
         caselist_folder = synapseclient.Folder(name="case_lists", parent=parentid)
-        caselistid = syn.store(caselist_folder).id
-    else:
-        caselistid = release_folders[1][0][1]
-    return caselistid
+        caselist_id = syn.store(caselist_folder).id
+    return caselist_id
 
 
+# TODO: Add to load.py
 def store_file(
     syn,
     filePath,

@@ -95,8 +95,8 @@ def consortiumToPublic(
     public_release_preview = databaseSynIdMappingDf["Id"][
         databaseSynIdMappingDf["Database"] == "public"
     ].values[0]
-    public_release_preview_caselist = database_to_staging.find_caselistid(
-        syn, public_release_preview
+    public_release_preview_caselist = database_to_staging.create_case_list_folder(
+        syn=syn, parentid=public_release_preview
     )
 
     #######################################################################
