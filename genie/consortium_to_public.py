@@ -50,7 +50,7 @@ def commonVariantFilter(mafDf):
     return mafDf
 
 
-# TODO: Add to load.py
+# TODO: Add to etl.py
 def consortiumToPublic(
     syn,
     processingDate,
@@ -98,8 +98,8 @@ def consortiumToPublic(
     public_release_preview = databaseSynIdMappingDf["Id"][
         databaseSynIdMappingDf["Database"] == "public"
     ].values[0]
-    public_release_preview_caselist = database_to_staging.create_case_list_folder(
-        syn=syn, parentid=public_release_preview
+    public_release_preview_caselist = database_to_staging.search_or_create_folder(
+        syn=syn, parentid=public_release_preview, folder_name="case_lists"
     )
 
     #######################################################################

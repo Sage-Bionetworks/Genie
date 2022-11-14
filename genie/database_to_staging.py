@@ -39,25 +39,6 @@ SV_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_sv_%s.txt")
 BED_DIFFS_SEQASSAY_PATH = os.path.join(GENIE_RELEASE_DIR, "diff_%s.csv")
 
 
-# TODO: add to load.py
-def create_case_list_folder(syn: synapseclient.Synapse, parentid: str) -> str:
-    """Create case_list folder if the folder doesn't exist
-
-    Args:
-        syn (synapseclient.Synapse): Synapse connection
-        parentid (str): Synapse Folder/Project Id
-
-    Returns:
-        str: Synapse Id of case_lists folder
-    """
-    caselist_id = syn.findEntityId(name="case_lists", parent=parentid)
-    # if case_lists doesn't exist
-    if caselist_id is None:
-        caselist_folder = synapseclient.Folder(name="case_lists", parent=parentid)
-        caselist_id = syn.store(caselist_folder).id
-    return caselist_id
-
-
 # TODO: Add to load.py
 def store_file(
     syn,
@@ -105,6 +86,7 @@ def store_file(
     return ent
 
 
+# TODO: Add to transform.py
 def _to_redact_interval(df_col):
     """
     Determines interval values that are <18 and >89 that need to be redacted
@@ -132,6 +114,7 @@ def _to_redact_interval(df_col):
     return to_redact, to_redact_pediatric
 
 
+# TODO: Add to transform.py
 def _redact_year(df_col):
     """Redacts year values that have < or >
 
@@ -150,6 +133,7 @@ def _redact_year(df_col):
     return df_col
 
 
+# TODO: Add to transform.py
 def _to_redact_difference(df_col_year1, df_col_year2):
     """Determine if difference between year2 and year1 is > 89
 
@@ -168,6 +152,7 @@ def _to_redact_difference(df_col_year1, df_col_year2):
     return to_redact
 
 
+# TODO: Add to transform.py
 def redact_phi(
     clinicaldf, interval_cols_to_redact=["AGE_AT_SEQ_REPORT", "INT_CONTACT", "INT_DOD"]
 ):
@@ -208,6 +193,7 @@ def redact_phi(
     return clinicaldf
 
 
+# TODO: Add to transform.py
 def remove_maf_samples(mafdf: pd.DataFrame, keep_samples: list) -> pd.DataFrame:
     """Remove samples from maf file
 
@@ -268,6 +254,7 @@ def get_whitelist_variants_idx(mafdf):
     return maf_variants.isin(variants) | match_start_end
 
 
+# TODO: Add to transform.py
 def configure_maf(mafdf, remove_variants, flagged_variants):
     """Configures each maf dataframe, does germline filtering
 
@@ -369,6 +356,7 @@ def configure_maf(mafdf, remove_variants, flagged_variants):
     return mafdf
 
 
+# TODO: Add to transform.py
 def calculate_missing_variant_counts(
     depth: pd.Series, alt_count: pd.Series, ref_count: pd.Series
 ) -> dict:
@@ -407,6 +395,7 @@ def calculate_missing_variant_counts(
     return {"depth": depth, "ref_count": ref_count, "alt_count": alt_count}
 
 
+# TODO: Add to transform.py
 def runMAFinBED(
     syn,
     center_mappingdf,
@@ -480,6 +469,7 @@ def runMAFinBED(
     return removed_variantsdf["removeVariants"]
 
 
+# TODO: Add to transform.py
 def seq_date_filter(clinicalDf, processingDate, consortiumReleaseCutOff):
     """
     Filter samples by seq date
@@ -516,6 +506,7 @@ def sample_class_filter(clinical_df: pd.DataFrame) -> list:
     return remove_samples
 
 
+# TODO: Add to transform.py
 def mutation_in_cis_filter(
     syn,
     skipMutationsInCis,
@@ -606,6 +597,7 @@ def mutation_in_cis_filter(
     return (remove_samples, flag_variantsdf["flaggedVariants"])
 
 
+# TODO: Add to transform.py
 def seq_assay_id_filter(clinicaldf):
     """
     (Deprecated)
@@ -649,27 +641,7 @@ def no_genepanel_filter(clinicaldf, beddf):
     return remove_samples
 
 
-def _get_wes_panels(syn, assay_info_synid):
-    """
-    Grab whole exome sequencing panel ids
-
-    Args:
-        syn: Synapse object
-        databaseSynIdMappingDf: database to synapse id mapping df
-
-    Returns:
-        List of whole exome sequenceing SEQ_ASSAY_IDs
-    """
-    # Get whole exome seq panels to exclude from gene matrix and gene panel
-    wes_panels = syn.tableQuery(
-        "select SEQ_ASSAY_ID from {} where "
-        "library_strategy = 'WXS'".format(assay_info_synid)
-    )
-    wes_paneldf = wes_panels.asDataFrame()
-    wes_seqassayids = wes_paneldf["SEQ_ASSAY_ID"]
-    return wes_seqassayids
-
-
+# TODO: add to load.py
 def store_gene_panel_files(
     syn,
     fileviewSynId,
@@ -722,6 +694,7 @@ def store_gene_panel_files(
     return genePanelEntities
 
 
+# TODO: add to load.py
 def store_fusion_files(
     syn,
     release_synid,
@@ -811,6 +784,7 @@ def store_fusion_files(
     )
 
 
+# TODO: add to load.py
 def store_sv_files(
     syn: synapseclient.Synapse,
     release_synid: str,
@@ -892,6 +866,7 @@ def store_sv_files(
     )
 
 
+# TODO: Add to transform.py
 def append_or_create_release_maf(dataframe: pd.DataFrame, filepath: str):
     """Creates a file with the dataframe or appends to a existing file.
 
@@ -910,6 +885,7 @@ def append_or_create_release_maf(dataframe: pd.DataFrame, filepath: str):
             f_out.write(data)
 
 
+# TODO: Add to load.py
 def store_maf_files(
     syn,
     genie_version,
@@ -1011,6 +987,7 @@ def store_maf_files(
             )
 
 
+# TODO: Add to transform.py
 def run_genie_filters(
     syn,
     genie_user,
@@ -1106,6 +1083,7 @@ def run_genie_filters(
     )
 
 
+# TODO: Add to load.py
 def store_assay_info_files(
     syn, genie_version, assay_info_synid, clinicaldf, release_synid
 ):
@@ -1144,6 +1122,7 @@ def store_assay_info_files(
     return wes_panels.tolist()
 
 
+# TODO: Add to load.py
 def store_clinical_files(
     syn,
     genie_version,
@@ -1326,6 +1305,7 @@ def store_clinical_files(
     return (clinicaldf, keep_center_consortium_samples, keep_merged_consortium_samples)
 
 
+# TODO: Add to load.py
 def store_cna_files(
     syn,
     flatfiles_view_synid,
@@ -1446,7 +1426,7 @@ def store_cna_files(
     return cna_samples
 
 
-# SEG
+# TODO: Add to load.py
 def store_seg_files(
     syn,
     genie_version,
@@ -1519,6 +1499,7 @@ def store_seg_files(
     )
 
 
+# TODO: Add to load.py
 def store_data_gene_matrix(
     syn,
     genie_version,
@@ -1575,6 +1556,7 @@ def store_data_gene_matrix(
     return data_gene_matrix
 
 
+# TODO: Add to load.py
 def store_bed_files(
     syn,
     genie_version,
@@ -1632,6 +1614,7 @@ def store_bed_files(
     )
 
 
+# TODO: Add to etl.py
 def stagingToCbio(
     syn,
     processingDate,
@@ -1825,8 +1808,6 @@ def stagingToCbio(
         syn, genieVersion, assay_info_synid, clinicalDf, consortiumReleaseSynId
     )
 
-    # wes_panelids = _get_wes_panels(syn, assay_info_synid)
-
     data_gene_matrix = store_data_gene_matrix(
         syn, genieVersion, clinicalDf, cnaSamples, consortiumReleaseSynId, wes_panelids
     )
@@ -1887,6 +1868,7 @@ def stagingToCbio(
     return genePanelEntities
 
 
+# TODO: Add to load.py
 def update_process_trackingdf(
     syn, process_trackerdb_synid, center, process_type, start=True
 ):
@@ -1916,6 +1898,7 @@ def update_process_trackingdf(
     syn.store(synapseclient.Table(process_trackerdb_synid, process_trackerdf))
 
 
+# TODO: Add to transform.py
 def revise_metadata_files(syn, consortiumid, genie_version=None):
     """
     Rewrite metadata files with the correct GENIE version
@@ -1960,35 +1943,29 @@ def revise_metadata_files(syn, consortiumid, genie_version=None):
         store_file(syn, meta_ent.path, parent=consortiumid, genieVersion=genie_version)
 
 
-def search_and_create_folder(syn, parentid, folder_name):
+# TODO: Add to load.py
+def search_or_create_folder(syn: synapseclient.Synapse, parentid: str, folder_name: str) -> str:
     """
-    This function will search for an existing directory given a parent id
-    It will create the Synapse folder if it doesn't exist
+    Searches for an existing Synapse Folder given a parent id
+    and creates the Synapse folder if it doesn't exist
 
     Args:
-        syn: Synapse object
-        parentid: Synapse id of a project or folder
-        folder_name: Folder being searched for
+        syn (synapseclient.Synapse): Synapse connection
+        parentid (str): Synapse Id of a project or folder
+        folder_name (str): Folde rname
 
     Returns:
-        string: Synapse folder id
-        boolean: Checks if the folder already existed.  True if it did
+        str: Synapse Folder id
     """
-    folders = syn.getChildren(parentid, includeTypes=["folder"])
-    search_for_folder = filter(lambda folder: folder["name"] == folder_name, folders)
-    search_for_folder = list(search_for_folder)
-    if len(search_for_folder) == 0:
+    folder_id = syn.findEntityId(name=folder_name, parent=parentid)
+    # if case_lists doesn't exist
+    if folder_id is None:
         folder_ent = synapseclient.Folder(name=folder_name, parent=parentid)
-        folder_synid = syn.store(folder_ent)["id"]
-        already_exists = False
-    elif len(search_for_folder) == 1:
-        folder_synid = search_for_folder[0]["id"]
-        already_exists = True
-    else:
-        raise ValueError("There should not be any duplicated folder names")
-    return (folder_synid, already_exists)
+        folder_id = syn.store(folder_ent).id
+    return folder_id
 
 
+# TODO: Add to load.py
 def create_link_version(
     syn,
     genie_version,
@@ -2017,22 +1994,16 @@ def create_link_version(
         database_synid_mappingdf["Database"] == "release"
     ].values[0]
     # Create major release folder
-    major_release_folder_synid, already_exists = search_and_create_folder(
-        syn, all_releases_synid, "Release {}".format(major_release)
+    major_release_folder_synid = search_or_create_folder(
+        syn, all_releases_synid, f"Release {major_release}"
     )
     # If the major release folder didn't exist, go ahead and create the
     # release folder
-    if not already_exists:
-        release_folder_ent = synapseclient.Folder(
-            genie_version, parent=major_release_folder_synid
-        )
-        release_folder_synid = syn.store(release_folder_ent)["id"]
-    else:
-        release_folder_synid, already_exists = search_and_create_folder(
-            syn, major_release_folder_synid, genie_version
-        )
+    release_folder_synid = search_or_create_folder(
+        syn, major_release_folder_synid, genie_version
+    )
     # Search or create case lists folder
-    caselist_folder_synid, already_exists = search_and_create_folder(
+    caselist_folder_synid = search_or_create_folder(
         syn, release_folder_synid, "case_lists"
     )
 
