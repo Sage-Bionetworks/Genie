@@ -184,7 +184,7 @@ def consortiumToPublic(
                 syn=syn,
                 filepath=casePath,
                 parentid=public_release_preview_caselist,
-                version_comment=genie_version
+                version_comment=genie_version,
             )
         )
 
