@@ -11,7 +11,6 @@ import synapseclient
 
 import genie_registry.bed
 from genie_registry.bed import bed
-from genie_registry.bedSP import bedSP
 
 if not shutil.which("bedtools"):
     pytest.skip("bedtools is not found, skipping bed tests", allow_module_level=True)
@@ -58,7 +57,6 @@ seq_assay_id = "SAGE-Test"
 new_path = "new.bed"
 parentid = "synTest"
 bed_class = bed(syn, "SAGE")
-bedsp_class = bedSP(syn, "SAGE")
 
 
 def test_perfect___process():
@@ -147,7 +145,7 @@ def test_includeinpanel___process():
     with patch.object(
         genie_registry.bed, "create_gtf", return_value=(EXON_TEMP.name, GENE_TEMP.name)
     ):
-        new_beddf = bedsp_class._process(
+        new_beddf = bed_class._process(
             beddf, seq_assay_id, new_path, parentid, create_panel=False
         )
         new_beddf.sort_values("Chromosome", inplace=True)
@@ -191,7 +189,7 @@ def test_clinicalreport___process():
     with patch.object(
         genie_registry.bed, "create_gtf", return_value=(EXON_TEMP.name, GENE_TEMP.name)
     ):
-        new_beddf = bedsp_class._process(
+        new_beddf = bed_class._process(
             beddf, seq_assay_id, new_path, parentid, create_panel=False
         )
         new_beddf.sort_values("Chromosome", inplace=True)
@@ -203,7 +201,6 @@ def test_clinicalreport___process():
 
 def test_filetype():
     assert bed_class._fileType == "bed"
-    assert bedsp_class._fileType == "bedSP"
 
 
 @pytest.fixture(
@@ -221,7 +218,6 @@ def test_incorrect_validatefilename(filename_fileformat_map):
 
 def test_correct_validatefilename():
     assert bed_class.validateFilename(["SAGE-test.bed"]) == "bed"
-    assert bedsp_class.validateFilename(["nonGENIE_SAGE-test.bed"]) == "bedSP"
 
 
 def test_perfect__validate():
@@ -325,7 +321,7 @@ def test_90percentboundary_failure__validate():
         )
     )
 
-    error, warning = bedsp_class._validate(bedDf)
+    error, warning = bed_class._validate(bedDf)
     expected_errors = (
         "BED file: You have no correct gene symbols. "
         "Make sure your gene symbol column (4th column) is formatted like so: "
@@ -354,7 +350,7 @@ def test_overlapping__validate():
             e=[True, False, True],
         )
     )
-    error, warning = bedsp_class._validate(beddf)
+    error, warning = bed_class._validate(beddf)
     assert error == ""
     assert warning == ""
 
@@ -365,7 +361,7 @@ def test_symbolnull_failure__validate():
         dict(a=["19"], b=[44080953], c=[44084624], d=["AAK1"], e=[False])
     )
 
-    error, warning = bedsp_class._validate(bedDf)
+    error, warning = bed_class._validate(bedDf)
     expected_errors = (
         "BED file: You have no correct gene symbols. "
         "Make sure your gene symbol column (4th column) is formatted like so: "

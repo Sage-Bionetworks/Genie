@@ -5,12 +5,10 @@ import pytest
 import synapseclient
 
 from genie_registry.seg import seg
-from genie_registry.cbs import cbs
 
 syn = mock.create_autospec(synapseclient.Synapse)
 
 segClass = seg(syn, "SAGE")
-cbsClass = cbs(syn, "SAGE")
 
 
 def test_processing():
@@ -52,15 +50,11 @@ def test_processing():
     newSegDf = segClass._process(segDf)
     assert expectedSegDf.equals(newSegDf[expectedSegDf.columns])
 
-    newSegDf = cbsClass._process(segDf)
-    assert expectedSegDf.equals(newSegDf[expectedSegDf.columns])
-
 
 def test_validation_filename():
     with pytest.raises(AssertionError):
         segClass.validateFilename(["foo"])
     assert segClass.validateFilename(["genie_data_cna_hg19_SAGE.seg"]) == "seg"
-    assert cbsClass.validateFilename(["genie_data_cna_hg19_SAGE.cbs"]) == "cbs"
 
 
 def test_validation_perfect():
@@ -103,10 +97,6 @@ def test_valdation_invalid():
         "Seg: ID must start with GENIE-SAGE\n"
     )
     error, warning = segClass._validate(segDf)
-    assert error == expectedErrors
-    assert warning == ""
-
-    error, warning = cbsClass._validate(segDf)
     assert error == expectedErrors
     assert warning == ""
 
