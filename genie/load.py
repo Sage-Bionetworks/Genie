@@ -29,6 +29,10 @@ def store_file(
         syn (synapseclient.Synapse): Synapse connection
         filepath (str): Path to file
         parentid (str): Synapse Id of a folder or project
+        name (str, optional): Name of entity. Defaults to basename of your file path.
+        annotations (Dict, optional): Synapse annotations to the File Entity. Defaults to None.
+        used (List[str], optional): Entities used to generate file. Defaults to None.
+        version_comment (str, optional): File Entity version comment. Defaults to None.
 
     Returns:
         synapseclient.File: Synapse File entity
