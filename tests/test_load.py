@@ -3,7 +3,7 @@ from unittest.mock import patch
 import synapseclient
 from synapseclient.core.exceptions import SynapseTimeoutError
 
-from genie import load
+from genie import load, __version__
 
 
 def test_store_file(syn):
@@ -11,9 +11,9 @@ def test_store_file(syn):
     with patch.object(syn, "store") as patch_store:
         load.store_file(syn, "full/path", "syn1234")
         patch_store.assert_called_once_with(
-            synapseclient.File("full/path", parentId="syn1234"),
+            synapseclient.File("full/path", parentId="syn1234", versionComment=None),
             used=None,
-            executed=None
+            executed=f"https://github.com/Sage-Bionetworks/Genie/tree/v{__version__}",
         )
 
 
@@ -22,20 +22,14 @@ def test_store_file_annotations(syn):
     with patch.object(syn, "store") as patch_store:
         load.store_file(syn, "full/path", "syn1234", annotations={"test": "test"})
         patch_store.assert_called_once_with(
-            synapseclient.File("full/path", parentId="syn1234", annotations={"test": "test"}),
+            synapseclient.File(
+                "full/path",
+                parentId="syn1234",
+                versionComment=None,
+                annotations={"test": "test"},
+            ),
             used=None,
-            executed=None
-        )
-
-
-def test_store_file_provenance(syn):
-    """Test storing of file with provenance"""
-    with patch.object(syn, "store") as patch_store:
-        load.store_file(syn, "full/path", "syn1234", used="syn3333", executed="foo")
-        patch_store.assert_called_once_with(
-            synapseclient.File("full/path", parentId="syn1234"),
-            used="syn3333",
-            executed="foo"
+            executed=f"https://github.com/Sage-Bionetworks/Genie/tree/v{__version__}",
         )
 
 

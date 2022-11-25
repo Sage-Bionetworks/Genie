@@ -415,7 +415,7 @@ def runMAFinBED(
             parentid=center_mappingdf["stagingSynId"][
                 center_mappingdf["center"] == center
             ][0],
-            version_comment=genieVersion
+            version_comment=genieVersion,
         )
         os.unlink("mafinbed_filtered_variants.csv")
     return removed_variantsdf["removeVariants"]
@@ -515,7 +515,7 @@ def mutation_in_cis_filter(
                     syn=syn,
                     filepath="mutationsInCis_filtered_samples.csv",
                     parentid=stagingSynId[0],
-                    version_comment=genieVersion
+                    version_comment=genieVersion,
                 )
                 os.unlink("mutationsInCis_filtered_samples.csv")
     query_str = (
@@ -631,9 +631,7 @@ def store_gene_panel_files(
         print(gene_panel)
         if gene_panel in panelNames:
             os.rename(genePanel.path, newGenePanelPath)
-            annotations = {
-                "cBioFileFormat": "genePanel"
-            }
+            annotations = {"cBioFileFormat": "genePanel"}
             genePanelEntities.append(
                 load.store_file(
                     syn=syn,
@@ -1544,9 +1542,7 @@ def store_bed_files(
         for seq_assay in beddf["SEQ_ASSAY_ID"].unique():
             bed_seq_df = beddf[beddf["SEQ_ASSAY_ID"] == seq_assay]
             center = seq_assay.split("-")[0]
-            bed_seq_df = bed_seq_df[
-                bed_seq_df["Hugo_Symbol"] != bed_seq_df["ID"]
-            ]
+            bed_seq_df = bed_seq_df[bed_seq_df["Hugo_Symbol"] != bed_seq_df["ID"]]
             # There should always be a match here, because there should never
             # be a SEQ_ASSAY_ID that starts without the center name
             # If there is, check the bed db for SEQ_ASSAY_ID
@@ -1897,7 +1893,7 @@ def revise_metadata_files(syn, consortiumid, genie_version=None):
             syn=syn,
             filepath=meta_ent.path,
             parentid=consortiumid,
-            version_comment=genie_version
+            version_comment=genie_version,
         )
 
 

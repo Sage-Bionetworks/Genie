@@ -15,9 +15,13 @@ logger = logging.getLogger(__name__)
 
 # TODO Edit docstring
 def store_file(
-    syn: synapseclient.Synapse, filepath: str, parentid: str, name: str = None,
-    annotations: Dict = None, used: List[str] = None,
-    version_comment: str = None
+    syn: synapseclient.Synapse,
+    filepath: str,
+    parentid: str,
+    name: str = None,
+    annotations: Dict = None,
+    used: List[str] = None,
+    version_comment: str = None,
 ) -> synapseclient.File:
     """Stores file into Synapse
 
@@ -29,7 +33,9 @@ def store_file(
     Returns:
         synapseclient.File: Synapse File entity
     """
-    file_ent = synapseclient.File(filepath, parentId=parentid, versionComment=version_comment)
+    file_ent = synapseclient.File(
+        filepath, parentId=parentid, versionComment=version_comment
+    )
     if name is not None:
         file_ent.name = name
     if annotations is not None:
@@ -37,7 +43,7 @@ def store_file(
     file_ent = syn.store(
         file_ent,
         used=used,
-        executed=f"https://github.com/Sage-Bionetworks/Genie/tree/v{__version__}"
+        executed=f"https://github.com/Sage-Bionetworks/Genie/tree/v{__version__}",
     )
     return file_ent
 

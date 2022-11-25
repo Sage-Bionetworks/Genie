@@ -239,7 +239,7 @@ def main(
                 syn=syn,
                 filepath=casePath,
                 parentid=caseListSynId,
-                version_comment=genie_version
+                version_comment=genie_version,
             )
         )
 

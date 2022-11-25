@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pandas as pd
 import synapseclient
 
-from genie import database_to_staging, extract
+from genie import database_to_staging, extract, load
 
 FILEVIEW_SYNID = "syn12345"
 GENIE_VERSION = "vTEST"
@@ -30,7 +30,7 @@ def test_store_gene_panel_files(syn):
     with mock.patch.object(
         syn, "tableQuery", return_value=Tablequerydf(gene_paneldf)
     ) as patch_syn_table_query, mock.patch.object(
-        database_to_staging, "store_file", return_value=synapseclient.Entity()
+        load, "store_file", return_value=synapseclient.Entity()
     ) as patch_storefile, mock.patch.object(
         syn,
         "get",
@@ -59,12 +59,12 @@ def test_store_gene_panel_files(syn):
         )
         assert patch_syn_table_query.call_count == 2
         patch_storefile.assert_called_once_with(
-            syn,
-            os.path.join(database_to_staging.GENIE_RELEASE_DIR, "PANEL1.txt"),
-            parent=CONSORTIUM_SYNID,
-            genieVersion=GENIE_VERSION,
+            syn=syn,
+            filepath=os.path.join(database_to_staging.GENIE_RELEASE_DIR, "PANEL1.txt"),
+            parentid=CONSORTIUM_SYNID,
+            version_comment=GENIE_VERSION,
             name="PANEL1.txt",
-            cBioFileFormat="genePanel",
+            annotations={"cBioFileFormat": "genePanel"},
             used="syn3333.2",
         )
 
@@ -86,7 +86,7 @@ def test_store_assay_info_files(syn):
     ) as patch_create_version, patch.object(
         extract, "get_syntabledf", return_value=assay_infodf
     ) as patch_table_query, patch.object(
-        database_to_staging, "store_file", return_value=synapseclient.Entity()
+        load, "store_file", return_value=synapseclient.Entity()
     ) as patch_storefile:
         wes_ids = database_to_staging.store_assay_info_files(
             syn, GENIE_VERSION, FILEVIEW_SYNID, clinicaldf, CONSORTIUM_SYNID
@@ -98,10 +98,10 @@ def test_store_assay_info_files(syn):
             syn, f"select * from {FILEVIEW_SYNID} where SEQ_ASSAY_ID in ('A')"
         )
         patch_storefile.assert_called_once_with(
-            syn,
-            path,
-            parent=CONSORTIUM_SYNID,
-            genieVersion=GENIE_VERSION,
+            syn=syn,
+            filepath=path,
+            parentid=CONSORTIUM_SYNID,
+            version_comment=GENIE_VERSION,
             name="assay_information.txt",
             used=f"{FILEVIEW_SYNID}.2",
         )

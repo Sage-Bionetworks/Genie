@@ -486,13 +486,13 @@ class bed(FileTypeFormat):
                 "dataType": "genomicVariants",
                 "fundingAgency": "AACR",
                 "assay": "targetGeneSeq",
-                "fileStage": "staging"
+                "fileStage": "staging",
             }
             load.store_file(
                 syn=self.syn,
                 filepath=os.path.join(gene_panel_path, gene_panel_name),
                 parentid=parentid,
-                annotations=annotations
+                annotations=annotations,
             )
 
     def _process(self, beddf, seq_assay_id, newpath, parentid, create_panel=True):

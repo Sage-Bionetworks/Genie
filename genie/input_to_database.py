@@ -11,7 +11,14 @@ from synapseclient import Synapse
 from synapseclient.core.utils import to_unix_epoch_time
 import pandas as pd
 
-from genie import extract, load, process_functions, process_mutation, toRetract, validate
+from genie import (
+    extract,
+    load,
+    process_functions,
+    process_mutation,
+    toRetract,
+    validate,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -829,8 +836,6 @@ def center_input_to_database(
         logger.info(messageOut)
 
     # Store and remove log file
-    load.store_file(
-        syn=syn, filepath=log_path, parentid=genie_config["logs"]
-    )
+    load.store_file(syn=syn, filepath=log_path, parentid=genie_config["logs"])
     os.remove(log_path)
     logger.info("ALL PROCESSES COMPLETE")
