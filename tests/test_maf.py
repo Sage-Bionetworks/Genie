@@ -7,12 +7,10 @@ import synapseclient
 
 import genie_registry.maf
 from genie_registry.maf import maf
-from genie_registry.mafSP import mafSP
 
 syn = mock.create_autospec(synapseclient.Synapse)
 
 maf_class = maf(syn, "SAGE")
-mafsp_class = mafSP(syn, "SAGE")
 
 
 def test_invalidname_validateFilename():
@@ -48,9 +46,6 @@ def test_perfect_validation():
     )
 
     error, warning = maf_class._validate(mafDf)
-    assert error == ""
-    assert warning == ""
-    error, warning = mafsp_class._validate(mafDf)
     assert error == ""
     assert warning == ""
 
