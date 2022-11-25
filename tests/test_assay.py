@@ -1,10 +1,9 @@
 """Test assay information validation and processing"""
 import copy
-from unittest.mock import patch, create_autospec
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
-import synapseclient
 
 from genie_registry.assay import Assayinfo
 from genie import extract, process_functions
@@ -19,26 +18,28 @@ GDC_DATA_DICT = {
     }
 }
 
-SYN = create_autospec(synapseclient.Synapse)
-ASSAY_INFO = Assayinfo(SYN, "SAGE", genie_config={"sample": "syn1234"})
+
+@pytest.fixture()
+def assay_info(syn):
+    return Assayinfo(syn, "SAGE", genie_config={"sample": "syn1234"})
 
 
-def test_filetype():
-    assert ASSAY_INFO._fileType == "assayinfo"
+def test_filetype(assay_info):
+    assert assay_info._fileType == "assayinfo"
 
 
-def test_invalidname__validatefilename():
+def test_invalidname__validatefilename(assay_info):
     """Assertion error thrown for wrong filename"""
     with pytest.raises(AssertionError):
-        ASSAY_INFO.validateFilename(["foo"])
+        assay_info.validateFilename(["foo"])
 
 
-def test_correct__validatefilename():
+def test_correct__validatefilename(assay_info):
     """Filetype returned when filename valid"""
-    assert ASSAY_INFO.validateFilename(["assay_information.yaml"]) == "assayinfo"
+    assert assay_info.validateFilename(["assay_information.yaml"]) == "assayinfo"
 
 
-def test_validinput__validate():
+def test_validinput__validate(assay_info):
     """Valid input should have no errors or warnings"""
     assay_info_dict = {
         "SEQ_ASSAY_ID": ["SAGE-1", "SAGE-3"],
@@ -66,13 +67,13 @@ def test_validinput__validate():
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = ASSAY_INFO._validate(assay_info_df, "syn9999")
+        error, warning = assay_info._validate(assay_info_df, "syn9999")
         assert error == ""
         assert warning == ""
         patch_get_gdc.assert_called()
 
 
-def test_case__validate():
+def test_case__validate(assay_info):
     """Valid input should have no errors or warnings"""
     assay_info_dict = {
         "SEQ_ASSAY_ID": ["sage-1", "SAGE-3"],
@@ -100,13 +101,13 @@ def test_case__validate():
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = ASSAY_INFO._validate(assay_info_df, "syn9999")
+        error, warning = assay_info._validate(assay_info_df, "syn9999")
         assert error == ""
         assert warning == ""
         patch_get_gdc.assert_called()
 
 
-def test_underscore__validate():
+def test_underscore__validate(assay_info):
     """Valid input should have no errors or warnings"""
     assay_info_dict = {
         "SEQ_ASSAY_ID": ["SAGE_1", "SAGE-3"],
@@ -134,20 +135,20 @@ def test_underscore__validate():
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = ASSAY_INFO._validate(assay_info_df, "syn9999")
+        error, warning = assay_info._validate(assay_info_df, "syn9999")
         assert error == ""
         assert warning == ""
         patch_get_gdc.assert_called()
 
 
-def test__missingcols__validate():
+def test__missingcols__validate(assay_info):
     """Test missing columns"""
     assay_info_df = pd.DataFrame()
     test_dict = copy.deepcopy(GDC_DATA_DICT)
     with patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = ASSAY_INFO._validate(assay_info_df, "syn99999")
+        error, warning = assay_info._validate(assay_info_df, "syn99999")
     expected_errors = (
         "Assay_information.yaml: Must have SEQ_ASSAY_ID column.\n"
         "Assay_information.yaml: Must have is_paired_end column.\n"
@@ -177,7 +178,7 @@ def test__missingcols__validate():
     patch_get_gdc.assert_called()
 
 
-def test_fillcols__process():
+def test_fillcols__process(assay_info):
     """
     Standardization of SEQ_ASSAY_ID
     Add in CENTER, gene_padding, and variant_classifications if missing
@@ -185,7 +186,7 @@ def test_fillcols__process():
 
     assay_info_dict = {"SEQ_ASSAY_ID": ["SAGE-Foo_1"], "SEQ_PIPELINE_ID": ["SAGE_Foo"]}
     assay_info_df = pd.DataFrame(assay_info_dict)
-    processed_assay_df = ASSAY_INFO._process(assay_info_df)
+    processed_assay_df = assay_info._process(assay_info_df)
     expected_assay_df = pd.DataFrame(
         {
             "SEQ_ASSAY_ID": ["SAGE-FOO-1"],
@@ -199,7 +200,7 @@ def test_fillcols__process():
     assert expected_assay_df.equals(processed_assay_df[expected_assay_df.columns])
 
 
-def test_default10__process():
+def test_default10__process(assay_info):
     """
     gene_padding default 10
     """
@@ -211,7 +212,7 @@ def test_default10__process():
         "variant_classifications": ["test", "test"],
     }
     assay_info_df = pd.DataFrame(assay_info_dict)
-    processed_assay_df = ASSAY_INFO._process(assay_info_df)
+    processed_assay_df = assay_info._process(assay_info_df)
     expected_assay_df = pd.DataFrame(
         {
             "SEQ_ASSAY_ID": ["SAGE-1", "SAGE-2"],
@@ -224,7 +225,7 @@ def test_default10__process():
     assert expected_assay_df.equals(processed_assay_df[expected_assay_df.columns])
 
 
-def test_invalid__validate():
+def test_invalid__validate(assay_info):
     assay_info_dict = {
         "SEQ_ASSAY_ID": ["SAGE-1", "SAG-2"],
         "is_paired_end": [True, "foo"],
@@ -254,7 +255,7 @@ def test_invalid__validate():
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = ASSAY_INFO._validate(assay_info_df, "syn9999")
+        error, warning = assay_info._validate(assay_info_df, "syn9999")
         expected_errors = (
             "Assay_information.yaml: "
             "Please make sure all your SEQ_ASSAY_IDs start with your "
