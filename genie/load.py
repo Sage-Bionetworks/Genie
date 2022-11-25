@@ -96,7 +96,7 @@ def update_process_trackingdf(
     process_trackerdb_synid: str,
     center: str,
     process_type: str,
-    start: bool = True
+    start: bool = True,
 ):
     """
     Updates the processing tracking database

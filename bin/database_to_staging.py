@@ -183,7 +183,7 @@ def main(
             process_trackerdb_synid=processTrackerSynId,
             center="SAGE",
             process_type="dbToStage",
-            start=True
+            start=True,
         )
 
     centerMappingSynId = databaseSynIdMappingDf["Id"][
@@ -307,7 +307,7 @@ def main(
             process_trackerdb_synid=processTrackerSynId,
             center="SAGE",
             process_type="dbToStage",
-            start=False
+            start=False,
         )
 
     if not test:

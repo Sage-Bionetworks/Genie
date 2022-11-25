@@ -152,7 +152,7 @@ def main(args):
             process_trackerdb_synid=processTrackerSynId,
             center="SAGE",
             process_type="public",
-            start=True
+            start=True,
         )
 
     caseListEntities, genePanelEntities = consortium_to_public.consortiumToPublic(
@@ -213,7 +213,7 @@ def main(args):
             process_trackerdb_synid=processTrackerSynId,
             center="SAGE",
             process_type="public",
-            start=False
+            start=False,
         )
 
     if not args.test:
