@@ -162,6 +162,7 @@ def move_mutation(mutation_path, input_files_dir):
         move_and_configure_maf(mutation_path, input_files_dir)
 
 
+# TODO: move to etl.py
 def process_mutation_workflow(
     syn: Synapse,
     center: str,
@@ -276,6 +277,7 @@ def append_or_createdf(dataframe: pd.DataFrame, filepath: str):
         dataframe.to_csv(filepath, sep="\t", mode="a", index=False, header=None)
 
 
+# TODO: this is storeFile... move to load.py
 def store_full_maf(syn: Synapse, filepath: str, parentid: str):
     """Stores full maf file
 
@@ -288,6 +290,7 @@ def store_full_maf(syn: Synapse, filepath: str, parentid: str):
     syn.store(synapseclient.File(filepath, parentId=parentid))
 
 
+# TODO: move to load.py
 def store_narrow_maf(syn: Synapse, filepath: str, maf_tableid: str):
     """
     Stores the narrow maf in Synapse Table
@@ -309,6 +312,7 @@ def store_narrow_maf(syn: Synapse, filepath: str, maf_tableid: str):
         pass
 
 
+# TODO: move to transform.py
 def format_maf(mafdf: pd.DataFrame, center: str) -> pd.DataFrame:
     """Format maf file, shortens the maf file length
 
@@ -332,6 +336,7 @@ def format_maf(mafdf: pd.DataFrame, center: str) -> pd.DataFrame:
     return mafdf
 
 
+# TODO: move to etl.py
 def split_and_store_maf(
     syn: "Synapse",
     center: str,

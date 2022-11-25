@@ -10,6 +10,7 @@ import synapseutils
 from genie import (
     input_to_database,
     example_filetype_format,
+    extract,
     process_functions,
     process_mutation,
 )
@@ -161,9 +162,7 @@ def test_main_get_center_input_files():
     ) as patch_synapseutils_walk, patch.object(
         syn, "get", side_effect=syn_get_effects
     ) as patch_syn_get:
-        center_file_list = input_to_database.get_center_input_files(
-            syn, "syn12345", center
-        )
+        center_file_list = extract.get_center_input_files(syn, "syn12345", center)
 
         assert len(center_file_list) == len(expected_center_file_list)
         assert len(center_file_list[0]) == 2
@@ -200,7 +199,7 @@ def test_mutation_get_center_input_files():
     ) as patch_synapseutils_walk, patch.object(
         syn, "get", side_effect=syn_get_effects
     ) as patch_syn_get:
-        center_file_list = input_to_database.get_center_input_files(
+        center_file_list = extract.get_center_input_files(
             syn, "syn12345", center, process="mutation"
         )
         assert len(center_file_list) == len(expected_center_file_list)
@@ -218,7 +217,7 @@ def test_empty_get_center_input_files():
     with patch.object(
         synapseutils, "walk", return_value=walk_return_empty()
     ) as patch_synapseutils_walk:
-        center_file_list = input_to_database.get_center_input_files(
+        center_file_list = extract.get_center_input_files(
             syn, "syn12345", center, process="vcf"
         )
         assert center_file_list == []

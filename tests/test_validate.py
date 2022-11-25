@@ -7,7 +7,7 @@ import pytest
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from genie import validate, process_functions, example_filetype_format
+from genie import example_filetype_format, extract, validate
 
 CENTER = "SAGE"
 syn = mock.create_autospec(synapseclient.Synapse)
@@ -302,11 +302,11 @@ def test_perform_validate(genie_config):
     with patch.object(
         validate, "_check_parentid_permission_container", return_value=None
     ) as patch_check_parentid, patch.object(
-        process_functions, "get_genie_config", return_value=genie_config
+        extract, "get_genie_config", return_value=genie_config
     ) as patch_get_config, patch.object(
         validate, "_check_center_input"
     ) as patch_check_center, patch.object(
-        process_functions, "_get_oncotreelink"
+        extract, "_get_oncotreelink"
     ) as patch_get_onco, patch.object(
         validate.GenieValidationHelper,
         "validate_single_file",
