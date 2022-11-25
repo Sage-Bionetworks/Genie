@@ -162,9 +162,7 @@ def test_main_get_center_input_files():
     ) as patch_synapseutils_walk, patch.object(
         syn, "get", side_effect=syn_get_effects
     ) as patch_syn_get:
-        center_file_list = extract.get_center_input_files(
-            syn, "syn12345", center
-        )
+        center_file_list = extract.get_center_input_files(syn, "syn12345", center)
 
         assert len(center_file_list) == len(expected_center_file_list)
         assert len(center_file_list[0]) == 2

@@ -14,6 +14,7 @@ class Argparser:
         databasetosynid_mappingdf = pd.DataFrame(database_dict)
         return databasetosynid_mappingdf
 
+
 ENTITY = synapseclient.Project("foo", annotations={"dbMapping": ["syn1234"]})
 
 
