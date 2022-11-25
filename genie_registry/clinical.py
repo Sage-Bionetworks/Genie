@@ -9,7 +9,7 @@ import pandas as pd
 import synapseclient
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import process_functions
+from genie import extract, process_functions
 from genie.database_to_staging import redact_phi
 
 logger = logging.getLogger(__name__)
@@ -336,16 +336,16 @@ class Clinical(FileTypeFormat):
         # Remove unwanted clinical columns prior to update
         # clinicalMerged = clinicalMerged.drop(clinicalMerged.columns[
         #    ~clinicalMerged.columns.isin(clinicalTemplate.columns)],1)
-        ethnicity_mapping = process_functions.get_syntabledf(
+        ethnicity_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['ethnicity_mapping']}"
         )
-        race_mapping = process_functions.get_syntabledf(
+        race_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['race_mapping']}"
         )
-        sex_mapping = process_functions.get_syntabledf(
+        sex_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['sex_mapping']}"
         )
-        sampletype_mapping = process_functions.get_syntabledf(
+        sampletype_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['sampletype_mapping']}"
         )
         # Attach MSK to centers
@@ -506,16 +506,16 @@ class Clinical(FileTypeFormat):
             {"ONCOTREE_CODE": list(oncotree_mapping_dict.keys())}
         )
 
-        ethnicity_mapping = process_functions.get_syntabledf(
+        ethnicity_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['ethnicity_mapping']}"
         )
-        race_mapping = process_functions.get_syntabledf(
+        race_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['race_mapping']}"
         )
-        sex_mapping = process_functions.get_syntabledf(
+        sex_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['sex_mapping']}"
         )
-        sampletype_mapping = process_functions.get_syntabledf(
+        sampletype_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['sampletype_mapping']}"
         )
         # CHECK: SAMPLE_ID

@@ -12,7 +12,7 @@ from synapseclient.core.utils import to_unix_epoch_time
 import synapseutils
 import pandas as pd
 
-from . import process_functions, process_mutation, toRetract, validate
+from genie import extract, process_functions, process_mutation, toRetract, validate
 
 logger = logging.getLogger(__name__)
 
@@ -28,25 +28,8 @@ Could potentially get all the inforamation of the file entity right here
 To avoid the syn.get rest call later which doesn't actually download the file
 """
 
-# def rename_file(ent):
-#     '''
-#     Gets file from synapse and renames the file if necessary.
 
-#     Adds the expected name as an annotation to a Synapse File object.
-
-#     Args:
-#         synid : Synapse id or entity
-
-#     Returns:
-#         entity with annotation set for path of corrected file
-#     '''
-#     dirpath = os.path.dirname(ent.path)
-#     expectedpath = os.path.join(dirpath, ent.name)
-
-#     ent.annotations.expectedPath = expectedpath
-#     return ent
-
-
+# TODO: add to transform.py
 def entity_date_to_timestamp(entity_date_time):
     """Convert Synapse object date/time string (from modifiedOn or createdOn properties) to a timestamp."""
 
@@ -55,58 +38,7 @@ def entity_date_to_timestamp(entity_date_time):
     return to_unix_epoch_time(date_time_obj)
 
 
-def get_center_input_files(syn, synid, center, process="main", downloadFile=True):
-    """
-    This function walks through each center's input directory
-    to get a list of tuples of center files
-
-    Args:
-        syn: Synapse object
-        synid: Center input folder synid
-        center: Center name
-        process: Process type includes, main, vcf, maf and mafSP.
-                 Defaults to main such that the vcf
-
-    Returns:
-        List of entities with the correct format to pass into validation
-    """
-    logger.info("GETTING {center} INPUT FILES".format(center=center))
-    clinical_pair_name = [
-        "data_clinical_supp_sample_{center}.txt".format(center=center),
-        "data_clinical_supp_patient_{center}.txt".format(center=center),
-    ]
-
-    center_files = synapseutils.walk(syn, synid)
-    clinicalpair_entities = []
-    prepared_center_file_list = []
-
-    for _, _, entities in center_files:
-        for name, ent_synid in entities:
-            # This is to remove vcfs from being validated during main
-            # processing. Often there are too many vcf files, and it is
-            # not necessary for them to be run everytime.
-            if name.endswith(".vcf") and process != "mutation":
-                continue
-
-            ent = syn.get(ent_synid, downloadFile=downloadFile)
-
-            # Clinical file can come as two files.
-            # The two files need to be merged together which is
-            # why there is this format
-
-            if name in clinical_pair_name:
-                clinicalpair_entities.append(ent)
-                continue
-
-            prepared_center_file_list.append([ent])
-
-    if clinicalpair_entities:
-        # clinicalpair_entities = [x for x in clinicalpair]
-        prepared_center_file_list.append(clinicalpair_entities)
-
-    return prepared_center_file_list
-
-
+# TODO: Add to validation.py
 def check_existing_file_status(validation_status_table, error_tracker_table, entities):
     """
     This function checks input files against the existing validation and error
@@ -169,6 +101,7 @@ def check_existing_file_status(validation_status_table, error_tracker_table, ent
     return {"status_list": statuses, "error_list": errors, "to_validate": to_validate}
 
 
+# TODO: Add to validation.py
 def _send_validation_error_email(syn, user, message_objs):
     """
     Sends validation error email
@@ -202,6 +135,7 @@ def _send_validation_error_email(syn, user, message_objs):
     )
 
 
+# TODO: Add to validation.py
 def _get_status_and_error_list(valid, message, entities):
     """
     Helper function to return the status and error list of the
@@ -225,6 +159,7 @@ def _get_status_and_error_list(valid, message, entities):
     return input_status_list, invalid_errors_list
 
 
+# TODO: Add to validation.py
 def validatefile(
     syn,
     project_id,
@@ -314,6 +249,7 @@ def validatefile(
 
 
 # TODO: Create ProcessHelper class
+# TODO: Add to transform.py
 def processfiles(
     syn,
     validfiles,
@@ -376,6 +312,7 @@ def processfiles(
     logger.info("ALL DATA STORED IN DATABASE")
 
 
+# TODO: Add to validation.py
 def append_duplication_errors(duplicated_filesdf, user_message_dict):
     """Duplicated files can occur because centers can upload files with the
     same filename in different folders.  This is to append duplication
@@ -408,6 +345,7 @@ def append_duplication_errors(duplicated_filesdf, user_message_dict):
     return user_message_dict
 
 
+# TODO: Add to validation.py
 def get_duplicated_files(validation_statusdf):
     """
     Check for duplicated files.  There should be no duplication,
@@ -447,6 +385,7 @@ def get_duplicated_files(validation_statusdf):
     return duplicated_filesdf
 
 
+# TODO: Add to validation.py
 def build_validation_status_table(input_valid_statuses: List[dict]):
     """Build validation status dataframe
 
@@ -492,6 +431,7 @@ def build_validation_status_table(input_valid_statuses: List[dict]):
     return input_valid_statusdf
 
 
+# TODO: Add to validation.py
 def build_error_tracking_table(invalid_errors: List[dict]):
     """Build error tracking dataframe
 
@@ -522,6 +462,7 @@ def build_error_tracking_table(invalid_errors: List[dict]):
     return invalid_errorsdf
 
 
+# TODO: Add to validation.py
 def update_status_and_error_tables(
     syn,
     input_valid_statusdf,
@@ -562,6 +503,7 @@ def update_status_and_error_tables(
     )
 
 
+# TODO: Add to validation.py
 def _update_tables_content(validation_statusdf, error_trackingdf):
     """Update validation status and error tracking dataframes with duplicated
     files.  Also update the error table to only contain errors - centers
@@ -622,6 +564,7 @@ def _update_tables_content(validation_statusdf, error_trackingdf):
     }
 
 
+# TODO: Add to validation.py
 def validation(
     syn, project_id, center, process, center_files, format_registry, genie_config
 ) -> pd.DataFrame:
@@ -725,7 +668,7 @@ def validation(
     return valid_filesdf[["id", "path", "fileType", "name"]]
 
 
-# TODO: probably should rename this for clarity
+# TODO: etl.py
 def center_input_to_database(
     syn: Synapse,
     project_id: str,
@@ -790,7 +733,9 @@ def center_input_to_database(
 
     center_input_synid = genie_config["center_config"][center]["inputSynId"]
     logger.info("Center: " + center)
-    center_files = get_center_input_files(syn, center_input_synid, center, process)
+    center_files = extract.get_center_input_files(
+        syn, center_input_synid, center, process
+    )
 
     # only validate if there are center files
     if center_files:
@@ -825,7 +770,7 @@ def center_input_to_database(
 
         processTrackerSynId = genie_config["processTracker"]
         # Add process tracker for time start
-        processTrackerDf = process_functions.get_syntabledf(
+        processTrackerDf = extract.get_syntabledf(
             syn=syn,
             query_string=(
                 f"SELECT timeStartProcessing FROM {processTrackerSynId} "
@@ -862,7 +807,7 @@ def center_input_to_database(
         )
 
         # Should add in this process end tracking before the deletion of samples
-        processTrackerDf = process_functions.get_syntabledf(
+        processTrackerDf = extract.get_syntabledf(
             syn=syn,
             query_string=(
                 f"SELECT timeEndProcessing FROM {processTrackerSynId} "

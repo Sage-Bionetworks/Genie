@@ -8,7 +8,7 @@ import pandas as pd
 import synapseclient
 from synapseclient.core.utils import to_unix_epoch_time
 
-from genie import process_functions
+from genie import extract, process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ def update_samples_in_release_table(
         release:  GENIE release number (ie. 5.3-consortium)
         samples_in_release_synid: Synapse Id of 'samples in release' Table
     """
-    clinical_ent = syn.get(file_mapping["clinical"], followLink=True)
+    clinical_ent = syn.get(file_mapping["sample"], followLink=True)
     clinicaldf = pd.read_csv(clinical_ent.path, sep="\t", comment="#")
     cols = [i["name"] for i in list(syn.getTableColumns(samples_in_release_synid))]
 
@@ -78,11 +78,10 @@ def update_samples_in_release_table(
         # no need to return schema variable because it isn't used
         syn.store(schema)
     # Columns of samples in release
-    samples_per_release = syn.tableQuery(
-        'SELECT SAMPLE_ID, "{}" FROM {}'.format(release, samples_in_release_synid)
+    samples_per_releasedf = extract.get_syntabledf(
+        syn=syn,
+        query_string=f'SELECT SAMPLE_ID, "{release}" FROM {samples_in_release_synid}',
     )
-
-    samples_per_releasedf = samples_per_release.asDataFrame()
     new_samples = clinicaldf[["SAMPLE_ID"]][
         ~clinicaldf.SAMPLE_ID.isin(samples_per_releasedf.SAMPLE_ID)
     ]
@@ -117,15 +116,11 @@ def update_cumulative_sample_table(
         cumulative_sample_count_synid: Synapse Id of
             'Cumulative sample count' Table
     """
-
-    sample_count_per_round = syn.tableQuery(
-        "SELECT * FROM {} where Release = '{}'".format(
-            cumulative_sample_count_synid, release
-        )
+    sample_count_per_rounddf = extract.get_syntabledf(
+        syn=syn,
+        query_string=f"SELECT * FROM {cumulative_sample_count_synid} where Release = '{release}'",
     )
-    sample_count_per_rounddf = sample_count_per_round.asDataFrame()
-
-    clinical_ent = syn.get(file_mapping["clinical"], followLink=True)
+    clinical_ent = syn.get(file_mapping["sample"], followLink=True)
     clinicaldf = pd.read_csv(clinical_ent.path, sep="\t", comment="#")
     clinicaldf.columns = [i.upper() for i in clinicaldf.columns]
     if clinicaldf.get("CENTER") is None:
@@ -174,33 +169,6 @@ def update_cumulative_sample_table(
     )
 
 
-def get_file_mapping(syn, release_folder_synid):
-    """
-    Get file mapping between important files needed for dashboard and
-    their synapse ids
-
-    Args:
-        syn:  synapse object
-        release_folder_synid: synapse id of release
-
-    """
-    files = syn.getChildren(release_folder_synid)
-    file_mapping = dict()
-    for metadata in files:
-        filename = metadata["name"]
-        synid = metadata["id"]
-        if not filename.startswith("meta"):
-            if filename.startswith("data_clinical_sample"):
-                file_mapping["clinical"] = synid
-            elif filename.endswith("fusions.txt"):
-                file_mapping["fusion"] = synid
-            elif filename.endswith("CNA.txt"):
-                file_mapping["cna"] = synid
-            elif filename.endswith(".seg"):
-                file_mapping["seg"] = synid
-    return file_mapping
-
-
 def update_release_numbers(syn, database_mappingdf, release=None):
     """
     Updates all release dashboard numbers or specific release number
@@ -221,15 +189,16 @@ def update_release_numbers(syn, database_mappingdf, release=None):
     release_folder_fileview_synid = database_mappingdf["Id"][
         database_mappingdf["Database"] == "releaseFolder"
     ].values[0]
-    release_folder = syn.tableQuery(
-        "select id,name from %s" % release_folder_fileview_synid
-        + " where name not like 'Release%' and name <> 'case_lists' and "
-        + "name not like '%.0.%'"
+    release_folder = syn.tableQuery()
+    query_str = (
+        f"select id,name from {release_folder_fileview_synid} where "
+        "name not like 'Release%' and name <> 'case_lists' and "
+        "name not like '%.0.%'"
     )
-    release_folderdf = release_folder.asDataFrame()
+    release_folderdf = extract.get_syntabledf(syn=syn, query_string=query_str)
 
     for rel_synid, rel_name in zip(release_folderdf.id, release_folderdf.name):
-        file_mapping = get_file_mapping(syn, rel_synid)
+        file_mapping = extract.get_file_mapping(syn, rel_synid)
         # If release is specified, only process on that,
         # otherwise process for all
         if release is None or release == rel_name:
@@ -255,18 +224,17 @@ def update_database_numbers(syn, database_mappingdf):
         database_mappingdf["Database"] == "cumulativeSampleCount"
     ].values[0]
     # Database
-    database_count = syn.tableQuery(
-        "SELECT * FROM %s where Release = 'Database'" % cumulative_sample_count_synid
+    database_countdf = extract.get_syntabledf(
+        syn=syn,
+        query_string=f"SELECT * FROM {cumulative_sample_count_synid} where Release = 'Database'",
     )
-    database_countdf = database_count.asDataFrame()
-    clinical = syn.tableQuery("select CENTER from syn7517674")
-    clinicaldf = clinical.asDataFrame()
+    clinicaldf = extract.get_syntabledf(
+        syn=syn, query_string="select CENTER from syn7517674"
+    )
     clinincal_counts = clinicaldf["CENTER"].value_counts()
     clinincal_counts["Total"] = sum(clinincal_counts)
     clinincal_counts.name = "Clinical"
-
-    fusion = syn.tableQuery("select * from syn7893268")
-    fusiondf = fusion.asDataFrame()
+    fusiondf = extract.get_syntabledf(syn=syn, query_string="select * from syn7893268")
     fusion_counts = fusiondf["CENTER"][
         ~fusiondf["TUMOR_SAMPLE_BARCODE"].duplicated()
     ].value_counts()
@@ -288,9 +256,7 @@ def update_database_numbers(syn, database_mappingdf):
             cna_numbers[center] = len(samples) - 1
     cna_counts = pd.Series(cna_numbers)
     cna_counts["Total"] = sum(cna_counts)
-
-    seg = syn.tableQuery("select * from syn7893341")
-    segdf = seg.asDataFrame()
+    segdf = extract.get_syntabledf(syn=syn, query_string="select * from syn7893341")
     seg_counts = segdf["CENTER"][~segdf["ID"].duplicated()].value_counts()
     seg_counts["Total"] = sum(seg_counts)
 
@@ -334,9 +300,9 @@ def update_oncotree_code_tables(syn, database_mappingdf):
     oncotree_distribution_synid = database_mappingdf["Id"][
         database_mappingdf["Database"] == "oncotree"
     ].values[0]
-
-    clinical = syn.tableQuery("select * from syn7517674")
-    clinicaldf = clinical.asDataFrame()
+    clinicaldf = extract.get_syntabledf(
+        syn=syn, query_string="select * from syn7517674"
+    )
 
     # DISTRIBUTION OF ONCOTREE CODE TABLE UPDATE
     oncotree_code_distributiondf = pd.DataFrame(
@@ -354,15 +320,11 @@ def update_oncotree_code_tables(syn, database_mappingdf):
     )
     oncotree_code_distributiondf["Oncotree_Code"] = oncotree_code_distributiondf.index
 
-    oncotree_distribution_db = syn.tableQuery(
-        "SELECT %s FROM %s"
-        % (
-            "Oncotree_Code," + ",".join(clinicaldf["CENTER"].unique()) + ",Total",
-            oncotree_distribution_synid,
-        )
+    center_string = ",".join(clinicaldf["CENTER"].unique())
+    oncotree_distribution_dbdf = extract.get_syntabledf(
+        syn=syn,
+        query_string=f"SELECT Oncotree_Code,{center_string},Total  FROM {oncotree_distribution_synid}",
     )
-
-    oncotree_distribution_dbdf = oncotree_distribution_db.asDataFrame()
     process_functions.updateDatabase(
         syn,
         oncotree_distribution_dbdf,
@@ -409,16 +371,10 @@ def update_oncotree_code_tables(syn, database_mappingdf):
         sum, axis=1
     )
     primary_code_distributiondf["Oncotree_Code"] = primary_code_distributiondf.index
-
-    primary_code_dist_db = syn.tableQuery(
-        "SELECT %s FROM %s"
-        % (
-            "Oncotree_Code," + ",".join(clinicaldf["CENTER"].unique()) + ",Total",
-            primary_code_synId,
-        )
+    primary_code_dist_dbdf = extract.get_syntabledf(
+        syn=syn,
+        query_string=f"SELECT Oncotree_Code,{center_string},Total  FROM {primary_code_synId}",
     )
-
-    primary_code_dist_dbdf = primary_code_dist_db.asDataFrame()
     process_functions.updateDatabase(
         syn,
         primary_code_dist_dbdf,
@@ -447,12 +403,10 @@ def update_sample_difference_table(syn, database_mappingdf):
     ].values[0]
 
     # UPDATE DIFF TABLE
-    sample_count_per_round = syn.tableQuery(
-        "SELECT * FROM %s where Center <> 'Total' and Release <> 'Database'"
-        % cumulative_sample_count_synid
+    sample_count_per_rounddf = extract.get_syntabledf(
+        syn=syn,
+        query_string=f"SELECT * FROM {cumulative_sample_count_synid} where Center <> 'Total' and Release <> 'Database'",
     )
-
-    sample_count_per_rounddf = sample_count_per_round.asDataFrame()
     releases = list(sample_count_per_rounddf["Release"].unique())
     # sort the releases and remove public releases
     releases.sort()
@@ -495,9 +449,9 @@ def update_sample_difference_table(syn, database_mappingdf):
         difference["Center"] = difference.index
         difference["Release"] = release_name
         diff_between_releasesdf = pd.concat([diff_between_releasesdf, difference])
-
-    difftable_db = syn.tableQuery("SELECT * FROM %s" % sample_diff_count_synid)
-    difftable_dbdf = difftable_db.asDataFrame()
+    difftable_dbdf = extract.get_syntabledf(
+        syn=syn, query_string=f"SELECT * FROM {sample_diff_count_synid}"
+    )
     difftable_dbdf = difftable_dbdf.fillna(0)
     new_values = (
         diff_between_releasesdf[["Clinical", "Mutation", "CNV", "SEG", "Fusions"]]
@@ -531,11 +485,8 @@ def update_data_completeness_table(syn, database_mappingdf):
         database_mappingdf["Database"] == "dataCompletion"
     ].values[0]
 
-    sample = syn.tableQuery("select * from syn7517674")
-    sampledf = sample.asDataFrame()
-    patient = syn.tableQuery("select * from syn7517669")
-    patientdf = patient.asDataFrame()
-
+    sampledf = extract.get_syntabledf(syn=syn, query_string="select * from syn7517674")
+    patientdf = extract.get_syntabledf(syn=syn, query_string="select * from syn7517669")
     data_completenessdf = pd.DataFrame()
     center_infos = sampledf.CENTER.drop_duplicates().apply(
         lambda center: get_center_data_completion(center, sampledf)
@@ -548,9 +499,9 @@ def update_data_completeness_table(syn, database_mappingdf):
     )
     for center_info in center_infos:
         data_completenessdf = pd.concat([data_completenessdf, center_info])
-
-    data_completeness_db = syn.tableQuery("select * from %s" % data_completion_synid)
-    data_completeness_dbdf = data_completeness_db.asDataFrame()
+    data_completeness_dbdf = extract.get_syntabledf(
+        syn=syn, query_string=f"select * from {data_completion_synid}"
+    )
     data_completenessdf.columns = data_completeness_dbdf.columns
     process_functions.updateDatabase(
         syn,
@@ -579,10 +530,9 @@ def update_wiki(syn, database_mappingdf):
     primary_code_synId = database_mappingdf["Id"][
         database_mappingdf["Database"] == "primaryCode"
     ].values[0]
-
-    centers = syn.tableQuery("select distinct(CENTER) as CENTER from syn7517674")
-
-    centersdf = centers.asDataFrame()
+    centersdf = extract.get_syntabledf(
+        syn=syn, query_string="select distinct(CENTER) as CENTER from syn7517674"
+    )
     now = datetime.datetime.now()
     markdown = [
         "_Updated {month}/{day}/{year}_\n\n".format(
@@ -636,16 +586,17 @@ def update_data_release_file_table(syn, database_mappingdf):
     # Add this query so that the fileview is indexed to include the
     # new release folder
     syn.tableQuery(f"select * from {release_folder_fileview_synid} limit 1")
-    release_folder = syn.tableQuery(
-        "select id,name from %s" % release_folder_fileview_synid
-        + " where name not like 'Release%' and name <> 'case_lists' "
-        + "and name not like '0.%'"
+    query_str = (
+        f"select id,name from {release_folder_fileview_synid} where "
+        "name not like 'Release%' and name <> 'case_lists' "
+        "and name not like '0.%'"
     )
-    release_folderdf = release_folder.asDataFrame()
+    release_folderdf = extract.get_syntabledf(syn=syn, query_string=query_str)
 
     data_release_table_synid = "syn16804261"
-    data_release_table = syn.tableQuery("select * from %s" % data_release_table_synid)
-    data_release_tabledf = data_release_table.asDataFrame()
+    data_release_tabledf = extract.get_syntabledf(
+        syn=syn, query_string=f"select * from {data_release_table_synid}"
+    )
 
     not_in_release_tabledf = release_folderdf[
         ~release_folderdf.name.isin(data_release_tabledf.release)
@@ -728,14 +679,13 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
         database_mappingdf["Database"] == "clinicalKeyDecrease"
     ].values[0]
 
-    release_folder = syn.tableQuery(
-        f"select id,name from {release_folder_fileview_synid} "
-        "where name not like 'Release%' and name <> 'case_lists' "
+    query_str = (
+        f"select id,name from {release_folder_fileview_synid} where "
+        "name not like 'Release%' and name <> 'case_lists' "
         "and name not like '%.0.%' and name not like '%-public' "
         "and name <> 'potential_artifacts'"
     )
-
-    release_folderdf = release_folder.asDataFrame()
+    release_folderdf = extract.get_syntabledf(syn=syn, query_string=query_str)
     # Set release number as a numerical value since string "10" < "9"
     # Also can't set by created on date, because sometimes
     # there are patch releases
@@ -833,10 +783,9 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
     center_decrease_mapping = center_decrease_mapping.transpose()
     center_decrease_mapping["CENTER"] = center_decrease_mapping.index
 
-    clinical_key_decrease = syn.tableQuery(
-        "select * from {0}".format(clinical_key_decrease_synid)
+    clinical_key_decreasedbdf = extract.get_syntabledf(
+        syn=syn, query_string=f"select * from {clinical_key_decrease_synid}"
     )
-    clinical_key_decreasedbdf = clinical_key_decrease.asDataFrame()
     process_functions.updateDatabase(
         syn,
         clinical_key_decreasedbdf,
@@ -893,10 +842,13 @@ def main():
     syn = process_functions.synLogin(args)
     if args.staging:
         # Database to Synapse Id mapping Table
+        # TODO: use project ids instead of table ids
         database_mapping_synid = "syn12094210"
     else:
         database_mapping_synid = "syn10967259"
 
+    # TODO: get genie config here... that would be a lot easier
+    # extract.get_genie_config(syn=syn, project_id=)
     database_mapping = syn.tableQuery("select * from %s" % database_mapping_synid)
     database_mappingdf = database_mapping.asDataFrame()
 

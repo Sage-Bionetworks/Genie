@@ -3,7 +3,7 @@ import argparse
 
 import pandas as pd
 
-from . import process_functions
+from . import extract, process_functions
 
 
 def retract_samples(syn, database_synid, col, remove_values):
@@ -38,53 +38,49 @@ def retract(syn, project_id):
         project_id: Synapse Project ID with a database mapping table
     """
 
-    patientRetract = syn.tableQuery(
-        "select * from %s"
-        % process_functions.getDatabaseSynId(
-            syn, tableName="patientRetraction", project_id=project_id
-        )
+    pat_retraction_synid = extract.getDatabaseSynId(
+        syn=syn, tableName="patientRetraction", project_id=project_id
     )
-    patientRetractIds = patientRetract.asDataFrame()
-    # grab all clinical samples that belong to patients in the patient clinical file and append to sample list
-    sampleClinical = syn.tableQuery(
-        "select * from %s"
-        % process_functions.getDatabaseSynId(
-            syn, tableName="sample", project_id=project_id
-        )
+    patientRetractIds = extract.get_syntabledf(
+        syn=syn, query_string=f"select * from {pat_retraction_synid}"
     )
-    sampleClinicalDf = sampleClinical.asDataFrame()
+    # grab all clinical samples that belong to patients in the patient
+    # clinical file and append to sample list
+    sample_synid = extract.getDatabaseSynId(
+        syn=syn, tableName="sample", project_id=project_id
+    )
+    sampleClinicalDf = extract.get_syntabledf(
+        syn=syn, query_string=f"select * from {sample_synid}"
+    )
+
     appendSamples = sampleClinicalDf["SAMPLE_ID"][
         sampleClinicalDf["PATIENT_ID"].isin(patientRetractIds.geniePatientId)
     ]
 
-    sampleRetract = syn.tableQuery(
-        "select * from %s"
-        % process_functions.getDatabaseSynId(
-            syn, tableName="sampleRetraction", project_id=project_id
-        )
+    sample_retract_synid = extract.getDatabaseSynId(
+        syn=syn, tableName="sampleRetraction", project_id=project_id
     )
-    sampleRetractIds = sampleRetract.asDataFrame()
-
+    sampleRetractIds = extract.get_syntabledf(
+        syn=syn, query_string=f"select * from {sample_retract_synid}"
+    )
     allRetractedSamples = pd.concat([sampleRetractIds["genieSampleId"], appendSamples])
 
     # Only need to retract clinical data, because the rest of the data is filtered by clinical data
     # Sample Clinical Data
     retract_samples(
-        syn,
-        process_functions.getDatabaseSynId(
-            syn, tableName="sample", project_id=project_id
-        ),
-        "SAMPLE_ID",
-        allRetractedSamples,
+        syn=syn,
+        database_synid=sample_synid,
+        col="SAMPLE_ID",
+        remove_values=allRetractedSamples,
     )
     # Patient Clinical Data
     retract_samples(
-        syn,
-        process_functions.getDatabaseSynId(
+        syn=syn,
+        database_synid=extract.getDatabaseSynId(
             syn, tableName="patient", project_id=project_id
         ),
-        "PATIENT_ID",
-        patientRetractIds["geniePatientId"],
+        col="PATIENT_ID",
+        remove_values=patientRetractIds["geniePatientId"],
     )
 
 

@@ -15,7 +15,7 @@ import pyranges
 import synapseclient
 import synapseutils
 
-from . import process_functions
+from . import extract, process_functions
 from . import __version__
 
 logger = logging.getLogger(__name__)
@@ -39,28 +39,7 @@ SV_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_sv_%s.txt")
 BED_DIFFS_SEQASSAY_PATH = os.path.join(GENIE_RELEASE_DIR, "diff_%s.csv")
 
 
-def find_caselistid(syn, parentid):
-    """
-    Search for case_lists folder based on parentId given
-
-    Args:
-        syn: Synapse object
-        parentid: Synapse Id of Folder or Project
-
-    Returns:
-        string: Synapse id of case list
-    """
-    release_ents = synapseutils.walk(syn, parentid)
-    release_folders = next(release_ents)
-    # if list is empty
-    if not release_folders[1]:
-        caselist_folder = synapseclient.Folder(name="case_lists", parent=parentid)
-        caselistid = syn.store(caselist_folder).id
-    else:
-        caselistid = release_folders[1][0][1]
-    return caselistid
-
-
+# TODO: Add to load.py
 def store_file(
     syn,
     filePath,
@@ -107,6 +86,7 @@ def store_file(
     return ent
 
 
+# TODO: Add to transform.py
 def _to_redact_interval(df_col):
     """
     Determines interval values that are <18 and >89 that need to be redacted
@@ -134,6 +114,7 @@ def _to_redact_interval(df_col):
     return to_redact, to_redact_pediatric
 
 
+# TODO: Add to transform.py
 def _redact_year(df_col):
     """Redacts year values that have < or >
 
@@ -152,6 +133,7 @@ def _redact_year(df_col):
     return df_col
 
 
+# TODO: Add to transform.py
 def _to_redact_difference(df_col_year1, df_col_year2):
     """Determine if difference between year2 and year1 is > 89
 
@@ -170,6 +152,7 @@ def _to_redact_difference(df_col_year1, df_col_year2):
     return to_redact
 
 
+# TODO: Add to transform.py
 def redact_phi(
     clinicaldf, interval_cols_to_redact=["AGE_AT_SEQ_REPORT", "INT_CONTACT", "INT_DOD"]
 ):
@@ -210,6 +193,7 @@ def redact_phi(
     return clinicaldf
 
 
+# TODO: Add to transform.py
 def remove_maf_samples(mafdf: pd.DataFrame, keep_samples: list) -> pd.DataFrame:
     """Remove samples from maf file
 
@@ -270,6 +254,7 @@ def get_whitelist_variants_idx(mafdf):
     return maf_variants.isin(variants) | match_start_end
 
 
+# TODO: Add to transform.py
 def configure_maf(mafdf, remove_variants, flagged_variants):
     """Configures each maf dataframe, does germline filtering
 
@@ -371,6 +356,7 @@ def configure_maf(mafdf, remove_variants, flagged_variants):
     return mafdf
 
 
+# TODO: Add to transform.py
 def calculate_missing_variant_counts(
     depth: pd.Series, alt_count: pd.Series, ref_count: pd.Series
 ) -> dict:
@@ -409,6 +395,7 @@ def calculate_missing_variant_counts(
     return {"depth": depth, "ref_count": ref_count, "alt_count": alt_count}
 
 
+# TODO: Add to transform.py
 def runMAFinBED(
     syn,
     center_mappingdf,
@@ -482,6 +469,7 @@ def runMAFinBED(
     return removed_variantsdf["removeVariants"]
 
 
+# TODO: Add to transform.py
 def seq_date_filter(clinicalDf, processingDate, consortiumReleaseCutOff):
     """
     Filter samples by seq date
@@ -518,6 +506,7 @@ def sample_class_filter(clinical_df: pd.DataFrame) -> list:
     return remove_samples
 
 
+# TODO: Add to transform.py
 def mutation_in_cis_filter(
     syn,
     skipMutationsInCis,
@@ -549,18 +538,19 @@ def mutation_in_cis_filter(
             os.path.dirname(os.path.abspath(__file__)), "../R/mergeCheck.R"
         )
         command = ["Rscript", mergeCheck_script]
+        # TODO: deprecate genie password soon
         if genie_user is not None and genie_pass is not None:
             command.extend(["--syn_user", genie_user, "--syn_pass", genie_pass])
         if test:
             command.append("--testing")
+        # TODO: use subprocess.run instead
         subprocess.check_call(command)
         # Store each centers mutations in cis to their staging folder
-        mergeCheck = syn.tableQuery(
-            "select * from {} where Center in ('{}')".format(
-                variant_filtering_synId, "','".join(center_mappingdf.center)
-            )
+        center_str = "','".join(center_mappingdf.center)
+        query_str = (
+            f"select * from {variant_filtering_synId} where Center in ('{center_str}')"
         )
-        mergeCheckDf = mergeCheck.asDataFrame()
+        mergeCheckDf = extract.get_syntabledf(syn=syn, query_string=query_str)
         for center in mergeCheckDf.Center.unique():
             if not pd.isnull(center):
                 stagingSynId = center_mappingdf.stagingSynId[
@@ -576,21 +566,19 @@ def mutation_in_cis_filter(
                     genieVersion=genieVersion,
                 )
                 os.unlink("mutationsInCis_filtered_samples.csv")
-    sample_filtering = syn.tableQuery(
-        "SELECT Tumor_Sample_Barcode FROM {} where Flag = 'TOSS' and "
-        "Tumor_Sample_Barcode is not null".format(variant_filtering_synId)
+    query_str = (
+        f"SELECT Tumor_Sample_Barcode FROM {variant_filtering_synId} where "
+        "Flag = 'TOSS' and Tumor_Sample_Barcode is not null"
     )
-
-    filtered_samplesdf = sample_filtering.asDataFrame()
+    filtered_samplesdf = extract.get_syntabledf(syn=syn, query_string=query_str)
     # #Alex script #1 removed patients
     remove_samples = filtered_samplesdf["Tumor_Sample_Barcode"].drop_duplicates()
 
-    # Find variants to flag
-    variant_flagging = syn.tableQuery(
-        "SELECT * FROM {} where Flag = 'FLAG' and "
-        "Tumor_Sample_Barcode is not null".format(variant_filtering_synId)
+    query_str = (
+        f"SELECT * FROM {variant_filtering_synId} where "
+        "Flag = 'Flag' and Tumor_Sample_Barcode is not null"
     )
-    flag_variantsdf = variant_flagging.asDataFrame()
+    flag_variantsdf = extract.get_syntabledf(syn=syn, query_string=query_str)
 
     flag_variantsdf["flaggedVariants"] = (
         flag_variantsdf["Chromosome"].astype(str)
@@ -608,6 +596,7 @@ def mutation_in_cis_filter(
     return (remove_samples, flag_variantsdf["flaggedVariants"])
 
 
+# TODO: Add to transform.py
 def seq_assay_id_filter(clinicaldf):
     """
     (Deprecated)
@@ -651,27 +640,7 @@ def no_genepanel_filter(clinicaldf, beddf):
     return remove_samples
 
 
-def _get_wes_panels(syn, assay_info_synid):
-    """
-    Grab whole exome sequencing panel ids
-
-    Args:
-        syn: Synapse object
-        databaseSynIdMappingDf: database to synapse id mapping df
-
-    Returns:
-        List of whole exome sequenceing SEQ_ASSAY_IDs
-    """
-    # Get whole exome seq panels to exclude from gene matrix and gene panel
-    wes_panels = syn.tableQuery(
-        "select SEQ_ASSAY_ID from {} where "
-        "library_strategy = 'WXS'".format(assay_info_synid)
-    )
-    wes_paneldf = wes_panels.asDataFrame()
-    wes_seqassayids = wes_paneldf["SEQ_ASSAY_ID"]
-    return wes_seqassayids
-
-
+# TODO: add to load.py
 def store_gene_panel_files(
     syn,
     fileviewSynId,
@@ -692,7 +661,7 @@ def store_gene_panel_files(
     # This line of code is required to make sure any new files are
     # pulled into the file view.
     syn.tableQuery(f"select * from {fileviewSynId} limit 1")
-    genePanelDf = process_functions.get_syntabledf(
+    genePanelDf = extract.get_syntabledf(
         syn,
         f"select id from {fileviewSynId} where "
         "cBioFileFormat = 'genePanel' and "
@@ -724,6 +693,7 @@ def store_gene_panel_files(
     return genePanelEntities
 
 
+# TODO: add to load.py
 def store_fusion_files(
     syn,
     release_synid,
@@ -748,7 +718,7 @@ def store_fusion_files(
         center_mappingdf: Center mapping dataframe
     """
     logger.info("MERING, FILTERING, STORING FUSION FILES")
-    FusionsDf = process_functions.get_syntabledf(
+    FusionsDf = extract.get_syntabledf(
         syn,
         "select HUGO_SYMBOL,ENTREZ_GENE_ID,CENTER,TUMOR_SAMPLE_BARCODE,FUSION,"
         f"DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME from {fusion_synid}",
@@ -813,6 +783,7 @@ def store_fusion_files(
     )
 
 
+# TODO: add to load.py
 def store_sv_files(
     syn: synapseclient.Synapse,
     release_synid: str,
@@ -837,7 +808,7 @@ def store_sv_files(
         center_mappingdf: Center mapping dataframe
     """
     logger.info("MERING, FILTERING, STORING FUSION FILES")
-    sv_df = process_functions.get_syntabledf(
+    sv_df = extract.get_syntabledf(
         syn,
         f"select * from {synid}",
     )
@@ -894,6 +865,7 @@ def store_sv_files(
     )
 
 
+# TODO: Add to transform.py
 def append_or_create_release_maf(dataframe: pd.DataFrame, filepath: str):
     """Creates a file with the dataframe or appends to a existing file.
 
@@ -912,6 +884,7 @@ def append_or_create_release_maf(dataframe: pd.DataFrame, filepath: str):
             f_out.write(data)
 
 
+# TODO: Add to load.py
 def store_maf_files(
     syn,
     genie_version,
@@ -943,10 +916,10 @@ def store_maf_files(
     """
 
     logger.info("FILTERING, STORING MUTATION FILES")
-    centerMafSynIds = syn.tableQuery(
-        "select id from {} where name like '%mutation%'".format(flatfiles_view_synid)
+    centerMafSynIdsDf = extract.get_syntabledf(
+        syn=syn,
+        query_string=f"select id from {flatfiles_view_synid} where name like '%mutation%'",
     )
-    centerMafSynIdsDf = centerMafSynIds.asDataFrame()
     mutations_path = os.path.join(GENIE_RELEASE_DIR, "data_mutations_extended.txt")
     with open(mutations_path, "w"):
         pass
@@ -1013,6 +986,7 @@ def store_maf_files(
             )
 
 
+# TODO: Add to transform.py
 def run_genie_filters(
     syn,
     genie_user,
@@ -1108,6 +1082,7 @@ def run_genie_filters(
     )
 
 
+# TODO: Add to load.py
 def store_assay_info_files(
     syn, genie_version, assay_info_synid, clinicaldf, release_synid
 ):
@@ -1127,7 +1102,7 @@ def store_assay_info_files(
     assay_info_path = os.path.join(GENIE_RELEASE_DIR, "assay_information.txt")
     seq_assay_str = "','".join(clinicaldf["SEQ_ASSAY_ID"].unique())
     version = syn.create_snapshot_version(assay_info_synid, comment=genie_version)
-    assay_infodf = process_functions.get_syntabledf(
+    assay_infodf = extract.get_syntabledf(
         syn,
         f"select * from {assay_info_synid} where SEQ_ASSAY_ID "
         f"in ('{seq_assay_str}')",
@@ -1146,6 +1121,7 @@ def store_assay_info_files(
     return wes_panels.tolist()
 
 
+# TODO: Add to load.py
 def store_clinical_files(
     syn,
     genie_version,
@@ -1289,8 +1265,7 @@ def store_clinical_files(
     keep_merged_consortium_samples = clinicaldf.SAMPLE_ID
     # This mapping table is the GENIE clinical code to description
     # mapping to generate the headers of the clinical file
-    mapping_table = syn.tableQuery("SELECT * FROM syn9621600")
-    mapping = mapping_table.asDataFrame()
+    mapping = extract.get_syntabledf(syn=syn, query_string="SELECT * FROM syn9621600")
     clinical_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical.txt")
     clinical_sample_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical_sample.txt")
     clinical_patient_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical_patient.txt")
@@ -1328,6 +1303,7 @@ def store_clinical_files(
     return (clinicaldf, keep_center_consortium_samples, keep_merged_consortium_samples)
 
 
+# TODO: Add to load.py
 def store_cna_files(
     syn,
     flatfiles_view_synid,
@@ -1357,7 +1333,7 @@ def store_cna_files(
     query_str = ("select id from {} " "where name like 'data_CNA%'").format(
         flatfiles_view_synid
     )
-    center_cna_synidsdf = process_functions.get_syntabledf(syn, query_str)
+    center_cna_synidsdf = extract.get_syntabledf(syn, query_str)
     # Grab all unique symbols and form cna_template
     all_symbols = set()
     for cna_synid in center_cna_synidsdf["id"]:
@@ -1448,7 +1424,7 @@ def store_cna_files(
     return cna_samples
 
 
-# SEG
+# TODO: Add to load.py
 def store_seg_files(
     syn,
     genie_version,
@@ -1476,10 +1452,10 @@ def store_seg_files(
     seg_path = os.path.join(GENIE_RELEASE_DIR, "data_cna_hg19.seg")
     version = syn.create_snapshot_version(seg_synid, comment=genie_version)
 
-    seg = syn.tableQuery(
-        "SELECT ID,CHROM,LOCSTART,LOCEND,NUMMARK,SEGMEAN" f",CENTER FROM {seg_synid}"
+    segdf = extract.get_syntabledf(
+        syn=syn,
+        query_string=f"SELECT ID,CHROM,LOCSTART,LOCEND,NUMMARK,SEGMEAN,CENTER FROM {seg_synid}",
     )
-    segdf = seg.asDataFrame()
     segdf = segdf.rename(
         columns={
             "CHROM": "chrom",
@@ -1521,6 +1497,7 @@ def store_seg_files(
     )
 
 
+# TODO: Add to load.py
 def store_data_gene_matrix(
     syn,
     genie_version,
@@ -1577,6 +1554,7 @@ def store_data_gene_matrix(
     return data_gene_matrix
 
 
+# TODO: Add to load.py
 def store_bed_files(
     syn,
     genie_version,
@@ -1634,6 +1612,7 @@ def store_bed_files(
     )
 
 
+# TODO: Add to etl.py
 def stagingToCbio(
     syn,
     processingDate,
@@ -1708,17 +1687,17 @@ def stagingToCbio(
     center_query_str = "','".join(CENTER_MAPPING_DF.center)
     patient_snapshot = syn.create_snapshot_version(patientSynId, comment=genieVersion)
     patient_used = f"{patientSynId}.{patient_snapshot}"
-    patientDf = process_functions.get_syntabledf(
+    patientDf = extract.get_syntabledf(
         syn, f"SELECT * FROM {patientSynId} where CENTER in ('{center_query_str}')"
     )
     sample_snapshot = syn.create_snapshot_version(sampleSynId, comment=genieVersion)
     sample_used = f"{sampleSynId}.{sample_snapshot}"
-    sampleDf = process_functions.get_syntabledf(
+    sampleDf = extract.get_syntabledf(
         syn, f"SELECT * FROM {sampleSynId} where CENTER in ('{center_query_str}')"
     )
     bed_snapshot = syn.create_snapshot_version(bedSynId, comment=genieVersion)
     bed_used = f"{bedSynId}.{bed_snapshot}"
-    bedDf = process_functions.get_syntabledf(
+    bedDf = extract.get_syntabledf(
         syn,
         "SELECT Chromosome,Start_Position,End_Position,Hugo_Symbol,ID,"
         "SEQ_ASSAY_ID,Feature_Type,includeInPanel,clinicalReported FROM"
@@ -1727,7 +1706,7 @@ def stagingToCbio(
 
     # Clinical release scope filter
     # If private -> Don't release to public
-    clinicalReleaseScopeDf = process_functions.get_syntabledf(
+    clinicalReleaseScopeDf = extract.get_syntabledf(
         syn, "SELECT * FROM syn8545211 where releaseScope <> 'private'"
     )
 
@@ -1827,8 +1806,6 @@ def stagingToCbio(
         syn, genieVersion, assay_info_synid, clinicalDf, consortiumReleaseSynId
     )
 
-    # wes_panelids = _get_wes_panels(syn, assay_info_synid)
-
     data_gene_matrix = store_data_gene_matrix(
         syn, genieVersion, clinicalDf, cnaSamples, consortiumReleaseSynId, wes_panelids
     )
@@ -1889,6 +1866,7 @@ def stagingToCbio(
     return genePanelEntities
 
 
+# TODO: Add to load.py
 def update_process_trackingdf(
     syn, process_trackerdb_synid, center, process_type, start=True
 ):
@@ -1904,20 +1882,16 @@ def update_process_trackingdf(
     """
     logger.info("UPDATE PROCESS TRACKING TABLE")
     column = "timeStartProcessing" if start else "timeEndProcessing"
-    process_tracker = syn.tableQuery(
-        "SELECT {col} FROM {tableid} where center = '{center}' "
-        "and processingType = '{process_type}'".format(
-            col=column,
-            tableid=process_trackerdb_synid,
-            center=center,
-            process_type=process_type,
-        )
+    query_str = (
+        f"SELECT {column} FROM {process_trackerdb_synid} where center = '{center}' "
+        f"and processingType = '{process_type}'"
     )
-    process_trackerdf = process_tracker.asDataFrame()
+    process_trackerdf = extract.get_syntabledf(syn=syn, query_string=query_str)
     process_trackerdf[column].iloc[0] = str(int(time.time() * 1000))
     syn.store(synapseclient.Table(process_trackerdb_synid, process_trackerdf))
 
 
+# TODO: Add to transform.py
 def revise_metadata_files(syn, consortiumid, genie_version=None):
     """
     Rewrite metadata files with the correct GENIE version
@@ -1962,35 +1936,31 @@ def revise_metadata_files(syn, consortiumid, genie_version=None):
         store_file(syn, meta_ent.path, parent=consortiumid, genieVersion=genie_version)
 
 
-def search_and_create_folder(syn, parentid, folder_name):
+# TODO: Add to load.py
+def search_or_create_folder(
+    syn: synapseclient.Synapse, parentid: str, folder_name: str
+) -> str:
     """
-    This function will search for an existing directory given a parent id
-    It will create the Synapse folder if it doesn't exist
+    Searches for an existing Synapse Folder given a parent id
+    and creates the Synapse folder if it doesn't exist
 
     Args:
-        syn: Synapse object
-        parentid: Synapse id of a project or folder
-        folder_name: Folder being searched for
+        syn (synapseclient.Synapse): Synapse connection
+        parentid (str): Synapse Id of a project or folder
+        folder_name (str): Folde rname
 
     Returns:
-        string: Synapse folder id
-        boolean: Checks if the folder already existed.  True if it did
+        str: Synapse Folder id
     """
-    folders = syn.getChildren(parentid, includeTypes=["folder"])
-    search_for_folder = filter(lambda folder: folder["name"] == folder_name, folders)
-    search_for_folder = list(search_for_folder)
-    if len(search_for_folder) == 0:
+    folder_id = syn.findEntityId(name=folder_name, parent=parentid)
+    # if case_lists doesn't exist
+    if folder_id is None:
         folder_ent = synapseclient.Folder(name=folder_name, parent=parentid)
-        folder_synid = syn.store(folder_ent)["id"]
-        already_exists = False
-    elif len(search_for_folder) == 1:
-        folder_synid = search_for_folder[0]["id"]
-        already_exists = True
-    else:
-        raise ValueError("There should not be any duplicated folder names")
-    return (folder_synid, already_exists)
+        folder_id = syn.store(folder_ent).id
+    return folder_id
 
 
+# TODO: Add to load.py
 def create_link_version(
     syn,
     genie_version,
@@ -2019,22 +1989,16 @@ def create_link_version(
         database_synid_mappingdf["Database"] == "release"
     ].values[0]
     # Create major release folder
-    major_release_folder_synid, already_exists = search_and_create_folder(
-        syn, all_releases_synid, "Release {}".format(major_release)
+    major_release_folder_synid = search_or_create_folder(
+        syn, all_releases_synid, f"Release {major_release}"
     )
     # If the major release folder didn't exist, go ahead and create the
     # release folder
-    if not already_exists:
-        release_folder_ent = synapseclient.Folder(
-            genie_version, parent=major_release_folder_synid
-        )
-        release_folder_synid = syn.store(release_folder_ent)["id"]
-    else:
-        release_folder_synid, already_exists = search_and_create_folder(
-            syn, major_release_folder_synid, genie_version
-        )
+    release_folder_synid = search_or_create_folder(
+        syn, major_release_folder_synid, genie_version
+    )
     # Search or create case lists folder
-    caselist_folder_synid, already_exists = search_and_create_folder(
+    caselist_folder_synid = search_or_create_folder(
         syn, release_folder_synid, "case_lists"
     )
 

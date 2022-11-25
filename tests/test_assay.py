@@ -7,7 +7,7 @@ import pytest
 import synapseclient
 
 from genie_registry.assay import Assayinfo
-from genie import process_functions
+from genie import extract, process_functions
 
 GDC_DATA_DICT = {
     "properties": {
@@ -20,7 +20,7 @@ GDC_DATA_DICT = {
 }
 
 SYN = create_autospec(synapseclient.Synapse)
-ASSAY_INFO = Assayinfo(SYN, "SAGE")
+ASSAY_INFO = Assayinfo(SYN, "SAGE", genie_config={"sample": "syn1234"})
 
 
 def test_filetype():
@@ -62,11 +62,7 @@ def test_validinput__validate():
     assay_info_df = pd.DataFrame(assay_info_dict)
     test_dict = copy.deepcopy(GDC_DATA_DICT)
     with patch.object(
-        process_functions, "get_synid_database_mappingdf", return_value="syn123"
-    ), patch.object(
-        process_functions, "getDatabaseSynId", return_value="syn1234"
-    ), patch.object(
-        process_functions, "get_syntabledf", return_value=uniq_seq_df
+        extract, "get_syntabledf", return_value=uniq_seq_df
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
@@ -100,11 +96,7 @@ def test_case__validate():
     assay_info_df = pd.DataFrame(assay_info_dict)
     test_dict = copy.deepcopy(GDC_DATA_DICT)
     with patch.object(
-        process_functions, "get_synid_database_mappingdf", return_value="syn123"
-    ), patch.object(
-        process_functions, "getDatabaseSynId", return_value="syn1234"
-    ), patch.object(
-        process_functions, "get_syntabledf", return_value=uniq_seq_df
+        extract, "get_syntabledf", return_value=uniq_seq_df
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
@@ -138,11 +130,7 @@ def test_underscore__validate():
     assay_info_df = pd.DataFrame(assay_info_dict)
     test_dict = copy.deepcopy(GDC_DATA_DICT)
     with patch.object(
-        process_functions, "get_synid_database_mappingdf", return_value="syn123"
-    ), patch.object(
-        process_functions, "getDatabaseSynId", return_value="syn1234"
-    ), patch.object(
-        process_functions, "get_syntabledf", return_value=uniq_seq_df
+        extract, "get_syntabledf", return_value=uniq_seq_df
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
@@ -262,11 +250,7 @@ def test_invalid__validate():
     # Which just points to reference keys
     test_dict = copy.deepcopy(GDC_DATA_DICT)
     with patch.object(
-        process_functions, "get_synid_database_mappingdf", return_value="syn123"
-    ), patch.object(
-        process_functions, "getDatabaseSynId", return_value="syn1234"
-    ), patch.object(
-        process_functions, "get_syntabledf", return_value=uniq_seq_df
+        extract, "get_syntabledf", return_value=uniq_seq_df
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:

@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pandas as pd
 import synapseclient
 
-from genie import database_to_staging, process_functions
+from genie import database_to_staging, extract
 
 SYN = synapseclient.Synapse()
 FILEVIEW_SYNID = "syn12345"
@@ -85,7 +85,7 @@ def test_store_assay_info_files():
     with patch.object(
         SYN, "create_snapshot_version", return_value=2
     ) as patch_create_version, patch.object(
-        process_functions, "get_syntabledf", return_value=assay_infodf
+        extract, "get_syntabledf", return_value=assay_infodf
     ) as patch_table_query, patch.object(
         database_to_staging, "store_file", return_value=synapseclient.Entity()
     ) as patch_storefile:

@@ -172,7 +172,7 @@ def main(
     ].values[0]
     # get syn id of case list folder in consortium release
     # caseListSynId = findCaseListId(syn, consortiumSynId)
-    caseListSynId, _ = database_to_staging.search_and_create_folder(
+    caseListSynId = database_to_staging.search_or_create_folder(
         syn, consortiumSynId, "case_lists"
     )
 

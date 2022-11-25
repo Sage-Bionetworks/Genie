@@ -204,13 +204,13 @@ class StructuralVariant(FileTypeFormat):
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
-            sv_df, "DNA_SUPPORT", ["yes", "no"], "Structural Variant", required=False
+            sv_df, "DNA_SUPPORT", ["Yes", "No"], "Structural Variant", required=False
         )
         # total_warning.write(warn)
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
-            sv_df, "RNA_SUPPORT", ["yes", "no"], "Structural Variant", required=False
+            sv_df, "RNA_SUPPORT", ["Yes", "No"], "Structural Variant", required=False
         )
         # total_warning.write(warn)
         total_error.write(error)
