@@ -7,6 +7,6 @@ logging.getLogger("keyring").setLevel(logging.WARNING)
 
 # create version in __init__.py
 # https://packaging.python.org/en/latest/guides/single-sourcing-package-version/
-__version__ = "14.3.0"
+__version__ = "14.3.1"
 
 __all__ = ["__version__"]
