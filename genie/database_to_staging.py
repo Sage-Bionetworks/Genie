@@ -1035,7 +1035,7 @@ def run_genie_filters(
     )
 
 
-# TODO: Add to load.py
+# TODO: Add to etl.py
 def store_assay_info_files(
     syn, genie_version, assay_info_synid, clinicaldf, release_synid
 ):
@@ -1074,7 +1074,7 @@ def store_assay_info_files(
     return wes_panels.tolist()
 
 
-# TODO: Add to load.py
+# TODO: Add to etl.py
 def store_clinical_files(
     syn,
     genie_version,
@@ -1261,7 +1261,7 @@ def store_clinical_files(
     return (clinicaldf, keep_center_consortium_samples, keep_merged_consortium_samples)
 
 
-# TODO: Add to load.py
+# TODO: Add to etl.py
 def store_cna_files(
     syn,
     flatfiles_view_synid,
@@ -1382,7 +1382,7 @@ def store_cna_files(
     return cna_samples
 
 
-# TODO: Add to load.py
+# TODO: Add to etl.py
 def store_seg_files(
     syn,
     genie_version,
@@ -1455,7 +1455,7 @@ def store_seg_files(
     )
 
 
-# TODO: Add to load.py
+# TODO: Add to etl.py
 def store_data_gene_matrix(
     syn,
     genie_version,
@@ -1512,7 +1512,7 @@ def store_data_gene_matrix(
     return data_gene_matrix
 
 
-# TODO: Add to load.py
+# TODO: Add to etl.py
 def store_bed_files(
     syn,
     genie_version,
@@ -1820,31 +1820,6 @@ def stagingToCbio(
     )
 
     return genePanelEntities
-
-
-# TODO: Add to load.py
-def update_process_trackingdf(
-    syn, process_trackerdb_synid, center, process_type, start=True
-):
-    """
-    Updates the processing tracking database
-
-    Args:
-        syn: synapse object
-        process_trackerdb_synid: Synapse id of process tracking db
-        center: GENIE center (ie. SAGE)
-        process_type: processing type (ie. dbToStage)
-        start: Start or end of processing.  Default is True for start
-    """
-    logger.info("UPDATE PROCESS TRACKING TABLE")
-    column = "timeStartProcessing" if start else "timeEndProcessing"
-    query_str = (
-        f"SELECT {column} FROM {process_trackerdb_synid} where center = '{center}' "
-        f"and processingType = '{process_type}'"
-    )
-    process_trackerdf = extract.get_syntabledf(syn=syn, query_string=query_str)
-    process_trackerdf[column].iloc[0] = str(int(time.time() * 1000))
-    syn.store(synapseclient.Table(process_trackerdb_synid, process_trackerdf))
 
 
 # TODO: Add to transform.py

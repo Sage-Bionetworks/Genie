@@ -4,13 +4,13 @@ import logging
 import os
 import synapseclient
 import subprocess
-import time
 
 from genie import dashboard_table_updater
 from genie import process_functions
 from genie import consortium_to_public
 from genie import database_to_staging
 from genie import extract
+from genie import load
 
 logger = logging.getLogger(__name__)
 
@@ -128,6 +128,9 @@ def main(args):
     releaseSynId = databaseSynIdMappingDf["Id"][
         databaseSynIdMappingDf["Database"] == "releaseFolder"
     ].values[0]
+    processTrackerSynId = databaseSynIdMappingDf["Id"][
+        databaseSynIdMappingDf["Database"] == "processTracker"
+    ].values[0]
     # TEST run of the infrastructure will always
     # Map to a specific folder
     if args.test:
@@ -144,16 +147,13 @@ def main(args):
 
     args.releaseId = officialPublic[args.genieVersion]
     if not args.test and not args.staging:
-        processTrackerSynId = databaseSynIdMappingDf["Id"][
-            databaseSynIdMappingDf["Database"] == "processTracker"
-        ].values[0]
-        processTracker = syn.tableQuery(
-            "SELECT timeStartProcessing FROM %s where center = 'SAGE' "
-            "and processingType = 'public'" % processTrackerSynId
+        load.update_process_trackingdf(
+            syn=syn,
+            process_trackerdb_synid=processTrackerSynId,
+            center="SAGE",
+            process_type="public",
+            start=True
         )
-        processTrackerDf = processTracker.asDataFrame()
-        processTrackerDf["timeStartProcessing"].iloc[0] = str(int(time.time() * 1000))
-        syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
     caseListEntities, genePanelEntities = consortium_to_public.consortiumToPublic(
         syn,
@@ -208,13 +208,13 @@ def main(args):
     )
     # Don't update process tracker is testing or staging
     if not args.test and not args.staging:
-        processTracker = syn.tableQuery(
-            "SELECT timeEndProcessing FROM %s where center = 'SAGE' and "
-            "processingType = 'public'" % processTrackerSynId
+        load.update_process_trackingdf(
+            syn=syn,
+            process_trackerdb_synid=processTrackerSynId,
+            center="SAGE",
+            process_type="public",
+            start=False
         )
-        processTrackerDf = processTracker.asDataFrame()
-        processTrackerDf["timeEndProcessing"].iloc[0] = str(int(time.time() * 1000))
-        syn.store(synapseclient.Table(processTrackerSynId, processTrackerDf))
 
     if not args.test:
         logger.info("DASHBOARD UPDATE")

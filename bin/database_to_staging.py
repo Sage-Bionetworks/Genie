@@ -178,8 +178,12 @@ def main(
     )
 
     if not staging:
-        database_to_staging.update_process_trackingdf(
-            syn, processTrackerSynId, "SAGE", "dbToStage", start=True
+        load.update_process_trackingdf(
+            syn=syn,
+            process_trackerdb_synid=processTrackerSynId,
+            center="SAGE",
+            process_type="dbToStage",
+            start=True
         )
 
     centerMappingSynId = databaseSynIdMappingDf["Id"][
@@ -298,8 +302,12 @@ def main(
     )
 
     if not staging:
-        database_to_staging.update_process_trackingdf(
-            syn, processTrackerSynId, "SAGE", "dbToStage", start=False
+        load.update_process_trackingdf(
+            syn=syn,
+            process_trackerdb_synid=processTrackerSynId,
+            center="SAGE",
+            process_type="dbToStage",
+            start=False
         )
 
     if not test:

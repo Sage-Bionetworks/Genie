@@ -3,12 +3,13 @@ This module contains all the functions that stores data
 to Synapse
 """
 import logging
+import time
 from typing import Dict, List
 
 import synapseclient
 from synapseclient.core.exceptions import SynapseTimeoutError
 
-from . import __version__
+from . import __version__, extract
 
 logger = logging.getLogger(__name__)
 
@@ -88,3 +89,31 @@ def store_table(syn: synapseclient.Synapse, filepath: str, tableid: str):
         # This error occurs because of waiting for table to index.
         # Don't worry about this error
         pass
+
+
+def update_process_trackingdf(
+    syn: synapseclient.Synapse,
+    process_trackerdb_synid: str,
+    center: str,
+    process_type: str,
+    start: bool = True
+):
+    """
+    Updates the processing tracking database
+
+    Args:
+        syn (synapseclient.Synapse): Synapse connection
+        process_trackerdb_synid: Synapse Id of Process Tracking Table
+        center: GENIE center (ie. SAGE)
+        process_type: processing type (dbToStage or public)
+        start: Start or end of processing.  Default is True for start
+    """
+    logger.info("UPDATE PROCESS TRACKING TABLE")
+    column = "timeStartProcessing" if start else "timeEndProcessing"
+    query_str = (
+        f"SELECT {column} FROM {process_trackerdb_synid} where center = '{center}' "
+        f"and processingType = '{process_type}'"
+    )
+    process_trackerdf = extract.get_syntabledf(syn=syn, query_string=query_str)
+    process_trackerdf[column].iloc[0] = str(int(time.time() * 1000))
+    syn.store(synapseclient.Table(process_trackerdb_synid, process_trackerdf))
