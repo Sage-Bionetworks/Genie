@@ -28,6 +28,17 @@ def test_store_file_annotations(syn):
         )
 
 
+def test_store_file_provenance(syn):
+    """Test storing of file with provenance"""
+    with patch.object(syn, "store") as patch_store:
+        load.store_file(syn, "full/path", "syn1234", used="syn3333", executed="foo")
+        patch_store.assert_called_once_with(
+            synapseclient.File("full/path", parentId="syn1234"),
+            used="syn3333",
+            executed="foo"
+        )
+
+
 def test_store_table(syn):
     """Test storing of table"""
     with patch.object(syn, "store") as patch_store:
