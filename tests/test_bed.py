@@ -50,16 +50,18 @@ table_query_results_map = {
     ("SELECT * FROM syn11806563",): create_mock_table(symbols),
 }
 
-syn = mock.create_autospec(synapseclient.Synapse)
-syn.tableQuery.side_effect = table_query_results
-
 seq_assay_id = "SAGE-Test"
 new_path = "new.bed"
 parentid = "synTest"
-bed_class = bed(syn, "SAGE")
 
 
-def test_perfect___process():
+@pytest.fixture()
+def bed_class(syn):
+    syn.tableQuery.side_effect = table_query_results
+    return bed(syn, "SAGE")
+
+
+def test_perfect___process(bed_class):
     """Process perfect bed file"""
     expected_beddf = pd.DataFrame(
         dict(
@@ -107,7 +109,7 @@ def test_perfect___process():
         )
 
 
-def test_includeinpanel___process():
+def test_includeinpanel___process(bed_class):
     """
     Make sure includeInPanel column is propogated and
     intergenic region is captured
@@ -155,7 +157,7 @@ def test_includeinpanel___process():
         )
 
 
-def test_clinicalreport___process():
+def test_clinicalreport___process(bed_class):
     expected_beddf = pd.DataFrame(
         dict(
             Chromosome=["2", "9", "12", "19"],
@@ -199,7 +201,7 @@ def test_clinicalreport___process():
         )
 
 
-def test_filetype():
+def test_filetype(bed_class):
     assert bed_class._fileType == "bed"
 
 
@@ -210,17 +212,17 @@ def filename_fileformat_map(request):
     return request.param
 
 
-def test_incorrect_validatefilename(filename_fileformat_map):
+def test_incorrect_validatefilename(bed_class, filename_fileformat_map):
     filepath_list = filename_fileformat_map
     with pytest.raises(AssertionError):
         bed_class.validateFilename(filepath_list)
 
 
-def test_correct_validatefilename():
+def test_correct_validatefilename(bed_class):
     assert bed_class.validateFilename(["SAGE-test.bed"]) == "bed"
 
 
-def test_perfect__validate():
+def test_perfect__validate(bed_class):
     bedDf = pd.DataFrame(
         dict(
             a=["2", "9", "12"],
@@ -237,7 +239,7 @@ def test_perfect__validate():
     assert warning == ""
 
 
-def test_90percent_boundary__validate():
+def test_90percent_boundary__validate(bed_class):
     bedDf = pd.DataFrame(
         dict(
             a=["2", "9", "12"],
@@ -253,7 +255,7 @@ def test_90percent_boundary__validate():
     assert warning == ""
 
 
-def test_missingcols_failure__validate():
+def test_missingcols_failure__validate(bed_class):
     emptydf = pd.DataFrame()
     error, warning = bed_class._validate(emptydf)
     expected_errors = (
@@ -265,7 +267,7 @@ def test_missingcols_failure__validate():
     assert warning == ""
 
 
-def test_hugosymbol_failure__validate():
+def test_hugosymbol_failure__validate(bed_class):
     bedDf = pd.DataFrame(
         dict(
             a=["2", "9", "12"],
@@ -285,7 +287,7 @@ def test_hugosymbol_failure__validate():
     assert warning == ""
 
 
-def test_badinputs_failure__validate():
+def test_badinputs_failure__validate(bed_class):
     bedDf = pd.DataFrame(
         dict(
             a=["2", "9", "12"],
@@ -309,7 +311,7 @@ def test_badinputs_failure__validate():
     assert warning == ""
 
 
-def test_90percentboundary_failure__validate():
+def test_90percentboundary_failure__validate(bed_class):
     # Test 90% boundary failure boundary, with incorrect gene names
     bedDf = pd.DataFrame(
         dict(
@@ -334,7 +336,7 @@ def test_90percentboundary_failure__validate():
     assert warning == expected_warnings
 
 
-def test_overlapping__validate():
+def test_overlapping__validate(bed_class):
     """
     Check if genes that overlap have no errors
     - Submitted bed start position in a gene
@@ -355,7 +357,7 @@ def test_overlapping__validate():
     assert warning == ""
 
 
-def test_symbolnull_failure__validate():
+def test_symbolnull_failure__validate(bed_class):
     # Test 2 gene symbols returned NULL
     bedDf = pd.DataFrame(
         dict(a=["19"], b=[44080953], c=[44084624], d=["AAK1"], e=[False])
