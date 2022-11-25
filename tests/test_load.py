@@ -17,6 +17,28 @@ def test_store_file(syn):
         )
 
 
+def test_store_file_version_comment(syn):
+    """Test storing of file"""
+    with patch.object(syn, "store") as patch_store:
+        load.store_file(syn, "full/path", "syn1234", version_comment="test")
+        patch_store.assert_called_once_with(
+            synapseclient.File("full/path", parentId="syn1234", versionComment="test"),
+            used=None,
+            executed=f"https://github.com/Sage-Bionetworks/Genie/tree/v{__version__}",
+        )
+
+
+def test_store_file_version_provenance(syn):
+    """Test storing of file"""
+    with patch.object(syn, "store") as patch_store:
+        load.store_file(syn, "full/path", "syn1234", used="temp")
+        patch_store.assert_called_once_with(
+            synapseclient.File("full/path", parentId="syn1234", versionComment=None),
+            used="temp",
+            executed=f"https://github.com/Sage-Bionetworks/Genie/tree/v{__version__}",
+        )
+
+
 def test_store_file_annotations(syn):
     """Test storing of file with annotations"""
     with patch.object(syn, "store") as patch_store:
