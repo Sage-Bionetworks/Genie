@@ -10,8 +10,6 @@ from synapseclient.core.exceptions import SynapseHTTPError
 from genie import example_filetype_format, extract, validate
 
 CENTER = "SAGE"
-syn = mock.create_autospec(synapseclient.Synapse)
-
 CNA_ENT = synapseclient.File(
     name="data_CNA_SAGE.txt", path="data_CNA_SAGE.txt", parentId="syn12345"
 )
@@ -39,7 +37,7 @@ class FileFormat(example_filetype_format.FileTypeFormat):
     _fileType = "clinical"
 
 
-def test_perfect_determine_filetype():
+def test_perfect_determine_filetype(syn):
     """
     Tests determining of file type through filenames
     Parameters are passed in from filename_fileformat_map
@@ -53,7 +51,7 @@ def test_perfect_determine_filetype():
         assert validator.determine_filetype() == filetype
 
 
-def test_wrongfilename_noerror_determine_filetype():
+def test_wrongfilename_noerror_determine_filetype(syn):
     """
     Tests None is passed back when wrong filename is passed
     when raise_error flag is False
@@ -113,7 +111,7 @@ def test_warning_collect_errors_and_warnings():
     )
 
 
-def test_valid_validate_single_file(genie_config):
+def test_valid_validate_single_file(syn, genie_config):
     """
     Tests that all the functions are run in validate single
     file workflow and all the right things are returned
@@ -155,7 +153,7 @@ def test_valid_validate_single_file(genie_config):
         mock_determine.assert_called_once_with()
 
 
-def test_filetype_validate_single_file():
+def test_filetype_validate_single_file(syn):
     """
     Tests that if filetype is passed in that an error is thrown
     if it is an incorrect filetype
@@ -178,7 +176,7 @@ def test_filetype_validate_single_file():
         assert not valid_cls.is_valid()
 
 
-def test_wrongfiletype_validate_single_file():
+def test_wrongfiletype_validate_single_file(syn):
     """
     Tests that if there is no filetype for the filename passed
     in, an error is thrown
@@ -208,7 +206,7 @@ def test_wrongfiletype_validate_single_file():
         mock_determine_filetype.assert_called_once_with()
 
 
-def test_nopermission__check_parentid_permission_container():
+def test_nopermission__check_parentid_permission_container(syn):
     """Throws error if no permissions to access"""
     parentid = "syn123"
     with patch.object(syn, "get", side_effect=SynapseHTTPError), pytest.raises(
@@ -220,7 +218,7 @@ def test_nopermission__check_parentid_permission_container():
         validate._check_parentid_permission_container(syn, parentid)
 
 
-def test_notcontainer__check_parentid_permission_container():
+def test_notcontainer__check_parentid_permission_container(syn):
     """Throws error if input if synid of file"""
     parentid = "syn123"
     file_ent = synapseclient.File("foo", parentId=parentid)
@@ -233,7 +231,7 @@ def test_notcontainer__check_parentid_permission_container():
         validate._check_parentid_permission_container(syn, parentid)
 
 
-def test_valid__check_parentid_permission_container():
+def test_valid__check_parentid_permission_container(syn):
     """
     Test that parentid specified is a container and have permissions to access
     """
@@ -283,7 +281,7 @@ class argparser:
         return databasetosynid_mappingdf
 
 
-def test_valid__upload_to_synapse():
+def test_valid__upload_to_synapse(syn):
     """
     Test upload of file to synapse under right conditions
     """
@@ -295,7 +293,7 @@ def test_valid__upload_to_synapse():
         )
 
 
-def test_perform_validate(genie_config):
+def test_perform_validate(syn, genie_config):
     """Make sure all functions are called"""
     arg = argparser()
     valid = True
