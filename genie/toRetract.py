@@ -84,6 +84,7 @@ def retract(syn, project_id):
     )
 
 
+# TODO: move to cli
 def main():
     """
     Main block with argparse and calls the main retract function
@@ -97,5 +98,6 @@ def main():
     retract(syn, args.project_id)
 
 
+# TODO: Remove and move to cli
 if __name__ == "__main__":
     main()

@@ -6,11 +6,9 @@ import subprocess
 import tempfile
 
 import pandas as pd
-import synapseclient  # lgtm [py/import-and-import-from]
 from synapseclient import Synapse
-from synapseclient.core.exceptions import SynapseTimeoutError
 
-from . import process_functions
+from . import load, process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -277,41 +275,6 @@ def append_or_createdf(dataframe: pd.DataFrame, filepath: str):
         dataframe.to_csv(filepath, sep="\t", mode="a", index=False, header=None)
 
 
-# TODO: this is storeFile... move to load.py
-def store_full_maf(syn: Synapse, filepath: str, parentid: str):
-    """Stores full maf file
-
-    Args:
-        syn: Synapse connection
-        filepath: Path to file
-        parentid: Synapse container id
-
-    """
-    syn.store(synapseclient.File(filepath, parentId=parentid))
-
-
-# TODO: move to load.py
-def store_narrow_maf(syn: Synapse, filepath: str, maf_tableid: str):
-    """
-    Stores the narrow maf in Synapse Table
-
-    Args:
-        syn: Synapse connection
-        filepath: Path to maf file
-        maf_tableid: database synid
-
-    """
-    logger.info(f"STORING {filepath}")
-    # database = syn.get(maf_tableid)
-    try:
-        update_table = synapseclient.Table(maf_tableid, filepath, separator="\t")
-        syn.store(update_table)
-    except SynapseTimeoutError:
-        # This error occurs because of waiting for table to index.
-        # Don't worry about this.
-        pass
-
-
 # TODO: move to transform.py
 def format_maf(mafdf: pd.DataFrame, center: str) -> pd.DataFrame:
     """Format maf file, shortens the maf file length
@@ -338,7 +301,7 @@ def format_maf(mafdf: pd.DataFrame, center: str) -> pd.DataFrame:
 
 # TODO: move to etl.py
 def split_and_store_maf(
-    syn: "Synapse",
+    syn: Synapse,
     center: str,
     maf_tableid: str,
     annotated_maf_path: str,
@@ -376,6 +339,6 @@ def split_and_store_maf(
         narrow_maf_chunk = maf_chunk[narrow_maf_cols]
         append_or_createdf(narrow_maf_chunk, narrow_maf_path)
 
-    store_narrow_maf(syn, narrow_maf_path, maf_tableid)
+    load.store_table(syn=syn, filepath=narrow_maf_path, tableid=maf_tableid)
     # Store MAF flat file into synapse
-    store_full_maf(syn, full_maf_path, flatfiles_synid)
+    load.store_file(syn=syn, filepath=full_maf_path, parentid=flatfiles_synid)
