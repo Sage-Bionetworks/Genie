@@ -1,4 +1,5 @@
-"""Process mutation files"""
+"""Process mutation files
+TODO deprecate this module and spread functions around"""
 import logging
 import os
 import shutil
@@ -12,6 +13,7 @@ from . import load, process_functions
 
 logger = logging.getLogger(__name__)
 
+# TODO: add to constants.py
 # Some columns are already capitalized, so they aren't included here
 MAF_COL_MAPPING = {
     "HUGO_SYMBOL": "Hugo_Symbol",
@@ -82,6 +84,8 @@ MAF_COL_MAPPING = {
     "T_DEPTH": "t_depth",
 }
 
+
+# TODO: add to constants.py
 KNOWN_STRING_COLS = [
     "IS_NEW",
     "ALLELE_NUM",
@@ -108,6 +112,7 @@ KNOWN_STRING_COLS = [
 ]
 
 
+# TODO: add to utils or transform
 def _convert_to_str_dtype(column_types, known_string_cols):
     """Sometimes the deteremined dtype is incorrect based off the first
     100 rows, update the incorrect dtypes.
@@ -118,6 +123,7 @@ def _convert_to_str_dtype(column_types, known_string_cols):
     return column_types
 
 
+# TODO Add to utils
 def determine_dtype(path: str):
     """Reads in a dataframe partially and determines the dtype of columns"""
     # Change this nrows to 5000 so that it better encapsulates the types
@@ -126,6 +132,7 @@ def determine_dtype(path: str):
     return column_types
 
 
+# TODO add to utils
 def move_and_configure_maf(mutation_path: str, input_files_dir: str) -> str:
     """Moves maf files into processing directory. Maf file's column headers
     are renamed if necessary and .0 are stripped.
@@ -151,6 +158,7 @@ def move_and_configure_maf(mutation_path: str, input_files_dir: str) -> str:
     return new_filepath
 
 
+# TODO: add to utils
 def move_mutation(mutation_path, input_files_dir):
     """Move mutation file into processing directory"""
     # If mutation file is vcf, just copy
@@ -223,6 +231,7 @@ def process_mutation_workflow(
     return annotated_maf_path
 
 
+# TODO: add to transform
 def annotate_mutation(
     center: str, mutation_files: list, genie_annotation_pkg: str, workdir: str
 ) -> str:
@@ -261,6 +270,7 @@ def annotate_mutation(
     return merged_maf_path
 
 
+# TODO: add to transform
 def append_or_createdf(dataframe: pd.DataFrame, filepath: str):
     """Creates a file with the dataframe or appends to a existing file.
 
