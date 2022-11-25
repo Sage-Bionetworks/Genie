@@ -74,6 +74,7 @@ def clin_class(syn, genie_config):
     syn.tableQuery.side_effect = table_query_results
     return Clinical(syn, "SAGE", genie_config=genie_config)
 
+
 @pytest.fixture(params=[(["foo"]), (["foo", "data_clinical_supp_sample_SAGE.txt"])])
 def filename_fileformat_map(request):
     return request.param
