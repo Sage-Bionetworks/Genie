@@ -6,7 +6,7 @@ import subprocess
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import process_functions
+from genie import load, process_functions
 
 LOGGER = logging.getLogger(__name__)
 
@@ -475,14 +475,24 @@ class bed(FileTypeFormat):
 
             with open(os.path.join(gene_panel_path, gene_panel_name), "w+") as f:
                 f.write(gene_panel_text)
-            process_functions.storeFile(
-                self.syn,
-                os.path.join(gene_panel_path, gene_panel_name),
-                parentId=parentid,
-                center=self.center,
-                fileFormat="bed",
-                dataSubType="metadata",
-                cBioFileFormat="genePanel",
+
+            annotations = {
+                "fileFormat": "bed",
+                "dataSubType": "metadata",
+                "cBioFileFormat": "genePanel",
+                "center": self.center,
+                "species": "Human",
+                "consortium": "GENIE",
+                "dataType": "genomicVariants",
+                "fundingAgency": "AACR",
+                "assay": "targetGeneSeq",
+                "fileStage": "staging"
+            }
+            load.store_file(
+                syn=self.syn,
+                filepath=os.path.join(gene_panel_path, gene_panel_name),
+                parentid=parentid,
+                annotations=annotations
             )
 
     def _process(self, beddf, seq_assay_id, newpath, parentid, create_panel=True):
