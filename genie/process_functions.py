@@ -61,6 +61,7 @@ def checkUrl(url):
     assert temp.status_code == 200, "%s site is down" % url
 
 
+# TODO Add to validate.py
 def checkColExist(DF, key):
     """
     This function checks if the column exists in a dataframe
@@ -135,6 +136,7 @@ def rmFiles(folderPath, recursive=True):
             break
 
 
+# TODO Add to transform
 def removeStringFloat(string):
     """
     remove string float in tsv file
@@ -150,6 +152,7 @@ def removeStringFloat(string):
     return string
 
 
+# TODO Add to transform
 def removePandasDfFloat(df, header=True):
     """
     Remove decimal for integers due to pandas
@@ -169,6 +172,7 @@ def removePandasDfFloat(df, header=True):
     return text
 
 
+# TODO Add to transform
 def removeFloat(df):
     """
     Need to remove this function
@@ -181,6 +185,7 @@ def removeFloat(df):
     return text
 
 
+# TODO Add to validate.py
 def checkGenieId(ID, center):
     """
     Checks if GENIE ID is labelled correctly
@@ -199,40 +204,6 @@ def checkGenieId(ID, center):
         return "GENIE-%s-%s" % (center, str(ID))
     else:
         return str(ID)
-
-
-def storeFile(
-    syn,
-    fileName,
-    parentId,
-    center,
-    fileFormat,
-    dataSubType,
-    platform=None,
-    cBioFileFormat=None,
-    used=None,
-):
-    """
-    # Storing Files along with annotations
-    """
-    logger.info("STORING FILES")
-    fileEnt = synapseclient.File(fileName, parent=parentId)
-    fileEnt.center = center
-    fileEnt.species = "Human"
-    fileEnt.consortium = "GENIE"
-    fileEnt.dataType = "genomicVariants"
-    fileEnt.fundingAgency = "AACR"
-    fileEnt.assay = "targetGeneSeq"
-    fileEnt.fileFormat = fileFormat
-    fileEnt.dataSubType = dataSubType
-    fileEnt.fileStage = "staging"
-    fileEnt.platform = platform
-    if platform is not None:
-        fileEnt.platform = platform
-    if cBioFileFormat is not None:
-        fileEnt.cBioFileFormat = cBioFileFormat
-    ent = syn.store(fileEnt, used=used)
-    return ent
 
 
 def seqDateFilter(clinicalDf, processingDate, days):
@@ -656,6 +627,7 @@ def updateDatabase(
     os.unlink(update_all_file.name)
 
 
+# TODO Add to validate.py
 def checkInt(element):
     """
     Check if an item can become an integer
@@ -673,6 +645,7 @@ def checkInt(element):
         return False
 
 
+# TODO Add to validate.py
 def check_col_and_values(
     df, col, possible_values, filename, na_allowed=False, required=False, sep=None
 ):
@@ -986,6 +959,7 @@ def _move_entity(syn, ent, parentid, name=None):
     return moved_ent
 
 
+# TODO: Add to extract.py
 def get_dbmapping(syn: Synapse, projectid: str) -> dict:
     """Gets database mapping information
 
