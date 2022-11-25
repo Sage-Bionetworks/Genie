@@ -32,14 +32,12 @@ table_query_results_map = {
     ),
 }
 
-syn = mock.create_autospec(synapseclient.Synapse)
-syn.tableQuery.side_effect = table_query_results
-
 ENTITY = synapseclient.Project("testing", annotations={"dbMapping": ["syn10967259"]})
 
 
 @pytest.fixture
-def cna_class(genie_config):
+def cna_class(syn, genie_config):
+    syn.tableQuery.side_effect = table_query_results
     return cna(syn, "SAGE", genie_config)
 
 
@@ -91,7 +89,7 @@ def test_processing(cna_class):
     pd.testing.assert_frame_equal(expectedCnaDf, newCnaDf[expectedCnaDf.columns])
 
 
-def test_validation(cna_class):
+def test_validation(syn, cna_class):
     with pytest.raises(AssertionError):
         cna_class.validateFilename(["foo"])
     assert cna_class.validateFilename(["data_CNA_SAGE.txt"]) == "cna"
