@@ -8,59 +8,16 @@ from typing import Dict, List
 import synapseclient
 from synapseclient.core.exceptions import SynapseTimeoutError
 
+from . import __version__
+
 logger = logging.getLogger(__name__)
 
 
-# TODO make sure to remove from database_to_staging
-# def store_file(
-#     syn,
-#     filePath,
-#     genieVersion="database",
-#     name=None,
-#     parent=None,
-#     fileFormat=None,
-#     cBioFileFormat=None,
-#     tag_or_commit=None,
-#     used=None,
-# ):
-#     """
-#     Convenience function to store files
-
-#     Args:
-#         syn: Synapse object
-#         filePath: path to file to store
-#         genieVersion: Version of genie release
-#         name: Name of entity
-#         fileFormat: GENIE file format
-#         cBioFileFormat: cBioPortal file format
-#         staging: Staging GENIE release.  Default to False
-#         caseLists: Case lists are stored elsewhere
-#         tag_or_commit: Github tag or commit
-#         used: List of entities used in creation of file
-#     """
-#     logger.info("STORING FILE: {}".format(os.path.basename(filePath)))
-#     if name is None:
-#         name = os.path.basename(filePath)
-#     ent = synapseclient.File(
-#         filePath, name=name, parent=parent, versionComment=genieVersion
-#     )
-#     if fileFormat is not None:
-#         ent.fileFormat = fileFormat
-#     if cBioFileFormat is not None:
-#         ent.cBioFileFormat = cBioFileFormat
-#     if tag_or_commit is None:
-#         tag_or_commit = f"v{__version__}"
-#     ent = syn.store(
-#         ent,
-#         executed=f"https://github.com/Sage-Bionetworks/Genie/tree/{tag_or_commit}",
-#         used=used,
-#     )
-#     return ent
-
-
+# TODO Edit docstring
 def store_file(
-    syn: synapseclient.Synapse, filepath: str, parentid: str,
-    annotations: Dict = None, used: List[str] = None, executed: List[str] = None
+    syn: synapseclient.Synapse, filepath: str, parentid: str, name: str = None,
+    annotations: Dict = None, used: List[str] = None,
+    version_comment: str = None
 ) -> synapseclient.File:
     """Stores file into Synapse
 
@@ -72,10 +29,16 @@ def store_file(
     Returns:
         synapseclient.File: Synapse File entity
     """
-    file_ent = synapseclient.File(filepath, parentId=parentid)
+    file_ent = synapseclient.File(filepath, parentId=parentid, versionComment=version_comment)
+    if name is not None:
+        file_ent.name = name
     if annotations is not None:
         file_ent.annotations = annotations
-    file_ent = syn.store(file_ent, used=used, executed=executed)
+    file_ent = syn.store(
+        file_ent,
+        used=used,
+        executed=f"https://github.com/Sage-Bionetworks/Genie/tree/v{__version__}"
+    )
     return file_ent
 
 

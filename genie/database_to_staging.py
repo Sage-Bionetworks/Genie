@@ -13,9 +13,8 @@ from typing import List
 import pandas as pd
 import pyranges
 import synapseclient
-import synapseutils
 
-from . import extract, process_functions
+from . import extract, load, process_functions
 from . import __version__
 
 logger = logging.getLogger(__name__)
@@ -37,53 +36,6 @@ FUSIONS_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_fusions_%s.txt")
 SEG_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_cna_hg19_%s.seg")
 SV_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_sv_%s.txt")
 BED_DIFFS_SEQASSAY_PATH = os.path.join(GENIE_RELEASE_DIR, "diff_%s.csv")
-
-
-# TODO: Add to load.py
-def store_file(
-    syn,
-    filePath,
-    genieVersion="database",
-    name=None,
-    parent=None,
-    fileFormat=None,
-    cBioFileFormat=None,
-    tag_or_commit=None,
-    used=None,
-):
-    """
-    Convenience function to store files
-
-    Args:
-        syn: Synapse object
-        filePath: path to file to store
-        genieVersion: Version of genie release
-        name: Name of entity
-        fileFormat: GENIE file format
-        cBioFileFormat: cBioPortal file format
-        staging: Staging GENIE release.  Default to False
-        caseLists: Case lists are stored elsewhere
-        tag_or_commit: Github tag or commit
-        used: List of entities used in creation of file
-    """
-    logger.info("STORING FILE: {}".format(os.path.basename(filePath)))
-    if name is None:
-        name = os.path.basename(filePath)
-    ent = synapseclient.File(
-        filePath, name=name, parent=parent, versionComment=genieVersion
-    )
-    if fileFormat is not None:
-        ent.fileFormat = fileFormat
-    if cBioFileFormat is not None:
-        ent.cBioFileFormat = cBioFileFormat
-    if tag_or_commit is None:
-        tag_or_commit = f"v{__version__}"
-    ent = syn.store(
-        ent,
-        executed=f"https://github.com/Sage-Bionetworks/Genie/tree/{tag_or_commit}",
-        used=used,
-    )
-    return ent
 
 
 # TODO: Add to transform.py
@@ -457,13 +409,13 @@ def runMAFinBED(
         center_mutation = removed_variantsdf[removed_variantsdf["Center"] == center]
         # mafText = process.removePandasDfFloat(center_mutation)
         center_mutation.to_csv("mafinbed_filtered_variants.csv", index=False)
-        store_file(
-            syn,
-            "mafinbed_filtered_variants.csv",
-            parent=center_mappingdf["stagingSynId"][
+        load.store_file(
+            syn=syn,
+            filepath="mafinbed_filtered_variants.csv",
+            parentid=center_mappingdf["stagingSynId"][
                 center_mappingdf["center"] == center
             ][0],
-            genieVersion=genieVersion,
+            version_comment=genieVersion
         )
         os.unlink("mafinbed_filtered_variants.csv")
     return removed_variantsdf["removeVariants"]
@@ -559,11 +511,11 @@ def mutation_in_cis_filter(
                 mergeCheckDf[mergeCheckDf["Center"] == center].to_csv(
                     "mutationsInCis_filtered_samples.csv", index=False
                 )
-                store_file(
-                    syn,
-                    "mutationsInCis_filtered_samples.csv",
-                    parent=stagingSynId[0],
-                    genieVersion=genieVersion,
+                load.store_file(
+                    syn=syn,
+                    filepath="mutationsInCis_filtered_samples.csv",
+                    parentid=stagingSynId[0],
+                    version_comment=genieVersion
                 )
                 os.unlink("mutationsInCis_filtered_samples.csv")
     query_str = (
@@ -679,14 +631,17 @@ def store_gene_panel_files(
         print(gene_panel)
         if gene_panel in panelNames:
             os.rename(genePanel.path, newGenePanelPath)
+            annotations = {
+                "cBioFileFormat": "genePanel"
+            }
             genePanelEntities.append(
-                store_file(
-                    syn,
-                    newGenePanelPath,
-                    parent=consortiumReleaseSynId,
-                    genieVersion=genieVersion,
+                load.store_file(
+                    syn=syn,
+                    filepath=newGenePanelPath,
+                    parentid=consortiumReleaseSynId,
+                    version_comment=genieVersion,
                     name=genePanelName,
-                    cBioFileFormat="genePanel",
+                    annotations=annotations,
                     used=f"{synId}.{genePanel.versionNumber}",
                 )
             )
@@ -739,11 +694,11 @@ def store_fusion_files(
                 center_fusion.to_csv(
                     FUSIONS_CENTER_PATH % center, sep="\t", index=False
                 )
-                store_file(
-                    syn,
-                    FUSIONS_CENTER_PATH % center,
-                    genieVersion=genie_version,
-                    parent=center_mappingdf["stagingSynId"][
+                load.store_file(
+                    syn=syn,
+                    filepath=FUSIONS_CENTER_PATH % center,
+                    version_comment=genie_version,
+                    parentid=center_mappingdf["stagingSynId"][
                         center_mappingdf["center"] == center
                     ][0],
                 )
@@ -773,11 +728,11 @@ def store_fusion_files(
     fusions_path = os.path.join(GENIE_RELEASE_DIR, "data_fusions.txt")
     with open(fusions_path, "w") as fusion_file:
         fusion_file.write(fusionText)
-    store_file(
-        syn,
-        fusions_path,
-        parent=release_synid,
-        genieVersion=genie_version,
+    load.store_file(
+        syn=syn,
+        filepath=fusions_path,
+        parentid=release_synid,
+        version_comment=genie_version,
         name="data_fusions.txt",
         used=f"{fusion_synid}.{version}",
     )
@@ -826,11 +781,11 @@ def store_sv_files(
             center_fusion = sv_staging_df[sv_staging_df["CENTER"] == center]
             if not center_fusion.empty:
                 center_fusion.to_csv(SV_CENTER_PATH % center, sep="\t", index=False)
-                store_file(
-                    syn,
-                    SV_CENTER_PATH % center,
-                    genieVersion=genie_version,
-                    parent=center_mappingdf["stagingSynId"][
+                load.store_file(
+                    syn=syn,
+                    filepath=SV_CENTER_PATH % center,
+                    version_comment=genie_version,
+                    parentid=center_mappingdf["stagingSynId"][
                         center_mappingdf["center"] == center
                     ][0],
                 )
@@ -855,11 +810,11 @@ def store_sv_files(
     sv_path = os.path.join(GENIE_RELEASE_DIR, "data_sv.txt")
     with open(sv_path, "w") as sv_file:
         sv_file.write(sv_text)
-    store_file(
-        syn,
-        sv_path,
-        parent=release_synid,
-        genieVersion=genie_version,
+    load.store_file(
+        syn=syn,
+        filepath=sv_path,
+        parentid=release_synid,
+        version_comment=genie_version,
         name="data_sv.txt",
         used=f"{synid}.{version}",
     )
@@ -964,11 +919,11 @@ def store_maf_files(
                     center_mafdf, MUTATIONS_CENTER_PATH % center
                 )
 
-    store_file(
-        syn,
-        mutations_path,
-        parent=release_synid,
-        genieVersion=genie_version,
+    load.store_file(
+        syn=syn,
+        filepath=mutations_path,
+        parentid=release_synid,
+        version_comment=genie_version,
         name="data_mutations_extended.txt",
         used=used_entities,
     )
@@ -978,11 +933,11 @@ def store_maf_files(
             staging_synid = center_mappingdf["stagingSynId"][
                 center_mappingdf["center"] == center
             ][0]
-            store_file(
-                syn,
-                MUTATIONS_CENTER_PATH % center,
-                genieVersion=genie_version,
-                parent=staging_synid,
+            load.store_file(
+                syn=syn,
+                filepath=MUTATIONS_CENTER_PATH % center,
+                version_comment=genie_version,
+                parentid=staging_synid,
             )
 
 
@@ -1108,11 +1063,11 @@ def store_assay_info_files(
         f"in ('{seq_assay_str}')",
     )
     assay_infodf.to_csv(assay_info_path, sep="\t", index=False)
-    store_file(
-        syn,
-        assay_info_path,
-        parent=release_synid,
-        genieVersion=genie_version,
+    load.store_file(
+        syn=syn,
+        filepath=assay_info_path,
+        parentid=release_synid,
+        version_comment=genie_version,
         name="assay_information.txt",
         used=f"{assay_info_synid}.{version}",
     )
@@ -1240,19 +1195,19 @@ def store_clinical_files(
             center_patient = center_clinical[patient_cols].drop_duplicates("PATIENT_ID")
             center_sample.to_csv(SAMPLE_CENTER_PATH % center, sep="\t", index=False)
             center_patient.to_csv(PATIENT_CENTER_PATH % center, sep="\t", index=False)
-            store_file(
-                syn,
-                SAMPLE_CENTER_PATH % center,
-                genieVersion=genie_version,
-                parent=center_mappingdf["stagingSynId"][
+            load.store_file(
+                syn=syn,
+                filepath=SAMPLE_CENTER_PATH % center,
+                version_comment=genie_version,
+                parentid=center_mappingdf["stagingSynId"][
                     center_mappingdf["center"] == center
                 ][0],
             )
-            store_file(
-                syn,
-                PATIENT_CENTER_PATH % center,
-                genieVersion=genie_version,
-                parent=center_mappingdf["stagingSynId"][
+            load.store_file(
+                syn=syn,
+                filepath=PATIENT_CENTER_PATH % center,
+                version_comment=genie_version,
+                parentid=center_mappingdf["stagingSynId"][
                     center_mappingdf["center"] == center
                 ][0],
             )
@@ -1277,27 +1232,32 @@ def store_clinical_files(
         clinical_sample_path,
         clinical_patient_path,
     )
-    store_file(
-        syn,
-        clinical_sample_path,
-        parent=release_synid,
-        genieVersion=genie_version,
+    load.store_file(
+        syn=syn,
+        filepath=clinical_sample_path,
+        parentid=release_synid,
+        version_comment=genie_version,
         name="data_clinical_sample.txt",
         used=used,
     )
 
-    store_file(
-        syn,
-        clinical_patient_path,
-        parent=release_synid,
-        genieVersion=genie_version,
+    load.store_file(
+        syn=syn,
+        filepath=clinical_patient_path,
+        parentid=release_synid,
+        version_comment=genie_version,
         name="data_clinical_patient.txt",
         used=used,
     )
 
     clinicaldf.to_csv(clinical_path, sep="\t", index=False)
-    store_file(
-        syn, clinical_path, parent=release_synid, name="data_clinical.txt", used=used
+    load.store_file(
+        syn=syn,
+        filepath=clinical_path,
+        parentid=release_synid,
+        name="data_clinical.txt",
+        used=used,
+        version_comment="database",
     )
 
     return (clinicaldf, keep_center_consortium_samples, keep_merged_consortium_samples)
@@ -1385,11 +1345,11 @@ def store_cna_files(
                 # Store center CNA file in staging dir
                 with open(CNA_CENTER_PATH % center, "w") as cna_file:
                     cna_file.write(cna_text)
-                store_file(
-                    syn,
-                    CNA_CENTER_PATH % center,
-                    genieVersion=genie_version,
-                    parent=center_mappingdf["stagingSynId"][
+                load.store_file(
+                    syn=syn,
+                    filepath=CNA_CENTER_PATH % center,
+                    version_comment=genie_version,
+                    parentid=center_mappingdf["stagingSynId"][
                         center_mappingdf["center"] == center
                     ][0],
                 )
@@ -1412,11 +1372,11 @@ def store_cna_files(
             with open(cna_path, "w") as cna_file:
                 cna_file.write(output.decode("utf-8").replace(" ", "\t"))
 
-    store_file(
-        syn,
-        cna_path,
-        parent=release_synid,
-        genieVersion=genie_version,
+    load.store_file(
+        syn=syn,
+        filepath=cna_path,
+        parentid=release_synid,
+        version_comment=genie_version,
         name="data_CNA.txt",
         used=used_entities,
     )
@@ -1474,11 +1434,11 @@ def store_seg_files(
                 segtext = process_functions.removePandasDfFloat(center_seg)
                 with open(SEG_CENTER_PATH % center, "w") as seg_file:
                     seg_file.write(segtext)
-                store_file(
-                    syn,
-                    SEG_CENTER_PATH % center,
-                    genieVersion=genie_version,
-                    parent=center_mappingdf["stagingSynId"][
+                load.store_file(
+                    syn=syn,
+                    filepath=SEG_CENTER_PATH % center,
+                    version_comment=genie_version,
+                    parentid=center_mappingdf["stagingSynId"][
                         center_mappingdf["center"] == center
                     ][0],
                 )
@@ -1487,11 +1447,11 @@ def store_seg_files(
     segtext = process_functions.removePandasDfFloat(segdf)
     with open(seg_path, "w") as seg_file:
         seg_file.write(segtext)
-    store_file(
-        syn,
-        seg_path,
-        parent=release_synid,
-        genieVersion=genie_version,
+    load.store_file(
+        syn=syn,
+        filepath=seg_path,
+        parentid=release_synid,
+        version_comment=genie_version,
         name="data_cna_hg19.seg",
         used=f"{seg_synid}.{version}",
     )
@@ -1544,11 +1504,11 @@ def store_data_gene_matrix(
 
     data_gene_matrix.to_csv(data_gene_matrix_path, sep="\t", index=False)
 
-    store_file(
-        syn,
-        data_gene_matrix_path,
-        parent=release_synid,
-        genieVersion=genie_version,
+    load.store_file(
+        syn=syn,
+        filepath=data_gene_matrix_path,
+        parentid=release_synid,
+        version_comment=genie_version,
         name="data_gene_matrix.txt",
     )
     return data_gene_matrix
@@ -1586,27 +1546,27 @@ def store_bed_files(
             center = seq_assay.split("-")[0]
             bed_seq_df = bed_seq_df[
                 bed_seq_df["Hugo_Symbol"] != bed_seq_df["ID"]
-            ]  # pylint: disable=line-too-long
+            ]
             # There should always be a match here, because there should never
             # be a SEQ_ASSAY_ID that starts without the center name
             # If there is, check the bed db for SEQ_ASSAY_ID
             center_ind = center_mappingdf["center"] == center
             if not bed_seq_df.empty:
                 bed_seq_df.to_csv(BED_DIFFS_SEQASSAY_PATH % seq_assay, index=False)
-                store_file(
-                    syn,
-                    BED_DIFFS_SEQASSAY_PATH % seq_assay,
-                    genieVersion=genie_version,
-                    parent=center_mappingdf["stagingSynId"][center_ind][0],
-                )  # pylint: disable=line-too-long
+                load.store_file(
+                    syn=syn,
+                    filepath=BED_DIFFS_SEQASSAY_PATH % seq_assay,
+                    version_comment=genie_version,
+                    parentid=center_mappingdf["stagingSynId"][center_ind][0],
+                )
     # This clinicalDf is already filtered through most of the filters
     beddf = beddf[beddf["SEQ_ASSAY_ID"].isin(seq_assay_ids)]
     beddf.to_csv(combined_bed_path, sep="\t", index=False)
-    store_file(
-        syn,
-        combined_bed_path,
-        parent=release_synid,
-        genieVersion=genie_version,
+    load.store_file(
+        syn=syn,
+        filepath=combined_bed_path,
+        parentid=release_synid,
+        version_comment=genie_version,
         name="genomic_information.txt",
         used=used,
     )
@@ -1933,7 +1893,12 @@ def revise_metadata_files(syn, consortiumid, genie_version=None):
                 meta.seek(0)
                 meta.write(meta_text)
                 meta.truncate()
-        store_file(syn, meta_ent.path, parent=consortiumid, genieVersion=genie_version)
+        load.store_file(
+            syn=syn,
+            filepath=meta_ent.path,
+            parentid=consortiumid,
+            version_comment=genie_version
+        )
 
 
 # TODO: Add to load.py
