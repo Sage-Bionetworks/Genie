@@ -515,7 +515,7 @@ class Clinical(FileTypeFormat):
         sex_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['sex_mapping']}"
         )
-        sampletype_mapping = process_functions.get_syntabledf(
+        sampletype_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['sampletype_mapping']}"
         )
         # CHECK: SAMPLE_ID
