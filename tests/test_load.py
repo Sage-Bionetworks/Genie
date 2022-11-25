@@ -11,7 +11,20 @@ def test_store_file(syn):
     with patch.object(syn, "store") as patch_store:
         load.store_file(syn, "full/path", "syn1234")
         patch_store.assert_called_once_with(
-            synapseclient.File("full/path", parentId="syn1234")
+            synapseclient.File("full/path", parentId="syn1234"),
+            used=None,
+            executed=None
+        )
+
+
+def test_store_file_annotations(syn):
+    """Test storing of file with annotations"""
+    with patch.object(syn, "store") as patch_store:
+        load.store_file(syn, "full/path", "syn1234", annotations={"test": "test"})
+        patch_store.assert_called_once_with(
+            synapseclient.File("full/path", parentId="syn1234", annotations={"test": "test"}),
+            used=None,
+            executed=None
         )
 
 
