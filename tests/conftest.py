@@ -4,7 +4,7 @@ import pytest
 import synapseclient
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def genie_config():
     oncotree_link = (
         "http://oncotree.mskcc.org/api/tumorTypes/tree?version=oncotree_2017_06_21"
@@ -71,6 +71,6 @@ def genie_config():
     return config
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def syn():
     return mock.create_autospec(synapseclient.Synapse)
