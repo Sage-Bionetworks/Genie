@@ -214,29 +214,6 @@ def test_append_or_createdf_create_file_0size():
         patch_tocsv.assert_called_once_with(temp_file.name, sep="\t", index=False)
 
 
-def test_store_full_maf(syn):
-    """Test storing of full maf"""
-    with patch.object(syn, "store") as patch_store:
-        process_mutation.store_full_maf(syn, "full/path", "syn1234")
-        patch_store.assert_called_once_with(
-            synapseclient.File("full/path", parentId="syn1234")
-        )
-
-
-def test_store_narrow_maf(syn):
-    """Test storing of narrow maf"""
-    with patch.object(syn, "store") as patch_store:
-        process_mutation.store_narrow_maf(syn, "full/path", "syn1234")
-        patch_store.assert_called_once()
-
-
-def test_store_narrow_maf_test_error(syn):
-    """Test storing of narrow maf catches and passes error"""
-    with patch.object(syn, "store", side_effect=SynapseTimeoutError) as patch_store:
-        process_mutation.store_narrow_maf(syn, "full/path", "syn1234")
-        patch_store.assert_called_once()
-
-
 def test_split_and_store_maf(syn):
     """Integration test, check splitting and storing of maf functions are
     called"""
