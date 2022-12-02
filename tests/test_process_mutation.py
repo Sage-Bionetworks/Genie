@@ -1,17 +1,14 @@
 """Test process mutation functions"""
-from distutils.command.build import build
 import shutil
 import subprocess
 import tempfile
-from unittest.mock import create_autospec, patch, call
+from unittest.mock import patch, call
 
 import pandas as pd
 import synapseclient
 from synapseclient.core.exceptions import SynapseTimeoutError
 
 from genie import process_mutation
-
-SYN = create_autospec(synapseclient.Synapse)
 
 
 def test_format_maf():
@@ -98,7 +95,7 @@ class TestDtype:
             patch_move.assert_called_once_with(self.mutation_path, self.input_dir)
 
 
-def test_process_mutation_workflow(genie_config):
+def test_process_mutation_workflow(syn, genie_config):
     """Integration test to make sure workflow runs"""
     validfiles = pd.DataFrame(
         {"fileType": ["vcf", "maf"], "path": ["path/to/vcf", "path/to/maf"]}
@@ -119,14 +116,14 @@ def test_process_mutation_workflow(genie_config):
     center = "SAGE"
     workdir = "working/dir/path"
     maf_path = "path/to/maf"
-    with patch.object(SYN, "get") as patch_synget, patch.object(
+    with patch.object(syn, "get") as patch_synget, patch.object(
         process_mutation, "annotate_mutation", return_value=maf_path
     ) as patch_annotation, patch.object(
         process_mutation, "split_and_store_maf"
     ) as patch_split:
 
         maf = process_mutation.process_mutation_workflow(
-            SYN, center, validfiles, genie_config, workdir
+            syn, center, validfiles, genie_config, workdir
         )
         patch_synget.assert_has_calls(syn_get_calls)
         patch_annotation.assert_called_once_with(
@@ -136,7 +133,7 @@ def test_process_mutation_workflow(genie_config):
             workdir=workdir,
         )
         patch_split.assert_called_once_with(
-            syn=SYN,
+            syn=syn,
             center=center,
             maf_tableid="syn22493903",
             annotated_maf_path=maf_path,
@@ -217,30 +214,30 @@ def test_append_or_createdf_create_file_0size():
         patch_tocsv.assert_called_once_with(temp_file.name, sep="\t", index=False)
 
 
-def test_store_full_maf():
+def test_store_full_maf(syn):
     """Test storing of full maf"""
-    with patch.object(SYN, "store") as patch_store:
-        process_mutation.store_full_maf(SYN, "full/path", "syn1234")
+    with patch.object(syn, "store") as patch_store:
+        process_mutation.store_full_maf(syn, "full/path", "syn1234")
         patch_store.assert_called_once_with(
             synapseclient.File("full/path", parentId="syn1234")
         )
 
 
-def test_store_narrow_maf():
+def test_store_narrow_maf(syn):
     """Test storing of narrow maf"""
-    with patch.object(SYN, "store") as patch_store:
-        process_mutation.store_narrow_maf(SYN, "full/path", "syn1234")
+    with patch.object(syn, "store") as patch_store:
+        process_mutation.store_narrow_maf(syn, "full/path", "syn1234")
         patch_store.assert_called_once()
 
 
-def test_store_narrow_maf_test_error():
+def test_store_narrow_maf_test_error(syn):
     """Test storing of narrow maf catches and passes error"""
-    with patch.object(SYN, "store", side_effect=SynapseTimeoutError) as patch_store:
-        process_mutation.store_narrow_maf(SYN, "full/path", "syn1234")
+    with patch.object(syn, "store", side_effect=SynapseTimeoutError) as patch_store:
+        process_mutation.store_narrow_maf(syn, "full/path", "syn1234")
         patch_store.assert_called_once()
 
 
-def test_split_and_store_maf():
+def test_split_and_store_maf(syn):
     """Integration test, check splitting and storing of maf functions are
     called"""
     # getTableColumns
@@ -261,7 +258,7 @@ def test_split_and_store_maf():
     )
 
     with patch.object(
-        SYN, "getTableColumns", return_value=columns
+        syn, "getTableColumns", return_value=columns
     ) as patch_getcols, patch.object(
         pd, "read_csv", return_value=[exampledf]
     ) as patch_readcsv, patch.object(
@@ -274,7 +271,7 @@ def test_split_and_store_maf():
         process_mutation, "store_full_maf"
     ) as patch_full:
         process_mutation.split_and_store_maf(
-            syn=SYN,
+            syn=syn,
             center=center,
             maf_tableid="sy12345",
             annotated_maf_path=annotated_maf_path,
@@ -289,5 +286,5 @@ def test_split_and_store_maf():
 
         assert patch_append.call_count == 2
 
-        patch_narrow.assert_called_once_with(SYN, narrow_maf_path, "sy12345")
-        patch_full.assert_called_once_with(SYN, full_maf_path, "syn2345")
+        patch_narrow.assert_called_once_with(syn, narrow_maf_path, "sy12345")
+        patch_full.assert_called_once_with(syn, full_maf_path, "syn2345")

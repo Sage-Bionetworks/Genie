@@ -1,14 +1,12 @@
-from unittest import mock
-
 import pandas as pd
 import pytest
-import synapseclient
 
 from genie_registry.vcf import vcf
 
-syn = mock.create_autospec(synapseclient.Synapse)
 
-vcfClass = vcf(syn, "SAGE")
+@pytest.fixture
+def vcf_class(syn):
+    return vcf(syn, "SAGE")
 
 
 def test_processing():
@@ -16,13 +14,13 @@ def test_processing():
 
 
 @pytest.mark.parametrize("filepath_list", [["foo"], ["GENIE-SAGE-ID1.bed"]])
-def test_incorrect_validatefilename(filepath_list):
+def test_incorrect_validatefilename(vcf_class, filepath_list):
     with pytest.raises(AssertionError):
-        vcfClass.validateFilename(filepath_list)
+        vcf_class.validateFilename(filepath_list)
 
 
-def test_validation():
-    assert vcfClass.validateFilename(["GENIE-SAGE-ID1.vcf"]) == "vcf"
+def test_validation(vcf_class):
+    assert vcf_class.validateFilename(["GENIE-SAGE-ID1.vcf"]) == "vcf"
 
     vcfDf = pd.DataFrame(
         {
@@ -37,7 +35,7 @@ def test_validation():
         }
     )
 
-    error, warning = vcfClass._validate(vcfDf)
+    error, warning = vcf_class._validate(vcfDf)
     assert error == ""
     assert warning == ""
 
@@ -55,7 +53,7 @@ def test_validation():
         }
     )
 
-    error, warning = vcfClass._validate(vcfDf)
+    error, warning = vcf_class._validate(vcfDf)
     expectedError = (
         "vcf: Must have these headers: CHROM, POS, ID, REF, "
         "ALT, QUAL, FILTER, INFO.\n"
@@ -80,7 +78,7 @@ def test_validation():
         }
     )
 
-    error, warning = vcfClass._validate(vcfDf)
+    error, warning = vcf_class._validate(vcfDf)
     expectedError = (
         "vcf: Must not have duplicate variants.\n"
         "vcf: May contain rows that are "
