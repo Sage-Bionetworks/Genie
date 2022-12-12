@@ -467,7 +467,6 @@ class Clinical(FileTypeFormat):
                 filterBy=self.center,
                 toDelete=True,
                 col=cols.tolist(),
-
             )
         newClinicalDf.to_csv(newPath, sep="\t", index=False)
         return newPath

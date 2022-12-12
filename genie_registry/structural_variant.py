@@ -34,7 +34,7 @@ class StructuralVariant(FileTypeFormat):
             newData=sv_df,
             filterBy=self.center,
             toDelete=True,
-            col=sv_df.columns.to_list()
+            col=sv_df.columns.to_list(),
         )
         sv_df.to_csv(newPath, sep="\t", index=False)
         return newPath

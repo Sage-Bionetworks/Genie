@@ -599,7 +599,7 @@ class bed(FileTypeFormat):
             newData=final_beddf,
             filterBy=self.center,
             filterByColumn="SEQ_ASSAY_ID",
-            toDelete=True
+            toDelete=True,
         )
         final_beddf.to_csv(newPath, sep="\t", index=False)
         return newPath

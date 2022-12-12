@@ -104,7 +104,7 @@ class fusions(FileTypeFormat):
             databaseSynId=databaseSynId,
             newData=fusion,
             filterBy=self.center,
-            toDelete=True
+            toDelete=True,
         )
         fusion.to_csv(newPath, sep="\t", index=False)
         return newPath

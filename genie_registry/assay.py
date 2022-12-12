@@ -40,7 +40,7 @@ class Assayinfo(FileTypeFormat):
             databaseSynId=databaseSynId,
             newData=process_assay_info_df,
             filterBy=self.center,
-            toDelete=True
+            toDelete=True,
         )
         process_assay_info_df.to_csv(newPath, sep="\t", index=False)
         return newPath

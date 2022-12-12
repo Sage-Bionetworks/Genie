@@ -168,7 +168,7 @@ def _update_table(
     new_dataset: pd.DataFrame,
     database_synid: str,
     primary_key_cols: List[str],
-    to_delete: bool = False
+    to_delete: bool = False,
 ):
     """
     Updates synapse tables by a row identifier with another
@@ -204,12 +204,16 @@ def _update_table(
     to_append_rows = process_functions._append_rows(new_dataset, database, primary_key)
     to_update_rows = process_functions._update_rows(new_dataset, database, primary_key)
     if to_delete:
-        to_delete_rows = process_functions._delete_rows(new_dataset, database, primary_key)
+        to_delete_rows = process_functions._delete_rows(
+            new_dataset, database, primary_key
+        )
     else:
         to_delete_rows = pd.DataFrame()
     allupdates = pd.concat([allupdates, to_append_rows, to_update_rows], sort=False)
     storedatabase = False
-    update_all_file = tempfile.NamedTemporaryFile(dir=process_functions.SCRIPT_DIR, delete=False)
+    update_all_file = tempfile.NamedTemporaryFile(
+        dir=process_functions.SCRIPT_DIR, delete=False
+    )
 
     with open(update_all_file.name, "w") as updatefile:
         # Must write out the headers in case there are no appends or updates
