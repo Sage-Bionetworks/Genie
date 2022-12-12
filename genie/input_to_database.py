@@ -490,7 +490,7 @@ def update_status_and_error_tables(
     """
     logger.info("UPDATE VALIDATION STATUS DATABASE")
 
-    process_functions.updateDatabase(
+    load._update_table(
         syn,
         error_tracker_table.asDataFrame(),
         invalid_errorsdf,
@@ -499,7 +499,7 @@ def update_status_and_error_tables(
         to_delete=True,
     )
 
-    process_functions.updateDatabase(
+    load._update_table(
         syn,
         validation_status_table.asDataFrame(),
         input_valid_statusdf,

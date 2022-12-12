@@ -11,7 +11,7 @@ from genie import (
     input_to_database,
     example_filetype_format,
     extract,
-    process_functions,
+    load,
     process_mutation,
 )
 from genie_registry.clinical import Clinical
@@ -820,7 +820,7 @@ class TestValidation:
         validation_status_table = emptytable_mock()
         error_tracker_table = emptytable_mock()
 
-        with patch.object(process_functions, "updateDatabase") as mock_update:
+        with patch.object(load, "_update_table") as mock_update:
             input_to_database.update_status_and_error_tables(
                 syn,
                 self.validation_statusdf,

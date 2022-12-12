@@ -5,7 +5,7 @@ import yaml
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import extract, process_functions
+from genie import extract, load, process_functions
 
 
 class Assayinfo(FileTypeFormat):
@@ -35,13 +35,12 @@ class Assayinfo(FileTypeFormat):
         """
         # Must pass in a list
         process_assay_info_df = self._process(assay_info_df)
-        process_functions.updateData(
-            self.syn,
-            databaseSynId,
-            process_assay_info_df,
-            self.center,
-            filterByColumn="CENTER",
-            toDelete=True,
+        load.update_table(
+            syn=self.syn,
+            databaseSynId=databaseSynId,
+            newData=process_assay_info_df,
+            filterBy=self.center,
+            toDelete=True
         )
         process_assay_info_df.to_csv(newPath, sep="\t", index=False)
         return newPath

@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import process_functions
+from genie import load, process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +41,12 @@ class seg(FileTypeFormat):
 
     def process_steps(self, seg, newPath, databaseSynId):
         seg = self._process(seg)
-        process_functions.updateData(
-            self.syn, databaseSynId, seg, self.center, toDelete=True
+        load.update_table(
+            syn=self.syn,
+            databaseSynId=databaseSynId,
+            newData=seg,
+            filterBy=self.center,
+            toDelete=True,
         )
         seg.to_csv(newPath, sep="\t", index=False)
         return newPath

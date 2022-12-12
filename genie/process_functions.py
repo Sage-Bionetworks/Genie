@@ -27,7 +27,7 @@ from genie import extract
 pd.options.mode.chained_assignment = None
 
 logger = logging.getLogger(__name__)
-
+# TODO: Add to constants.py
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -509,122 +509,6 @@ def _update_rows(new_datasetdf, databasedf, checkby):
     )
 
     return toupdatedf
-
-
-def updateData(
-    syn: Synapse,
-    databaseSynId: str,
-    newData: pd.DataFrame,
-    filterBy: str,
-    filterByColumn: str = "CENTER",
-    col: List[str] = None,
-    toDelete: bool = False,
-) -> None:
-    """Update Synapse table given a new dataframe
-
-    Args:
-        syn (Synapse): Synapse connection
-        databaseSynId (str): Synapse Id of Synapse Table
-        newData (pd.DataFrame): New data in a dataframe
-        filterBy (str): Value to filter new data by
-        filterByColumn (str, optional): Column to filter values by. Defaults to "CENTER".
-        col (List[str], optional): List of columns to ingest. Defaults to None.
-        toDelete (bool, optional): Delete rows given the primary key. Defaults to False.
-    """
-    databaseEnt = syn.get(databaseSynId)
-    database = syn.tableQuery(
-        f"SELECT * FROM {databaseSynId} where {filterByColumn} ='{filterBy}'"
-    )
-    database = database.asDataFrame()
-    db_cols = set(database.columns)
-    if col is not None:
-        new_data_cols = set(col)
-        # Make sure columns from file exists in database columns
-        use_cols = db_cols.intersection(new_data_cols)
-        # No need to fail, because there is bound to be at least one
-        # column that will exist in the database
-        database = database[list(use_cols)]
-    else:
-        newData = newData[database.columns]
-    updateDatabase(
-        syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete
-    )
-
-
-def updateDatabase(
-    syn, database, new_dataset, database_synid, primary_key_cols, to_delete=False
-):
-    """
-    Updates synapse tables by a row identifier with another
-    dataset that has the same number and order of columns
-
-    Args:
-        syn: Synapse object
-        database: The synapse table (pandas dataframe)
-        new_dataset: New dataset (pandas dataframe)
-        databaseSynId: Synapse Id of the database table
-        uniqueKeyCols: Column(s) that make up the unique key
-        toDelete: Delete rows, Defaults to False
-
-    Returns:
-        Nothing
-    """
-    primary_key = "UNIQUE_KEY"
-    database = database.fillna("")
-    orig_database_cols = database.columns
-    col_order = ["ROW_ID", "ROW_VERSION"]
-    col_order.extend(orig_database_cols.tolist())
-    new_dataset = new_dataset.fillna("")
-    # Columns must be in the same order
-    new_dataset = new_dataset[orig_database_cols]
-    database[primary_key_cols] = database[primary_key_cols].applymap(str)
-    database[primary_key] = database[primary_key_cols].apply(
-        lambda x: " ".join(x), axis=1
-    )
-
-    new_dataset[primary_key_cols] = new_dataset[primary_key_cols].applymap(str)
-    new_dataset[primary_key] = new_dataset[primary_key_cols].apply(
-        lambda x: " ".join(x), axis=1
-    )
-
-    allupdates = pd.DataFrame(columns=col_order)
-    to_append_rows = _append_rows(new_dataset, database, primary_key)
-    to_update_rows = _update_rows(new_dataset, database, primary_key)
-    if to_delete:
-        to_delete_rows = _delete_rows(new_dataset, database, primary_key)
-    else:
-        to_delete_rows = pd.DataFrame()
-    allupdates = pd.concat([allupdates, to_append_rows, to_update_rows], sort=False)
-    storedatabase = False
-    update_all_file = tempfile.NamedTemporaryFile(dir=SCRIPT_DIR, delete=False)
-
-    with open(update_all_file.name, "w") as updatefile:
-        # Must write out the headers in case there are no appends or updates
-        updatefile.write(",".join(col_order) + "\n")
-        if not allupdates.empty:
-            """
-            This is done because of pandas typing.
-            An integer column with one NA/blank value
-            will be cast as a double.
-            """
-            updatefile.write(
-                allupdates[col_order]
-                .to_csv(index=False, header=None)
-                .replace(".0,", ",")
-                .replace(".0\n", "\n")
-            )
-            storedatabase = True
-        if not to_delete_rows.empty:
-            updatefile.write(
-                to_delete_rows.to_csv(index=False, header=None)
-                .replace(".0,", ",")
-                .replace(".0\n", "\n")
-            )
-            storedatabase = True
-    if storedatabase:
-        syn.store(synapseclient.Table(database_synid, update_all_file.name))
-    # Delete the update file
-    os.unlink(update_all_file.name)
 
 
 # TODO Add to validate.py

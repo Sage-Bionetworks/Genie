@@ -9,7 +9,7 @@ import pandas as pd
 import synapseclient
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import extract, process_functions
+from genie import extract, load, process_functions
 from genie.database_to_staging import redact_phi
 
 logger = logging.getLogger(__name__)
@@ -429,14 +429,13 @@ class Clinical(FileTypeFormat):
             self.uploadMissingData(
                 patientClinical, "PATIENT_ID", patient_synid, parentId
             )
-
-            process_functions.updateData(
-                self.syn,
-                patient_synid,
-                patientClinical,
-                self.center,
-                col=cols.tolist(),
+            load.update_table(
+                syn=self.syn,
+                databaseSynId=patient_synid,
+                newData=patientClinical,
+                filterBy=self.center,
                 toDelete=True,
+                col=cols.tolist(),
             )
         if sample:
             cols = newClinicalDf.columns[newClinicalDf.columns.isin(sampleCols)]
@@ -461,15 +460,15 @@ class Clinical(FileTypeFormat):
                 sampleClinical["ONCOTREE_CODE"].isin(oncotree_mapping["ONCOTREE_CODE"])
             ]
             self.uploadMissingData(sampleClinical, "SAMPLE_ID", sample_synid, parentId)
-            process_functions.updateData(
-                self.syn,
-                sample_synid,
-                sampleClinical,
-                self.center,
-                col=cols.tolist(),
+            load.update_table(
+                syn=self.syn,
+                databaseSynId=sample_synid,
+                newData=sampleClinical,
+                filterBy=self.center,
                 toDelete=True,
-            )
+                col=cols.tolist(),
 
+            )
         newClinicalDf.to_csv(newPath, sep="\t", index=False)
         return newPath
 

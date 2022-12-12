@@ -6,7 +6,7 @@ import pandas as pd
 from synapseclient.core.utils import to_unix_epoch_time
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import process_functions
+from genie import load
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +46,11 @@ class sampleRetraction(FileTypeFormat):
     def process_steps(self, deleteSamples, fileSynId, databaseSynId, newPath):
         info = self.syn.get(fileSynId, downloadFile=False)
         deleteSamples = self._process(deleteSamples, info.modifiedOn.split(".")[0])
-        process_functions.updateData(
-            self.syn,
-            databaseSynId,
-            deleteSamples,
-            self.center,
+        load.update_table(
+            syn=self.syn,
+            databaseSynId=databaseSynId,
+            newData=deleteSamples,
+            filterBy=self.center,
             filterByColumn="center",
             toDelete=True,
         )

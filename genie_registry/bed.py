@@ -593,13 +593,13 @@ class bed(FileTypeFormat):
             string: Path to new bed file
         """
         final_beddf = self._process(beddf, seq_assay_id, newPath, parentId)
-        process_functions.updateData(
-            self.syn,
-            databaseSynId,
-            final_beddf,
-            seq_assay_id,
+        load.update_table(
+            syn=self.syn,
+            databaseSynId=databaseSynId,
+            newData=final_beddf,
+            filterBy=self.center,
             filterByColumn="SEQ_ASSAY_ID",
-            toDelete=True,
+            toDelete=True
         )
         final_beddf.to_csv(newPath, sep="\t", index=False)
         return newPath
