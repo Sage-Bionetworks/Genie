@@ -4,11 +4,12 @@ import logging
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from genie import config, example_filetype_format, extract, process_functions
+from genie import config, example_filetype_format, extract, load
 
 logger = logging.getLogger(__name__)
 
 
+# TODO: move to models.py
 class ValidationHelper(object):
 
     # Used for the kwargs in validate_single_file
@@ -114,10 +115,9 @@ class GenieValidationHelper(ValidationHelper):
     _validate_kwargs = ["nosymbol_check"]
 
 
+# TODO: Currently only checks if a user has READ permissions
 def _check_parentid_permission_container(syn, parentid):
-    """Checks permission / container
-    # TODO: Currently only checks if a user has READ permissions
-    """
+    """Checks permission / container"""
     if parentid is not None:
         try:
             syn_ent = syn.get(parentid, downloadFile=False)
@@ -145,26 +145,6 @@ def _check_center_input(center, center_list):
         raise ValueError(
             "Must specify one of these " f"centers: {', '.join(center_list)}"
         )
-
-
-# TODO: why this instead of storeFile, move to load.py
-def _upload_to_synapse(syn, filepaths, valid, parentid=None):
-    """
-    Upload to synapse if parentid is specified and valid
-
-    Args:
-        syn: Synapse object
-        filepaths: List of file paths
-        valid: Boolean value for validity of file
-        parentid: Synapse id of container. Default is None
-
-    """
-    if parentid is not None and valid:
-        logger.info("Uploading file to {}".format(parentid))
-        for path in filepaths:
-            file_ent = synapseclient.File(path, parent=parentid)
-            ent = syn.store(file_ent)
-            logger.info("Stored to {}".format(ent.id))
 
 
 # TODO: specify all the arguments instead of using args.
@@ -205,4 +185,6 @@ def _perform_validate(syn, args):
     valid, message = validator.validate_single_file(**mykwargs)
 
     # Upload to synapse if parentid is specified and valid
-    _upload_to_synapse(syn, args.filepath, valid, parentid=args.parentid)
+    if valid and args.parentid is not None:
+        logger.info(f"Uploading files to {args.parentid}")
+        load.store_files(syn=syn, filepaths=args.filepath, parentid=args.parentid)
