@@ -4,7 +4,7 @@
 
 [![PyPi](https://img.shields.io/pypi/v/aacrgenie.svg?style=for-the-badge&label=PyPi&logo=PyPi)](https://pypi.org/project/aacrgenie)
 [![Docker Automated](https://img.shields.io/docker/automated/sagebionetworks/genie.svg?style=for-the-badge&logo=docker)](https://hub.docker.com/r/sagebionetworks/genie)
-[![GitHub CI](https://img.shields.io/github/workflow/status/Sage-Bionetworks/Genie/build.svg?&style=for-the-badge&logo=github)](https://github.com/nlpsandbox/nlpsandbox-client)
+[![GitHub CI](https://img.shields.io/github/actions/workflow/status/Sage-Bionetworks/Genie/ci.yml?branch=develop&style=for-the-badge&logo=github)](https://github.com/Sage-Bionetworks/Genie)
 
 
 ## Introduction
