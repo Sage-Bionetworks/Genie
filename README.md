@@ -13,10 +13,13 @@ This repository documents code used to gather, QC, standardize, and analyze data
 
 ## Dependencies
 
-These are tools or packages you will need, to be able to reproduce these results:
+This package contains both R, Python and cli tools.  These are tools or packages you will need, to be able to reproduce these results:
 - Python 3.7 or higher
-- `pip install -r requirements.txt`
+    - `pip install -r requirements.txt`
 - [bedtools](https://bedtools.readthedocs.io/en/latest/content/installation.html)
+- R 4.0.2 or higher
+    - `renv::install()`
+    - If you have trouble installing synapser, follow instructions [here](https://r-docs.synapse.org/#note-for-windows-and-mac-users)
 
 ## File Validator
 
