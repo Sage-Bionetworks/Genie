@@ -23,6 +23,8 @@ This package contains both R, Python and cli tools.  These are tools or packages
 
 ## File Validator
 
+One of the features of the `aacrgenie` package is that is provides a local validation tool that GENIE data contributors and install and use to validate their files locally prior to uploading to Synapse.
+
 ```
 pip install aacrgenie
 genie -v
@@ -35,6 +37,31 @@ genie validate -h
 genie validate data_clinical_supp_SAGE.txt SAGE
 ```
 
+
+
 ## Contributing
 
 Please view [contributing guide](CONTRIBUTING.md) to learn how to contribute to the GENIE package.
+
+
+# Sage Bionetworks Only
+
+## Developing locally
+
+These are instructions on how you would develop and test the pipeline locally.
+
+1. Be sure you are invited to the Synapse GENIE Admin team.
+1. Install the package locally
+
+    ```
+    pip install -e .
+    ```
+
+1. Run the pipelines on the test project
+
+    ```
+    python bin/input_to_database.py main --project_id syn7208886 --deleteOld
+    python bin/input_to_database.py mutation --project_id syn7208886 --deleteOld
+    python bin/database_to_staging.py Jan-2017 ./cbioportal TEST --test
+    python bin/consortium_to_public.py Jan-2017 ./cbioportal TEST --test
+    ```
