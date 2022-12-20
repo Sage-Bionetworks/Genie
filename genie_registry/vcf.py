@@ -84,10 +84,44 @@ class vcf(FileTypeFormat):
                 )
 
         if len(vcfdf.columns) > 8:
+            if len(vcfdf.columns) > 11:
+                total_error += (
+                    "vcf: Should not have more than 11 columns.  Only"
+                    "single sample or matched tumor normal vcf files are accepted"
+                )
             if "FORMAT" not in vcfdf.columns:
                 total_error += (
-                    "vcf: Must have FORMAT header if genotype columns exist.\n"
+                    "vcf: Must have FORMAT header if sample columns exist.\n"
                 )
+            if len(vcfdf.columns) == 11:
+                sample_id = vcfdf.columns[-2]
+                normal_id = vcfdf.columns[-1]
+                error = process_functions.validate_genie_identifier(
+                    identifiers=pd.Series([sample_id]),
+                    center=self.center,
+                    filename="vcf",
+                    col="tumor sample column"
+                )
+                total_error += error
+                error = process_functions.validate_genie_identifier(
+                    identifiers=pd.Series([normal_id]),
+                    center=self.center,
+                    filename="vcf",
+                    col="normal sample column"
+                )
+                total_error += error
+            else:
+                if "TUMOR" not in vcfdf.columns:
+                    sample_id = vcfdf.columns[-1]
+                    error = process_functions.validate_genie_identifier(
+                        identifiers=pd.Series([sample_id]),
+                        center=self.center,
+                        filename="vcf",
+                        col="tumor sample column"
+                    )
+                    error = error.replace("\n", "")
+                    error += " if vcf represents a single sample and TUMOR is not the sample column header.\n"
+                    total_error += error
 
         # Require that they report variants mapped to
         # either GRCh37 or hg19 without
