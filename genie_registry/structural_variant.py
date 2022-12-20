@@ -150,7 +150,15 @@ class StructuralVariant(FileTypeFormat):
                 "column(s): {}.\n".format(", ".join(non_ints))
             )
 
-        region_allow_vals = ["5_PRIME_UTR", "3_PRIME_UTR", "PROMOTER", "EXON", "INTRON"]
+        region_allow_vals = [
+            "5_prime_UTR",
+            "3_prime_UTR",
+            "Promoter",
+            "Exon",
+            "Intron",
+            "5'UTR",
+            "3'UTR",
+        ]
         warn, error = process_functions.check_col_and_values(
             sv_df,
             "SITE1_REGION",
@@ -196,13 +204,13 @@ class StructuralVariant(FileTypeFormat):
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
-            sv_df, "DNA_SUPPORT", ["yes", "no"], "Structural Variant", required=False
+            sv_df, "DNA_SUPPORT", ["Yes", "No"], "Structural Variant", required=False
         )
         # total_warning.write(warn)
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
-            sv_df, "RNA_SUPPORT", ["yes", "no"], "Structural Variant", required=False
+            sv_df, "RNA_SUPPORT", ["Yes", "No"], "Structural Variant", required=False
         )
         # total_warning.write(warn)
         total_error.write(error)
