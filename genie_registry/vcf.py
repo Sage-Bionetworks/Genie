@@ -139,14 +139,14 @@ class vcf(FileTypeFormat):
                     "vcf: Should not have the chr prefix in front of chromosomes.\n"
                 )
             # Get accepted chromosomes
-            accepted_chromosomes = list(map(str, range(1,23)))
+            accepted_chromosomes = list(map(str, range(1, 23)))
             accepted_chromosomes.extend(["X", "Y"])
             correct_chromosomes = [
                 str(chrom).replace("chr", "") in accepted_chromosomes
                 for chrom in vcfdf["#CHROM"]
             ]
             accepted_chromosomes_str = ",".join(accepted_chromosomes)
-            if sum(correct_chromosomes) > 0:
+            if not all(correct_chromosomes):
                 total_error += (
                     "vcf: Chromsomes must be part of this list: "
                     f"{accepted_chromosomes_str}.\n"
