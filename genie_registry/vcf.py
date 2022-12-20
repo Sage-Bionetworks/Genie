@@ -82,17 +82,17 @@ class vcf(FileTypeFormat):
                     "vcf: May contain rows that are "
                     "space delimited instead of tab delimited.\n"
                 )
-
-        if len(vcfdf.columns) > 8:
-            if len(vcfdf.columns) > 11:
-                total_error += (
-                    "vcf: Should not have more than 11 columns.  Only"
-                    "single sample or matched tumor normal vcf files are accepted"
-                )
+        # Vcf can only have max of 11 columns
+        if len(vcfdf.columns) > 11:
+            total_error += (
+                "vcf: Should not have more than 11 columns.  Only"
+                "single sample or matched tumor normal vcf files are accepted"
+            )
+        elif len(vcfdf.columns) > 8:
+            # If there are greater than 8 columns, there must be the FORMAT column
             if "FORMAT" not in vcfdf.columns:
-                total_error += (
-                    "vcf: Must have FORMAT header if sample columns exist.\n"
-                )
+                total_error += "vcf: Must have FORMAT header if sample columns exist.\n"
+            # If 11 columns, this is assumed to be a tumor normal vcf
             if len(vcfdf.columns) == 11:
                 sample_id = vcfdf.columns[-2]
                 normal_id = vcfdf.columns[-1]
@@ -100,24 +100,28 @@ class vcf(FileTypeFormat):
                     identifiers=pd.Series([sample_id]),
                     center=self.center,
                     filename="vcf",
-                    col="tumor sample column"
+                    col="tumor sample column",
                 )
                 total_error += error
                 error = process_functions.validate_genie_identifier(
                     identifiers=pd.Series([normal_id]),
                     center=self.center,
                     filename="vcf",
-                    col="normal sample column"
+                    col="normal sample column",
                 )
                 total_error += error
             else:
+                # Everything else above 8 columns that isn't 11 columns
+                # will be assumed to be a single sample vcf.
+                # if TUMOR is not the sample column header, then validate
+                # the sample column header.
                 if "TUMOR" not in vcfdf.columns:
                     sample_id = vcfdf.columns[-1]
                     error = process_functions.validate_genie_identifier(
                         identifiers=pd.Series([sample_id]),
                         center=self.center,
                         filename="vcf",
-                        col="tumor sample column"
+                        col="tumor sample column",
                     )
                     error = error.replace("\n", "")
                     error += " if vcf represents a single sample and TUMOR is not the sample column header.\n"
