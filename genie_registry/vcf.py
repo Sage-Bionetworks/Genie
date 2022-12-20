@@ -85,8 +85,8 @@ class vcf(FileTypeFormat):
         # Vcf can only have max of 11 columns
         if len(vcfdf.columns) > 11:
             total_error += (
-                "vcf: Should not have more than 11 columns.  Only"
-                "single sample or matched tumor normal vcf files are accepted"
+                "vcf: Should not have more than 11 columns. Only "
+                "single sample or matched tumor normal vcf files are accepted.\n"
             )
         elif len(vcfdf.columns) > 8:
             # If there are greater than 8 columns, there must be the FORMAT column
@@ -123,9 +123,10 @@ class vcf(FileTypeFormat):
                         filename="vcf",
                         col="tumor sample column",
                     )
-                    error = error.replace("\n", "")
-                    error += " if vcf represents a single sample and TUMOR is not the sample column header.\n"
-                    total_error += error
+                    if error:
+                        error = error.replace("\n", "")
+                        error += " if vcf represents a single sample and TUMOR is not the sample column header.\n"
+                        total_error += error
 
         # Require that they report variants mapped to
         # either GRCh37 or hg19 without
