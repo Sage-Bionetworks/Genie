@@ -71,10 +71,10 @@ These are instructions on how you would develop and test the pipeline locally.
         python bin/input_to_database.py main --project_id syn7208886 --deleteOld
         ```
 
-    1. Process the mutation data.
+    1. Process the mutation data.  Be sure to clone this repo: https://github.com/Sage-Bionetworks/annotation-tools
 
         ```
-        python bin/input_to_database.py mutation --project_id syn7208886 --deleteOld
+        python bin/input_to_database.py mutation --project_id syn7208886 --deleteOld --genie_annotation_pkg ../annotation-tools
         ```
 
     1. Create a consortium release.  Be sure to add the `--test` parameter.
