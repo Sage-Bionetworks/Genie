@@ -83,7 +83,7 @@ These are instructions on how you would develop and test the pipeline locally.
         python bin/database_to_staging.py Jan-2017 ../cbioportal TEST --test
         ```
 
-    1. Create a public release.  Be sure to add the `--test` parameter.
+    1. Create a public release.  Be sure to add the `--test` parameter.  Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal
 
         ```
         python bin/consortium_to_public.py Jan-2017 ../cbioportal TEST --test
