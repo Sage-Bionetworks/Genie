@@ -343,6 +343,17 @@
         "Matrix"
       ]
     },
+    "PythonEmbedInR": {
+      "Package": "PythonEmbedInR",
+      "Version": "0.12.79",
+      "Source": "unknown",
+      "Hash": "0b9622b3011ecd7b1c6782b86f821a74",
+      "Requirements": [
+        "R6",
+        "pack",
+        "rjson"
+      ]
+    },
     "R6": {
       "Package": "R6",
       "Version": "2.5.1",
@@ -401,16 +412,6 @@
       "Hash": "1e035db628cefb315c571202d70202fe",
       "Requirements": [
         "Matrix",
-        "Rcpp"
-      ]
-    },
-    "RcppTOML": {
-      "Package": "RcppTOML",
-      "Version": "0.1.7",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "f8a578aa91321ecec1292f1e2ffadeda",
-      "Requirements": [
         "Rcpp"
       ]
     },
@@ -1123,16 +1124,6 @@
       "Hash": "36b4265fb818f6a342bed217549cd896",
       "Requirements": []
     },
-    "here": {
-      "Package": "here",
-      "Version": "1.0.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "24b224366f9c2e7534d2344d10d59211",
-      "Requirements": [
-        "rprojroot"
-      ]
-    },
     "highr": {
       "Package": "highr",
       "Version": "0.9",
@@ -1393,6 +1384,14 @@
         "askpass"
       ]
     },
+    "pack": {
+      "Package": "pack",
+      "Version": "0.1-1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "c4f814b30334e8bc6124647794781a09",
+      "Requirements": []
+    },
     "pbkrtest": {
       "Package": "pbkrtest",
       "Version": "0.5.1",
@@ -1601,23 +1600,6 @@
         "yaml"
       ]
     },
-    "reticulate": {
-      "Package": "reticulate",
-      "Version": "1.26",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "91c176c84a2e3558572d2cbaddc08bd4",
-      "Requirements": [
-        "Matrix",
-        "Rcpp",
-        "RcppTOML",
-        "here",
-        "jsonlite",
-        "png",
-        "rappdirs",
-        "withr"
-      ]
-    },
     "rjson": {
       "Package": "rjson",
       "Version": "0.2.21",
@@ -1782,18 +1764,11 @@
     },
     "synapser": {
       "Package": "synapser",
-      "Version": "0.15.33",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "synapser",
-      "RemoteUsername": "generalui",
-      "RemoteRef": "reticulate",
-      "RemoteSha": "a731da345fd57a54e83b47abd108b08b641e9a6e",
-      "Hash": "a9ee3cfd09292a2a0c868cbd7b344392",
+      "Version": "0.15.35",
+      "Source": "unknown",
+      "Hash": "b64fa4408d7bff4fc66c438a18115b2d",
       "Requirements": [
-        "reticulate",
-        "rjson"
+        "PythonEmbedInR"
       ]
     },
     "sys": {

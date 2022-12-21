@@ -74,17 +74,17 @@ These are instructions on how you would develop and test the pipeline locally.
     1. Process the mutation data.  Be sure to clone this repo: https://github.com/Sage-Bionetworks/annotation-tools
 
         ```
-        python bin/input_to_database.py mutation --project_id syn7208886 --deleteOld --genie_annotation_pkg ../annotation-tools
+        python bin/input_to_database.py mutation --project_id syn7208886 --deleteOld --genie_annotation_pkg ../annotation-tools --createNewMafDatabase
         ```
 
-    1. Create a consortium release.  Be sure to add the `--test` parameter.
+    1. Create a consortium release.  Be sure to add the `--test` parameter. Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal
 
         ```
-        python bin/database_to_staging.py Jan-2017 ./cbioportal TEST --test
+        python bin/database_to_staging.py Jan-2017 ../cbioportal TEST --test
         ```
 
     1. Create a public release.  Be sure to add the `--test` parameter.
 
         ```
-        python bin/consortium_to_public.py Jan-2017 ./cbioportal TEST --test
+        python bin/consortium_to_public.py Jan-2017 ../cbioportal TEST --test
         ```
