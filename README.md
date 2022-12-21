@@ -57,11 +57,34 @@ These are instructions on how you would develop and test the pipeline locally.
     pip install -e .
     ```
 
-1. Run the pipelines on the test project
+1. Run the different pipelines on the test project.  The `--project_id syn7208886` points to the test project.
 
-    ```
-    python bin/input_to_database.py main --project_id syn7208886 --deleteOld
-    python bin/input_to_database.py mutation --project_id syn7208886 --deleteOld
-    python bin/database_to_staging.py Jan-2017 ./cbioportal TEST --test
-    python bin/consortium_to_public.py Jan-2017 ./cbioportal TEST --test
-    ```
+    1. Validate all the files.
+
+        ```
+        python bin/input_to_database.py main --project_id syn7208886 --onlyValidate
+        ```
+
+    1. Process all the files aside from the mutation (maf, vcf) files.  The mutation processing was split because it takes at least 2 days to process all the production mutation data.  Ideally, there is a parameter to exclude or include file types to process/validate, but that is not implemented.
+
+        ```
+        python bin/input_to_database.py main --project_id syn7208886 --deleteOld
+        ```
+
+    1. Process the mutation data.
+
+        ```
+        python bin/input_to_database.py mutation --project_id syn7208886 --deleteOld
+        ```
+
+    1. Create a consortium release.  Be sure to add the `--test` parameter.
+
+        ```
+        python bin/database_to_staging.py Jan-2017 ./cbioportal TEST --test
+        ```
+
+    1. Create a public release.  Be sure to add the `--test` parameter.
+
+        ```
+        python bin/consortium_to_public.py Jan-2017 ./cbioportal TEST --test
+        ```
