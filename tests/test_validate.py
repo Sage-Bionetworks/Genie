@@ -1,5 +1,4 @@
 """Tests validate.py"""
-from unittest import mock
 from unittest.mock import Mock, patch
 
 import pandas as pd
@@ -7,7 +6,7 @@ import pytest
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from genie import example_filetype_format, extract, validate
+from genie import example_filetype_format, extract, load, validate
 
 CENTER = "SAGE"
 CNA_ENT = synapseclient.File(
@@ -262,11 +261,10 @@ ONCOTREE_ENT = "syn222"
 
 class argparser:
     oncotree_link = "link"
-    parentid = None
+    parentid = "syn3333"
     filetype = None
-    project_id = None
     center = "try"
-    filepath = "path.csv"
+    filepath = ["path.csv"]
     nosymbol_check = False
     format_registry_packages = ["genie"]
     project_id = "syn1234"
@@ -279,18 +277,6 @@ class argparser:
         }
         databasetosynid_mappingdf = pd.DataFrame(database_dict)
         return databasetosynid_mappingdf
-
-
-def test_valid__upload_to_synapse(syn):
-    """
-    Test upload of file to synapse under right conditions
-    """
-    ent = synapseclient.File(id="syn123", parentId="syn222")
-    with patch.object(syn, "store", return_value=ent) as patch_synstore:
-        validate._upload_to_synapse(syn, ["foo"], True, parentid="syn123")
-        patch_synstore.assert_called_once_with(
-            synapseclient.File("foo", parent="syn123")
-        )
 
 
 def test_perform_validate(syn, genie_config):
@@ -310,7 +296,7 @@ def test_perform_validate(syn, genie_config):
         "validate_single_file",
         return_value=(valid, "foo"),
     ) as patch_validate, patch.object(
-        validate, "_upload_to_synapse"
+        load, "store_files"
     ) as patch_syn_upload:
         validate._perform_validate(syn, arg)
         patch_check_parentid.assert_called_once_with(syn=syn, parentid=arg.parentid)
@@ -321,5 +307,5 @@ def test_perform_validate(syn, genie_config):
             nosymbol_check=arg.nosymbol_check, project_id=arg.project_id
         )
         patch_syn_upload.assert_called_once_with(
-            syn, arg.filepath, valid, parentid=arg.parentid
+            syn=syn, filepaths=arg.filepath, parentid=arg.parentid
         )

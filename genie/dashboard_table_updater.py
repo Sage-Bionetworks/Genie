@@ -8,7 +8,7 @@ import pandas as pd
 import synapseclient
 from synapseclient.core.utils import to_unix_epoch_time
 
-from genie import extract, process_functions
+from genie import extract, load, process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ def update_samples_in_release_table(
 
     old_samples[release] = 1
     samples_in_releasedf = new_samples.append(old_samples)
-    process_functions.updateDatabase(
+    load._update_table(
         syn,
         samples_per_releasedf,
         samples_in_releasedf,
@@ -159,7 +159,7 @@ def update_cumulative_sample_table(
     total_counts = total_counts.applymap(int)
     total_counts["Center"] = total_counts.index
     total_counts["Release"] = release
-    process_functions.updateDatabase(
+    load._update_table(
         syn,
         sample_count_per_rounddf,
         total_counts,
@@ -269,7 +269,7 @@ def update_database_numbers(syn, database_mappingdf):
     db_counts = db_counts.applymap(int)
     db_counts["Center"] = db_counts.index
     db_counts["Release"] = "Database"
-    process_functions.updateDatabase(
+    load._update_table(
         syn,
         database_countdf,
         db_counts,
@@ -325,7 +325,7 @@ def update_oncotree_code_tables(syn, database_mappingdf):
         syn=syn,
         query_string=f"SELECT Oncotree_Code,{center_string},Total  FROM {oncotree_distribution_synid}",
     )
-    process_functions.updateDatabase(
+    load._update_table(
         syn,
         oncotree_distribution_dbdf,
         oncotree_code_distributiondf,
@@ -375,7 +375,7 @@ def update_oncotree_code_tables(syn, database_mappingdf):
         syn=syn,
         query_string=f"SELECT Oncotree_Code,{center_string},Total  FROM {primary_code_synId}",
     )
-    process_functions.updateDatabase(
+    load._update_table(
         syn,
         primary_code_dist_dbdf,
         primary_code_distributiondf,
@@ -463,7 +463,7 @@ def update_sample_difference_table(syn, database_mappingdf):
         ["Clinical", "Mutation", "CNV", "SEG", "Fusions"]
     ] = new_values
 
-    process_functions.updateDatabase(
+    load._update_table(
         syn,
         difftable_dbdf,
         diff_between_releasesdf,
@@ -503,7 +503,7 @@ def update_data_completeness_table(syn, database_mappingdf):
         syn=syn, query_string=f"select * from {data_completion_synid}"
     )
     data_completenessdf.columns = data_completeness_dbdf.columns
-    process_functions.updateDatabase(
+    load._update_table(
         syn,
         data_completeness_dbdf,
         data_completenessdf,
@@ -786,7 +786,7 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
     clinical_key_decreasedbdf = extract.get_syntabledf(
         syn=syn, query_string=f"select * from {clinical_key_decrease_synid}"
     )
-    process_functions.updateDatabase(
+    load._update_table(
         syn,
         clinical_key_decreasedbdf,
         center_decrease_mapping,

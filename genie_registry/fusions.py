@@ -4,7 +4,7 @@ import logging
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import process_functions
+from genie import load, process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -99,8 +99,12 @@ class fusions(FileTypeFormat):
     # PROCESSING
     def process_steps(self, fusion, databaseSynId, newPath):
         fusion = self._process(fusion)
-        process_functions.updateData(
-            self.syn, databaseSynId, fusion, self.center, toDelete=True
+        load.update_table(
+            syn=self.syn,
+            databaseSynId=databaseSynId,
+            newData=fusion,
+            filterBy=self.center,
+            toDelete=True,
         )
         fusion.to_csv(newPath, sep="\t", index=False)
         return newPath

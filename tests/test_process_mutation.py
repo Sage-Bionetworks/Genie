@@ -5,10 +5,8 @@ import tempfile
 from unittest.mock import patch, call
 
 import pandas as pd
-import synapseclient
-from synapseclient.core.exceptions import SynapseTimeoutError
 
-from genie import process_mutation
+from genie import load, process_mutation
 
 
 def test_format_maf():
@@ -214,29 +212,6 @@ def test_append_or_createdf_create_file_0size():
         patch_tocsv.assert_called_once_with(temp_file.name, sep="\t", index=False)
 
 
-def test_store_full_maf(syn):
-    """Test storing of full maf"""
-    with patch.object(syn, "store") as patch_store:
-        process_mutation.store_full_maf(syn, "full/path", "syn1234")
-        patch_store.assert_called_once_with(
-            synapseclient.File("full/path", parentId="syn1234")
-        )
-
-
-def test_store_narrow_maf(syn):
-    """Test storing of narrow maf"""
-    with patch.object(syn, "store") as patch_store:
-        process_mutation.store_narrow_maf(syn, "full/path", "syn1234")
-        patch_store.assert_called_once()
-
-
-def test_store_narrow_maf_test_error(syn):
-    """Test storing of narrow maf catches and passes error"""
-    with patch.object(syn, "store", side_effect=SynapseTimeoutError) as patch_store:
-        process_mutation.store_narrow_maf(syn, "full/path", "syn1234")
-        patch_store.assert_called_once()
-
-
 def test_split_and_store_maf(syn):
     """Integration test, check splitting and storing of maf functions are
     called"""
@@ -266,10 +241,10 @@ def test_split_and_store_maf(syn):
     ) as patch_format, patch.object(
         process_mutation, "append_or_createdf"
     ) as patch_append, patch.object(
-        process_mutation, "store_narrow_maf"
-    ) as patch_narrow, patch.object(
-        process_mutation, "store_full_maf"
-    ) as patch_full:
+        load, "store_table"
+    ) as patch_store_table, patch.object(
+        load, "store_file"
+    ) as patch_store_file:
         process_mutation.split_and_store_maf(
             syn=syn,
             center=center,
@@ -286,5 +261,9 @@ def test_split_and_store_maf(syn):
 
         assert patch_append.call_count == 2
 
-        patch_narrow.assert_called_once_with(syn, narrow_maf_path, "sy12345")
-        patch_full.assert_called_once_with(syn, full_maf_path, "syn2345")
+        patch_store_table.assert_called_once_with(
+            syn=syn, filepath=narrow_maf_path, tableid="sy12345"
+        )
+        patch_store_file.assert_called_once_with(
+            syn=syn, filepath=full_maf_path, parentid="syn2345"
+        )

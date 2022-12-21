@@ -9,10 +9,16 @@ from typing import List
 import synapseclient  # lgtm [py/import-and-import-from]
 from synapseclient import Synapse
 from synapseclient.core.utils import to_unix_epoch_time
-import synapseutils
 import pandas as pd
 
-from genie import extract, process_functions, process_mutation, toRetract, validate
+from genie import (
+    extract,
+    load,
+    process_functions,
+    process_mutation,
+    toRetract,
+    validate,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -484,7 +490,7 @@ def update_status_and_error_tables(
     """
     logger.info("UPDATE VALIDATION STATUS DATABASE")
 
-    process_functions.updateDatabase(
+    load._update_table(
         syn,
         error_tracker_table.asDataFrame(),
         invalid_errorsdf,
@@ -493,7 +499,7 @@ def update_status_and_error_tables(
         to_delete=True,
     )
 
-    process_functions.updateDatabase(
+    load._update_table(
         syn,
         validation_status_table.asDataFrame(),
         input_valid_statusdf,
@@ -830,6 +836,6 @@ def center_input_to_database(
         logger.info(messageOut)
 
     # Store and remove log file
-    syn.store(synapseclient.File(log_path, parentId=genie_config["logs"]))
+    load.store_file(syn=syn, filepath=log_path, parentid=genie_config["logs"])
     os.remove(log_path)
     logger.info("ALL PROCESSES COMPLETE")

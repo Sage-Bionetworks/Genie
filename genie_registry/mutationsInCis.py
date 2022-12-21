@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import process_functions
+from genie import load, process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +35,13 @@ class mutationsInCis(FileTypeFormat):
 
     # PROCESS
     def process_steps(self, mutationInCis, newPath, databaseSynId):
-        process_functions.updateData(
-            self.syn, databaseSynId, mutationInCis, self.center, filterByColumn="Center"
+        load.update_table(
+            syn=self.syn,
+            databaseSynId=databaseSynId,
+            newData=mutationInCis,
+            filterBy=self.center,
+            filterByColumn="Center",
+            toDelete=True,
         )
         mutationInCis.to_csv(newPath, sep="\t", index=False)
         return newPath

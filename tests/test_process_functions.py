@@ -8,8 +8,6 @@ import synapseclient
 
 from genie import process_functions
 
-syn = mock.create_autospec(synapseclient.Synapse)
-
 DATABASE_DF = pd.DataFrame(
     {
         "UNIQUE_KEY": ["test1", "test2", "test3"],
@@ -305,7 +303,7 @@ def test_norows__delete_rows():
     assert delete_rows.empty
 
 
-def test__create_schema():
+def test__create_schema(syn):
     """Tests calling of create schema"""
     table_name = str(uuid.uuid1())
     parentid = str(uuid.uuid1())
@@ -324,7 +322,7 @@ def test__create_schema():
         assert new_schema == schema
 
 
-def test__update_database_mapping():
+def test__update_database_mapping(syn):
     """Tests updates database mapping"""
     fileformat = str(uuid.uuid1())
     database_mappingdf = pd.DataFrame(
@@ -343,7 +341,7 @@ def test__update_database_mapping():
         patch_syn_store.assert_called_once()
 
 
-def test_noname__move_entity():
+def test_noname__move_entity(syn):
     """Tests not changing entity name"""
     ent = synapseclient.Entity(name="foo", parentId="syn2222")
     new_parent = "syn1234"
@@ -353,7 +351,7 @@ def test_noname__move_entity():
         patch_syn_store.assert_called_once_with(ent)
 
 
-def test_name__move_entity():
+def test_name__move_entity(syn):
     """Tests entity name is updated"""
     ent = synapseclient.Entity(name="foo", parentId="syn2222")
     new_parent = "syn1234"
@@ -365,7 +363,7 @@ def test_name__move_entity():
         patch_syn_store.assert_called_once_with(ent)
 
 
-def test_create_new_fileformat_table():
+def test_create_new_fileformat_table(syn):
     fileformat = str(uuid.uuid1())
     db_synid = "syn1111111"
     database_mappingdf = pd.DataFrame(
