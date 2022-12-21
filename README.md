@@ -51,7 +51,7 @@ Please view [contributing guide](CONTRIBUTING.md) to learn how to contribute to 
 These are instructions on how you would develop and test the pipeline locally.
 
 1. Be sure you are invited to the Synapse GENIE Admin team.
-1. Install the package locally
+1. Clone this repo and install the package locally.
 
     ```
     pip install -e .
@@ -88,3 +88,7 @@ These are instructions on how you would develop and test the pipeline locally.
         ```
         python bin/consortium_to_public.py Jan-2017 ../cbioportal TEST --test
         ```
+
+## Production
+
+The production pipeline is run on Nextflow Tower and the Nextflow workflow is captured in [nf-genie](https://github.com/Sage-Bionetworks-Workflows/nf-genie).  It is wise to create an ec2 via the Sage Bionetworks service catalog to work with the production data,because there is limited PHI in GENIE.
