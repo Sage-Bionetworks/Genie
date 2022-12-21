@@ -55,6 +55,8 @@ These are instructions on how you would develop and test the pipeline locally.
 
     ```
     pip install -e .
+    pip install -r requirements.txt
+    pip install -r requirements-dev.txt
     ```
 
 1. Run the different pipelines on the test project.  The `--project_id syn7208886` points to the test project.
