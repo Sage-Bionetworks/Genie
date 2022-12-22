@@ -1,7 +1,12 @@
-synapseclient>=2.3.0
+synapseclient>=2.7.0
 pandas>=1.0,<1.5.0
+# known working version 0.20.4
 httplib2>=0.11.3
+# known working version 3.14.1
 pycryptodome>=3.12.0
+# known working version 6.0
 PyYAML>=5.1
-pyranges
-chardet
+pyranges==0.0.115
+# known working version 4.0.0
+chardet>=3.0.4
+numpy<=1.22.2
