@@ -140,7 +140,7 @@ class vcf(FileTypeFormat):
                 )
             # Get accepted chromosomes
             accepted_chromosomes = list(map(str, range(1, 23)))
-            accepted_chromosomes.extend(["X", "Y"])
+            accepted_chromosomes.extend(["X", "Y", "MT"])
             correct_chromosomes = [
                 str(chrom).replace("chr", "") in accepted_chromosomes
                 for chrom in vcfdf["#CHROM"]
