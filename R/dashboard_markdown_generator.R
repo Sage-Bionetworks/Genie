@@ -67,8 +67,8 @@ release_folder = synTableQuery(sprintf("select id from %s where name = '%s'",
 release_folder_synid = release_folder$asDataFrame()$id
 #Store the html file.
 html_path = sprintf('%s.html', release)
-release_html_ent = synStore(File(html_path,
-                                 parentId = release_folder_synid))
-synStore(Wiki(markdown = sprintf("${preview?entityId=%s}",
-                                 release_html_ent$properties$id),
-              owner = release_folder_synid))
+# release_html_ent = synStore(File(html_path,
+#                                  parentId = release_folder_synid))
+# synStore(Wiki(markdown = sprintf("${preview?entityId=%s}",
+#                                  release_html_ent$properties$id),
+#               owner = release_folder_synid))
