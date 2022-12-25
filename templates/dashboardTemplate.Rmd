@@ -757,7 +757,7 @@ duplicate_v_ent = synStore(File("duplicated_variants.csv", parent=release_synid)
 unlink("duplicated_variants.csv")
 ```
 
-There are `r sum(duplicated_idx)` duplicated variant(s). Ignore the rest if the number is 0. These `r paste0('[duplicated variants](https://www.synapse.org/#!Synapse:', duplicate_v_ent$properties$id, "){target='_blank'}")` are most likely caused by the annotation pipeline as no duplicated variants are allowed in the maf or vcfs.
+There are `r sum(duplicated_idx)` duplicated variant(s). Ignore the rest if the number is 0. These `r paste0('[duplicated variants](https://www.synapse.org/#!Synapse:', duplicate_v_ent$properties$id, "){target='_blank'}")` are potentially caused by the annotation pipeline as no duplicated variants are allowed in each maf or vcf file.
 
 
 ### Non-somatic Variants
