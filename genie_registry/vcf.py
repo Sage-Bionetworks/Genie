@@ -131,7 +131,9 @@ class vcf(FileTypeFormat):
         # Require that they report variants mapped to
         # either GRCh37 or hg19 without
         # the chr-prefix.
-        error, warn = validate._validate_chromosome(df=vcfdf, col="#CHROM")
+        error, warn = validate._validate_chromosome(
+            df=vcfdf, col="#CHROM", fileformat="vcf"
+        )
         total_error += error
         warning += warn
 
