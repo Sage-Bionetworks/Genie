@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import process_functions
+from genie import process_functions, validate
 
 logger = logging.getLogger(__name__)
 
@@ -130,27 +130,10 @@ class vcf(FileTypeFormat):
 
         # Require that they report variants mapped to
         # either GRCh37 or hg19 without
-        # the chr-prefix. variants on chrM are not supported
-        have_column = process_functions.checkColExist(vcfdf, "#CHROM")
-        if have_column:
-            nochr = ["chr" in i for i in vcfdf["#CHROM"] if isinstance(i, str)]
-            if sum(nochr) > 0:
-                warning += (
-                    "vcf: Should not have the chr prefix in front of chromosomes.\n"
-                )
-            # Get accepted chromosomes
-            accepted_chromosomes = list(map(str, range(1, 23)))
-            accepted_chromosomes.extend(["X", "Y", "MT"])
-            correct_chromosomes = [
-                str(chrom).replace("chr", "") in accepted_chromosomes
-                for chrom in vcfdf["#CHROM"]
-            ]
-            accepted_chromosomes_str = ",".join(accepted_chromosomes)
-            if not all(correct_chromosomes):
-                total_error += (
-                    "vcf: Chromsomes must be part of this list: "
-                    f"{accepted_chromosomes_str}.\n"
-                )
+        # the chr-prefix.
+        error, warn = validate._validate_chromosome(df=vcfdf, col="#CHROM")
+        total_error += error
+        warning += warn
 
         # No white spaces
         white_space = vcfdf.apply(lambda x: contains_whitespace(x), axis=1)

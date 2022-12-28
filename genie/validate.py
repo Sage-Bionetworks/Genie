@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import logging
 
+import pandas as pd
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
@@ -163,6 +164,40 @@ def _check_center_input(center, center_list):
         raise ValueError(
             "Must specify one of these " f"centers: {', '.join(center_list)}"
         )
+
+
+def _validate_chromosome(df: pd.DataFrame, col: str) -> tuple:
+    """Validate chromosome values
+
+    Args:
+        df (pd.DataFrame): Dataframe
+        col (str): Column header for column containing chromosome values
+
+    Returns:
+        tuple: errors and warnings
+    """
+    have_column = process_functions.checkColExist(df, col)
+    errors = ""
+    warnings = ""
+    if have_column:
+        nochr = ["chr" in i for i in df["#CHROM"] if isinstance(i, str)]
+        if sum(nochr) > 0:
+            warnings += "vcf: Should not have the chr prefix in front of chromosomes.\n"
+        # Get accepted chromosomes
+        accepted_chromosomes = list(map(str, range(1, 23)))
+        accepted_chromosomes.extend(["X", "Y", "MT"])
+        # correct_chromosomes = [
+        #     str(chrom).replace("chr", "") in accepted_chromosomes
+        #     for chrom in df[col]
+        # ]
+        correct_chromosomes = df[col].str.replace("chr", "")
+        df[col] = correct_chromosomes
+        warning, error = process_functions.check_col_and_values(
+            df=df, col=col, possible_values=accepted_chromosomes, filename="vcf"
+        )
+        errors += error
+        warnings += warning
+    return (errors, warnings)
 
 
 def _upload_to_synapse(syn, filepaths, valid, parentid=None):
