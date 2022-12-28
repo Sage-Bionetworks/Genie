@@ -166,12 +166,13 @@ def _check_center_input(center, center_list):
         )
 
 
-def _validate_chromosome(df: pd.DataFrame, col: str) -> tuple:
+def _validate_chromosome(df: pd.DataFrame, col: str, fileformat: str) -> tuple:
     """Validate chromosome values
 
     Args:
         df (pd.DataFrame): Dataframe
         col (str): Column header for column containing chromosome values
+        fileformat (str): GENIE supported file format
 
     Returns:
         tuple: errors and warnings
@@ -180,7 +181,7 @@ def _validate_chromosome(df: pd.DataFrame, col: str) -> tuple:
     errors = ""
     warnings = ""
     if have_column:
-        nochr = ["chr" in i for i in df["#CHROM"] if isinstance(i, str)]
+        nochr = ["chr" in i for i in df[col] if isinstance(i, str)]
         if sum(nochr) > 0:
             warnings += "vcf: Should not have the chr prefix in front of chromosomes.\n"
         # Get accepted chromosomes
@@ -190,10 +191,10 @@ def _validate_chromosome(df: pd.DataFrame, col: str) -> tuple:
         #     str(chrom).replace("chr", "") in accepted_chromosomes
         #     for chrom in df[col]
         # ]
-        correct_chromosomes = df[col].str.replace("chr", "")
+        correct_chromosomes = df[col].astype(str).str.replace("chr", "")
         df[col] = correct_chromosomes
         warning, error = process_functions.check_col_and_values(
-            df=df, col=col, possible_values=accepted_chromosomes, filename="vcf"
+            df=df, col=col, possible_values=accepted_chromosomes, filename=fileformat
         )
         errors += error
         warnings += warning
