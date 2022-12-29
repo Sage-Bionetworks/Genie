@@ -166,7 +166,9 @@ def _check_center_input(center, center_list):
         )
 
 
-def _validate_chromosome(df: pd.DataFrame, col: str, fileformat: str, allow_chr: bool = True) -> tuple:
+def _validate_chromosome(
+    df: pd.DataFrame, col: str, fileformat: str, allow_chr: bool = True
+) -> tuple:
     """Validate chromosome values
 
     Args:
