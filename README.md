@@ -73,7 +73,9 @@ These are instructions on how you would develop and test the pipeline locally.
         python bin/input_to_database.py main --project_id syn7208886 --deleteOld
         ```
 
-    1. Process the mutation data.  Be sure to clone this repo: https://github.com/Sage-Bionetworks/annotation-tools
+    1. Process the mutation data.  Be sure to clone this repo: https://github.com/Sage-Bionetworks/annotation-tools.  This repo houses the code that re-annotates the mutation data with genome nexus.  The `--createNewMafDatabase` will create a new mutation tables in the test project.  This flag is necessary for production data for two main reasons:
+        * During processing of mutation data, the data is appended to the data, so without creating an empty table, there will be duplicated data uploaded.
+        * By design, Synapse Tables were meant to be appended to.  When a Synapse Tables is updated, it takes time to index the table and return results. This can cause problems for the pipeline when trying to query the mutation table.  It is actually faster to create an entire new table than updating or deleting all rows and appending new rows when dealing with millions of rows.
 
         ```
         python bin/input_to_database.py mutation --project_id syn7208886 --deleteOld --genie_annotation_pkg ../annotation-tools --createNewMafDatabase
@@ -93,4 +95,4 @@ These are instructions on how you would develop and test the pipeline locally.
 
 ## Production
 
-The production pipeline is run on Nextflow Tower and the Nextflow workflow is captured in [nf-genie](https://github.com/Sage-Bionetworks-Workflows/nf-genie).  It is wise to create an ec2 via the Sage Bionetworks service catalog to work with the production data,because there is limited PHI in GENIE.
+The production pipeline is run on Nextflow Tower and the Nextflow workflow is captured in [nf-genie](https://github.com/Sage-Bionetworks-Workflows/nf-genie).  It is wise to create an ec2 via the Sage Bionetworks service catalog to work with the production data, because there is limited PHI in GENIE.
