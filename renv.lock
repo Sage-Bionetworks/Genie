@@ -343,6 +343,17 @@
         "Matrix"
       ]
     },
+    "PythonEmbedInR": {
+      "Package": "PythonEmbedInR",
+      "Version": "0.12.79",
+      "Source": "unknown",
+      "Hash": "0b9622b3011ecd7b1c6782b86f821a74",
+      "Requirements": [
+        "R6",
+        "pack",
+        "rjson"
+      ]
+    },
     "R6": {
       "Package": "R6",
       "Version": "2.5.1",
@@ -1749,6 +1760,15 @@
       "Hash": "04411ae66ab4659230c067c32966fc20",
       "Requirements": [
         "Matrix"
+      ]
+    },
+    "synapser": {
+      "Package": "synapser",
+      "Version": "0.15.35",
+      "Source": "unknown",
+      "Hash": "b64fa4408d7bff4fc66c438a18115b2d",
+      "Requirements": [
+        "PythonEmbedInR"
       ]
     },
     "sys": {
