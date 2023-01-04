@@ -20,6 +20,10 @@ This package contains both R, Python and cli tools.  These are tools or packages
 - R 4.2.2
     - `renv::install()`
     - Follow instructions [here](https://r-docs.synapse.org/#note-for-windows-and-mac-users) to install synapser
+- [Java > 8](https://www.java.com/en/download/)
+    - For mac users, it seems to work better to run `brew install java`
+- [wget] (https://www.gnu.org/software/wget/)
+    - For mac users, have to run `brew install wget`
 
 ## File Validator
 
@@ -50,7 +54,9 @@ Please view [contributing guide](CONTRIBUTING.md) to learn how to contribute to 
 
 These are instructions on how you would develop and test the pipeline locally.
 
+1. Make sure you have read through the [GENIE Onboarding Docs] (https://sagebionetworks.jira.com/wiki/spaces/APGD/pages/2163344270/Onboarding) and have access to all of the required repositories, resources and synapse projects for Main GENIE.
 1. Be sure you are invited to the Synapse GENIE Admin team.
+1. Make sure you are a Synapse certified user: [Certified User - Synapse User Account Types](https://help.synapse.org/docs/Synapse-User-Account-Types.2007072795.html#SynapseUserAccountTypes-CertifiedUser)
 1. Clone this repo and install the package locally.
 
     ```
