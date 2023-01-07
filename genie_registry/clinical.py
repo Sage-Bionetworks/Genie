@@ -9,7 +9,7 @@ import pandas as pd
 import synapseclient
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import process_functions
+from genie import extract, load, process_functions
 from genie.database_to_staging import redact_phi
 
 logger = logging.getLogger(__name__)
@@ -336,16 +336,16 @@ class Clinical(FileTypeFormat):
         # Remove unwanted clinical columns prior to update
         # clinicalMerged = clinicalMerged.drop(clinicalMerged.columns[
         #    ~clinicalMerged.columns.isin(clinicalTemplate.columns)],1)
-        ethnicity_mapping = process_functions.get_syntabledf(
+        ethnicity_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['ethnicity_mapping']}"
         )
-        race_mapping = process_functions.get_syntabledf(
+        race_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['race_mapping']}"
         )
-        sex_mapping = process_functions.get_syntabledf(
+        sex_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['sex_mapping']}"
         )
-        sampletype_mapping = process_functions.get_syntabledf(
+        sampletype_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['sampletype_mapping']}"
         )
         # Attach MSK to centers
@@ -429,14 +429,13 @@ class Clinical(FileTypeFormat):
             self.uploadMissingData(
                 patientClinical, "PATIENT_ID", patient_synid, parentId
             )
-
-            process_functions.updateData(
-                self.syn,
-                patient_synid,
-                patientClinical,
-                self.center,
-                col=cols.tolist(),
+            load.update_table(
+                syn=self.syn,
+                databaseSynId=patient_synid,
+                newData=patientClinical,
+                filterBy=self.center,
                 toDelete=True,
+                col=cols.tolist(),
             )
         if sample:
             cols = newClinicalDf.columns[newClinicalDf.columns.isin(sampleCols)]
@@ -461,15 +460,14 @@ class Clinical(FileTypeFormat):
                 sampleClinical["ONCOTREE_CODE"].isin(oncotree_mapping["ONCOTREE_CODE"])
             ]
             self.uploadMissingData(sampleClinical, "SAMPLE_ID", sample_synid, parentId)
-            process_functions.updateData(
-                self.syn,
-                sample_synid,
-                sampleClinical,
-                self.center,
-                col=cols.tolist(),
+            load.update_table(
+                syn=self.syn,
+                databaseSynId=sample_synid,
+                newData=sampleClinical,
+                filterBy=self.center,
                 toDelete=True,
+                col=cols.tolist(),
             )
-
         newClinicalDf.to_csv(newPath, sep="\t", index=False)
         return newPath
 
@@ -506,16 +504,16 @@ class Clinical(FileTypeFormat):
             {"ONCOTREE_CODE": list(oncotree_mapping_dict.keys())}
         )
 
-        ethnicity_mapping = process_functions.get_syntabledf(
+        ethnicity_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['ethnicity_mapping']}"
         )
-        race_mapping = process_functions.get_syntabledf(
+        race_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['race_mapping']}"
         )
-        sex_mapping = process_functions.get_syntabledf(
+        sex_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['sex_mapping']}"
         )
-        sampletype_mapping = process_functions.get_syntabledf(
+        sampletype_mapping = extract.get_syntabledf(
             self.syn, f"select * from {self.genie_config['sampletype_mapping']}"
         )
         # CHECK: SAMPLE_ID

@@ -1,5 +1,3 @@
-from unittest import mock
-
 import pandas as pd
 
 from genie_registry.structural_variant import StructuralVariant

@@ -1,19 +1,21 @@
-from unittest import mock
-
 import pandas as pd
 import pytest
-import synapseclient
 
 from genie_registry.sampleRetraction import sampleRetraction
 from genie_registry.patientRetraction import patientRetraction
 
-syn = mock.create_autospec(synapseclient.Synapse)
 
-sr = sampleRetraction(syn, "SAGE")
-pr = patientRetraction(syn, "SAGE")
+@pytest.fixture
+def sr(syn):
+    return sampleRetraction(syn, "SAGE")
 
 
-def test_processing():
+@pytest.fixture
+def pr(syn):
+    return patientRetraction(syn, "SAGE")
+
+
+def test_processing(sr, pr):
 
     expectedsrDf = pd.DataFrame(
         dict(
@@ -86,7 +88,7 @@ def test_processing():
     assert expectedprDf.equals(newprDf[expectedprDf.columns])
 
 
-def test_validation():
+def test_validate_filename(sr, pr):
     with pytest.raises(AssertionError):
         sr.validateFilename(["foo"])
     assert sr.validateFilename(["sampleRetraction.csv"]) == "sampleRetraction"

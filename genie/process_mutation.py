@@ -1,4 +1,5 @@
-"""Process mutation files"""
+"""Process mutation files
+TODO deprecate this module and spread functions around"""
 import logging
 import os
 import shutil
@@ -6,14 +7,13 @@ import subprocess
 import tempfile
 
 import pandas as pd
-import synapseclient  # lgtm [py/import-and-import-from]
 from synapseclient import Synapse
-from synapseclient.core.exceptions import SynapseTimeoutError
 
-from . import process_functions
+from . import load, process_functions
 
 logger = logging.getLogger(__name__)
 
+# TODO: add to constants.py
 # Some columns are already capitalized, so they aren't included here
 MAF_COL_MAPPING = {
     "HUGO_SYMBOL": "Hugo_Symbol",
@@ -84,6 +84,8 @@ MAF_COL_MAPPING = {
     "T_DEPTH": "t_depth",
 }
 
+
+# TODO: add to constants.py
 KNOWN_STRING_COLS = [
     "IS_NEW",
     "ALLELE_NUM",
@@ -110,6 +112,7 @@ KNOWN_STRING_COLS = [
 ]
 
 
+# TODO: add to utils or transform
 def _convert_to_str_dtype(column_types, known_string_cols):
     """Sometimes the deteremined dtype is incorrect based off the first
     100 rows, update the incorrect dtypes.
@@ -120,6 +123,7 @@ def _convert_to_str_dtype(column_types, known_string_cols):
     return column_types
 
 
+# TODO Add to utils
 def determine_dtype(path: str):
     """Reads in a dataframe partially and determines the dtype of columns"""
     # Change this nrows to 5000 so that it better encapsulates the types
@@ -128,6 +132,7 @@ def determine_dtype(path: str):
     return column_types
 
 
+# TODO add to utils
 def move_and_configure_maf(mutation_path: str, input_files_dir: str) -> str:
     """Moves maf files into processing directory. Maf file's column headers
     are renamed if necessary and .0 are stripped.
@@ -153,6 +158,7 @@ def move_and_configure_maf(mutation_path: str, input_files_dir: str) -> str:
     return new_filepath
 
 
+# TODO: add to utils
 def move_mutation(mutation_path, input_files_dir):
     """Move mutation file into processing directory"""
     # If mutation file is vcf, just copy
@@ -162,6 +168,7 @@ def move_mutation(mutation_path, input_files_dir):
         move_and_configure_maf(mutation_path, input_files_dir)
 
 
+# TODO: move to etl.py
 def process_mutation_workflow(
     syn: Synapse,
     center: str,
@@ -224,6 +231,7 @@ def process_mutation_workflow(
     return annotated_maf_path
 
 
+# TODO: add to transform
 def annotate_mutation(
     center: str, mutation_files: list, genie_annotation_pkg: str, workdir: str
 ) -> str:
@@ -262,6 +270,7 @@ def annotate_mutation(
     return merged_maf_path
 
 
+# TODO: add to transform
 def append_or_createdf(dataframe: pd.DataFrame, filepath: str):
     """Creates a file with the dataframe or appends to a existing file.
 
@@ -276,39 +285,7 @@ def append_or_createdf(dataframe: pd.DataFrame, filepath: str):
         dataframe.to_csv(filepath, sep="\t", mode="a", index=False, header=None)
 
 
-def store_full_maf(syn: Synapse, filepath: str, parentid: str):
-    """Stores full maf file
-
-    Args:
-        syn: Synapse connection
-        filepath: Path to file
-        parentid: Synapse container id
-
-    """
-    syn.store(synapseclient.File(filepath, parentId=parentid))
-
-
-def store_narrow_maf(syn: Synapse, filepath: str, maf_tableid: str):
-    """
-    Stores the narrow maf in Synapse Table
-
-    Args:
-        syn: Synapse connection
-        filepath: Path to maf file
-        maf_tableid: database synid
-
-    """
-    logger.info(f"STORING {filepath}")
-    # database = syn.get(maf_tableid)
-    try:
-        update_table = synapseclient.Table(maf_tableid, filepath, separator="\t")
-        syn.store(update_table)
-    except SynapseTimeoutError:
-        # This error occurs because of waiting for table to index.
-        # Don't worry about this.
-        pass
-
-
+# TODO: move to transform.py
 def format_maf(mafdf: pd.DataFrame, center: str) -> pd.DataFrame:
     """Format maf file, shortens the maf file length
 
@@ -332,8 +309,9 @@ def format_maf(mafdf: pd.DataFrame, center: str) -> pd.DataFrame:
     return mafdf
 
 
+# TODO: move to etl.py
 def split_and_store_maf(
-    syn: "Synapse",
+    syn: Synapse,
     center: str,
     maf_tableid: str,
     annotated_maf_path: str,
@@ -371,6 +349,6 @@ def split_and_store_maf(
         narrow_maf_chunk = maf_chunk[narrow_maf_cols]
         append_or_createdf(narrow_maf_chunk, narrow_maf_path)
 
-    store_narrow_maf(syn, narrow_maf_path, maf_tableid)
+    load.store_table(syn=syn, filepath=narrow_maf_path, tableid=maf_tableid)
     # Store MAF flat file into synapse
-    store_full_maf(syn, full_maf_path, flatfiles_synid)
+    load.store_file(syn=syn, filepath=full_maf_path, parentid=flatfiles_synid)

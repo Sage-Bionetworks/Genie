@@ -5,11 +5,12 @@ import pandas as pd
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from . import config, example_filetype_format, process_functions
+from genie import config, example_filetype_format, extract, load, process_functions
 
 logger = logging.getLogger(__name__)
 
 
+# TODO: move to models.py
 class ValidationHelper(object):
 
     # Used for the kwargs in validate_single_file
@@ -115,28 +116,9 @@ class GenieValidationHelper(ValidationHelper):
     _validate_kwargs = ["nosymbol_check"]
 
 
-def get_config(syn, synid):
-    """Gets Synapse database to Table mapping in dict
-
-    Args:
-        syn: Synapse connection
-        synid: Synapse id of database mapping table
-
-    Returns:
-        dict: {'databasename': 'synid'}
-
-    """
-    config = syn.tableQuery("SELECT * FROM {}".format(synid))
-    configdf = config.asDataFrame()
-    configdf.index = configdf["Database"]
-    config_dict = configdf.to_dict()
-    return config_dict["Id"]
-
-
+# TODO: Currently only checks if a user has READ permissions
 def _check_parentid_permission_container(syn, parentid):
-    """Checks permission / container
-    # TODO: Currently only checks if a user has READ permissions
-    """
+    """Checks permission / container"""
     if parentid is not None:
         try:
             syn_ent = syn.get(parentid, downloadFile=False)
@@ -201,35 +183,17 @@ def _validate_chromosome(df: pd.DataFrame, col: str, fileformat: str) -> tuple:
     return (errors, warnings)
 
 
-def _upload_to_synapse(syn, filepaths, valid, parentid=None):
-    """
-    Upload to synapse if parentid is specified and valid
-
-    Args:
-        syn: Synapse object
-        filepaths: List of file paths
-        valid: Boolean value for validity of file
-        parentid: Synapse id of container. Default is None
-
-    """
-    if parentid is not None and valid:
-        logger.info("Uploading file to {}".format(parentid))
-        for path in filepaths:
-            file_ent = synapseclient.File(path, parent=parentid)
-            ent = syn.store(file_ent)
-            logger.info("Stored to {}".format(ent.id))
-
-
+# TODO: specify all the arguments instead of using args.
+# TODO: This is a cli function...
 def _perform_validate(syn, args):
     """This is the main entry point to the genie command line tool."""
 
     # Check parentid argparse
     _check_parentid_permission_container(syn=syn, parentid=args.parentid)
-    genie_config = process_functions.get_genie_config(
-        syn=syn, project_id=args.project_id
-    )
+    genie_config = extract.get_genie_config(syn=syn, project_id=args.project_id)
     # HACK: Modify oncotree link config
-    genie_config["oncotreeLink"] = process_functions._get_oncotreelink(
+    # TODO: Remove oncotree_link parameter from this function
+    genie_config["oncotreeLink"] = extract._get_oncotreelink(
         syn=syn, genie_config=genie_config, oncotree_link=args.oncotree_link
     )
     # Check center argparse
@@ -257,4 +221,6 @@ def _perform_validate(syn, args):
     valid, message = validator.validate_single_file(**mykwargs)
 
     # Upload to synapse if parentid is specified and valid
-    _upload_to_synapse(syn, args.filepath, valid, parentid=args.parentid)
+    if valid and args.parentid is not None:
+        logger.info(f"Uploading files to {args.parentid}")
+        load.store_files(syn=syn, filepaths=args.filepath, parentid=args.parentid)

@@ -3,24 +3,25 @@ import logging
 import os
 
 import pandas as pd
-import synapseclient  # lgtm [py/import-and-import-from]
-from synapseclient import Synapse
+import synapseclient
 
-from . import process_functions
+from genie import extract
 
 logger = logging.getLogger(__name__)
 
 
-def write(syn: Synapse, center_mapping_synid: str, error_tracker_synid: str):
+def write(
+    syn: synapseclient.Synapse, center_mapping_synid: str, error_tracker_synid: str
+):
     """Write center errors to a file
 
     Args:
-        syn: Synapse connection
-        center_mapping_df: Center mapping dataframe
-        error_tracker_synid: Error tracking synapse id
+        syn (synapseclient.Synapse): Synapse connection
+        center_mapping_synid (str): Center mapping Synapse id
+        error_tracker_synid (str): Error tracking Synapse id
 
     """
-    center_mapping_df = process_functions.get_syntabledf(
+    center_mapping_df = extract.get_syntabledf(
         syn=syn,
         query_string=f"SELECT * FROM {center_mapping_synid} where release is true",
     )
@@ -41,15 +42,17 @@ def write(syn: Synapse, center_mapping_synid: str, error_tracker_synid: str):
         os.remove(center + "_errors.txt")
 
 
-def _combine_center_file_errors(syn: Synapse, center_errorsdf: pd.DataFrame) -> str:
+def _combine_center_file_errors(
+    syn: synapseclient.Synapse, center_errorsdf: pd.DataFrame
+) -> str:
     """Combine all center errors into one printable string
 
     Args:
-        syn: Synapse connection
-        center_errorsdf: Center errors dataframe
+        syn (synapseclient.Synapse): Synapse connection
+        center_errorsdf (pd.DataFrame): Center errors dataframe
 
     Returns:
-        Center errors in a pretty formatted string
+        str: Center errors in a pretty formatted string
 
     """
     center_errors = ""
@@ -61,15 +64,17 @@ def _combine_center_file_errors(syn: Synapse, center_errorsdf: pd.DataFrame) -> 
     return center_errors
 
 
-def get_center_invalid_errors(syn: Synapse, error_tracker_synid: str) -> dict:
+def get_center_invalid_errors(
+    syn: synapseclient.Synapse, error_tracker_synid: str
+) -> dict:
     """Get all invalid errors per center
 
     Args:
-        syn: Synapse connection
-        error_tracker_synid: Synapse id of invalid error database table
+        syn (synapseclient.Synapse): Synapse connection
+        error_tracker_synid (str): Synapse id of invalid error database table
 
     Returns:
-        dict: center - file error string
+        dict: {center: file error string}
 
     """
     error_tracker = syn.tableQuery(f"SELECT * FROM {error_tracker_synid}")

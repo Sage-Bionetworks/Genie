@@ -11,6 +11,7 @@ from genie import (
     create_case_lists,
     dashboard_table_updater,
     database_to_staging,
+    load,
     process_functions,
 )
 
@@ -172,13 +173,17 @@ def main(
     ].values[0]
     # get syn id of case list folder in consortium release
     # caseListSynId = findCaseListId(syn, consortiumSynId)
-    caseListSynId, _ = database_to_staging.search_and_create_folder(
+    caseListSynId = database_to_staging.search_or_create_folder(
         syn, consortiumSynId, "case_lists"
     )
 
     if not staging:
-        database_to_staging.update_process_trackingdf(
-            syn, processTrackerSynId, "SAGE", "dbToStage", start=True
+        load.update_process_trackingdf(
+            syn=syn,
+            process_trackerdb_synid=processTrackerSynId,
+            center="SAGE",
+            process_type="dbToStage",
+            start=True,
         )
 
     centerMappingSynId = databaseSynIdMappingDf["Id"][
@@ -234,8 +239,11 @@ def main(
     for casePath in caseListFiles:
         casePath = os.path.join(database_to_staging.CASE_LIST_PATH, casePath)
         caseListEntities.append(
-            database_to_staging.store_file(
-                syn, casePath, parent=caseListSynId, genieVersion=genie_version
+            load.store_file(
+                syn=syn,
+                filepath=casePath,
+                parentid=caseListSynId,
+                version_comment=genie_version,
             )
         )
 
@@ -294,8 +302,12 @@ def main(
     )
 
     if not staging:
-        database_to_staging.update_process_trackingdf(
-            syn, processTrackerSynId, "SAGE", "dbToStage", start=False
+        load.update_process_trackingdf(
+            syn=syn,
+            process_trackerdb_synid=processTrackerSynId,
+            center="SAGE",
+            process_type="dbToStage",
+            start=False,
         )
 
     if not test:
@@ -317,11 +329,11 @@ def main(
         genie_user=genie_user,
         genie_pass=genie_pass,
     )
-    database_to_staging.store_file(
-        syn,
-        data_guide_pdf,
-        genieVersion=genie_version,
-        parent=folders["release_folder"],
+    load.store_file(
+        syn=syn,
+        filepath=data_guide_pdf,
+        version_comment=genie_version,
+        parentid=folders["release_folder"],
     )
     logger.info("COMPLETED DATABASE TO STAGING")
 
