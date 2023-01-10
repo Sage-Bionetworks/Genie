@@ -55,7 +55,7 @@ def test_firstcolumn_validation(maf_class):
         {
             "REFERENCE_ALLELE": ["A", "B", "C", "D", "E"],
             "START_POSITION": [1, 2, 3, 4, 2],
-            "CHROMOSOME": ["A", "A", "A", "A", "A"],
+            "CHROMOSOME": ["1", "2", "3", "4", "5"],
             "TUMOR_SAMPLE_BARCODE": [
                 "GENIE-SAGE-ID1-1",
                 "GENIE-SAGE-ID1-1",
@@ -138,9 +138,10 @@ def test_errors_validation(maf_class):
     expectedErrors = (
         "maf: "
         "REFERENCE_ALLELE can't have any blank or null values.\n"
-        "maf: "
-        "CHROMOSOME column cannot have any values that start "
-        "with 'chr' or any 'WT' values.\n"
+        "maf: Should not have the chr prefix in front of chromosomes.\n"
+        "maf: Please double check your CHROMOSOME column.  "
+        "This column must only be these values: 1, 2, 3, 4, 5, 6, 7, 8, 9, "
+        "10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, X, Y, MT\n"
         "maf: TUMOR_SAMPLE_BARCODE must start with GENIE-SAGE\n"
     )
     expectedWarnings = (
