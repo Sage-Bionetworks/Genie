@@ -6,9 +6,8 @@ from unittest.mock import patch
 import pandas as pd
 import synapseclient
 
-from genie import database_to_staging, process_functions
+from genie import database_to_staging, extract, load
 
-SYN = synapseclient.Synapse()
 FILEVIEW_SYNID = "syn12345"
 GENIE_VERSION = "vTEST"
 CONSORTIUM_SYNID = "syn2222"
@@ -24,16 +23,16 @@ class Tablequerydf:
         return self.df
 
 
-def test_store_gene_panel_files():
+def test_store_gene_panel_files(syn):
     data_gene_panel = pd.DataFrame({"mutations": ["PANEL1"]})
     gene_paneldf = pd.DataFrame({"id": ["syn3333"]})
 
     with mock.patch.object(
-        SYN, "tableQuery", return_value=Tablequerydf(gene_paneldf)
+        syn, "tableQuery", return_value=Tablequerydf(gene_paneldf)
     ) as patch_syn_table_query, mock.patch.object(
-        database_to_staging, "store_file", return_value=synapseclient.Entity()
+        load, "store_file", return_value=synapseclient.Entity()
     ) as patch_storefile, mock.patch.object(
-        SYN,
+        syn,
         "get",
         return_value=synapseclient.Entity(path="/foo/bar/PANEL1.txt", versionNumber=2),
     ) as patch_syn_get, mock.patch.object(
@@ -41,7 +40,7 @@ def test_store_gene_panel_files():
     ) as patch_os_rename:
 
         database_to_staging.store_gene_panel_files(
-            SYN,
+            syn,
             FILEVIEW_SYNID,
             GENIE_VERSION,
             data_gene_panel,
@@ -60,12 +59,12 @@ def test_store_gene_panel_files():
         )
         assert patch_syn_table_query.call_count == 2
         patch_storefile.assert_called_once_with(
-            SYN,
-            os.path.join(database_to_staging.GENIE_RELEASE_DIR, "PANEL1.txt"),
-            parent=CONSORTIUM_SYNID,
-            genieVersion=GENIE_VERSION,
+            syn=syn,
+            filepath=os.path.join(database_to_staging.GENIE_RELEASE_DIR, "PANEL1.txt"),
+            parentid=CONSORTIUM_SYNID,
+            version_comment=GENIE_VERSION,
             name="PANEL1.txt",
-            cBioFileFormat="genePanel",
+            annotations={"cBioFileFormat": "genePanel"},
             used="syn3333.2",
         )
 
@@ -76,33 +75,33 @@ def test_store_gene_panel_files():
         )
 
 
-def test_store_assay_info_files():
+def test_store_assay_info_files(syn):
     """Tests storing of assay information file"""
     assay_infodf = pd.DataFrame({"library_strategy": ["WXS"], "SEQ_ASSAY_ID": ["A"]})
     clinicaldf = pd.DataFrame({"SEQ_ASSAY_ID": ["A"]})
     database_to_staging.GENIE_RELEASE_DIR = "./"
     path = os.path.join(database_to_staging.GENIE_RELEASE_DIR, "assay_information.txt")
     with patch.object(
-        SYN, "create_snapshot_version", return_value=2
+        syn, "create_snapshot_version", return_value=2
     ) as patch_create_version, patch.object(
-        process_functions, "get_syntabledf", return_value=assay_infodf
+        extract, "get_syntabledf", return_value=assay_infodf
     ) as patch_table_query, patch.object(
-        database_to_staging, "store_file", return_value=synapseclient.Entity()
+        load, "store_file", return_value=synapseclient.Entity()
     ) as patch_storefile:
         wes_ids = database_to_staging.store_assay_info_files(
-            SYN, GENIE_VERSION, FILEVIEW_SYNID, clinicaldf, CONSORTIUM_SYNID
+            syn, GENIE_VERSION, FILEVIEW_SYNID, clinicaldf, CONSORTIUM_SYNID
         )
         patch_create_version.assert_called_once_with(
             FILEVIEW_SYNID, comment=GENIE_VERSION
         )
         patch_table_query.assert_called_once_with(
-            SYN, f"select * from {FILEVIEW_SYNID} where SEQ_ASSAY_ID in ('A')"
+            syn, f"select * from {FILEVIEW_SYNID} where SEQ_ASSAY_ID in ('A')"
         )
         patch_storefile.assert_called_once_with(
-            SYN,
-            path,
-            parent=CONSORTIUM_SYNID,
-            genieVersion=GENIE_VERSION,
+            syn=syn,
+            filepath=path,
+            parentid=CONSORTIUM_SYNID,
+            version_comment=GENIE_VERSION,
             name="assay_information.txt",
             used=f"{FILEVIEW_SYNID}.2",
         )

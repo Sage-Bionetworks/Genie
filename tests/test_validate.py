@@ -1,5 +1,4 @@
 """Tests validate.py"""
-from unittest import mock
 from unittest.mock import Mock, patch
 
 import pandas as pd
@@ -7,11 +6,9 @@ import pytest
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from genie import validate, process_functions, example_filetype_format
+from genie import example_filetype_format, extract, load, validate
 
 CENTER = "SAGE"
-syn = mock.create_autospec(synapseclient.Synapse)
-
 CNA_ENT = synapseclient.File(
     name="data_CNA_SAGE.txt", path="data_CNA_SAGE.txt", parentId="syn12345"
 )
@@ -39,7 +36,7 @@ class FileFormat(example_filetype_format.FileTypeFormat):
     _fileType = "clinical"
 
 
-def test_perfect_determine_filetype():
+def test_perfect_determine_filetype(syn):
     """
     Tests determining of file type through filenames
     Parameters are passed in from filename_fileformat_map
@@ -53,7 +50,7 @@ def test_perfect_determine_filetype():
         assert validator.determine_filetype() == filetype
 
 
-def test_wrongfilename_noerror_determine_filetype():
+def test_wrongfilename_noerror_determine_filetype(syn):
     """
     Tests None is passed back when wrong filename is passed
     when raise_error flag is False
@@ -113,7 +110,7 @@ def test_warning_collect_errors_and_warnings():
     )
 
 
-def test_valid_validate_single_file(genie_config):
+def test_valid_validate_single_file(syn, genie_config):
     """
     Tests that all the functions are run in validate single
     file workflow and all the right things are returned
@@ -155,7 +152,7 @@ def test_valid_validate_single_file(genie_config):
         mock_determine.assert_called_once_with()
 
 
-def test_filetype_validate_single_file():
+def test_filetype_validate_single_file(syn):
     """
     Tests that if filetype is passed in that an error is thrown
     if it is an incorrect filetype
@@ -178,7 +175,7 @@ def test_filetype_validate_single_file():
         assert not valid_cls.is_valid()
 
 
-def test_wrongfiletype_validate_single_file():
+def test_wrongfiletype_validate_single_file(syn):
     """
     Tests that if there is no filetype for the filename passed
     in, an error is thrown
@@ -208,7 +205,7 @@ def test_wrongfiletype_validate_single_file():
         mock_determine_filetype.assert_called_once_with()
 
 
-def test_nopermission__check_parentid_permission_container():
+def test_nopermission__check_parentid_permission_container(syn):
     """Throws error if no permissions to access"""
     parentid = "syn123"
     with patch.object(syn, "get", side_effect=SynapseHTTPError), pytest.raises(
@@ -220,7 +217,7 @@ def test_nopermission__check_parentid_permission_container():
         validate._check_parentid_permission_container(syn, parentid)
 
 
-def test_notcontainer__check_parentid_permission_container():
+def test_notcontainer__check_parentid_permission_container(syn):
     """Throws error if input if synid of file"""
     parentid = "syn123"
     file_ent = synapseclient.File("foo", parentId=parentid)
@@ -233,7 +230,7 @@ def test_notcontainer__check_parentid_permission_container():
         validate._check_parentid_permission_container(syn, parentid)
 
 
-def test_valid__check_parentid_permission_container():
+def test_valid__check_parentid_permission_container(syn):
     """
     Test that parentid specified is a container and have permissions to access
     """
@@ -264,11 +261,10 @@ ONCOTREE_ENT = "syn222"
 
 class argparser:
     oncotree_link = "link"
-    parentid = None
+    parentid = "syn3333"
     filetype = None
-    project_id = None
     center = "try"
-    filepath = "path.csv"
+    filepath = ["path.csv"]
     nosymbol_check = False
     format_registry_packages = ["genie"]
     project_id = "syn1234"
@@ -283,36 +279,24 @@ class argparser:
         return databasetosynid_mappingdf
 
 
-def test_valid__upload_to_synapse():
-    """
-    Test upload of file to synapse under right conditions
-    """
-    ent = synapseclient.File(id="syn123", parentId="syn222")
-    with patch.object(syn, "store", return_value=ent) as patch_synstore:
-        validate._upload_to_synapse(syn, ["foo"], True, parentid="syn123")
-        patch_synstore.assert_called_once_with(
-            synapseclient.File("foo", parent="syn123")
-        )
-
-
-def test_perform_validate(genie_config):
+def test_perform_validate(syn, genie_config):
     """Make sure all functions are called"""
     arg = argparser()
     valid = True
     with patch.object(
         validate, "_check_parentid_permission_container", return_value=None
     ) as patch_check_parentid, patch.object(
-        process_functions, "get_genie_config", return_value=genie_config
+        extract, "get_genie_config", return_value=genie_config
     ) as patch_get_config, patch.object(
         validate, "_check_center_input"
     ) as patch_check_center, patch.object(
-        process_functions, "_get_oncotreelink"
+        extract, "_get_oncotreelink"
     ) as patch_get_onco, patch.object(
         validate.GenieValidationHelper,
         "validate_single_file",
         return_value=(valid, "foo"),
     ) as patch_validate, patch.object(
-        validate, "_upload_to_synapse"
+        load, "store_files"
     ) as patch_syn_upload:
         validate._perform_validate(syn, arg)
         patch_check_parentid.assert_called_once_with(syn=syn, parentid=arg.parentid)
@@ -323,5 +307,5 @@ def test_perform_validate(genie_config):
             nosymbol_check=arg.nosymbol_check, project_id=arg.project_id
         )
         patch_syn_upload.assert_called_once_with(
-            syn, arg.filepath, valid, parentid=arg.parentid
+            syn=syn, filepaths=arg.filepath, parentid=arg.parentid
         )

@@ -1,30 +1,27 @@
-from unittest import mock
 from unittest.mock import patch
 
 import pandas as pd
 import pytest
-import synapseclient
 
 import genie_registry.maf
 from genie_registry.maf import maf
-from genie_registry.mafSP import mafSP
-
-syn = mock.create_autospec(synapseclient.Synapse)
-
-maf_class = maf(syn, "SAGE")
-mafsp_class = mafSP(syn, "SAGE")
 
 
-def test_invalidname_validateFilename():
+@pytest.fixture
+def maf_class(syn):
+    return maf(syn, "SAGE")
+
+
+def test_invalidname_validateFilename(maf_class):
     with pytest.raises(AssertionError):
         maf_class.validateFilename(["foo"])
 
 
-def test_valid_validateFilename():
+def test_valid_validateFilename(maf_class):
     assert maf_class.validateFilename(["data_mutations_extended_SAGE.txt"]) == "maf"
 
 
-def test_perfect_validation():
+def test_perfect_validation(maf_class):
     mafDf = pd.DataFrame(
         dict(
             CHROMOSOME=[1, 2, 3, 4, 5],
@@ -50,12 +47,9 @@ def test_perfect_validation():
     error, warning = maf_class._validate(mafDf)
     assert error == ""
     assert warning == ""
-    error, warning = mafsp_class._validate(mafDf)
-    assert error == ""
-    assert warning == ""
 
 
-def test_firstcolumn_validation():
+def test_firstcolumn_validation(maf_class):
     """Tests if first column isn't correct"""
     mafDf = pd.DataFrame(
         {
@@ -101,7 +95,7 @@ def test_firstcolumn_validation():
     assert warning == ""
 
 
-def test_missingcols_validation():
+def test_missingcols_validation(maf_class):
     """Tests missing columns"""
     emptydf = pd.DataFrame()
     error, warning = maf_class._validate(emptydf)
@@ -124,7 +118,7 @@ def test_missingcols_validation():
     assert warning == expected_warnings
 
 
-def test_errors_validation():
+def test_errors_validation(maf_class):
     mafDf = pd.DataFrame(
         dict(
             CHROMOSOME=[1, "chr2", "WT", 4, 5],
@@ -165,7 +159,7 @@ def test_errors_validation():
     assert warning == expectedWarnings
 
 
-def test_invalid_validation():
+def test_invalid_validation(maf_class):
     mafDf = pd.DataFrame(
         dict(
             CHROMOSOME=[1, 2, 3, 4, 2, 4],

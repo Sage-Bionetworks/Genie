@@ -5,7 +5,6 @@ import logging
 from . import (
     assay,
     bed,
-    cbs,
     clinical,
     cna,
     fusions,
@@ -30,7 +29,6 @@ __all__ = [
     "__version__",
     "assay",
     "bed",
-    "cbs",
     "clinical",
     "cna",
     "fusions",

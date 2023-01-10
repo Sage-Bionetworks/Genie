@@ -8,8 +8,6 @@ import synapseclient
 
 from genie import process_functions
 
-syn = mock.create_autospec(synapseclient.Synapse)
-
 DATABASE_DF = pd.DataFrame(
     {
         "UNIQUE_KEY": ["test1", "test2", "test3"],
@@ -305,52 +303,7 @@ def test_norows__delete_rows():
     assert delete_rows.empty
 
 
-class argparser:
-    def asDataFrame(self):
-        database_dict = {"Database": ["centerMapping"], "Id": ["syn123"]}
-        databasetosynid_mappingdf = pd.DataFrame(database_dict)
-        return databasetosynid_mappingdf
-
-
-@pytest.mark.parametrize(
-    "test,staging,synid",
-    [
-        (False, False, "syn10967259"),
-        (False, True, "syn12094210"),
-        (True, False, "syn11600968"),
-    ],
-)
-def test_get_synid_database_mappingdf(test, staging, synid):
-    """
-    Tests getting database mapping config
-    no flags
-    staging flag
-    test flag
-    """
-    arg = argparser()
-    with patch.object(syn, "get", return_value=ENTITY), patch.object(
-        process_functions, "get_syntabledf", return_value=arg.asDataFrame()
-    ) as patch_gettabledf:
-        df = process_functions.get_synid_database_mappingdf(syn, project_id=None)
-        patch_gettabledf.assert_called_once_with(
-            syn, "SELECT * FROM {}".format(ENTITY.dbMapping[0])
-        )
-        assert df.equals(arg.asDataFrame())
-
-
-def test_get_syntabledf():
-    """
-    Test helper function that queries synapse tables and returns dataframes
-    """
-    arg = argparser()
-    with patch.object(syn, "tableQuery", return_value=arg) as patch_syn_tablequery:
-        querystring = "select * from foo"
-        df = process_functions.get_syntabledf(syn, querystring)
-        patch_syn_tablequery.assert_called_once_with(querystring)
-        assert df.equals(arg.asDataFrame())
-
-
-def test__create_schema():
+def test__create_schema(syn):
     """Tests calling of create schema"""
     table_name = str(uuid.uuid1())
     parentid = str(uuid.uuid1())
@@ -369,7 +322,7 @@ def test__create_schema():
         assert new_schema == schema
 
 
-def test__update_database_mapping():
+def test__update_database_mapping(syn):
     """Tests updates database mapping"""
     fileformat = str(uuid.uuid1())
     database_mappingdf = pd.DataFrame(
@@ -388,7 +341,7 @@ def test__update_database_mapping():
         patch_syn_store.assert_called_once()
 
 
-def test_noname__move_entity():
+def test_noname__move_entity(syn):
     """Tests not changing entity name"""
     ent = synapseclient.Entity(name="foo", parentId="syn2222")
     new_parent = "syn1234"
@@ -398,7 +351,7 @@ def test_noname__move_entity():
         patch_syn_store.assert_called_once_with(ent)
 
 
-def test_name__move_entity():
+def test_name__move_entity(syn):
     """Tests entity name is updated"""
     ent = synapseclient.Entity(name="foo", parentId="syn2222")
     new_parent = "syn1234"
@@ -410,7 +363,7 @@ def test_name__move_entity():
         patch_syn_store.assert_called_once_with(ent)
 
 
-def test_create_new_fileformat_table():
+def test_create_new_fileformat_table(syn):
     fileformat = str(uuid.uuid1())
     db_synid = "syn1111111"
     database_mappingdf = pd.DataFrame(
@@ -468,20 +421,3 @@ def test_create_new_fileformat_table():
             "newdb_mappingdf": update_return,
             "moved_ent": move_entity_return,
         }
-
-
-def test_notnone_get_oncotree_link(genie_config):
-    """Test link passed in by user is used"""
-    url = "https://www.synapse.org"
-    link = process_functions._get_oncotreelink(syn, genie_config, oncotree_link=url)
-    assert link == url
-
-
-def test_none__getoncotreelink(genie_config):
-    """Test oncotree link is gotten"""
-    url = "https://www.synapse.org"
-    link = synapseclient.File("foo", parentId="foo", externalURL=url)
-    with patch.object(syn, "get", return_value=link) as patch_synget:
-        oncolink = process_functions._get_oncotreelink(syn, genie_config)
-        patch_synget.assert_called_once_with(genie_config["oncotreeLink"])
-        assert oncolink == url

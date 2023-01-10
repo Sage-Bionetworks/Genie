@@ -8,6 +8,7 @@ import logging
 
 from genie import (
     config,
+    extract,
     input_to_database,
     process_functions,
     write_invalid_reasons,
@@ -56,7 +57,7 @@ def main(
     syn = process_functions.synLogin(pemfile, debug=debug)
 
     # Get project GENIE configurations
-    genie_config = process_functions.get_genie_config(syn=syn, project_id=project_id)
+    genie_config = extract.get_genie_config(syn=syn, project_id=project_id)
 
     # Filter for specific center
     if center is not None:
@@ -115,6 +116,9 @@ def main(
 
     # Start GENIE processing
     for process_center in centers:
+        # Check if the genie genome nexus is up, if not then don't run
+        # processing
+        process_functions.checkUrl("http://genie.genomenexus.org/")
         input_to_database.center_input_to_database(
             syn=syn,
             project_id=project_id,

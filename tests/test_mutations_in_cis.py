@@ -42,19 +42,17 @@ table_query_results_map = {
     ("select * from syn11601206 where Center = 'SAGE'",): createMockTable(mutCisDf),
 }
 
-syn = mock.create_autospec(synapseclient.Synapse)
-syn.tableQuery.side_effect = table_query_results
-
 
 @pytest.fixture
-def mutCis(genie_config):
+def mutCis(syn, genie_config):
+    syn.tableQuery.side_effect = table_query_results
     return mutationsInCis(syn, "SAGE", genie_config)
 
 
 ENTITY = synapseclient.Project("testing", annotations={"dbMapping": ["syn10967259"]})
 
 
-def test_validation__perfect(mutCis):
+def test_validation__perfect(syn, mutCis):
     with pytest.raises(AssertionError):
         mutCis.validateFilename(["foo"])
     assert (
@@ -84,7 +82,7 @@ def test_validation__perfect(mutCis):
         assert warning == ""
 
 
-def test_validation__missing_col(mutCis):
+def test_validation__missing_col(syn, mutCis):
     mutCisDf = pd.DataFrame(
         dict(
             Flag=["mutationsInCis"],
@@ -108,7 +106,7 @@ def test_validation__missing_col(mutCis):
         assert error == expectedErrors
 
 
-def test_validation__invalid(mutCis):
+def test_validation__invalid(syn, mutCis):
     mutCisDf = pd.DataFrame(
         dict(
             Flag=["mutationsInCis"],

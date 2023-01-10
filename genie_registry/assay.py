@@ -5,7 +5,7 @@ import yaml
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import process_functions
+from genie import extract, load, process_functions
 
 
 class Assayinfo(FileTypeFormat):
@@ -35,12 +35,11 @@ class Assayinfo(FileTypeFormat):
         """
         # Must pass in a list
         process_assay_info_df = self._process(assay_info_df)
-        process_functions.updateData(
-            self.syn,
-            databaseSynId,
-            process_assay_info_df,
-            self.center,
-            filterByColumn="CENTER",
+        load.update_table(
+            syn=self.syn,
+            databaseSynId=databaseSynId,
+            newData=process_assay_info_df,
+            filterBy=self.center,
             toDelete=True,
         )
         process_assay_info_df.to_csv(newPath, sep="\t", index=False)
@@ -153,15 +152,10 @@ class Assayinfo(FileTypeFormat):
                     "Assay_information.yaml: Please make sure all your "
                     "SEQ_ASSAY_IDs start with your center abbreviation.\n"
                 )
-            db_to_syn_map_df = process_functions.get_synid_database_mappingdf(
-                self.syn, project_id
-            )
-            sample_synid = process_functions.getDatabaseSynId(
-                self.syn, "sample", databaseToSynIdMappingDf=db_to_syn_map_df
-            )
-            uniq_seq_df = process_functions.get_syntabledf(
+
+            uniq_seq_df = extract.get_syntabledf(
                 self.syn,
-                f"select distinct(SEQ_ASSAY_ID) as seq from {sample_synid} "
+                f"select distinct(SEQ_ASSAY_ID) as seq from {self.genie_config['sample']} "
                 f"where CENTER = '{self.center}'",
             )
             # These are all the SEQ_ASSAY_IDs that are in the clinical database
