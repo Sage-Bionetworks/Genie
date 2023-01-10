@@ -10,14 +10,13 @@ import synapseutils
 from genie import (
     input_to_database,
     example_filetype_format,
-    process_functions,
+    extract,
+    load,
     process_mutation,
 )
 from genie_registry.clinical import Clinical
 from genie.validate import GenieValidationHelper
 
-
-syn = mock.create_autospec(synapseclient.Synapse)
 sample_clinical_synid = "syn2222"
 
 sample_clinical_entity = synapseclient.File(
@@ -99,35 +98,6 @@ class mock_csv_query_result(object):
         return self.df
 
 
-# def test_samename_rename_file():
-#     '''Test that the file path is not renamed.
-#     '''
-#     filename = synapseclient.utils.make_bogus_data_file()
-#     entity = synapseclient.File(path=filename,
-#                                 id='syn012345',
-#                                 parentId='syn45678',
-#                                 name=os.path.basename(filename))
-#     expectedpath = filename
-#     new_entity = input_to_database.rename_file(entity)
-#     assert new_entity.annotations.expectedPath == expectedpath
-#     os.remove(filename)
-
-
-# def test_diffname_rename_file():
-#     '''Test that the file path is renamed.
-#     '''
-#     filename = synapseclient.utils.make_bogus_data_file()
-#     entity = synapseclient.File(path=filename,
-#                                 id='syn012345',
-#                                 parentId='syn45678',
-#                                 name='testname')
-
-#     expectedpath = os.path.join(os.path.dirname(filename), "testname")
-#     new_entity = input_to_database.rename_file(entity)
-#     assert new_entity.annotations.expectedPath == expectedpath
-#     os.remove(filename)
-
-
 def walk_return():
     """
     Generator returned by synapseutils.walk
@@ -143,7 +113,7 @@ def walk_return_empty():
     yield ([], [], [])
 
 
-def test_main_get_center_input_files():
+def test_main_get_center_input_files(syn):
     """
     Test to make sure center input files are gotten
     excluding the vcf files since process main is specified
@@ -161,9 +131,7 @@ def test_main_get_center_input_files():
     ) as patch_synapseutils_walk, patch.object(
         syn, "get", side_effect=syn_get_effects
     ) as patch_syn_get:
-        center_file_list = input_to_database.get_center_input_files(
-            syn, "syn12345", center
-        )
+        center_file_list = extract.get_center_input_files(syn, "syn12345", center)
 
         assert len(center_file_list) == len(expected_center_file_list)
         assert len(center_file_list[0]) == 2
@@ -172,7 +140,7 @@ def test_main_get_center_input_files():
         patch_syn_get.assert_has_calls(calls)
 
 
-def test_mutation_get_center_input_files():
+def test_mutation_get_center_input_files(syn):
     """
     Test to make sure center input files are gotten
     including the vcf files since process vcf is specified
@@ -200,7 +168,7 @@ def test_mutation_get_center_input_files():
     ) as patch_synapseutils_walk, patch.object(
         syn, "get", side_effect=syn_get_effects
     ) as patch_syn_get:
-        center_file_list = input_to_database.get_center_input_files(
+        center_file_list = extract.get_center_input_files(
             syn, "syn12345", center, process="mutation"
         )
         assert len(center_file_list) == len(expected_center_file_list)
@@ -210,7 +178,7 @@ def test_mutation_get_center_input_files():
         patch_syn_get.assert_has_calls(calls)
 
 
-def test_empty_get_center_input_files():
+def test_empty_get_center_input_files(syn):
     """
     Test that center input files is empty if directory
     pass in is empty
@@ -218,31 +186,11 @@ def test_empty_get_center_input_files():
     with patch.object(
         synapseutils, "walk", return_value=walk_return_empty()
     ) as patch_synapseutils_walk:
-        center_file_list = input_to_database.get_center_input_files(
+        center_file_list = extract.get_center_input_files(
             syn, "syn12345", center, process="vcf"
         )
         assert center_file_list == []
         patch_synapseutils_walk.assert_called_once_with(syn, "syn12345")
-
-
-# @pytest.fixture(params=[
-#     # tuple with (input, expectedOutput)
-#     (["data_CNA_SAGE.txt"], "cna"),
-#     (["data_clinical_supp_SAGE.txt"], "clinical"),
-#     (["data_clinical_supp_sample_SAGE.txt",
-#       "data_clinical_supp_patient_SAGE.txt"], "clinical")])
-# def filename_fileformat_map(request):
-#     return request.param
-
-
-# def test_perfect_get_filetype(filename_fileformat_map):
-#     (filepath_list, fileformat) = filename_fileformat_map
-#     assert input_to_database.get_filetype(
-#         syn, filepath_list, center) == fileformat
-
-
-# def test_wrongfilename_get_filetype():
-#     assert input_to_database.get_filetype(syn, ['wrong.txt'], center) is None
 
 
 def test_unvalidatedinput_check_existing_file_status():
@@ -386,7 +334,7 @@ def test_error_check_existing_file_status():
         input_to_database.check_existing_file_status(emptydf, emptydf, entities)
 
 
-def test_valid_validatefile(genie_config):
+def test_valid_validatefile(syn, genie_config):
     """
     Tests the behavior of a file that gets validated that becomes
     valid
@@ -464,7 +412,7 @@ def test_valid_validatefile(genie_config):
         patch_send_email.assert_not_called()
 
 
-def test_invalid_validatefile(genie_config):
+def test_invalid_validatefile(syn, genie_config):
     """
     Tests the behavior of a file that gets validated that becomes
     invalid
@@ -543,7 +491,7 @@ def test_invalid_validatefile(genie_config):
         )
 
 
-def test_already_validated_validatefile():
+def test_already_validated_validatefile(syn):
     """
     Test already validated files
     """
@@ -676,7 +624,7 @@ def test_invalid__get_status_and_error_list():
     assert invalid_errors_list == [{"entity": entity, "errors": errors}]
 
 
-def test__send_validation_error_email():
+def test__send_validation_error_email(syn):
     message = "invalid error message here"
     filenames = ["data_clinical_supp_SAGE.txt"]
     file_user = "333"
@@ -867,12 +815,12 @@ class TestValidation:
         errordf = input_to_database.build_error_tracking_table(invalid_errors)
         assert errordf.equals(self.empty_errors)
 
-    def test_update_status_and_error_tables(self):
+    def test_update_status_and_error_tables(self, syn):
         """Test updating validation status and error table"""
         validation_status_table = emptytable_mock()
         error_tracker_table = emptytable_mock()
 
-        with patch.object(process_functions, "updateDatabase") as mock_update:
+        with patch.object(load, "_update_table") as mock_update:
             input_to_database.update_status_and_error_tables(
                 syn,
                 self.validation_statusdf,
@@ -946,7 +894,7 @@ class TestValidation:
         assert updated_tables["error_trackingdf"].empty
         assert updated_tables["validation_statusdf"].empty
 
-    def test_validation(self, genie_config):
+    def test_validation(self, syn, genie_config):
         """Test validation steps"""
         modified_on = 1561143558000
         process = "main"
@@ -1031,7 +979,7 @@ class TestValidation:
         ("main", Mock(), "maf"),
     ],
 )
-def test_main_processfile(genie_config, process, genieclass, filetype):
+def test_main_processfile(syn, genie_config, process, genieclass, filetype):
     validfiles = {
         "id": ["syn1"],
         "path": ["/path/to/data_clinical_supp.txt"],
@@ -1055,7 +1003,7 @@ def test_main_processfile(genie_config, process, genieclass, filetype):
     genieclass.assert_called_once()
 
 
-def test_mainnone_processfile(genie_config):
+def test_mainnone_processfile(syn, genie_config):
     """If file type is None, the processing function is not called"""
     validfiles = {
         "id": ["syn1"],
@@ -1081,7 +1029,7 @@ def test_mainnone_processfile(genie_config):
         patch_clin.assert_not_called()
 
 
-def test_mutation_processfile(genie_config):
+def test_mutation_processfile(syn, genie_config):
     """
     Make sure mutation is called correctly
     """

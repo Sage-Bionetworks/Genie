@@ -30,12 +30,10 @@ table_query_results_map = {
 }
 ENTITY = synapseclient.Project("testing", annotations={"dbMapping": ["syn10967259"]})
 
-syn = mock.create_autospec(synapseclient.Synapse)
-syn.tableQuery.side_effect = table_query_results
-
 
 @pytest.fixture
-def fusionClass(genie_config):
+def fusionClass(syn, genie_config):
+    syn.tableQuery.side_effect = table_query_results
     return fusions(syn, "SAGE", genie_config)
 
 
@@ -87,7 +85,7 @@ def test_validation__fail_name(fusionClass):
     assert fusionClass.validateFilename(["data_fusions_SAGE.txt"]) == "fusions"
 
 
-def test_validation_perfect(fusionClass):
+def test_validation_perfect(syn, fusionClass):
     fusionDf = pd.DataFrame(
         {
             "HUGO_SYMBOL": ["AAED", "AAK1", "AAAS"],
@@ -111,7 +109,7 @@ def test_validation_perfect(fusionClass):
         assert warning == ""
 
 
-def test_validation_perfect_invalid(fusionClass):
+def test_validation_perfect_invalid(syn, fusionClass):
     fusionDf = pd.DataFrame(
         {
             "HUGO_SYMBOL": [float("nan"), "AAK1", "AAAS"],

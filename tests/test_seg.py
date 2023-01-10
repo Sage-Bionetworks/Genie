@@ -1,19 +1,15 @@
-from unittest import mock
-
 import pandas as pd
 import pytest
-import synapseclient
 
 from genie_registry.seg import seg
-from genie_registry.cbs import cbs
-
-syn = mock.create_autospec(synapseclient.Synapse)
-
-segClass = seg(syn, "SAGE")
-cbsClass = cbs(syn, "SAGE")
 
 
-def test_processing():
+@pytest.fixture
+def seg_class(syn):
+    return seg(syn, "SAGE")
+
+
+def test_processing(seg_class):
     expectedSegDf = pd.DataFrame(
         {
             "ID": [
@@ -49,21 +45,17 @@ def test_processing():
         }
     )
 
-    newSegDf = segClass._process(segDf)
-    assert expectedSegDf.equals(newSegDf[expectedSegDf.columns])
-
-    newSegDf = cbsClass._process(segDf)
+    newSegDf = seg_class._process(segDf)
     assert expectedSegDf.equals(newSegDf[expectedSegDf.columns])
 
 
-def test_validation_filename():
+def test_validation_filename(seg_class):
     with pytest.raises(AssertionError):
-        segClass.validateFilename(["foo"])
-    assert segClass.validateFilename(["genie_data_cna_hg19_SAGE.seg"]) == "seg"
-    assert cbsClass.validateFilename(["genie_data_cna_hg19_SAGE.cbs"]) == "cbs"
+        seg_class.validateFilename(["foo"])
+    assert seg_class.validateFilename(["genie_data_cna_hg19_SAGE.seg"]) == "seg"
 
 
-def test_validation_perfect():
+def test_validation_perfect(seg_class):
     segDf = pd.DataFrame(
         {
             "ID": [
@@ -81,12 +73,12 @@ def test_validation_perfect():
         }
     )
 
-    error, warning = segClass._validate(segDf)
+    error, warning = seg_class._validate(segDf)
     assert error == ""
     assert warning == ""
 
 
-def test_valdation_invalid():
+def test_valdation_invalid(seg_class):
     segDf = pd.DataFrame(
         {
             "ID": ["ID1", "ID2", "ID3", "ID4", "ID5"],
@@ -102,11 +94,7 @@ def test_valdation_invalid():
         "CHROM, LOC.END, LOC.START.\n"
         "Seg: ID must start with GENIE-SAGE\n"
     )
-    error, warning = segClass._validate(segDf)
-    assert error == expectedErrors
-    assert warning == ""
-
-    error, warning = cbsClass._validate(segDf)
+    error, warning = seg_class._validate(segDf)
     assert error == expectedErrors
     assert warning == ""
 
@@ -120,7 +108,7 @@ def test_valdation_invalid():
             "SEG.MEAN": [1, 2, "f.d", 4, 3],
         }
     )
-    error, warning = segClass._validate(segDf)
+    error, warning = seg_class._validate(segDf)
     expectedErrors = (
         "Seg: Only integars allowed in these column(s): "
         "LOC.END, LOC.START, NUM.MARK.\n"

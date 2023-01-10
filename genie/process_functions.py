@@ -17,6 +17,8 @@ import pandas as pd
 import synapseclient  # lgtm [py/import-and-import-from]
 from synapseclient import Synapse
 
+from genie import extract
+
 # try:
 #   from urllib.request import urlopen
 # except ImportError:
@@ -25,108 +27,8 @@ from synapseclient import Synapse
 pd.options.mode.chained_assignment = None
 
 logger = logging.getLogger(__name__)
-
+# TODO: Add to constants.py
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-# try:
-#   from urlparse import urlparse
-# except ImportError:
-#   from urllib.parse import urlparse
-
-# Create merged dictionary of remapped genes
-# def createDict(invalidated_genes):
-#     toRemapRemove = {}
-#     invalidated_genes = pd.Series(invalidated_genes)
-#     for i in invalidated_genes[invalidated_genes!=True]:
-#         toRemapRemove.update(i)
-#     return(toRemapRemove)
-
-# Validate genes
-# def hgncRestCall(path):
-#     """
-#     This function does the rest call to the genenames website
-
-#     :params path:     The gene symbol url path to add to the base uri
-
-#     :returns:         If the symbol exists, returns True and the corrected symbol, otherwise returns False and None.
-#     """
-#     headers = {'Accept': 'application/json',}
-
-#     uri = 'http://rest.genenames.org'
-
-#     target = urlparse(uri+path)
-#     method = 'GET'
-#     body = ''
-#     h = http.Http()
-#     response, content = h.request(target.geturl(),
-#                                   method,
-#                                   body,
-#                                   headers)
-#     if response['status'] == '200':
-#         data = json.loads(content)
-#         if len(data['response']['docs']) == 0:
-#             return(False, [None])
-#         else:
-#             mapped = [symbol['symbol'] for symbol in data['response']['docs']]
-#             return(True, mapped)
-#     else:
-#         return(False, [None])
-
-# Validation of gene names
-# def validateSymbol(gene, returnMapping=False):
-#     """
-#     This function does validation of symbols
-
-#     :params gene:               Gene symbol
-#     :params returnMapping:      Return mapping of old gene to new gene
-
-#     :returns:                   Check if the provided gene name is a correct symbol and print out genes
-#                                 that need to be remapped or can't be mapped to anything
-#     """
-#     path = '/fetch/symbol/%s' %  gene
-#     verified, symbol = hgncRestCall(path)
-#     if not verified:
-#         path = '/fetch/prev_symbol/%s' %  gene
-#         verified, symbol = hgncRestCall(path)
-#     if not verified:
-#         path = '/fetch/alias_symbol/%s' %  gene
-#         verified, symbol = hgncRestCall(path)
-#     if gene in symbol:
-#         return(True)
-#     else:
-#         if symbol[0] is None:
-#             #logger.error("%s cannot be remapped. Please correct." % gene)
-#             logger.warning("%s cannot be remapped. These rows will have an empty gene symbol" % gene)
-#         else:
-#             #if "MLL4", then the HUGO symbol should be KMT2D and KMT2B
-#             if len(symbol) > 1:
-#                 #logger.error("%s can be mapped to different symbols: %s. Please correct." % (gene, ", ".join(symbol)))
-#                 logger.warning("%s can be mapped to different symbols: %s. Please correct or it will be removed." % (gene, ", ".join(symbol)))
-#             else:
-#                 logger.info("%s will be remapped to %s" % (gene, symbol[0]))
-#                 if returnMapping:
-#                     return({gene: symbol[0]})
-#                 else:
-#                     return(True)
-#         if returnMapping:
-#             return({gene: float('nan')})
-#         else:
-#             return(False)
-#         #return(True)
-
-# # Remap and remove genes in dataframes given a column
-# def remapGenes(invalidated_genes, DF, col,isBedFile=False):
-#     nonmapped = []
-#     gene_dict = createDict(invalidated_genes)
-#     for key in gene_dict:
-#         value = gene_dict[key]
-#         if isBedFile:
-#         #     nonmapped.append(key)
-#         #     DF = DF[DF[col] != key]
-#         # else:
-#             DF[col][DF[col] == key] = value
-#     return(DF, nonmapped)
 
 
 def retry_get_url(url):
@@ -159,6 +61,7 @@ def checkUrl(url):
     assert temp.status_code == 200, "%s site is down" % url
 
 
+# TODO Add to validate.py
 def checkColExist(DF, key):
     """
     This function checks if the column exists in a dataframe
@@ -174,6 +77,7 @@ def checkColExist(DF, key):
     return result
 
 
+# TODO: Add to validation.py
 def validate_genie_identifier(
     identifiers: pd.Series, center: str, filename: str, col: str
 ) -> str:
@@ -200,35 +104,6 @@ def validate_genie_identifier(
     return total_error
 
 
-# def get_oncotree_codes(oncotree_url):
-#     '''
-#     Deprecated
-#     Gets the oncotree data from the specified url.
-
-#     Args:
-#         oncotree_url: Oncotree url
-
-#     Returns:
-#         dataframe: oncotree codes
-#     '''
-#     # PATTERN = re.compile('([A-Za-z\' ,-/]*) \\(([A-Za-z_]*)\\)')
-#     PATTERN = re.compile('.*[(](.*)[)]')
-#     # with requests.get(oncotree_url) as oncotreeUrl:
-#     #   oncotree = oncotreeUrl.text.split("\n")
-#     oncotreeUrl = retry_get_url(oncotree_url)
-#     oncotree = oncotreeUrl.text.split("\n")
-
-#     # oncotree = urlopen(oncotree_url).read().split('\n')
-#     allCodes = []
-#     for row in oncotree[:-1]:
-#         data = row.split("\t")
-#         allCodes.extend([
-#             PATTERN.match(i).group(1)
-#             for i in data[0:5] if PATTERN.match(i)])
-#     codes = pd.DataFrame({"ONCOTREE_CODE": list(set(allCodes))})
-#     return(codes)
-
-
 def lookup_dataframe_value(df, col, query):
     """
     Look up dataframe value given query and column
@@ -246,66 +121,6 @@ def lookup_dataframe_value(df, col, query):
     return query_val
 
 
-def get_syntabledf(syn, query_string):
-    """
-    Get dataframe from table query
-
-    Args:
-        syn: Synapse object
-        query_string: Table query
-
-    Returns:
-        pandas dataframe with query results
-    """
-    table = syn.tableQuery(query_string)
-    tabledf = table.asDataFrame()
-    return tabledf
-
-
-def get_synid_database_mappingdf(syn, project_id):
-    """
-    Get database to synapse id mapping dataframe
-
-    Args:
-        syn: Synapse object
-        project_id: Synapse Project ID with a 'dbMapping' annotation.
-
-    Returns:
-        database to synapse id mapping dataframe
-    """
-
-    project = syn.get(project_id)
-    database_mapping_synid = project.annotations["dbMapping"][0]
-    database_map_query = "SELECT * FROM {}".format(database_mapping_synid)
-    mappingdf = get_syntabledf(syn, database_map_query)
-    return mappingdf
-
-
-def getDatabaseSynId(syn, tableName, project_id=None, databaseToSynIdMappingDf=None):
-    """
-    Get database synapse id from database to synapse id mapping table
-
-    Args:
-        syn: Synapse object
-        project_id: Synapse Project ID with a database mapping table.
-        tableName: Name of synapse table
-        databaseToSynIdMappingDf: Avoid calling rest call to download table
-                                  if the mapping table is already downloaded
-
-    Returns:
-        str:  Synapse id of wanted database
-    """
-    if databaseToSynIdMappingDf is None:
-        databaseToSynIdMappingDf = get_synid_database_mappingdf(
-            syn, project_id=project_id
-        )
-
-    synId = lookup_dataframe_value(
-        databaseToSynIdMappingDf, "Id", 'Database == "{}"'.format(tableName)
-    )
-    return synId
-
-
 def rmFiles(folderPath, recursive=True):
     """
     Convenience function to remove all files in dir
@@ -321,6 +136,7 @@ def rmFiles(folderPath, recursive=True):
             break
 
 
+# TODO Add to transform
 def removeStringFloat(string):
     """
     remove string float in tsv file
@@ -336,6 +152,7 @@ def removeStringFloat(string):
     return string
 
 
+# TODO Add to transform
 def removePandasDfFloat(df, header=True):
     """
     Remove decimal for integers due to pandas
@@ -355,6 +172,7 @@ def removePandasDfFloat(df, header=True):
     return text
 
 
+# TODO Add to transform
 def removeFloat(df):
     """
     Need to remove this function
@@ -367,6 +185,7 @@ def removeFloat(df):
     return text
 
 
+# TODO Add to validate.py
 def checkGenieId(ID, center):
     """
     Checks if GENIE ID is labelled correctly
@@ -385,40 +204,6 @@ def checkGenieId(ID, center):
         return "GENIE-%s-%s" % (center, str(ID))
     else:
         return str(ID)
-
-
-def storeFile(
-    syn,
-    fileName,
-    parentId,
-    center,
-    fileFormat,
-    dataSubType,
-    platform=None,
-    cBioFileFormat=None,
-    used=None,
-):
-    """
-    # Storing Files along with annotations
-    """
-    logger.info("STORING FILES")
-    fileEnt = synapseclient.File(fileName, parent=parentId)
-    fileEnt.center = center
-    fileEnt.species = "Human"
-    fileEnt.consortium = "GENIE"
-    fileEnt.dataType = "genomicVariants"
-    fileEnt.fundingAgency = "AACR"
-    fileEnt.assay = "targetGeneSeq"
-    fileEnt.fileFormat = fileFormat
-    fileEnt.dataSubType = dataSubType
-    fileEnt.fileStage = "staging"
-    fileEnt.platform = platform
-    if platform is not None:
-        fileEnt.platform = platform
-    if cBioFileFormat is not None:
-        fileEnt.cBioFileFormat = cBioFileFormat
-    ent = syn.store(fileEnt, used=used)
-    return ent
 
 
 def seqDateFilter(clinicalDf, processingDate, days):
@@ -726,122 +511,7 @@ def _update_rows(new_datasetdf, databasedf, checkby):
     return toupdatedf
 
 
-def updateData(
-    syn: Synapse,
-    databaseSynId: str,
-    newData: pd.DataFrame,
-    filterBy: str,
-    filterByColumn: str = "CENTER",
-    col: List[str] = None,
-    toDelete: bool = False,
-) -> None:
-    """Update Synapse table given a new dataframe
-
-    Args:
-        syn (Synapse): Synapse connection
-        databaseSynId (str): Synapse Id of Synapse Table
-        newData (pd.DataFrame): New data in a dataframe
-        filterBy (str): Value to filter new data by
-        filterByColumn (str, optional): Column to filter values by. Defaults to "CENTER".
-        col (List[str], optional): List of columns to ingest. Defaults to None.
-        toDelete (bool, optional): Delete rows given the primary key. Defaults to False.
-    """
-    databaseEnt = syn.get(databaseSynId)
-    database = syn.tableQuery(
-        f"SELECT * FROM {databaseSynId} where {filterByColumn} ='{filterBy}'"
-    )
-    database = database.asDataFrame()
-    db_cols = set(database.columns)
-    if col is not None:
-        new_data_cols = set(col)
-        # Make sure columns from file exists in database columns
-        use_cols = db_cols.intersection(new_data_cols)
-        # No need to fail, because there is bound to be at least one
-        # column that will exist in the database
-        database = database[list(use_cols)]
-    else:
-        newData = newData[database.columns]
-    updateDatabase(
-        syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete
-    )
-
-
-def updateDatabase(
-    syn, database, new_dataset, database_synid, primary_key_cols, to_delete=False
-):
-    """
-    Updates synapse tables by a row identifier with another
-    dataset that has the same number and order of columns
-
-    Args:
-        syn: Synapse object
-        database: The synapse table (pandas dataframe)
-        new_dataset: New dataset (pandas dataframe)
-        databaseSynId: Synapse Id of the database table
-        uniqueKeyCols: Column(s) that make up the unique key
-        toDelete: Delete rows, Defaults to False
-
-    Returns:
-        Nothing
-    """
-    primary_key = "UNIQUE_KEY"
-    database = database.fillna("")
-    orig_database_cols = database.columns
-    col_order = ["ROW_ID", "ROW_VERSION"]
-    col_order.extend(orig_database_cols.tolist())
-    new_dataset = new_dataset.fillna("")
-    # Columns must be in the same order
-    new_dataset = new_dataset[orig_database_cols]
-    database[primary_key_cols] = database[primary_key_cols].applymap(str)
-    database[primary_key] = database[primary_key_cols].apply(
-        lambda x: " ".join(x), axis=1
-    )
-
-    new_dataset[primary_key_cols] = new_dataset[primary_key_cols].applymap(str)
-    new_dataset[primary_key] = new_dataset[primary_key_cols].apply(
-        lambda x: " ".join(x), axis=1
-    )
-
-    allupdates = pd.DataFrame(columns=col_order)
-    to_append_rows = _append_rows(new_dataset, database, primary_key)
-    to_update_rows = _update_rows(new_dataset, database, primary_key)
-    if to_delete:
-        to_delete_rows = _delete_rows(new_dataset, database, primary_key)
-    else:
-        to_delete_rows = pd.DataFrame()
-    allupdates = pd.concat([allupdates, to_append_rows, to_update_rows], sort=False)
-    storedatabase = False
-    update_all_file = tempfile.NamedTemporaryFile(dir=SCRIPT_DIR, delete=False)
-
-    with open(update_all_file.name, "w") as updatefile:
-        # Must write out the headers in case there are no appends or updates
-        updatefile.write(",".join(col_order) + "\n")
-        if not allupdates.empty:
-            """
-            This is done because of pandas typing.
-            An integer column with one NA/blank value
-            will be cast as a double.
-            """
-            updatefile.write(
-                allupdates[col_order]
-                .to_csv(index=False, header=None)
-                .replace(".0,", ",")
-                .replace(".0\n", "\n")
-            )
-            storedatabase = True
-        if not to_delete_rows.empty:
-            updatefile.write(
-                to_delete_rows.to_csv(index=False, header=None)
-                .replace(".0,", ",")
-                .replace(".0\n", "\n")
-            )
-            storedatabase = True
-    if storedatabase:
-        syn.store(synapseclient.Table(database_synid, update_all_file.name))
-    # Delete the update file
-    os.unlink(update_all_file.name)
-
-
+# TODO Add to validate.py
 def checkInt(element):
     """
     Check if an item can become an integer
@@ -859,6 +529,7 @@ def checkInt(element):
         return False
 
 
+# TODO Add to validate.py
 def check_col_and_values(
     df, col, possible_values, filename, na_allowed=False, required=False, sep=None
 ):
@@ -1172,6 +843,7 @@ def _move_entity(syn, ent, parentid, name=None):
     return moved_ent
 
 
+# TODO: Add to extract.py
 def get_dbmapping(syn: Synapse, projectid: str) -> dict:
     """Gets database mapping information
 
@@ -1217,7 +889,7 @@ def create_new_fileformat_table(
     database_mappingdf = db_info["df"]
     dbmapping_synid = db_info["synid"]
 
-    olddb_synid = getDatabaseSynId(
+    olddb_synid = extract.getDatabaseSynId(
         syn, file_format, databaseToSynIdMappingDf=database_mappingdf
     )
     olddb_ent = syn.get(olddb_synid)
@@ -1244,78 +916,3 @@ def create_new_fileformat_table(
         "newdb_mappingdf": newdb_mappingdf,
         "moved_ent": moved_ent,
     }
-
-
-def get_database_mapping_config(syn: Synapse, synid: str) -> dict:
-    """Gets Synapse database to Table mapping in dict
-
-    Args:
-        syn: Synapse connection
-        synid: Synapse id of database mapping table
-
-    Returns:
-        dict: {'databasename': 'synid'}
-    """
-    config = syn.tableQuery(f"SELECT * FROM {synid}")
-    configdf = config.asDataFrame()
-    configdf.index = configdf["Database"]
-    config_dict = configdf.to_dict()
-    return config_dict["Id"]
-
-
-def get_genie_config(
-    syn: Synapse,
-    project_id: str,
-) -> dict:
-    """Get configurations needed for the GENIE codebase
-
-    Args:
-        syn (Synapse): Synapse connection
-        project_id (str): Synapse project id
-
-    Returns:
-        dict: _description_
-    """
-    # Get the Synapse Project where data is stored
-    # Should have annotations to find the table lookup
-    project = syn.get(project_id)
-
-    # Get project GENIE configurations
-    database_to_synid_mapping_synid = project.annotations.get("dbMapping", "")
-    genie_config = get_database_mapping_config(
-        syn=syn, synid=database_to_synid_mapping_synid[0]
-    )
-    # Fill in GENIE center configurations
-    center_mapping_id = genie_config["centerMapping"]
-    center_mapping_df = get_syntabledf(
-        syn=syn, query_string=f"SELECT * FROM {center_mapping_id} where release is true"
-    )
-    center_mapping_df.index = center_mapping_df.center
-    # Add center configurations including input/staging synapse ids
-    genie_config["center_config"] = center_mapping_df.to_dict("index")
-
-    genie_config["ethnicity_mapping"] = "syn7434242"
-    genie_config["race_mapping"] = "syn7434236"
-    genie_config["sex_mapping"] = "syn7434222"
-    genie_config["sampletype_mapping"] = "syn7434273"
-
-    return genie_config
-
-
-def _get_oncotreelink(syn, genie_config, oncotree_link=None):
-    """
-    Gets oncotree link unless a link is specified by the user
-
-    Args:
-        syn: Synapse object
-        databasetosynid_mappingdf: database to synid mapping
-        oncotree_link: link to oncotree. Default is None
-
-    Returns:
-        oncotree link
-
-    """
-    if oncotree_link is None:
-        onco_link_ent = syn.get(genie_config["oncotreeLink"])
-        oncotree_link = onco_link_ent.externalURL
-    return oncotree_link

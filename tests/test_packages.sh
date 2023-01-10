@@ -12,9 +12,6 @@ genie validate data_CNA_SAGE.txt SAGE --test
 genie validate data_mutations_extended_SAGE.txt SAGE --test
 genie validate GENIE-SAGE-1-1.vcf SAGE --test
 genie validate mutationsInCis_filtered_samples.csv SAGE --test
-genie validate nonGENIE_data_clinical.txt SAGE --test
-genie validate nonGENIE_data_mutations_extended_SAGE.txt SAGE --test
-genie validate nonGENIE_SAGE-AKT1.bed SAGE --test
 genie validate patientRetraction.csv SAGE --test
 genie validate SAGE-PANEL-1.bed SAGE --test
 genie validate SAGE_workflow.md SAGE --test
