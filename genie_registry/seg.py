@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import load, process_functions
+from genie import load, process_functions, validate
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +74,12 @@ class seg(FileTypeFormat):
                 )
             if not segDF["SEG.MEAN"].dtype in [float, int]:
                 total_error += "Seg: Only numerical values allowed in SEG.MEAN.\n"
+
+            error, warn = validate._validate_chromosome(
+                df=segDF, col="CHROM", fileformat="Seg"
+            )
+            total_error += error
+            warning += warn
 
         checkNA = segDF.isna().apply(sum)
         nullCols = [ind for ind in checkNA.index if checkNA[ind] > 0]

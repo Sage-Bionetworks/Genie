@@ -116,6 +116,9 @@ def main(
 
     # Start GENIE processing
     for process_center in centers:
+        # Check if the genie genome nexus is up, if not then don't run
+        # processing
+        process_functions.checkUrl("http://genie.genomenexus.org/")
         input_to_database.center_input_to_database(
             syn=syn,
             project_id=project_id,
