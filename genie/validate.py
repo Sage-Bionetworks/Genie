@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import logging
 
+import pandas as pd
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from genie import config, example_filetype_format, extract, load
+from genie import config, example_filetype_format, extract, load, process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -145,6 +146,41 @@ def _check_center_input(center, center_list):
         raise ValueError(
             "Must specify one of these " f"centers: {', '.join(center_list)}"
         )
+
+
+def _validate_chromosome(df: pd.DataFrame, col: str, fileformat: str) -> tuple:
+    """Validate chromosome values
+
+    Args:
+        df (pd.DataFrame): Dataframe
+        col (str): Column header for column containing chromosome values
+        fileformat (str): GENIE supported file format
+
+    Returns:
+        tuple: errors and warnings
+    """
+    have_column = process_functions.checkColExist(df, col)
+    errors = ""
+    warnings = ""
+    if have_column:
+        nochr = ["chr" in i for i in df[col] if isinstance(i, str)]
+        if sum(nochr) > 0:
+            warnings += f"{fileformat}: Should not have the chr prefix in front of chromosomes.\n"
+        # Get accepted chromosomes
+        accepted_chromosomes = list(map(str, range(1, 23)))
+        accepted_chromosomes.extend(["X", "Y", "MT"])
+        # correct_chromosomes = [
+        #     str(chrom).replace("chr", "") in accepted_chromosomes
+        #     for chrom in df[col]
+        # ]
+        correct_chromosomes = df[col].astype(str).str.replace("chr", "")
+        df[col] = correct_chromosomes
+        warning, error = process_functions.check_col_and_values(
+            df=df, col=col, possible_values=accepted_chromosomes, filename=fileformat
+        )
+        errors += error
+        warnings += warning
+    return (errors, warnings)
 
 
 # TODO: specify all the arguments instead of using args.
