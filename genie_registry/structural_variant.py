@@ -144,7 +144,7 @@ class StructuralVariant(FileTypeFormat):
             col
             for col in int_cols
             if sv_df.get(col) is not None
-            and sv_df[col].dropna().apply(process_functions.checkInt).all()
+            and not sv_df[col].dropna().apply(process_functions.checkInt).all()
         ]
         if len(non_ints) > 0:
             total_error.write(
