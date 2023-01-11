@@ -143,7 +143,8 @@ class StructuralVariant(FileTypeFormat):
         non_ints = [
             col
             for col in int_cols
-            if sv_df.get(col) is not None and sv_df[col].dropna().apply(process_functions.checkInt).all()
+            if sv_df.get(col) is not None
+            and sv_df[col].dropna().apply(process_functions.checkInt).all()
         ]
         if len(non_ints) > 0:
             total_error.write(
@@ -214,7 +215,7 @@ class StructuralVariant(FileTypeFormat):
             possible_values=["Yes", "No"],
             filename="Structural Variant",
             na_allowed=True,
-            required=False
+            required=False,
         )
         # total_warning.write(warn)
         total_error.write(error)
@@ -224,7 +225,7 @@ class StructuralVariant(FileTypeFormat):
             possible_values=["Yes", "No"],
             filename="Structural Variant",
             na_allowed=True,
-            required=False
+            required=False,
         )
         # total_warning.write(warn)
         total_error.write(error)
