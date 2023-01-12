@@ -67,10 +67,10 @@ class StructuralVariant(FileTypeFormat):
             total_error.write("Structural Variant: No duplicated rows allowed.\n")
 
         warn, error = process_functions.check_col_and_values(
-            sv_df,
-            "SV_STATUS",
-            ["SOMATIC", "GERMLINE"],
-            "Structural Variant",
+            df=sv_df,
+            col="SV_STATUS",
+            possible_values=["SOMATIC", "GERMLINE"],
+            filename="Structural Variant",
             required=True,
         )
         total_warning.write(warn)
@@ -139,10 +139,12 @@ class StructuralVariant(FileTypeFormat):
             "NORMAL_SPLIT_READ_COUNT",
         ]
         # Get all columns that are non integers.
+        # Allow for NA's
         non_ints = [
             col
             for col in int_cols
-            if sv_df.get(col) is not None and sv_df[col].dtype != int
+            if sv_df.get(col) is not None
+            and not sv_df[col].dropna().apply(process_functions.checkInt).all()
         ]
         if len(non_ints) > 0:
             total_error.write(
@@ -160,57 +162,70 @@ class StructuralVariant(FileTypeFormat):
             "3'UTR",
         ]
         warn, error = process_functions.check_col_and_values(
-            sv_df,
-            "SITE1_REGION",
-            region_allow_vals,
-            "Structural Variant",
+            df=sv_df,
+            col="SITE1_REGION",
+            possible_values=region_allow_vals,
+            filename="Structural Variant",
+            na_allowed=True,
             required=False,
         )
         warn, error = process_functions.check_col_and_values(
-            sv_df,
-            "SITE2_REGION",
-            region_allow_vals,
-            "Structural Variant",
+            df=sv_df,
+            col="SITE2_REGION",
+            possible_values=region_allow_vals,
+            filename="Structural Variant",
+            na_allowed=True,
             required=False,
         )
         warn, error = process_functions.check_col_and_values(
-            sv_df,
-            "NCBI_BUILD",
-            ["GRCh37", "GRCh38"],
-            "Structural Variant",
-            required=False,
-        )
-        # total_warning.write(warn)
-        total_error.write(error)
-
-        warn, error = process_functions.check_col_and_values(
-            sv_df,
-            "BREAKPOINT_TYPE",
-            ["PRECISE", "IMPRECISE"],
-            "Structural Variant",
+            df=sv_df,
+            col="NCBI_BUILD",
+            possible_values=["GRCh37", "GRCh38"],
+            filename="Structural Variant",
             required=False,
         )
         # total_warning.write(warn)
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
-            sv_df,
-            "CONNECTION_TYPE",
-            ["3to5", "5to3", "5to5", "3to3"],
-            "Structural Variant",
+            df=sv_df,
+            col="BREAKPOINT_TYPE",
+            possible_values=["PRECISE", "IMPRECISE"],
+            filename="Structural Variant",
+            na_allowed=True,
             required=False,
         )
         # total_warning.write(warn)
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
-            sv_df, "DNA_SUPPORT", ["Yes", "No"], "Structural Variant", required=False
+            df=sv_df,
+            col="CONNECTION_TYPE",
+            possible_values=["3to5", "5to3", "5to5", "3to3"],
+            filename="Structural Variant",
+            na_allowed=True,
+            required=False,
         )
         # total_warning.write(warn)
         total_error.write(error)
 
         warn, error = process_functions.check_col_and_values(
-            sv_df, "RNA_SUPPORT", ["Yes", "No"], "Structural Variant", required=False
+            df=sv_df,
+            col="DNA_SUPPORT",
+            possible_values=["Yes", "No"],
+            filename="Structural Variant",
+            na_allowed=True,
+            required=False,
+        )
+        # total_warning.write(warn)
+        total_error.write(error)
+        warn, error = process_functions.check_col_and_values(
+            df=sv_df,
+            col="RNA_SUPPORT",
+            possible_values=["Yes", "No"],
+            filename="Structural Variant",
+            na_allowed=True,
+            required=False,
         )
         # total_warning.write(warn)
         total_error.write(error)

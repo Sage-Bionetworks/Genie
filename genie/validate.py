@@ -148,7 +148,9 @@ def _check_center_input(center, center_list):
         )
 
 
-def _validate_chromosome(df: pd.DataFrame, col: str, fileformat: str) -> tuple:
+def _validate_chromosome(
+    df: pd.DataFrame, col: str, fileformat: str, allow_chr: bool = True
+) -> tuple:
     """Validate chromosome values
 
     Args:
@@ -165,7 +167,10 @@ def _validate_chromosome(df: pd.DataFrame, col: str, fileformat: str) -> tuple:
     if have_column:
         nochr = ["chr" in i for i in df[col] if isinstance(i, str)]
         if sum(nochr) > 0:
-            warnings += f"{fileformat}: Should not have the chr prefix in front of chromosomes.\n"
+            if allow_chr:
+                warnings += f"{fileformat}: Should not have the chr prefix in front of chromosomes.\n"
+            else:
+                errors += f"{fileformat}: Should not have the chr prefix in front of chromosomes.\n"
         # Get accepted chromosomes
         accepted_chromosomes = list(map(str, range(1, 23)))
         accepted_chromosomes.extend(["X", "Y", "MT"])

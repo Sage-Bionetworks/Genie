@@ -5,7 +5,7 @@ import logging
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import process_functions
+from genie import process_functions, validate
 
 logger = logging.getLogger(__name__)
 
@@ -245,18 +245,23 @@ class maf(FileTypeFormat):
         total_error.write(error)
         warning.write(warn)
 
-        if process_functions.checkColExist(mutationDF, "CHROMOSOME"):
-            # CHECK: Chromosome column can't have any values that start
-            # with chr or have any WT values
-            invalid_values = [
-                str(i).startswith("chr") or str(i) == "WT"
-                for i in mutationDF["CHROMOSOME"]
-            ]
-            if sum(invalid_values) > 0:
-                total_error.write(
-                    "maf: CHROMOSOME column cannot have any values that "
-                    "start with 'chr' or any 'WT' values.\n"
-                )
+        error, warn = validate._validate_chromosome(
+            df=mutationDF, col="CHROMOSOME", fileformat="maf", allow_chr=False
+        )
+        total_error.write(error)
+        warning.write(warn)
+        # if process_functions.checkColExist(mutationDF, "CHROMOSOME"):
+        #     # CHECK: Chromosome column can't have any values that start
+        #     # with chr or have any WT values
+        #     invalid_values = [
+        #         str(i).startswith("chr") or str(i) == "WT"
+        #         for i in mutationDF["CHROMOSOME"]
+        #     ]
+        #     if sum(invalid_values) > 0:
+        #         total_error.write(
+        #             "maf: CHROMOSOME column cannot have any values that "
+        #             "start with 'chr' or any 'WT' values.\n"
+        #         )
 
         error = _check_tsa1_tsa2(mutationDF)
         total_error.write(error)
