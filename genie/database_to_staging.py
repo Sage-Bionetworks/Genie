@@ -7,15 +7,13 @@ import math
 import os
 import re
 import subprocess
-import time
 from typing import List
 
 import pandas as pd
 import pyranges
 import synapseclient
 
-from . import extract, load, process_functions
-from . import __version__
+from . import extract, load, process_functions, transform
 
 logger = logging.getLogger(__name__)
 
@@ -704,19 +702,8 @@ def store_fusion_files(
     FusionsDf = FusionsDf[
         FusionsDf["TUMOR_SAMPLE_BARCODE"].isin(keep_for_merged_consortium_samples)
     ]
-    FusionsDf = FusionsDf.rename(
-        columns={
-            "HUGO_SYMBOL": "Hugo_Symbol",
-            "ENTREZ_GENE_ID": "Entrez_Gene_Id",
-            "CENTER": "Center",
-            "TUMOR_SAMPLE_BARCODE": "Tumor_Sample_Barcode",
-            "FUSION": "Fusion",
-            "DNA_SUPPORT": "DNA_support",
-            "RNA_SUPPORT": "RNA_support",
-            "METHOD": "Method",
-            "FRAME": "Frame",
-        }
-    )
+    FusionsDf.rename(columns=transform._col_name_to_titlecase, inplace=True)
+
     # Remove duplicated Fusions
     FusionsDf = FusionsDf[
         ~FusionsDf[["Hugo_Symbol", "Tumor_Sample_Barcode", "Fusion"]].duplicated()
@@ -760,7 +747,7 @@ def store_sv_files(
         current_release_staging: Staging flag
         center_mappingdf: Center mapping dataframe
     """
-    logger.info("MERING, FILTERING, STORING FUSION FILES")
+    logger.info("MERING, FILTERING, STORING SV FILES")
     sv_df = extract.get_syntabledf(
         syn,
         f"select * from {synid}",
@@ -789,21 +776,7 @@ def store_sv_files(
                 )
 
     sv_df = sv_df[sv_df["SAMPLE_ID"].isin(keep_for_merged_consortium_samples)]
-    # sv_df = sv_df.rename(
-    #     columns={
-    #         "HUGO_SYMBOL": "Hugo_Symbol",
-    #         "ENTREZ_GENE_ID": "Entrez_Gene_Id",
-    #         "CENTER": "Center",
-    #         "TUMOR_SAMPLE_BARCODE": "Tumor_Sample_Barcode",
-    #         "FUSION": "Fusion",
-    #         "DNA_SUPPORT": "DNA_support",
-    #         "RNA_SUPPORT": "RNA_support",
-    #         "METHOD": "Method",
-    #         "FRAME": "Frame",
-    #     }
-    # )
-
-    # FusionsDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
+    sv_df.rename(columns=transform._col_name_to_titlecase, inplace=True)
     sv_text = process_functions.removePandasDfFloat(sv_df)
     sv_path = os.path.join(GENIE_RELEASE_DIR, "data_sv.txt")
     with open(sv_path, "w") as sv_file:
