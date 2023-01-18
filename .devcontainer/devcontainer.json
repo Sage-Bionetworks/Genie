@@ -1,0 +1,6 @@
+{
+    "image": "sagebionetworks/genie:latest",
+    "mounts": [
+        "source=${localEnv:HOME}/.synapseConfig,target=/root/.synapseConfig,type=bind,consistency=cached"
+    ]
+}
