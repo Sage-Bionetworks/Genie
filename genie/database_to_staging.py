@@ -702,19 +702,8 @@ def store_fusion_files(
     FusionsDf = FusionsDf[
         FusionsDf["TUMOR_SAMPLE_BARCODE"].isin(keep_for_merged_consortium_samples)
     ]
-    FusionsDf = FusionsDf.rename(
-        columns={
-            "HUGO_SYMBOL": "Hugo_Symbol",
-            "ENTREZ_GENE_ID": "Entrez_Gene_Id",
-            "CENTER": "Center",
-            "TUMOR_SAMPLE_BARCODE": "Tumor_Sample_Barcode",
-            "FUSION": "Fusion",
-            "DNA_SUPPORT": "DNA_support",
-            "RNA_SUPPORT": "RNA_support",
-            "METHOD": "Method",
-            "FRAME": "Frame",
-        }
-    )
+    FusionsDf.rename(columns=transform._col_name_to_titlecase, inplace=True)
+
     # Remove duplicated Fusions
     FusionsDf = FusionsDf[
         ~FusionsDf[["Hugo_Symbol", "Tumor_Sample_Barcode", "Fusion"]].duplicated()
