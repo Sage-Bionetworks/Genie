@@ -736,8 +736,9 @@ if (length(largePanels) > 1) {
 
 ## Possible Non-center Related Data Issues
 
-This section includes QC issues that are mostly related to the Sage Bionetworks pipeline, Genome Nexus or _maybe_ center related issues..
-If empty, nothing is flagged.
+This section includes QC issues that are mostly related to the Sage Bionetworks pipeline, Genome Nexus or _maybe_ center related issues.
+
+### Duplicated Variants
 
 ```{r, include=F, echo=F}
 variant <- paste0(this_mut$Tumor_Sample_Barcode, "_",
@@ -746,42 +747,38 @@ variant <- paste0(this_mut$Tumor_Sample_Barcode, "_",
                   this_mut$Reference_Allele, "/",
                   this_mut$Tumor_Seq_Allele2)
 duplicated_idx = duplicated(variant)
-duplicated_variants  = sum(duplicated_idx) > 0
+
+write.csv(this_mut[duplicated_idx,
+                   c("Chromosome", "Start_Position", "Reference_Allele",
+                     "Tumor_Seq_Allele2", "Tumor_Sample_Barcode")],
+          "duplicated_variants.csv",
+          row.names=F, quote=F)
+duplicate_v_ent = synStore(File("duplicated_variants.csv", parent=release_synid))
+unlink("duplicated_variants.csv")
 ```
 
-`r if(duplicated_variants) {"---\n\n### Duplicated Variants\nThese duplicated variants are caused by the annotation pipeline as no duplicated variants are allowed in the maf or vcfs."}`
+There are `r sum(duplicated_idx)` duplicated variant(s). Ignore the rest if the number is 0. These `r paste0('[duplicated variants](https://www.synapse.org/#!Synapse:', duplicate_v_ent$properties$id, "){target='_blank'}")` are potentially caused by the annotation pipeline as no duplicated variants are allowed in each maf or vcf file.
 
-```{r duplicated, echo=F}
-if (duplicated_variants) {
-  kable(this_mut[duplicated_idx, c("Chromosome", "Start_Position",
-                                   "Reference_Allele",
-                                   "Tumor_Seq_Allele2",
-                                   "Tumor_Sample_Barcode")],
-        row.names=F)
-}
-```
+
+### Non-somatic Variants
 
 ```{r nonsomatic, echo=F, include=F}
 non_somatic <- this_mut[this_mut$Reference_Allele==this_mut$Tumor_Seq_Allele2 &
                           this_mut$Reference_Allele==this_mut$Tumor_Seq_Allele1,]
-if (nrow(non_somatic) > 0) {
-  write.csv(non_somatic[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
-                            "Tumor_Seq_Allele1", "Tumor_Seq_Allele2",
-                            "Tumor_Sample_Barcode")],
-            "non_somatic.csv",
-            row.names=F, quote=F)
-  non_somatic_ent = synStore(File("non_somatic.csv", parent=release_synid))
-  unlink("non_somatic.csv")
-}
-
+write.csv(non_somatic[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
+                          "Tumor_Seq_Allele1", "Tumor_Seq_Allele2",
+                          "Tumor_Sample_Barcode")],
+          "non_somatic.csv",
+          row.names=F, quote=F)
+non_somatic_ent = synStore(File("non_somatic.csv", parent=release_synid))
+unlink("non_somatic.csv")
 ```
 
-`r if(nrow(non_somatic) > 0) {paste0("---\n\n### Non-somatic Mutations\nThese [mutations](",
-                                     "https://www.synapse.org/#!Synapse:", non_somatic_ent$properties$id,
-                                     "){target='_blank'} should be removed from the data.")}`
+There are `r nrow(non_somatic)` non somatic variant(s). Ignore the rest if the number is 0. These `r paste0('[variants](https://www.synapse.org/#!Synapse:', non_somatic_ent$properties$id, "){target='_blank'}")` should be removed from the data.
 
+### SNV labelled as DNP
 
-```{r invalid_variant_type, echo=F, include=F}
+```{r is_dnp, echo=F, include=F}
 is_dnp <- nchar(this_mut$Reference_Allele) == nchar(this_mut$Tumor_Seq_Allele2) &
           nchar(this_mut$Reference_Allele)==2 & this_mut$Variant_Type == "DNP"
 dnp <- this_mut[is_dnp, ]
@@ -789,16 +786,20 @@ not_dnp <- dnp[
   substr(dnp$Reference_Allele, 1, 1) == substr(dnp$Tumor_Seq_Allele2, 1, 1) |
   substr(dnp$Reference_Allele, 1, 2) == substr(dnp$Tumor_Seq_Allele2, 1, 2),
 ]
-if (nrow(not_dnp) > 0) {
-  write.csv(not_dnp[,c("Hugo_Symbol", "Chromosome", "Reference_Allele",
-                       "Tumor_Seq_Allele2", "Tumor_Sample_Barcode",
-                       "Variant_Type")],
-            "snv_as_dnp.csv",
-            row.names=F, quote=F)
-  dnp_ent = synStore(File("snv_as_dnp.csv", parent=release_synid))
-  unlink("snv_as_dnp.csv")
-}
+write.csv(not_dnp[,c("Hugo_Symbol", "Chromosome", "Reference_Allele",
+                     "Tumor_Seq_Allele2", "Tumor_Sample_Barcode",
+                     "Variant_Type")],
+          "snv_as_dnp.csv",
+          row.names=F, quote=F)
+dnp_ent = synStore(File("snv_as_dnp.csv", parent=release_synid))
+unlink("snv_as_dnp.csv")
+```
 
+There are `r nrow(not_dnp)` SNV(s) labelled as DNP(s). Ignore the rest if the number is 0. These are `r paste0('[variants](https://www.synapse.org/#!Synapse:', dnp_ent$properties$id, "){target='_blank'}")` that have variant type DNP that should be SNV.
+
+### SNV labelled as ONP
+
+```{r is_onp, echo=F, include=F}
 is_onp <- nchar(this_mut$Reference_Allele) == nchar(this_mut$Tumor_Seq_Allele2) &
           nchar(this_mut$Reference_Allele) == 3 & this_mut$Variant_Type == "ONP"
 onp <- this_mut[is_onp, ]
@@ -807,21 +808,13 @@ not_onp <- onp[
   substr(onp$Reference_Allele, 1, 2) == substr(onp$Tumor_Seq_Allele2, 1, 2),
 ]
 
-if (nrow(not_onp) > 0) {
-  write.csv(not_onp[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
-                        "Tumor_Seq_Allele2", "Tumor_Sample_Barcode",
-                        "Variant_Type")],
-            "snv_as_onp.csv", row.names=F, quote=F)
-  onp_ent = synStore(File("snv_as_onp.csv", parent=release_synid))
-  unlink("snv_as_onp.csv")
-}
+write.csv(not_onp[, c("Hugo_Symbol", "Chromosome", "Reference_Allele",
+                      "Tumor_Seq_Allele2", "Tumor_Sample_Barcode",
+                      "Variant_Type")],
+          "snv_as_onp.csv", row.names=F, quote=F)
+onp_ent = synStore(File("snv_as_onp.csv", parent=release_synid))
+unlink("snv_as_onp.csv")
 
 ```
 
-`r if(nrow(not_dnp) > 0) {paste0("---\n\n### SNV labelled as DNP\nThese are [variants](",
-                                 "https://www.synapse.org/#!Synapse:", dnp_ent$properties$id,
-                                 "){target='_blank'} that have variant type DNP that should be SNV")}`
-
-`r if(nrow(not_onp) > 0) {paste0("---\n\n### SNV labelled as ONP\nThese are [variants](",
-                                 "https://www.synapse.org/#!Synapse:", onp_ent$properties$id,
-                                 "){target='_blank'} that have variant type ONP that should be SNV.")}`
+There are `r nrow(not_onp)` SNV(s) labelled as ONP(s). Ignore the rest if the number is 0. These are `r paste0('[variants](https://www.synapse.org/#!Synapse:', onp_ent$properties$id, "){target='_blank'}")` that have variant type ONP that should be SNV.
