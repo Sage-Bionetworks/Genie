@@ -13,7 +13,7 @@ def _col_name_to_titlecase(string: str) -> str:
 
     """
     # This is a mapping of strings that are abbreviations
-    abbrev_map = {"Dna_": "DNA_", "Rna_": "RNA_", "Sv_": "SV_", "Ncbi_": "NCBI_"}
+    abbrev_map = {"Dna_": "DNA_", "Rna_": "RNA_", "Sv_": "SV_", "Ncbi_": "NCBI_", "_Id": "ID"}
     # The reason I split the string by _ and utilize the capitalize function
     # instead of using something like .title(), so outlined here:
     # https://stackoverflow.com/questions/1549641/how-can-i-capitalize-the-first-letter-of-each-word-in-a-string
