@@ -760,7 +760,7 @@ def store_sv_files(
         current_release_staging: Staging flag
         center_mappingdf: Center mapping dataframe
     """
-    logger.info("MERING, FILTERING, STORING FUSION FILES")
+    logger.info("MERING, FILTERING, STORING SV FILES")
     sv_df = extract.get_syntabledf(
         syn,
         f"select * from {synid}",
