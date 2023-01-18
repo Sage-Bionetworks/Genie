@@ -17,8 +17,7 @@ def _col_name_to_titlecase(string: str) -> str:
         "Dna_": "DNA_",
         "Rna_": "RNA_",
         "Sv_": "SV_",
-        "Ncbi_": "NCBI_",
-        "_Id": "_ID",
+        "Ncbi_": "NCBI_"
     }
     # The reason I split the string by _ and utilize the capitalize function
     # instead of using something like .title(), so outlined here:
