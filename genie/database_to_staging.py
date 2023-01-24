@@ -7,7 +7,6 @@ import math
 import os
 import re
 import subprocess
-import time
 from typing import List
 
 import pandas as pd
@@ -1775,16 +1774,16 @@ def stagingToCbio(
         wes_panelids,
     )
 
-    store_fusion_files(
-        syn,
-        consortiumReleaseSynId,
-        genieVersion,
-        fusionSynId,
-        keepForCenterConsortiumSamples,
-        keepForMergedConsortiumSamples,
-        current_release_staging,
-        CENTER_MAPPING_DF,
-    )
+    # store_fusion_files(
+    #     syn,
+    #     consortiumReleaseSynId,
+    #     genieVersion,
+    #     fusionSynId,
+    #     keepForCenterConsortiumSamples,
+    #     keepForMergedConsortiumSamples,
+    #     current_release_staging,
+    #     CENTER_MAPPING_DF,
+    # )
 
     store_sv_files(
         syn,
