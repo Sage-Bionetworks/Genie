@@ -189,7 +189,9 @@ def update_release_numbers(syn, database_mappingdf, release=None):
     release_folder_fileview_synid = database_mappingdf["Id"][
         database_mappingdf["Database"] == "releaseFolder"
     ].values[0]
-    release_folder = syn.tableQuery()
+    # Add this query so that the fileview is indexed to include the
+    # new release folder
+    syn.tableQuery(f"select * from {release_folder_fileview_synid} limit 1")
     query_str = (
         f"select id,name from {release_folder_fileview_synid} where "
         "name not like 'Release%' and name <> 'case_lists' and "
@@ -585,7 +587,7 @@ def update_data_release_file_table(syn, database_mappingdf):
     ].values[0]
     # Add this query so that the fileview is indexed to include the
     # new release folder
-    syn.tableQuery(f"select * from {release_folder_fileview_synid} limit 1")
+    # syn.tableQuery(f"select * from {release_folder_fileview_synid} limit 1")
     query_str = (
         f"select id,name from {release_folder_fileview_synid} where "
         "name not like 'Release%' and name <> 'case_lists' "
