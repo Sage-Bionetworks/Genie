@@ -1837,7 +1837,7 @@ def revise_metadata_files(syn, consortiumid, genie_version=None):
             i["id"], downloadLocation=GENIE_RELEASE_DIR, ifcollision="overwrite.local"
         )
         for i in release_files
-        if "meta" in i["name"]
+        if "meta" in i["name"] and i['name'] != "meta_fusions.txt"
     ]
 
     for meta_ent in meta_file_ents:
