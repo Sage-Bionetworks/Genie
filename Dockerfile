@@ -36,10 +36,10 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		# VariantAnnotation dependency
 		libxml2-dev \
 		# Supports data guide creation
-		# texlive \
-		# texinfo \
+		texlive \
+		texinfo \
 		# texlive-generic-recommended \
-		# texlive-latex-extra \
+		texlive-latex-extra \
 		# genome nexus
 		openjdk-8-jre \
 		# This is for reticulate
@@ -58,7 +58,7 @@ RUN dpkg -i pandoc-3.0.1-1-amd64.deb
 WORKDIR /root/Genie
 COPY . .
 
-# ENV CRYPTOGRAPHY_DONT_BUILD_RUST=true
+ENV CRYPTOGRAPHY_DONT_BUILD_RUST=true
 RUN Rscript R/install_packages.R
 
 RUN python3 -m pip install --no-cache-dir cython
