@@ -3,8 +3,8 @@
     "Version": "4.2.2",
     "Repositories": [
       {
-        "Name": "CRAN",
-        "URL": "https://cran.rstudio.com"
+        "Name": "SAGE",
+        "URL": "http://ran.synapse.org"
       }
     ]
   },
@@ -1783,7 +1783,8 @@
     "synapser": {
       "Package": "synapser",
       "Version": "1.0.59",
-      "Source": "unknown",
+      "Source": "Repository",
+      "Repository": "SAGE",
       "Hash": "a093d64da4562649484e13920faad510",
       "Requirements": [
         "reticulate",
