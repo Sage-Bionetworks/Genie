@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 
 class mutationsInCis(FileTypeFormat):
-
     _fileType = "mutationsInCis"
 
     _validation_kwargs = []

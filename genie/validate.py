@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 # TODO: move to models.py
 class ValidationHelper(object):
-
     # Used for the kwargs in validate_single_file
     # Overload this per class
     _validate_kwargs = []

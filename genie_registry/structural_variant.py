@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class StructuralVariant(FileTypeFormat):
-
     _fileType = "sv"
 
     # _validation_kwargs = ["nosymbol_check", "project_id"]

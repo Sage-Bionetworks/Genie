@@ -54,7 +54,6 @@ class ValidationResults:
 
 
 class FileTypeFormat(metaclass=ABCMeta):
-
     _process_kwargs = ["newPath", "databaseSynId"]
 
     _fileType = "fileType"

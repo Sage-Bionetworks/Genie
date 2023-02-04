@@ -314,7 +314,6 @@ def test__create_schema(syn):
         table_name, columns=columns, parent=parentid, annotations=annotations
     )
     with patch.object(syn, "store", return_value=schema) as patch_syn_store:
-
         new_schema = process_functions._create_schema(
             syn, table_name, parentid, columns=columns, annotations=annotations
         )

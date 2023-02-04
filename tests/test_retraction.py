@@ -16,7 +16,6 @@ def pr(syn):
 
 
 def test_processing(sr, pr):
-
     expectedsrDf = pd.DataFrame(
         dict(
             genieSampleId=[
