@@ -1,4 +1,6 @@
-install.packages("synapser", repos=c("http://ran.synapse.org", "http://cran.fhcrc.org"))
+install.packages("reticulate", repos=c("http://cran.r-project.org"))
+install.packages("rjson", repos=c("http://cran.r-project.org"))
+install.packages("synapser", repos=c("http://ran.synapse.org"))
 install.packages("dplyr", repos = "http://cran.r-project.org")
 install.packages("argparse", repos = "http://cran.r-project.org")
 install.packages("rmarkdown", repos = "http://cran.r-project.org")
@@ -9,9 +11,9 @@ install.packages("xtable", repos = "http://cran.r-project.org")
 install.packages("ggpubr", repos = "http://cran.r-project.org")
 install.packages("XML", repos = "http://cran.r-project.org")
 install.packages("BiocManager", repos = "http://cran.r-project.org")
-
+#
 BiocManager::install("VariantAnnotation")
-
+# renv::restore()
 library(synapser)
 library(dplyr)
 library(argparse)

@@ -36,25 +36,29 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		# VariantAnnotation dependency
 		libxml2-dev \
 		# Supports data guide creation
-		texlive \
-		texinfo \
+		# texlive \
+		# texinfo \
 		# texlive-generic-recommended \
-		texlive-latex-extra \
+		# texlive-latex-extra \
 		# genome nexus
-		openjdk-8-jre && \
+		openjdk-8-jre \
+		# This is for reticulate
+		python3.8-venv && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 
 #install pandoc 1.19.2.1 (dashboard use)
-RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.1-1-amd64.deb
-RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb	
+# RUN wget https://github.com/jgm/pandoc/releases/download/1.19.2.1/pandoc-1.19.2.1-1-amd64.deb
+# RUN dpkg -i pandoc-1.19.2.1-1-amd64.deb
+RUN wget https://github.com/jgm/pandoc/releases/download/3.0.1/pandoc-3.0.1-1-amd64.deb
+RUN dpkg -i pandoc-3.0.1-1-amd64.deb
 
 # Only copy most recent changes in code are always installed
 # Do not build from local computer
 WORKDIR /root/Genie
 COPY . .
 
-ENV CRYPTOGRAPHY_DONT_BUILD_RUST=true
+# ENV CRYPTOGRAPHY_DONT_BUILD_RUST=true
 RUN Rscript R/install_packages.R
 
 RUN python3 -m pip install --no-cache-dir cython
