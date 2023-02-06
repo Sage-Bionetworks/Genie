@@ -1,5 +1,5 @@
 FROM ubuntu:focal-20220113
-ENV DEBIAN_FRONTEND=noninteractive 
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Must install this because gpg not installed
 RUN apt-get update && \
@@ -53,24 +53,38 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 RUN wget https://github.com/jgm/pandoc/releases/download/3.0.1/pandoc-3.0.1-1-amd64.deb
 RUN dpkg -i pandoc-3.0.1-1-amd64.deb
 
+
+
 # Only copy most recent changes in code are always installed
 # Do not build from local computer
 WORKDIR /root/Genie
-COPY . .
-
-ENV CRYPTOGRAPHY_DONT_BUILD_RUST=true
+# Copy install packages first, because R installation takes
+# a long time and unless there are changes to the actual
+# R packages used.  So the only files copied over are
+# renv/ renv.lock and the installation R script
+COPY R/install_packages.R R/install_packages.R
+COPY renv/ renv/
+COPY renv.lock renv.lock
 RUN Rscript R/install_packages.R
 
-RUN python3 -m pip install --no-cache-dir cython
-RUN python3 -m pip install --no-cache-dir -r requirements.txt
-# RUN python3 -m pip install -e .
-RUN python3 setup.py sdist
+ENV CRYPTOGRAPHY_DONT_BUILD_RUST=true
+COPY . .
+RUN echo "source('renv/activate.R')" >> .Rprofile
+
+# RUN python3 setup.py sdist
+# RUN python3 setup.py develop
+RUN pip3 install --no-cache-dir -r requirements.txt
+# TODO Must include R/ and templates/ within the
+# genie/ directory to use MANIFEST.in
+# For now, install using develop parameter so that
+# the package is called from the directory
 RUN python3 setup.py develop
+# RUN pip3 install --no-cache-dir .
 
-WORKDIR /root/
-# Must move this git clone to after the install of Genie,
-# because must update cbioportal
-RUN git clone https://github.com/cBioPortal/cbioportal.git
-RUN git clone https://github.com/Sage-Bionetworks/annotation-tools.git
+# WORKDIR /root/
+# # Must move this git clone to after the install of Genie,
+# # because must update cbioportal
+# RUN git clone https://github.com/cBioPortal/cbioportal.git
+# RUN git clone https://github.com/Sage-Bionetworks/annotation-tools.git
 
-WORKDIR /root/Genie
+# WORKDIR /root/Genie

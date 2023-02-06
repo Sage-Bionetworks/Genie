@@ -1,3 +1,4 @@
+source("renv/activate.R")
 # install.packages("reticulate", repos=c("http://cran.r-project.org"))
 # install.packages("rjson", repos=c("http://cran.r-project.org"))
 # install.packages("synapser", repos=c("http://ran.synapse.org"))
