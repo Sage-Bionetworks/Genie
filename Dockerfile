@@ -71,20 +71,18 @@ ENV CRYPTOGRAPHY_DONT_BUILD_RUST=true
 COPY . .
 RUN echo "source('renv/activate.R')" >> .Rprofile
 
-# RUN python3 setup.py sdist
-# RUN python3 setup.py develop
-RUN pip3 install --no-cache-dir -r requirements.txt
 # TODO Must include R/ and templates/ within the
 # genie/ directory to use MANIFEST.in
 # For now, install using develop parameter so that
 # the package is called from the directory
+RUN pip3 install --no-cache-dir -r requirements.txt
 RUN python3 setup.py develop
 # RUN pip3 install --no-cache-dir .
 
-# WORKDIR /root/
-# # Must move this git clone to after the install of Genie,
-# # because must update cbioportal
-# RUN git clone https://github.com/cBioPortal/cbioportal.git
-# RUN git clone https://github.com/Sage-Bionetworks/annotation-tools.git
+WORKDIR /root/
+# Must move this git clone to after the install of Genie,
+# because must update cbioportal
+RUN git clone https://github.com/cBioPortal/cbioportal.git
+RUN git clone https://github.com/Sage-Bionetworks/annotation-tools.git
 
-# WORKDIR /root/Genie
+WORKDIR /root/Genie
