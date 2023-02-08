@@ -50,7 +50,6 @@ def remapFusion(gene_dict, DF, col):
 
 
 class fusions(FileTypeFormat):
-
     _fileType = "fusions"
 
     _process_kwargs = ["newPath", "databaseSynId"]

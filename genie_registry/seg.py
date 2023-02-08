@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class seg(FileTypeFormat):
-
     _fileType = "seg"
 
     _process_kwargs = ["newPath", "databaseSynId"]
