@@ -256,6 +256,95 @@ def test_invalid__check_center_input():
         validate._check_center_input(center, center_list)
 
 
+def test_nonexistentcol__validate_chromosome():
+    """Checks that no errors or warnings get thrown if
+    chromosome vol doesn't exist"""
+    input_df = pd.DataFrame(
+        {
+            "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
+            "SITE1_HUGO_SYMBOL": ["af", "af", "ff"],
+            "SITE2_HUGO_SYMBOL": ["af", "af", "ff"],
+        }
+    )
+    errors, warnings = validate._validate_chromosome(
+        df=input_df, col="CHROM", fileformat="FOO", allow_chr=True
+    )
+    assert errors == "" and warnings == "", "Error and warnings should be empty!"
+
+
+def test_valid_nochar__validate_chromosome():
+    """Checks that no errors or warnings get thrown if
+    chromosome vol has all the valid values and has nochr"""
+    input_df = pd.DataFrame(
+        {
+            "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
+            "CHROM": ["1", "19", "MT"],
+        }
+    )
+    errors, warnings = validate._validate_chromosome(
+        df=input_df, col="CHROM", fileformat="FOO", allow_chr=True
+    )
+    assert errors == "" and warnings == "", "Error and warnings should be empty!"
+
+
+def test_valid_allowchr__validate_chromosome():
+    """Checks that no errors get thrown if
+    chromosome vol has all the valid values and has chr"""
+    input_df = pd.DataFrame(
+        {
+            "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
+            "CHROM": ["1", "ch19", "chrMT"],
+        }
+    )
+    errors, warnings = validate._validate_chromosome(
+        df=input_df, col="CHROM", fileformat="FOO", allow_chr=True
+    )
+    assert errors == ""
+    assert warnings == "FOO: Should not have the chr prefix in front of chromosomes.\n"
+
+
+def test_invalid_allowchr__validate_chromosome():
+    """Checks that errors and warnings get thrown if
+    chromosome vol has invalid values and chr is allowed"""
+    input_df = pd.DataFrame(
+        {
+            "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
+            "CHROM": ["chr1", "chr9", "chrZ"],
+        }
+    )
+    possible_vals = list(map(str, range(1, 23)))
+    possible_vals.extend(["X", "Y", "MT"])
+    errors, warnings = validate._validate_chromosome(
+        df=input_df, col="CHROM", fileformat="FOO", allow_chr=True
+    )
+    assert (
+        errors
+        == f"FOO: Please double check your CHROM column.  This column must only be these values: {possible_vals}\n"
+    )
+    assert warnings == "FOO: Should not have the chr prefix in front of chromosomes.\n"
+
+
+def test_invalid_nochr__validate_chromosome():
+    """Checks that errors and warnings get thrown if
+    chromosome vol has invalid values and chr is not allowed"""
+    input_df = pd.DataFrame(
+        {
+            "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
+            "CHROM": [2, 9, 100],
+        }
+    )
+    possible_vals = list(map(str, range(1, 23)))
+    possible_vals.extend(["X", "Y", "MT"])
+    errors, warnings = validate._validate_chromosome(
+        df=input_df, col="CHROM", fileformat="FOO", allow_chr=True
+    )
+    assert (
+        errors
+        == f"FOO: Please double check your CHROM column.  This column must only be these values: {possible_vals}\n"
+    )
+    assert warnings == ""
+
+
 ONCOTREE_ENT = "syn222"
 
 
