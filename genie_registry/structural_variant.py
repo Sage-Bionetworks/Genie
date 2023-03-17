@@ -229,11 +229,15 @@ class StructuralVariant(FileTypeFormat):
         # total_warning.write(warn)
         total_error.write(error)
 
-        # check for chromosome columns
+        # check for chromosome columns and don't allow 'chr' for now
+        # since in the database there’s nothing with CHR
         chrom_cols = ["SITE1_CHROMOSOME", "SITE2_CHROMOSOME"]
         for chrom_col in chrom_cols:
             error, warn = validate._validate_chromosome(
-                df=sv_df, col=chrom_col, fileformat="Structural Variant"
+                df=sv_df,
+                col=chrom_col,
+                fileformat="Structural Variant",
+                allow_chr=False,
             )
             total_error.write(error)
 
