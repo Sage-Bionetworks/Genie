@@ -11,6 +11,7 @@ import synapseclient
 
 import genie_registry.bed
 from genie_registry.bed import bed
+from genie import validate
 
 if not shutil.which("bedtools"):
     pytest.skip("bedtools is not found, skipping bed tests", allow_module_level=True)
@@ -287,7 +288,7 @@ def test_hugosymbol_failure__validate(bed_class):
     assert warning == ""
 
 
-def test_badinputs_failure__validate(bed_class, accepted_chromosomes):
+def test_badinputs_failure__validate(bed_class):
     bedDf = pd.DataFrame(
         dict(
             a=["2", "chr9", "30"],
@@ -307,7 +308,7 @@ def test_badinputs_failure__validate(bed_class, accepted_chromosomes):
         "This column must only be these values: True, False\n"
         "BED file: Please double check your Chromosome column.  "
         "This column must only be these values: {possible_vals}\n".format(
-            possible_vals=", ".join(accepted_chromosomes)
+            possible_vals=", ".join(validate.ACCEPTED_CHROMOSOMES)
         )
     )
     expected_warnings = (
