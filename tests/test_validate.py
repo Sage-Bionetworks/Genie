@@ -208,11 +208,31 @@ def test_wrongfiletype_validate_single_file(syn):
 def test_accepted_chromosomes_value():
     """Testing global accepted_chromosomes before we use it"""
     assert validate.ACCEPTED_CHROMOSOMES == [
-        "1", "2", "3", "4", "5",
-        "6", "7", "8", "9", "10",
-        "11","12", "13", "14", "15",
-        "16", "17", "18", "19", "20",
-        "21", "22", "X", "Y", "MT"
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "X",
+        "Y",
+        "MT",
     ]
 
 
