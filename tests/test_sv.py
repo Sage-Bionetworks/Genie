@@ -90,9 +90,7 @@ class TestSv:
                 "NORMAL_VARIANT_COUNT": [1, "foo"],
                 "TUMOR_VARIANT_COUNT": [1, "foo"],
                 "NORMAL_PAIRED_END_READ_COUNT": [1, "foo"],
-                "NORMAL_SPLIT_READ_COUNT": [1, "foo"],
-                "SITE1_CHROMOSOME": [1, 23],
-                "SITE2_CHROMOSOME": ["X", "2"]
+                "NORMAL_SPLIT_READ_COUNT": [1, "foo"]
             }
         )
         error, warning = self.sv_cls._validate(sv_df)
@@ -120,7 +118,7 @@ class TestSv:
                 "CONNECTION_TYPE": ["3to5", "5to5"],
                 "DNA_SUPPORT": ["Yes", "No"],
                 "RNA_Support": ["Yes", "No"],
-                "SITE1_CHROMOSOME": [1, 23],
+                "SITE1_CHROMOSOME": [1, 22],
                 "SITE2_CHROMOSOME": ["X", "2"]
             }
         )
