@@ -346,7 +346,7 @@ def test_invalid_nochr__validate_chromosome(accepted_chromosomes):
             possible_vals=", ".join(accepted_chromosomes)
         )
     )
-    assert warnings == "","Warnings should be empty"
+    assert warnings == "", "Warnings should be empty"
 
 
 ONCOTREE_ENT = "syn222"

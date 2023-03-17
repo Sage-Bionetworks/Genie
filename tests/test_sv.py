@@ -53,7 +53,6 @@ class TestSv:
             "Structural Variant: No duplicated rows allowed.\n"
         )
         assert warning == ""
-        
 
     def test_validation_missing_required_cols(self):
         sv_df = pd.DataFrame(
@@ -90,7 +89,7 @@ class TestSv:
                 "NORMAL_VARIANT_COUNT": [1, "foo"],
                 "TUMOR_VARIANT_COUNT": [1, "foo"],
                 "NORMAL_PAIRED_END_READ_COUNT": [1, "foo"],
-                "NORMAL_SPLIT_READ_COUNT": [1, "foo"]
+                "NORMAL_SPLIT_READ_COUNT": [1, "foo"],
             }
         )
         error, warning = self.sv_cls._validate(sv_df)
@@ -119,7 +118,7 @@ class TestSv:
                 "DNA_SUPPORT": ["Yes", "No"],
                 "RNA_Support": ["Yes", "No"],
                 "SITE1_CHROMOSOME": [1, 22],
-                "SITE2_CHROMOSOME": ["X", "2"]
+                "SITE2_CHROMOSOME": ["X", "2"],
             }
         )
         error, warning = self.sv_cls._validate(sv_df)

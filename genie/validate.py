@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 ACCEPTED_CHROMOSOMES = list(map(str, range(1, 23))) + ["X", "Y", "MT"]
 
+
 # TODO: move to models.py
 class ValidationHelper(object):
     # Used for the kwargs in validate_single_file
