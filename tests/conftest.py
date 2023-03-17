@@ -74,8 +74,3 @@ def genie_config():
 @pytest.fixture(scope="session")
 def syn():
     return mock.create_autospec(synapseclient.Synapse)
-
-
-@pytest.fixture(scope="session")
-def accepted_chromosomes():
-    return list(map(str, range(1, 23))) + ["X", "Y", "MT"]

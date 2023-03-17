@@ -205,6 +205,17 @@ def test_wrongfiletype_validate_single_file(syn):
         mock_determine_filetype.assert_called_once_with()
 
 
+def test_accepted_chromosomes_value():
+    """Testing global accepted_chromosomes before we use it"""
+    assert validate.ACCEPTED_CHROMOSOMES == [
+        "1", "2", "3", "4", "5",
+        "6", "7", "8", "9", "10",
+        "11","12", "13", "14", "15",
+        "16", "17", "18", "19", "20",
+        "21", "22", "X", "Y", "MT"
+    ]
+
+
 def test_nopermission__check_parentid_permission_container(syn):
     """Throws error if no permissions to access"""
     parentid = "syn123"
@@ -307,7 +318,7 @@ def test_valid_allowchr__validate_chromosome():
     assert warnings == "FOO: Should not have the chr prefix in front of chromosomes.\n"
 
 
-def test_invalid_allowchr__validate_chromosome(accepted_chromosomes):
+def test_invalid_allowchr__validate_chromosome():
     """Checks that errors and warnings get thrown if
     chromosome col has invalid values and chr is allowed in the values"""
     input_df = pd.DataFrame(
@@ -322,13 +333,13 @@ def test_invalid_allowchr__validate_chromosome(accepted_chromosomes):
     assert (
         errors
         == "FOO: Please double check your CHROM column.  This column must only be these values: {possible_vals}\n".format(
-            possible_vals=", ".join(accepted_chromosomes)
+            possible_vals=", ".join(validate.ACCEPTED_CHROMOSOMES)
         )
     )
     assert warnings == "FOO: Should not have the chr prefix in front of chromosomes.\n"
 
 
-def test_invalid_nochr__validate_chromosome(accepted_chromosomes):
+def test_invalid_nochr__validate_chromosome():
     """Checks that errors and warnings get thrown if
     chromosome col has invalid values and chr is not allowed"""
     input_df = pd.DataFrame(
@@ -343,7 +354,7 @@ def test_invalid_nochr__validate_chromosome(accepted_chromosomes):
     assert (
         errors == "FOO: Should not have the chr prefix in front of chromosomes.\n"
         "FOO: Please double check your CHROM column.  This column must only be these values: {possible_vals}\n".format(
-            possible_vals=", ".join(accepted_chromosomes)
+            possible_vals=", ".join(validate.ACCEPTED_CHROMOSOMES)
         )
     )
     assert warnings == "", "Warnings should be empty"
