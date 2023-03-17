@@ -10,6 +10,8 @@ from genie import config, example_filetype_format, extract, load, process_functi
 logger = logging.getLogger(__name__)
 
 
+ACCEPTED_CHROMOSOMES = list(map(str, range(1, 23))) + ["X", "Y", "MT"]
+
 # TODO: move to models.py
 class ValidationHelper(object):
     # Used for the kwargs in validate_single_file
@@ -170,9 +172,6 @@ def _validate_chromosome(
                 warnings += f"{fileformat}: Should not have the chr prefix in front of chromosomes.\n"
             else:
                 errors += f"{fileformat}: Should not have the chr prefix in front of chromosomes.\n"
-        # Get accepted chromosomes
-        accepted_chromosomes = list(map(str, range(1, 23)))
-        accepted_chromosomes.extend(["X", "Y", "MT"])
         # correct_chromosomes = [
         #     str(chrom).replace("chr", "") in accepted_chromosomes
         #     for chrom in df[col]
@@ -180,7 +179,7 @@ def _validate_chromosome(
         correct_chromosomes = df[col].astype(str).str.replace("chr", "")
         df[col] = correct_chromosomes
         warning, error = process_functions.check_col_and_values(
-            df=df, col=col, possible_values=accepted_chromosomes, filename=fileformat
+            df=df, col=col, possible_values=ACCEPTED_CHROMOSOMES, filename=fileformat
         )
         errors += error
         warnings += warning
