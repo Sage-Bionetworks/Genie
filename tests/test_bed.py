@@ -287,17 +287,16 @@ def test_hugosymbol_failure__validate(bed_class):
     assert warning == ""
 
 
-def test_badinputs_failure__validate(bed_class):
+def test_badinputs_failure__validate(bed_class, accepted_chromosomes):
     bedDf = pd.DataFrame(
         dict(
-            a=["2", "9", "12"],
+            a=["2", "chr9", "30"],
             b=["69688533", 99401860, 53701241],
             c=[69901480, "99417584", 53718647],
             d=["AAK1", "AAED1", "AAAS"],
             e=[True, False, "foobar"],
         )
     )
-
     error, warning = bed_class._validate(bedDf)
     expected_errors = (
         "BED file: The Start_Position column must only be integers. "
@@ -306,9 +305,16 @@ def test_badinputs_failure__validate(bed_class):
         "Make sure there are no headers.\n"
         "BED file: Please double check your includeInPanel column.  "
         "This column must only be these values: True, False\n"
+        "BED file: Please double check your Chromosome column.  "
+        "This column must only be these values: {possible_vals}\n".format(
+            possible_vals=", ".join(accepted_chromosomes)
+        )
+    )
+    expected_warnings = (
+        "BED file: Should not have the chr prefix in front of chromosomes.\n"
     )
     assert error == expected_errors
-    assert warning == ""
+    assert warning == expected_warnings
 
 
 def test_90percentboundary_failure__validate(bed_class):
