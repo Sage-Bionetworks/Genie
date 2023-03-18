@@ -1,9 +1,9 @@
-from unittest import mock
+from unittest.mock import patch
 
 import pandas as pd
 
 from genie_registry.structural_variant import StructuralVariant
-import genie
+from genie import validate
 
 
 class TestSv:
@@ -137,8 +137,8 @@ class TestSv:
                 "SITE1_CHROMOSOME": [1, 22],
             }
         )
-        with mock.patch(
-            "genie.validate._validate_chromosome", return_value=("", "")
+        with patch.object(
+            validate, "_validate_chromosome", return_value=("", "")
         ) as validation__validate_chromosome_mock:
             self.sv_cls._validate(sv_df)
             assert validation__validate_chromosome_mock.call_count == 2, (
