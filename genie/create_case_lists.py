@@ -214,6 +214,32 @@ def write_case_list_fusions(samples, output_directory, study_id):
     return caselist_path
 
 
+def write_case_list_sv(samples, output_directory, study_id):
+    """
+    Writes the structual variant (sv) sequenced samples
+
+    Args:
+        samples: List of sv samples
+        output_directory: Directory to write case lists
+        study_id: cBioPortal study id
+
+    Returns:
+        sv caselist path
+    """
+    case_list_ids = "\t".join(samples)
+    caselist_path = os.path.abspath(os.path.join(output_directory, "cases_sv.txt"))
+    with open(caselist_path, "w") as case_list_file:
+        case_list_file_text = CASE_LIST_TEXT_TEMPLATE.format(
+            study_id=study_id,
+            stable_id=study_id + "_sv",
+            case_list_name="Samples with Structural Variants",
+            case_list_description="Samples with Structural Variants",
+            case_list_ids=case_list_ids,
+        )
+        case_list_file.write(case_list_file_text)
+    return caselist_path
+
+
 def write_case_list_cnaseq(cna_samples, output_directory, study_id):
     """
     writes both cna and mutation samples (Just _cna file for now)
