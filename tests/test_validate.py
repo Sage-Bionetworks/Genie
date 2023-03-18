@@ -205,6 +205,37 @@ def test_wrongfiletype_validate_single_file(syn):
         mock_determine_filetype.assert_called_once_with()
 
 
+def test_accepted_chromosomes_value():
+    """Testing global accepted_chromosomes before we use it"""
+    assert validate.ACCEPTED_CHROMOSOMES == [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "X",
+        "Y",
+        "MT",
+    ]
+
+
 def test_nopermission__check_parentid_permission_container(syn):
     """Throws error if no permissions to access"""
     parentid = "syn123"
@@ -254,6 +285,99 @@ def test_invalid__check_center_input():
         match="Must specify one of these " "centers: {}".format(", ".join(center_list)),
     ):
         validate._check_center_input(center, center_list)
+
+
+def test_nonexistentcol__validate_chromosome():
+    """Checks that no errors or warnings get thrown if
+    chromosome vol doesn't exist"""
+    input_df = pd.DataFrame(
+        {
+            "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
+            "SITE1_HUGO_SYMBOL": ["af", "af", "ff"],
+            "SITE2_HUGO_SYMBOL": ["af", "af", "ff"],
+        }
+    )
+    errors, warnings = validate._validate_chromosome(
+        df=input_df, col="CHROM", fileformat="FOO", allow_chr=True
+    )
+    assert (
+        errors == "" and warnings == ""
+    ), "Error and warnings should be empty when chromosome col doesn't exist!"
+
+
+def test_valid_nochar__validate_chromosome():
+    """Checks that no errors or warnings get thrown if
+    chromosome col has all the valid values and chr is not allowed"""
+    input_df = pd.DataFrame(
+        {
+            "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
+            "CHROM": ["1", "19", "MT"],
+        }
+    )
+    errors, warnings = validate._validate_chromosome(
+        df=input_df, col="CHROM", fileformat="FOO", allow_chr=False
+    )
+    assert (
+        errors == "" and warnings == ""
+    ), "Error and warnings should be empty when chromosome col is valid!"
+
+
+def test_valid_allowchr__validate_chromosome():
+    """Checks that no errors get thrown if
+    chromosome col has all the valid values and has chr in the values"""
+    input_df = pd.DataFrame(
+        {
+            "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
+            "CHROM": ["1", "chr19", "chrMT"],
+        }
+    )
+    errors, warnings = validate._validate_chromosome(
+        df=input_df, col="CHROM", fileformat="FOO", allow_chr=True
+    )
+    assert errors == ""
+    assert warnings == "FOO: Should not have the chr prefix in front of chromosomes.\n"
+
+
+def test_invalid_allowchr__validate_chromosome():
+    """Checks that errors and warnings get thrown if
+    chromosome col has invalid values and chr is allowed in the values"""
+    input_df = pd.DataFrame(
+        {
+            "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
+            "CHROM": ["chr1", "chr9", "chrZ"],
+        }
+    )
+    errors, warnings = validate._validate_chromosome(
+        df=input_df, col="CHROM", fileformat="FOO", allow_chr=True
+    )
+    assert (
+        errors
+        == "FOO: Please double check your CHROM column.  This column must only be these values: {possible_vals}\n".format(
+            possible_vals=", ".join(validate.ACCEPTED_CHROMOSOMES)
+        )
+    )
+    assert warnings == "FOO: Should not have the chr prefix in front of chromosomes.\n"
+
+
+def test_invalid_nochr__validate_chromosome():
+    """Checks that errors and warnings get thrown if
+    chromosome col has invalid values and chr is not allowed"""
+    input_df = pd.DataFrame(
+        {
+            "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
+            "CHROM": ["chr2", 9, 100],
+        }
+    )
+    errors, warnings = validate._validate_chromosome(
+        df=input_df, col="CHROM", fileformat="FOO", allow_chr=False
+    )
+    assert (
+        errors == "FOO: Should not have the chr prefix in front of chromosomes.\n"
+        "FOO: Please double check your CHROM column.  This column must only be these values: {possible_vals}\n".format(
+            possible_vals=", ".join(validate.ACCEPTED_CHROMOSOMES)
+        )
+    )
+    assert warnings == "", "Warnings should be empty"
 
 
 ONCOTREE_ENT = "syn222"
