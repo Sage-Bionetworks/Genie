@@ -1,6 +1,9 @@
+from unittest.mock import patch
+
 import pandas as pd
 
 from genie_registry.structural_variant import StructuralVariant
+from genie import validate
 
 
 class TestSv:
@@ -117,8 +120,28 @@ class TestSv:
                 "CONNECTION_TYPE": ["3to5", "5to5"],
                 "DNA_SUPPORT": ["Yes", "No"],
                 "RNA_Support": ["Yes", "No"],
+                "SITE1_CHROMOSOME": [1, 22],
+                "SITE2_CHROMOSOME": ["X", "2"],
             }
         )
         error, warning = self.sv_cls._validate(sv_df)
         assert error == ""
         assert warning == ""
+
+    def test_validation__validate_chromosome_is_called(self):
+        """Tests that _validate_chromosome is called twice
+        for the two chromosome columns that sv files may have"""
+        sv_df = pd.DataFrame(
+            {
+                "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID2-1"],
+                "SITE1_CHROMOSOME": [1, 22],
+            }
+        )
+        with patch.object(
+            validate, "_validate_chromosome", return_value=("", "")
+        ) as validation__validate_chromosome_mock:
+            self.sv_cls._validate(sv_df)
+            assert validation__validate_chromosome_mock.call_count == 2, (
+                "_validate_chromosome should be called twice for sv file"
+                "since it has two potential chromosome columns to check"
+            )
