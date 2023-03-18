@@ -107,18 +107,20 @@ def create_sequenced_samples(seq_assay_map, assay_info_file_name):
         assay_info_file_name: Assay information name
 
     Returns:
-        list of cna samples
+        lists of cna and sv samples
     """
     with open(assay_info_file_name, "r") as assay_info_file:
         reader = csv.DictReader(assay_info_file, dialect="excel-tab")
         cna_samples = []
         fusion_samples = []
+        sv_samples = []
         for row in reader:
             if "cna" in row["alteration_types"]:
                 cna_samples.extend(seq_assay_map[row["SEQ_ASSAY_ID"]])
             if "structural_variants" in row["alteration_types"]:
                 fusion_samples.extend(seq_assay_map[row["SEQ_ASSAY_ID"]])
-    return cna_samples, fusion_samples
+                sv_samples.extend(seq_assay_map[row["SEQ_ASSAY_ID"]])
+    return cna_samples, fusion_samples, sv_samples
 
 
 def write_case_list_sequenced(clinical_samples, output_directory, study_id):
@@ -285,10 +287,11 @@ def main(clinical_file_name, assay_info_file_name, output_directory, study_id):
     # create_sequenced_samples used to get the samples, but since the removal
     # of WES samples, we can no longer rely on the gene matrix file to grab
     # all sequenced samples, must use assay information file
-    cna_samples, fusion_samples = create_sequenced_samples(
+    cna_samples, fusion_samples, sv_samples = create_sequenced_samples(
         seq_assay_map, assay_info_file_name
     )
     write_case_list_sequenced(clin_samples, output_directory, study_id)
     write_case_list_cna(cna_samples, output_directory, study_id)
     write_case_list_cnaseq(cna_samples, output_directory, study_id)
     write_case_list_fusions(fusion_samples, output_directory, study_id)
+    write_case_list_sv(sv_samples, output_directory, study_id)
