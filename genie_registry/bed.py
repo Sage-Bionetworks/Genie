@@ -6,7 +6,7 @@ import subprocess
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import load, process_functions
+from genie import load, process_functions, validate
 
 LOGGER = logging.getLogger(__name__)
 
@@ -698,4 +698,12 @@ class bed(FileTypeFormat):
                         "(;optionaltext).  Optional text can be "
                         "semi-colon separated.\n"
                     )
+            # validate on required chromosome col, chr is allowed
+            # as we tackle it later in processing
+            error, warn = validate._validate_chromosome(
+                df=beddf, col="Chromosome", fileformat="BED file", allow_chr=True
+            )
+            total_error += error
+            warning += warn
+
         return (total_error, warning)
