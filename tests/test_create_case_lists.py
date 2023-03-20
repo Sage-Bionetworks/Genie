@@ -175,7 +175,7 @@ class TestCreateCaseList:
         with open(self.case_list_fusion_path, "r") as case_list:
             caselist_text = case_list.read()
         assert caselist_text == expected_text
-        
+
     def test_cnaseq_write_case_list_sv(self):
         expected_text = (
             "cancer_study_identifier: test\n"
@@ -186,4 +186,6 @@ class TestCreateCaseList:
         )
         with open(self.case_list_sv_path, "r") as case_list:
             caselist_text = case_list.read()
-        assert caselist_text == expected_text
+        assert (
+            caselist_text == expected_text
+        ), "The case list text doesn't match the expected output"
