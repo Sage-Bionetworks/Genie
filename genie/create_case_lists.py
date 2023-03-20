@@ -112,6 +112,7 @@ def create_sequenced_samples(seq_assay_map, assay_info_file_name):
     with open(assay_info_file_name, "r") as assay_info_file:
         reader = csv.DictReader(assay_info_file, dialect="excel-tab")
         cna_samples = []
+        # TODO: Remove when depreciating fusion files
         fusion_samples = []
         sv_samples = []
         for row in reader:
@@ -216,17 +217,16 @@ def write_case_list_fusions(samples, output_directory, study_id):
     return caselist_path
 
 
-def write_case_list_sv(samples, output_directory, study_id):
-    """
-    Writes the structual variant (sv) sequenced samples
+def write_case_list_sv(samples: list, output_directory: str, study_id: str) -> str:
+    """Writes the structural variant (sv) sequenced samples
 
     Args:
-        samples: List of sv samples
-        output_directory: Directory to write case lists
-        study_id: cBioPortal study id
+        samples (list): List of sv samples
+        output_directory (str: Directory to write case lists
+        study_id (str): cBioPortal study id
 
     Returns:
-        sv caselist path
+        str: sv caselist path
     """
     case_list_ids = "\t".join(samples)
     caselist_path = os.path.abspath(os.path.join(output_directory, "cases_sv.txt"))
@@ -293,5 +293,6 @@ def main(clinical_file_name, assay_info_file_name, output_directory, study_id):
     write_case_list_sequenced(clin_samples, output_directory, study_id)
     write_case_list_cna(cna_samples, output_directory, study_id)
     write_case_list_cnaseq(cna_samples, output_directory, study_id)
+    # TODO: Remove when depreciating fusion files
     write_case_list_fusions(fusion_samples, output_directory, study_id)
     write_case_list_sv(sv_samples, output_directory, study_id)
