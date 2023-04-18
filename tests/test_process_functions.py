@@ -429,7 +429,7 @@ class TestCheckColAndValues:
             pd.DataFrame({"some_col": ["Val1", "Val2", "val1"]}),
             pd.DataFrame({"some_col": ["Val1", "Val2", "Val3"]}),
             pd.DataFrame({"some_col": [None, "Val1", "Val2"]}),
-            pd.DataFrame({"some_col": [float('nan'), "Val1", "Val2"]}),
+            pd.DataFrame({"some_col": [float("nan"), "Val1", "Val2"]}),
             pd.DataFrame({"some_col": ["VAL1", "Val1", "Val2"]}),
         ],
         ids=[
@@ -490,7 +490,7 @@ class TestCheckColAndValues:
     def test_that_func_returns_correct_error_warning_if_input_col_has_na_and_nas_is_allowed(
         self,
     ):
-        test_input = pd.DataFrame({"some_col": ["Val1", "Val2", float('nan'), None]})
+        test_input = pd.DataFrame({"some_col": ["Val1", "Val2", float("nan"), None]})
         warning, error = process_functions.check_col_and_values(
             df=test_input,
             col="some_col",
