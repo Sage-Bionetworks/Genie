@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 import uuid
 
 import pandas as pd
+import numpy as np
 import pytest
 import synapseclient
 
@@ -420,3 +421,84 @@ def test_create_new_fileformat_table(syn):
             "newdb_mappingdf": update_return,
             "moved_ent": move_entity_return,
         }
+
+
+class TestCheckColAndValues:
+    @pytest.mark.parametrize(
+        "test_input",
+        [
+            pd.DataFrame({"some_col": ["Val1", "Val2", "val1"]}),
+            pd.DataFrame({"some_col": ["Val1", "Val2", "Val3"]}),
+            pd.DataFrame({"some_col": [None, "Val1", "Val2"]}),
+            pd.DataFrame({"some_col": [np.nan, "Val1", "Val2"]}),
+            pd.DataFrame({"some_col": ["VAL1", "Val1", "Val2"]}),
+        ],
+        ids=[
+            "lowercase_invalid_val",
+            "extra_invalid_val",
+            "none_val",
+            "na_val",
+            "uppercase_invalid_val",
+        ],
+    )
+    def test_that_func_returns_correct_error_warning_for_str_cols_if_input_has_invalid_vals(
+        self,
+        test_input,
+    ):
+        warning, error = process_functions.check_col_and_values(
+            df=test_input,
+            col="some_col",
+            possible_values=["Val1", "Val2"],
+            filename="some_file",
+            required=False,
+        )
+        assert error == (
+            "some_file: Please double check your some_col column.  This column must only be these values: Val1, Val2\n"
+        )
+        assert warning == ""
+
+    def test_that_func_returns_correct_error_warning_if_input_col_is_missing_and_required_is_true(
+        self,
+    ):
+        test_input = pd.DataFrame({"some_col2": ["Val1", "Val2"]})
+        warning, error = process_functions.check_col_and_values(
+            df=test_input,
+            col="some_col",
+            possible_values=["Val1", "Val2"],
+            filename="some_file",
+            required=True,
+        )
+        assert error == "some_file: Must have some_col column.\n"
+        assert warning == ""
+
+    def test_that_func_returns_correct_error_warning_if_input_col_is_missing_and_required_is_false(
+        self,
+    ):
+        test_input = pd.DataFrame({"some_col2": ["Val1", "Val2"]})
+        warning, error = process_functions.check_col_and_values(
+            df=test_input,
+            col="some_col",
+            possible_values=["Val1", "Val2"],
+            filename="some_file",
+            required=False,
+        )
+        assert error == ""
+        assert (
+            warning
+            == "some_file: Doesn't have some_col column. This column will be added\n"
+        )
+
+    def test_that_func_returns_correct_error_warning_if_input_col_has_na_and_nas_is_allowed(
+        self,
+    ):
+        test_input = pd.DataFrame({"some_col": ["Val1", "Val2", np.nan, None]})
+        warning, error = process_functions.check_col_and_values(
+            df=test_input,
+            col="some_col",
+            possible_values=["Val1", "Val2"],
+            filename="some_file",
+            required=False,
+            na_allowed=True,
+        )
+        assert error == ""
+        assert warning == ""
