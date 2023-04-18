@@ -110,18 +110,22 @@ class TestSv:
     def test_validation_no_errors(self):
         sv_df = pd.DataFrame(
             {
-                "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID2-1"],
-                "SV_STATUS": ["SOMATIC", "GERMLINE"],
-                "SITE1_ENTREZ_GENE_ID": [1, 2],
-                "SITE2_ENTREZ_GENE_ID": [1, 3],
-                "SITE1_REGION_NUMBER": [1, 2],
-                "NCBI_BUILD": ["GRCh38", "GRCh37"],
-                "BREAKPOINT_TYPE": ["PRECISE", "IMPRECISE"],
-                "CONNECTION_TYPE": ["3to5", "5to5"],
-                "DNA_SUPPORT": ["Yes", "No"],
-                "RNA_Support": ["Yes", "No"],
-                "SITE1_CHROMOSOME": [1, 22],
-                "SITE2_CHROMOSOME": ["X", "2"],
+                "sample_id": [
+                    "GENIE-SAGE-ID1-1",
+                    "GENIE-SAGE-ID2-1",
+                    "GENIE-SAGE-ID3-1",
+                ],
+                "SV_STATUS": ["SOMATIC", "GERMLINE", "GERMLINE"],
+                "SITE1_ENTREZ_GENE_ID": [1, 2, 2],
+                "SITE2_ENTREZ_GENE_ID": [1, 3, 3],
+                "SITE1_REGION_NUMBER": [1, 2, 2],
+                "NCBI_BUILD": ["GRCh38", "GRCh37", "GRCh37"],
+                "BREAKPOINT_TYPE": ["PRECISE", "IMPRECISE", "IMPRECISE"],
+                "CONNECTION_TYPE": ["3to5", "5to5", "5to5"],
+                "DNA_SUPPORT": ["Yes", "No", "Unknown"],
+                "RNA_Support": ["Yes", "No", "Unknown"],
+                "SITE1_CHROMOSOME": [1, 22, 22],
+                "SITE2_CHROMOSOME": ["X", "2", "2"],
             }
         )
         error, warning = self.sv_cls._validate(sv_df)
