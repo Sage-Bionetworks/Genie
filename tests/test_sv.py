@@ -126,6 +126,8 @@ class TestSv:
                 "RNA_Support": ["Yes", "No", "Unknown"],
                 "SITE1_CHROMOSOME": [1, 22, 22],
                 "SITE2_CHROMOSOME": ["X", "2", "2"],
+                "SITE1_REGION": ["IGR", "Upstream", "5_Prime_UTR Intron"],
+                "SITE2_REGION": ["3-UTR", "3_Prime_UTR Intron", "Exon"],
             }
         )
         error, warning = self.sv_cls._validate(sv_df)
