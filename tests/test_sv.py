@@ -110,7 +110,11 @@ class TestSv:
     def test_validation_no_errors(self):
         sv_df = pd.DataFrame(
             {
-                "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID2-1", "GENIE-SAGE-ID3-1"],
+                "sample_id": [
+                    "GENIE-SAGE-ID1-1",
+                    "GENIE-SAGE-ID2-1",
+                    "GENIE-SAGE-ID3-1",
+                ],
                 "SV_STATUS": ["SOMATIC", "GERMLINE", "GERMLINE"],
                 "SITE1_ENTREZ_GENE_ID": [1, 2, 2],
                 "SITE2_ENTREZ_GENE_ID": [1, 3, 3],
