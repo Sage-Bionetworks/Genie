@@ -219,7 +219,7 @@ class StructuralVariant(FileTypeFormat):
         warn, error = process_functions.check_col_and_values(
             df=sv_df,
             col="DNA_SUPPORT",
-            possible_values=["Yes", "No"],
+            possible_values=["Yes", "No", "Unknown"],
             filename="Structural Variant",
             na_allowed=True,
             required=False,
@@ -229,7 +229,7 @@ class StructuralVariant(FileTypeFormat):
         warn, error = process_functions.check_col_and_values(
             df=sv_df,
             col="RNA_SUPPORT",
-            possible_values=["Yes", "No"],
+            possible_values=["Yes", "No", "Unknown"],
             filename="Structural Variant",
             na_allowed=True,
             required=False,
