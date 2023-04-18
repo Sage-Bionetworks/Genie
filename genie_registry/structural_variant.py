@@ -159,6 +159,14 @@ class StructuralVariant(FileTypeFormat):
             "Intron",
             "5'UTR",
             "3'UTR",
+            "5-UTR",
+            "3-UTR",
+            "5_Prime_UTR Intron",
+            "3_Prime_UTR Intron",
+            "Downstream",
+            "Upstream",
+            "Intergenic",
+            "IGR",
         ]
         warn, error = process_functions.check_col_and_values(
             df=sv_df,
