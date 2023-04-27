@@ -151,7 +151,11 @@ def _check_center_input(center, center_list):
 
 
 def _validate_chromosome(
-    df: pd.DataFrame, col: str, fileformat: str, allow_chr: bool = True
+    df: pd.DataFrame,
+    col: str,
+    fileformat: str,
+    allow_chr: bool = True,
+    allow_na: bool = False,
 ) -> tuple:
     """Validate chromosome values
 
@@ -159,6 +163,8 @@ def _validate_chromosome(
         df (pd.DataFrame): Dataframe
         col (str): Column header for column containing chromosome values
         fileformat (str): GENIE supported file format
+        allow_chr (bool): whether characters are allowed in the values
+        allow_na (bool): whether NA/blanks are allowed in the values
 
     Returns:
         tuple: errors and warnings
@@ -180,7 +186,11 @@ def _validate_chromosome(
         correct_chromosomes = df[col].astype(str).str.replace("chr", "")
         df[col] = correct_chromosomes
         warning, error = process_functions.check_col_and_values(
-            df=df, col=col, possible_values=ACCEPTED_CHROMOSOMES, filename=fileformat
+            df=df,
+            col=col,
+            possible_values=ACCEPTED_CHROMOSOMES,
+            filename=fileformat,
+            na_allowed=allow_na,
         )
         errors += error
         warnings += warning

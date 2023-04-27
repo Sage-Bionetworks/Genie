@@ -189,6 +189,7 @@ class StructuralVariant(FileTypeFormat):
             col="NCBI_BUILD",
             possible_values=["GRCh37", "GRCh38"],
             filename="Structural Variant",
+            na_allowed=True,
             required=False,
         )
         # total_warning.write(warn)
@@ -246,6 +247,7 @@ class StructuralVariant(FileTypeFormat):
                 col=chrom_col,
                 fileformat="Structural Variant",
                 allow_chr=False,
+                allow_na=True,
             )
             total_error.write(error)
 
