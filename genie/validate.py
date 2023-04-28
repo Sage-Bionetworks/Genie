@@ -192,6 +192,7 @@ def _validate_chromosome(
         # preserve NAs
         df[col] = transform._convert_float_col_with_nas_to_int(df, col)
         df[col] = transform._convert_col_with_nas_to_str(df, col)
+        df[col] = [val.replace("chr", "") if pd.notna(val) else val for val in df[col]]
         warning, error = process_functions.check_col_and_values(
             df=df,
             col=col,
