@@ -189,6 +189,7 @@ class StructuralVariant(FileTypeFormat):
             col="NCBI_BUILD",
             possible_values=["GRCh37", "GRCh38"],
             filename="Structural Variant",
+            na_allowed=True,
             required=False,
         )
         # total_warning.write(warn)
@@ -236,7 +237,6 @@ class StructuralVariant(FileTypeFormat):
         )
         # total_warning.write(warn)
         total_error.write(error)
-
         # check for chromosome columns and don't allow 'chr' for now
         # since in the database there’s nothing with CHR
         chrom_cols = ["SITE1_CHROMOSOME", "SITE2_CHROMOSOME"]
@@ -246,6 +246,7 @@ class StructuralVariant(FileTypeFormat):
                 col=chrom_col,
                 fileformat="Structural Variant",
                 allow_chr=False,
+                allow_na=True,
             )
             total_error.write(error)
 

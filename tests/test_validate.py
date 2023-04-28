@@ -6,7 +6,7 @@ import pytest
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from genie import example_filetype_format, extract, load, validate
+from genie import example_filetype_format, extract, load, validate, process_functions
 
 CENTER = "SAGE"
 CNA_ENT = synapseclient.File(
@@ -378,6 +378,36 @@ def test_invalid_nochr__validate_chromosome():
         )
     )
     assert warnings == "", "Warnings should be empty"
+
+
+@pytest.mark.parametrize(
+    "test_na_allowed,expected_val",
+    [(True, True), (False, False)],
+    ids=[
+        "allow_na_is_true",
+        "allow_na_is_false",
+    ],
+)
+def test_that__validate_chromosome_calls_check_col_and_values_with_correct_na_allowed_val(
+    test_na_allowed, expected_val
+):
+    input_df = pd.DataFrame({"SITE1_CHROMOSOME": [2, 3, 4]})
+    with patch.object(
+        process_functions, "check_col_and_values", return_value=("", "")
+    ) as check_col_and_values_mock:
+        validate._validate_chromosome(
+            df=input_df,
+            col="SITE1_CHROMOSOME",
+            fileformat="Structural Variant",
+            allow_na=test_na_allowed,
+        )
+        check_col_and_values_mock.assert_called_once_with(
+            df=input_df,
+            col="SITE1_CHROMOSOME",
+            possible_values=validate.ACCEPTED_CHROMOSOMES,
+            filename="Structural Variant",
+            na_allowed=expected_val,
+        )
 
 
 ONCOTREE_ENT = "syn222"

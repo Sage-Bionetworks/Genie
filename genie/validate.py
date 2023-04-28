@@ -5,7 +5,14 @@ import pandas as pd
 import synapseclient
 from synapseclient.core.exceptions import SynapseHTTPError
 
-from genie import config, example_filetype_format, extract, load, process_functions
+from genie import (
+    config,
+    example_filetype_format,
+    extract,
+    load,
+    process_functions,
+    transform,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +89,6 @@ class ValidationHelper(object):
             message: errors and warnings
             valid: Boolean value of validation status
         """
-
         if self.file_type not in self._format_registry:
             valid_result_cls = example_filetype_format.ValidationResults(
                 errors="Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally",
@@ -151,7 +157,11 @@ def _check_center_input(center, center_list):
 
 
 def _validate_chromosome(
-    df: pd.DataFrame, col: str, fileformat: str, allow_chr: bool = True
+    df: pd.DataFrame,
+    col: str,
+    fileformat: str,
+    allow_chr: bool = True,
+    allow_na: bool = False,
 ) -> tuple:
     """Validate chromosome values
 
@@ -159,6 +169,8 @@ def _validate_chromosome(
         df (pd.DataFrame): Dataframe
         col (str): Column header for column containing chromosome values
         fileformat (str): GENIE supported file format
+        allow_chr (bool): whether the chr prefix is allowed in the values
+        allow_na (bool): whether NA/blanks are allowed in the values
 
     Returns:
         tuple: errors and warnings
@@ -177,10 +189,16 @@ def _validate_chromosome(
         #     str(chrom).replace("chr", "") in accepted_chromosomes
         #     for chrom in df[col]
         # ]
-        correct_chromosomes = df[col].astype(str).str.replace("chr", "")
-        df[col] = correct_chromosomes
+        # preserve NAs
+        df[col] = transform._convert_float_col_with_nas_to_int(df, col)
+        df[col] = transform._convert_col_with_nas_to_str(df, col)
+        df[col] = [val.replace("chr", "") if pd.notna(val) else val for val in df[col]]
         warning, error = process_functions.check_col_and_values(
-            df=df, col=col, possible_values=ACCEPTED_CHROMOSOMES, filename=fileformat
+            df=df,
+            col=col,
+            possible_values=ACCEPTED_CHROMOSOMES,
+            filename=fileformat,
+            na_allowed=allow_na,
         )
         errors += error
         warnings += warning
