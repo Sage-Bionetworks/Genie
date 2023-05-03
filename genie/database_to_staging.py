@@ -643,85 +643,6 @@ def store_gene_panel_files(
 
 
 # TODO: add to load.py
-def store_fusion_files(
-    syn,
-    release_synid,
-    genie_version,
-    fusion_synid,
-    keep_for_center_consortium_samples,
-    keep_for_merged_consortium_samples,
-    current_release_staging,
-    center_mappingdf,
-):
-    """
-    Create, filter, configure, and store fusion file
-
-    Args:
-        syn: Synapse object
-        release_synid: Synapse id to store release file
-        genie_version: GENIE version (ie. v6.1-consortium)
-        fusion_synid: Fusion database synid
-        keep_for_center_consortium_samples: Samples to keep for center files
-        keep_for_merged_consortium_samples: Samples to keep for merged file
-        current_release_staging: Staging flag
-        center_mappingdf: Center mapping dataframe
-    """
-    logger.info("MERING, FILTERING, STORING FUSION FILES")
-    FusionsDf = extract.get_syntabledf(
-        syn,
-        "select HUGO_SYMBOL,ENTREZ_GENE_ID,CENTER,TUMOR_SAMPLE_BARCODE,FUSION,"
-        f"DNA_SUPPORT,RNA_SUPPORT,METHOD,FRAME from {fusion_synid}",
-    )
-    version = syn.create_snapshot_version(fusion_synid, comment=genie_version)
-
-    FusionsDf["ENTREZ_GENE_ID"].mask(
-        FusionsDf["ENTREZ_GENE_ID"] == 0, float("nan"), inplace=True
-    )
-
-    if not current_release_staging:
-        FusionsStagingDf = FusionsDf[
-            FusionsDf["TUMOR_SAMPLE_BARCODE"].isin(keep_for_center_consortium_samples)
-        ]
-        for center in center_mappingdf.center:
-            center_fusion = FusionsStagingDf[FusionsStagingDf["CENTER"] == center]
-            if not center_fusion.empty:
-                center_fusion.to_csv(
-                    FUSIONS_CENTER_PATH % center, sep="\t", index=False
-                )
-                load.store_file(
-                    syn=syn,
-                    filepath=FUSIONS_CENTER_PATH % center,
-                    version_comment=genie_version,
-                    parentid=center_mappingdf["stagingSynId"][
-                        center_mappingdf["center"] == center
-                    ][0],
-                )
-
-    FusionsDf = FusionsDf[
-        FusionsDf["TUMOR_SAMPLE_BARCODE"].isin(keep_for_merged_consortium_samples)
-    ]
-    FusionsDf.rename(columns=transform._col_name_to_titlecase, inplace=True)
-
-    # Remove duplicated Fusions
-    FusionsDf = FusionsDf[
-        ~FusionsDf[["Hugo_Symbol", "Tumor_Sample_Barcode", "Fusion"]].duplicated()
-    ]
-    # FusionsDf.to_csv(FUSIONS_PATH, sep="\t", index=False)
-    fusionText = process_functions.removePandasDfFloat(FusionsDf)
-    fusions_path = os.path.join(GENIE_RELEASE_DIR, "data_fusions.txt")
-    with open(fusions_path, "w") as fusion_file:
-        fusion_file.write(fusionText)
-    load.store_file(
-        syn=syn,
-        filepath=fusions_path,
-        parentid=release_synid,
-        version_comment=genie_version,
-        name="data_fusions.txt",
-        used=f"{fusion_synid}.{version}",
-    )
-
-
-# TODO: add to load.py
 def store_sv_files(
     syn: synapseclient.Synapse,
     release_synid: str,
@@ -1746,17 +1667,6 @@ def stagingToCbio(
         wes_panelids,
     )
 
-    store_fusion_files(
-        syn,
-        consortiumReleaseSynId,
-        genieVersion,
-        fusionSynId,
-        keepForCenterConsortiumSamples,
-        keepForMergedConsortiumSamples,
-        current_release_staging,
-        CENTER_MAPPING_DF,
-    )
-
     store_sv_files(
         syn,
         consortiumReleaseSynId,
@@ -1809,7 +1719,7 @@ def revise_metadata_files(syn, consortiumid, genie_version=None):
             i["id"], downloadLocation=GENIE_RELEASE_DIR, ifcollision="overwrite.local"
         )
         for i in release_files
-        if "meta" in i["name"]
+        if "meta" in i["name"] and i["name"] != "meta_fusions.txt"
     ]
 
     for meta_ent in meta_file_ents:
@@ -1922,8 +1832,9 @@ def create_link_version(
             release_file["name"] != "data_clinical.txt" or release_type == "consortium"
         )
         is_gene_panel = release_file["name"].startswith("data_gene_panel")
+        is_depreciated_file = release_file["name"] in ["data_fusions.txt"]
 
-        if not_folder and not_public and not is_gene_panel:
+        if not_folder and not_public and not is_gene_panel and not is_depreciated_file:
             syn.store(
                 synapseclient.Link(
                     release_file["id"],
