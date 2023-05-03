@@ -38,7 +38,6 @@ def test_store_gene_panel_files(syn):
     ) as patch_syn_get, mock.patch.object(
         os, "rename"
     ) as patch_os_rename:
-
         database_to_staging.store_gene_panel_files(
             syn,
             FILEVIEW_SYNID,

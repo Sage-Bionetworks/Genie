@@ -1,6 +1,9 @@
+from unittest.mock import patch
+
 import pandas as pd
 
 from genie_registry.structural_variant import StructuralVariant
+from genie import validate
 
 
 class TestSv:
@@ -107,18 +110,44 @@ class TestSv:
     def test_validation_no_errors(self):
         sv_df = pd.DataFrame(
             {
-                "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID2-1"],
-                "SV_STATUS": ["SOMATIC", "GERMLINE"],
-                "SITE1_ENTREZ_GENE_ID": [1, 2],
-                "SITE2_ENTREZ_GENE_ID": [1, 3],
-                "SITE1_REGION_NUMBER": [1, 2],
-                "NCBI_BUILD": ["GRCh38", "GRCh37"],
-                "BREAKPOINT_TYPE": ["PRECISE", "IMPRECISE"],
-                "CONNECTION_TYPE": ["3to5", "5to5"],
-                "DNA_SUPPORT": ["Yes", "No"],
-                "RNA_Support": ["Yes", "No"],
+                "sample_id": [
+                    "GENIE-SAGE-ID1-1",
+                    "GENIE-SAGE-ID2-1",
+                    "GENIE-SAGE-ID3-1",
+                ],
+                "SV_STATUS": ["SOMATIC", "GERMLINE", "GERMLINE"],
+                "SITE1_ENTREZ_GENE_ID": [1, 2, 2],
+                "SITE2_ENTREZ_GENE_ID": [1, 3, 3],
+                "SITE1_REGION_NUMBER": [1, 2, 2],
+                "NCBI_BUILD": ["GRCh38", float("nan"), "GRCh37"],
+                "BREAKPOINT_TYPE": ["PRECISE", "IMPRECISE", "IMPRECISE"],
+                "CONNECTION_TYPE": ["3to5", "5to5", "5to5"],
+                "DNA_SUPPORT": ["Yes", "No", "Unknown"],
+                "RNA_Support": ["Yes", "No", "Unknown"],
+                "SITE1_CHROMOSOME": [1, 22, float("nan")],
+                "SITE2_CHROMOSOME": ["X", "2", float("nan")],
+                "SITE1_REGION": ["IGR", "Upstream", "5_Prime_UTR Intron"],
+                "SITE2_REGION": ["3-UTR", "3_Prime_UTR Intron", "Exon"],
             }
         )
         error, warning = self.sv_cls._validate(sv_df)
         assert error == ""
         assert warning == ""
+
+    def test_validation__validate_chromosome_is_called(self):
+        """Tests that _validate_chromosome is called twice
+        for the two chromosome columns that sv files may have"""
+        sv_df = pd.DataFrame(
+            {
+                "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID2-1"],
+                "SITE1_CHROMOSOME": [1, 22],
+            }
+        )
+        with patch.object(
+            validate, "_validate_chromosome", return_value=("", "")
+        ) as validation__validate_chromosome_mock:
+            self.sv_cls._validate(sv_df)
+            assert validation__validate_chromosome_mock.call_count == 2, (
+                "_validate_chromosome should be called twice for sv file"
+                "since it has two potential chromosome columns to check"
+            )

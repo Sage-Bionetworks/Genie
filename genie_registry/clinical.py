@@ -226,7 +226,6 @@ def remap_clinical_values(
 
 
 class Clinical(FileTypeFormat):
-
     _fileType = "clinical"
 
     # _process_kwargs = [
@@ -571,7 +570,6 @@ class Clinical(FileTypeFormat):
                     )
                 ]
             ):
-
                 total_error.write(
                     "Sample Clinical File: PATIENT_ID's much be contained in "
                     "the SAMPLE_ID's (ex. SAGE-1 <-> SAGE-1-2)\n"
@@ -670,7 +668,6 @@ class Clinical(FileTypeFormat):
                 and havePatientColumn
                 and haveSampleColumn
             ):
-
                 wrongCodeSamples = []
                 # This is to check if oncotree codes match the sex,
                 # returns list of samples that have conflicting codes and sex
@@ -679,12 +676,10 @@ class Clinical(FileTypeFormat):
                     clinicaldf["PATIENT_ID"],
                     clinicaldf["SAMPLE_ID"],
                 ):
-
                     if (
                         oncotree_mapping_dict.get(code) is not None
                         and sum(clinicaldf["PATIENT_ID"] == patient) > 0
                     ):
-
                         primaryCode = oncotree_mapping_dict[code][
                             "ONCOTREE_PRIMARY_NODE"
                         ]
@@ -698,14 +693,12 @@ class Clinical(FileTypeFormat):
                             in maleOncoCodes
                             and sex != 1.0
                         ):
-
                             wrongCodeSamples.append(sample)
                         if (
                             oncotree_mapping_dict[code]["ONCOTREE_PRIMARY_NODE"]
                             in womenOncoCodes
                             and sex != 2.0
                         ):
-
                             wrongCodeSamples.append(sample)
                 if len(wrongCodeSamples) > 0:
                     warning.write(
@@ -845,7 +838,6 @@ class Clinical(FileTypeFormat):
                     ]
                 ]
             ):
-
                 total_error.write(
                     "Patient Clinical File: Please double check your "
                     "INT_CONTACT column, it must be an integer, '>32485', "
@@ -872,7 +864,6 @@ class Clinical(FileTypeFormat):
                     ]
                 ]
             ):
-
                 total_error.write(
                     "Patient Clinical File: Please double check your INT_DOD "
                     "column, it must be an integer, '>32485', '<6570', "

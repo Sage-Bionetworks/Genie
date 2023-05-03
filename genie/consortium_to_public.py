@@ -208,6 +208,7 @@ def consortiumToPublic(
                 "non_somatic.csv",
                 "snv_as_dnp.csv",
                 "snv_as_onp.csv",
+                "duplicated_variants.csv",
             ]
         ):
             # data_gene_matrix was processed above because it had to be

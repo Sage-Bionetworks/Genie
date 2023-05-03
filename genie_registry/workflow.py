@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class workflow(FileTypeFormat):
-
     _fileType = "md"
 
     _process_kwargs = ["databaseSynId"]

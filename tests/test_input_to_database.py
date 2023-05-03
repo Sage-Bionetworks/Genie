@@ -387,7 +387,6 @@ def test_valid_validatefile(syn, genie_config):
     ) as patch_staterror_list, patch.object(
         input_to_database, "_send_validation_error_email"
     ) as patch_send_email:
-
         validate_results = input_to_database.validatefile(
             syn,
             None,
@@ -467,7 +466,6 @@ def test_invalid_validatefile(syn, genie_config):
         "_get_status_and_error_list",
         return_value=status_error_list_results,
     ) as patch_staterror_list:
-
         validate_results = input_to_database.validatefile(
             syn,
             None,
@@ -543,7 +541,6 @@ def test_already_validated_validatefile(syn):
     ) as patch_staterror_list, patch.object(
         input_to_database, "_send_validation_error_email"
     ) as patch_send_email:
-
         validate_results = input_to_database.validatefile(
             syn,
             None,
@@ -945,7 +942,6 @@ class TestValidation:
         ), patch.object(
             input_to_database, "update_status_and_error_tables"
         ):
-
             valid_filedf = input_to_database.validation(
                 syn,
                 "syn123",

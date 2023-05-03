@@ -3,13 +3,12 @@ import logging
 import os
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import load, process_functions
+from genie import load, process_functions, validate
 
 logger = logging.getLogger(__name__)
 
 
 class StructuralVariant(FileTypeFormat):
-
     _fileType = "sv"
 
     # _validation_kwargs = ["nosymbol_check", "project_id"]
@@ -160,6 +159,14 @@ class StructuralVariant(FileTypeFormat):
             "Intron",
             "5'UTR",
             "3'UTR",
+            "5-UTR",
+            "3-UTR",
+            "5_Prime_UTR Intron",
+            "3_Prime_UTR Intron",
+            "Downstream",
+            "Upstream",
+            "Intergenic",
+            "IGR",
         ]
         warn, error = process_functions.check_col_and_values(
             df=sv_df,
@@ -182,6 +189,7 @@ class StructuralVariant(FileTypeFormat):
             col="NCBI_BUILD",
             possible_values=["GRCh37", "GRCh38"],
             filename="Structural Variant",
+            na_allowed=True,
             required=False,
         )
         # total_warning.write(warn)
@@ -212,7 +220,7 @@ class StructuralVariant(FileTypeFormat):
         warn, error = process_functions.check_col_and_values(
             df=sv_df,
             col="DNA_SUPPORT",
-            possible_values=["Yes", "No"],
+            possible_values=["Yes", "No", "Unknown"],
             filename="Structural Variant",
             na_allowed=True,
             required=False,
@@ -222,12 +230,24 @@ class StructuralVariant(FileTypeFormat):
         warn, error = process_functions.check_col_and_values(
             df=sv_df,
             col="RNA_SUPPORT",
-            possible_values=["Yes", "No"],
+            possible_values=["Yes", "No", "Unknown"],
             filename="Structural Variant",
             na_allowed=True,
             required=False,
         )
         # total_warning.write(warn)
         total_error.write(error)
+        # check for chromosome columns and don't allow 'chr' for now
+        # since in the database there’s nothing with CHR
+        chrom_cols = ["SITE1_CHROMOSOME", "SITE2_CHROMOSOME"]
+        for chrom_col in chrom_cols:
+            error, warn = validate._validate_chromosome(
+                df=sv_df,
+                col=chrom_col,
+                fileformat="Structural Variant",
+                allow_chr=False,
+                allow_na=True,
+            )
+            total_error.write(error)
 
         return total_error.getvalue(), total_warning.getvalue()

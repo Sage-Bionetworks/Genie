@@ -42,7 +42,6 @@ def cna_class(syn, genie_config):
 
 
 def test_processing(cna_class):
-
     order = ["Hugo_Symbol", "Entrez_gene_id", "GENIE-SAGE-Id1-1", "GENIE-SAGE-Id2-1"]
 
     expected_cnadf = pd.DataFrame(
