@@ -1811,7 +1811,7 @@ def revise_metadata_files(syn, consortiumid, genie_version=None):
             i["id"], downloadLocation=GENIE_RELEASE_DIR, ifcollision="overwrite.local"
         )
         for i in release_files
-        if "meta" in i["name"] and i['name'] != "meta_fusions.txt"
+        if "meta" in i["name"] and i["name"] != "meta_fusions.txt"
     ]
 
     for meta_ent in meta_file_ents:
@@ -1924,9 +1924,7 @@ def create_link_version(
             release_file["name"] != "data_clinical.txt" or release_type == "consortium"
         )
         is_gene_panel = release_file["name"].startswith("data_gene_panel")
-        is_depreciated_file = (
-            release_file["name"] in ["data_fusions.txt"]
-        )
+        is_depreciated_file = release_file["name"] in ["data_fusions.txt"]
 
         if not_folder and not_public and not is_gene_panel and not is_depreciated_file:
             syn.store(
