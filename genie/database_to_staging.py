@@ -1667,7 +1667,6 @@ def stagingToCbio(
         wes_panelids,
     )
 
-
     store_sv_files(
         syn,
         consortiumReleaseSynId,
