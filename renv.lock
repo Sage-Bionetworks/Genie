@@ -3,8 +3,12 @@
     "Version": "4.2.2",
     "Repositories": [
       {
+        "Name": "SAGE",
+        "URL": "http://ran.synapse.org"
+      },
+      {
         "Name": "CRAN",
-        "URL": "https://cran.rstudio.com"
+        "URL": "https://cloud.r-project.org"
       }
     ]
   },
@@ -38,13 +42,13 @@
     },
     "BSgenome": {
       "Package": "BSgenome",
-      "Version": "1.66.1",
+      "Version": "1.66.2",
       "Source": "Bioconductor",
       "git_url": "https://git.bioconductor.org/packages/BSgenome",
       "git_branch": "RELEASE_3_16",
-      "git_last_commit": "d1efdfa",
-      "git_last_commit_date": "2022-11-03",
-      "Hash": "f0a857ebea57544691a8320423037d02",
+      "git_last_commit": "0b63ff0",
+      "git_last_commit_date": "2023-01-05",
+      "Hash": "8ef00586af21febf23c65f6025caf4a2",
       "Requirements": [
         "BiocGenerics",
         "Biostrings",
@@ -126,13 +130,13 @@
     },
     "BiocParallel": {
       "Package": "BiocParallel",
-      "Version": "1.32.4",
+      "Version": "1.32.5",
       "Source": "Bioconductor",
       "git_url": "https://git.bioconductor.org/packages/BiocParallel",
       "git_branch": "RELEASE_3_16",
-      "git_last_commit": "fbe8e78",
-      "git_last_commit_date": "2022-12-01",
-      "Hash": "6f388c751c30d8c5655051420645a9a9",
+      "git_last_commit": "6110035",
+      "git_last_commit_date": "2022-12-22",
+      "Hash": "1ccd5fb92fe75b6f903fdda4a2d68689",
       "Requirements": [
         "BH",
         "codetools",
@@ -186,13 +190,13 @@
     },
     "GenomeInfoDb": {
       "Package": "GenomeInfoDb",
-      "Version": "1.34.4",
+      "Version": "1.34.9",
       "Source": "Bioconductor",
       "git_url": "https://git.bioconductor.org/packages/GenomeInfoDb",
       "git_branch": "RELEASE_3_16",
-      "git_last_commit": "cf8d71c",
-      "git_last_commit_date": "2022-11-30",
-      "Hash": "023e35ebc2e07f75fe45cacf85fc39be",
+      "git_last_commit": "24d7cb9",
+      "git_last_commit_date": "2023-02-02",
+      "Hash": "c8adcafcf06ec6681c35eafa837c69bb",
       "Requirements": [
         "BiocGenerics",
         "GenomeInfoDbData",
@@ -231,13 +235,13 @@
     },
     "GenomicFeatures": {
       "Package": "GenomicFeatures",
-      "Version": "1.50.3",
+      "Version": "1.50.4",
       "Source": "Bioconductor",
       "git_url": "https://git.bioconductor.org/packages/GenomicFeatures",
       "git_branch": "RELEASE_3_16",
-      "git_last_commit": "d143f91",
-      "git_last_commit_date": "2022-12-11",
-      "Hash": "a797be6614ddaa55b1f66730b2b5cfcf",
+      "git_last_commit": "68bf6e1",
+      "git_last_commit_date": "2022-12-14",
+      "Hash": "61e396f773cfa09ae1d49f299522ead2",
       "Requirements": [
         "AnnotationDbi",
         "Biobase",
@@ -343,17 +347,6 @@
         "Matrix"
       ]
     },
-    "PythonEmbedInR": {
-      "Package": "PythonEmbedInR",
-      "Version": "0.12.79",
-      "Source": "unknown",
-      "Hash": "0b9622b3011ecd7b1c6782b86f821a74",
-      "Requirements": [
-        "R6",
-        "pack",
-        "rjson"
-      ]
-    },
     "R6": {
       "Package": "R6",
       "Version": "2.5.1",
@@ -382,10 +375,10 @@
     },
     "RSQLite": {
       "Package": "RSQLite",
-      "Version": "2.2.19",
+      "Version": "2.2.20",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "becd8219ad7056f1dbe2f3517c75c17d",
+      "Hash": "b5df65015a2d74c144a1419dab6ffd3b",
       "Requirements": [
         "DBI",
         "Rcpp",
@@ -412,6 +405,16 @@
       "Hash": "1e035db628cefb315c571202d70202fe",
       "Requirements": [
         "Matrix",
+        "Rcpp"
+      ]
+    },
+    "RcppTOML": {
+      "Package": "RcppTOML",
+      "Version": "0.1.7",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "f8a578aa91321ecec1292f1e2ffadeda",
+      "Requirements": [
         "Rcpp"
       ]
     },
@@ -977,10 +980,10 @@
     },
     "formatR": {
       "Package": "formatR",
-      "Version": "1.12",
+      "Version": "1.13",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "e45696cc90f4d5b993fa1a289e01c5df",
+      "Hash": "93a7b3306d291ae1116008e31fc114b5",
       "Requirements": []
     },
     "fs": {
@@ -1124,12 +1127,22 @@
       "Hash": "36b4265fb818f6a342bed217549cd896",
       "Requirements": []
     },
-    "highr": {
-      "Package": "highr",
-      "Version": "0.9",
+    "here": {
+      "Package": "here",
+      "Version": "1.0.1",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "8eb36c8125038e648e5d111c0d7b2ed4",
+      "Hash": "24b224366f9c2e7534d2344d10d59211",
+      "Requirements": [
+        "rprojroot"
+      ]
+    },
+    "highr": {
+      "Package": "highr",
+      "Version": "0.10",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "06230136b2d2b9ba5805e1963fa6e890",
       "Requirements": [
         "xfun"
       ]
@@ -1384,14 +1397,6 @@
         "askpass"
       ]
     },
-    "pack": {
-      "Package": "pack",
-      "Version": "0.1-1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "c4f814b30334e8bc6124647794781a09",
-      "Requirements": []
-    },
     "pbkrtest": {
       "Package": "pbkrtest",
       "Version": "0.5.1",
@@ -1600,6 +1605,23 @@
         "yaml"
       ]
     },
+    "reticulate": {
+      "Package": "reticulate",
+      "Version": "1.26",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "91c176c84a2e3558572d2cbaddc08bd4",
+      "Requirements": [
+        "Matrix",
+        "Rcpp",
+        "RcppTOML",
+        "here",
+        "jsonlite",
+        "png",
+        "rappdirs",
+        "withr"
+      ]
+    },
     "rjson": {
       "Package": "rjson",
       "Version": "0.2.21",
@@ -1764,11 +1786,13 @@
     },
     "synapser": {
       "Package": "synapser",
-      "Version": "0.15.35",
-      "Source": "unknown",
-      "Hash": "b64fa4408d7bff4fc66c438a18115b2d",
+      "Version": "1.0.59",
+      "Source": "Repository",
+      "Repository": "SAGE",
+      "Hash": "a093d64da4562649484e13920faad510",
       "Requirements": [
-        "PythonEmbedInR"
+        "reticulate",
+        "rjson"
       ]
     },
     "sys": {

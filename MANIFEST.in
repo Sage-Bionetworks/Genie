@@ -1,2 +1,4 @@
-include genie/*.sh
-include R/*
+# This file currently doesn't do anything because
+# R/ and templates/ isn't within the genie/ directory
+graft R/
+graft templates/

@@ -89,7 +89,6 @@ def checkIfOneZero(x):
 
 
 class cna(FileTypeFormat):
-
     _fileType = "cna"
 
     _process_kwargs = ["newPath"]

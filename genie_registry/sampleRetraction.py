@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class sampleRetraction(FileTypeFormat):
-
     _fileType = "sampleRetraction"
 
     _process_kwargs = ["newPath", "databaseSynId", "fileSynId"]

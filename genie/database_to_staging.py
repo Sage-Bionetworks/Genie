@@ -156,9 +156,7 @@ def remove_maf_samples(mafdf: pd.DataFrame, keep_samples: list) -> pd.DataFrame:
 
     """
     keep_maf = mafdf["Tumor_Sample_Barcode"].isin(keep_samples)
-    mafdf = mafdf.loc[
-        keep_maf,
-    ]
+    mafdf = mafdf.loc[keep_maf,]
     return mafdf
 
 

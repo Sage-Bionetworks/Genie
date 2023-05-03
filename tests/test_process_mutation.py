@@ -119,7 +119,6 @@ def test_process_mutation_workflow(syn, genie_config):
     ) as patch_annotation, patch.object(
         process_mutation, "split_and_store_maf"
     ) as patch_split:
-
         maf = process_mutation.process_mutation_workflow(
             syn, center, validfiles, genie_config, workdir
         )
