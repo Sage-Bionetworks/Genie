@@ -71,7 +71,7 @@ class seg(FileTypeFormat):
                     "Seg: Only integars allowed in these column(s): %s.\n"
                     % ", ".join(sorted(nonInts))
                 )
-            if not segDF["SEG.MEAN"].dtype in [float, int]:
+            if segDF["SEG.MEAN"].dtype not in [float, int]:
                 total_error += "Seg: Only numerical values allowed in SEG.MEAN.\n"
 
             error, warn = validate._validate_chromosome(

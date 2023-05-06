@@ -6,9 +6,7 @@ import os
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-import tempfile
 import time
-from typing import List
 
 import ast
 from Crypto.Cipher import PKCS1_OAEP

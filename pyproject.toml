@@ -2,3 +2,6 @@
 line-length = 88
 target-version = ['py37']
 include = '\.pyi?$'
+
+[tool.ruff]
+extend-ignore = ["E501"]

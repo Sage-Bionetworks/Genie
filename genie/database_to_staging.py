@@ -156,7 +156,9 @@ def remove_maf_samples(mafdf: pd.DataFrame, keep_samples: list) -> pd.DataFrame:
 
     """
     keep_maf = mafdf["Tumor_Sample_Barcode"].isin(keep_samples)
-    mafdf = mafdf.loc[keep_maf,]
+    mafdf = mafdf.loc[
+        keep_maf,
+    ]
     return mafdf
 
 
@@ -1520,9 +1522,6 @@ def stagingToCbio(
     ][0]
     variant_filtering_synId = databaseSynIdMappingDf["Id"][
         databaseSynIdMappingDf["Database"] == "mutationsInCis"
-    ][0]
-    fusionSynId = databaseSynIdMappingDf["Id"][
-        databaseSynIdMappingDf["Database"] == "fusions"
     ][0]
     sv_synid = databaseSynIdMappingDf["Id"][databaseSynIdMappingDf["Database"] == "sv"][
         0
