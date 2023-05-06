@@ -757,15 +757,12 @@ def getPrimary(code, oncotreeDict, primary):
 #     return syn
 
 
-def synapse_login(
-    auth_token: Optional[str] = None, debug: Optional[bool] = False
-) -> Synapse:
+def synapse_login(debug: Optional[bool] = False) -> Synapse:
     """
-    This function logs into synapse for you if credentials are saved.
-    If not saved, then user is prompted username and password.
+    Logs into Synapse if credentials are saved.
+    If not saved, then user is prompted username and auth token.
 
     Args:
-        auth_token: Synapse personal access token
         debug: Synapse debug feature. Defaults to False
 
     Returns:
@@ -775,15 +772,13 @@ def synapse_login(
     silent = False if debug else False
     syn = synapseclient.Synapse(debug=debug, silent=silent)
     try:
-        syn = synapseclient.login(silent=True)
+        syn.login()
     except Exception:
-        if auth_token is None:
-            raise ValueError(
-                "Please specify --auth_token to specify your Synapse "
-                "login. Please view https://help.synapse.org/docs/Client-Configuration.1985446156.html"
-                "to learn about logging into Synapse via the Python client."
-            )
-        syn = synapseclient.login(authToken=auth_token)
+        raise ValueError(
+            "Please view https://help.synapse.org/docs/Client-Configuration.1985446156.html"
+            "to configure authentication to the client.  Configure a ~/.synapseConfig"
+            "or set the SYNAPSE_AUTH_TOKEN environmental variable."
+        )
     return syn
 
 
