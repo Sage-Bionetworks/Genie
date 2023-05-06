@@ -38,8 +38,6 @@ def perform_get_file_errors(syn, args):
 def build_parser():
     parser = argparse.ArgumentParser(description="GENIE processing")
 
-    parser.add_argument("--auth_token", type=str, help="Synapse Personal Access Token")
-
     parser.add_argument(
         "-v", "--version", action="version", version=f"genie {__version__}"
     )
@@ -147,7 +145,7 @@ def build_parser():
 def main():
     """Invoke"""
     args = build_parser().parse_args()
-    syn = process_functions.synapse_login(auth_token=args.auth_token)
+    syn = process_functions.synapse_login()
     # func has to match the set_defaults
     args.func(syn, args)
 
