@@ -2,9 +2,7 @@ library(argparse)
 parser <- ArgumentParser()
 parser$add_argument("filepath", help = "Filepath to write variants")
 parser$add_argument("--testing", action = "store_true", help = "Use testing files")
-parser$add_argument("--auth_token", help = "Synapse Personal Access token")
 args <- parser$parse_args()
-auth_token <- args$auth_token
 testing <- args$testing
 filepath <- args$filepath
 
@@ -19,11 +17,7 @@ library(VariantAnnotation)
 #   stop("Must supply a boolean value and a filepath to write variants not in bed")
 # }
 # SAGE login
-tryCatch({
-  synLogin()# set user and password
-}, error = function(err) {
-  synLogin(authToken=auth_token)
-})
+synLogin()
 #testing = as.logical(args[1])
 if (testing) {
   databaseSynIdMappingId = 'syn11600968'

@@ -25,13 +25,7 @@ title: '`r release`'
 
 ```{r intro}
 suppressMessages(library(synapser))
-tryCatch({
-  foo = capture.output(synLogin())
-}, error = function(err) {
-  auth_token = params$auth_token
-  foo = capture.output(synLogin(authToken=auth_token))
-})
-
+foo = capture.output(synLogin())
 suppressMessages(library(ggplot2))
 suppressMessages(library(UpSetR))
 suppressMessages(library(RColorBrewer))

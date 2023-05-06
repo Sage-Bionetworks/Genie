@@ -12,21 +12,14 @@ parser$add_argument("--staging",
 parser$add_argument("--testing",
                     action = "store_true",
                     help = "Use testing files")
-parser$add_argument("--auth_token",
-                    help = "Synapse Personal Access Token")
 
 args <- parser$parse_args()
-auth_token <- args$auth_token
 release <- args$release
 template_path <- args$template_path
 suppressPackageStartupMessages(library(synapser))
 suppressPackageStartupMessages(library(rmarkdown))
 
-tryCatch({
-  synLogin()
-}, error = function(err) {
-  synLogin(authToken=auth_token)
-})
+synLogin()
 
 if (args$staging) {
  database_synid_mappingid = 'syn12094210'
