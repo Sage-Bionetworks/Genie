@@ -348,9 +348,7 @@ def runMAFinBED(
     syn,
     center_mappingdf,
     test=False,
-    genieVersion="test",
-    genie_user=None,
-    genie_pass=None,
+    genieVersion="test"
 ):
     """
     Run MAF in BED script, filter data and update MAFinBED database
@@ -360,8 +358,6 @@ def runMAFinBED(
         center_mappingdf: center mapping dataframe
         test: Testing parameter. Default is False.
         genieVersion: GENIE version. Default is test.
-        genie_user: Synapse username. Default is None.
-        genie_pass: Synapse password.  Default is None.
 
     Returns:
         pd.Series: Variants to remove
@@ -372,8 +368,6 @@ def runMAFinBED(
     notinbed_file = os.path.join(script_dir, "../R/notinbed.csv")
     # The MAFinBED script filters out the centers that aren't being processed
     command = ["Rscript", mafinbed_script, notinbed_file]
-    if genie_user is not None and genie_pass is not None:
-        command.extend(["--syn_user", genie_user, "--syn_pass", genie_pass])
     if test:
         command.append("--testing")
     subprocess.check_call(command)
@@ -461,9 +455,7 @@ def mutation_in_cis_filter(
     variant_filtering_synId,
     center_mappingdf,
     genieVersion,
-    test=False,
-    genie_user=None,
-    genie_pass=None,
+    test=False
 ):
     """
     Run mutation in cis filter, look up samples to remove
@@ -475,8 +467,6 @@ def mutation_in_cis_filter(
         center_mappingdf: center mapping dataframe
         genieVersion: GENIE version. Default is test.
         test: Testing parameter. Default is False.
-        genie_user: Synapse username. Default is None.
-        genie_pass: Synapse password.  Default is None.
 
     Returns:
         pd.Series: Samples to remove
@@ -486,9 +476,6 @@ def mutation_in_cis_filter(
             os.path.dirname(os.path.abspath(__file__)), "../R/mergeCheck.R"
         )
         command = ["Rscript", mergeCheck_script]
-        # TODO: deprecate genie password soon
-        if genie_user is not None and genie_pass is not None:
-            command.extend(["--syn_user", genie_user, "--syn_pass", genie_pass])
         if test:
             command.append("--testing")
         # TODO: use subprocess.run instead
@@ -876,9 +863,7 @@ def run_genie_filters(
         syn,
         center_mappingdf,
         test=test,
-        genieVersion=genie_version,
-        genie_user=genie_user,
-        genie_pass=genie_pass,
+        genieVersion=genie_version
     )
 
     logger.info("MUTATION IN CIS FILTER")
@@ -891,9 +876,7 @@ def run_genie_filters(
         variant_filtering_synId,
         center_mappingdf,
         genieVersion=genie_version,
-        test=test,
-        genie_user=genie_user,
-        genie_pass=genie_pass,
+        test=test
     )
     remove_no_genepanel_samples = no_genepanel_filter(clinicaldf, beddf)
 
@@ -1483,8 +1466,6 @@ def stagingToCbio(
         current_release_staging: Is it staging. Default is False.
         skipMutationsInCis: Skip mutation in cis filter. Default is False.
         test: Testing parameter. Default is False.
-        genie_user: Synapse username. Default is None.
-        genie_pass: Synapse password.  Default is None.
 
     Returns:
         list: Gene panel entities
