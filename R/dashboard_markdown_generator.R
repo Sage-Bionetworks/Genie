@@ -41,8 +41,7 @@ if (args$staging) {
 rmarkdown_path = sprintf('%s.Rmd', release)
 file.copy(template_path, rmarkdown_path, overwrite = T)
 rmarkdown::render(rmarkdown_path,
-                  params = list("auth_token" = auth_token,
-                                "database_synid_mappingid" = database_synid_mappingid,
+                  params = list("database_synid_mappingid" = database_synid_mappingid,
                                 "release" = release))
 # Obtain release folder
 database_synid_mapping = synTableQuery(sprintf('select * from %s',
