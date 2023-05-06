@@ -25,11 +25,8 @@ def generate_dashboard_html(genie_version, staging=False):
     release folder
 
     Args:
-        syn: Synapse connection
         genie_version: GENIE release
         staging: Use staging files. Default is False
-        genie_user: GENIE synapse username
-        genie_pass: GENIE synapse password
 
     """
     markdown_render_cmd = [
