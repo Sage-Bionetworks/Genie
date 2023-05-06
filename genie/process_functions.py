@@ -3,28 +3,18 @@ import datetime
 import json
 import logging
 import os
-import requests
-from requests.adapters import HTTPAdapter
-
-# import tempfile
 import time
 from typing import Optional
-from urllib3.util import Retry
 
-# import ast
-# from Crypto.Cipher import PKCS1_OAEP
-# from Crypto.PublicKey import RSA
 import pandas as pd
-import synapseclient  # lgtm [py/import-and-import-from]
+import requests
+import synapseclient
+from requests.adapters import HTTPAdapter
 from synapseclient import Synapse
+from urllib3.util import Retry
 
 from genie import extract
 
-# try:
-#   from urllib.request import urlopen
-# except ImportError:
-#   from urllib2 import urlopen
-# Ignore SettingWithCopyWarning warning
 pd.options.mode.chained_assignment = None
 
 logger = logging.getLogger(__name__)
