@@ -12,14 +12,11 @@ parser$add_argument("--staging",
 parser$add_argument("--testing",
                     action = "store_true",
                     help = "Use testing files")
-parser$add_argument("--syn_user",
-                    help = "Synapse username")
-parser$add_argument("--syn_pass",
-                    help = "Synapse password")
+parser$add_argument("--auth_token",
+                    help = "Synapse Personal Access Token")
 
 args <- parser$parse_args()
-genie_user <- args$syn_user
-genie_pass <- args$syn_pass
+auth_token <- args$auth_token
 release <- args$release
 template_path <- args$template_path
 suppressPackageStartupMessages(library(synapser))
@@ -28,7 +25,7 @@ suppressPackageStartupMessages(library(rmarkdown))
 tryCatch({
   synLogin()
 }, error = function(err) {
-  synLogin(genie_user, genie_pass)
+  synLogin(authToken=auth_token)
 })
 
 if (args$staging) {
@@ -51,8 +48,7 @@ if (args$staging) {
 rmarkdown_path = sprintf('%s.Rmd', release)
 file.copy(template_path, rmarkdown_path, overwrite = T)
 rmarkdown::render(rmarkdown_path,
-                  params = list("genieUser" = genie_user,
-                                "geniePass" = genie_pass,
+                  params = list("auth_token" = auth_token,
                                 "database_synid_mappingid" = database_synid_mappingid,
                                 "release" = release))
 # Obtain release folder

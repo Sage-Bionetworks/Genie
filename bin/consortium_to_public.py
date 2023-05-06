@@ -18,9 +18,7 @@ PWD = os.path.dirname(os.path.abspath(__file__))
 
 
 # TODO: Move to genie.database_to_staging.py
-def generate_dashboard_html(
-    genie_version, staging=False, genie_user=None, genie_pass=None
-):
+def generate_dashboard_html(genie_version, staging=False):
     """Generates dashboard html writeout that gets uploaded to the
     release folder
 
@@ -39,22 +37,13 @@ def generate_dashboard_html(
         "--template_path",
         os.path.join(PWD, "../templates/dashboardTemplate.Rmd"),
     ]
-
-    if genie_user is not None and genie_pass is not None:
-        markdown_render_cmd.extend(["--syn_user", genie_user, "--syn_pass", genie_pass])
     if staging:
         markdown_render_cmd.append("--staging")
     subprocess.check_call(markdown_render_cmd)
 
 
 # TODO: Move to genie.database_to_staging.py
-def generate_data_guide(
-    genie_version,
-    oncotree_version=None,
-    database_mapping=None,
-    genie_user=None,
-    genie_pass=None,
-):
+def generate_data_guide(genie_version, oncotree_version=None, database_mapping=None):
     """Generates the GENIE data guide"""
 
     template_path = os.path.join(PWD, "../templates/data_guide_template.Rnw")
@@ -65,8 +54,6 @@ def generate_data_guide(
         "{{release}}": genie_version,
         "{{database_synid}}": database_mapping,
         "{{oncotree}}": oncotree_version.replace("_", "\\_"),
-        "{{username}}": genie_user,
-        "{{password}}": genie_pass,
         "{{genie_banner}}": os.path.join(PWD, "../genie_banner.png"),
     }
 
@@ -216,12 +203,7 @@ def main(args):
         dashboard_table_updater.run_dashboard(
             syn, databaseSynIdMappingDf, args.genieVersion, staging=args.staging
         )
-        generate_dashboard_html(
-            args.genieVersion,
-            staging=args.staging,
-            genie_user=genie_user,
-            genie_pass=genie_pass,
-        )
+        generate_dashboard_html(args.genieVersion, staging=args.staging)
         logger.info("DASHBOARD UPDATE COMPLETE")
         logger.info("AUTO GENERATE DATA GUIDE")
 
@@ -236,8 +218,6 @@ def main(args):
         args.genieVersion,
         oncotree_version=oncotree_version,
         database_mapping=databaseSynIdMappingId,
-        genie_user=genie_user,
-        genie_pass=genie_pass,
     )
     data_guide_ent = synapseclient.File(
         data_guide_pdf, parent=folders["release_folder"]

@@ -5,13 +5,12 @@ parser <- ArgumentParser()
 parser$add_argument("--testing",
                     action = "store_true",
                     help = "Use testing files")
-parser$add_argument("--syn_user",
-                    help = "Synapse username")
+parser$add_argument("--auth_token",
+                    help = "Synapse Personal Access Token")
 parser$add_argument("--syn_pass",
                     help = "Synapse password")
 args <- parser$parse_args()
-genie_user <- args$syn_user
-genie_pass <- args$syn_pass
+auth_token <- args$auth_token
 testing <- args$testing
 
 library(synapser)
@@ -38,9 +37,7 @@ source(file.path(working_dir, "test_flag_variants.R"))
 tryCatch({
   synLogin()
 }, error = function(err) {
-  #genieUser = Sys.getenv("GENIE_USER")
-  #geniePass = Sys.getenv("GENIE_PASS")
-  synLogin(genie_user, genie_pass)
+  synLogin(authToken=auth_token)
 })
 
 # limits

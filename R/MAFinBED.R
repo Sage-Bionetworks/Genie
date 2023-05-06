@@ -2,11 +2,9 @@ library(argparse)
 parser <- ArgumentParser()
 parser$add_argument("filepath", help = "Filepath to write variants")
 parser$add_argument("--testing", action = "store_true", help = "Use testing files")
-parser$add_argument("--syn_user", help = "Synapse username")
-parser$add_argument("--syn_pass", help = "Synapse password")
+parser$add_argument("--auth_token", help = "Synapse Personal Access token")
 args <- parser$parse_args()
-genie_user <- args$syn_user
-genie_pass <- args$syn_pass
+auth_token <- args$auth_token
 testing <- args$testing
 filepath <- args$filepath
 
@@ -24,9 +22,7 @@ library(VariantAnnotation)
 tryCatch({
   synLogin()# set user and password
 }, error = function(err) {
-  #genieUser = Sys.getenv("GENIE_USER")
-  #geniePass = Sys.getenv("GENIE_PASS")
-  synLogin(genie_user, genie_pass)
+  synLogin(authToken=auth_token)
 })
 #testing = as.logical(args[1])
 if (testing) {

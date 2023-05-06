@@ -650,7 +650,7 @@ def store_sv_files(
     synid: str,
     keep_for_center_consortium_samples: List[str],
     keep_for_merged_consortium_samples: List[str],
-    current_release_staging: str,
+    current_release_staging: bool,
     center_mappingdf: pd.DataFrame,
 ):
     """
@@ -834,8 +834,6 @@ def store_maf_files(
 # TODO: Add to transform.py
 def run_genie_filters(
     syn,
-    genie_user,
-    genie_pass,
     genie_version,
     variant_filtering_synId,
     clinicaldf,
@@ -851,8 +849,6 @@ def run_genie_filters(
 
     Args:
         syn: Synapse object
-        genie_user: Synapse username
-        genie_pass: Synapse password
         genie_version: GENIE version (ie. v6.1-consortium)
         variant_filtering_synId: Synapse id of mutationInCis table
         clinicaldf: Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID
@@ -1472,8 +1468,6 @@ def stagingToCbio(
     current_release_staging=False,
     skipMutationsInCis=False,
     test=False,
-    genie_user=None,
-    genie_pass=None,
 ):
     """
     Main function that takes the GENIE database and creates release files
@@ -1591,8 +1585,6 @@ def stagingToCbio(
         flagged_mutationInCis_variants,
     ) = run_genie_filters(
         syn,
-        genie_user,
-        genie_pass,
         genieVersion,
         variant_filtering_synId,
         clinicalDf,
