@@ -4,8 +4,6 @@ output: html_document
 #    toc: true
 #    toc_depth: 3
 params:
-  auth_token:
-    value: x
   database_synid_mappingid:
     value: x
   release:
