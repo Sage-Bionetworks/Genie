@@ -4,33 +4,11 @@
 import argparse
 import logging
 
-import synapseclient
-
-from . import create_case_lists, validate, write_invalid_reasons
+from . import create_case_lists, process_functions, validate, write_invalid_reasons
 from . import __version__
 
 
 logger = logging.getLogger(__name__)
-
-
-def synapse_login(username=None, password=None):
-    """
-    This function logs into synapse for you if credentials are saved.
-    If not saved, then user is prompted username and password.
-
-    :returns:     Synapseclient object
-    """
-    try:
-        syn = synapseclient.login(silent=True)
-    except Exception:
-        if username is None and password is None:
-            raise ValueError(
-                "Please specify --syn_user, --syn_pass to specify your Synapse "
-                "login. Please view https://docs.synapse.org/articles/client_configuration.html"
-                "to learn about logging into Synapse via the Python client."
-            )
-        syn = synapseclient.login(email=username, password=password, silent=True)
-    return syn
 
 
 def perform_create_case_list(syn, args):
@@ -60,9 +38,7 @@ def perform_get_file_errors(syn, args):
 def build_parser():
     parser = argparse.ArgumentParser(description="GENIE processing")
 
-    parser.add_argument("--syn_user", type=str, help="Synapse username")
-
-    parser.add_argument("--syn_pass", type=str, help="Synapse password")
+    parser.add_argument("--auth_token", type=str, help="Synapse Personal Access Token")
 
     parser.add_argument(
         "-v", "--version", action="version", version=f"genie {__version__}"
@@ -171,7 +147,7 @@ def build_parser():
 def main():
     """Invoke"""
     args = build_parser().parse_args()
-    syn = synapse_login(args.syn_user, args.syn_pass)
+    syn = process_functions.synapse_login(auth_token=args.auth_token)
     # func has to match the set_defaults
     args.func(syn, args)
 

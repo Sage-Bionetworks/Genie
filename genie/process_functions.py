@@ -5,14 +5,15 @@ import logging
 import os
 import requests
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-import tempfile
-import time
-from typing import List
 
-import ast
-from Crypto.Cipher import PKCS1_OAEP
-from Crypto.PublicKey import RSA
+# import tempfile
+import time
+from typing import Optional
+from urllib3.util import Retry
+
+# import ast
+# from Crypto.Cipher import PKCS1_OAEP
+# from Crypto.PublicKey import RSA
 import pandas as pd
 import synapseclient  # lgtm [py/import-and-import-from]
 from synapseclient import Synapse
@@ -676,83 +677,113 @@ def getPrimary(code, oncotreeDict, primary):
 #       geniepem_f.write(key.exportKey(format='PEM'))
 
 
-def read_key(pemfile_path):
+# def read_key(pemfile_path):
+#     """
+#     Obtain key from pemfile
+
+#     Args:
+#         pemfile_path:  Path to pemfile
+
+#     Returns:
+#         RSA key
+#     """
+#     with open(pemfile_path, "r") as pemfile_f:
+#         key = RSA.importKey(pemfile_f.read())
+#     return key
+
+
+# def decrypt_message(message, key):
+#     """
+#     Decrypt message with a pem key from
+#     func read_key
+
+#     Args:
+#         message: Encrypted message
+#         key: read_key returned key
+
+#     Returns:
+#         Decrypted message
+#     """
+#     # Use module Crypto.Cipher.PKCS1_OAEP instead
+#     decryptor = PKCS1_OAEP.new(key)
+#     decrypted = decryptor.decrypt(ast.literal_eval(str(message)))
+#     return decrypted.decode("utf-8")
+
+
+# def get_password(pemfile_path):
+#     """
+#     Get password using pemfile
+
+#     Args:
+#         pemfile_path: Path to pem file
+
+#     Return:
+#         Password
+#     """
+#     if not os.path.exists(pemfile_path):
+#         raise ValueError(
+#             "Path to pemFile must be specified if there " "is no cached credentials"
+#         )
+#     key = read_key(pemfile_path)
+#     genie_pass = decrypt_message(os.environ["GENIE_PASS"], key)
+#     return genie_pass
+
+
+# def synLogin(pemfile_path, debug=False):
+#     """
+#     Use pem file to log into synapse if credentials aren't cached
+
+#     Args:
+#         pemfile_path: Path to pem file
+#         debug: Synapse debug feature.  Defaults to False
+
+#     Returns:
+#         Synapse object logged in
+#     """
+#     try:
+#         syn = synapseclient.Synapse(debug=debug)
+#         # Get auth token via scheduled job secrets
+#         if os.getenv("SCHEDULED_JOB_SECRETS") is not None:
+#             secrets = json.loads(os.getenv("SCHEDULED_JOB_SECRETS"))
+#             auth_token = secrets["SYNAPSE_AUTH_TOKEN"]
+#         else:
+#             auth_token = None
+#         syn.login(authToken=auth_token)
+#     except Exception:
+#         # TODO: deprecate this feature soon
+#         genie_pass = get_password(pemfile_path)
+#         syn = synapseclient.Synapse(debug=debug)
+#         syn.login(os.environ["GENIE_USER"], genie_pass)
+#     return syn
+
+
+def synapse_login(
+    auth_token: Optional[str] = None, debug: Optional[bool] = False
+) -> Synapse:
     """
-    Obtain key from pemfile
+    This function logs into synapse for you if credentials are saved.
+    If not saved, then user is prompted username and password.
 
     Args:
-        pemfile_path:  Path to pemfile
+        auth_token: Synapse personal access token
+        debug: Synapse debug feature. Defaults to False
 
     Returns:
-        RSA key
+        Synapseclient object
     """
-    with open(pemfile_path, "r") as pemfile_f:
-        key = RSA.importKey(pemfile_f.read())
-    return key
-
-
-def decrypt_message(message, key):
-    """
-    Decrypt message with a pem key from
-    func read_key
-
-    Args:
-        message: Encrypted message
-        key: read_key returned key
-
-    Returns:
-        Decrypted message
-    """
-    # Use module Crypto.Cipher.PKCS1_OAEP instead
-    decryptor = PKCS1_OAEP.new(key)
-    decrypted = decryptor.decrypt(ast.literal_eval(str(message)))
-    return decrypted.decode("utf-8")
-
-
-def get_password(pemfile_path):
-    """
-    Get password using pemfile
-
-    Args:
-        pemfile_path: Path to pem file
-
-    Return:
-        Password
-    """
-    if not os.path.exists(pemfile_path):
-        raise ValueError(
-            "Path to pemFile must be specified if there " "is no cached credentials"
-        )
-    key = read_key(pemfile_path)
-    genie_pass = decrypt_message(os.environ["GENIE_PASS"], key)
-    return genie_pass
-
-
-def synLogin(pemfile_path, debug=False):
-    """
-    Use pem file to log into synapse if credentials aren't cached
-
-    Args:
-        pemfile_path: Path to pem file
-        debug: Synapse debug feature.  Defaults to False
-
-    Returns:
-        Synapse object logged in
-    """
+    # If debug is True, then silent should be False
+    silent = False if debug else False
+    syn = synapseclient.Synapse(debug=debug, silent=silent)
     try:
-        syn = synapseclient.Synapse(debug=debug)
-        # Get auth token via scheduled job secrets
-        if os.getenv("SCHEDULED_JOB_SECRETS") is not None:
-            secrets = json.loads(os.getenv("SCHEDULED_JOB_SECRETS"))
-            auth_token = secrets["SYNAPSE_AUTH_TOKEN"]
-        else:
-            auth_token = None
-        syn.login(authToken=auth_token)
+        syn = synapseclient.login(silent=True)
     except Exception:
-        # TODO: deprecate this feature soon
-        genie_pass = get_password(pemfile_path)
-        syn = synapseclient.Synapse(debug=debug)
-        syn.login(os.environ["GENIE_USER"], genie_pass)
+        if auth_token is None:
+            raise ValueError(
+                "Please specify --auth_token to specify your Synapse "
+                "login. Please view https://help.synapse.org/docs/Client-Configuration.1985446156.html"
+                "to learn about logging into Synapse via the Python client."
+            )
+        syn = synapseclient.login(authToken=auth_token)
     return syn
 
 

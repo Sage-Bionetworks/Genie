@@ -92,7 +92,6 @@ def main(
     cbioportal_path,
     oncotree_link=None,
     consortium_release_cutoff=184,
-    pemfile=None,
     test=False,
     staging=False,
     debug=False,
@@ -115,7 +114,6 @@ def main(
         cbioportal_path: Path to cbioportal validator
         oncotree_link: Link to oncotree codes
         consortium_release_cutoff: release cut off value in days
-        pemfile: Path to private key file
         test: Test flag, uses test databases
         staging: Staging flag, uses staging databases
         debug:  Synapse debug flag
@@ -124,12 +122,7 @@ def main(
     # HACK: Delete all existing files first
     process_functions.rmFiles(database_to_staging.GENIE_RELEASE_DIR)
 
-    syn = process_functions.synLogin(pemfile, debug=debug)
-    genie_user = os.environ.get("GENIE_USER")
-    if pemfile is not None:
-        genie_pass = process_functions.get_password(pemfile)
-    else:
-        genie_pass = None
+    syn = process_functions.synapse_login(debug=debug)
     # HACK: Use project id instead of this...
     if test:
         databaseSynIdMappingId = "syn11600968"
@@ -395,7 +388,6 @@ if __name__ == "__main__":
         cbioportal_path=args.cbioportalPath,
         oncotree_link=args.oncotree_link,
         consortium_release_cutoff=args.consortiumReleaseCutOff,
-        pemfile=args.pemFile,
         test=args.test,
         staging=args.staging,
         debug=args.debug,

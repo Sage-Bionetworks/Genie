@@ -103,12 +103,7 @@ def main(args):
             "Process date must be in the format " "abbreviated_month-YEAR ie. Oct-2017"
         )
 
-    syn = process_functions.synLogin(args.pemFile, debug=args.debug)
-    genie_user = os.environ.get("GENIE_USER")
-    if args.pemFile is not None:
-        genie_pass = process_functions.get_password(args.pemFile)
-    else:
-        genie_pass = None
+    syn = process_functions.synapse_login(debug=args.debug)
 
     # Get all the possible public releases
     # Get configuration
@@ -282,9 +277,6 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--test", action="store_true", help="Store into staging folder")
-
-    parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
-
     parser.add_argument("--debug", action="store_true", help="Synapse debug feature")
     args = parser.parse_args()
     main(args)
