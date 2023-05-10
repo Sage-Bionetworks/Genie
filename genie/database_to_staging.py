@@ -344,12 +344,7 @@ def calculate_missing_variant_counts(
 
 
 # TODO: Add to transform.py
-def runMAFinBED(
-    syn,
-    center_mappingdf,
-    test=False,
-    genieVersion="test"
-):
+def runMAFinBED(syn, center_mappingdf, test=False, genieVersion="test"):
     """
     Run MAF in BED script, filter data and update MAFinBED database
 
@@ -455,7 +450,7 @@ def mutation_in_cis_filter(
     variant_filtering_synId,
     center_mappingdf,
     genieVersion,
-    test=False
+    test=False,
 ):
     """
     Run mutation in cis filter, look up samples to remove
@@ -860,10 +855,7 @@ def run_genie_filters(
     # FILTERING
     logger.info("MAF IN BED FILTER")
     remove_mafinbed_variants = runMAFinBED(
-        syn,
-        center_mappingdf,
-        test=test,
-        genieVersion=genie_version
+        syn, center_mappingdf, test=test, genieVersion=genie_version
     )
 
     logger.info("MUTATION IN CIS FILTER")
@@ -876,7 +868,7 @@ def run_genie_filters(
         variant_filtering_synId,
         center_mappingdf,
         genieVersion=genie_version,
-        test=test
+        test=test,
     )
     remove_no_genepanel_samples = no_genepanel_filter(clinicaldf, beddf)
 
