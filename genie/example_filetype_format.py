@@ -66,7 +66,7 @@ class FileTypeFormat(metaclass=ABCMeta):
         Args:
             syn: a synapseclient.Synapse object
             center: The participating center name.
-            genie_config: The configurations needed for the GENIE codebase. 
+            genie_config: The configurations needed for the GENIE codebase.
                 GENIE table type/name to Synapse Id. Defaults to None.
             ancillary_files: all files downloaded for validation. Defaults to None.
         """

@@ -191,7 +191,7 @@ def validatefile(
         format_registry (typing.List, optional): GENIE file format registry.
                                                  Defaults to None.
         genie_config (typing.Dict, optional): See example of genie config at
-                                              ./genie_config.json. Defaults to None.              
+                                              ./genie_config.json. Defaults to None.
         ancillary_files: all files downloaded for validation
 
     Returns:
