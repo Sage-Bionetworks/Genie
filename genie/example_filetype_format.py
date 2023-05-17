@@ -4,6 +4,7 @@ This contains the GENIE model objects
 from abc import ABCMeta
 import logging
 import os
+from typing import List, Optional
 
 import pandas as pd
 
@@ -13,13 +14,15 @@ logger = logging.getLogger(__name__)
 class ValidationResults:
     """Validation results"""
 
-    def __init__(self, errors: str, warnings: str, detailed: str = None) -> None:
+    def __init__(
+        self, errors: str, warnings: str, detailed: Optional[str] = None
+    ) -> None:
         """
         Args:
             errors (str): errors for the file
             warnings (str): warning for the file
-            detailed_errors (pd.DataFrame, optional): Dataframe of detailed row based
-                                                      error messages. Defaults to None.
+            detailed (pd.DataFrame, optional): Dataframe of detailed row based
+                                               error messages. Defaults to None.
         """
         self.errors = errors
         self.warnings = warnings
@@ -58,7 +61,7 @@ class FileTypeFormat(metaclass=ABCMeta):
 
     _fileType = "fileType"
 
-    _validation_kwargs = []
+    _validation_kwargs: List[str] = []
 
     def __init__(self, syn, center, genie_config=None):
         self.syn = syn
