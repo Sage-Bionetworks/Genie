@@ -129,13 +129,11 @@ def update_cumulative_sample_table(
     clinical_counts["Total"] = sum(clinical_counts)
     clinical_counts.name = "Clinical"
 
-    fusion_ent = syn.get(file_mapping["fusion"], followLink=True)
-    fusiondf = pd.read_csv(fusion_ent.path, sep="\t", comment="#")
-    fusiondf.columns = [i.upper() for i in fusiondf.columns]
-    fusion_counts = fusiondf["CENTER"][
-        ~fusiondf["TUMOR_SAMPLE_BARCODE"].duplicated()
-    ].value_counts()
-    fusion_counts["Total"] = sum(fusion_counts)
+    sv_ent = syn.get(file_mapping["sv"], followLink=True)
+    sv_df = pd.read_csv(sv_ent.path, sep="\t", comment="#")
+    sv_df.columns = [col.upper() for col in sv_df.columns]
+    sv_counts = sv_df["CENTER"][~sv_df["SAMPLE_ID"].duplicated()].value_counts()
+    sv_counts["Total"] = sum(sv_counts)
 
     cna_ent = syn.get(file_mapping["cna"], followLink=True)
     cnadf = pd.read_csv(cna_ent.path, sep="\t", comment="#")
@@ -151,7 +149,7 @@ def update_cumulative_sample_table(
     seg_counts["Total"] = sum(seg_counts)
 
     total_counts = pd.DataFrame(clinical_counts)
-    total_counts["Fusions"] = fusion_counts
+    total_counts["Fusions"] = sv_counts
     total_counts["CNV"] = cna_counts
     total_counts["Mutation"] = clinical_counts
     total_counts["SEG"] = seg_counts
@@ -236,11 +234,9 @@ def update_database_numbers(syn, database_mappingdf):
     clinincal_counts = clinicaldf["CENTER"].value_counts()
     clinincal_counts["Total"] = sum(clinincal_counts)
     clinincal_counts.name = "Clinical"
-    fusiondf = extract.get_syntabledf(syn=syn, query_string="select * from syn7893268")
-    fusion_counts = fusiondf["CENTER"][
-        ~fusiondf["TUMOR_SAMPLE_BARCODE"].duplicated()
-    ].value_counts()
-    fusion_counts["Total"] = sum(fusion_counts)
+    sv_df = extract.get_syntabledf(syn=syn, query_string="select * from syn30891574")
+    sv_counts = sv_df["CENTER"][~sv_df["SAMPLE_ID"].duplicated()].value_counts()
+    sv_counts["Total"] = sum(sv_counts)
 
     center_flat_files = syn.getChildren("syn12278118")
     cna_file_paths = [
@@ -263,7 +259,7 @@ def update_database_numbers(syn, database_mappingdf):
     seg_counts["Total"] = sum(seg_counts)
 
     db_counts = pd.DataFrame(clinincal_counts)
-    db_counts["Fusions"] = fusion_counts
+    db_counts["Fusions"] = sv_counts
     db_counts["CNV"] = cna_counts
     db_counts["Mutation"] = clinincal_counts
     db_counts["SEG"] = seg_counts
@@ -828,8 +824,6 @@ def main():
         "--release", help="GENIE release number (ie. 5.3-consortium)", default=None
     )
 
-    parser.add_argument("--pem_file", type=str, help="Path to PEM file (genie.pem)")
-
     parser.add_argument(
         "--staging", action="store_true", help="Using staging directory files"
     )
@@ -841,7 +835,7 @@ def main():
     )
 
     args = parser.parse_args()
-    syn = process_functions.synLogin(args)
+    syn = process_functions.synapse_login(debug=args.debug)
     if args.staging:
         # Database to Synapse Id mapping Table
         # TODO: use project ids instead of table ids

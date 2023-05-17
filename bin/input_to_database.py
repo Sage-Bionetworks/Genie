@@ -21,7 +21,6 @@ def main(
     process: str,
     project_id: str,
     center=None,
-    pemfile=None,
     delete_old=False,
     only_validate=False,
     oncotree_link=None,
@@ -36,7 +35,6 @@ def main(
         process (str): main or mutation processing
         project_id (str): Synapse project id that houses GENIE project
         center (str, optional): GENIE center. Defaults to None.
-        pemfile (str, optional): Path to private key. Defaults to None.
         delete_old (bool, optional): True to delete all old input/processed files.
                                      Defaults to False.
         only_validate (bool, optional): True if only validate files. Defaults to False.
@@ -54,7 +52,7 @@ def main(
         Exception: If processing is already happening.
     """
 
-    syn = process_functions.synLogin(pemfile, debug=debug)
+    syn = process_functions.synapse_login(debug=debug)
 
     # Get project GENIE configurations
     genie_config = extract.get_genie_config(syn=syn, project_id=project_id)
@@ -160,7 +158,6 @@ if __name__ == "__main__":
         "--project_id", help="Synapse Project ID where data is stored.", required=True
     )
     parser.add_argument("--center", help="The centers")
-    parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
     parser.add_argument(
         "--deleteOld",
         action="store_true",
@@ -195,7 +192,6 @@ if __name__ == "__main__":
         args.process,
         project_id=args.project_id,
         center=args.center,
-        pemfile=args.pemFile,
         delete_old=args.deleteOld,
         only_validate=args.onlyValidate,
         oncotree_link=args.oncotree_link,

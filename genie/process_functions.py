@@ -3,25 +3,18 @@ import datetime
 import json
 import logging
 import os
-import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
 import time
+from typing import Optional
 
-import ast
-from Crypto.Cipher import PKCS1_OAEP
-from Crypto.PublicKey import RSA
 import pandas as pd
-import synapseclient  # lgtm [py/import-and-import-from]
+import requests
+import synapseclient
+from requests.adapters import HTTPAdapter
 from synapseclient import Synapse
+from urllib3.util import Retry
 
 from genie import extract
 
-# try:
-#   from urllib.request import urlopen
-# except ImportError:
-#   from urllib2 import urlopen
-# Ignore SettingWithCopyWarning warning
 pd.options.mode.chained_assignment = None
 
 logger = logging.getLogger(__name__)
@@ -658,99 +651,28 @@ def getPrimary(code, oncotreeDict, primary):
     return toAdd
 
 
-# def create_key():
-#   from Crypto.PublicKey import RSA
-#   from Crypto import Random
-#   from Crypto.Cipher import PKCS1_OAEP
-#
-#   random_generator = Random.new().read
-#   generate public and private keys
-#   key = RSA.generate(1024, random_generator)
-#   key_cryptor = PKCS1_OAEP.new(key)
-#   encrypted = key_cryptor.encrypt(geniePassword)
-#   #message to encrypt is in the above line 'encrypt this message'
-#   decrypted = key_cryptor.decrypt(encrypted)
-#   with open("genie.pem","wb") as geniepem_f:
-#       geniepem_f.write(key.exportKey(format='PEM'))
-
-
-def read_key(pemfile_path):
+def synapse_login(debug: Optional[bool] = False) -> Synapse:
     """
-    Obtain key from pemfile
+    Logs into Synapse if credentials are saved.
+    If not saved, then user is prompted username and auth token.
 
     Args:
-        pemfile_path:  Path to pemfile
+        debug: Synapse debug feature. Defaults to False
 
     Returns:
-        RSA key
+        Synapseclient object
     """
-    with open(pemfile_path, "r") as pemfile_f:
-        key = RSA.importKey(pemfile_f.read())
-    return key
-
-
-def decrypt_message(message, key):
-    """
-    Decrypt message with a pem key from
-    func read_key
-
-    Args:
-        message: Encrypted message
-        key: read_key returned key
-
-    Returns:
-        Decrypted message
-    """
-    # Use module Crypto.Cipher.PKCS1_OAEP instead
-    decryptor = PKCS1_OAEP.new(key)
-    decrypted = decryptor.decrypt(ast.literal_eval(str(message)))
-    return decrypted.decode("utf-8")
-
-
-def get_password(pemfile_path):
-    """
-    Get password using pemfile
-
-    Args:
-        pemfile_path: Path to pem file
-
-    Return:
-        Password
-    """
-    if not os.path.exists(pemfile_path):
-        raise ValueError(
-            "Path to pemFile must be specified if there " "is no cached credentials"
-        )
-    key = read_key(pemfile_path)
-    genie_pass = decrypt_message(os.environ["GENIE_PASS"], key)
-    return genie_pass
-
-
-def synLogin(pemfile_path, debug=False):
-    """
-    Use pem file to log into synapse if credentials aren't cached
-
-    Args:
-        pemfile_path: Path to pem file
-        debug: Synapse debug feature.  Defaults to False
-
-    Returns:
-        Synapse object logged in
-    """
+    # If debug is True, then silent should be False
+    silent = False if debug else False
+    syn = synapseclient.Synapse(debug=debug, silent=silent)
     try:
-        syn = synapseclient.Synapse(debug=debug)
-        # Get auth token via scheduled job secrets
-        if os.getenv("SCHEDULED_JOB_SECRETS") is not None:
-            secrets = json.loads(os.getenv("SCHEDULED_JOB_SECRETS"))
-            auth_token = secrets["SYNAPSE_AUTH_TOKEN"]
-        else:
-            auth_token = None
-        syn.login(authToken=auth_token)
+        syn.login()
     except Exception:
-        # TODO: deprecate this feature soon
-        genie_pass = get_password(pemfile_path)
-        syn = synapseclient.Synapse(debug=debug)
-        syn.login(os.environ["GENIE_USER"], genie_pass)
+        raise ValueError(
+            "Please view https://help.synapse.org/docs/Client-Configuration.1985446156.html"
+            "to configure authentication to the client.  Configure a ~/.synapseConfig"
+            "or set the SYNAPSE_AUTH_TOKEN environmental variable."
+        )
     return syn
 
 

@@ -6,7 +6,7 @@ import logging
 import os
 import time
 import tempfile
-from typing import Dict, List
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
 import synapseclient
@@ -22,10 +22,10 @@ def store_file(
     syn: synapseclient.Synapse,
     filepath: str,
     parentid: str,
-    name: str = None,
-    annotations: Dict = None,
-    used: List[str] = None,
-    version_comment: str = None,
+    name: Optional[str] = None,
+    annotations: Optional[Dict] = None,
+    used: Optional[Union[List[str], str]] = None,
+    version_comment: Optional[str] = None,
 ) -> synapseclient.File:
     """Stores file into Synapse
 

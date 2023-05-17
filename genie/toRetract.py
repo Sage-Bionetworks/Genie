@@ -90,11 +90,10 @@ def main():
     Main block with argparse and calls the main retract function
     """
     parser = argparse.ArgumentParser(description="Sample retraction")
-    parser.add_argument("--pemFile", type=str, help="Path to PEM file (genie.pem)")
     parser.add_argument("--project_id", type=str, help="Synapse Project ID to use.")
     parser.add_argument("--debug", action="store_true", help="Synapse Debug Feature")
     args = parser.parse_args()
-    syn = process_functions.synLogin(args.pemFile, debug=args.debug)
+    syn = process_functions.synapse_login(debug=args.debug)
     retract(syn, args.project_id)
 
 

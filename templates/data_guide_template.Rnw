@@ -104,13 +104,7 @@ get_list_assay_info_table <- function(allowed_values, assayinfodf, col) {
   col_per_panel
 }
 
-tryCatch({
-  synLogin()
-}, error = function(err) {
-  genie_user = "{{username}}"
-  genie_pass = "{{password}}"
-  synLogin(genie_user, genie_pass)
-})
+synLogin()
 
 #database_synid_mappingid = 'syn10967259'
 database_synid_mappingid = "{{database_synid}}"
@@ -372,7 +366,7 @@ The resulting MAF was filtered by the gnomAD allele frequency (AF) columns.  If 
 \section*{Description of Data Files}
 
 
-Description on most of the data files can be found under the "Data files" section for \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats}{cBioPortal file formats}.
+Description on most of the data files can be found under the "Data files" section for \href{https://docs.cbioportal.org/file-formats/}{cBioPortal file formats}.
 
 
 \begin{center}
@@ -381,19 +375,19 @@ Description on most of the data files can be found under the "Data files" sectio
   \hline
 File Name & Description & Details \\
   \hline
-data\_mutations\_extended.txt & Mutation data & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#mutation-data}{MAF format} \\
+data\_mutations\_extended.txt & Mutation data & \href{https://docs.cbioportal.org/file-formats/#mutation-data}{MAF format} \\
    \hline
-data\_CNA.txt & Discritized copy number data.  \newline Note: Not all centers contributed copy number data to GENIE. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#discrete-copy-number-data}{CNA format} \\
+data\_CNA.txt & Discritized copy number data.  \newline Note: Not all centers contributed copy number data to GENIE. & \href{https://docs.cbioportal.org/file-formats/#discrete-copy-number-data}{CNA format} \\
    \hline
-data\_fusions.txt & Structural variant data. \newline Note: not all centers contributed structural rearrangement data to GENIE. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#fusion-data}{Fusion format} \\
+data\_sv.txt & Structural variant data. \newline Note: not all centers contributed structural rearrangement data to GENIE. & \href{https://docs.cbioportal.org/file-formats/#structural-variant-data}{SV format} \\
    \hline
 genomic\_information.txt &  File describing genomic coordinates covered by all platforms for GENIE data.  \newline Note: Not all centers contributed copy number data to GENIE. & This is not a cBioPortal file format. \newline \textbf{Chromosome}, \textbf{Start\_Position}, \textbf{End\_Position}: Gene positions. \newline \textbf{Hugo\_Symbol}: Re-mapped gene symbol based on gene positions. \textbf{ID}: Center submitted gene symbols. \newline \textbf{SEQ\_ASSAY\_ID}: The institutional assay identifier for genomic testing platform. \newline \textbf{Feature\_Type}: "exon", "intron", or "intergenic". \newline \textbf{includeInPanel}: Used to define gene panel files for cBioPortal. \newline \textbf{clinicalReported}: These are the genes that were clinically Reported. Blank means information not provided.\\
    \hline
 assay\_information.txt & Assay information & This is not a cBioPortal file format. \newline \textbf{is\_paried\_end}, \textbf{library\_selection}, , \textbf{library\_strategy}, \textbf{platform}, \textbf{read\_length}, \textbf{target\_capture\_kit}, \textbf{instrument\_model}: defined by \href{https://docs.gdc.cancer.gov/Data\_Dictionary/viewer/#?view=table-definition-view&id=read\_group}{GDC read group} \newline \textbf{number\_of\_genes}: Number of genes from which variants are called \newline \textbf{variant\_classifications}: List of types of variants that are reported for this assay. \newline \textbf{gene\_padding}: Number of basepairs to add to exon endpoints for the inBED filter.  \newline \textbf{alteration\_types}: List of alteration types. \newline \textbf{specimen\_type}: List of specimen types \newline \textbf{specimen\_tumor\_cellularity}: Tumor Cellularity Cutoff \newline \textbf{calling\_strategy}: Yumor only or tumor normal \newline \textbf{coverage}: List of coverage \\
    \hline
-genie\_data\_cna\_hg19.seg  & Segmented copy number data.  \newline Note: Not all centers contributed copy number data to GENIE. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#segmented-data}{SEG format} \\
+data\_cna\_hg19.seg  & Segmented copy number data.  \newline Note: Not all centers contributed copy number data to GENIE. & \href{https://docs.cbioportal.org/file-formats/#segmented-data}{SEG format} \\
    \hline
-data\_clinical.txt & De-identified tier 1 clinical data. & \href{https://docs.cbioportal.org/5.1-data-loading/data-loading/file-formats#clinical-data}{clinical format}. See Clinical Data section below for more details. \\
+data\_clinical.txt & De-identified tier 1 clinical data. & \href{https://docs.cbioportal.org/file-formats/#clinical-data}{clinical format}. See Clinical Data section below for more details. \\
    \hline
 \end{longtable}
 \end{center}
