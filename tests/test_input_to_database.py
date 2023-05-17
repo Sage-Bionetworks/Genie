@@ -13,6 +13,7 @@ from genie import (
     extract,
     load,
     process_mutation,
+    validate,
 )
 from genie_registry.clinical import Clinical
 from genie.validate import GenieValidationHelper
@@ -395,6 +396,7 @@ def test_valid_validatefile(syn, genie_config):
             error_trackerdf,
             center,
             genie_config=genie_config,
+            ancillary_files=entities,
         )
 
         assert expected_results == validate_results
@@ -961,6 +963,7 @@ class TestValidation:
                 center="SAGE",
                 format_registry={"test": valiate_cls},
                 genie_config=genie_config,
+                ancillary_files=entities,
             )
 
             assert valid_filedf.equals(

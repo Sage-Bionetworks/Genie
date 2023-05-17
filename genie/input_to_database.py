@@ -175,6 +175,7 @@ def validatefile(
     center,
     format_registry=None,
     genie_config=None,
+    ancillary_files=None,
 ):
     """Validate a list of entities.
 
@@ -182,11 +183,16 @@ def validatefile(
 
     Args:
         syn: Synapse object
+        project_id (str): GENIE Synapse project id
         entities: A list of entities for a single file 'type' (usually a single file, but clinical can have two)
-        validation_statusdf: Validation status dataframe
-        error_trackerdf: Invalid files error tracking dataframe
+        validation_status_table: Validation status dataframe
+        error_tracker_table: Invalid files error tracking dataframe
         center: Center of interest
-        oncotree_link: Oncotree url
+        format_registry (typing.List, optional): GENIE file format registry.
+                                                 Defaults to None.
+        genie_config (typing.Dict, optional): See example of genie config at
+                                              ./genie_config.json. Defaults to None.              
+        ancillary_files: all files downloaded for validation
 
     Returns:
         tuple: input_status_list - status of input files,
@@ -221,6 +227,7 @@ def validatefile(
         entitylist=entities,
         format_registry=format_registry,
         genie_config=genie_config,
+        ancillary_files=ancillary_files,
     )
     filetype = validator.file_type
     if check_file_status["to_validate"]:
@@ -624,6 +631,7 @@ def validation(
             center=center,
             format_registry=format_registry,
             genie_config=genie_config,
+            ancillary_files=center_files,
         )
 
         input_valid_statuses.extend(status)
