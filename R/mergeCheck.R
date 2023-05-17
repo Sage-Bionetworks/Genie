@@ -99,7 +99,7 @@ for (center in centers) {
                                           mafSynId, querySamples),
                                   includeRowIdAndRowVersion = F)
     #genieMutTable = synTableQuery(sprintf("SELECT Center,Tumor_Sample_Barcode,Hugo_Symbol,HGVSp_Short,Variant_Classification,Chromosome,Start_Position,Reference_Allele,Tumor_Seq_Allele2,t_depth,t_alt_count,End_Position,Protein_position FROM %s where Tumor_Sample_Barcode in ('%s')", mafSynId, querySamples),includeRowIdAndRowVersion=F)
-    
+
     genieMutData = synapser::as.data.frame(genieMutTable)
     flag_variants_to_merge(genieMutData, genieClinData, samplesToRun, upload = TRUE)
     #write.csv(rbind(annotated_df[is.na(annotated_df$Flag),],new_rows), "Missing_variant_annotation.csv", row.names=F)

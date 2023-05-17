@@ -1488,9 +1488,6 @@ def stagingToCbio(
     variant_filtering_synId = databaseSynIdMappingDf["Id"][
         databaseSynIdMappingDf["Database"] == "mutationsInCis"
     ][0]
-    fusionSynId = databaseSynIdMappingDf["Id"][
-        databaseSynIdMappingDf["Database"] == "fusions"
-    ][0]
     sv_synid = databaseSynIdMappingDf["Id"][databaseSynIdMappingDf["Database"] == "sv"][
         0
     ]
