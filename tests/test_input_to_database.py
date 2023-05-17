@@ -13,7 +13,6 @@ from genie import (
     extract,
     load,
     process_mutation,
-    validate,
 )
 from genie_registry.clinical import Clinical
 from genie.validate import GenieValidationHelper
