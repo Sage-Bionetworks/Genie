@@ -4,10 +4,6 @@ output: html_document
 #    toc: true
 #    toc_depth: 3
 params:
-  genieUser:
-    value: x
-  geniePass:
-    value: x
   database_synid_mappingid:
     value: x
   release:
@@ -27,14 +23,7 @@ title: '`r release`'
 
 ```{r intro}
 suppressMessages(library(synapser))
-tryCatch({
-  foo = capture.output(synLogin())
-}, error = function(err) {
-  genieUser = params$genieUser
-  geniePass = params$geniePass
-  foo = capture.output(synLogin(genieUser, geniePass))
-})
-
+foo = capture.output(synLogin())
 suppressMessages(library(ggplot2))
 suppressMessages(library(UpSetR))
 suppressMessages(library(RColorBrewer))

@@ -104,13 +104,7 @@ get_list_assay_info_table <- function(allowed_values, assayinfodf, col) {
   col_per_panel
 }
 
-tryCatch({
-  synLogin()
-}, error = function(err) {
-  genie_user = "{{username}}"
-  genie_pass = "{{password}}"
-  synLogin(genie_user, genie_pass)
-})
+synLogin()
 
 #database_synid_mappingid = 'syn10967259'
 database_synid_mappingid = "{{database_synid}}"

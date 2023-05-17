@@ -5,13 +5,7 @@ parser <- ArgumentParser()
 parser$add_argument("--testing",
                     action = "store_true",
                     help = "Use testing files")
-parser$add_argument("--syn_user",
-                    help = "Synapse username")
-parser$add_argument("--syn_pass",
-                    help = "Synapse password")
 args <- parser$parse_args()
-genie_user <- args$syn_user
-genie_pass <- args$syn_pass
 testing <- args$testing
 
 library(synapser)
@@ -35,14 +29,7 @@ source(file.path(working_dir, "mergecheck_functions.R"))
 source(file.path(working_dir, "test_flag_variants.R"))
 
 # login to synapse
-tryCatch({
-  synLogin()
-}, error = function(err) {
-  #genieUser = Sys.getenv("GENIE_USER")
-  #geniePass = Sys.getenv("GENIE_PASS")
-  synLogin(genie_user, genie_pass)
-})
-
+synLogin()
 # limits
 variant_limit = 100000
 tbl_size_limit = 500

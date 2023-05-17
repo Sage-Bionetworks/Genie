@@ -344,14 +344,7 @@ def calculate_missing_variant_counts(
 
 
 # TODO: Add to transform.py
-def runMAFinBED(
-    syn,
-    center_mappingdf,
-    test=False,
-    genieVersion="test",
-    genie_user=None,
-    genie_pass=None,
-):
+def runMAFinBED(syn, center_mappingdf, test=False, genieVersion="test"):
     """
     Run MAF in BED script, filter data and update MAFinBED database
 
@@ -360,8 +353,6 @@ def runMAFinBED(
         center_mappingdf: center mapping dataframe
         test: Testing parameter. Default is False.
         genieVersion: GENIE version. Default is test.
-        genie_user: Synapse username. Default is None.
-        genie_pass: Synapse password.  Default is None.
 
     Returns:
         pd.Series: Variants to remove
@@ -372,8 +363,6 @@ def runMAFinBED(
     notinbed_file = os.path.join(script_dir, "../R/notinbed.csv")
     # The MAFinBED script filters out the centers that aren't being processed
     command = ["Rscript", mafinbed_script, notinbed_file]
-    if genie_user is not None and genie_pass is not None:
-        command.extend(["--syn_user", genie_user, "--syn_pass", genie_pass])
     if test:
         command.append("--testing")
     subprocess.check_call(command)
@@ -462,8 +451,6 @@ def mutation_in_cis_filter(
     center_mappingdf,
     genieVersion,
     test=False,
-    genie_user=None,
-    genie_pass=None,
 ):
     """
     Run mutation in cis filter, look up samples to remove
@@ -475,8 +462,6 @@ def mutation_in_cis_filter(
         center_mappingdf: center mapping dataframe
         genieVersion: GENIE version. Default is test.
         test: Testing parameter. Default is False.
-        genie_user: Synapse username. Default is None.
-        genie_pass: Synapse password.  Default is None.
 
     Returns:
         pd.Series: Samples to remove
@@ -486,9 +471,6 @@ def mutation_in_cis_filter(
             os.path.dirname(os.path.abspath(__file__)), "../R/mergeCheck.R"
         )
         command = ["Rscript", mergeCheck_script]
-        # TODO: deprecate genie password soon
-        if genie_user is not None and genie_pass is not None:
-            command.extend(["--syn_user", genie_user, "--syn_pass", genie_pass])
         if test:
             command.append("--testing")
         # TODO: use subprocess.run instead
@@ -650,7 +632,7 @@ def store_sv_files(
     synid: str,
     keep_for_center_consortium_samples: List[str],
     keep_for_merged_consortium_samples: List[str],
-    current_release_staging: str,
+    current_release_staging: bool,
     center_mappingdf: pd.DataFrame,
 ):
     """
@@ -834,8 +816,6 @@ def store_maf_files(
 # TODO: Add to transform.py
 def run_genie_filters(
     syn,
-    genie_user,
-    genie_pass,
     genie_version,
     variant_filtering_synId,
     clinicaldf,
@@ -851,8 +831,6 @@ def run_genie_filters(
 
     Args:
         syn: Synapse object
-        genie_user: Synapse username
-        genie_pass: Synapse password
         genie_version: GENIE version (ie. v6.1-consortium)
         variant_filtering_synId: Synapse id of mutationInCis table
         clinicaldf: Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID
@@ -877,12 +855,7 @@ def run_genie_filters(
     # FILTERING
     logger.info("MAF IN BED FILTER")
     remove_mafinbed_variants = runMAFinBED(
-        syn,
-        center_mappingdf,
-        test=test,
-        genieVersion=genie_version,
-        genie_user=genie_user,
-        genie_pass=genie_pass,
+        syn, center_mappingdf, test=test, genieVersion=genie_version
     )
 
     logger.info("MUTATION IN CIS FILTER")
@@ -896,8 +869,6 @@ def run_genie_filters(
         center_mappingdf,
         genieVersion=genie_version,
         test=test,
-        genie_user=genie_user,
-        genie_pass=genie_pass,
     )
     remove_no_genepanel_samples = no_genepanel_filter(clinicaldf, beddf)
 
@@ -1472,8 +1443,6 @@ def stagingToCbio(
     current_release_staging=False,
     skipMutationsInCis=False,
     test=False,
-    genie_user=None,
-    genie_pass=None,
 ):
     """
     Main function that takes the GENIE database and creates release files
@@ -1489,8 +1458,6 @@ def stagingToCbio(
         current_release_staging: Is it staging. Default is False.
         skipMutationsInCis: Skip mutation in cis filter. Default is False.
         test: Testing parameter. Default is False.
-        genie_user: Synapse username. Default is None.
-        genie_pass: Synapse password.  Default is None.
 
     Returns:
         list: Gene panel entities
@@ -1591,8 +1558,6 @@ def stagingToCbio(
         flagged_mutationInCis_variants,
     ) = run_genie_filters(
         syn,
-        genie_user,
-        genie_pass,
         genieVersion,
         variant_filtering_synId,
         clinicalDf,
