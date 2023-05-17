@@ -664,9 +664,9 @@ def store_sv_files(
             sv_df["SAMPLE_ID"].isin(keep_for_center_consortium_samples)
         ]
         for center in center_mappingdf.center:
-            center_fusion = sv_staging_df[sv_staging_df["CENTER"] == center]
-            if not center_fusion.empty:
-                center_fusion.to_csv(SV_CENTER_PATH % center, sep="\t", index=False)
+            center_sv = sv_staging_df[sv_staging_df["CENTER"] == center]
+            if not center_sv.empty:
+                center_sv.to_csv(SV_CENTER_PATH % center, sep="\t", index=False)
                 load.store_file(
                     syn=syn,
                     filepath=SV_CENTER_PATH % center,
