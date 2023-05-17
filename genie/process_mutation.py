@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+from typing import Optional
 
 import pandas as pd
 from synapseclient import Synapse
@@ -175,7 +176,7 @@ def process_mutation_workflow(
     validfiles: pd.DataFrame,
     genie_config: dict,
     workdir: str,
-) -> str:
+) -> Optional[str]:
     """Process vcf/maf workflow
 
     Args:
@@ -186,7 +187,7 @@ def process_mutation_workflow(
         workdir: Working directory
 
     Returns:
-        Annotated Maf Path
+        Annotated Maf Path. None if there are no valid mutation files.
 
     """
     # Get valid files
@@ -195,7 +196,7 @@ def process_mutation_workflow(
     # If there are no valid mutation files, return
     if not valid_mutation_files:
         logger.info("No mutation data")
-        return
+        return None
     # Certificate to use GENIE Genome Nexus
     syn.get(
         "syn22053204",

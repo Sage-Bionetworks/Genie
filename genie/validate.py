@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+from typing import Dict, List, Optional
 
 import pandas as pd
 import synapseclient
@@ -24,17 +25,17 @@ ACCEPTED_CHROMOSOMES = list(map(str, range(1, 23))) + ["X", "Y", "MT"]
 class ValidationHelper(object):
     # Used for the kwargs in validate_single_file
     # Overload this per class
-    _validate_kwargs = []
+    _validate_kwargs: List[str] = []
 
     def __init__(
         self,
-        syn,
-        project_id,
-        center,
-        entitylist,
-        format_registry=None,
-        file_type=None,
-        genie_config=None,
+        syn: synapseclient.Synapse,
+        project_id: str,
+        center: str,
+        entitylist: List[synapseclient.File],
+        format_registry: Optional[Dict] = None,
+        file_type: Optional[str] = None,
+        genie_config: Optional[Dict] = None,
     ):
         """A validator helper class for a center's files.
 
@@ -42,10 +43,11 @@ class ValidationHelper(object):
             syn: a synapseclient.Synapse object
             project_id: Synapse Project ID where files are stored and configured.
             center: The participating center name.
-            filepathlist: a list of file paths.
+            entitylist: a list of File entities for single filetype validation.
             format_registry: A dictionary mapping file format name to the
                              format class.
             file_type: Specify file type to skip filename validation
+            genie_config: A mapping between GENIE synapse resources and its ID.
         """
         self._synapse_client = syn
         self._project = syn.get(project_id)

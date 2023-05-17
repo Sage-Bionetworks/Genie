@@ -4,6 +4,7 @@ import datetime
 from io import StringIO
 import logging
 import os
+from typing import Optional
 
 import pandas as pd
 import synapseclient
@@ -19,7 +20,7 @@ def _check_year(
     clinicaldf: pd.DataFrame,
     year_col: int,
     filename: str,
-    allowed_string_values: list = None,
+    allowed_string_values: Optional[list] = None,
 ) -> str:
     """Check year columns
 
