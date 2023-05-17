@@ -42,11 +42,11 @@ repos:
 #   - id: blacken-docs
 #     additional_dependencies: [black]
 
-# - repo: https://github.com/pre-commit/mirrors-mypy
-#   rev: 'v1.0.1'
-#   hooks:
-#   - id: mypy
-#     additional_dependencies: [pydantic~=1.10]
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: 'v1.3.0'
+  hooks:
+  - id: mypy
+    additional_dependencies: [pydantic~=1.10]
 
 # Checks for missing docstrings
 # - repo: https://github.com/econchick/interrogate
