@@ -132,9 +132,7 @@ def update_cumulative_sample_table(
     sv_ent = syn.get(file_mapping["sv"], followLink=True)
     sv_df = pd.read_csv(sv_ent.path, sep="\t", comment="#")
     sv_df.columns = [col.upper() for col in sv_df.columns]
-    sv_counts = sv_df["CENTER"][
-        ~sv_df["SAMPLE_ID"].duplicated()
-    ].value_counts()
+    sv_counts = sv_df["CENTER"][~sv_df["SAMPLE_ID"].duplicated()].value_counts()
     sv_counts["Total"] = sum(sv_counts)
 
     cna_ent = syn.get(file_mapping["cna"], followLink=True)
@@ -237,9 +235,7 @@ def update_database_numbers(syn, database_mappingdf):
     clinincal_counts["Total"] = sum(clinincal_counts)
     clinincal_counts.name = "Clinical"
     sv_df = extract.get_syntabledf(syn=syn, query_string="select * from syn30891574")
-    sv_counts = sv_df["CENTER"][
-        ~sv_df["SAMPLE_ID"].duplicated()
-    ].value_counts()
+    sv_counts = sv_df["CENTER"][~sv_df["SAMPLE_ID"].duplicated()].value_counts()
     sv_counts["Total"] = sum(sv_counts)
 
     center_flat_files = syn.getChildren("syn12278118")
