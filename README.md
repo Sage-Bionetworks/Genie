@@ -9,7 +9,7 @@
 
 ## Introduction
 
-This repository documents code used to gather, QC, standardize, and analyze data uploaded by institutes participating in AACR's Project GENIE (Genomics, Evidence, Neoplasia, Information, Exchange). 
+This repository documents code used to gather, QC, standardize, and analyze data uploaded by institutes participating in AACR's Project GENIE (Genomics, Evidence, Neoplasia, Information, Exchange).
 
 ## Dependencies
 
@@ -64,6 +64,22 @@ These are instructions on how you would develop and test the pipeline locally.
     pip install -r requirements.txt
     pip install -r requirements-dev.txt
     ```
+
+1. Configure the Synapse client to authenticate to Synapse.
+    1. Create a Synapse [Personal Access token (PAT)](https://help.synapse.org/docs/Managing-Your-Account.2055405596.html#ManagingYourAccount-PersonalAccessTokens).
+    1. Add a `~/.synapseConfig` file
+        ```
+        [authentication]
+        authtoken = <PAT here>
+        ```
+    1. OR set an environmental variable
+        ```
+        export SYNAPSE_AUTH_TOKEN=<PAT here>
+        ```
+    1. Confirm you can log in your terminal.
+        ```shell
+        synapse login
+        ```
 
 1. Run the different pipelines on the test project.  The `--project_id syn7208886` points to the test project.
 

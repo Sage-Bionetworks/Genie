@@ -1,6 +1,4 @@
 """Test genie.transform module"""
-from unittest.mock import patch
-
 import pandas as pd
 import pytest
 

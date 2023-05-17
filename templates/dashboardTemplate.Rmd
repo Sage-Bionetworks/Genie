@@ -4,10 +4,6 @@ output: html_document
 #    toc: true
 #    toc_depth: 3
 params:
-  genieUser:
-    value: x
-  geniePass:
-    value: x
   database_synid_mappingid:
     value: x
   release:
@@ -27,21 +23,14 @@ title: '`r release`'
 
 ```{r intro}
 suppressMessages(library(synapser))
-tryCatch({
-  foo = capture.output(synLogin())
-}, error = function(err) {
-  genieUser = params$genieUser
-  geniePass = params$geniePass
-  foo = capture.output(synLogin(genieUser, geniePass))
-})
-
+foo = capture.output(synLogin())
 suppressMessages(library(ggplot2))
 suppressMessages(library(UpSetR))
 suppressMessages(library(RColorBrewer))
 suppressMessages(library(jsonlite))
 suppressMessages(library(knitr))
 
-createCenterColumn <- function(clinicalDf) {        
+createCenterColumn <- function(clinicalDf) {
   if (is.null(clinicalDf$CENTER)) {
     centers = unlist(
       lapply(strsplit(clinicalDf$PATIENT_ID, "-"), function(x) return(x[2])))
@@ -83,9 +72,9 @@ plotCenterXRace <- function(genieClinData) {
   t = as.data.frame.matrix(table(genieClinData$CENTER,genieClinData$PRIMARY_RACE))
   t = data.frame(n = rowSums(t),t)
   # kable(t)
-  
+
   # kable(data.frame("Percent.Unknown" = (t[,"Unknown"]/rowSums(t[,colnames(t) != "n"]))*100), digits = 2)
-  
+
   # reduce table to none "Unknown" data
   # t$n = t$n - t$Unknown
   # t = t[,!(colnames(t) == "Unknown")]
@@ -95,7 +84,7 @@ plotCenterXRace <- function(genieClinData) {
            "Other", "Unknown")]
   t[,colnames(t) != "n"] = t[,colnames(t) != "n"]/rowSums(t[,colnames(t) != "n"])
   # kable(t[k,],digits = 3)
-  
+
   # Center vs Race BARCHARTS
   t$Center = rownames(t)
   l = c("White", "Black", "Asian", "Native.American",
@@ -109,7 +98,7 @@ plotCenterXRace <- function(genieClinData) {
               drop = "n")
   colnames(t)[colnames(t) == "time"] = "Race"
   t$Race = factor(t$Race,l)
-  plot(ggplot(t,aes(Race, Percentage, group = Center)) + 
+  plot(ggplot(t,aes(Race, Percentage, group = Center)) +
          geom_bar(stat = "identity") +
          facet_wrap(~Center, ncol = 4) +
          ylim(0,1) +
@@ -121,15 +110,15 @@ plotCenterXEthnicity <- function(genieClinData) {
   t = as.data.frame.matrix(table(genieClinData$CENTER,genieClinData$ETHNICITY))
   # t = data.frame(n = rowSums(t),t)
   # kable(t)
-  
+
   # kable(data.frame("Percent.Unknown" = (t[,"Unknown"]/rowSums(t[,colnames(t) != "n"]))*100), digits = 2)
-  
+
   # t$n = t$n - t$Unknown
   # t = t[,!(colnames(t) == "Unknown")]
   # k = which(t$n > 100)
   t[,colnames(t) != "n"] = t[,colnames(t) != "n"]/rowSums(t[,colnames(t) != "n"])
   # kable(t[k,],digits = 3)
-  
+
   # Center vs Ethnicity BARCHARTS
   t$Center = rownames(t)
   l = c("Non-Spanish/non-Hispanic", "Spanish/Hispanic", "Unknown")
@@ -154,10 +143,10 @@ plotCenterXSex <- function(genieClinData) {
   t = as.data.frame.matrix(table(genieClinData$CENTER,genieClinData$SEX))
   t = data.frame(n = rowSums(t),t)
   kable(t)
-  
+
   t[,colnames(t) != "n"] = t[,colnames(t) != "n"]/rowSums(t[,colnames(t) != "n"])
   kable(t,digits = 3)
-  
+
   # Center vs Sex BARCHARTS
   t$Center = rownames(t)
   l = c("Female","Male")
@@ -183,7 +172,7 @@ plotCenterXAge <- function(genieClinData) {
     multiply = T
   } else {
     multiply = F
-  } 
+  }
   genieClinData$age_days <- genieClinData$AGE_AT_SEQ_REPORT
   k = grep("^>",genieClinData$AGE_AT_SEQ_REPORT) # these are the >=90 group that get mapped to 90
   genieClinData$age_days[k] = 32872
@@ -193,11 +182,11 @@ plotCenterXAge <- function(genieClinData) {
   if (multiply) {
     genieClinData$age_days <- genieClinData$age_days * 365
   }
-  
+
   k = is.na(genieClinData$age_days)
   t = as.data.frame.matrix(table(genieClinData$CENTER,k))
   kable(data.frame("Percent.Unknown"=(t[,"TRUE"]/rowSums(t))*100),digits=2)
-  
+
   k = !is.na(genieClinData$age_days)
   plot(ggplot(genieClinData[k,], aes(x = (age_days/365), group = CENTER)) +
          geom_histogram(aes(y = (..count..)/width/tapply(..count..,..group..,sum)[..group..]),
@@ -684,7 +673,7 @@ if (!is.null(this_bed)) {
   }
   noneExistentAssays = this_assays[!this_assays %in% this_bed$SEQ_ASSAY_ID]
   if (length(noneExistentAssays) > 0) {
-    print(paste("These assays do not have bed files associated with them: ", 
+    print(paste("These assays do not have bed files associated with them: ",
                 paste(noneExistentAssays, collapse = ", ")))
   }
   this_assays = this_assays[this_assays %in% this_bed$SEQ_ASSAY_ID]
