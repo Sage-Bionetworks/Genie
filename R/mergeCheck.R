@@ -5,13 +5,7 @@ parser <- ArgumentParser()
 parser$add_argument("--testing",
                     action = "store_true",
                     help = "Use testing files")
-parser$add_argument("--syn_user",
-                    help = "Synapse username")
-parser$add_argument("--syn_pass",
-                    help = "Synapse password")
 args <- parser$parse_args()
-genie_user <- args$syn_user
-genie_pass <- args$syn_pass
 testing <- args$testing
 
 library(synapser)
@@ -35,14 +29,7 @@ source(file.path(working_dir, "mergecheck_functions.R"))
 source(file.path(working_dir, "test_flag_variants.R"))
 
 # login to synapse
-tryCatch({
-  synLogin()
-}, error = function(err) {
-  #genieUser = Sys.getenv("GENIE_USER")
-  #geniePass = Sys.getenv("GENIE_PASS")
-  synLogin(genie_user, genie_pass)
-})
-
+synLogin()
 # limits
 variant_limit = 100000
 tbl_size_limit = 500
@@ -112,7 +99,7 @@ for (center in centers) {
                                           mafSynId, querySamples),
                                   includeRowIdAndRowVersion = F)
     #genieMutTable = synTableQuery(sprintf("SELECT Center,Tumor_Sample_Barcode,Hugo_Symbol,HGVSp_Short,Variant_Classification,Chromosome,Start_Position,Reference_Allele,Tumor_Seq_Allele2,t_depth,t_alt_count,End_Position,Protein_position FROM %s where Tumor_Sample_Barcode in ('%s')", mafSynId, querySamples),includeRowIdAndRowVersion=F)
-    
+
     genieMutData = synapser::as.data.frame(genieMutTable)
     flag_variants_to_merge(genieMutData, genieClinData, samplesToRun, upload = TRUE)
     #write.csv(rbind(annotated_df[is.na(annotated_df$Flag),],new_rows), "Missing_variant_annotation.csv", row.names=F)

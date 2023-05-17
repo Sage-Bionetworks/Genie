@@ -2,3 +2,10 @@
 line-length = 88
 target-version = ['py37']
 include = '\.pyi?$'
+
+[tool.ruff]
+extend-ignore = ["E501"]
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101", "B608", "B404", "B603", "B602", "B607"]

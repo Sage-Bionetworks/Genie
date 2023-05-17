@@ -35,13 +35,13 @@ uploadToTable <- function(tbl, databaseSynId, subSetSamples, centerMappingDf) {
     if (any(annotated_df$Flag[!samples %in% new_samples] == "TOSS")) {
       annotated_df$Flag[!samples %in% new_samples][
         annotated_df$Flag[!samples %in% new_samples] == "TOSS"] = "FIXED"
-    } 
+    }
     if (any(annotated_df$Center %in% keepCenters)) {
       annotated_df$Flag[annotated_df$Center %in% keepCenters] = "KEEP"
     }
     synapser::synStore(Table(databaseSynId, annotated_df))
   }
-  
+
   #Append any new data
   new_rows = nodup_tbl[!new_samples %in% samples,]
   #Even when nodup_tbl is empty, it can be subsetted, causing one NA row to be uploaded.
@@ -61,15 +61,15 @@ uploadToTable <- function(tbl, databaseSynId, subSetSamples, centerMappingDf) {
 
 # Flag variants to merge
 flag_variants_to_merge <- function(genieMutData, genieClinData, samplesToRun, upload = TRUE) {
-  
+
   genieMutData <- data.frame( lapply( genieMutData , factor ))
   # Create factors for clinical data
-  
+
   SAMPLE_ID = genieClinData$SAMPLE_ID[genieClinData$SAMPLE_ID %in% samplesToRun]
   genieClinData = data.frame(SAMPLE_ID)
   genieClinData <- data.frame( lapply( genieClinData , factor ))
   # all inclusive list of samples should be from the clinical data file
-  # therefore factor levels for Tumor_Sample_Barcode in the MAF should be set to that of SAMPLE_ID of clinical data table 
+  # therefore factor levels for Tumor_Sample_Barcode in the MAF should be set to that of SAMPLE_ID of clinical data table
   # check that no samples are listed in the MAF that are not listed in the clinical data file
   # reversing the order of the inputs would tell you which samples are submitted that have no entries (no mutations) in the MAF
   if (length(setdiff(levels(genieMutData$Tumor_Sample_Barcode),
@@ -77,12 +77,12 @@ flag_variants_to_merge <- function(genieMutData, genieClinData, samplesToRun, up
     genieMutData$Tumor_Sample_Barcode = factor(genieMutData$Tumor_Sample_Barcode,
                                                levels = levels(genieClinData$SAMPLE_ID))
   }
-  
+
   # records with count data that preclude a VAF estimate - set VAF to 100% (1/1, alt/depth)
   # genieMutData$t_depth <-  as.numeric(genieMutData$t_depth) DONT DO THIS LINE...
   genieMutData$t_depth <-  as.numeric(levels(genieMutData$t_depth))[genieMutData$t_depth]
   noVAF.idx = which((genieMutData$t_depth == 0) | is.na(genieMutData$t_depth))
-  genieMutData$t_alt_count_num = 
+  genieMutData$t_alt_count_num =
     as.numeric(levels(genieMutData$t_alt_count))[genieMutData$t_alt_count]
   #if (length(noVAF.idx) > 0) {
   genieMutData$t_alt_count_num[noVAF.idx] = 1
@@ -93,7 +93,7 @@ flag_variants_to_merge <- function(genieMutData, genieClinData, samplesToRun, up
   genieMutData$Tumor_Seq_Allele2 <- as.character(genieMutData$Tumor_Seq_Allele2)
   #invalid class “VRanges” object: if 'alt' is 'NA', then 'altDepth' should be 'NA'
   genieMutData$t_alt_count_num[is.na(genieMutData$Tumor_Seq_Allele2)] <- NA
-  
+
   # get VRanges for all variants called in the MAF
   mafVR = VRanges(seqnames = Rle(paste0("chr",genieMutData$Chromosome)),
                   ranges = IRanges(start = genieMutData$Start_Position,
@@ -104,31 +104,31 @@ flag_variants_to_merge <- function(genieMutData, genieClinData, samplesToRun, up
                   totalDepth = genieMutData$t_depth,
                   sampleNames = genieMutData$Tumor_Sample_Barcode)
   seqlevels(mafVR) = sort(seqlevels(mafVR))
-  
+
   # precompute
   vaf = altDepth(mafVR)/totalDepth(mafVR)
   ord = order(mafVR)
-  
+
   # start with empty table
   tbl = genieMutData[1, c("Center","Tumor_Sample_Barcode","Hugo_Symbol",
                           "HGVSp_Short","Variant_Classification","Chromosome",
                           "Start_Position","Reference_Allele","Tumor_Seq_Allele2",
                           "t_alt_count_num","t_depth")]
   tbl = tbl[-1,]
-  
+
   # check for potential variants that may need to be evaluated for merge (cis/trans)
   genieMutData$Tumor_Sample_Barcode <- as.character(genieMutData$Tumor_Sample_Barcode)
   #genieClinData$SAMPLE_ID <- as.character(genieClinData$SAMPLE_ID)
   t = Sys.time()
   samplesRun = c()
   for (i in 1:length(samplesToRun)) {
-    
+
     # get sample indices (in order from pre sort above)
     idx = ord[which(genieMutData$Tumor_Sample_Barcode[ord] == samplesToRun[i])]
     samplesRun = c(samplesRun, samplesToRun[i])
     # get length of idx
     l = length(idx)
-    
+
     # if sample has more than one variant
     if (l > 1) {
       # get differences in BPs of variant sites
@@ -173,4 +173,3 @@ flag_variants_to_merge <- function(genieMutData, genieClinData, samplesToRun, up
     }
   }
 }
-

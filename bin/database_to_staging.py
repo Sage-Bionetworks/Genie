@@ -20,18 +20,13 @@ logger = logging.getLogger(__name__)
 PWD = os.path.dirname(os.path.abspath(__file__))
 
 
-def generate_dashboard_html(
-    genie_version, staging=False, genie_user=None, genie_pass=None
-):
+def generate_dashboard_html(genie_version, staging=False):
     """Generates dashboard html writeout that gets uploaded to the
     release folder
 
     Args:
-        syn: Synapse connection
         genie_version: GENIE release
         staging: Use staging files. Default is False
-        genie_user: GENIE synapse username
-        genie_pass: GENIE synapse password
 
     """
     markdown_render_cmd = [
@@ -42,20 +37,12 @@ def generate_dashboard_html(
         os.path.join(PWD, "../templates/dashboardTemplate.Rmd"),
     ]
 
-    if genie_user is not None and genie_pass is not None:
-        markdown_render_cmd.extend(["--syn_user", genie_user, "--syn_pass", genie_pass])
     if staging:
         markdown_render_cmd.append("--staging")
     subprocess.check_call(markdown_render_cmd)
 
 
-def generate_data_guide(
-    genie_version,
-    oncotree_version=None,
-    database_mapping=None,
-    genie_user=None,
-    genie_pass=None,
-):
+def generate_data_guide(genie_version, oncotree_version=None, database_mapping=None):
     """Generates the GENIE data guide"""
 
     template_path = os.path.join(PWD, "../templates/data_guide_template.Rnw")
@@ -66,8 +53,6 @@ def generate_data_guide(
         "{{release}}": genie_version,
         "{{database_synid}}": database_mapping,
         "{{oncotree}}": oncotree_version.replace("_", "\\_"),
-        "{{username}}": genie_user,
-        "{{password}}": genie_pass,
         "{{genie_banner}}": os.path.join(PWD, "../genie_banner.png"),
     }
 
@@ -92,7 +77,6 @@ def main(
     cbioportal_path,
     oncotree_link=None,
     consortium_release_cutoff=184,
-    pemfile=None,
     test=False,
     staging=False,
     debug=False,
@@ -115,7 +99,6 @@ def main(
         cbioportal_path: Path to cbioportal validator
         oncotree_link: Link to oncotree codes
         consortium_release_cutoff: release cut off value in days
-        pemfile: Path to private key file
         test: Test flag, uses test databases
         staging: Staging flag, uses staging databases
         debug:  Synapse debug flag
@@ -124,12 +107,7 @@ def main(
     # HACK: Delete all existing files first
     process_functions.rmFiles(database_to_staging.GENIE_RELEASE_DIR)
 
-    syn = process_functions.synLogin(pemfile, debug=debug)
-    genie_user = os.environ.get("GENIE_USER")
-    if pemfile is not None:
-        genie_pass = process_functions.get_password(pemfile)
-    else:
-        genie_pass = None
+    syn = process_functions.synapse_login(debug=debug)
     # HACK: Use project id instead of this...
     if test:
         databaseSynIdMappingId = "syn11600968"
@@ -208,8 +186,6 @@ def main(
         current_release_staging=staging,
         skipMutationsInCis=skip_mutationsincis,
         test=test,
-        genie_user=genie_user,
-        genie_pass=genie_pass,
     )
 
     # Create case lists files
@@ -315,9 +291,7 @@ def main(
         dashboard_table_updater.run_dashboard(
             syn, databaseSynIdMappingDf, genie_version, staging=staging
         )
-        generate_dashboard_html(
-            genie_version, staging=staging, genie_user=genie_user, genie_pass=genie_pass
-        )
+        generate_dashboard_html(genie_version, staging=staging)
         logger.info("DASHBOARD UPDATE COMPLETE")
         logger.info("AUTO GENERATE DATA GUIDE")
 
@@ -326,8 +300,6 @@ def main(
         genie_version,
         oncotree_version=oncotree_version,
         database_mapping=databaseSynIdMappingId,
-        genie_user=genie_user,
-        genie_pass=genie_pass,
     )
     load.store_file(
         syn=syn,
@@ -395,7 +367,6 @@ if __name__ == "__main__":
         cbioportal_path=args.cbioportalPath,
         oncotree_link=args.oncotree_link,
         consortium_release_cutoff=args.consortiumReleaseCutOff,
-        pemfile=args.pemFile,
         test=args.test,
         staging=args.staging,
         debug=args.debug,
