@@ -277,6 +277,25 @@ class maf(FileTypeFormat):
 
         return total_error.getvalue(), warning.getvalue()
 
+
+    def _cross_validate(self, mutationDF: pd.DataFrame) -> tuple:
+        """This function cross-validates the mutation file to make sure it
+        adheres to the mutation SOP.
+
+        Args:
+            mutationDF (pd.DataFrame): mutation dataframe
+
+        Returns:
+            Text with all the errors in the mutation file
+        """
+        errors, warnings = self.cross_validate_ids_between_two_files(
+            df1 = mutationDF,
+            df2_file_name = f"data_clinical_supp_sample_{self.center}.txt",
+            id_to_check = "SAMPLE_ID",
+        )
+        return errors, warnings
+
+
     def _get_dataframe(self, filePathList):
         """Get mutation dataframe"""
         # Must do this because pandas.read_csv will allow for a file to

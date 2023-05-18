@@ -4,11 +4,12 @@ import datetime
 import logging
 import os
 import time
-from typing import List
+from typing import List, Dict
 
 import synapseclient  # lgtm [py/import-and-import-from]
 from synapseclient import Synapse
 from synapseclient.core.utils import to_unix_epoch_time
+import synapseutils
 import pandas as pd
 
 from genie import (
@@ -163,6 +164,75 @@ def _get_status_and_error_list(valid, message, entities):
         input_status_list = [{"entity": ent, "status": "INVALID"} for ent in entities]
         invalid_errors_list = [{"entity": ent, "errors": message} for ent in entities]
     return input_status_list, invalid_errors_list
+
+
+def get_ancillary_files(
+    syn: synapseclient.Synapse,
+    synid: str,
+    project_id: str,
+    center: str,
+    process: str = "main",
+    downloadFile: bool = True,
+    genie_config: list = None,
+    format_registry: list = None,
+) -> Dict[str, Dict[str, object]]:
+    """Walks through each center's input directory
+    to get a dict of center files
+
+    Args:
+        syn (synapseclient.Synapse): Synapse connection
+        synid (str): Synapse Id of a folder
+        project_id (str): GENIE Synapse project id
+        center (str): GENIE center name
+        process (str, optional): Process type include "main", "mutation".
+                                 Defaults to "main".
+        downloadFile (bool, optional): Downloads the file. Defaults to True.
+
+    Returns:
+        dict: {entity_name: {
+            entity: Synapse.File
+            filetypeformat_object: FileTypeFormat
+            }
+    """
+    logger.info("GETTING {center} INPUT FILES".format(center=center))
+
+    center_files = synapseutils.walk(syn, synid)
+    prepared_center_files = {}
+
+    for _, _, entities in center_files:
+        for name, ent_synid in entities:
+            prepared_center_files[name] = {}
+            # This is to remove vcfs from being validated during main
+            # processing. Often there are too many vcf files, and it is
+            # not necessary for them to be run everytime.
+            if name.endswith(".vcf") and process != "mutation":
+                continue
+
+            ent = syn.get(ent_synid, downloadFile=downloadFile)
+            prepared_center_files[name]["entity"] = ent
+
+            validator = validate.GenieValidationHelper(
+                syn=syn,
+                project_id=project_id,
+                center=center,
+                entitylist=[ent.path],
+                format_registry=format_registry,
+                genie_config=genie_config,
+                ancillary_files=None,
+            )
+            filetype = validator.file_type
+
+            validator_cls = validator._format_registry[validator.file_type]
+            validator = validator_cls(
+                syn=validator._synapse_client,
+                center=validator.center,
+                genie_config=validator.genie_config,
+                ancillary_files=None,
+            )
+
+            prepared_center_files[name]["filetypeformat_object"] = validator
+
+    return prepared_center_files
 
 
 # TODO: Add to validation.py
@@ -579,7 +649,14 @@ def _update_tables_content(validation_statusdf, error_trackingdf):
 
 # TODO: Add to validation.py
 def validation(
-    syn, project_id, center, process, center_files, format_registry, genie_config
+    syn,
+    project_id,
+    center,
+    process,
+    center_files,
+    format_registry,
+    genie_config,
+    ancillary_files=None,
 ) -> pd.DataFrame:
     """
     Validation of all center files
@@ -591,6 +668,7 @@ def validation(
         center_files:
         format_registry:
         genie_config:
+        ancillary_files:
 
     Returns:
         pd.DataFrame: Dataframe of valid GENIE files
@@ -631,7 +709,7 @@ def validation(
             center=center,
             format_registry=format_registry,
             genie_config=genie_config,
-            ancillary_files=center_files,
+            ancillary_files=ancillary_files,
         )
 
         input_valid_statuses.extend(status)
@@ -750,6 +828,9 @@ def center_input_to_database(
     center_files = extract.get_center_input_files(
         syn, center_input_synid, center, process
     )
+    ancillary_files = get_ancillary_files(
+        syn, center_input_synid, project_id, center, process, format_registry
+    )
 
     # only validate if there are center files
     if center_files:
@@ -761,6 +842,7 @@ def center_input_to_database(
             center_files=center_files,
             format_registry=format_registry,
             genie_config=genie_config,
+            ancillary_files=ancillary_files,
         )
     else:
         logger.info(f"{center} has not uploaded any files")

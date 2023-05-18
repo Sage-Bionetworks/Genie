@@ -200,6 +200,77 @@ class FileTypeFormat(metaclass=ABCMeta):
         logger.info("NO VALIDATION for %s files" % self._fileType)
         return errors, warnings
 
+    def cross_validate_ids_between_two_files(
+        self,
+        df1: pd.DataFrame,
+        df2_file_name: str,
+        id_to_check: str,
+    ) -> tuple:
+        """Check that all the identifier(s) (ids) in one
+        file exists in the other file
+
+        Args:
+            df1 (pd.DataFrame): file to use as base of check
+            df2_file_name (str): file name of the file to cross-validate against
+            id_to_check (str): name of column to check values for
+
+        Returns:
+            tuple: The errors and warnings as a file from cross-validation.
+                   Defaults to blank strings
+        """
+        errors = ""
+        warnings = ""
+        if df2_file_name in self.ancillary_files:
+            df2_filepath = self.ancillary_files[df2_file_name]["entity"].path
+            df2_filetype = self.ancillary_files[df2_file_name][
+                "filetypeformat_object"
+            ]._fileType
+
+            try:
+                df2 = self.ancillary_files[df2_file_name][
+                    "filetypeformat_object"
+                ].read_file(df2_filepath)
+            except Exception as e:
+                errors = f"The file(s) to be cross-validated against ({df2_filepath}) cannot be read. Original error: {str(e)}"
+                warnings = ""
+
+            # standardize case
+            df2.columns = [col.upper() for col in df2.columns]
+
+            if id_to_check in df2.columns and id_to_check in df1.columns:
+                # check to see if the ids are equal
+                if set(df1[id_to_check]) != set(df2[id_to_check]):
+                    errors = (
+                        f"The {id_to_check}s between {self._fileType} and "
+                        f"{df2_filetype} are not equal."
+                    )
+                    warnings = ""
+            else:
+                errors = ""
+                warnings = f"{id_to_check} doesn't exist in {self._fileType} or {df2_filetype}. No cross-validation will be done."
+        else:
+            errors = ""
+            warnings = f"{df2_file_name} doesn't exist. No cross-validation will be done between"
+            f"{self._fileType} and {df2_filetype}"
+        return errors, warnings
+
+    def _cross_validate(self, df: pd.DataFrame) -> tuple:
+        """
+        This is the base cross-validation function.
+        By default, no cross-validation occurs.
+
+        Args:
+            df (pd.DataFrame): A dataframe of the file
+
+        Returns:
+            tuple: The errors and warnings as a file from cross-validation.
+                   Defaults to blank strings
+        """
+        errors = ""
+        warnings = ""
+        logger.info("NO VALIDATION for %s files" % self._fileType)
+        return errors, warnings
+
     def validate(self, filePathList, **kwargs) -> ValidationResults:
         """
         This is the main validation function.
@@ -231,7 +302,14 @@ class FileTypeFormat(metaclass=ABCMeta):
 
         if not errors:
             logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
-            errors, warnings = self._validate(df, **mykwargs)
+            errors_validate, warnings_validate = self._validate(df, **mykwargs)
+            logger.info(
+                "CROSS-VALIDATING %s" % os.path.basename(",".join(filePathList))
+            )
+            errors_cross_validate, warnings_cross_validate = self._cross_validate(df)
+            errors = f"{errors_validate}\n{errors_cross_validate}"
+            warnings = f"{warnings_validate}\n{warnings_cross_validate}"
+            
 
         result_cls = ValidationResults(errors=errors, warnings=warnings)
         return result_cls
