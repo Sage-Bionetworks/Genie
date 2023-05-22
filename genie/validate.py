@@ -35,6 +35,7 @@ class ValidationHelper(object):
         format_registry=None,
         file_type=None,
         genie_config=None,
+        ancillary_files=None,
     ):
         """A validator helper class for a center's files.
 
@@ -42,10 +43,11 @@ class ValidationHelper(object):
             syn: a synapseclient.Synapse object
             project_id: Synapse Project ID where files are stored and configured.
             center: The participating center name.
-            filepathlist: a list of file paths.
+            entitylist: a list of file paths.
             format_registry: A dictionary mapping file format name to the
                              format class.
             file_type: Specify file type to skip filename validation
+            ancillary_files: all files downloaded for validation
         """
         self._synapse_client = syn
         self._project = syn.get(project_id)
@@ -54,6 +56,7 @@ class ValidationHelper(object):
         self._format_registry = format_registry
         self.file_type = self.determine_filetype() if file_type is None else file_type
         self.genie_config = genie_config
+        self.ancillary_files = ancillary_files
 
     def determine_filetype(self):
         """Gets the file type of the file by validating its filename
@@ -108,6 +111,7 @@ class ValidationHelper(object):
                 syn=self._synapse_client,
                 center=self.center,
                 genie_config=self.genie_config,
+                ancillary_files=self.ancillary_files,
             )
             filepathlist = [entity.path for entity in self.entitylist]
             valid_result_cls = validator.validate(filePathList=filepathlist, **mykwargs)
@@ -227,6 +231,7 @@ def _perform_validate(syn, args):
         synapseclient.File(name=filepath, path=filepath, parentId=None)
         for filepath in args.filepath
     ]
+
     validator = GenieValidationHelper(
         syn=syn,
         project_id=args.project_id,
