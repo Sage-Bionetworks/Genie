@@ -113,9 +113,6 @@ class ValidationHelper(object):
                 genie_config=self.genie_config,
                 ancillary_files=self.ancillary_files,
             )
-            print("------Printing ancillary files------")
-            print(validator.ancillary_files)
-            print("------End of printing ancillary files------")
             filepathlist = [entity.path for entity in self.entitylist]
             valid_result_cls = validator.validate(filePathList=filepathlist, **mykwargs)
 
