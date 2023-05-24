@@ -195,42 +195,76 @@ def get_ancillary_files(
             }
     """
     logger.info("GETTING {center} INPUT FILES".format(center=center))
+    clinical_pair_name = [
+        "data_clinical_supp_sample_{center}.txt".format(center=center),
+        "data_clinical_supp_patient_{center}.txt".format(center=center),
+    ]
+    clinicalpair_entities = []
 
     center_files = synapseutils.walk(syn, synid)
     prepared_center_files = {}
 
     for _, _, entities in center_files:
         for name, ent_synid in entities:
-            prepared_center_files[name] = {}
-            # This is to remove vcfs from being validated during main
-            # processing. Often there are too many vcf files, and it is
-            # not necessary for them to be run everytime.
+            if name in clinical_pair_name:
+                clinicalpair_entities.append(ent)
+                continue
+
             if name.endswith(".vcf") and process != "mutation":
                 continue
 
             ent = syn.get(ent_synid, downloadFile=downloadFile)
-            prepared_center_files[name]["entity"] = ent
 
             validator = validate.GenieValidationHelper(
                 syn=syn,
                 project_id=project_id,
                 center=center,
-                entitylist=[ent.path],
+                entitylist=[ent],
                 format_registry=format_registry,
                 genie_config=genie_config,
                 ancillary_files=None,
             )
             filetype = validator.file_type
-
+            if validator.file_type not in validator._format_registry:
+                continue
             validator_cls = validator._format_registry[validator.file_type]
-            validator = validator_cls(
+            fileformat_validator = validator_cls(
                 syn=validator._synapse_client,
                 center=validator.center,
                 genie_config=validator.genie_config,
                 ancillary_files=None,
             )
 
-            prepared_center_files[name]["filetypeformat_object"] = validator
+            prepared_center_files[filetype] = {}
+            prepared_center_files[filetype]["entity"] = ent
+            prepared_center_files[filetype][
+                "filetypeformat_object"
+            ] = fileformat_validator
+
+    # if the clinical files exist
+    if clinicalpair_entities:
+        # handling for just the clinical pair, can remove once we have separate classes
+        cli_validator = validate.GenieValidationHelper(
+            syn=syn,
+            project_id=project_id,
+            center=center,
+            entitylist=clinicalpair_entities,
+            format_registry=format_registry,
+            genie_config=genie_config,
+            ancillary_files=None,
+        )
+        cli_filetype = cli_validator.file_type
+        cli_validator_cls = cli_validator._format_registry[cli_validator.file_type]
+        cli_fileformat_validator = validator_cls(
+            syn=cli_validator._synapse_client,
+            center=cli_validator.center,
+            genie_config=cli_validator.genie_config,
+            ancillary_files=None,
+        )
+
+        prepared_center_files[filetype] = {}
+        prepared_center_files[filetype]["entity"] = clinicalpair_entities
+        prepared_center_files[filetype]["filetypeformat_object"] = cli_fileformat_validator
 
     return prepared_center_files
 
@@ -829,7 +863,13 @@ def center_input_to_database(
         syn, center_input_synid, center, process
     )
     ancillary_files = get_ancillary_files(
-        syn, center_input_synid, project_id, center, process, format_registry
+        syn=syn,
+        synid=center_input_synid,
+        project_id=project_id,
+        center=center,
+        process=process,
+        format_registry=format_registry,
+        genie_config=genie_config,
     )
 
     # only validate if there are center files

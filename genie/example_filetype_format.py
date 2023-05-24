@@ -276,7 +276,7 @@ class FileTypeFormat(metaclass=ABCMeta):
         """
         errors = ""
         warnings = ""
-        logger.info("NO VALIDATION for %s files" % self._fileType)
+        logger.info("NO CROSS-VALIDATION for %s files" % self._fileType)
         return errors, warnings
 
     def validate(self, filePathList, **kwargs) -> ValidationResults:
@@ -310,13 +310,15 @@ class FileTypeFormat(metaclass=ABCMeta):
 
         if not errors:
             logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
-            errors_validate, warnings_validate = self._validate(df, **mykwargs)
+            errors, warnings = self._validate(df, **mykwargs)
             logger.info(
                 "CROSS-VALIDATING %s" % os.path.basename(",".join(filePathList))
             )
-            errors_cross_validate, warnings_cross_validate = self._cross_validate(df)
-            errors = f"{errors_validate}\n{errors_cross_validate}"
-            warnings = f"{warnings_validate}\n{warnings_cross_validate}"
+            # only cross-validate if validation passes
+            if not errors:
+                errors_cross_validate, warnings_cross_validate = self._cross_validate(df)
+                errors = f"{errors}\n{errors_cross_validate}"
+                warnings = f"{warnings}\n{warnings_cross_validate}"
             
 
         result_cls = ValidationResults(errors=errors, warnings=warnings)
