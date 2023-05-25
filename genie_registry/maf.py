@@ -5,7 +5,7 @@ import logging
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import clinical, process_functions, validate
+from genie import process_functions, validate
 
 logger = logging.getLogger(__name__)
 
@@ -287,24 +287,46 @@ class maf(FileTypeFormat):
         Returns:
             Text with all the errors in the mutation file
         """
-        clinical_files = [
-            files
+        errors = ""
+        warnings = ""
+        maf_filename = f"data_mutations_extended_{self.center}.txt"
+        id_to_check = "SAMPLE_ID"
+
+        clinical_files = {
+            file.name: file.path
             for files in self.ancillary_files
-            if len(files) > 1
-        ]
-        clinical_filepath = [
-            file.path
-            for file in clinical_files
-            if file.name == f"data_clinical_supp_sample_{self.center}.txt"
-        ]
-        clinical_sample_df = clinical.get_dataframe(filePathList=clinical_filepath)
-        errors, warnings = self.cross_validate_ids_between_two_files(
-            df1=mutationDF,
-            df1_filename=f"data_mutations_extended_{self.center}.txt",
-            df2=clinical_sample_df,
-            df2_filename=clinical_filepath,
-            id_to_check="SAMPLE_ID",
-        )
+            for file in files
+            if file.name.startswith("data_clinical_supp")
+        }
+        clinical_file_names = ''.join(clinical_files.keys())
+        if clinical_files:
+            try:
+                clinical_sample_df = process_functions.get_clinical_dataframe(
+                    filePathList=list(clinical_files.values())
+                )
+            except Exception as e:
+                errors = (
+                    f"The clinical file(s) cannot be read. No cross-validation will be done. Original error: {str(e)}"
+                )
+                warnings = ""
+
+            if not errors:
+                if process_functions.checkColExist(
+                    mutationDF, id_to_check
+                ) and process_functions.checkColExist(clinical_sample_df, id_to_check):
+                    errors, warnings = self.cross_validate_ids_between_two_files(
+                        df1=mutationDF,
+                        df1_filename=maf_filename,
+                        df2=clinical_sample_df,
+                        df2_filename=clinical_file_names,
+                        id_to_check=id_to_check,
+                    )
+                else:
+                    errors = ""
+                    warnings = f"{id_to_check} doesn't exist in the maf or clinical file(s). No cross-validation will be done."
+        else:
+            errors = ""
+            warnings = f"The clinical file(s) doesn't exist. No cross-validation will be done."
         return errors, warnings
 
     def _get_dataframe(self, filePathList):
