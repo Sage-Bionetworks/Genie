@@ -235,9 +235,9 @@ def get_ancillary_files(
                 ancillary_files=None,
             )
 
-            prepared_center_files[filetype] = {}
-            prepared_center_files[filetype]["entity"] = ent
-            prepared_center_files[filetype][
+            prepared_center_files[name] = {}
+            prepared_center_files[name]["entity"] = ent
+            prepared_center_files[name][
                 "filetypeformat_object"
             ] = fileformat_validator
 
@@ -262,10 +262,9 @@ def get_ancillary_files(
             ancillary_files=None,
         )
 
-        prepared_center_files[filetype] = {}
-        prepared_center_files[filetype]["entity"] = clinicalpair_entities
-        prepared_center_files[filetype]["filetypeformat_object"] = cli_fileformat_validator
-
+        prepared_center_files[name] = {}
+        prepared_center_files[name]["entity"] = clinicalpair_entities
+        prepared_center_files[name]["filetypeformat_object"] = cli_fileformat_validator
     return prepared_center_files
 
 
@@ -862,15 +861,15 @@ def center_input_to_database(
     center_files = extract.get_center_input_files(
         syn, center_input_synid, center, process
     )
-    ancillary_files = get_ancillary_files(
-        syn=syn,
-        synid=center_input_synid,
-        project_id=project_id,
-        center=center,
-        process=process,
-        format_registry=format_registry,
-        genie_config=genie_config,
-    )
+    #ancillary_files = get_ancillary_files(
+    #    syn=syn,
+    #    synid=center_input_synid,
+    #    project_id=project_id,
+    #    center=center,
+    #    process=process,
+    #    format_registry=format_registry,
+    #    genie_config=genie_config,
+    #)
 
     # only validate if there are center files
     if center_files:
@@ -882,7 +881,7 @@ def center_input_to_database(
             center_files=center_files,
             format_registry=format_registry,
             genie_config=genie_config,
-            ancillary_files=ancillary_files,
+            ancillary_files=center_files,
         )
     else:
         logger.info(f"{center} has not uploaded any files")

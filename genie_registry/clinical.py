@@ -15,6 +15,41 @@ from genie.database_to_staging import redact_phi
 logger = logging.getLogger(__name__)
 
 
+def get_dataframe(self, filePathList):
+        clinicaldf = pd.read_csv(filePathList[0], sep="\t", comment="#")
+        clinicaldf.columns = [col.upper() for col in clinicaldf.columns]
+
+        if len(filePathList) > 1:
+            other_clinicaldf = pd.read_csv(filePathList[1], sep="\t", comment="#")
+            other_clinicaldf.columns = [col.upper() for col in other_clinicaldf.columns]
+
+            try:
+                clinicaldf = clinicaldf.merge(other_clinicaldf, on="PATIENT_ID")
+            except Exception:
+                raise ValueError(
+                    (
+                        "If submitting separate patient and sample files, "
+                        "they both must have the PATIENT_ID column"
+                    )
+                )
+            # Must figure out which is sample and which is patient
+            if "sample" in filePathList[0]:
+                sample = clinicaldf
+                patient = other_clinicaldf
+            else:
+                sample = other_clinicaldf
+                patient = clinicaldf
+
+            if not all(sample["PATIENT_ID"].isin(patient["PATIENT_ID"])):
+                raise ValueError(
+                    (
+                        "Patient Clinical File: All samples must have associated "
+                        "patient information"
+                    )
+                )
+
+        return clinicaldf
+
 def _check_year(
     clinicaldf: pd.DataFrame,
     year_col: int,

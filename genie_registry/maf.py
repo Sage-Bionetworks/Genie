@@ -5,7 +5,7 @@ import logging
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import process_functions, validate
+from genie import clinical, process_functions, validate
 
 logger = logging.getLogger(__name__)
 
@@ -277,7 +277,6 @@ class maf(FileTypeFormat):
 
         return total_error.getvalue(), warning.getvalue()
 
-
     def _cross_validate(self, mutationDF: pd.DataFrame) -> tuple:
         """This function cross-validates the mutation file to make sure it
         adheres to the mutation SOP.
@@ -288,13 +287,25 @@ class maf(FileTypeFormat):
         Returns:
             Text with all the errors in the mutation file
         """
+        clinical_files = [
+            files
+            for files in self.ancillary_files
+            if len(files) > 1
+        ]
+        clinical_filepath = [
+            file.path
+            for file in clinical_files
+            if file.name == f"data_clinical_supp_sample_{self.center}.txt"
+        ]
+        clinical_sample_df = clinical.get_dataframe(filePathList=clinical_filepath)
         errors, warnings = self.cross_validate_ids_between_two_files(
-            df1 = mutationDF,
-            df2_file_name = f"data_clinical_supp_sample_{self.center}.txt",
-            id_to_check = "SAMPLE_ID",
+            df1=mutationDF,
+            df1_filename=f"data_mutations_extended_{self.center}.txt",
+            df2=clinical_sample_df,
+            df2_filename=clinical_filepath,
+            id_to_check="SAMPLE_ID",
         )
         return errors, warnings
-
 
     def _get_dataframe(self, filePathList):
         """Get mutation dataframe"""
