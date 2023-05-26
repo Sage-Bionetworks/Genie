@@ -337,7 +337,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--consortiumReleaseCutOff",
         type=int,
-        metavar=184,
+        metavar="184",
         default=184,
         help="Consortium release cut off time in days",
     )
