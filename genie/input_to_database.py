@@ -237,9 +237,7 @@ def get_ancillary_files(
 
             prepared_center_files[name] = {}
             prepared_center_files[name]["entity"] = ent
-            prepared_center_files[name][
-                "filetypeformat_object"
-            ] = fileformat_validator
+            prepared_center_files[name]["filetypeformat_object"] = fileformat_validator
 
     # if the clinical files exist
     if clinicalpair_entities:
@@ -333,6 +331,7 @@ def validatefile(
         ancillary_files=ancillary_files,
     )
     filetype = validator.file_type
+
     if check_file_status["to_validate"]:
         valid_cls, message = validator.validate_single_file(
             oncotree_link=genie_config["oncotreeLink"], nosymbol_check=False
@@ -861,7 +860,8 @@ def center_input_to_database(
     center_files = extract.get_center_input_files(
         syn, center_input_synid, center, process
     )
-    #ancillary_files = get_ancillary_files(
+
+    # ancillary_files = get_ancillary_files(
     #    syn=syn,
     #    synid=center_input_synid,
     #    project_id=project_id,
@@ -869,7 +869,7 @@ def center_input_to_database(
     #    process=process,
     #    format_registry=format_registry,
     #    genie_config=genie_config,
-    #)
+    # )
 
     # only validate if there are center files
     if center_files:

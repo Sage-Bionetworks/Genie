@@ -253,9 +253,7 @@ def _perform_validate(syn, args):
         load.store_files(syn=syn, filepaths=args.filepath, parentid=args.parentid)
 
 
-def parse_file_info_in_nested_list(
-    nested_list: list, search_str: str
-) -> dict:
+def parse_file_info_in_nested_list(nested_list: list, search_str: str) -> dict:
     """Parses for a name and filepath in a nested list of Synapse entity objects
 
     Args:
