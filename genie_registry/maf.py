@@ -290,43 +290,48 @@ class maf(FileTypeFormat):
         errors = ""
         warnings = ""
         maf_filename = f"data_mutations_extended_{self.center}.txt"
-        id_to_check = "SAMPLE_ID"
 
-        clinical_files = {
-            file.name: file.path
-            for files in self.ancillary_files
-            for file in files
-            if file.name.startswith("data_clinical_supp")
-        }
-        clinical_file_names = ''.join(clinical_files.keys())
-        if clinical_files:
+        # This section can be removed once we remove the list of lists
+        clinical_files = validate.parse_file_info_in_nested_list(
+            nested_list=self.ancillary_files, search_str="data_clinical_supp"
+        )
+        clinical_file_names = clinical_files["file_info"]["name"]
+        clinical_file_paths = clinical_files["file_info"]["path"]
+
+        if clinical_files["files"]:
             try:
                 clinical_sample_df = process_functions.get_clinical_dataframe(
-                    filePathList=list(clinical_files.values())
+                    filePathList=clinical_file_paths
                 )
             except Exception as e:
-                errors = (
-                    f"The clinical file(s) cannot be read. No cross-validation will be done. Original error: {str(e)}"
-                )
+                errors = f"The clinical file(s) cannot be read. No cross-validation will be done. Original error: {str(e)}"
                 warnings = ""
 
             if not errors:
                 if process_functions.checkColExist(
-                    mutationDF, id_to_check
-                ) and process_functions.checkColExist(clinical_sample_df, id_to_check):
-                    errors, warnings = self.cross_validate_ids_between_two_files(
+                    mutationDF, "SAMPLE_ID"
+                ) and process_functions.checkColExist(
+                    clinical_sample_df, "TUMOR_SAMPLE_BARCODE"
+                ):
+                    errors, warnings = validate.check_values_between_two_df(
                         df1=mutationDF,
                         df1_filename=maf_filename,
+                        df1_id_to_check="SAMPLE_ID",
                         df2=clinical_sample_df,
                         df2_filename=clinical_file_names,
-                        id_to_check=id_to_check,
+                        df2_id_to_check="TUMOR_SAMPLE_BARCODE",
                     )
                 else:
                     errors = ""
-                    warnings = f"{id_to_check} doesn't exist in the maf or clinical file(s). No cross-validation will be done."
+                    warnings = (
+                        "SAMPLE_ID doesn't exist in the maf or TUMOR_SAMPLE_BARCODE doesn't exist clinical file(s)."
+                        "No cross-validation will be done."
+                    )
         else:
-            errors = ""
-            warnings = f"The clinical file(s) doesn't exist. No cross-validation will be done."
+            errors = (
+                "The clinical file(s) doesn't exist. No cross-validation will be done."
+            )
+            warnings = ""
         return errors, warnings
 
     def _get_dataframe(self, filePathList):

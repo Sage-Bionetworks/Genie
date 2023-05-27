@@ -3,6 +3,7 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
+from genie import process_functions, validate
 import genie_registry.maf
 from genie_registry.maf import maf
 
@@ -271,3 +272,55 @@ def test_valid__check_tsa1_tsa2(df):
     """Test valid TSA1 and TSA2"""
     error = genie_registry.maf._check_tsa1_tsa2(df)
     assert error == ""
+
+
+def test_that__cross_validate_returns_error_if_no_clinicial_files(maf_class):
+    with patch.object(
+        validate,
+        "parse_file_info_in_nested_list",
+        return_value={"files": {}, "file_info": {"name": "", "path": ""}},
+    ) as patch_clinical_files:
+        errors, warnings = maf_class._cross_validate(pd.DataFrame({}))
+        assert warnings == ""
+        assert (
+            errors
+            == "The clinical file(s) doesn't exist. No cross-validation will be done."
+        )
+
+
+def test_that__cross_validate_returns_error_if_clinical_df_read_error(maf_class):
+    with patch.object(
+        validate,
+        "parse_file_info_in_nested_list",
+        return_value={"files": {"some_file"}, "file_info": {"name": "", "path": ""}},
+    ) as patch_clinical_files, patch.object(
+        process_functions,
+        "get_clinical_dataframe",
+        side_effect=Exception("mocked error"),
+    ) as patch_get_df:
+        errors, warnings = maf_class._cross_validate(pd.DataFrame({}))
+        assert warnings == ""
+        assert errors == (
+            "The clinical file(s) cannot be read. No cross-validation will be done. "
+            "Original error: mocked error"
+        )
+
+
+def test_that__cross_validate_returns_warning_if_id_cols_do_not_exist(maf_class):
+    with patch.object(
+        validate,
+        "parse_file_info_in_nested_list",
+        return_value={"files": {"some_file"}, "file_info": {"name": "", "path": ""}},
+    ) as patch_clinical_files, patch.object(
+        process_functions,
+        "get_clinical_dataframe",
+        return_value=pd.DataFrame({"test_col": [2, 3, 4]}),
+    ) as patch_get_df, patch.object(
+        process_functions, "checkColExist", return_value=False
+    ) as patch_check_col_exist:
+        errors, warnings = maf_class._cross_validate(pd.DataFrame({}))
+        assert warnings == (
+            "SAMPLE_ID doesn't exist in the maf or TUMOR_SAMPLE_BARCODE doesn't exist clinical file(s)."
+            "No cross-validation will be done."
+        )
+        assert errors == ""

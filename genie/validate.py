@@ -251,3 +251,68 @@ def _perform_validate(syn, args):
     if valid and args.parentid is not None:
         logger.info(f"Uploading files to {args.parentid}")
         load.store_files(syn=syn, filepaths=args.filepath, parentid=args.parentid)
+
+
+def parse_file_info_in_nested_list(
+    nested_list: list, search_str: str
+) -> dict:
+    """Parses for a name and filepath in a nested list of Synapse entity objects
+
+    Args:
+        nested_list (list[list]): _description_
+        search_str (str): the substring to look for in the files
+
+    Returns:
+        dict[dict]: files found,
+            name(s) and filepath(s) of the file(s) found
+    """
+    file_info = {}
+    files = {
+        file["name"]: file["path"]
+        for files in nested_list
+        for file in files
+        if file["name"].startswith(search_str)
+    }
+    file_info["name"] = ",".join(files.keys())
+    file_info["path"] = list(files.values())
+    return {"files": files, "file_info": file_info}
+
+
+def check_values_between_two_df(
+    df1: pd.DataFrame,
+    df1_filename: str,
+    df1_id_to_check: str,
+    df2: pd.DataFrame,
+    df2_filename: str,
+    df2_id_to_check: str,
+) -> tuple:
+    """Check that all the identifier(s) (ids) in one
+    file exists in the other file
+
+    Args:
+        df1 (pd.DataFrame): file to use as base of check
+        df1_filename (str): filename of file to use as base of check
+        df1_id_to_check (str): name of column to check values for in df1
+        df2 (pd.DataFrame): file to cross-validate against
+        df2_filename (str): filename of file to cross-validate against
+        df2_id_to_check (str): name of column to check values for in df2
+
+    Returns:
+        tuple: The errors and warnings as a file from cross-validation.
+               Defaults to blank strings
+    """
+    errors = ""
+    warnings = ""
+
+    # standardize case
+    df2.columns = [col.upper() for col in df2.columns]
+
+    # check to see if the ids are equal
+    if set(df1[df1_id_to_check]) != set(df2[df2_id_to_check]):
+        errors = (
+            f"The values between {df1_id_to_check} in {df1_filename} and "
+            f"{df2_id_to_check} in {df2_filename} are not exactly the same."
+        )
+        warnings = ""
+
+    return errors, warnings
