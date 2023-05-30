@@ -511,7 +511,7 @@ def test_that_parse_file_info_in_nested_list_returns_expected(
     "test_df1,test_df2,expected_errors,expected_warnings",
     [
         (
-            pd.DataFrame({"ID": [1, 2, 3, 3]}),
+            pd.DataFrame({"ID": [1, 2]}),
             pd.DataFrame({"ID2": [1, 2, 3]}),
             "",
             "",
@@ -519,13 +519,13 @@ def test_that_parse_file_info_in_nested_list_returns_expected(
         (
             pd.DataFrame({"ID": [1, 2, 3, 4]}),
             pd.DataFrame({"ID2": [1, 2, 3]}),
-            "The values between ID in test1 and ID2 in test2 are not exactly the same.",
+            "Not all values for ID in test1 can be found in ID2 in test2.",
             "",
         ),
         (
             pd.DataFrame({"ID": [3, 4, 5]}),
             pd.DataFrame({"ID2": [1, 2, 3]}),
-            "The values between ID in test1 and ID2 in test2 are not exactly the same.",
+            "Not all values for ID in test1 can be found in ID2 in test2.",
             "",
         ),
     ],

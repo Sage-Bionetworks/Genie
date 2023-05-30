@@ -336,12 +336,12 @@ def test_that__cross_validate_returns_warning_if_id_cols_do_not_exist(maf_class)
             pd.DataFrame(
                 dict(
                     SAMPLE_ID=[
-                        "GENIE-SAGE-ID1-1",
+                        "GENIE-SAGE-ID1-0",
                         "GENIE-SAGE-ID1-2",
                     ],
                 )
             ),
-            "The values between TUMOR_SAMPLE_BARCODE in data_mutations_extended_SAGE.txt and SAMPLE_ID in data_clinical_supp.txt are not exactly the same.",
+            "Not all values for TUMOR_SAMPLE_BARCODE in data_mutations_extended_SAGE.txt can be found in SAMPLE_ID in data_clinical_supp.txt.",
             "",
         ),
         (

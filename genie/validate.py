@@ -285,7 +285,7 @@ def check_values_between_two_df(
     df2_id_to_check: str,
 ) -> tuple:
     """Check that all the identifier(s) (ids) in one
-    file exists in the other file
+    file (df1) exists in the other file (df1)
 
     Args:
         df1 (pd.DataFrame): file to use as base of check
@@ -305,11 +305,11 @@ def check_values_between_two_df(
     # standardize case
     df2.columns = [col.upper() for col in df2.columns]
 
-    # check to see if the ids are equal
-    if set(df1[df1_id_to_check]) != set(df2[df2_id_to_check]):
+    # check to see if df1 ids are present in df2
+    if not set(df1[df1_id_to_check]) <= set(df2[df2_id_to_check]):
         errors = (
-            f"The values between {df1_id_to_check} in {df1_filename} and "
-            f"{df2_id_to_check} in {df2_filename} are not exactly the same."
+            f"Not all values for {df1_id_to_check} in {df1_filename} "
+            f"can be found in {df2_id_to_check} in {df2_filename}."
         )
         warnings = ""
 
