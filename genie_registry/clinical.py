@@ -9,7 +9,7 @@ import pandas as pd
 import synapseclient
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import extract, load, process_functions
+from genie import extract, load, process_functions, validate
 from genie.database_to_staging import redact_phi
 
 logger = logging.getLogger(__name__)
@@ -1010,3 +1010,26 @@ class Clinical(FileTypeFormat):
                 )
 
         return clinicaldf
+
+    def _cross_validate_bed_files_exist(self, clinicaldf) -> tuple:
+        """Check that a bed file exist per SEQ_ASSAY_ID value in clinical file"""
+        errors = ""
+        warnings = ""
+        seq_assay_ids = clinicaldf["SEQ_ASSAY_ID"].unique().tolist()
+
+        for seq_assay_id in seq_assay_ids:
+            bed_files = validate.parse_file_info_in_nested_list(
+                nested_list=self.ancillary_files, search_str=f"{seq_assay_id}.bed"
+            )
+            if not bed_files["files"]:
+                errors += (
+                    f"There is no bed file named {seq_assay_id}.bed that exists for the "
+                    f"SEQ_ASSAY_ID: {seq_assay_id}.\n"
+                )
+        return errors, warnings
+
+    def _cross_validate(self, clinicaldf) -> tuple:
+        """Cross-validation for clinical file(s)"""
+
+        errors, warnings = self._cross_validate_bed_files_exist(clinicaldf)
+        return errors, warnings
