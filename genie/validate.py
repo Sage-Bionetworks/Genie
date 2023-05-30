@@ -303,6 +303,7 @@ def check_values_between_two_df(
     warnings = ""
 
     # standardize case
+    df1.columns = [col.upper() for col in df1.columns]
     df2.columns = [col.upper() for col in df2.columns]
 
     # check to see if df1 ids are present in df2
