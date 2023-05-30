@@ -22,7 +22,20 @@ logger = logging.getLogger(__name__)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def get_clinical_dataframe(filePathList):
+def get_clinical_dataframe(filePathList : list) -> pd.DataFrame:
+    """Gets the clinical file(s) and reads them in as a 
+    dataframe
+
+    Args:
+        filePathList (list): List of clinical files
+
+    Raises:
+        ValueError: when PATIENT_ID column doesn't exist
+        ValueError: When PATIENT_IDs in sample file doesn't exist in patient file
+
+    Returns:
+        pd.DataFrame: clinical file as a dataframe
+    """
     clinicaldf = pd.read_csv(filePathList[0], sep="\t", comment="#")
     clinicaldf.columns = [col.upper() for col in clinicaldf.columns]
 

@@ -208,47 +208,6 @@ class FileTypeFormat(metaclass=ABCMeta):
         logger.info("NO VALIDATION for %s files" % self._fileType)
         return errors, warnings
 
-    def cross_validate_ids_between_two_files(
-        self,
-        df1: pd.DataFrame,
-        df1_filename: str,
-        df2: pd.DataFrame,
-        df2_filename: str,
-        id_to_check: str,
-    ) -> tuple:
-        """Check that all the identifier(s) (ids) in one
-        file exists in the other file
-
-        Args:
-            df1 (pd.DataFrame): file to use as base of check
-            df1_filename (str): filename of file to use as base of check
-            df2 (pd.DataFrame): file to cross-validate against
-            df2_filename (str): filename of file to cross-validate against
-            id_to_check (str): name of column to check values for
-
-        Returns:
-            tuple: The errors and warnings as a file from cross-validation.
-                   Defaults to blank strings
-        """
-        errors = ""
-        warnings = ""
-
-        # standardize case
-        df2.columns = [col.upper() for col in df2.columns]
-
-        if id_to_check in df2.columns and id_to_check in df1.columns:
-            # check to see if the ids are equal
-            if set(df1[id_to_check]) != set(df2[id_to_check]):
-                errors = (
-                    f"The {id_to_check}s between {df1_filename} and "
-                    f"{df2_filename} are not equal."
-                )
-                warnings = ""
-        else:
-            errors = ""
-            warnings = f"{id_to_check} doesn't exist in {df1_filename} or {df2_filename}. No cross-validation will be done."
-        return errors, warnings
-
     def _cross_validate(self, df: pd.DataFrame) -> tuple:
         """
         This is the base cross-validation function.
@@ -306,7 +265,7 @@ class FileTypeFormat(metaclass=ABCMeta):
                 errors_cross_validate, warnings_cross_validate = self._cross_validate(
                     df
                 )
-                errors = f"{errors}\n{errors_cross_validate}"
+                errors = f"{errors_cross_validate}"
                 warnings = f"{warnings}\n{warnings_cross_validate}"
 
         result_cls = ValidationResults(errors=errors, warnings=warnings)

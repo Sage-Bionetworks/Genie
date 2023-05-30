@@ -308,23 +308,19 @@ class maf(FileTypeFormat):
                 warnings = ""
 
             if not errors:
-                if process_functions.checkColExist(
-                    mutationDF, "SAMPLE_ID"
-                ) and process_functions.checkColExist(
-                    clinical_sample_df, "TUMOR_SAMPLE_BARCODE"
-                ):
+                if process_functions.checkColExist(clinical_sample_df, "SAMPLE_ID"):
                     errors, warnings = validate.check_values_between_two_df(
                         df1=mutationDF,
                         df1_filename=maf_filename,
-                        df1_id_to_check="SAMPLE_ID",
+                        df1_id_to_check="TUMOR_SAMPLE_BARCODE",
                         df2=clinical_sample_df,
                         df2_filename=clinical_file_names,
-                        df2_id_to_check="TUMOR_SAMPLE_BARCODE",
+                        df2_id_to_check="SAMPLE_ID",
                     )
                 else:
                     errors = ""
                     warnings = (
-                        "SAMPLE_ID doesn't exist in the maf or TUMOR_SAMPLE_BARCODE doesn't exist clinical file(s)."
+                        "SAMPLE_ID doesn't exist in the clinical file(s)."
                         "No cross-validation will be done."
                     )
         else:

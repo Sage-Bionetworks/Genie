@@ -13,17 +13,9 @@ def maf_class(syn):
     return maf(syn, "SAGE")
 
 
-def test_invalidname_validateFilename(maf_class):
-    with pytest.raises(AssertionError):
-        maf_class.validateFilename(["foo"])
-
-
-def test_valid_validateFilename(maf_class):
-    assert maf_class.validateFilename(["data_mutations_extended_SAGE.txt"]) == "maf"
-
-
-def test_perfect_validation(maf_class):
-    mafDf = pd.DataFrame(
+@pytest.fixture
+def valid_maf_df():
+    yield pd.DataFrame(
         dict(
             CHROMOSOME=[1, 2, 3, 4, 5],
             START_POSITION=[1, 2, 3, 4, 2],
@@ -45,7 +37,18 @@ def test_perfect_validation(maf_class):
         )
     )
 
-    error, warning = maf_class._validate(mafDf)
+
+def test_invalidname_validateFilename(maf_class):
+    with pytest.raises(AssertionError):
+        maf_class.validateFilename(["foo"])
+
+
+def test_valid_validateFilename(maf_class):
+    assert maf_class.validateFilename(["data_mutations_extended_SAGE.txt"]) == "maf"
+
+
+def test_perfect_validation(maf_class, valid_maf_df):
+    error, warning = maf_class._validate(valid_maf_df)
     assert error == ""
     assert warning == ""
 
@@ -320,7 +323,57 @@ def test_that__cross_validate_returns_warning_if_id_cols_do_not_exist(maf_class)
     ) as patch_check_col_exist:
         errors, warnings = maf_class._cross_validate(pd.DataFrame({}))
         assert warnings == (
-            "SAMPLE_ID doesn't exist in the maf or TUMOR_SAMPLE_BARCODE doesn't exist clinical file(s)."
+            "SAMPLE_ID doesn't exist in the clinical file(s)."
             "No cross-validation will be done."
         )
         assert errors == ""
+
+
+@pytest.mark.parametrize(
+    "test_clinical_df,expected_error,expected_warning",
+    [
+        (
+            pd.DataFrame(
+                dict(
+                    SAMPLE_ID=[
+                        "GENIE-SAGE-ID1-1",
+                        "GENIE-SAGE-ID1-2",
+                    ],
+                )
+            ),
+            "The values between TUMOR_SAMPLE_BARCODE in data_mutations_extended_SAGE.txt and SAMPLE_ID in data_clinical_supp.txt are not exactly the same.",
+            "",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    SAMPLE_ID=[
+                        "GENIE-SAGE-ID1-1",
+                        "GENIE-SAGE-ID1-1",
+                    ],
+                )
+            ),
+            "",
+            "",
+        ),
+    ],
+    ids=["diff_ids", "matching_ids"],
+)
+def test_that__cross_validate_returns_expected_msg_if_valid(
+    maf_class, valid_maf_df, test_clinical_df, expected_warning, expected_error
+):
+    with patch.object(
+        validate,
+        "parse_file_info_in_nested_list",
+        return_value={
+            "files": {"some_file"},
+            "file_info": {"name": "data_clinical_supp.txt", "path": ""},
+        },
+    ) as patch_clinical_files, patch.object(
+        process_functions,
+        "get_clinical_dataframe",
+        return_value=test_clinical_df,
+    ) as patch_get_df:
+        errors, warnings = maf_class._cross_validate(mutationDF=valid_maf_df)
+        assert warnings == expected_warning
+        assert errors == expected_error
