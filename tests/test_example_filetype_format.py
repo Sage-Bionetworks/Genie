@@ -3,8 +3,6 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
-from genie import process_functions, validate
-import genie.example_filetype_format
 from genie.example_filetype_format import FileTypeFormat
 
 
@@ -27,7 +25,6 @@ def test_that_validate_returns_expected_msg_if__validate_fails(filetype_format_c
         "_cross_validate",
         return_value=("some_cross_error", "some_cross_warning"),
     ) as patch_cross_validate:
-
         result_cls = filetype_format_class.validate(filePathList=["something.txt"])
         patch_validate.assert_called_once()
         patch_cross_validate.assert_not_called()
@@ -49,7 +46,6 @@ def test_that_validate_returns_expected_msg_if__validate_passes(filetype_format_
         "_cross_validate",
         return_value=("some_cross_error", "some_cross_warning"),
     ) as patch_cross_validate:
-
         result_cls = filetype_format_class.validate(filePathList=["something.txt"])
         patch_validate.assert_called_once()
         patch_cross_validate.assert_called_once()
@@ -58,14 +54,16 @@ def test_that_validate_returns_expected_msg_if__validate_passes(filetype_format_
 
 
 def test_that_validate_throws_exception_if_file_read_error(filetype_format_class):
-    with patch.object(FileTypeFormat, "_validate",) as patch_validate, patch.object(
+    with patch.object(
+        FileTypeFormat,
+        "_validate",
+    ) as patch_validate, patch.object(
         FileTypeFormat,
         "read_file",
         side_effect=Exception("mocked error"),
     ) as patch_read_file, patch.object(
         FileTypeFormat, "_cross_validate"
     ) as patch_cross_validate:
-
         result_cls = filetype_format_class.validate(filePathList=["something.txt"])
         assert result_cls.warnings == ""
         assert result_cls.errors == (

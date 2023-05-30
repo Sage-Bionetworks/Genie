@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def get_clinical_dataframe(filePathList : list) -> pd.DataFrame:
-    """Gets the clinical file(s) and reads them in as a 
+def get_clinical_dataframe(filePathList: list) -> pd.DataFrame:
+    """Gets the clinical file(s) and reads them in as a
     dataframe
 
     Args:
