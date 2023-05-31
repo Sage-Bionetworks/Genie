@@ -265,8 +265,8 @@ class FileTypeFormat(metaclass=ABCMeta):
                 errors_cross_validate, warnings_cross_validate = self._cross_validate(
                     df
                 )
-                errors = f"{errors_cross_validate}"
-                warnings = f"{warnings}\n{warnings_cross_validate}"
+                errors = f"{errors_cross_validate}\n"
+                warnings = f"{warnings}\n{warnings_cross_validate}\n"
 
         result_cls = ValidationResults(errors=errors, warnings=warnings)
         return result_cls
