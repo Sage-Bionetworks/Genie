@@ -303,11 +303,11 @@ class maf(FileTypeFormat):
                 clinical_sample_df = process_functions.get_clinical_dataframe(
                     filePathList=clinical_file_paths
                 )
+                has_file_read_error = False
             except Exception as e:
-                errors = f"The clinical file(s) cannot be read. No cross-validation will be done. Original error: {str(e)}"
-                warnings = ""
+                has_file_read_error = True
 
-            if not errors:
+            if not has_file_read_error:
                 if process_functions.checkColExist(clinical_sample_df, "SAMPLE_ID"):
                     errors, warnings = validate.check_values_between_two_df(
                         df1=mutationDF,
@@ -317,17 +317,6 @@ class maf(FileTypeFormat):
                         df2_filename=clinical_file_names,
                         df2_id_to_check="SAMPLE_ID",
                     )
-                else:
-                    errors = ""
-                    warnings = (
-                        "SAMPLE_ID doesn't exist in the clinical file(s)."
-                        "No cross-validation will be done."
-                    )
-        else:
-            errors = (
-                "The clinical file(s) doesn't exist. No cross-validation will be done."
-            )
-            warnings = ""
         return errors, warnings
 
     def _get_dataframe(self, filePathList):

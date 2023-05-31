@@ -277,21 +277,24 @@ def test_valid__check_tsa1_tsa2(df):
     assert error == ""
 
 
-def test_that__cross_validate_returns_error_if_no_clinicial_files(maf_class):
+def test_that__cross_validate_does_not_read_files_if_no_clinical_files(maf_class):
     with patch.object(
         validate,
         "parse_file_info_in_nested_list",
         return_value={"files": {}, "file_info": {"name": "", "path": ""}},
-    ) as patch_clinical_files:
+    ) as patch_clinical_files, patch.object(
+        process_functions,
+        "get_clinical_dataframe",
+    ) as patch_get_df:
         errors, warnings = maf_class._cross_validate(pd.DataFrame({}))
         assert warnings == ""
-        assert (
-            errors
-            == "The clinical file(s) doesn't exist. No cross-validation will be done."
-        )
+        assert errors == ""
+        patch_get_df.assert_not_called()
 
 
-def test_that__cross_validate_returns_error_if_clinical_df_read_error(maf_class):
+def test_that__cross_validate_does_not_call_check_col_exist_if_clinical_df_read_error(
+    maf_class,
+):
     with patch.object(
         validate,
         "parse_file_info_in_nested_list",
@@ -300,16 +303,16 @@ def test_that__cross_validate_returns_error_if_clinical_df_read_error(maf_class)
         process_functions,
         "get_clinical_dataframe",
         side_effect=Exception("mocked error"),
-    ) as patch_get_df:
+    ) as patch_get_df, patch.object(
+        process_functions, "checkColExist"
+    ) as patch_check_col_exist:
         errors, warnings = maf_class._cross_validate(pd.DataFrame({}))
         assert warnings == ""
-        assert errors == (
-            "The clinical file(s) cannot be read. No cross-validation will be done. "
-            "Original error: mocked error"
-        )
+        assert errors == ""
+        patch_check_col_exist.assert_not_called()
 
 
-def test_that__cross_validate_returns_warning_if_id_cols_do_not_exist(maf_class):
+def test_that__cross_validate_does_not_call_check_values_if_id_cols_do_not_exist(maf_class):
     with patch.object(
         validate,
         "parse_file_info_in_nested_list",
@@ -320,13 +323,13 @@ def test_that__cross_validate_returns_warning_if_id_cols_do_not_exist(maf_class)
         return_value=pd.DataFrame({"test_col": [2, 3, 4]}),
     ) as patch_get_df, patch.object(
         process_functions, "checkColExist", return_value=False
-    ) as patch_check_col_exist:
+    ) as patch_check_col_exist, patch.object(
+        validate, "check_values_between_two_df"
+    ) as patch_check_values:
         errors, warnings = maf_class._cross_validate(pd.DataFrame({}))
-        assert warnings == (
-            "SAMPLE_ID doesn't exist in the clinical file(s)."
-            "No cross-validation will be done."
-        )
+        assert warnings == ""
         assert errors == ""
+        patch_check_values.assert_not_called()
 
 
 @pytest.mark.parametrize(
