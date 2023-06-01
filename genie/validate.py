@@ -309,9 +309,9 @@ def check_values_between_two_df(
     # check to see if df1 ids are present in df2
     if not set(df1[df1_id_to_check]) <= set(df2[df2_id_to_check]):
         errors = (
-            f"Not all values for {df1_id_to_check} in {df1_filename} "
-            f"can be found in {df2_id_to_check} in {df2_filename}."
+            f"At least one {df1_id_to_check} in your {df1_filename} file "
+            f"does not exist as a {df2_id_to_check} in your {df2_filename} file. "
+            "Please update your file(s) to be consistent.\n"
         )
-        warnings = ""
 
     return errors, warnings
