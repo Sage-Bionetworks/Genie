@@ -1138,8 +1138,8 @@ def test_that__cross_validate_returns_correct_format_for_errors_warnings(clin_cl
         errors, warnings = clin_class._cross_validate(
             clinicaldf=pd.DataFrame({"something": [1]})
         )
-        assert errors == "test1test3\n"
-        assert warnings == "test2"
+        assert errors == "test1\ntest3\n"
+        assert warnings == "test2\n"
 
 
 def test_that__cross_validate_assay_info_has_seq_does_not_read_files_if_no_assay_files(

@@ -1055,11 +1055,10 @@ class Clinical(FileTypeFormat):
             nested_list=self.ancillary_files, search_str="data_clinical_supp"
         )
         clinical_file_names = clinical_files["file_info"]["name"]
-
         if assay_files["files"]:
             try:
                 assay_df = process_functions.get_assay_dataframe(
-                    filePathList=assay_file_paths
+                    filepath_list=assay_file_paths
                 )
                 has_file_read_error = False
             except Exception as e:
@@ -1084,6 +1083,6 @@ class Clinical(FileTypeFormat):
         )
         errors_bed, warnings_bed = self._cross_validate_bed_files_exist(clinicaldf)
 
-        errors = errors_assay + errors_bed
-        warnings = warnings_assay + warnings_bed
+        errors = "\n".join([errors_assay, errors_bed])
+        warnings = "\n".join([warnings_assay, warnings_bed])
         return errors, warnings
