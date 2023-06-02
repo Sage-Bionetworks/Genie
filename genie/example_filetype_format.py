@@ -257,11 +257,11 @@ class FileTypeFormat(metaclass=ABCMeta):
         if not errors:
             logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
             errors, warnings = self._validate(df, **mykwargs)
-            logger.info(
-                "CROSS-VALIDATING %s" % os.path.basename(",".join(filePathList))
-            )
             # only cross-validate if validation passes
             if not errors:
+                logger.info(
+                    "CROSS-VALIDATING %s" % os.path.basename(",".join(filePathList))
+                )
                 errors_cross_validate, warnings_cross_validate = self._cross_validate(
                     df
                 )
