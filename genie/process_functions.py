@@ -22,6 +22,55 @@ logger = logging.getLogger(__name__)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
+def get_clinical_dataframe(filePathList: list) -> pd.DataFrame:
+    """Gets the clinical file(s) and reads them in as a
+    dataframe
+
+    Args:
+        filePathList (list): List of clinical files
+
+    Raises:
+        ValueError: when PATIENT_ID column doesn't exist
+        ValueError: When PATIENT_IDs in sample file doesn't exist in patient file
+
+    Returns:
+        pd.DataFrame: clinical file as a dataframe
+    """
+    clinicaldf = pd.read_csv(filePathList[0], sep="\t", comment="#")
+    clinicaldf.columns = [col.upper() for col in clinicaldf.columns]
+
+    if len(filePathList) > 1:
+        other_clinicaldf = pd.read_csv(filePathList[1], sep="\t", comment="#")
+        other_clinicaldf.columns = [col.upper() for col in other_clinicaldf.columns]
+
+        try:
+            clinicaldf = clinicaldf.merge(other_clinicaldf, on="PATIENT_ID")
+        except Exception:
+            raise ValueError(
+                (
+                    "If submitting separate patient and sample files, "
+                    "they both must have the PATIENT_ID column"
+                )
+            )
+        # Must figure out which is sample and which is patient
+        if "sample" in filePathList[0]:
+            sample = clinicaldf
+            patient = other_clinicaldf
+        else:
+            sample = other_clinicaldf
+            patient = clinicaldf
+
+        if not all(sample["PATIENT_ID"].isin(patient["PATIENT_ID"])):
+            raise ValueError(
+                (
+                    "Patient Clinical File: All samples must have associated "
+                    "patient information"
+                )
+            )
+
+    return clinicaldf
+
+
 def retry_get_url(url):
     """
     Implement retry logic when getting urls.

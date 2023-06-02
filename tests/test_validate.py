@@ -463,3 +463,86 @@ def test_perform_validate(syn, genie_config):
         patch_syn_upload.assert_called_once_with(
             syn=syn, filepaths=arg.filepath, parentid=arg.parentid
         )
+
+
+@pytest.mark.parametrize(
+    "test_nested_list,expected",
+    [
+        ([[]], {"files": {}, "file_info": {"name": "", "path": []}}),
+        (
+            [
+                [{"name": "test_txt1", "path": "/some_path1.txt"}],
+                [{"name": "test_txt2", "path": "/some_path2.txt"}],
+            ],
+            {"files": {}, "file_info": {"name": "", "path": []}},
+        ),
+        (
+            [
+                [
+                    {"name": "test_file1_1", "path": "/some_path1_1.txt"},
+                    {"name": "test_file1_2", "path": "/some_path1_2.txt"},
+                ],
+                [{"name": "test_file2", "path": "/some_path2.txt"}],
+            ],
+            {
+                "files": {
+                    "test_file1_1": "/some_path1_1.txt",
+                    "test_file1_2": "/some_path1_2.txt",
+                },
+                "file_info": {
+                    "name": "test_file1_1,test_file1_2",
+                    "path": ["/some_path1_1.txt", "/some_path1_2.txt"],
+                },
+            },
+        ),
+    ],
+    ids=["empty_nested_list", "no_files_with_substr", "valid_files"],
+)
+def test_that_parse_file_info_in_nested_list_returns_expected(
+    test_nested_list, expected
+):
+    result = validate.parse_file_info_in_nested_list(
+        nested_list=test_nested_list, search_str="test_file1"
+    )
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    "test_df1,test_df2,expected_errors,expected_warnings",
+    [
+        (
+            pd.DataFrame({"ID": [1, 2]}),
+            pd.DataFrame({"ID2": [1, 2, 3]}),
+            "",
+            "",
+        ),
+        (
+            pd.DataFrame({"ID": [1, 2, 3, 4]}),
+            pd.DataFrame({"ID2": [1, 2, 3]}),
+            "At least one ID in your test1 file does not exist as a ID2 in your test2 file. "
+            "Please update your file(s) to be consistent.\n",
+            "",
+        ),
+        (
+            pd.DataFrame({"ID": [3, 4, 5]}),
+            pd.DataFrame({"ID2": [1, 2, 3]}),
+            "At least one ID in your test1 file does not exist as a ID2 in your test2 file. "
+            "Please update your file(s) to be consistent.\n",
+            "",
+        ),
+    ],
+    ids=["all_match", "some_match", "no_match"],
+)
+def test_that_check_values_between_two_df_returns_expected(
+    test_df1, test_df2, expected_errors, expected_warnings
+):
+    errors, warnings = validate.check_values_between_two_df(
+        df1=test_df1,
+        df1_filename="test1",
+        df1_id_to_check="ID",
+        df2=test_df2,
+        df2_filename="test2",
+        df2_id_to_check="ID2",
+    )
+    assert errors == expected_errors
+    assert warnings == expected_warnings
