@@ -1015,6 +1015,7 @@ class Clinical(FileTypeFormat):
         """Check that a bed file exist per SEQ_ASSAY_ID value in clinical file"""
         errors = ""
         warnings = ""
+        missing_files = []
         seq_assay_ids = clinicaldf["SEQ_ASSAY_ID"].unique().tolist()
 
         for seq_assay_id in seq_assay_ids:
@@ -1022,10 +1023,14 @@ class Clinical(FileTypeFormat):
                 nested_list=self.ancillary_files, search_str=f"{seq_assay_id}.bed"
             )
             if not bed_files["files"]:
-                errors += (
-                    f"There is no bed file named {seq_assay_id}.bed that exists for the "
-                    f"SEQ_ASSAY_ID: {seq_assay_id}.\n"
-                )
+                missing_files.append(f"{seq_assay_id}.bed")
+
+        if missing_files:
+            errors = (
+                "At least one SEQ_ASSAY_ID in your clinical file does not have an associated BED file. "
+                "Please update your file(s) to be consistent.\n"
+                f"Missing BED files: {', '.join(missing_files)}\n"
+            )
         return errors, warnings
 
     def _cross_validate_assay_info_has_seq(self, clinicaldf: pd.DataFrame) -> tuple:

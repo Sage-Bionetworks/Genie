@@ -36,7 +36,7 @@ def test_that_validate_returns_expected_msg_if__validate_passes(filetype_format_
     with patch.object(
         FileTypeFormat,
         "_validate",
-        return_value=("", "some_warning"),
+        return_value=("", "some_warning\n"),
     ) as patch_validate, patch.object(
         FileTypeFormat,
         "read_file",
@@ -49,8 +49,8 @@ def test_that_validate_returns_expected_msg_if__validate_passes(filetype_format_
         result_cls = filetype_format_class.validate(filePathList=["something.txt"])
         patch_validate.assert_called_once()
         patch_cross_validate.assert_called_once()
-        assert result_cls.warnings == "some_warning\nsome_cross_warning\n"
-        assert result_cls.errors == "some_cross_error\n"
+        assert result_cls.warnings == "some_warning\nsome_cross_warning"
+        assert result_cls.errors == "some_cross_error"
 
 
 def test_that_validate_throws_exception_if_file_read_error(filetype_format_class):
