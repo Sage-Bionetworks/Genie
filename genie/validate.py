@@ -240,6 +240,7 @@ def _perform_validate(syn, args):
         format_registry=format_registry,
         file_type=args.filetype,
         genie_config=genie_config,
+        ancillary_files=[],
     )
     mykwargs = dict(
         nosymbol_check=args.nosymbol_check,
