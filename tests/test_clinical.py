@@ -1077,7 +1077,9 @@ def test__check_int_dead_consistency_inconsistent(inconsistent_df):
                 [{"name": "SAGE-1-1.bed", "path": ""}],
                 [{"name": "SAGE-1.bed", "path": ""}],
             ],
-            "There is no bed file named SAGE-1-2.bed that exists for the SEQ_ASSAY_ID: SAGE-1-2.\n",
+            "At least one SEQ_ASSAY_ID in your clinical file does not have an associated BED file. "
+            "Please update your file(s) to be consistent.\n"
+            "Missing BED files: SAGE-1-2.bed\n",
             "",
         ),
         (
@@ -1087,8 +1089,9 @@ def test__check_int_dead_consistency_inconsistent(inconsistent_df):
                 [{"name": "SAGE-1-1.bed", "path": ""}],
                 [{"name": "SAGE-1.bed", "path": ""}],
             ],
-            "There is no bed file named SAGE-1-2.bed that exists for the SEQ_ASSAY_ID: SAGE-1-2.\n"
-            "There is no bed file named SAGE-1-3.bed that exists for the SEQ_ASSAY_ID: SAGE-1-3.\n",
+            "At least one SEQ_ASSAY_ID in your clinical file does not have an associated BED file. "
+            "Please update your file(s) to be consistent.\n"
+            "Missing BED files: SAGE-1-2.bed, SAGE-1-3.bed\n",
             "",
         ),
         (
@@ -1096,8 +1099,9 @@ def test__check_int_dead_consistency_inconsistent(inconsistent_df):
             [
                 [{"name": "SAGE-1.txt", "path": ""}],
             ],
-            "There is no bed file named SAGE-1-2.bed that exists for the SEQ_ASSAY_ID: SAGE-1-2.\n"
-            "There is no bed file named SAGE-1-3.bed that exists for the SEQ_ASSAY_ID: SAGE-1-3.\n",
+            "At least one SEQ_ASSAY_ID in your clinical file does not have an associated BED file. "
+            "Please update your file(s) to be consistent.\n"
+            "Missing BED files: SAGE-1-2.bed, SAGE-1-3.bed\n",
             "",
         ),
     ],
