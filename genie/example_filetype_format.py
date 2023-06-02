@@ -7,6 +7,7 @@ import os
 from typing import List, Optional
 
 import pandas as pd
+import synapseclient
 
 logger = logging.getLogger(__name__)
 
@@ -63,10 +64,26 @@ class FileTypeFormat(metaclass=ABCMeta):
 
     _validation_kwargs: List[str] = []
 
-    def __init__(self, syn, center, genie_config=None):
+    def __init__(
+        self,
+        syn: synapseclient.Synapse,
+        center: str,
+        genie_config: Optional[dict] = None,
+        ancillary_files: Optional[List[List[object]]] = None,
+    ):
+        """A validator helper class for a center's files.
+
+        Args:
+            syn (synapseclient.Synapse): a synapseclient.Synapse object
+            center (str): The participating center name.
+            genie_config (dict): The configurations needed for the GENIE codebase.
+                GENIE table type/name to Synapse Id. Defaults to None.
+            ancillary_files (List[List[synapseclient.Entity]]): all files downloaded for validation. Defaults to None.
+        """
         self.syn = syn
         self.center = center
         self.genie_config = genie_config
+        self.ancillary_files = ancillary_files
 
         # self.pool = multiprocessing.Pool(poolSize)
 
