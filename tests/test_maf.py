@@ -312,7 +312,9 @@ def test_that__cross_validate_does_not_call_check_col_exist_if_clinical_df_read_
         patch_check_col_exist.assert_not_called()
 
 
-def test_that__cross_validate_does_not_call_check_values_if_id_cols_do_not_exist(maf_class):
+def test_that__cross_validate_does_not_call_check_values_if_id_cols_do_not_exist(
+    maf_class,
+):
     with patch.object(
         validate,
         "parse_file_info_in_nested_list",
@@ -344,7 +346,8 @@ def test_that__cross_validate_does_not_call_check_values_if_id_cols_do_not_exist
                     ],
                 )
             ),
-            "Not all values for TUMOR_SAMPLE_BARCODE in data_mutations_extended_SAGE.txt can be found in SAMPLE_ID in data_clinical_supp.txt.",
+            "At least one TUMOR_SAMPLE_BARCODE in your MAF file does not exist as a SAMPLE_ID in your sample clinical file. "
+            "Please update your file(s) to be consistent.\n",
             "",
         ),
         (

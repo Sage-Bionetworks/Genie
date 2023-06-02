@@ -519,13 +519,15 @@ def test_that_parse_file_info_in_nested_list_returns_expected(
         (
             pd.DataFrame({"ID": [1, 2, 3, 4]}),
             pd.DataFrame({"ID2": [1, 2, 3]}),
-            "Not all values for ID in test1 can be found in ID2 in test2.",
+            "At least one ID in your test1 file does not exist as a ID2 in your test2 file. "
+            "Please update your file(s) to be consistent.\n",
             "",
         ),
         (
             pd.DataFrame({"ID": [3, 4, 5]}),
             pd.DataFrame({"ID2": [1, 2, 3]}),
-            "Not all values for ID in test1 can be found in ID2 in test2.",
+            "At least one ID in your test1 file does not exist as a ID2 in your test2 file. "
+            "Please update your file(s) to be consistent.\n",
             "",
         ),
     ],
