@@ -1220,20 +1220,50 @@ def test_that__cross_validate_assay_info_has_seq_does_not_call_check_values_if_i
                     SEQ_ASSAY_ID=["SAGE-1", "SAGE-2", "SAGE-3"],
                 )
             ),
-            "Not all values for SEQ_ASSAY_ID in assay_information.yaml can be found in SEQ_ASSAY_ID in assay_information.yaml.",
+            "At least one SEQ_ASSAY_ID in your clinical file file does not exist as a SEQ_ASSAY_ID in your assay information file. "
+            "Please update your file(s) to be consistent.\n",
             "",
         ),
         (
             pd.DataFrame(
                 dict(
-                    SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-SAGE-1", "SAGE-1", "SAGE-2"],
+                    SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-SAGE-1"],
+                )
+            ),
+            "At least one SEQ_ASSAY_ID in your clinical file file does not exist as a SEQ_ASSAY_ID in your assay information file. "
+            "Please update your file(s) to be consistent.\n",
+            "",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    SEQ_ASSAY_ID=[
+                        "SAGE-1-1",
+                        "SAGE-SAGE-1",
+                        "SAGE-1",
+                        "SAGE-2",
+                        "SAGE-3",
+                    ],
+                )
+            ),
+            "",
+            "",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    SEQ_ASSAY_ID=[
+                        "SAGE-1-1",
+                        "SAGE-SAGE-1",
+                        "SAGE-1",
+                    ],
                 )
             ),
             "",
             "",
         ),
     ],
-    ids=["diff_ids", "matching_ids_for_clinical"],
+    ids=["diff_ids", "semi_match_ids", "match_in_clinical", "exact_match"],
 )
 def test_that__cross_validate_assay_info_has_seq_returns_expected_msg_if_valid(
     clin_class, valid_clinical_df, test_assay_df, expected_warning, expected_error

@@ -1053,13 +1053,8 @@ class Clinical(FileTypeFormat):
         assay_files = validate.parse_file_info_in_nested_list(
             nested_list=self.ancillary_files, search_str="assay_information"
         )
-        assay_file_names = assay_files["file_info"]["name"]
         assay_file_paths = assay_files["file_info"]["path"]
 
-        clinical_files = validate.parse_file_info_in_nested_list(
-            nested_list=self.ancillary_files, search_str="data_clinical_supp"
-        )
-        clinical_file_names = clinical_files["file_info"]["name"]
         if assay_files["files"]:
             try:
                 assay_df = process_functions.get_assay_dataframe(
@@ -1073,10 +1068,10 @@ class Clinical(FileTypeFormat):
                 if process_functions.checkColExist(assay_df, col_to_validate):
                     errors, warnings = validate.check_values_between_two_df(
                         df1=clinicaldf,
-                        df1_filename=clinical_file_names,
+                        df1_filename="clinical file",
                         df1_id_to_check=col_to_validate,
                         df2=assay_df,
-                        df2_filename=assay_file_names,
+                        df2_filename="assay information",
                         df2_id_to_check=col_to_validate,
                     )
         return errors, warnings
