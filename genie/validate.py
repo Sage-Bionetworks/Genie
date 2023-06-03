@@ -239,7 +239,7 @@ def _perform_validate(syn, args):
             for extra in args.ancillary_files
         ]
     else:
-        build_ancillary_files = []
+        build_ancillary_files = None
     validator = GenieValidationHelper(
         syn=syn,
         project_id=args.project_id,
