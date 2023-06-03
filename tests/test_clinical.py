@@ -1135,15 +1135,15 @@ def test_that__cross_validate_calls_expected_methods(clin_class):
 
 def test_that__cross_validate_returns_correct_format_for_errors_warnings(clin_class):
     with mock.patch.object(
-        Clinical, "_cross_validate_assay_info_has_seq", return_value=("test1", "test2")
+        Clinical, "_cross_validate_assay_info_has_seq", return_value=("test1", "")
     ) as patch__cross_validate_assay, mock.patch.object(
         Clinical, "_cross_validate_bed_files_exist", return_value=("test3\n", "")
     ) as patch__cross_validate_bed:
         errors, warnings = clin_class._cross_validate(
             clinicaldf=pd.DataFrame({"something": [1]})
         )
-        assert errors == "test1\ntest3\n"
-        assert warnings == "test2\n"
+        assert errors == "test1test3\n"
+        assert warnings == ""
 
 
 def test_that__cross_validate_assay_info_has_seq_does_not_read_files_if_no_assay_files(

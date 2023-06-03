@@ -1083,6 +1083,6 @@ class Clinical(FileTypeFormat):
         )
         errors_bed, warnings_bed = self._cross_validate_bed_files_exist(clinicaldf)
 
-        errors = "\n".join([errors_assay, errors_bed])
-        warnings = "\n".join([warnings_assay, warnings_bed])
+        errors = errors_assay + errors_bed
+        warnings = warnings_assay + warnings_bed
         return errors, warnings
