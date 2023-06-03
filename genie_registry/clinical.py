@@ -1033,8 +1033,56 @@ class Clinical(FileTypeFormat):
             )
         return errors, warnings
 
+    def _cross_validate_assay_info_has_seq(self, clinicaldf: pd.DataFrame) -> tuple:
+        """Cross validates that assay information file has all the
+        SEQ_ASSAY_IDs present in the clinical file
+        TODO: Refactor this function (similar to _cross_validate in maf)
+        once the clinical files have been taken care of
+        so that it can be generalized to any file type
+
+        Args:
+            clinicaldf (pd.DataFrame): input clinical data
+
+        Returns:
+            tuple: errors and warnings
+        """
+        errors = ""
+        warnings = ""
+        col_to_validate = "SEQ_ASSAY_ID"
+        # This section can be removed once we remove the list of lists
+        assay_files = validate.parse_file_info_in_nested_list(
+            nested_list=self.ancillary_files, search_str="assay_information"
+        )
+        assay_file_paths = assay_files["file_info"]["path"]
+
+        if assay_files["files"]:
+            try:
+                assay_df = process_functions.get_assay_dataframe(
+                    filepath_list=assay_file_paths
+                )
+                has_file_read_error = False
+            except Exception as e:
+                has_file_read_error = True
+
+            if not has_file_read_error:
+                if process_functions.checkColExist(assay_df, col_to_validate):
+                    errors, warnings = validate.check_values_between_two_df(
+                        df1=clinicaldf,
+                        df1_filename="clinical file",
+                        df1_id_to_check=col_to_validate,
+                        df2=assay_df,
+                        df2_filename="assay information",
+                        df2_id_to_check=col_to_validate,
+                    )
+        return errors, warnings
+
     def _cross_validate(self, clinicaldf) -> tuple:
         """Cross-validation for clinical file(s)"""
+        errors_assay, warnings_assay = self._cross_validate_assay_info_has_seq(
+            clinicaldf
+        )
+        errors_bed, warnings_bed = self._cross_validate_bed_files_exist(clinicaldf)
 
-        errors, warnings = self._cross_validate_bed_files_exist(clinicaldf)
+        errors = errors_assay + errors_bed
+        warnings = warnings_assay + warnings_bed
         return errors, warnings
