@@ -258,7 +258,7 @@ class FileTypeFormat(metaclass=ABCMeta):
             logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
             errors, warnings = self._validate(df, **mykwargs)
             # only cross-validate if validation passes
-            if not errors:
+            if not errors and self.ancillary_files is not None:
                 logger.info(
                     "CROSS-VALIDATING %s" % os.path.basename(",".join(filePathList))
                 )

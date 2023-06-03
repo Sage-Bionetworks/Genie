@@ -8,7 +8,36 @@ from genie.example_filetype_format import FileTypeFormat
 
 @pytest.fixture
 def filetype_format_class(syn):
+    yield FileTypeFormat(syn, "SAGE", ancillary_files=[["mocked"]])
+
+
+@pytest.fixture
+def filetype_format_class_no_ancillary(syn):
     yield FileTypeFormat(syn, "SAGE")
+
+
+def test_that_validate_no_cross_file_without_ancillary(
+    filetype_format_class_no_ancillary,
+):
+    with patch.object(
+        FileTypeFormat,
+        "_validate",
+        return_value=("", "some_warning\n"),
+    ) as patch_validate, patch.object(
+        FileTypeFormat,
+        "read_file",
+        return_value=pd.DataFrame(),
+    ), patch.object(
+        FileTypeFormat,
+        "_cross_validate",
+    ) as patch_cross_validate:
+        result_cls = filetype_format_class_no_ancillary.validate(
+            filePathList=["something.txt"]
+        )
+        patch_validate.assert_called_once()
+        patch_cross_validate.assert_not_called()
+        assert result_cls.warnings == "some_warning\n"
+        assert result_cls.errors == ""
 
 
 def test_that_validate_returns_expected_msg_if__validate_fails(filetype_format_class):
@@ -20,7 +49,7 @@ def test_that_validate_returns_expected_msg_if__validate_fails(filetype_format_c
         FileTypeFormat,
         "read_file",
         return_value=pd.DataFrame(),
-    ) as patch_read_file, patch.object(
+    ), patch.object(
         FileTypeFormat,
         "_cross_validate",
         return_value=("some_cross_error", "some_cross_warning"),
@@ -41,7 +70,7 @@ def test_that_validate_returns_expected_msg_if__validate_passes(filetype_format_
         FileTypeFormat,
         "read_file",
         return_value=pd.DataFrame(),
-    ) as patch_read_file, patch.object(
+    ), patch.object(
         FileTypeFormat,
         "_cross_validate",
         return_value=("some_cross_error", "some_cross_warning"),
@@ -61,9 +90,7 @@ def test_that_validate_throws_exception_if_file_read_error(filetype_format_class
         FileTypeFormat,
         "read_file",
         side_effect=Exception("mocked error"),
-    ) as patch_read_file, patch.object(
-        FileTypeFormat, "_cross_validate"
-    ) as patch_cross_validate:
+    ), patch.object(FileTypeFormat, "_cross_validate") as patch_cross_validate:
         result_cls = filetype_format_class.validate(filePathList=["something.txt"])
         assert result_cls.warnings == ""
         assert result_cls.errors == (
