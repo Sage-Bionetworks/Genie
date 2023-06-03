@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+import os
 
 import pandas as pd
 import synapseclient
@@ -231,7 +232,11 @@ def _perform_validate(syn, args):
         synapseclient.File(name=filepath, path=filepath, parentId=None)
         for filepath in args.filepath
     ]
-
+    # HACK: create the ancillary files format
+    build_ancillary_files = [
+        [{"name": os.path.basename(extra), "path": extra}]
+        for extra in args.ancillary_files
+    ]
     validator = GenieValidationHelper(
         syn=syn,
         project_id=args.project_id,
@@ -240,7 +245,7 @@ def _perform_validate(syn, args):
         format_registry=format_registry,
         file_type=args.filetype,
         genie_config=genie_config,
-        ancillary_files=[],
+        ancillary_files=build_ancillary_files,
     )
     mykwargs = dict(
         nosymbol_check=args.nosymbol_check,

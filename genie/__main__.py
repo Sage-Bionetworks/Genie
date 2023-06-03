@@ -111,6 +111,12 @@ def build_parser():
         action="store_true",
         help="Do not check hugo symbols of fusion and cna file",
     )
+    parser_validate.add_argument(
+        "--ancillary-files",
+        nargs="+",
+        type=str,
+        help="Some files require cross file validation",
+    )
 
     parser_validate.set_defaults(func=validate._perform_validate)
 
