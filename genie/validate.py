@@ -233,10 +233,13 @@ def _perform_validate(syn, args):
         for filepath in args.filepath
     ]
     # HACK: create the ancillary files format
-    build_ancillary_files = [
-        [{"name": os.path.basename(extra), "path": extra}]
-        for extra in args.ancillary_files
-    ]
+    if args.ancillary_files:
+        build_ancillary_files = [
+            [{"name": os.path.basename(extra), "path": extra}]
+            for extra in args.ancillary_files
+        ]
+    else:
+        build_ancillary_files = []
     validator = GenieValidationHelper(
         syn=syn,
         project_id=args.project_id,
