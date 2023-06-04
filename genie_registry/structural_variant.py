@@ -30,12 +30,17 @@ class StructuralVariant(FileTypeFormat):
         sv_df = self._process(sv_df)
         # Add in not required primary key columns so that the update code doesn't fail
         not_required_cols = [
-            "SITE1_HUGO_SYMBOL", "SITE2_HUGO_SYMBOL", "SITE1_POSITION", "SITE2_POSITION", "EVENT_INFO", "ANNOTATION"
+            "SITE1_HUGO_SYMBOL",
+            "SITE2_HUGO_SYMBOL",
+            "SITE1_POSITION",
+            "SITE2_POSITION",
+            "EVENT_INFO",
+            "ANNOTATION",
         ]
         # Fill with blank columns
         for col in not_required_cols:
             if not process_functions.checkColExist(sv_df, col):
-                sv_df[col] = ''
+                sv_df[col] = ""
         # TODO: test the col parameter
         load.update_table(
             syn=self.syn,
