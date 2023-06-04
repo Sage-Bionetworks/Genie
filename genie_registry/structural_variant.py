@@ -19,15 +19,19 @@ class StructuralVariant(FileTypeFormat):
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "data_sv.txt"
 
-    def _process(self, sv_df):
+    def _process(self, sv_df: DataFrame) -> DataFrame:
+        """Transformation code for SV
+
+        Args:
+            sv_df (DataFrame): SV dataframe
+
+        Returns:
+            DataFrame: Transformed dataframe
+        """
         sv_df.columns = [col.upper() for col in sv_df.columns]
         # Add center column
         center = [sample_id.split("-")[1] for sample_id in sv_df["SAMPLE_ID"]]
         sv_df["CENTER"] = center
-        return sv_df
-
-    def process_steps(self, sv_df: DataFrame, newPath: str, databaseSynId: str) -> str:
-        sv_df = self._process(sv_df)
         # Add in not required primary key columns so that the update code doesn't fail
         not_required_cols = [
             "SITE1_HUGO_SYMBOL",
@@ -41,6 +45,10 @@ class StructuralVariant(FileTypeFormat):
         for col in not_required_cols:
             if not process_functions.checkColExist(sv_df, col):
                 sv_df[col] = ""
+        return sv_df
+
+    def process_steps(self, sv_df: DataFrame, newPath: str, databaseSynId: str) -> str:
+        sv_df = self._process(sv_df)
         # TODO: test the col parameter
         load.update_table(
             syn=self.syn,
