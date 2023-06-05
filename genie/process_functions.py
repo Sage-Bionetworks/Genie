@@ -62,7 +62,7 @@ def checkUrl(url):
 
 
 # TODO Add to validate.py
-def checkColExist(DF, key):
+def checkColExist(DF: pd.DataFrame, key: str):
     """
     This function checks if the column exists in a dataframe
 

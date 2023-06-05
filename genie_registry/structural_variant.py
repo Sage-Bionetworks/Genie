@@ -2,6 +2,8 @@ from io import StringIO
 import logging
 import os
 
+from pandas import DataFrame
+
 from genie.example_filetype_format import FileTypeFormat
 from genie import load, process_functions, validate
 
@@ -17,14 +19,35 @@ class StructuralVariant(FileTypeFormat):
     def _validateFilename(self, filePath):
         assert os.path.basename(filePath[0]) == "data_sv.txt"
 
-    def _process(self, sv_df):
+    def _process(self, sv_df: DataFrame) -> DataFrame:
+        """Transformation code for SV
+
+        Args:
+            sv_df (DataFrame): SV dataframe
+
+        Returns:
+            DataFrame: Transformed dataframe
+        """
         sv_df.columns = [col.upper() for col in sv_df.columns]
         # Add center column
         center = [sample_id.split("-")[1] for sample_id in sv_df["SAMPLE_ID"]]
         sv_df["CENTER"] = center
+        # Add in not required primary key columns so that the update code doesn't fail
+        not_required_cols = [
+            "SITE1_HUGO_SYMBOL",
+            "SITE2_HUGO_SYMBOL",
+            "SITE1_POSITION",
+            "SITE2_POSITION",
+            "EVENT_INFO",
+            "ANNOTATION",
+        ]
+        # Fill with blank columns
+        for col in not_required_cols:
+            if not process_functions.checkColExist(sv_df, col):
+                sv_df[col] = ""
         return sv_df
 
-    def process_steps(self, sv_df, newPath, databaseSynId):
+    def process_steps(self, sv_df: DataFrame, newPath: str, databaseSynId: str) -> str:
         sv_df = self._process(sv_df)
         # TODO: test the col parameter
         load.update_table(
@@ -75,16 +98,16 @@ class StructuralVariant(FileTypeFormat):
         total_warning.write(warn)
         total_error.write(error)
 
-        have_hugo_1 = process_functions.checkColExist(sv_df, "SITE1_HUGO_SYMBOL")
-        have_hugo_2 = process_functions.checkColExist(sv_df, "SITE2_HUGO_SYMBOL")
-        have_entrez_1 = process_functions.checkColExist(sv_df, "SITE1_ENTREZ_GENE_ID")
-        have_entrez_2 = process_functions.checkColExist(sv_df, "SITE2_ENTREZ_GENE_ID")
+        # have_hugo_1 = process_functions.checkColExist(sv_df, "SITE1_HUGO_SYMBOL")
+        # have_hugo_2 = process_functions.checkColExist(sv_df, "SITE2_HUGO_SYMBOL")
+        # have_entrez_1 = process_functions.checkColExist(sv_df, "SITE1_ENTREZ_GENE_ID")
+        # have_entrez_2 = process_functions.checkColExist(sv_df, "SITE2_ENTREZ_GENE_ID")
 
-        if not ((have_hugo_1 or have_entrez_1) and (have_hugo_2 or have_entrez_2)):
-            total_error.write(
-                "Structural Variant: Either SITE1_HUGO_SYMBOL/SITE1_ENTREZ_GENE_ID "
-                "or SITE2_HUGO_SYMBOL/SITE2_ENTREZ_GENE_ID is required.\n"
-            )
+        # if not ((have_hugo_1 or have_entrez_1) and (have_hugo_2 or have_entrez_2)):
+        #     total_error.write(
+        #         "Structural Variant: Either SITE1_HUGO_SYMBOL/SITE1_ENTREZ_GENE_ID "
+        #         "or SITE2_HUGO_SYMBOL/SITE2_ENTREZ_GENE_ID is required.\n"
+        #     )
 
         # optional_columns = [
         #     "SITE1_REGION_NUMBER",
@@ -145,7 +168,7 @@ class StructuralVariant(FileTypeFormat):
             if sv_df.get(col) is not None
             and not sv_df[col].dropna().apply(process_functions.checkInt).all()
         ]
-        if len(non_ints) > 0:
+        if non_ints:
             total_error.write(
                 "Structural Variant: Only integers allowed in these "
                 "column(s): {}.\n".format(", ".join(non_ints))
