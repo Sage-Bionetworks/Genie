@@ -251,8 +251,12 @@ class FileTypeFormat(metaclass=ABCMeta):
         if not errors:
             logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
             errors, warnings = self._validate(df, **mykwargs)
-            # only cross-validate if validation passes
-            if not errors and self.ancillary_files is not None:
+            # only cross-validate if validation passes or ancillary files exist
+            # Assumes that self.ancillary_files won't be [[]] due to whats returned from
+            # extract.get_center_input_files
+            if not errors and (
+                isinstance(self.ancillary_files, list) and self.ancillary_files
+            ):
                 logger.info(
                     "CROSS-VALIDATING %s" % os.path.basename(",".join(filePathList))
                 )
