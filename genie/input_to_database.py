@@ -6,7 +6,7 @@ import os
 import time
 from typing import List, Optional
 
-import synapseclient  # lgtm [py/import-and-import-from]
+import synapseclient
 from synapseclient import Synapse
 from synapseclient.core.utils import to_unix_epoch_time
 import pandas as pd
@@ -165,6 +165,106 @@ def _get_status_and_error_list(valid, message, entities):
     return input_status_list, invalid_errors_list
 
 
+# def get_ancillary_files(
+#     syn: synapseclient.Synapse,
+#     synid: str,
+#     project_id: str,
+#     center: str,
+#     process: str = "main",
+#     downloadFile: bool = True,
+#     genie_config: list = None,
+#     format_registry: list = None,
+# ) -> Dict[str, Dict[str, object]]:
+#     """Walks through each center's input directory
+#     to get a dict of center files
+
+#     Args:
+#         syn (synapseclient.Synapse): Synapse connection
+#         synid (str): Synapse Id of a folder
+#         project_id (str): GENIE Synapse project id
+#         center (str): GENIE center name
+#         process (str, optional): Process type include "main", "mutation".
+#                                  Defaults to "main".
+#         downloadFile (bool, optional): Downloads the file. Defaults to True.
+
+#     Returns:
+#         dict: {entity_name: {
+#             entity: Synapse.File
+#             filetypeformat_object: FileTypeFormat
+#             }
+#     """
+#     logger.info("GETTING {center} INPUT FILES".format(center=center))
+#     clinical_pair_name = [
+#         "data_clinical_supp_sample_{center}.txt".format(center=center),
+#         "data_clinical_supp_patient_{center}.txt".format(center=center),
+#     ]
+#     clinicalpair_entities = []
+
+#     center_files = synapseutils.walk(syn, synid)
+#     prepared_center_files = {}
+
+#     for _, _, entities in center_files:
+#         for name, ent_synid in entities:
+#             if name in clinical_pair_name:
+#                 clinicalpair_entities.append(ent)
+#                 continue
+
+#             if name.endswith(".vcf") and process != "mutation":
+#                 continue
+
+#             ent = syn.get(ent_synid, downloadFile=downloadFile)
+
+#             validator = validate.GenieValidationHelper(
+#                 syn=syn,
+#                 project_id=project_id,
+#                 center=center,
+#                 entitylist=[ent],
+#                 format_registry=format_registry,
+#                 genie_config=genie_config,
+#                 ancillary_files=None,
+#             )
+#             filetype = validator.file_type
+#             if validator.file_type not in validator._format_registry:
+#                 continue
+#             validator_cls = validator._format_registry[validator.file_type]
+#             fileformat_validator = validator_cls(
+#                 syn=validator._synapse_client,
+#                 center=validator.center,
+#                 genie_config=validator.genie_config,
+#                 ancillary_files=None,
+#             )
+
+#             prepared_center_files[name] = {}
+#             prepared_center_files[name]["entity"] = ent
+#             prepared_center_files[name]["filetypeformat_object"] = fileformat_validator
+
+#     # if the clinical files exist
+#     if clinicalpair_entities:
+#         # handling for just the clinical pair, can remove once we have separate classes
+#         cli_validator = validate.GenieValidationHelper(
+#             syn=syn,
+#             project_id=project_id,
+#             center=center,
+#             entitylist=clinicalpair_entities,
+#             format_registry=format_registry,
+#             genie_config=genie_config,
+#             ancillary_files=None,
+#         )
+#         cli_filetype = cli_validator.file_type
+#         cli_validator_cls = cli_validator._format_registry[cli_validator.file_type]
+#         cli_fileformat_validator = validator_cls(
+#             syn=cli_validator._synapse_client,
+#             center=cli_validator.center,
+#             genie_config=cli_validator.genie_config,
+#             ancillary_files=None,
+#         )
+
+#         prepared_center_files[name] = {}
+#         prepared_center_files[name]["entity"] = clinicalpair_entities
+#         prepared_center_files[name]["filetypeformat_object"] = cli_fileformat_validator
+#     return prepared_center_files
+
+
 # TODO: Add to validation.py
 def validatefile(
     syn: synapseclient.Synapse,
@@ -236,6 +336,7 @@ def validatefile(
         ancillary_files=ancillary_files,
     )
     filetype = validator.file_type
+
     if check_file_status["to_validate"]:
         valid_cls, message = validator.validate_single_file(
             oncotree_link=genie_config["oncotreeLink"], nosymbol_check=False
@@ -585,7 +686,14 @@ def _update_tables_content(validation_statusdf, error_trackingdf):
 
 # TODO: Add to validation.py
 def validation(
-    syn, project_id, center, process, center_files, format_registry, genie_config
+    syn,
+    project_id,
+    center,
+    process,
+    center_files,
+    format_registry,
+    genie_config,
+    ancillary_files=None,
 ) -> pd.DataFrame:
     """
     Validation of all center files
@@ -597,6 +705,7 @@ def validation(
         center_files:
         format_registry:
         genie_config:
+        ancillary_files:
 
     Returns:
         pd.DataFrame: Dataframe of valid GENIE files
@@ -637,7 +746,7 @@ def validation(
             center=center,
             format_registry=format_registry,
             genie_config=genie_config,
-            ancillary_files=center_files,
+            ancillary_files=ancillary_files,
         )
 
         input_valid_statuses.extend(status)
@@ -763,6 +872,16 @@ def center_input_to_database(
         syn, center_input_synid, center, process
     )
 
+    # ancillary_files = get_ancillary_files(
+    #    syn=syn,
+    #    synid=center_input_synid,
+    #    project_id=project_id,
+    #    center=center,
+    #    process=process,
+    #    format_registry=format_registry,
+    #    genie_config=genie_config,
+    # )
+
     # only validate if there are center files
     if center_files:
         validFiles = validation(
@@ -773,6 +892,7 @@ def center_input_to_database(
             center_files=center_files,
             format_registry=format_registry,
             genie_config=genie_config,
+            ancillary_files=center_files,
         )
     else:
         logger.info(f"{center} has not uploaded any files")

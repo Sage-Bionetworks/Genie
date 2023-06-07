@@ -5,6 +5,7 @@ import logging
 import os
 import time
 from typing import Optional
+import yaml
 
 import pandas as pd
 import requests
@@ -20,6 +21,117 @@ pd.options.mode.chained_assignment = None
 logger = logging.getLogger(__name__)
 # TODO: Add to constants.py
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def get_clinical_dataframe(filePathList: list) -> pd.DataFrame:
+    """Gets the clinical file(s) and reads them in as a
+    dataframe
+
+    Args:
+        filePathList (list): List of clinical files
+
+    Raises:
+        ValueError: when PATIENT_ID column doesn't exist
+        ValueError: When PATIENT_IDs in sample file doesn't exist in patient file
+
+    Returns:
+        pd.DataFrame: clinical file as a dataframe
+    """
+    clinicaldf = pd.read_csv(filePathList[0], sep="\t", comment="#")
+    clinicaldf.columns = [col.upper() for col in clinicaldf.columns]
+
+    if len(filePathList) > 1:
+        other_clinicaldf = pd.read_csv(filePathList[1], sep="\t", comment="#")
+        other_clinicaldf.columns = [col.upper() for col in other_clinicaldf.columns]
+
+        try:
+            clinicaldf = clinicaldf.merge(other_clinicaldf, on="PATIENT_ID")
+        except Exception:
+            raise ValueError(
+                (
+                    "If submitting separate patient and sample files, "
+                    "they both must have the PATIENT_ID column"
+                )
+            )
+        # Must figure out which is sample and which is patient
+        if "sample" in filePathList[0]:
+            sample = clinicaldf
+            patient = other_clinicaldf
+        else:
+            sample = other_clinicaldf
+            patient = clinicaldf
+
+        if not all(sample["PATIENT_ID"].isin(patient["PATIENT_ID"])):
+            raise ValueError(
+                (
+                    "Patient Clinical File: All samples must have associated "
+                    "patient information"
+                )
+            )
+
+    return clinicaldf
+
+
+def get_assay_dataframe(filepath_list: list) -> pd.DataFrame:
+    """Reads in assay_information.yaml file
+        and outputs it as a dataframe
+
+    Args:
+        filepath_list (list): list of files
+
+    Raises:
+        ValueError: thrown if read error with file
+
+    Returns:
+        pd.DataFrame: dataframe version of assay info file
+    """
+    filepath = filepath_list[0]
+    try:
+        with open(filepath, "r") as yamlfile:
+            # https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation
+            # Must add this because yaml load deprecation
+            assay_info_dict = yaml.safe_load(yamlfile)
+    except Exception:
+        raise ValueError(
+            "assay_information.yaml: Can't read in your file. "
+            "Please make sure the file is a correctly formatted yaml"
+        )
+    # assay_info_df = pd.DataFrame(panel_info_dict)
+    # assay_info_df = assay_info_df.transpose()
+    # assay_info_df['SEQ_ASSAY_ID'] = assay_info_df.index
+    # assay_info_df.reset_index(drop=True, inplace=True)
+    assay_infodf = pd.DataFrame(assay_info_dict)
+    assay_info_transposeddf = assay_infodf.transpose()
+
+    all_panel_info = pd.DataFrame()
+    for assay in assay_info_dict:
+        assay_specific_info = assay_info_dict[assay]["assay_specific_info"]
+        assay_specific_infodf = pd.DataFrame(assay_specific_info)
+
+        intial_seq_id_infodf = assay_info_transposeddf.loc[[assay]]
+
+        # make sure to create a skeleton for the number of seq assay ids
+        # in the seq pipeline
+        seq_assay_id_infodf = pd.concat(
+            [intial_seq_id_infodf] * len(assay_specific_info)
+        )
+        seq_assay_id_infodf.reset_index(drop=True, inplace=True)
+        assay_finaldf = pd.concat([assay_specific_infodf, seq_assay_id_infodf], axis=1)
+        del assay_finaldf["assay_specific_info"]
+        # Transform values containing lists to string concatenated values
+        columns_containing_lists = [
+            "variant_classifications",
+            "alteration_types",
+            "preservation_technique",
+            "coverage",
+        ]
+
+        for col in columns_containing_lists:
+            if assay_finaldf.get(col) is not None:
+                assay_finaldf[col] = [";".join(row) for row in assay_finaldf[col]]
+        assay_finaldf["SEQ_PIPELINE_ID"] = assay
+        all_panel_info = pd.concat([all_panel_info, assay_finaldf])
+    return all_panel_info
 
 
 def retry_get_url(url):

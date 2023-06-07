@@ -10,7 +10,7 @@ import pandas as pd
 import synapseclient
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import extract, load, process_functions
+from genie import extract, load, process_functions, validate
 from genie.database_to_staging import redact_phi
 
 logger = logging.getLogger(__name__)
@@ -1011,3 +1011,79 @@ class Clinical(FileTypeFormat):
                 )
 
         return clinicaldf
+
+    def _cross_validate_bed_files_exist(self, clinicaldf) -> tuple:
+        """Check that a bed file exist per SEQ_ASSAY_ID value in clinical file"""
+        errors = ""
+        warnings = ""
+        missing_files = []
+        seq_assay_ids = clinicaldf["SEQ_ASSAY_ID"].unique().tolist()
+
+        for seq_assay_id in seq_assay_ids:
+            bed_files = validate.parse_file_info_in_nested_list(
+                nested_list=self.ancillary_files, search_str=f"{seq_assay_id}.bed"  # type: ignore[arg-type]
+            )
+            if not bed_files["files"]:
+                missing_files.append(f"{seq_assay_id}.bed")
+
+        if missing_files:
+            errors = (
+                "At least one SEQ_ASSAY_ID in your clinical file does not have an associated BED file. "
+                "Please update your file(s) to be consistent.\n"
+                f"Missing BED files: {', '.join(missing_files)}\n"
+            )
+        return errors, warnings
+
+    def _cross_validate_assay_info_has_seq(self, clinicaldf: pd.DataFrame) -> tuple:
+        """Cross validates that assay information file has all the
+        SEQ_ASSAY_IDs present in the clinical file
+        TODO: Refactor this function (similar to _cross_validate in maf)
+        once the clinical files have been taken care of
+        so that it can be generalized to any file type
+
+        Args:
+            clinicaldf (pd.DataFrame): input clinical data
+
+        Returns:
+            tuple: errors and warnings
+        """
+        errors = ""
+        warnings = ""
+        col_to_validate = "SEQ_ASSAY_ID"
+        # This section can be removed once we remove the list of lists
+        assay_files = validate.parse_file_info_in_nested_list(
+            nested_list=self.ancillary_files, search_str="assay_information"  # type: ignore[arg-type]
+        )
+        assay_file_paths = assay_files["file_info"]["path"]
+
+        if assay_files["files"]:
+            try:
+                assay_df = process_functions.get_assay_dataframe(
+                    filepath_list=assay_file_paths
+                )
+                has_file_read_error = False
+            except Exception:
+                has_file_read_error = True
+
+            if not has_file_read_error:
+                if process_functions.checkColExist(assay_df, col_to_validate):
+                    errors, warnings = validate.check_values_between_two_df(
+                        df1=clinicaldf,
+                        df1_filename="clinical file",
+                        df1_id_to_check=col_to_validate,
+                        df2=assay_df,
+                        df2_filename="assay information",
+                        df2_id_to_check=col_to_validate,
+                    )
+        return errors, warnings
+
+    def _cross_validate(self, clinicaldf) -> tuple:
+        """Cross-validation for clinical file(s)"""
+        errors_assay, warnings_assay = self._cross_validate_assay_info_has_seq(
+            clinicaldf
+        )
+        errors_bed, warnings_bed = self._cross_validate_bed_files_exist(clinicaldf)
+
+        errors = errors_assay + errors_bed
+        warnings = warnings_assay + warnings_bed
+        return errors, warnings
