@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+from typing import Dict, List, Optional
 
 import pandas as pd
 import synapseclient
@@ -24,18 +25,18 @@ ACCEPTED_CHROMOSOMES = list(map(str, range(1, 23))) + ["X", "Y", "MT"]
 class ValidationHelper(object):
     # Used for the kwargs in validate_single_file
     # Overload this per class
-    _validate_kwargs = []
+    _validate_kwargs: List[str] = []
 
     def __init__(
         self,
-        syn,
-        project_id,
-        center,
-        entitylist,
-        format_registry=None,
-        file_type=None,
-        genie_config=None,
-        ancillary_files=None,
+        syn: synapseclient.Synapse,
+        project_id: str,
+        center: str,
+        entitylist: List[synapseclient.File],
+        format_registry: Optional[Dict] = None,
+        file_type: Optional[str] = None,
+        genie_config: Optional[Dict] = None,
+        ancillary_files: Optional[list] = None,
     ):
         """A validator helper class for a center's files.
 
@@ -253,7 +254,9 @@ def _perform_validate(syn, args):
         load.store_files(syn=syn, filepaths=args.filepath, parentid=args.parentid)
 
 
-def parse_file_info_in_nested_list(nested_list: list, search_str: str) -> dict:
+def parse_file_info_in_nested_list(
+    nested_list: List[List[synapseclient.Entity]], search_str: str
+) -> dict:
     """Parses for a name and filepath in a nested list of Synapse entity objects
 
     Args:
@@ -272,7 +275,7 @@ def parse_file_info_in_nested_list(nested_list: list, search_str: str) -> dict:
         if file["name"].startswith(search_str)
     }
     file_info["name"] = ",".join(files.keys())
-    file_info["path"] = list(files.values())
+    file_info["path"] = list(files.values())  # type: ignore[assignment]
     return {"files": files, "file_info": file_info}
 
 

@@ -4,12 +4,11 @@ import datetime
 import logging
 import os
 import time
-from typing import List, Dict
+from typing import List, Optional
 
-import synapseclient  # lgtm [py/import-and-import-from]
+import synapseclient
 from synapseclient import Synapse
 from synapseclient.core.utils import to_unix_epoch_time
-import synapseutils
 import pandas as pd
 
 from genie import (
@@ -166,117 +165,117 @@ def _get_status_and_error_list(valid, message, entities):
     return input_status_list, invalid_errors_list
 
 
-def get_ancillary_files(
-    syn: synapseclient.Synapse,
-    synid: str,
-    project_id: str,
-    center: str,
-    process: str = "main",
-    downloadFile: bool = True,
-    genie_config: list = None,
-    format_registry: list = None,
-) -> Dict[str, Dict[str, object]]:
-    """Walks through each center's input directory
-    to get a dict of center files
+# def get_ancillary_files(
+#     syn: synapseclient.Synapse,
+#     synid: str,
+#     project_id: str,
+#     center: str,
+#     process: str = "main",
+#     downloadFile: bool = True,
+#     genie_config: list = None,
+#     format_registry: list = None,
+# ) -> Dict[str, Dict[str, object]]:
+#     """Walks through each center's input directory
+#     to get a dict of center files
 
-    Args:
-        syn (synapseclient.Synapse): Synapse connection
-        synid (str): Synapse Id of a folder
-        project_id (str): GENIE Synapse project id
-        center (str): GENIE center name
-        process (str, optional): Process type include "main", "mutation".
-                                 Defaults to "main".
-        downloadFile (bool, optional): Downloads the file. Defaults to True.
+#     Args:
+#         syn (synapseclient.Synapse): Synapse connection
+#         synid (str): Synapse Id of a folder
+#         project_id (str): GENIE Synapse project id
+#         center (str): GENIE center name
+#         process (str, optional): Process type include "main", "mutation".
+#                                  Defaults to "main".
+#         downloadFile (bool, optional): Downloads the file. Defaults to True.
 
-    Returns:
-        dict: {entity_name: {
-            entity: Synapse.File
-            filetypeformat_object: FileTypeFormat
-            }
-    """
-    logger.info("GETTING {center} INPUT FILES".format(center=center))
-    clinical_pair_name = [
-        "data_clinical_supp_sample_{center}.txt".format(center=center),
-        "data_clinical_supp_patient_{center}.txt".format(center=center),
-    ]
-    clinicalpair_entities = []
+#     Returns:
+#         dict: {entity_name: {
+#             entity: Synapse.File
+#             filetypeformat_object: FileTypeFormat
+#             }
+#     """
+#     logger.info("GETTING {center} INPUT FILES".format(center=center))
+#     clinical_pair_name = [
+#         "data_clinical_supp_sample_{center}.txt".format(center=center),
+#         "data_clinical_supp_patient_{center}.txt".format(center=center),
+#     ]
+#     clinicalpair_entities = []
 
-    center_files = synapseutils.walk(syn, synid)
-    prepared_center_files = {}
+#     center_files = synapseutils.walk(syn, synid)
+#     prepared_center_files = {}
 
-    for _, _, entities in center_files:
-        for name, ent_synid in entities:
-            if name in clinical_pair_name:
-                clinicalpair_entities.append(ent)
-                continue
+#     for _, _, entities in center_files:
+#         for name, ent_synid in entities:
+#             if name in clinical_pair_name:
+#                 clinicalpair_entities.append(ent)
+#                 continue
 
-            if name.endswith(".vcf") and process != "mutation":
-                continue
+#             if name.endswith(".vcf") and process != "mutation":
+#                 continue
 
-            ent = syn.get(ent_synid, downloadFile=downloadFile)
+#             ent = syn.get(ent_synid, downloadFile=downloadFile)
 
-            validator = validate.GenieValidationHelper(
-                syn=syn,
-                project_id=project_id,
-                center=center,
-                entitylist=[ent],
-                format_registry=format_registry,
-                genie_config=genie_config,
-                ancillary_files=None,
-            )
-            filetype = validator.file_type
-            if validator.file_type not in validator._format_registry:
-                continue
-            validator_cls = validator._format_registry[validator.file_type]
-            fileformat_validator = validator_cls(
-                syn=validator._synapse_client,
-                center=validator.center,
-                genie_config=validator.genie_config,
-                ancillary_files=None,
-            )
+#             validator = validate.GenieValidationHelper(
+#                 syn=syn,
+#                 project_id=project_id,
+#                 center=center,
+#                 entitylist=[ent],
+#                 format_registry=format_registry,
+#                 genie_config=genie_config,
+#                 ancillary_files=None,
+#             )
+#             filetype = validator.file_type
+#             if validator.file_type not in validator._format_registry:
+#                 continue
+#             validator_cls = validator._format_registry[validator.file_type]
+#             fileformat_validator = validator_cls(
+#                 syn=validator._synapse_client,
+#                 center=validator.center,
+#                 genie_config=validator.genie_config,
+#                 ancillary_files=None,
+#             )
 
-            prepared_center_files[name] = {}
-            prepared_center_files[name]["entity"] = ent
-            prepared_center_files[name]["filetypeformat_object"] = fileformat_validator
+#             prepared_center_files[name] = {}
+#             prepared_center_files[name]["entity"] = ent
+#             prepared_center_files[name]["filetypeformat_object"] = fileformat_validator
 
-    # if the clinical files exist
-    if clinicalpair_entities:
-        # handling for just the clinical pair, can remove once we have separate classes
-        cli_validator = validate.GenieValidationHelper(
-            syn=syn,
-            project_id=project_id,
-            center=center,
-            entitylist=clinicalpair_entities,
-            format_registry=format_registry,
-            genie_config=genie_config,
-            ancillary_files=None,
-        )
-        cli_filetype = cli_validator.file_type
-        cli_validator_cls = cli_validator._format_registry[cli_validator.file_type]
-        cli_fileformat_validator = validator_cls(
-            syn=cli_validator._synapse_client,
-            center=cli_validator.center,
-            genie_config=cli_validator.genie_config,
-            ancillary_files=None,
-        )
+#     # if the clinical files exist
+#     if clinicalpair_entities:
+#         # handling for just the clinical pair, can remove once we have separate classes
+#         cli_validator = validate.GenieValidationHelper(
+#             syn=syn,
+#             project_id=project_id,
+#             center=center,
+#             entitylist=clinicalpair_entities,
+#             format_registry=format_registry,
+#             genie_config=genie_config,
+#             ancillary_files=None,
+#         )
+#         cli_filetype = cli_validator.file_type
+#         cli_validator_cls = cli_validator._format_registry[cli_validator.file_type]
+#         cli_fileformat_validator = validator_cls(
+#             syn=cli_validator._synapse_client,
+#             center=cli_validator.center,
+#             genie_config=cli_validator.genie_config,
+#             ancillary_files=None,
+#         )
 
-        prepared_center_files[name] = {}
-        prepared_center_files[name]["entity"] = clinicalpair_entities
-        prepared_center_files[name]["filetypeformat_object"] = cli_fileformat_validator
-    return prepared_center_files
+#         prepared_center_files[name] = {}
+#         prepared_center_files[name]["entity"] = clinicalpair_entities
+#         prepared_center_files[name]["filetypeformat_object"] = cli_fileformat_validator
+#     return prepared_center_files
 
 
 # TODO: Add to validation.py
 def validatefile(
-    syn,
-    project_id,
-    entities,
-    validation_status_table,
-    error_tracker_table,
-    center,
-    format_registry=None,
-    genie_config=None,
-    ancillary_files=None,
+    syn: synapseclient.Synapse,
+    project_id: str,
+    entities: List[synapseclient.File],
+    validation_status_table: synapseclient.table.CsvFileTable,
+    error_tracker_table: synapseclient.table.CsvFileTable,
+    center: str,
+    format_registry: Optional[dict] = None,
+    genie_config: Optional[dict] = None,
+    ancillary_files: Optional[list] = None,
 ):
     """Validate a list of entities.
 
@@ -289,11 +288,11 @@ def validatefile(
         validation_status_table: Validation status dataframe
         error_tracker_table: Invalid files error tracking dataframe
         center: Center of interest
-        format_registry (typing.List, optional): GENIE file format registry.
+        format_registry (list, optional): GENIE file format registry.
                                                  Defaults to None.
-        genie_config (typing.Dict, optional): See example of genie config at
+        genie_config (list, optional): See example of genie config at
                                               ./genie_config.json. Defaults to None.
-        ancillary_files: all files downloaded for validation
+        ancillary_files (list): all files downloaded for validation
 
     Returns:
         tuple: input_status_list - status of input files,
@@ -301,6 +300,12 @@ def validatefile(
                messages_to_send - list of tuples with (filenames, message, file_users)
 
     """
+    # TODO: Look into if errors should be thrown if these are None
+    # Aka. should these actually be optional params
+    if genie_config is None:
+        genie_config = {}
+    if format_registry is None:
+        format_registry = {}
 
     # filepaths = [entity.path for entity in entities]
     filenames = [entity.name for entity in entities]
@@ -800,8 +805,8 @@ def center_input_to_database(
     process: str,
     only_validate: bool,
     delete_old: bool = False,
-    format_registry: list = None,
-    genie_config: dict = None,
+    format_registry: Optional[dict] = None,
+    genie_config: Optional[dict] = None,
 ):
     """Processing per center
 
@@ -812,11 +817,17 @@ def center_input_to_database(
         process (str): main or mutation processing
         only_validate (bool): Only validate or not
         delete_old (bool, optional): Delete old files. Defaults to False.
-        format_registry (typing.List, optional): GENIE file format registry.
+        format_registry (dict, optional): GENIE file format registry.
                                                  Defaults to None.
-        genie_config (typing.Dict, optional): See example of genie config at
+        genie_config (dict, optional): See example of genie config at
                                               ./genie_config.json. Defaults to None.
     """
+    # TODO: Look into if errors should be thrown if these are None
+    # Aka. should these actually be optional params
+    if genie_config is None:
+        genie_config = {}
+    if format_registry is None:
+        format_registry = {}
 
     if only_validate:
         log_path = os.path.join(

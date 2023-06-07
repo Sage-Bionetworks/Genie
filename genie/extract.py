@@ -4,7 +4,7 @@ from Synapse
 """
 
 import logging
-from typing import List
+from typing import List, Optional
 
 import synapseclient
 import synapseutils
@@ -285,7 +285,7 @@ def get_genie_config(
 
 # TODO: Remove oncotree_link parameter from this function
 def _get_oncotreelink(
-    syn: synapseclient.Synapse, genie_config: dict, oncotree_link: str = None
+    syn: synapseclient.Synapse, genie_config: dict, oncotree_link: Optional[str] = None
 ) -> str:
     """
     Gets oncotree link unless a link is specified by the user

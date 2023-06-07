@@ -4,6 +4,7 @@ import datetime
 from io import StringIO
 import logging
 import os
+from typing import Optional
 
 import pandas as pd
 import synapseclient
@@ -19,7 +20,7 @@ def _check_year(
     clinicaldf: pd.DataFrame,
     year_col: int,
     filename: str,
-    allowed_string_values: list = None,
+    allowed_string_values: Optional[list] = None,
 ) -> str:
     """Check year columns
 
@@ -1020,7 +1021,7 @@ class Clinical(FileTypeFormat):
 
         for seq_assay_id in seq_assay_ids:
             bed_files = validate.parse_file_info_in_nested_list(
-                nested_list=self.ancillary_files, search_str=f"{seq_assay_id}.bed"
+                nested_list=self.ancillary_files, search_str=f"{seq_assay_id}.bed"  # type: ignore[arg-type]
             )
             if not bed_files["files"]:
                 missing_files.append(f"{seq_assay_id}.bed")
@@ -1051,7 +1052,7 @@ class Clinical(FileTypeFormat):
         col_to_validate = "SEQ_ASSAY_ID"
         # This section can be removed once we remove the list of lists
         assay_files = validate.parse_file_info_in_nested_list(
-            nested_list=self.ancillary_files, search_str="assay_information"
+            nested_list=self.ancillary_files, search_str="assay_information"  # type: ignore[arg-type]
         )
         assay_file_paths = assay_files["file_info"]["path"]
 
@@ -1061,7 +1062,7 @@ class Clinical(FileTypeFormat):
                     filepath_list=assay_file_paths
                 )
                 has_file_read_error = False
-            except Exception as e:
+            except Exception:
                 has_file_read_error = True
 
             if not has_file_read_error:

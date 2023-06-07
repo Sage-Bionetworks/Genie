@@ -8,7 +8,7 @@ import os
 from typing import List, Optional
 
 import pandas as pd
-
+import synapseclient
 
 logger = logging.getLogger(__name__)
 
@@ -54,14 +54,14 @@ class FileTypeFormat(metaclass=ABCMeta):
 
     _fileType = "fileType"
 
-    _validation_kwargs = []
+    _validation_kwargs: List[str] = []
 
     def __init__(
         self,
-        syn: object,
+        syn: synapseclient.Synapse,
         center: str,
-        genie_config: dict = None,
-        ancillary_files: List[List[object]] = None,
+        genie_config: Optional[dict] = None,
+        ancillary_files: Optional[List[List[synapseclient.Entity]]] = None,
     ):
         """A validator helper class for a center's files.
 

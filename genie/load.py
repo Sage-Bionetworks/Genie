@@ -128,7 +128,7 @@ def update_table(
     newData: pd.DataFrame,
     filterBy: str,
     filterByColumn: str = "CENTER",
-    col: List[str] = None,
+    col: Optional[List[str]] = None,
     toDelete: bool = False,
 ):
     """Update Synapse table given a new dataframe

@@ -58,7 +58,7 @@ first = (
         ("data_clinical_supp_patient_SAGE.txt", patient_clinical_synid),
     ],
 )
-second = (
+second: tuple = (
     [("vcfs", "syn33333")],
     [],
     [("GENIE-SAGE-000-1111.vcf", vcf1synid), ("GENIE-SAGE-111-2222.vcf", vcf2synid)],

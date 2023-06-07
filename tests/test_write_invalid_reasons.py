@@ -17,6 +17,7 @@ ENT1 = synapseclient.File(id="syn123", name="test", parentId="syn3333")
 
 
 class QueryResponse:
+    @staticmethod
     def asDataFrame():
         return CENTER_ERRORSDF
 

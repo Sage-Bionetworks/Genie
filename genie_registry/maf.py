@@ -292,7 +292,7 @@ class maf(FileTypeFormat):
 
         # This section can be removed once we remove the list of lists
         clinical_files = validate.parse_file_info_in_nested_list(
-            nested_list=self.ancillary_files, search_str="data_clinical_supp"
+            nested_list=self.ancillary_files, search_str="data_clinical_supp"  # type: ignore[arg-type]
         )
         clinical_file_paths = clinical_files["file_info"]["path"]
 
@@ -302,7 +302,7 @@ class maf(FileTypeFormat):
                     filePathList=clinical_file_paths
                 )
                 has_file_read_error = False
-            except Exception as e:
+            except Exception:
                 has_file_read_error = True
 
             if not has_file_read_error:
