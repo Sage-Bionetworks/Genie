@@ -2,9 +2,10 @@
 This contains the GENIE model objects
 """
 from abc import ABCMeta
+from dataclasses import dataclass
 import logging
 import os
-from typing import List
+from typing import List, Optional
 
 import pandas as pd
 
@@ -12,20 +13,13 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class ValidationResults:
     """Validation results"""
 
-    def __init__(self, errors: str, warnings: str, detailed: str = None) -> None:
-        """
-        Args:
-            errors (str): errors for the file
-            warnings (str): warning for the file
-            detailed_errors (pd.DataFrame, optional): Dataframe of detailed row based
-                                                      error messages. Defaults to None.
-        """
-        self.errors = errors
-        self.warnings = warnings
-        self.detailed = detailed
+    errors: str
+    warnings: str
+    detailed: Optional[str] = None
 
     def is_valid(self) -> bool:
         """True if file is valid"""
@@ -257,8 +251,12 @@ class FileTypeFormat(metaclass=ABCMeta):
         if not errors:
             logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
             errors, warnings = self._validate(df, **mykwargs)
-            # only cross-validate if validation passes
-            if not errors:
+            # only cross-validate if validation passes or ancillary files exist
+            # Assumes that self.ancillary_files won't be [[]] due to whats returned from
+            # extract.get_center_input_files
+            if not errors and (
+                isinstance(self.ancillary_files, list) and self.ancillary_files
+            ):
                 logger.info(
                     "CROSS-VALIDATING %s" % os.path.basename(",".join(filePathList))
                 )
