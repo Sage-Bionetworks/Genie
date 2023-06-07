@@ -11,14 +11,9 @@ def filetype_format_class(syn):
     yield FileTypeFormat(syn, "SAGE", ancillary_files=[["mocked"]])
 
 
-@pytest.fixture
-def filetype_format_class_no_ancillary(syn):
-    yield FileTypeFormat(syn, "SAGE")
-
-
-def test_that_validate_no_cross_file_without_ancillary(
-    filetype_format_class_no_ancillary,
-):
+@pytest.mark.parametrize("invalid_ancillary", [[], None])
+def test_that_validate_no_cross_file_without_invalid_ancillary(invalid_ancillary, syn):
+    filetype_cls = FileTypeFormat(syn, "SAGE", ancillary_files=invalid_ancillary)
     with patch.object(
         FileTypeFormat,
         "_validate",
@@ -31,9 +26,7 @@ def test_that_validate_no_cross_file_without_ancillary(
         FileTypeFormat,
         "_cross_validate",
     ) as patch_cross_validate:
-        result_cls = filetype_format_class_no_ancillary.validate(
-            filePathList=["something.txt"]
-        )
+        result_cls = filetype_cls.validate(filePathList=["something.txt"])
         patch_validate.assert_called_once()
         patch_cross_validate.assert_not_called()
         assert result_cls.warnings == "some_warning\n"
