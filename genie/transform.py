@@ -2,7 +2,7 @@
 package"""
 
 import pandas as pd
-from pandas.api.types import is_integer_dtype, is_float_dtype
+from pandas.api.types import is_float_dtype
 
 
 def _col_name_to_titlecase(string: str) -> str:

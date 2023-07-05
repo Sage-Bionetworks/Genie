@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 import synapseclient
 
+from genie import process_functions, validate
 import genie_registry
 from genie_registry.clinical import Clinical
 
@@ -78,6 +79,61 @@ def clin_class(syn, genie_config):
 @pytest.fixture(params=[(["foo"]), (["foo", "data_clinical_supp_sample_SAGE.txt"])])
 def filename_fileformat_map(request):
     return request.param
+
+
+@pytest.fixture
+def valid_clinical_df():
+    patientdf = pd.DataFrame(
+        dict(
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
+            SEX=[1, 2, 1, 2, 99],
+            PRIMARY_RACE=[1, 2, 3, 4, 99],
+            SECONDARY_RACE=[1, 2, 3, 4, 99],
+            TERTIARY_RACE=[1, 2, 3, 4, 99],
+            ETHNICITY=[1, 2, 3, 4, 99],
+            BIRTH_YEAR=[1222, "Unknown", 1920, 1990, 1990],
+            CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
+            YEAR_CONTACT=["Unknown", "Not Collected", ">89", "<18", 1990],
+            INT_CONTACT=["Unknown", "Not Collected", ">32485", "<6570", 2000],
+            YEAR_DEATH=["Unknown", "Not Collected", "Unknown", "Not Applicable", "<18"],
+            INT_DOD=["Unknown", "Not Collected", "Unknown", "Not Applicable", "<6570"],
+            DEAD=["Unknown", "Not Collected", "Unknown", False, True],
+        )
+    )
+
+    sampledf = pd.DataFrame(
+        dict(
+            SAMPLE_ID=[
+                "GENIE-SAGE-ID1-1",
+                "GENIE-SAGE-ID2-1",
+                "GENIE-SAGE-ID3-1",
+                "GENIE-SAGE-ID4-1",
+                "GENIE-SAGE-ID5-1",
+            ],
+            PATIENT_ID=[
+                "GENIE-SAGE-ID1",
+                "GENIE-SAGE-ID2",
+                "GENIE-SAGE-ID3",
+                "GENIE-SAGE-ID4",
+                "GENIE-SAGE-ID5",
+            ],
+            AGE_AT_SEQ_REPORT=[">32485", "Unknown", "<6570", 20000, 100000],
+            ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"],
+            SAMPLE_TYPE=[1, 2, 3, 4, 4],
+            SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1"],
+            SEQ_DATE=["Jan-2013", "ApR-2013", "Jul-2013", "Oct-2013", "release"],
+            SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", "cfDNA", "cfDNA"],
+        )
+    )
+
+    clinicaldf = patientdf.merge(sampledf, on="PATIENT_ID")
+    yield clinicaldf
 
 
 def test_filetype(clin_class):
@@ -384,64 +440,14 @@ def test_sample__process(clin_class):
     assert expected_sampledf.equals(new_sampledf[expected_sampledf.columns])
 
 
-def test_perfect__validate(clin_class):
+def test_perfect__validate(clin_class, valid_clinical_df):
     """
     Test perfect validation
     """
-    patientdf = pd.DataFrame(
-        dict(
-            PATIENT_ID=[
-                "GENIE-SAGE-ID1",
-                "GENIE-SAGE-ID2",
-                "GENIE-SAGE-ID3",
-                "GENIE-SAGE-ID4",
-                "GENIE-SAGE-ID5",
-            ],
-            SEX=[1, 2, 1, 2, 99],
-            PRIMARY_RACE=[1, 2, 3, 4, 99],
-            SECONDARY_RACE=[1, 2, 3, 4, 99],
-            TERTIARY_RACE=[1, 2, 3, 4, 99],
-            ETHNICITY=[1, 2, 3, 4, 99],
-            BIRTH_YEAR=[1222, "Unknown", 1920, 1990, 1990],
-            CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
-            YEAR_CONTACT=["Unknown", "Not Collected", ">89", "<18", 1990],
-            INT_CONTACT=["Unknown", "Not Collected", ">32485", "<6570", 2000],
-            YEAR_DEATH=["Unknown", "Not Collected", "Unknown", "Not Applicable", "<18"],
-            INT_DOD=["Unknown", "Not Collected", "Unknown", "Not Applicable", "<6570"],
-            DEAD=["Unknown", "Not Collected", "Unknown", False, True],
-        )
-    )
-
-    sampledf = pd.DataFrame(
-        dict(
-            SAMPLE_ID=[
-                "GENIE-SAGE-ID1-1",
-                "GENIE-SAGE-ID2-1",
-                "GENIE-SAGE-ID3-1",
-                "GENIE-SAGE-ID4-1",
-                "GENIE-SAGE-ID5-1",
-            ],
-            PATIENT_ID=[
-                "GENIE-SAGE-ID1",
-                "GENIE-SAGE-ID2",
-                "GENIE-SAGE-ID3",
-                "GENIE-SAGE-ID4",
-                "GENIE-SAGE-ID5",
-            ],
-            AGE_AT_SEQ_REPORT=[">32485", "Unknown", "<6570", 20000, 100000],
-            ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"],
-            SAMPLE_TYPE=[1, 2, 3, 4, 4],
-            SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1"],
-            SEQ_DATE=["Jan-2013", "ApR-2013", "Jul-2013", "Oct-2013", "release"],
-            SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", "cfDNA", "cfDNA"],
-        )
-    )
-
-    clinicaldf = patientdf.merge(sampledf, on="PATIENT_ID")
     with mock.patch(
         "genie.process_functions.get_oncotree_code_mappings", return_value=onco_map_dict
     ) as mock_get_onco_map:
-        error, warning = clin_class._validate(clinicaldf)
+        error, warning = clin_class._validate(valid_clinical_df)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
         assert error == ""
         assert warning == ""
@@ -1053,3 +1059,229 @@ def test__check_int_dead_consistency_inconsistent(inconsistent_df):
         "Patient Clinical File: DEAD value is inconsistent with "
         "INT_DOD for at least one patient.\n"
     )
+
+
+@pytest.mark.parametrize(
+    "test_clinical_df,test_ancillary_files,expected_error,expected_warning",
+    [
+        (
+            pd.DataFrame(
+                {"SEQ_ASSAY_ID": ["SAGE-1-1", "SAGE-SAGE-1", "SAGE-1", "SAGE-1"]}
+            ),
+            [
+                [{"name": "SAGE-SAGE-1.bed", "path": ""}],
+                [{"name": "SAGE-1-1.bed", "path": ""}],
+                [{"name": "SAGE-1.bed", "path": ""}],
+            ],
+            "",
+            "",
+        ),
+        (
+            pd.DataFrame({"SEQ_ASSAY_ID": ["SAGE-1-1", "SAGE-1-2"]}),
+            [
+                [{"name": "SAGE-SAGE-1.bed", "path": ""}],
+                [{"name": "SAGE-1-1.bed", "path": ""}],
+                [{"name": "SAGE-1.bed", "path": ""}],
+            ],
+            "At least one SEQ_ASSAY_ID in your clinical file does not have an associated BED file. "
+            "Please update your file(s) to be consistent.\n"
+            "Missing BED files: SAGE-1-2.bed\n",
+            "",
+        ),
+        (
+            pd.DataFrame({"SEQ_ASSAY_ID": ["SAGE-1-2", "SAGE-1-3"]}),
+            [
+                [{"name": "SAGE-SAGE-1.bed", "path": ""}],
+                [{"name": "SAGE-1-1.bed", "path": ""}],
+                [{"name": "SAGE-1.bed", "path": ""}],
+            ],
+            "At least one SEQ_ASSAY_ID in your clinical file does not have an associated BED file. "
+            "Please update your file(s) to be consistent.\n"
+            "Missing BED files: SAGE-1-2.bed, SAGE-1-3.bed\n",
+            "",
+        ),
+        (
+            pd.DataFrame({"SEQ_ASSAY_ID": ["SAGE-1-2", "SAGE-1-3"]}),
+            [
+                [{"name": "SAGE-1.txt", "path": ""}],
+            ],
+            "At least one SEQ_ASSAY_ID in your clinical file does not have an associated BED file. "
+            "Please update your file(s) to be consistent.\n"
+            "Missing BED files: SAGE-1-2.bed, SAGE-1-3.bed\n",
+            "",
+        ),
+    ],
+    ids=["all_match", "partial_match", "no_match", "no_bed_files"],
+)
+def test_that_cross_validate_bed_files_exist_returns_correct_msgs(
+    clin_class, test_clinical_df, test_ancillary_files, expected_error, expected_warning
+):
+    clin_class.ancillary_files = test_ancillary_files
+    errors, warnings = clin_class._cross_validate_bed_files_exist(test_clinical_df)
+    assert errors == expected_error
+    assert warnings == expected_warning
+
+
+def test_that__cross_validate_calls_expected_methods(clin_class):
+    with mock.patch.object(
+        Clinical, "_cross_validate_assay_info_has_seq", return_value=("", "")
+    ) as patch__cross_validate_assay, mock.patch.object(
+        Clinical, "_cross_validate_bed_files_exist", return_value=("", "")
+    ) as patch__cross_validate_bed:
+        clin_class._cross_validate(clinicaldf=pd.DataFrame({"something": [1]}))
+        patch__cross_validate_assay.assert_called_once()
+        patch__cross_validate_bed.assert_called_once()
+
+
+def test_that__cross_validate_returns_correct_format_for_errors_warnings(clin_class):
+    with mock.patch.object(
+        Clinical, "_cross_validate_assay_info_has_seq", return_value=("test1", "")
+    ) as patch__cross_validate_assay, mock.patch.object(
+        Clinical, "_cross_validate_bed_files_exist", return_value=("test3\n", "")
+    ) as patch__cross_validate_bed:
+        errors, warnings = clin_class._cross_validate(
+            clinicaldf=pd.DataFrame({"something": [1]})
+        )
+        assert errors == "test1test3\n"
+        assert warnings == ""
+
+
+def test_that__cross_validate_assay_info_has_seq_does_not_read_files_if_no_assay_files(
+    clin_class,
+):
+    with mock.patch.object(
+        validate,
+        "parse_file_info_in_nested_list",
+        return_value={"files": {}, "file_info": {"name": "", "path": ""}},
+    ) as patch_assay_files, mock.patch.object(
+        process_functions,
+        "get_assay_dataframe",
+    ) as patch_get_df:
+        errors, warnings = clin_class._cross_validate_assay_info_has_seq(
+            pd.DataFrame({})
+        )
+        assert warnings == ""
+        assert errors == ""
+        patch_get_df.assert_not_called()
+
+
+def test_that__cross_validate_assay_info_has_seq_does_not_call_check_col_exist_if_assay_df_read_error(
+    clin_class,
+):
+    with mock.patch.object(
+        validate,
+        "parse_file_info_in_nested_list",
+        return_value={"files": {"some_file"}, "file_info": {"name": "", "path": ""}},
+    ) as patch_assay_files, mock.patch.object(
+        process_functions,
+        "get_assay_dataframe",
+        side_effect=Exception("mocked error"),
+    ) as patch_get_df, mock.patch.object(
+        process_functions, "checkColExist"
+    ) as patch_check_col_exist:
+        errors, warnings = clin_class._cross_validate_assay_info_has_seq(
+            pd.DataFrame({})
+        )
+        assert warnings == ""
+        assert errors == ""
+        patch_check_col_exist.assert_not_called()
+
+
+def test_that__cross_validate_assay_info_has_seq_does_not_call_check_values_if_id_cols_do_not_exist(
+    clin_class,
+):
+    with mock.patch.object(
+        validate,
+        "parse_file_info_in_nested_list",
+        return_value={"files": {"some_file"}, "file_info": {"name": "", "path": ""}},
+    ) as patch_assay_files, mock.patch.object(
+        process_functions,
+        "get_assay_dataframe",
+        return_value=pd.DataFrame({"test_col": [2, 3, 4]}),
+    ) as patch_get_df, mock.patch.object(
+        process_functions, "checkColExist", return_value=False
+    ) as patch_check_col_exist, mock.patch.object(
+        validate, "check_values_between_two_df"
+    ) as patch_check_values:
+        errors, warnings = clin_class._cross_validate_assay_info_has_seq(
+            pd.DataFrame({})
+        )
+        assert warnings == ""
+        assert errors == ""
+        patch_check_values.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "test_assay_df,expected_error,expected_warning",
+    [
+        (
+            pd.DataFrame(
+                dict(
+                    SEQ_ASSAY_ID=["SAGE-1", "SAGE-2", "SAGE-3"],
+                )
+            ),
+            "At least one SEQ_ASSAY_ID in your clinical file file does not exist as a SEQ_ASSAY_ID in your assay information file. "
+            "Please update your file(s) to be consistent.\n",
+            "",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-SAGE-1"],
+                )
+            ),
+            "At least one SEQ_ASSAY_ID in your clinical file file does not exist as a SEQ_ASSAY_ID in your assay information file. "
+            "Please update your file(s) to be consistent.\n",
+            "",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    SEQ_ASSAY_ID=[
+                        "SAGE-1-1",
+                        "SAGE-SAGE-1",
+                        "SAGE-1",
+                        "SAGE-2",
+                        "SAGE-3",
+                    ],
+                )
+            ),
+            "",
+            "",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    SEQ_ASSAY_ID=[
+                        "SAGE-1-1",
+                        "SAGE-SAGE-1",
+                        "SAGE-1",
+                    ],
+                )
+            ),
+            "",
+            "",
+        ),
+    ],
+    ids=["diff_ids", "semi_match_ids", "match_in_clinical", "exact_match"],
+)
+def test_that__cross_validate_assay_info_has_seq_returns_expected_msg_if_valid(
+    clin_class, valid_clinical_df, test_assay_df, expected_warning, expected_error
+):
+    with mock.patch.object(
+        validate,
+        "parse_file_info_in_nested_list",
+        return_value={
+            "files": {"some_file"},
+            "file_info": {"name": "assay_information.yaml", "path": ""},
+        },
+    ) as patch_assay_files, mock.patch.object(
+        process_functions,
+        "get_assay_dataframe",
+        return_value=test_assay_df,
+    ) as patch_get_df:
+        errors, warnings = clin_class._cross_validate_assay_info_has_seq(
+            valid_clinical_df
+        )
+        assert warnings == expected_warning
+        assert errors == expected_error

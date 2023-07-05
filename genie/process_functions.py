@@ -3,32 +3,135 @@ import datetime
 import json
 import logging
 import os
-import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-import tempfile
 import time
-from typing import List
+from typing import Optional
+import yaml
 
-import ast
-from Crypto.Cipher import PKCS1_OAEP
-from Crypto.PublicKey import RSA
 import pandas as pd
-import synapseclient  # lgtm [py/import-and-import-from]
+import requests
+import synapseclient
+from requests.adapters import HTTPAdapter
 from synapseclient import Synapse
+from urllib3.util import Retry
 
 from genie import extract
 
-# try:
-#   from urllib.request import urlopen
-# except ImportError:
-#   from urllib2 import urlopen
-# Ignore SettingWithCopyWarning warning
 pd.options.mode.chained_assignment = None
 
 logger = logging.getLogger(__name__)
 # TODO: Add to constants.py
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def get_clinical_dataframe(filePathList: list) -> pd.DataFrame:
+    """Gets the clinical file(s) and reads them in as a
+    dataframe
+
+    Args:
+        filePathList (list): List of clinical files
+
+    Raises:
+        ValueError: when PATIENT_ID column doesn't exist
+        ValueError: When PATIENT_IDs in sample file doesn't exist in patient file
+
+    Returns:
+        pd.DataFrame: clinical file as a dataframe
+    """
+    clinicaldf = pd.read_csv(filePathList[0], sep="\t", comment="#")
+    clinicaldf.columns = [col.upper() for col in clinicaldf.columns]
+
+    if len(filePathList) > 1:
+        other_clinicaldf = pd.read_csv(filePathList[1], sep="\t", comment="#")
+        other_clinicaldf.columns = [col.upper() for col in other_clinicaldf.columns]
+
+        try:
+            clinicaldf = clinicaldf.merge(other_clinicaldf, on="PATIENT_ID")
+        except Exception:
+            raise ValueError(
+                (
+                    "If submitting separate patient and sample files, "
+                    "they both must have the PATIENT_ID column"
+                )
+            )
+        # Must figure out which is sample and which is patient
+        if "sample" in filePathList[0]:
+            sample = clinicaldf
+            patient = other_clinicaldf
+        else:
+            sample = other_clinicaldf
+            patient = clinicaldf
+
+        if not all(sample["PATIENT_ID"].isin(patient["PATIENT_ID"])):
+            raise ValueError(
+                (
+                    "Patient Clinical File: All samples must have associated "
+                    "patient information"
+                )
+            )
+
+    return clinicaldf
+
+
+def get_assay_dataframe(filepath_list: list) -> pd.DataFrame:
+    """Reads in assay_information.yaml file
+        and outputs it as a dataframe
+
+    Args:
+        filepath_list (list): list of files
+
+    Raises:
+        ValueError: thrown if read error with file
+
+    Returns:
+        pd.DataFrame: dataframe version of assay info file
+    """
+    filepath = filepath_list[0]
+    try:
+        with open(filepath, "r") as yamlfile:
+            # https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation
+            # Must add this because yaml load deprecation
+            assay_info_dict = yaml.safe_load(yamlfile)
+    except Exception:
+        raise ValueError(
+            "assay_information.yaml: Can't read in your file. "
+            "Please make sure the file is a correctly formatted yaml"
+        )
+    # assay_info_df = pd.DataFrame(panel_info_dict)
+    # assay_info_df = assay_info_df.transpose()
+    # assay_info_df['SEQ_ASSAY_ID'] = assay_info_df.index
+    # assay_info_df.reset_index(drop=True, inplace=True)
+    assay_infodf = pd.DataFrame(assay_info_dict)
+    assay_info_transposeddf = assay_infodf.transpose()
+
+    all_panel_info = pd.DataFrame()
+    for assay in assay_info_dict:
+        assay_specific_info = assay_info_dict[assay]["assay_specific_info"]
+        assay_specific_infodf = pd.DataFrame(assay_specific_info)
+
+        intial_seq_id_infodf = assay_info_transposeddf.loc[[assay]]
+
+        # make sure to create a skeleton for the number of seq assay ids
+        # in the seq pipeline
+        seq_assay_id_infodf = pd.concat(
+            [intial_seq_id_infodf] * len(assay_specific_info)
+        )
+        seq_assay_id_infodf.reset_index(drop=True, inplace=True)
+        assay_finaldf = pd.concat([assay_specific_infodf, seq_assay_id_infodf], axis=1)
+        del assay_finaldf["assay_specific_info"]
+        # Transform values containing lists to string concatenated values
+        columns_containing_lists = [
+            "variant_classifications",
+            "alteration_types",
+            "preservation_technique",
+            "coverage",
+        ]
+
+        for col in columns_containing_lists:
+            if assay_finaldf.get(col) is not None:
+                assay_finaldf[col] = [";".join(row) for row in assay_finaldf[col]]
+        assay_finaldf["SEQ_PIPELINE_ID"] = assay
+        all_panel_info = pd.concat([all_panel_info, assay_finaldf])
+    return all_panel_info
 
 
 def retry_get_url(url):
@@ -660,99 +763,28 @@ def getPrimary(code, oncotreeDict, primary):
     return toAdd
 
 
-# def create_key():
-#   from Crypto.PublicKey import RSA
-#   from Crypto import Random
-#   from Crypto.Cipher import PKCS1_OAEP
-#
-#   random_generator = Random.new().read
-#   generate public and private keys
-#   key = RSA.generate(1024, random_generator)
-#   key_cryptor = PKCS1_OAEP.new(key)
-#   encrypted = key_cryptor.encrypt(geniePassword)
-#   #message to encrypt is in the above line 'encrypt this message'
-#   decrypted = key_cryptor.decrypt(encrypted)
-#   with open("genie.pem","wb") as geniepem_f:
-#       geniepem_f.write(key.exportKey(format='PEM'))
-
-
-def read_key(pemfile_path):
+def synapse_login(debug: Optional[bool] = False) -> Synapse:
     """
-    Obtain key from pemfile
+    Logs into Synapse if credentials are saved.
+    If not saved, then user is prompted username and auth token.
 
     Args:
-        pemfile_path:  Path to pemfile
+        debug: Synapse debug feature. Defaults to False
 
     Returns:
-        RSA key
+        Synapseclient object
     """
-    with open(pemfile_path, "r") as pemfile_f:
-        key = RSA.importKey(pemfile_f.read())
-    return key
-
-
-def decrypt_message(message, key):
-    """
-    Decrypt message with a pem key from
-    func read_key
-
-    Args:
-        message: Encrypted message
-        key: read_key returned key
-
-    Returns:
-        Decrypted message
-    """
-    # Use module Crypto.Cipher.PKCS1_OAEP instead
-    decryptor = PKCS1_OAEP.new(key)
-    decrypted = decryptor.decrypt(ast.literal_eval(str(message)))
-    return decrypted.decode("utf-8")
-
-
-def get_password(pemfile_path):
-    """
-    Get password using pemfile
-
-    Args:
-        pemfile_path: Path to pem file
-
-    Return:
-        Password
-    """
-    if not os.path.exists(pemfile_path):
-        raise ValueError(
-            "Path to pemFile must be specified if there " "is no cached credentials"
-        )
-    key = read_key(pemfile_path)
-    genie_pass = decrypt_message(os.environ["GENIE_PASS"], key)
-    return genie_pass
-
-
-def synLogin(pemfile_path, debug=False):
-    """
-    Use pem file to log into synapse if credentials aren't cached
-
-    Args:
-        pemfile_path: Path to pem file
-        debug: Synapse debug feature.  Defaults to False
-
-    Returns:
-        Synapse object logged in
-    """
+    # If debug is True, then silent should be False
+    silent = False if debug else False
+    syn = synapseclient.Synapse(debug=debug, silent=silent)
     try:
-        syn = synapseclient.Synapse(debug=debug)
-        # Get auth token via scheduled job secrets
-        if os.getenv("SCHEDULED_JOB_SECRETS") is not None:
-            secrets = json.loads(os.getenv("SCHEDULED_JOB_SECRETS"))
-            auth_token = secrets["SYNAPSE_AUTH_TOKEN"]
-        else:
-            auth_token = None
-        syn.login(authToken=auth_token)
+        syn.login()
     except Exception:
-        # TODO: deprecate this feature soon
-        genie_pass = get_password(pemfile_path)
-        syn = synapseclient.Synapse(debug=debug)
-        syn.login(os.environ["GENIE_USER"], genie_pass)
+        raise ValueError(
+            "Please view https://help.synapse.org/docs/Client-Configuration.1985446156.html"
+            "to configure authentication to the client.  Configure a ~/.synapseConfig"
+            "or set the SYNAPSE_AUTH_TOKEN environmental variable."
+        )
     return syn
 
 

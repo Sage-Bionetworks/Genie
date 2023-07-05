@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+from typing import Dict, List, Optional
 
 import pandas as pd
 import synapseclient
@@ -24,17 +25,18 @@ ACCEPTED_CHROMOSOMES = list(map(str, range(1, 23))) + ["X", "Y", "MT"]
 class ValidationHelper(object):
     # Used for the kwargs in validate_single_file
     # Overload this per class
-    _validate_kwargs = []
+    _validate_kwargs: List[str] = []
 
     def __init__(
         self,
-        syn,
-        project_id,
-        center,
-        entitylist,
-        format_registry=None,
-        file_type=None,
-        genie_config=None,
+        syn: synapseclient.Synapse,
+        project_id: str,
+        center: str,
+        entitylist: List[synapseclient.File],
+        format_registry: Optional[Dict] = None,
+        file_type: Optional[str] = None,
+        genie_config: Optional[Dict] = None,
+        ancillary_files: Optional[list] = None,
     ):
         """A validator helper class for a center's files.
 
@@ -42,10 +44,11 @@ class ValidationHelper(object):
             syn: a synapseclient.Synapse object
             project_id: Synapse Project ID where files are stored and configured.
             center: The participating center name.
-            filepathlist: a list of file paths.
+            entitylist: a list of file paths.
             format_registry: A dictionary mapping file format name to the
                              format class.
             file_type: Specify file type to skip filename validation
+            ancillary_files: all files downloaded for validation
         """
         self._synapse_client = syn
         self._project = syn.get(project_id)
@@ -54,6 +57,7 @@ class ValidationHelper(object):
         self._format_registry = format_registry
         self.file_type = self.determine_filetype() if file_type is None else file_type
         self.genie_config = genie_config
+        self.ancillary_files = ancillary_files
 
     def determine_filetype(self):
         """Gets the file type of the file by validating its filename
@@ -108,6 +112,7 @@ class ValidationHelper(object):
                 syn=self._synapse_client,
                 center=self.center,
                 genie_config=self.genie_config,
+                ancillary_files=self.ancillary_files,
             )
             filepathlist = [entity.path for entity in self.entitylist]
             valid_result_cls = validator.validate(filePathList=filepathlist, **mykwargs)
@@ -227,6 +232,7 @@ def _perform_validate(syn, args):
         synapseclient.File(name=filepath, path=filepath, parentId=None)
         for filepath in args.filepath
     ]
+
     validator = GenieValidationHelper(
         syn=syn,
         project_id=args.project_id,
@@ -246,3 +252,69 @@ def _perform_validate(syn, args):
     if valid and args.parentid is not None:
         logger.info(f"Uploading files to {args.parentid}")
         load.store_files(syn=syn, filepaths=args.filepath, parentid=args.parentid)
+
+
+def parse_file_info_in_nested_list(
+    nested_list: List[List[synapseclient.Entity]], search_str: str
+) -> dict:
+    """Parses for a name and filepath in a nested list of Synapse entity objects
+
+    Args:
+        nested_list (list[list]): _description_
+        search_str (str): the substring to look for in the files
+
+    Returns:
+        dict[dict]: files found,
+            name(s) and filepath(s) of the file(s) found
+    """
+    file_info = {}
+    files = {
+        file["name"]: file["path"]
+        for files in nested_list
+        for file in files
+        if file["name"].startswith(search_str)
+    }
+    file_info["name"] = ",".join(files.keys())
+    file_info["path"] = list(files.values())  # type: ignore[assignment]
+    return {"files": files, "file_info": file_info}
+
+
+def check_values_between_two_df(
+    df1: pd.DataFrame,
+    df1_filename: str,
+    df1_id_to_check: str,
+    df2: pd.DataFrame,
+    df2_filename: str,
+    df2_id_to_check: str,
+) -> tuple:
+    """Check that all the identifier(s) (ids) in one
+    file (df1) exists in the other file (df1)
+
+    Args:
+        df1 (pd.DataFrame): file to use as base of check
+        df1_filename (str): filename of file to use as base of check
+        df1_id_to_check (str): name of column to check values for in df1
+        df2 (pd.DataFrame): file to cross-validate against
+        df2_filename (str): filename of file to cross-validate against
+        df2_id_to_check (str): name of column to check values for in df2
+
+    Returns:
+        tuple: The errors and warnings as a file from cross-validation.
+               Defaults to blank strings
+    """
+    errors = ""
+    warnings = ""
+
+    # standardize case
+    df1.columns = [col.upper() for col in df1.columns]
+    df2.columns = [col.upper() for col in df2.columns]
+
+    # check to see if df1 ids are present in df2
+    if not set(df1[df1_id_to_check]) <= set(df2[df2_id_to_check]):
+        errors = (
+            f"At least one {df1_id_to_check} in your {df1_filename} file "
+            f"does not exist as a {df2_id_to_check} in your {df2_filename} file. "
+            "Please update your file(s) to be consistent.\n"
+        )
+
+    return errors, warnings

@@ -824,8 +824,6 @@ def main():
         "--release", help="GENIE release number (ie. 5.3-consortium)", default=None
     )
 
-    parser.add_argument("--pem_file", type=str, help="Path to PEM file (genie.pem)")
-
     parser.add_argument(
         "--staging", action="store_true", help="Using staging directory files"
     )
@@ -837,7 +835,7 @@ def main():
     )
 
     args = parser.parse_args()
-    syn = process_functions.synLogin(args)
+    syn = process_functions.synapse_login(debug=args.debug)
     if args.staging:
         # Database to Synapse Id mapping Table
         # TODO: use project ids instead of table ids

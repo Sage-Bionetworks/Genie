@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from unittest import mock
 from unittest.mock import Mock, patch
 
@@ -58,7 +58,7 @@ first = (
         ("data_clinical_supp_patient_SAGE.txt", patient_clinical_synid),
     ],
 )
-second = (
+second: tuple = (
     [("vcfs", "syn33333")],
     [],
     [("GENIE-SAGE-000-1111.vcf", vcf1synid), ("GENIE-SAGE-111-2222.vcf", vcf2synid)],
@@ -395,6 +395,7 @@ def test_valid_validatefile(syn, genie_config):
             error_trackerdf,
             center,
             genie_config=genie_config,
+            ancillary_files=entities,
         )
 
         assert expected_results == validate_results
@@ -950,6 +951,7 @@ class TestValidation:
                 entities,
                 format_registry={"test": valiate_cls},
                 genie_config=genie_config,
+                ancillary_files=entities,
             )
             assert patch_query.call_count == 2
             patch_validatefile.assert_called_once_with(
@@ -961,6 +963,7 @@ class TestValidation:
                 center="SAGE",
                 format_registry={"test": valiate_cls},
                 genie_config=genie_config,
+                ancillary_files=entities,
             )
 
             assert valid_filedf.equals(

@@ -2,28 +2,24 @@
 This contains the GENIE model objects
 """
 from abc import ABCMeta
+from dataclasses import dataclass
 import logging
 import os
+from typing import List, Optional
 
 import pandas as pd
+import synapseclient
 
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class ValidationResults:
     """Validation results"""
 
-    def __init__(self, errors: str, warnings: str, detailed: str = None) -> None:
-        """
-        Args:
-            errors (str): errors for the file
-            warnings (str): warning for the file
-            detailed_errors (pd.DataFrame, optional): Dataframe of detailed row based
-                                                      error messages. Defaults to None.
-        """
-        self.errors = errors
-        self.warnings = warnings
-        self.detailed = detailed
+    errors: str
+    warnings: str
+    detailed: Optional[str] = None
 
     def is_valid(self) -> bool:
         """True if file is valid"""
@@ -58,12 +54,28 @@ class FileTypeFormat(metaclass=ABCMeta):
 
     _fileType = "fileType"
 
-    _validation_kwargs = []
+    _validation_kwargs: List[str] = []
 
-    def __init__(self, syn, center, genie_config=None):
+    def __init__(
+        self,
+        syn: synapseclient.Synapse,
+        center: str,
+        genie_config: Optional[dict] = None,
+        ancillary_files: Optional[List[List[synapseclient.Entity]]] = None,
+    ):
+        """A validator helper class for a center's files.
+
+        Args:
+            syn (synapseclient.Synapse): a synapseclient.Synapse object
+            center (str): The participating center name.
+            genie_config (dict): The configurations needed for the GENIE codebase.
+                GENIE table type/name to Synapse Id. Defaults to None.
+            ancillary_files (List[List[synapseclient.Entity]]): all files downloaded for validation. Defaults to None.
+        """
         self.syn = syn
         self.center = center
         self.genie_config = genie_config
+        self.ancillary_files = ancillary_files
 
         # self.pool = multiprocessing.Pool(poolSize)
 
@@ -190,6 +202,23 @@ class FileTypeFormat(metaclass=ABCMeta):
         logger.info("NO VALIDATION for %s files" % self._fileType)
         return errors, warnings
 
+    def _cross_validate(self, df: pd.DataFrame) -> tuple:
+        """
+        This is the base cross-validation function.
+        By default, no cross-validation occurs.
+
+        Args:
+            df (pd.DataFrame): A dataframe of the file
+
+        Returns:
+            tuple: The errors and warnings as a file from cross-validation.
+                   Defaults to blank strings
+        """
+        errors = ""
+        warnings = ""
+        logger.info("NO CROSS-VALIDATION for %s files" % self._fileType)
+        return errors, warnings
+
     def validate(self, filePathList, **kwargs) -> ValidationResults:
         """
         This is the main validation function.
@@ -222,6 +251,20 @@ class FileTypeFormat(metaclass=ABCMeta):
         if not errors:
             logger.info("VALIDATING %s" % os.path.basename(",".join(filePathList)))
             errors, warnings = self._validate(df, **mykwargs)
+            # only cross-validate if validation passes or ancillary files exist
+            # Assumes that self.ancillary_files won't be [[]] due to whats returned from
+            # extract.get_center_input_files
+            if not errors and (
+                isinstance(self.ancillary_files, list) and self.ancillary_files
+            ):
+                logger.info(
+                    "CROSS-VALIDATING %s" % os.path.basename(",".join(filePathList))
+                )
+                errors_cross_validate, warnings_cross_validate = self._cross_validate(
+                    df
+                )
+                errors += errors_cross_validate
+                warnings += warnings_cross_validate
 
         result_cls = ValidationResults(errors=errors, warnings=warnings)
         return result_cls

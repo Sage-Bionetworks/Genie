@@ -16,7 +16,7 @@ library(testthat)
 library(VariantAnnotation)
 genieMutData = matrix(nrow = 2, ncol = 13)
 colnames(genieMutData) = c("Chromosome", "Hugo_Symbol", "Start_Position", "End_Position", "Reference_Allele",
-                           "Tumor_Seq_Allele2", "t_depth", 't_alt_count', "Tumor_Sample_Barcode", 
+                           "Tumor_Seq_Allele2", "t_depth", 't_alt_count', "Tumor_Sample_Barcode",
                            "Protein_position", "HGVSp_Short", "Variant_Classification", "Center")
 
 
@@ -58,7 +58,7 @@ test_that("Mutations are not flagged", {
   expect_equal(colnames(tbl), c("Center", "Tumor_Sample_Barcode", "Hugo_Symbol", "HGVSp_Short",
                                 "Variant_Classification", "Chromosome", "Start_Position",
                                 "Reference_Allele", "Tumor_Seq_Allele2", "t_alt_count_num", "t_depth"))
-  
+
 })
 
 genieMutData$Start_Position = c("1", "10")
@@ -93,4 +93,3 @@ test_that("Mutations not flagged, different starts and ends", {
   tbl <- data.frame( lapply( tbl , factor ))
   expect_equal(tbl, expected[,colnames(tbl)])
 })
-

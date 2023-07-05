@@ -277,6 +277,46 @@ class maf(FileTypeFormat):
 
         return total_error.getvalue(), warning.getvalue()
 
+    def _cross_validate(self, mutationDF: pd.DataFrame) -> tuple:
+        """This function cross-validates the mutation file to make sure it
+        adheres to the mutation SOP.
+
+        Args:
+            mutationDF (pd.DataFrame): mutation dataframe
+
+        Returns:
+            Text with all the errors in the mutation file
+        """
+        errors = ""
+        warnings = ""
+
+        # This section can be removed once we remove the list of lists
+        clinical_files = validate.parse_file_info_in_nested_list(
+            nested_list=self.ancillary_files, search_str="data_clinical_supp"  # type: ignore[arg-type]
+        )
+        clinical_file_paths = clinical_files["file_info"]["path"]
+
+        if clinical_files["files"]:
+            try:
+                clinical_sample_df = process_functions.get_clinical_dataframe(
+                    filePathList=clinical_file_paths
+                )
+                has_file_read_error = False
+            except Exception:
+                has_file_read_error = True
+
+            if not has_file_read_error:
+                if process_functions.checkColExist(clinical_sample_df, "SAMPLE_ID"):
+                    errors, warnings = validate.check_values_between_two_df(
+                        df1=mutationDF,
+                        df1_filename="MAF",
+                        df1_id_to_check="TUMOR_SAMPLE_BARCODE",
+                        df2=clinical_sample_df,
+                        df2_filename="sample clinical",
+                        df2_id_to_check="SAMPLE_ID",
+                    )
+        return errors, warnings
+
     def _get_dataframe(self, filePathList):
         """Get mutation dataframe"""
         # Must do this because pandas.read_csv will allow for a file to
@@ -324,5 +364,9 @@ class maf(FileTypeFormat):
             # Retain completely blank lines so that
             # validator will cause the file to fail
             skip_blank_lines=False,
+            # allows mixed datatypes when reading
+            # can occur when trying to read chunks
+            # chromosome triesto parse as str and int
+            low_memory=False,
         )
         return mutationdf
