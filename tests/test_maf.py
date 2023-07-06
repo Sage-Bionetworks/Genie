@@ -1,4 +1,5 @@
-from unittest.mock import patch
+from io import BytesIO, StringIO
+from unittest.mock import mock_open, patch
 
 import pandas as pd
 import pytest
@@ -383,3 +384,26 @@ def test_that__cross_validate_returns_expected_msg_if_valid(
         errors, warnings = maf_class._cross_validate(mutationDF=valid_maf_df)
         assert warnings == expected_warning
         assert errors == expected_error
+
+
+def test_that__get_dataframe_returns_expected_result(
+    maf_class,
+):
+    file = (
+        "Hugo_Symbol	Entrez_Gene_Id	Center	NCBI_Build	Chromosome\n"
+        "TEST	3845	TEST	GRCh37	12"
+    )
+    with patch("builtins.open", mock_open(read_data=file)) as mock_file:
+        test = maf_class._get_dataframe(["some_path"])
+        pd.testing.assert_frame_equal(
+            test,
+            pd.DataFrame(
+                {
+                    "Hugo_Symbol": ["TEST"],
+                    "Entrez_Gene_Id": [3845],
+                    "Center": ["TEST"],
+                    "NCBI_Build": ["GRCh37"],
+                    "Chromosome": [12],
+                }
+            ),
+        )
