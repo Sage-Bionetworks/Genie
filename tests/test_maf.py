@@ -1,4 +1,5 @@
-from unittest.mock import patch
+from io import BytesIO, StringIO
+from unittest.mock import mock_open, patch
 
 import pandas as pd
 import pytest
@@ -271,3 +272,26 @@ def test_valid__check_tsa1_tsa2(df):
     """Test valid TSA1 and TSA2"""
     error = genie_registry.maf._check_tsa1_tsa2(df)
     assert error == ""
+
+
+def test_that__get_dataframe_returns_expected_result(
+    maf_class,
+):
+    file = (
+        "Hugo_Symbol	Entrez_Gene_Id	Center	NCBI_Build	Chromosome\n"
+        "TEST	3845	TEST	GRCh37	12"
+    )
+    with patch("builtins.open", mock_open(read_data=file)) as mock_file:
+        test = maf_class._get_dataframe(["some_path"])
+        pd.testing.assert_frame_equal(
+            test,
+            pd.DataFrame(
+                {
+                    "Hugo_Symbol": ["TEST"],
+                    "Entrez_Gene_Id": [3845],
+                    "Center": ["TEST"],
+                    "NCBI_Build": ["GRCh37"],
+                    "Chromosome": [12],
+                }
+            ),
+        )

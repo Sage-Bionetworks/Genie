@@ -1,5 +1,6 @@
 """This module contains all the transformation functions used throughout the GENIE
 package"""
+import warnings
 
 import pandas as pd
 from pandas.api.types import is_integer_dtype, is_float_dtype
@@ -41,3 +42,17 @@ def _convert_float_col_with_nas_to_int(df: pd.DataFrame, col: str) -> list:
         return new_vals
     else:
         return df[col].tolist()
+
+
+def _convert_df_with_mixed_dtypes(read_csv_params: dict) -> pd.DataFrame:
+    """This checks if a dataframe read in normally has mixed data types and converts a dataframe with
+    mixed datatypes to one datatype.
+        read_csv_params (dict): of input params and values to pandas's read_csv function.
+            needs to include filepath to dataset to be read in"""
+    warnings.simplefilter("error", pd.errors.DtypeWarning)
+    try:
+        df = pd.read_csv(**read_csv_params, low_memory=True)
+    except pd.errors.DtypeWarning:
+        df = pd.read_csv(**read_csv_params, low_memory=False, engine="c")
+    warnings.resetwarnings()
+    return df
