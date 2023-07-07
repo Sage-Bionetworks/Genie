@@ -45,15 +45,14 @@ def _convert_float_col_with_nas_to_int(df: pd.DataFrame, col: str) -> list:
 
 
 def _convert_df_with_mixed_dtypes(read_csv_params: dict) -> pd.DataFrame:
-    
-    """This checks if a dataframe read in normally comes out with mixed data types (which happens 
-    when low_memory = True because read_csv parses in chunks and guesses dtypes by chunk) and 
-    converts a dataframe with mixed datatypes to one datatype. 
-    
+    """This checks if a dataframe read in normally comes out with mixed data types (which happens
+    when low_memory = True because read_csv parses in chunks and guesses dtypes by chunk) and
+    converts a dataframe with mixed datatypes to one datatype.
+
     Args:
         read_csv_params (dict): of input params and values to pandas's read_csv function.
             needs to include filepath to dataset to be read in
-            
+
     Returns:
         pd.DataFrame : The dataset read in
     """
