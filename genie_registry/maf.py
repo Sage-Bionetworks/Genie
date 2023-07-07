@@ -328,9 +328,6 @@ class maf(FileTypeFormat):
             # Retain completely blank lines so that
             # validator will cause the file to fail
             "skip_blank_lines": False,
-            # allows mixed datatypes when reading
-            # can occur when trying to read chunks
-            # chromosome triesto parse as str and int
         }
         mutationdf = transform._convert_df_with_mixed_dtypes(read_csv_params)
         return mutationdf
