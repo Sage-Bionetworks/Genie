@@ -170,10 +170,6 @@ class maf(FileTypeFormat):
             for col in primary_cols:
                 if mutationDF[col].dtype == object:
                     mutationDF[col] = mutationDF[col].str.strip()
-                    mutationDF[col].mask(
-                        pd.to_numeric(mutationDF[col], errors="coerce").isnull(),
-                        mutationDF[col].str.strip(),
-                    )
             duplicated_idx = mutationDF.duplicated(primary_cols)
             # Find samples with duplicated variants
             duplicated_variants = (
