@@ -52,11 +52,6 @@ def _to_redact_interval(df_col):
                pandas.Series: to redact pediatric boolean vector
 
     """
-    "<6570"
-    ">32540"
-    "10000"
-    "3400"
-    "60000"
     phi_cutoff = 365 * 89
     pediatric_cutoff = 365 * 18
     # Some centers pre-redact their values by adding < or >. These
@@ -144,26 +139,24 @@ def redact_phi(
     )
     clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
     clinicaldf.loc[to_redact_peds, "BIRTH_YEAR"] = "withheld"
-    for col in interval_cols_to_redact:
-        clinicaldf.loc[to_redact, col] = ">32485"
-        clinicaldf.loc[to_redact_peds, col] = "<6570"
+    clinicaldf.loc[to_redact, interval_cols_to_redact] = ">32485"
+    clinicaldf.loc[to_redact_peds, interval_cols_to_redact] = "<6570"
 
     to_redact, to_redact_peds = _to_redact_difference(
         clinicaldf["BIRTH_YEAR"], clinicaldf["YEAR_DEATH"]
     )
     clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
     clinicaldf.loc[to_redact_peds, "BIRTH_YEAR"] = "withheld"
-    for col in interval_cols_to_redact:
-        clinicaldf.loc[to_redact, col] = ">32485"
-        clinicaldf.loc[to_redact_peds, col] = "<6570"
+    clinicaldf.loc[to_redact, interval_cols_to_redact] = ">32485"
+    clinicaldf.loc[to_redact_peds, interval_cols_to_redact] = "<6570"
+
     to_redact, to_redact_peds = _to_redact_difference(
         clinicaldf["BIRTH_YEAR"], datetime.datetime.utcnow().year
     )
     clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
     clinicaldf.loc[to_redact_peds, "BIRTH_YEAR"] = "withheld"
-    for col in interval_cols_to_redact:
-        clinicaldf.loc[to_redact, col] = ">32485"
-        clinicaldf.loc[to_redact_peds, col] = "<6570"
+    clinicaldf.loc[to_redact, interval_cols_to_redact] = ">32485"
+    clinicaldf.loc[to_redact_peds, interval_cols_to_redact] = "<6570"
     return clinicaldf
 
 
