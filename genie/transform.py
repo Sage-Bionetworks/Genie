@@ -53,6 +53,6 @@ def _convert_df_with_mixed_dtypes(read_csv_params: dict) -> pd.DataFrame:
     try:
         df = pd.read_csv(**read_csv_params, low_memory=True)
     except pd.errors.DtypeWarning:
+        warnings.resetwarnings()
         df = pd.read_csv(**read_csv_params, low_memory=False, engine="c")
-    warnings.resetwarnings()
     return df

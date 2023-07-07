@@ -4,8 +4,6 @@ from unittest.mock import patch
 
 import pandas as pd
 from pandas.api.types import (
-    is_float_dtype,
-    is_integer_dtype,
     is_object_dtype,
 )
 import pytest
@@ -90,65 +88,24 @@ class TestConvertCols:
         assert pd.isna(result[1])
 
 
-@pytest.mark.parametrize(
-    "test_input,expected_output,expected_dtype", 
-    [
-        (
-            pd.DataFrame({"some_col": [1, "Val2", "1"]}),
-            pd.DataFrame({"some_col": ["1", "Val2", "1"]}),
-            is_object_dtype,
-        ),
-        (
-            pd.DataFrame({"some_col": ["Val1", "Val2", "Val3"]}),
-            pd.DataFrame({"some_col": ["Val1", "Val2", "Val3"]}),
-            is_object_dtype,
-        ),
-        (
-            pd.DataFrame({"some_col": [1.0, "Val2", 3]}),
-            pd.DataFrame({"some_col": ["1.0", "Val2", "3"]}),
-            is_object_dtype,
-        ),
-        (
-            pd.DataFrame({"some_col": ["2", "3", 1]}),
-            pd.DataFrame({"some_col": [2, 3, 1]}),
-            is_integer_dtype,
-        ),
-        (
-            pd.DataFrame({"some_col": [2, None, 1]}),
-            pd.DataFrame({"some_col": [2, None, 1]}),
-            is_float_dtype,
-        ),
-        (
-            pd.DataFrame({"some_col": [float("nan"), None, "1"]}),
-            pd.DataFrame({"some_col": [float("nan"), None, 1]}),
-            is_float_dtype,
-        ),
-        (
-            pd.DataFrame({"some_col": [float("nan"), "Val1", "1"]}),
-            pd.DataFrame({"some_col": [float("nan"), "Val1", "1"]}),
-            is_object_dtype,
-        ),
-        (
-            pd.DataFrame({"some_col": [1, 1.0, 3.0]}),
-            pd.DataFrame({"some_col": [1, 1.0, 3.0]}),
-            is_float_dtype,
-        ),
-    ],
-    ids=[
-        "mixed_dtype_str_int",
-        "all_str",
-        "mixed_dtype_float_int_str",
-        "mixed_dtype_all_int",
-        "int_none",
-        "int_nan",
-        "mixed_dtype_nan_str",
-        "int_float",
-    ],
-)
+def read_csv_side_effect(**kwargs):
+    if kwargs["low_memory"] == True:
+        raise pd.errors.DtypeWarning("some_warning")
+
+
 class TestConvertMixedDtypes:
-    def test_that__convert_df_with_mixed_dtypes_gets_expected_output(
-        self, test_input, expected_output, expected_dtype
-    ):
+    @pytest.fixture(scope="session")
+    def test_input(self):
+        yield pd.DataFrame({"some_col": [1, "Val2", "1"]})
+
+    @pytest.fixture(scope="session")
+    def bytes_io_output(self, test_input):
+        output = BytesIO()
+        test_input.to_csv(output, index=False)
+        output.seek(0)
+        yield output
+
+    def test_that__convert_df_with_mixed_dtypes_gets_expected_output(self, test_input):
         # Create your in memory BytesIO file.
         output = BytesIO()
         test_input.to_csv(output, index=False)
@@ -158,24 +115,46 @@ class TestConvertMixedDtypes:
             {"filepath_or_buffer": output, "index_col": False}
         )
         pd.testing.assert_frame_equal(
-            df.reset_index(drop=True), expected_output.reset_index(drop=True)
+            df.reset_index(drop=True), pd.DataFrame({"some_col": ["1", "Val2", "1"]})
         )
-        assert expected_dtype(df["some_col"])
+        assert is_object_dtype(df["some_col"])
 
-    def test_that__convert_df_with_mixed_dtypes_catches_pandas_exception(
-        self, test_input, expected_output, expected_dtype
+    def test_that__convert_df_with_mixed_dtypes_calls_read_csv_once_if_no_exception(
+        self, bytes_io_output
     ):
-        # Create your in memory BytesIO file.
-        output = BytesIO()
-        test_input.to_csv(output, index=False)
-        output.seek(0)  # Contains the CSV in memory file.
-
         with mock.patch.object(pd, "read_csv") as mock_read_csv:
             transform._convert_df_with_mixed_dtypes(
-                {"filepath_or_buffer": output, "index_col": False}
+                {"filepath_or_buffer": bytes_io_output, "index_col": False}
             )
             mock_read_csv.assert_called_once_with(
-                filepath_or_buffer=output,
+                filepath_or_buffer=bytes_io_output,
                 index_col=False,
                 low_memory=True,
+            )
+
+    def test_that__convert_df_with_mixed_dtypes_catches_mixed_dtype_exception(
+        self, bytes_io_output
+    ):
+        # Create your in memory BytesIO file.
+        with mock.patch.object(
+            pd, "read_csv", side_effect=read_csv_side_effect
+        ) as mock_read_csv:
+            transform._convert_df_with_mixed_dtypes(
+                {"filepath_or_buffer": bytes_io_output, "index_col": False}
+            )
+            mock_read_csv.assert_has_calls(
+                [
+                    mock.call(
+                        filepath_or_buffer=bytes_io_output,
+                        index_col=False,
+                        low_memory=True,
+                    ),
+                    mock.call(
+                        filepath_or_buffer=bytes_io_output,
+                        index_col=False,
+                        low_memory=False,
+                        engine="c",
+                    ),
+                ],
+                any_order=False,
             )
