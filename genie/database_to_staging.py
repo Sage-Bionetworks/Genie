@@ -150,13 +150,17 @@ def redact_phi(
     clinicaldf.loc[to_redact, interval_cols_to_redact] = ">32485"
     clinicaldf.loc[to_redact_peds, interval_cols_to_redact] = "<6570"
 
+    # this redaction only makes sense for patients that are alive
+    # Because if a patient dies at age 20, there is no need to calculate
+    # the current age.
     to_redact, to_redact_peds = _to_redact_difference(
         clinicaldf["BIRTH_YEAR"], datetime.datetime.utcnow().year
     )
-    clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
-    clinicaldf.loc[to_redact_peds, "BIRTH_YEAR"] = "withheld"
-    clinicaldf.loc[to_redact, interval_cols_to_redact] = ">32485"
-    clinicaldf.loc[to_redact_peds, interval_cols_to_redact] = "<6570"
+    is_alive = clinicaldf["DEAD"].isin(["False", "FALSE"])
+    clinicaldf.loc[(to_redact & is_alive), "BIRTH_YEAR"] = "cannotReleaseHIPAA"
+    clinicaldf.loc[(to_redact_peds & is_alive), "BIRTH_YEAR"] = "withheld"
+    clinicaldf.loc[(to_redact & is_alive), interval_cols_to_redact] = ">32485"
+    clinicaldf.loc[(to_redact_peds & is_alive), interval_cols_to_redact] = "<6570"
     return clinicaldf
 
 
