@@ -38,6 +38,13 @@ class TestSv:
                 ]
             }
         )
+        expected_df["SITE1_HUGO_SYMBOL"] = ""
+        expected_df["SITE2_HUGO_SYMBOL"] = ""
+        expected_df["SITE1_POSITION"] = ""
+        expected_df["SITE2_POSITION"] = ""
+        expected_df["EVENT_INFO"] = ""
+        expected_df["ANNOTATION"] = ""
+
         processed_df = self.sv_cls._process(sv_df)
         assert expected_df.equals(processed_df)
 
@@ -46,8 +53,6 @@ class TestSv:
             {
                 "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
                 "SV_STATUS": ["SOMATIC", "SOMATIC", "GERMLINE"],
-                "SITE1_HUGO_SYMBOL": ["af", "af", "ff"],
-                "SITE2_HUGO_SYMBOL": ["af", "af", "ff"],
             }
         )
         error, warning = self.sv_cls._validate(sv_df)
@@ -68,8 +73,6 @@ class TestSv:
         assert error == (
             "Structural Variant: Must have SAMPLE_ID column.\n"
             "Structural Variant: Must have SV_STATUS column.\n"
-            "Structural Variant: Either SITE1_HUGO_SYMBOL/SITE1_ENTREZ_GENE_ID or "
-            "SITE2_HUGO_SYMBOL/SITE2_ENTREZ_GENE_ID is required.\n"
         )
         assert warning == ""
 

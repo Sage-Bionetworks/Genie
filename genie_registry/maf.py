@@ -5,7 +5,7 @@ import logging
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import process_functions, validate
+from genie import process_functions, transform, validate
 
 logger = logging.getLogger(__name__)
 
@@ -335,13 +335,12 @@ class maf(FileTypeFormat):
                 "Number of fields in a line do not match the "
                 "expected number of columns"
             )
-
-        mutationdf = pd.read_csv(
-            filePathList[0],
-            sep="\t",
-            comment="#",
+        read_csv_params = {
+            "filepath_or_buffer": filePathList[0],
+            "sep": "\t",
+            "comment": "#",
             # Keep the value 'NA'
-            na_values=[
+            "na_values": [
                 "-1.#IND",
                 "1.#QNAN",
                 "1.#IND",
@@ -357,12 +356,13 @@ class maf(FileTypeFormat):
                 "-nan",
                 "",
             ],
-            keep_default_na=False,
+            "keep_default_na": False,
             # This is to check if people write files
             # with R, quote=T
-            quoting=3,
+            "quoting": 3,
             # Retain completely blank lines so that
             # validator will cause the file to fail
-            skip_blank_lines=False,
-        )
+            "skip_blank_lines": False,
+        }
+        mutationdf = transform._convert_df_with_mixed_dtypes(read_csv_params)
         return mutationdf
