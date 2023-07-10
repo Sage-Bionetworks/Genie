@@ -1,4 +1,5 @@
 """Test genie.transform module"""
+import os
 from io import BytesIO
 from unittest.mock import patch
 
@@ -96,61 +97,89 @@ def read_csv_side_effect(**kwargs):
 class TestConvertMixedDtypes:
     @pytest.fixture(scope="session")
     def test_input(self):
-        yield pd.DataFrame({"some_col": [1, "Val2", "1"]})
-
-    @pytest.fixture(scope="session")
-    def bytes_io_output(self, test_input):
+        input = pd.DataFrame({"some_col": [1, "Val2", "1"]})
         output = BytesIO()
-        test_input.to_csv(output, index=False)
+        input.to_csv(output, index=False)
         output.seek(0)
         yield output
 
-    def test_that__convert_df_with_mixed_dtypes_gets_expected_output(self, test_input):
-        # Create your in memory BytesIO file.
-        output = BytesIO()
-        test_input.to_csv(output, index=False)
-        output.seek(0)  # Contains the CSV in memory file.
+    @pytest.fixture(scope="session")
+    def test_mixed_dtype_input(self):
+        input = pd.DataFrame(
+            {
+                "some_col": ([1.0] * 100000 + ["a"] * 100000 + [float("nan")] * 100000),
+                "some_col2": (
+                    [1.0] * 100000 + ["b"] * 100000 + [float("nan")] * 100000
+                ),
+            }
+        )
+        input.to_csv("test_mixed_dtype_input.csv", index=False)
+        yield "test_mixed_dtype_input.csv"
+        os.remove("test_mixed_dtype_input.csv")
 
+    def test_that__convert_df_with_mixed_dtypes_gets_expected_output_with_normal_input(
+        self, test_input
+    ):
         df = transform._convert_df_with_mixed_dtypes(
-            {"filepath_or_buffer": output, "index_col": False}
+            {"filepath_or_buffer": test_input, "index_col": False}
         )
         pd.testing.assert_frame_equal(
             df.reset_index(drop=True), pd.DataFrame({"some_col": ["1", "Val2", "1"]})
         )
         assert is_object_dtype(df["some_col"])
 
+    def test_that__convert_df_with_mixed_dtypes_gets_expected_output_with_large_mixed_dtype_input(
+        self, test_mixed_dtype_input
+    ):
+        df = transform._convert_df_with_mixed_dtypes(
+            {"filepath_or_buffer": test_mixed_dtype_input, "index_col": False}
+        )
+        pd.testing.assert_frame_equal(
+            df.reset_index(drop=True),
+            pd.DataFrame(
+                {
+                    "some_col": (
+                        ["1.0"] * 100000 + ["a"] * 100000 + [float("nan")] * 100000
+                    ),
+                    "some_col2": (
+                        ["1.0"] * 100000 + ["b"] * 100000 + [float("nan")] * 100000
+                    ),
+                }
+            ),
+        )
+        assert is_object_dtype(df["some_col"])
+
     def test_that__convert_df_with_mixed_dtypes_calls_read_csv_once_if_no_exception(
-        self, bytes_io_output
+        self, test_input
     ):
         with mock.patch.object(pd, "read_csv") as mock_read_csv:
             transform._convert_df_with_mixed_dtypes(
-                {"filepath_or_buffer": bytes_io_output, "index_col": False}
+                {"filepath_or_buffer": test_input, "index_col": False}
             )
             mock_read_csv.assert_called_once_with(
-                filepath_or_buffer=bytes_io_output,
+                filepath_or_buffer=test_input,
                 index_col=False,
                 low_memory=True,
             )
 
     def test_that__convert_df_with_mixed_dtypes_catches_mixed_dtype_exception(
-        self, bytes_io_output
+        self, test_input
     ):
-        # Create your in memory BytesIO file.
         with mock.patch.object(
             pd, "read_csv", side_effect=read_csv_side_effect
         ) as mock_read_csv:
             transform._convert_df_with_mixed_dtypes(
-                {"filepath_or_buffer": bytes_io_output, "index_col": False}
+                {"filepath_or_buffer": test_input, "index_col": False}
             )
             mock_read_csv.assert_has_calls(
                 [
                     mock.call(
-                        filepath_or_buffer=bytes_io_output,
+                        filepath_or_buffer=test_input,
                         index_col=False,
                         low_memory=True,
                     ),
                     mock.call(
-                        filepath_or_buffer=bytes_io_output,
+                        filepath_or_buffer=test_input,
                         index_col=False,
                         low_memory=False,
                         engine="c",
