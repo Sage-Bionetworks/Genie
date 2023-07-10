@@ -191,32 +191,6 @@ def write_case_list_cna(cna_samples, output_directory, study_id):
     return cna_caselist_path
 
 
-def write_case_list_fusions(samples, output_directory, study_id):
-    """
-    Writes the cna sequenced samples
-
-    Args:
-        samples: List of fusion samples
-        output_directory: Directory to write case lists
-        study_id: cBioPortal study id
-
-    Returns:
-        cna caselist path
-    """
-    case_list_ids = "\t".join(samples)
-    caselist_path = os.path.abspath(os.path.join(output_directory, "cases_fusions.txt"))
-    with open(caselist_path, "w") as case_list_file:
-        case_list_file_text = CASE_LIST_TEXT_TEMPLATE.format(
-            study_id=study_id,
-            stable_id=study_id + "_fusions",
-            case_list_name="Samples with Fusions",
-            case_list_description="Samples with Fusions",
-            case_list_ids=case_list_ids,
-        )
-        case_list_file.write(case_list_file_text)
-    return caselist_path
-
-
 def write_case_list_sv(samples: list, output_directory: str, study_id: str) -> str:
     """Writes the structural variant (sv) sequenced samples
 
@@ -293,6 +267,4 @@ def main(clinical_file_name, assay_info_file_name, output_directory, study_id):
     write_case_list_sequenced(clin_samples, output_directory, study_id)
     write_case_list_cna(cna_samples, output_directory, study_id)
     write_case_list_cnaseq(cna_samples, output_directory, study_id)
-    # TODO: Remove when depreciating fusion files
-    write_case_list_fusions(fusion_samples, output_directory, study_id)
     write_case_list_sv(sv_samples, output_directory, study_id)

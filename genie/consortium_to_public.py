@@ -189,7 +189,7 @@ def consortiumToPublic(
     mapping = extract.get_syntabledf(syn=syn, query_string="SELECT * FROM syn9621600")
     genePanelEntities = []
     for entName, entId in consortiumRelease[2]:
-        is_depreciated_file = entName in ["data_fusions.txt"]
+        is_deprecated_file = entName in ["data_fusions.txt"]
         # skip files to convert
         if (
             entName.startswith("data_linear")
@@ -208,7 +208,7 @@ def consortiumToPublic(
                 "snv_as_onp.csv",
                 "duplicated_variants.csv",
             ]
-            or is_depreciated_file
+            or is_deprecated_file
         ):
             # data_gene_matrix was processed above because it had to be
             # used for generating caselists
