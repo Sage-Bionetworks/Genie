@@ -89,9 +89,6 @@ class TestCreateCaseList:
         self.case_list_cnaseq_path = create_case_lists.write_case_list_cnaseq(
             ["test1", "test2"], "./", study_id
         )
-        self.case_list_fusion_path = create_case_lists.write_case_list_fusions(
-            ["test1", "test2"], "./", study_id
-        )
         self.case_list_sv_path = create_case_lists.write_case_list_sv(
             ["test1", "test2"], "./", study_id
         )
@@ -101,7 +98,6 @@ class TestCreateCaseList:
         os.remove(self.sequenced_case_list_files[1])
         os.remove(self.case_list_cna_path)
         os.remove(self.case_list_cnaseq_path)
-        os.remove(self.case_list_fusion_path)
         os.remove(self.case_list_sv_path)
 
     def test_filenames_write_case_list_sequenced(self):
@@ -161,18 +157,6 @@ class TestCreateCaseList:
             "case_list_ids: test1\ttest2"
         )
         with open(self.case_list_cnaseq_path, "r") as case_list:
-            caselist_text = case_list.read()
-        assert caselist_text == expected_text
-
-    def test_cnaseq_write_case_list_fusions(self):
-        expected_text = (
-            "cancer_study_identifier: test\n"
-            "stable_id: test_fusions\n"
-            "case_list_name: Samples with Fusions\n"
-            "case_list_description: Samples with Fusions\n"
-            "case_list_ids: test1\ttest2"
-        )
-        with open(self.case_list_fusion_path, "r") as case_list:
             caselist_text = case_list.read()
         assert caselist_text == expected_text
 
