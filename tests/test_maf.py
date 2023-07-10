@@ -1,4 +1,5 @@
-from unittest.mock import patch
+from io import BytesIO, StringIO
+from unittest.mock import mock_open, patch
 
 import pandas as pd
 import pytest
@@ -271,3 +272,59 @@ def test_valid__check_tsa1_tsa2(df):
     """Test valid TSA1 and TSA2"""
     error = genie_registry.maf._check_tsa1_tsa2(df)
     assert error == ""
+
+
+@pytest.mark.parametrize(
+    "test_input,expected",
+    [
+        (
+            (
+                "Hugo_Symbol	Entrez_Gene_Id	Center	NCBI_Build	Chromosome\n"
+                "TEST	3845	TEST	GRCh37	12"
+            ),
+            pd.DataFrame(
+                {
+                    "Hugo_Symbol": ["TEST"],
+                    "Entrez_Gene_Id": [3845],
+                    "Center": ["TEST"],
+                    "NCBI_Build": ["GRCh37"],
+                    "Chromosome": [12],
+                }
+            ),
+        ),
+        (
+            (
+                "#Something Something else\n"
+                "Hugo_Symbol	Entrez_Gene_Id	Center	NCBI_Build	Chromosome\n"
+                "TEST	3845	TEST	GRCh37	12"
+            ),
+            pd.DataFrame(
+                {
+                    "Hugo_Symbol": ["TEST"],
+                    "Entrez_Gene_Id": [3845],
+                    "Center": ["TEST"],
+                    "NCBI_Build": ["GRCh37"],
+                    "Chromosome": [12],
+                }
+            ),
+        ),
+    ],
+    ids=["no_pound_sign", "pound_sign"],
+)
+def test_that__get_dataframe_returns_expected_result(maf_class, test_input, expected):
+    with patch("builtins.open", mock_open(read_data=test_input)) as mock_file:
+        test = maf_class._get_dataframe(["some_path"])
+        pd.testing.assert_frame_equal(test, expected)
+
+
+def test_that__get_dataframe_throws_value_error(maf_class):
+    file = (
+        "#Hugo_Symbol	Entrez_Gene_Id	Center	NCBI_Build	Chromosome\n"
+        "TEST	3845	TEST	GRCh37	12"
+    )
+    with patch("builtins.open", mock_open(read_data=file)) as patch_open:
+        with pytest.raises(
+            ValueError,
+            match="Number of fields in a line do not match the expected number of columns",
+        ):
+            maf_class._get_dataframe(["some_path"])
