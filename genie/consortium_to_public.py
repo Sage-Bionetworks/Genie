@@ -59,9 +59,6 @@ def consortiumToPublic(
         database_to_staging.GENIE_RELEASE_DIR,
         "data_mutations_extended.txt",
     )
-    fusions_path = os.path.join(
-        database_to_staging.GENIE_RELEASE_DIR, "data_fusions.txt"
-    )
     seg_path = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR,
         "data_cna_hg19.seg",
@@ -192,6 +189,7 @@ def consortiumToPublic(
     mapping = extract.get_syntabledf(syn=syn, query_string="SELECT * FROM syn9621600")
     genePanelEntities = []
     for entName, entId in consortiumRelease[2]:
+        is_depreciated_file = entName in ["data_fusions.txt"]
         # skip files to convert
         if (
             entName.startswith("data_linear")
@@ -210,6 +208,7 @@ def consortiumToPublic(
                 "snv_as_onp.csv",
                 "duplicated_variants.csv",
             ]
+            or is_depreciated_file
         ):
             # data_gene_matrix was processed above because it had to be
             # used for generating caselists
@@ -269,21 +268,6 @@ def consortiumToPublic(
                 parentid=public_release_preview,
                 version_comment=genie_version,
                 name="data_mutations_extended.txt",
-            )
-
-        elif "fusion" in entName:
-            fusion = syn.get(entId, followLink=True)
-            fusionDf = pd.read_csv(fusion.path, sep="\t")
-            fusionDf = fusionDf[
-                fusionDf["Tumor_Sample_Barcode"].isin(publicReleaseSamples)
-            ]
-            fusionDf.to_csv(fusions_path, sep="\t", index=False)
-            load.store_file(
-                syn=syn,
-                filepath=fusions_path,
-                parentid=public_release_preview,
-                version_comment=genie_version,
-                name="data_fusions.txt",
             )
         elif "CNA" in entName:
             cna = syn.get(entId, followLink=True)
