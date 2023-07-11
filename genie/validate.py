@@ -318,3 +318,34 @@ def check_values_between_two_df(
         )
 
     return errors, warnings
+
+
+def check_variant_start_and_end_positions(
+    input_df: pd.DataFrame, start_pos_col: str, end_pos_col: str, filename: str
+) -> tuple:
+    """Checks that a variant's start position is less than its
+        end position
+
+    Args:
+        input_df (pd.DataFrame): Input data to check positions
+        start_pos_col (str): Name of the start position column
+        end_pos_col (str): Name of the end position column
+        filename (str): Name of the file
+
+    Returns:
+        tuple: The errors and warnings from the position validation
+               Defaults to blank strings
+
+    """
+    errors = ""
+    warnings = ""
+
+    if any(input_df[start_pos_col] > input_df[end_pos_col]):
+        errors = (
+            f"{filename}: Your variants file has record(s) that have an end position value "
+            "less than the start position value. When we annotate through the "
+            "genome-nexus-annotation-pipeline, the records with this position "
+            "discrepancy will show a blank reference and variant allele. "
+            "Please update your file to be consistent.\n"
+        )
+    return errors, warnings

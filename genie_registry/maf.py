@@ -275,6 +275,18 @@ class maf(FileTypeFormat):
             )
             total_error.write(error)
 
+        # only check end position as start position is required col
+        if process_functions.checkColExist(
+            mutationDF, "START_POSITION"
+        ) and process_functions.checkColExist(mutationDF, "END_POSITION"):
+            errors, warnings = validate.check_variant_start_and_end_positions(
+                input_df=mutationDF,
+                start_pos_col="START_POSITION",
+                end_pos_col="END_POSITION",
+                filename = "maf"
+            )
+            total_error.write(errors)
+            warning.write(warnings)
         return total_error.getvalue(), warning.getvalue()
 
     def _cross_validate(self, mutationDF: pd.DataFrame) -> tuple:
