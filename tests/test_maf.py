@@ -459,7 +459,7 @@ def test_that__get_dataframe_throws_value_error(maf_class):
             )
         ),
     ],
-    ids=["no_end_pos_col", "pos_cols_str"]
+    ids=["no_end_pos_col", "pos_cols_str"],
 )
 def test_that__validate_does_not_call_check_variant_start_and_end_positions(
     maf_class, test_input
@@ -487,7 +487,7 @@ def test_that__validate_does_not_call_check_variant_start_and_end_positions(
             )
         ),
     ],
-    ids=["all_numeric_pos", "str_numeric_pos"]
+    ids=["all_numeric_pos", "str_numeric_pos"],
 )
 def test_that__validate_calls_check_variant_start_and_end_positions(
     maf_class, test_input
