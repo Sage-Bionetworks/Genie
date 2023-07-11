@@ -283,7 +283,7 @@ class maf(FileTypeFormat):
                 input_df=mutationDF,
                 start_pos_col="START_POSITION",
                 end_pos_col="END_POSITION",
-                filename = "maf"
+                filename="maf",
             )
             total_error.write(errors)
             warning.write(warnings)

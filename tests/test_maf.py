@@ -457,8 +457,8 @@ def test_that__validate_calls_check_variant_start_and_end_positions(
     test_input = valid_maf_df.copy()
     test_input["END_POSITION"] = test_input["START_POSITION"] + 1
     with patch.object(
-        validate, "check_variant_start_and_end_positions"
-    , return_value = ("","")) as patch_check_variant:
+        validate, "check_variant_start_and_end_positions", return_value=("", "")
+    ) as patch_check_variant:
         maf_class._validate(test_input)
         patch_check_variant.assert_called_once_with(
             input_df=test_input,
