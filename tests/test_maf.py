@@ -168,7 +168,8 @@ def test_invalid_validation(maf_class):
         dict(
             CHROMOSOME=[1, 2, 3, 4, 2, 4],
             T_ALT_COUNT=[1, 2, 3, 4, 3, 4],
-            START_POSITION=[1, 2, 3, 4, 2, 4],
+            START_POSITION=[1, 2, "string", 4, 2, 4],
+            END_POSITION=["1", "2", 3, "string", 4, 5],
             REFERENCE_ALLELE=["A ", "A ", "A", "A ", "A ", " A"],
             TUMOR_SAMPLE_BARCODE=["ID1-1", "ID1-1", "ID1-1", "ID1-1", "ID1-1", "ID1-1"],
             N_DEPTH=[1, 2, 3, 4, 3, 4],
@@ -189,6 +190,8 @@ def test_invalid_validation(maf_class):
         "maf: "
         "If missing T_DEPTH, must have T_REF_COUNT!\n"
         "maf: N_REF_COUNT must be a numerical column.\n"
+        "maf: START_POSITION must be a numerical column.\n"
+        "maf: END_POSITION must be a numerical column.\n"
         "maf: "
         "TUMOR_SEQ_ALLELE2 can't have any blank or null values.\n"
         "maf: TUMOR_SAMPLE_BARCODE must start with GENIE-SAGE\n"
@@ -439,3 +442,63 @@ def test_that__get_dataframe_throws_value_error(maf_class):
             match="Number of fields in a line do not match the expected number of columns",
         ):
             maf_class._get_dataframe(["some_path"])
+
+
+@pytest.mark.parametrize(
+    "test_input",
+    [
+        pd.DataFrame(
+            dict(
+                START_POSITION=[23, 24, 25],
+            )
+        ),
+        pd.DataFrame(
+            dict(
+                START_POSITION=[23, 24, 25],
+                END_POSITION=["val1", "23", "val3"],
+            )
+        ),
+    ],
+    ids=["no_end_pos_col", "pos_cols_str"],
+)
+def test_that__validate_does_not_call_check_variant_start_and_end_positions(
+    maf_class, test_input
+):
+    with patch.object(
+        validate, "check_variant_start_and_end_positions", return_value=("", "")
+    ) as patch_check_variant:
+        maf_class._validate(test_input)
+        patch_check_variant.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "test_input",
+    [
+        pd.DataFrame(
+            dict(
+                START_POSITION=[23, 24, 25],
+                END_POSITION=[25, 26, 27],
+            )
+        ),
+        pd.DataFrame(
+            dict(
+                START_POSITION=[23, 24, 25],
+                END_POSITION=["23", "24", "25"],
+            )
+        ),
+    ],
+    ids=["all_numeric_pos", "str_numeric_pos"],
+)
+def test_that__validate_calls_check_variant_start_and_end_positions(
+    maf_class, test_input
+):
+    with patch.object(
+        validate, "check_variant_start_and_end_positions", return_value=("", "")
+    ) as patch_check_variant:
+        maf_class._validate(test_input)
+        patch_check_variant.assert_called_once_with(
+            input_df=test_input,
+            start_pos_col="START_POSITION",
+            end_pos_col="END_POSITION",
+            filename="maf",
+        )

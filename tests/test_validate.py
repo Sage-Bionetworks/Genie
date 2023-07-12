@@ -546,3 +546,60 @@ def test_that_check_values_between_two_df_returns_expected(
     )
     assert errors == expected_errors
     assert warnings == expected_warnings
+
+
+@pytest.mark.parametrize(
+    "test_input,expected_errors,expected_warnings",
+    [
+        (
+            pd.DataFrame(
+                {"start_pos": [1, 2], "end_pos": [3, 4], "some_col": ["a", "b"]}
+            ),
+            "",
+            "",
+        ),
+        (
+            pd.DataFrame(
+                {"start_pos": [1, 2], "end_pos": [0, 4], "some_col": ["a", "b"]}
+            ),
+            (
+                "test_file: Your variants file has record(s) that have an end position "
+                "value less than the start position value. Please update your file to be consistent. "
+                "When we annotate using the genome-nexus-annotation-pipeline, the records with this "
+                "position discrepancy will show a blank reference and variant allele.\n"
+            ),
+            "",
+        ),
+        (
+            pd.DataFrame(
+                {"start_pos": [1, 2], "end_pos": [0, 1], "some_col": ["a", "b"]}
+            ),
+            (
+                "test_file: Your variants file has record(s) that have an end position "
+                "value less than the start position value. Please update your file to be consistent. "
+                "When we annotate using the genome-nexus-annotation-pipeline, the records with this "
+                "position discrepancy will show a blank reference and variant allele.\n"
+            ),
+            "",
+        ),
+        (
+            pd.DataFrame(
+                {"start_pos": [1, 2], "end_pos": [1, 2], "some_col": ["a", "b"]}
+            ),
+            "",
+            "",
+        ),
+    ],
+    ids=["start_lt_end_pos", "end_lt_start_pos", "end_all_lt_start_pos", "equal_pos"],
+)
+def test_that_check_variant_start_and_end_positions_returns_expected(
+    test_input, expected_errors, expected_warnings
+):
+    errors, warnings = validate.check_variant_start_and_end_positions(
+        input_df=test_input,
+        start_pos_col="start_pos",
+        end_pos_col="end_pos",
+        filename="test_file",
+    )
+    assert errors == expected_errors
+    assert warnings == expected_warnings

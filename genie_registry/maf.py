@@ -196,7 +196,10 @@ class maf(FileTypeFormat):
             "N_DEPTH",
             "N_REF_COUNT",
             "N_ALT_COUNT",
+            "START_POSITION",
+            "END_POSITION",
         ]
+        actual_numerical_cols = []
         for col in numerical_cols:
             col_exists = process_functions.checkColExist(mutationDF, col)
             if col_exists:
@@ -211,6 +214,8 @@ class maf(FileTypeFormat):
                     pass
                 if mutationDF[col].dtype not in [int, float]:
                     total_error.write(f"maf: {col} must be a numerical column.\n")
+                else:
+                    actual_numerical_cols.append(col)
 
         # CHECK: Must have TUMOR_SEQ_ALLELE2
         error, warn = _check_allele_col(mutationDF, "TUMOR_SEQ_ALLELE2")
@@ -275,6 +280,20 @@ class maf(FileTypeFormat):
             )
             total_error.write(error)
 
+        # only check end position as start position is required col
+        if (
+            process_functions.checkColExist(mutationDF, "START_POSITION")
+            and process_functions.checkColExist(mutationDF, "END_POSITION")
+            and set(["START_POSITION", "END_POSITION"]) <= set(actual_numerical_cols)
+        ):
+            errors, warnings = validate.check_variant_start_and_end_positions(
+                input_df=mutationDF,
+                start_pos_col="START_POSITION",
+                end_pos_col="END_POSITION",
+                filename="maf",
+            )
+            total_error.write(errors)
+            warning.write(warnings)
         return total_error.getvalue(), warning.getvalue()
 
     def _cross_validate(self, mutationDF: pd.DataFrame) -> tuple:
