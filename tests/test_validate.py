@@ -564,9 +564,9 @@ def test_that_check_values_between_two_df_returns_expected(
             ),
             (
                 "test_file: Your variants file has record(s) that have an end position "
-            "value less than the start position value. Please update your file to be consistent. "
-            "When we annotate using the genome-nexus-annotation-pipeline, the records with this "
-            "position discrepancy will show a blank reference and variant allele.\n"
+                "value less than the start position value. Please update your file to be consistent. "
+                "When we annotate using the genome-nexus-annotation-pipeline, the records with this "
+                "position discrepancy will show a blank reference and variant allele.\n"
             ),
             "",
         ),
@@ -576,9 +576,9 @@ def test_that_check_values_between_two_df_returns_expected(
             ),
             (
                 "test_file: Your variants file has record(s) that have an end position "
-            "value less than the start position value. Please update your file to be consistent. "
-            "When we annotate using the genome-nexus-annotation-pipeline, the records with this "
-            "position discrepancy will show a blank reference and variant allele.\n"
+                "value less than the start position value. Please update your file to be consistent. "
+                "When we annotate using the genome-nexus-annotation-pipeline, the records with this "
+                "position discrepancy will show a blank reference and variant allele.\n"
             ),
             "",
         ),
