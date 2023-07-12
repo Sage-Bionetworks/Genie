@@ -342,10 +342,9 @@ def check_variant_start_and_end_positions(
 
     if any(input_df[start_pos_col] > input_df[end_pos_col]):
         errors = (
-            f"{filename}: Your variants file has record(s) that have an end position value "
-            "less than the start position value. When we annotate through the "
-            "genome-nexus-annotation-pipeline, the records with this position "
-            "discrepancy will show a blank reference and variant allele. "
-            "Please update your file to be consistent.\n"
+            f"{filename}: Your variants file has record(s) that have an end position "
+            "value less than the start position value. Please update your file to be consistent. "
+            "When we annotate using the genome-nexus-annotation-pipeline, the records with this "
+            "position discrepancy will show a blank reference and variant allele.\n"
         )
     return errors, warnings
