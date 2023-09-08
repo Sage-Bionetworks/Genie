@@ -1815,9 +1815,9 @@ def create_link_version(
             release_file["name"] != "data_clinical.txt" or release_type == "consortium"
         )
         is_gene_panel = release_file["name"].startswith("data_gene_panel")
-        is_depreciated_file = release_file["name"] in ["data_fusions.txt"]
+        is_deprecated_file = release_file["name"] in ["data_fusions.txt"]
 
-        if not_folder and not_public and not is_gene_panel and not is_depreciated_file:
+        if not_folder and not_public and not is_gene_panel and not is_deprecated_file:
             syn.store(
                 synapseclient.Link(
                     release_file["id"],

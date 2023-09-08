@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import time
-from typing import Optional
+from typing import Optional, Union
 import yaml
 
 import pandas as pd
@@ -165,7 +165,7 @@ def checkUrl(url):
 
 
 # TODO Add to validate.py
-def checkColExist(DF, key):
+def checkColExist(DF: pd.DataFrame, key: Union[str, int]):
     """
     This function checks if the column exists in a dataframe
 

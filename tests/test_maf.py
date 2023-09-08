@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import mock_open, patch
 
 import pandas as pd
 import pytest
@@ -168,7 +168,8 @@ def test_invalid_validation(maf_class):
         dict(
             CHROMOSOME=[1, 2, 3, 4, 2, 4],
             T_ALT_COUNT=[1, 2, 3, 4, 3, 4],
-            START_POSITION=[1, 2, 3, 4, 2, 4],
+            START_POSITION=[1, 2, "string", 4, 2, 4],
+            END_POSITION=["1", "2", 3, "string", 4, 5],
             REFERENCE_ALLELE=["A ", "A ", "A", "A ", "A ", " A"],
             TUMOR_SAMPLE_BARCODE=["ID1-1", "ID1-1", "ID1-1", "ID1-1", "ID1-1", "ID1-1"],
             N_DEPTH=[1, 2, 3, 4, 3, 4],
@@ -189,6 +190,8 @@ def test_invalid_validation(maf_class):
         "maf: "
         "If missing T_DEPTH, must have T_REF_COUNT!\n"
         "maf: N_REF_COUNT must be a numerical column.\n"
+        "maf: START_POSITION must be a numerical column.\n"
+        "maf: END_POSITION must be a numerical column.\n"
         "maf: "
         "TUMOR_SEQ_ALLELE2 can't have any blank or null values.\n"
         "maf: TUMOR_SAMPLE_BARCODE must start with GENIE-SAGE\n"
@@ -282,7 +285,7 @@ def test_that__cross_validate_does_not_read_files_if_no_clinical_files(maf_class
         validate,
         "parse_file_info_in_nested_list",
         return_value={"files": {}, "file_info": {"name": "", "path": ""}},
-    ) as patch_clinical_files, patch.object(
+    ), patch.object(
         process_functions,
         "get_clinical_dataframe",
     ) as patch_get_df:
@@ -299,11 +302,11 @@ def test_that__cross_validate_does_not_call_check_col_exist_if_clinical_df_read_
         validate,
         "parse_file_info_in_nested_list",
         return_value={"files": {"some_file"}, "file_info": {"name": "", "path": ""}},
-    ) as patch_clinical_files, patch.object(
+    ), patch.object(
         process_functions,
         "get_clinical_dataframe",
         side_effect=Exception("mocked error"),
-    ) as patch_get_df, patch.object(
+    ), patch.object(
         process_functions, "checkColExist"
     ) as patch_check_col_exist:
         errors, warnings = maf_class._cross_validate(pd.DataFrame({}))
@@ -319,13 +322,13 @@ def test_that__cross_validate_does_not_call_check_values_if_id_cols_do_not_exist
         validate,
         "parse_file_info_in_nested_list",
         return_value={"files": {"some_file"}, "file_info": {"name": "", "path": ""}},
-    ) as patch_clinical_files, patch.object(
+    ), patch.object(
         process_functions,
         "get_clinical_dataframe",
         return_value=pd.DataFrame({"test_col": [2, 3, 4]}),
-    ) as patch_get_df, patch.object(
+    ), patch.object(
         process_functions, "checkColExist", return_value=False
-    ) as patch_check_col_exist, patch.object(
+    ), patch.object(
         validate, "check_values_between_two_df"
     ) as patch_check_values:
         errors, warnings = maf_class._cross_validate(pd.DataFrame({}))
@@ -375,11 +378,127 @@ def test_that__cross_validate_returns_expected_msg_if_valid(
             "files": {"some_file"},
             "file_info": {"name": "data_clinical_supp.txt", "path": ""},
         },
-    ) as patch_clinical_files, patch.object(
+    ), patch.object(
         process_functions,
         "get_clinical_dataframe",
         return_value=test_clinical_df,
-    ) as patch_get_df:
+    ):
         errors, warnings = maf_class._cross_validate(mutationDF=valid_maf_df)
         assert warnings == expected_warning
         assert errors == expected_error
+
+
+@pytest.mark.parametrize(
+    "test_input,expected",
+    [
+        (
+            (
+                "Hugo_Symbol	Entrez_Gene_Id	Center	NCBI_Build	Chromosome\n"
+                "TEST	3845	TEST	GRCh37	12"
+            ),
+            pd.DataFrame(
+                {
+                    "Hugo_Symbol": ["TEST"],
+                    "Entrez_Gene_Id": [3845],
+                    "Center": ["TEST"],
+                    "NCBI_Build": ["GRCh37"],
+                    "Chromosome": [12],
+                }
+            ),
+        ),
+        (
+            (
+                "#Something Something else\n"
+                "Hugo_Symbol	Entrez_Gene_Id	Center	NCBI_Build	Chromosome\n"
+                "TEST	3845	TEST	GRCh37	12"
+            ),
+            pd.DataFrame(
+                {
+                    "Hugo_Symbol": ["TEST"],
+                    "Entrez_Gene_Id": [3845],
+                    "Center": ["TEST"],
+                    "NCBI_Build": ["GRCh37"],
+                    "Chromosome": [12],
+                }
+            ),
+        ),
+    ],
+    ids=["no_pound_sign", "pound_sign"],
+)
+def test_that__get_dataframe_returns_expected_result(maf_class, test_input, expected):
+    with patch("builtins.open", mock_open(read_data=test_input)):
+        test = maf_class._get_dataframe(["some_path"])
+        pd.testing.assert_frame_equal(test, expected)
+
+
+def test_that__get_dataframe_throws_value_error(maf_class):
+    file = (
+        "#Hugo_Symbol	Entrez_Gene_Id	Center	NCBI_Build	Chromosome\n"
+        "TEST	3845	TEST	GRCh37	12"
+    )
+    with patch("builtins.open", mock_open(read_data=file)):
+        with pytest.raises(
+            ValueError,
+            match="Number of fields in a line do not match the expected number of columns",
+        ):
+            maf_class._get_dataframe(["some_path"])
+
+
+@pytest.mark.parametrize(
+    "test_input",
+    [
+        pd.DataFrame(
+            dict(
+                START_POSITION=[23, 24, 25],
+            )
+        ),
+        pd.DataFrame(
+            dict(
+                START_POSITION=[23, 24, 25],
+                END_POSITION=["val1", "23", "val3"],
+            )
+        ),
+    ],
+    ids=["no_end_pos_col", "pos_cols_str"],
+)
+def test_that__validate_does_not_call_check_variant_start_and_end_positions(
+    maf_class, test_input
+):
+    with patch.object(
+        validate, "check_variant_start_and_end_positions", return_value=("", "")
+    ) as patch_check_variant:
+        maf_class._validate(test_input)
+        patch_check_variant.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "test_input",
+    [
+        pd.DataFrame(
+            dict(
+                START_POSITION=[23, 24, 25],
+                END_POSITION=[25, 26, 27],
+            )
+        ),
+        pd.DataFrame(
+            dict(
+                START_POSITION=[23, 24, 25],
+                END_POSITION=["23", "24", "25"],
+            )
+        ),
+    ],
+    ids=["all_numeric_pos", "str_numeric_pos"],
+)
+def test_that__validate_calls_check_variant_start_and_end_positions(
+    maf_class, test_input
+):
+    with patch.object(
+        validate, "check_variant_start_and_end_positions", return_value=("", "")
+    ) as patch_check_variant:
+        maf_class._validate(test_input)
+        patch_check_variant.assert_called_once_with(
+            input_df=test_input,
+            start_pos_col="START_POSITION",
+            end_pos_col="END_POSITION",
+            filename="maf",
+        )
