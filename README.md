@@ -14,7 +14,7 @@ This repository documents code used to gather, QC, standardize, and analyze data
 ## Dependencies
 
 This package contains both R, Python and cli tools.  These are tools or packages you will need, to be able to reproduce these results:
-- Python >3.7 or <3.10
+- Python >=3.8 or <3.10
     - `pip install -r requirements.txt`
 - [bedtools](https://bedtools.readthedocs.io/en/latest/content/installation.html)
 - R 4.2.2
