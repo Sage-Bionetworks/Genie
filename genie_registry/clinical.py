@@ -1021,7 +1021,10 @@ class Clinical(FileTypeFormat):
 
         for seq_assay_id in seq_assay_ids:
             bed_files = validate.parse_file_info_in_nested_list(
-                nested_list=self.ancillary_files, search_str=f"{seq_assay_id}.bed"  # type: ignore[arg-type]
+                nested_list=self.ancillary_files,
+                search_str=f"{seq_assay_id}.bed",  # type: ignore[arg-type]
+                ignore_case=True,
+                allow_underscore=True,
             )
             if not bed_files["files"]:
                 missing_files.append(f"{seq_assay_id}.bed")
@@ -1074,6 +1077,8 @@ class Clinical(FileTypeFormat):
                         df2=assay_df,
                         df2_filename="assay information",
                         df2_id_to_check=col_to_validate,
+                        ignore_case=True,
+                        allow_underscore=True,
                     )
         return errors, warnings
 

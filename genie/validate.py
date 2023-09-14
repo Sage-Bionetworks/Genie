@@ -255,13 +255,18 @@ def _perform_validate(syn, args):
 
 
 def parse_file_info_in_nested_list(
-    nested_list: List[List[synapseclient.Entity]], search_str: str
+    nested_list: List[List[synapseclient.Entity]],
+    search_str: str,
+    ignore_case: bool = False,
+    allow_underscore: bool = False,
 ) -> dict:
     """Parses for a name and filepath in a nested list of Synapse entity objects
 
     Args:
         nested_list (list[list]): _description_
         search_str (str): the substring to look for in the files
+        ignore_case (bool, optional): whether to perform case-insensitive comparison.
+        allow_underscore (bool, optional): whether to treat underscores as equivalent to dashes.
 
     Returns:
         dict[dict]: files found,
@@ -272,7 +277,17 @@ def parse_file_info_in_nested_list(
         file["name"]: file["path"]
         for files in nested_list
         for file in files
-        if file["name"].startswith(search_str)
+        if standardize_string_for_validation(
+            input_string=file["name"],
+            ignore_case=ignore_case,
+            allow_underscore=allow_underscore,
+        ).startswith(
+            standardize_string_for_validation(
+                input_string=search_str,
+                ignore_case=ignore_case,
+                allow_underscore=allow_underscore,
+            )
+        )
     }
     file_info["name"] = ",".join(files.keys())
     file_info["path"] = list(files.values())  # type: ignore[assignment]
@@ -286,6 +301,8 @@ def check_values_between_two_df(
     df2: pd.DataFrame,
     df2_filename: str,
     df2_id_to_check: str,
+    ignore_case: bool = False,
+    allow_underscore: bool = False,
 ) -> tuple:
     """Check that all the identifier(s) (ids) in one
     file (df1) exists in the other file (df1)
@@ -297,6 +314,8 @@ def check_values_between_two_df(
         df2 (pd.DataFrame): file to cross-validate against
         df2_filename (str): filename of file to cross-validate against
         df2_id_to_check (str): name of column to check values for in df2
+        ignore_case (bool, optional): whether to perform case-insensitive comparison.
+        allow_underscore (bool, optional): whether to treat underscores as equivalent to dashes.
 
     Returns:
         tuple: The errors and warnings as a file from cross-validation.
@@ -309,8 +328,26 @@ def check_values_between_two_df(
     df1.columns = [col.upper() for col in df1.columns]
     df2.columns = [col.upper() for col in df2.columns]
 
+    # standardize string values
+    df1_values = [
+        standardize_string_for_validation(
+            input_string=val,
+            ignore_case=ignore_case,
+            allow_underscore=allow_underscore,
+        )
+        for val in df1[df1_id_to_check]
+    ]
+    df2_values = [
+        standardize_string_for_validation(
+            input_string=val,
+            ignore_case=ignore_case,
+            allow_underscore=allow_underscore,
+        )
+        for val in df2[df2_id_to_check]
+    ]
+
     # check to see if df1 ids are present in df2
-    if not set(df1[df1_id_to_check]) <= set(df2[df2_id_to_check]):
+    if not set(df1_values) <= set(df2_values):
         errors = (
             f"At least one {df1_id_to_check} in your {df1_filename} file "
             f"does not exist as a {df2_id_to_check} in your {df2_filename} file. "
@@ -348,3 +385,25 @@ def check_variant_start_and_end_positions(
             "position discrepancy will show a blank reference and variant allele.\n"
         )
     return errors, warnings
+
+
+def standardize_string_for_validation(
+    input_string: str, ignore_case: bool = False, allow_underscore: bool = False
+) -> str:
+    """This standardizes a string to prep it for further validation purposes
+        e.g: string comparison
+
+    Args:
+        input_string (str): input string to standardize
+        ignore_case (bool, optional): Lowercases the string perform case-insensitive comparison. Defaults to False.
+        allow_underscore (bool, optional): Treats underscores as equivalent to dashes. Defaults to False.
+
+    Returns:
+        str: standardized string
+    """
+    standardized_str = input_string
+    if ignore_case:
+        standardized_str = standardized_str.lower()
+    if allow_underscore:
+        standardized_str = standardized_str.replace("_", "-")
+    return standardized_str
