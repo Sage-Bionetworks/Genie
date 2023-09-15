@@ -273,7 +273,7 @@ def parse_file_info_in_nested_list(
             name(s) and filepath(s) of the file(s) found
     """
     file_info = {}
-    files = {
+    all_files = {
         file["name"]: file["path"]
         for files in nested_list
         for file in files
@@ -289,9 +289,11 @@ def parse_file_info_in_nested_list(
             )
         )
     }
-    file_info["name"] = ",".join(files.keys())
-    file_info["path"] = list(files.values())  # type: ignore[assignment]
-    return {"files": files, "file_info": file_info}
+
+    file_info["name"] = ",".join(all_files.keys())
+    file_info["path"] = list(all_files.values())  # type: ignore[assignment]
+    return {"files": all_files, "file_info": file_info}
+    return all_files
 
 
 def check_values_between_two_df(
@@ -401,9 +403,12 @@ def standardize_string_for_validation(
     Returns:
         str: standardized string
     """
-    standardized_str = input_string
-    if ignore_case:
-        standardized_str = standardized_str.lower()
-    if allow_underscore:
-        standardized_str = standardized_str.replace("_", "-")
-    return standardized_str
+    if isinstance(input_string, str):
+        standardized_str = input_string
+        if ignore_case:
+            standardized_str = standardized_str.lower()
+        if allow_underscore:
+            standardized_str = standardized_str.replace("_", "-")
+        return standardized_str
+    else:
+        return input_string

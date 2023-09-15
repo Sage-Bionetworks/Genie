@@ -508,47 +508,47 @@ def test_that_parse_file_info_in_nested_list_returns_expected(
 
 
 def test_that_parse_file_info_in_nested_list_returns_expected_with_ignore_case():
-    test_nested_list = (
+    test_nested_list = [
         [
-            [{"name": "test_file1_1", "path": "/some_path1_1.txt"}],
-            [{"name": "test_file2", "path": "/some_path2.txt"}],
+            {"name": "TEST-file1-1", "path": "/some_path1_1.txt"},
+            {"name": "test-file1-2", "path": "/some_path1_2.txt"},
         ],
-    )
-    expected = (
-        {
-            "files": {
-                "test_file1_1": "/some_path1_1.txt",
-            },
-            "file_info": {
-                "name": "test_file1_1",
-                "path": ["/some_path1_1.txt"],
-            },
+        [{"name": "test_file2", "path": "/some_path2.txt"}],
+    ]
+    expected = {
+        "files": {
+            "TEST-file1-1": "/some_path1_1.txt",
+            "test-file1-2": "/some_path1_2.txt",
         },
-    )
+        "file_info": {
+            "name": "TEST-file1-1,test-file1-2",
+            "path": ["/some_path1_1.txt", "/some_path1_2.txt"],
+        },
+    }
     result = validate.parse_file_info_in_nested_list(
-        nested_list=test_nested_list, search_str="TEST-file1", ignore_case=True
+        nested_list=test_nested_list, search_str="tEsT-file1", ignore_case=True
     )
     assert result == expected
 
 
 def test_that_parse_file_info_in_nested_list_returns_expected_with_allow_underscore():
-    test_nested_list = (
+    test_nested_list = [
         [
-            [{"name": "test-file1-1"}],
-            [{"name": "test-file2"}],
+            {"name": "test_file1_1", "path": "/some_path1_1.txt"},
+            {"name": "test-file1_2", "path": "/some_path1_2.txt"},
         ],
-    )
-    expected = (
-        {
-            "files": {
-                "test_file1-1": "/some_path1-1.txt",
-            },
-            "file_info": {
-                "name": "test-file1-1",
-                "path": ["/some-path1-1.txt"],
-            },
+        [{"name": "test_file2", "path": "/some_path2.txt"}],
+    ]
+    expected = {
+        "files": {
+            "test_file1_1": "/some_path1_1.txt",
+            "test-file1_2": "/some_path1_2.txt",
         },
-    )
+        "file_info": {
+            "name": "test_file1_1,test-file1_2",
+            "path": ["/some_path1_1.txt", "/some_path1_2.txt"],
+        },
+    }
     result = validate.parse_file_info_in_nested_list(
         nested_list=test_nested_list, search_str="test_file1", allow_underscore=True
     )
@@ -556,26 +556,26 @@ def test_that_parse_file_info_in_nested_list_returns_expected_with_allow_undersc
 
 
 def test_that_parse_file_info_in_nested_list_returns_expected_with_ignore_case_and_allow_underscore():
-    test_nested_list = (
+    test_nested_list = [
         [
-            [{"name": "test-file1-1"}],
-            [{"name": "test-file2"}],
+            {"name": "TEST-file1_1", "path": "/some_path1_1.txt"},
+            {"name": "test_fiLE1_2", "path": "/some_path1_2.txt"},
         ],
-    )
-    expected = (
-        {
-            "files": {
-                "test-file1-1": "/some-path1-1.txt",
-            },
-            "file_info": {
-                "name": "test-file1_1",
-                "path": ["/some-path1-1.txt"],
-            },
+        [{"name": "test_file2", "path": "/some_path2.txt"}],
+    ]
+    expected = {
+        "files": {
+            "TEST-file1_1": "/some_path1_1.txt",
+            "test_fiLE1_2": "/some_path1_2.txt",
         },
-    )
+        "file_info": {
+            "name": "TEST-file1_1,test_fiLE1_2",
+            "path": ["/some_path1_1.txt", "/some_path1_2.txt"],
+        },
+    }
     result = validate.parse_file_info_in_nested_list(
         nested_list=test_nested_list,
-        search_str="TEST-file1",
+        search_str="TEST_file1",
         ignore_case=True,
         allow_underscore=True,
     )
@@ -743,3 +743,10 @@ def test_that_standardize_string_for_validation_allows_underscores_and_ignores_c
         input_string="SAGe_1", ignore_case=True, allow_underscore=True
     )
     assert test_str == "sage-1"
+
+
+def test_that_standardize_string_for_validation_does_nothing_for_non_str():
+    test_str = validate.standardize_string_for_validation(
+        input_string=120, ignore_case=True, allow_underscore=True
+    )
+    assert test_str == 120

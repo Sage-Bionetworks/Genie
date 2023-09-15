@@ -1122,6 +1122,28 @@ def test_that_cross_validate_bed_files_exist_returns_correct_msgs(
     assert warnings == expected_warning
 
 
+def test_that_cross_validate_bed_files_exist_calls_expected_methods(clin_class):
+    test_clinical_df = pd.DataFrame({"SEQ_ASSAY_ID": ["SAGE-SAGE-1"]})
+    test_ancillary_files = (
+        [
+            [{"name": "SAGE-SAGE-1.bed", "path": ""}],
+        ],
+    )
+    with mock.patch.object(
+        validate,
+        "parse_file_info_in_nested_list",
+        return_value={"files": "SAGE-1-1.bed"},
+    ) as patch_parse_file_info:
+        clin_class.ancillary_files = test_ancillary_files
+        clin_class._cross_validate_bed_files_exist(test_clinical_df)
+        patch_parse_file_info.assert_called_once_with(
+            nested_list=clin_class.ancillary_files,
+            search_str="SAGE-SAGE-1.bed",
+            ignore_case=True,
+            allow_underscore=True,
+        )
+
+
 def test_that__cross_validate_calls_expected_methods(clin_class):
     with mock.patch.object(
         Clinical, "_cross_validate_assay_info_has_seq", return_value=("", "")
@@ -1209,6 +1231,36 @@ def test_that__cross_validate_assay_info_has_seq_does_not_call_check_values_if_i
         assert warnings == ""
         assert errors == ""
         patch_check_values.assert_not_called()
+
+
+def test_that__cross_validate_assay_info_has_seq_calls_check_values_between_two_df(
+    clin_class,
+):
+    with mock.patch.object(
+        validate,
+        "parse_file_info_in_nested_list",
+        return_value={"files": {"some_file"}, "file_info": {"name": "", "path": ""}},
+    ) as patch_assay_files, mock.patch.object(
+        process_functions,
+        "get_assay_dataframe",
+        return_value=None,
+    ) as patch_get_df, mock.patch.object(
+        process_functions, "checkColExist", return_value=True
+    ) as patch_check_col_exist, mock.patch.object(
+        validate, "check_values_between_two_df", return_value=("", "")
+    ) as patch_check_values:
+        input_df = None
+        clin_class._cross_validate_assay_info_has_seq(clinicaldf=input_df)
+        patch_check_values.assert_called_once_with(
+            df1=None,
+            df1_filename="clinical file",
+            df1_id_to_check="SEQ_ASSAY_ID",
+            df2=None,
+            df2_filename="assay information",
+            df2_id_to_check="SEQ_ASSAY_ID",
+            ignore_case=True,
+            allow_underscore=True,
+        )
 
 
 @pytest.mark.parametrize(
