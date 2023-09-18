@@ -125,12 +125,14 @@ patch.object(MODULE_NAME, "FUNCTION_TO_MOCK_NAME".return_value=SOME_RETURN_VALUE
 Follow gitflow best practices as linked above.
 
 1. Always merge all new features into `develop` branch first (unless it is a documentation, readme, or github action patch into `main`)
-1. After initial features are ready in the `develop` branch, create a `release-X.X` branch to prepare for the release.
+1. After initial features are ready in the `develop` branch, create a `release-X.X` branch (do not need to push this branch to remote) to prepare for the release.
     1. update the `__version__` parameter in `genie/__init__.py`
 1. Merge `release-X.X` branch into `main` - Not by pull request!
-1. Create release tag (`v...`) and include release notes.  Also include any known bugs for each release here.
+1. Create release tag (`v...`) and a brief message
+1. Push tag and change(s) from `main`
+1. Create a new release on the repo. Include release notes.  Also include any known bugs for each release here. Wait for the CI/CD to finish.
 1. Merge `main` back into `develop`
-
+1. Push `develop`
 
 ### DockerHub
 

@@ -507,14 +507,91 @@ def test_that_parse_file_info_in_nested_list_returns_expected(
     assert result == expected
 
 
+def test_that_parse_file_info_in_nested_list_returns_expected_with_ignore_case():
+    test_nested_list = [
+        [
+            {"name": "TEST-file1-1", "path": "/some_path1_1.txt"},
+            {"name": "test-file1-2", "path": "/some_path1_2.txt"},
+        ],
+        [{"name": "test_file2", "path": "/some_path2.txt"}],
+    ]
+    expected = {
+        "files": {
+            "TEST-file1-1": "/some_path1_1.txt",
+            "test-file1-2": "/some_path1_2.txt",
+        },
+        "file_info": {
+            "name": "TEST-file1-1,test-file1-2",
+            "path": ["/some_path1_1.txt", "/some_path1_2.txt"],
+        },
+    }
+    result = validate.parse_file_info_in_nested_list(
+        nested_list=test_nested_list, search_str="tEsT-file1", ignore_case=True
+    )
+    assert result == expected
+
+
+def test_that_parse_file_info_in_nested_list_returns_expected_with_allow_underscore():
+    test_nested_list = [
+        [
+            {"name": "test_file1_1", "path": "/some_path1_1.txt"},
+            {"name": "test-file1_2", "path": "/some_path1_2.txt"},
+        ],
+        [{"name": "test_file2", "path": "/some_path2.txt"}],
+    ]
+    expected = {
+        "files": {
+            "test_file1_1": "/some_path1_1.txt",
+            "test-file1_2": "/some_path1_2.txt",
+        },
+        "file_info": {
+            "name": "test_file1_1,test-file1_2",
+            "path": ["/some_path1_1.txt", "/some_path1_2.txt"],
+        },
+    }
+    result = validate.parse_file_info_in_nested_list(
+        nested_list=test_nested_list, search_str="test_file1", allow_underscore=True
+    )
+    assert result == expected
+
+
+def test_that_parse_file_info_in_nested_list_returns_expected_with_ignore_case_and_allow_underscore():
+    test_nested_list = [
+        [
+            {"name": "TEST-file1_1", "path": "/some_path1_1.txt"},
+            {"name": "test_fiLE1_2", "path": "/some_path1_2.txt"},
+        ],
+        [{"name": "test_file2", "path": "/some_path2.txt"}],
+    ]
+    expected = {
+        "files": {
+            "TEST-file1_1": "/some_path1_1.txt",
+            "test_fiLE1_2": "/some_path1_2.txt",
+        },
+        "file_info": {
+            "name": "TEST-file1_1,test_fiLE1_2",
+            "path": ["/some_path1_1.txt", "/some_path1_2.txt"],
+        },
+    }
+    result = validate.parse_file_info_in_nested_list(
+        nested_list=test_nested_list,
+        search_str="TEST_file1",
+        ignore_case=True,
+        allow_underscore=True,
+    )
+    assert result == expected
+
+
 @pytest.mark.parametrize(
-    "test_df1,test_df2,expected_errors,expected_warnings",
+    "test_df1,test_df2,expected_errors,expected_warnings,ignore_case,allow_underscore",
     [
         (
             pd.DataFrame({"ID": [1, 2]}),
             pd.DataFrame({"ID2": [1, 2, 3]}),
             "",
             "",
+            False,
+            False,
         ),
         (
             pd.DataFrame({"ID": [1, 2, 3, 4]}),
@@ -522,6 +599,8 @@ def test_that_parse_file_info_in_nested_list_returns_expected(
             "At least one ID in your test1 file does not exist as a ID2 in your test2 file. "
             "Please update your file(s) to be consistent.\n",
             "",
+            False,
+            False,
         ),
         (
             pd.DataFrame({"ID": [3, 4, 5]}),
@@ -529,12 +608,70 @@ def test_that_parse_file_info_in_nested_list_returns_expected(
             "At least one ID in your test1 file does not exist as a ID2 in your test2 file. "
             "Please update your file(s) to be consistent.\n",
             "",
+            False,
+            False,
+        ),
+        (
+            pd.DataFrame({"ID": ["TEST1", "TEST2", "TeSt3"]}),
+            pd.DataFrame({"ID2": ["test1", "test2", "TEST3"]}),
+            "",
+            "",
+            True,
+            False,
+        ),
+        (
+            pd.DataFrame({"ID": ["TEST_1", "TEST_2", "TEST-3"]}),
+            pd.DataFrame({"ID2": ["TEST_1", "TEST-2", "TEST_3"]}),
+            "",
+            "",
+            False,
+            True,
+        ),
+        (
+            pd.DataFrame({"ID": ["TEST_1", "TEST_2", "TeSt-3"]}),
+            pd.DataFrame({"ID2": ["test_1", "test-2", "TEST_3"]}),
+            "",
+            "",
+            True,
+            True,
+        ),
+        (
+            pd.DataFrame({"ID": ["TEST__1", "TEST_2", "TeSt-3"]}),
+            pd.DataFrame({"ID2": ["test_1", "test-2", "TEST_3"]}),
+            "At least one ID in your test1 file does not exist as a ID2 in your test2 file. "
+            "Please update your file(s) to be consistent.\n",
+            "",
+            True,
+            True,
+        ),
+        (
+            pd.DataFrame({"ID": ["TEST1", "TEST2", "TeSt3"]}),
+            pd.DataFrame({"ID2": ["test1", "test2", "TEST3"]}),
+            "At least one ID in your test1 file does not exist as a ID2 in your test2 file. "
+            "Please update your file(s) to be consistent.\n",
+            "",
+            False,
+            False,
         ),
     ],
-    ids=["all_match", "some_match", "no_match"],
+    ids=[
+        "all_match",
+        "some_match",
+        "no_match",
+        "ignore_case",
+        "allow_underscore",
+        "ignore_case_and_allow_underscore",
+        "str_some_match",
+        "str_no_match",
+    ],
 )
 def test_that_check_values_between_two_df_returns_expected(
-    test_df1, test_df2, expected_errors, expected_warnings
+    test_df1,
+    test_df2,
+    expected_errors,
+    expected_warnings,
+    ignore_case,
+    allow_underscore,
 ):
     errors, warnings = validate.check_values_between_two_df(
         df1=test_df1,
@@ -543,6 +680,8 @@ def test_that_check_values_between_two_df_returns_expected(
         df2=test_df2,
         df2_filename="test2",
         df2_id_to_check="ID2",
+        ignore_case=ignore_case,
+        allow_underscore=allow_underscore,
     )
     assert errors == expected_errors
     assert warnings == expected_warnings
@@ -603,3 +742,29 @@ def test_that_check_variant_start_and_end_positions_returns_expected(
     )
     assert errors == expected_errors
     assert warnings == expected_warnings
+
+
+@pytest.mark.parametrize(
+    "input_str,expected,ignore_case,allow_underscore",
+    [
+        ("SAGe-1", "sage-1", True, False),
+        ("SAGe_1", "SAGe-1", False, True),
+        ("SAGe_1", "sage-1", True, True),
+        (120, 120, True, True),
+    ],
+    ids=[
+        "ignore_case",
+        "allow_underscore",
+        "ignore_case_and_allow_underscore",
+        "non_str",
+    ],
+)
+def test_that_standardize_string_for_validation_returns_expected(
+    input_str, expected, ignore_case, allow_underscore
+):
+    test_str = validate.standardize_string_for_validation(
+        input_string=input_str,
+        ignore_case=ignore_case,
+        allow_underscore=allow_underscore,
+    )
+    assert test_str == expected
