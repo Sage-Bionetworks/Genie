@@ -260,7 +260,11 @@ def parse_file_info_in_nested_list(
     ignore_case: bool = False,
     allow_underscore: bool = False,
 ) -> dict:
-    """Parses for a name and filepath in a nested list of Synapse entity objects
+    """
+    TODO: To refactor/remove once clinical file structure gets updated to
+    be non-nested
+    
+    Parses for a name and filepath in a nested list of Synapse entity objects
 
     Args:
         nested_list (list[list]): _description_
@@ -293,7 +297,6 @@ def parse_file_info_in_nested_list(
     file_info["name"] = ",".join(all_files.keys())
     file_info["path"] = list(all_files.values())  # type: ignore[assignment]
     return {"files": all_files, "file_info": file_info}
-    return all_files
 
 
 def check_values_between_two_df(

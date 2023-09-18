@@ -635,6 +635,24 @@ def test_that_parse_file_info_in_nested_list_returns_expected_with_ignore_case_a
             True,
             True,
         ),
+        (
+            pd.DataFrame({"ID": ["TEST__1", "TEST_2", "TeSt-3"]}),
+            pd.DataFrame({"ID2": ["test_1", "test-2", "TEST_3"]}),
+            "At least one ID in your test1 file does not exist as a ID2 in your test2 file. "
+            "Please update your file(s) to be consistent.\n",
+            "",
+            True,
+            True,
+        ),
+        (
+            pd.DataFrame({"ID": ["TEST1", "TEST2", "TeSt3"]}),
+            pd.DataFrame({"ID2": ["test1", "test2", "TEST3"]}),
+            "At least one ID in your test1 file does not exist as a ID2 in your test2 file. "
+            "Please update your file(s) to be consistent.\n",
+            "",
+            False,
+            False,
+        ),
     ],
     ids=[
         "all_match",
@@ -643,6 +661,8 @@ def test_that_parse_file_info_in_nested_list_returns_expected_with_ignore_case_a
         "ignore_case",
         "allow_underscore",
         "ignore_case_and_allow_underscore",
+        "str_some_match",
+        "str_no_match"
     ],
 )
 def test_that_check_values_between_two_df_returns_expected(
@@ -724,29 +744,27 @@ def test_that_check_variant_start_and_end_positions_returns_expected(
     assert warnings == expected_warnings
 
 
-def test_that_standardize_string_for_validation_ignores_case():
+@pytest.mark.parametrize(
+    "input_str,expected,ignore_case,allow_underscore",
+    [
+        ("SAGe-1", "sage-1", True, False),
+        ("SAGe_1", "SAGe-1", False, True),
+        ("SAGe_1", "sage-1", True, True),
+        (120, 120, True, True),
+    ],
+    ids=[
+        "ignore_case",
+        "allow_underscore",
+        "ignore_case_and_allow_underscore",
+        "non_str",
+    ],
+)
+def test_that_standardize_string_for_validation_returns_expected(
+    input_str, expected, ignore_case, allow_underscore
+):
     test_str = validate.standardize_string_for_validation(
-        input_string="SAGe-1", ignore_case=True
+        input_string=input_str,
+        ignore_case=ignore_case,
+        allow_underscore=allow_underscore,
     )
-    assert test_str == "sage-1"
-
-
-def test_that_standardize_string_for_validation_allows_underscores():
-    test_str = validate.standardize_string_for_validation(
-        input_string="SAGe_1", allow_underscore=True
-    )
-    assert test_str == "SAGe-1"
-
-
-def test_that_standardize_string_for_validation_allows_underscores_and_ignores_case():
-    test_str = validate.standardize_string_for_validation(
-        input_string="SAGe_1", ignore_case=True, allow_underscore=True
-    )
-    assert test_str == "sage-1"
-
-
-def test_that_standardize_string_for_validation_does_nothing_for_non_str():
-    test_str = validate.standardize_string_for_validation(
-        input_string=120, ignore_case=True, allow_underscore=True
-    )
-    assert test_str == 120
+    assert test_str == expected
