@@ -263,7 +263,7 @@ def parse_file_info_in_nested_list(
     """
     TODO: To refactor/remove once clinical file structure gets updated to
     be non-nested
-    
+
     Parses for a name and filepath in a nested list of Synapse entity objects
 
     Args:

@@ -662,7 +662,7 @@ def test_that_parse_file_info_in_nested_list_returns_expected_with_ignore_case_a
         "allow_underscore",
         "ignore_case_and_allow_underscore",
         "str_some_match",
-        "str_no_match"
+        "str_no_match",
     ],
 )
 def test_that_check_values_between_two_df_returns_expected(
