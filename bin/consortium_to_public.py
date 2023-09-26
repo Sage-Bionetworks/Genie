@@ -204,22 +204,23 @@ def main(args):
         logger.info("DASHBOARD UPDATE COMPLETE")
         logger.info("AUTO GENERATE DATA GUIDE")
 
-    onco_link = databaseSynIdMappingDf["Id"][
-        databaseSynIdMappingDf["Database"] == "oncotreeLink"
-    ].values[0]
-    onco_link_ent = syn.get(onco_link)
-    oncotree_link = onco_link_ent.externalURL
-    oncotree_version = oncotree_link.split("=")[1]
+    # TODO: remove data guide code
+    # onco_link = databaseSynIdMappingDf["Id"][
+    #    databaseSynIdMappingDf["Database"] == "oncotreeLink"
+    # ].values[0]
+    # onco_link_ent = syn.get(onco_link)
+    # oncotree_link = onco_link_ent.externalURL
+    # oncotree_version = oncotree_link.split("=")[1]
 
-    data_guide_pdf = generate_data_guide(
-        args.genieVersion,
-        oncotree_version=oncotree_version,
-        database_mapping=databaseSynIdMappingId,
-    )
-    data_guide_ent = synapseclient.File(
-        data_guide_pdf, parent=folders["release_folder"]
-    )
-    syn.store(data_guide_ent)
+    # data_guide_pdf = generate_data_guide(
+    #    args.genieVersion,
+    #    oncotree_version=oncotree_version,
+    #    database_mapping=databaseSynIdMappingId,
+    # )
+    # data_guide_ent = synapseclient.File(
+    #    data_guide_pdf, parent=folders["release_folder"]
+    # )
+    # syn.store(data_guide_ent)
     logger.info("COMPLETED CONSORTIUM TO PUBLIC")
 
 
