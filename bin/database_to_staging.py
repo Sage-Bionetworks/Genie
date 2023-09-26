@@ -295,18 +295,19 @@ def main(
         logger.info("DASHBOARD UPDATE COMPLETE")
         logger.info("AUTO GENERATE DATA GUIDE")
 
-    #oncotree_version = oncotree_link.split("=")[1]
-    #data_guide_pdf = generate_data_guide(
+    # TODO: remove data guide code
+    # oncotree_version = oncotree_link.split("=")[1]
+    # data_guide_pdf = generate_data_guide(
     #    genie_version,
     #    oncotree_version=oncotree_version,
     #    database_mapping=databaseSynIdMappingId,
-    #)
-    #load.store_file(
+    # )
+    # load.store_file(
     #    syn=syn,
     #    filepath=data_guide_pdf,
     #    version_comment=genie_version,
     #    parentid=folders["release_folder"],
-    #)
+    # )
     logger.info("COMPLETED DATABASE TO STAGING")
 
 
