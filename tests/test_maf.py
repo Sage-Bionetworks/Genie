@@ -94,6 +94,8 @@ def test_firstcolumn_validation(maf_class):
         "maf: First column header must be "
         "one of these: CHROMOSOME, HUGO_SYMBOL, "
         "TUMOR_SAMPLE_BARCODE.\n"
+        "maf: Your REFERENCE_ALLELE column has invalid allele values. "
+        "These are the accepted allele values: ['A', 'T', 'C', 'G', 'N', ' ', '-'].\n"
     )
     assert error == expectedErrors
     assert warning == ""
@@ -147,6 +149,10 @@ def test_errors_validation(maf_class):
         "This column must only be these values: 1, 2, 3, 4, 5, 6, 7, 8, 9, "
         "10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, X, Y, MT\n"
         "maf: TUMOR_SAMPLE_BARCODE must start with GENIE-SAGE\n"
+        "maf: Your REFERENCE_ALLELE column has invalid allele values. "
+        "These are the accepted allele values: ['A', 'T', 'C', 'G', 'N', ' ', '-'].\n"
+        "maf: Your TUMOR_SEQ_ALLELE2 column has invalid allele values. "
+        "These are the accepted allele values: ['A', 'T', 'C', 'G', 'N', ' ', '-'].\n"
     )
     expectedWarnings = (
         "maf: "
@@ -195,6 +201,8 @@ def test_invalid_validation(maf_class):
         "maf: "
         "TUMOR_SEQ_ALLELE2 can't have any blank or null values.\n"
         "maf: TUMOR_SAMPLE_BARCODE must start with GENIE-SAGE\n"
+        "maf: Your TUMOR_SEQ_ALLELE2 column has invalid allele values. "
+        "These are the accepted allele values: ['A', 'T', 'C', 'G', 'N', ' ', '-'].\n"
     )
     expectedWarnings = (
         "maf: TUMOR_SEQ_ALLELE2 column contains 'NA' values, "

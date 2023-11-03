@@ -768,3 +768,94 @@ def test_that_standardize_string_for_validation_returns_expected(
         allow_underscore=allow_underscore,
     )
     assert test_str == expected
+
+
+@pytest.mark.parametrize(
+    "input,expected_index,allowed_alleles,ignore_case",
+    [
+        (
+            pd.DataFrame(
+                {"REFERENCE_ALLELE": ["ACGT-G", "A-CGT ", "A", "C", "T", "G", "-", " "]}
+            ),
+            pd.Index([]),
+            ["A", "T", "C", "G", " ", "-"],
+            True,
+        ),
+        (
+            pd.DataFrame({"REFERENCE_ALLELE": ["acgt-g", "acgt", "  "]}),
+            pd.Index([]),
+            ["A", "T", "C", "G", " ", "-"],
+            True,
+        ),
+        (
+            pd.DataFrame({"REFERENCE_ALLELE": ["@##", "ACGTX"]}),
+            pd.Index([0, 1]),
+            ["A", "T", "C", "G", " ", "-"],
+            True,
+        ),
+        (
+            pd.DataFrame({"REFERENCE_ALLELE": ["XXX", "ACGT"]}),
+            pd.Index([0]),
+            ["A", "T", "C", "G", " ", "-"],
+            True,
+        ),
+        (
+            pd.DataFrame({"REFERENCE_ALLELE": ["ACGT-G", pd.NA, None]}),
+            pd.Index([1, 2]),
+            ["A", "T", "C", "G", " ", "-"],
+            True,
+        ),
+        (
+            pd.DataFrame({"REFERENCE_ALLELE": ["acgt-G"]}),
+            pd.Index([0]),
+            ["A", "T", "C", "G", " ", "-"],
+            False,
+        ),
+    ],
+    ids=[
+        "correct_alleles",
+        "correct_alleles_case",
+        "invalid_special_chars",
+        "invalid_chars",
+        "missing_entries",
+        "case_not_ignored",
+    ],
+)
+def test_that_get_invalid_allele_rows_returns_expected(
+    input, expected_index, allowed_alleles, ignore_case
+):
+    invalid_rows = validate.get_invalid_allele_rows(
+        input,
+        input_col="REFERENCE_ALLELE",
+        allowed_alleles=allowed_alleles,
+        ignore_case=ignore_case,
+    )
+    assert invalid_rows.equals(expected_index)
+
+
+@pytest.mark.parametrize(
+    "input_invalid_rows,expected_error,expected_warning",
+    [
+        (
+            pd.Index([1, 2, 3]),
+            (
+                "maf: Your REFERENCE_ALLELE column has invalid allele values. "
+                "These are the accepted allele values: ['A', 'C', 'T', 'G', ' ', '-'].\n"
+            ),
+            "",
+        ),
+        ([], "", ""),
+    ],
+    ids=["has_invalid_alleles", "has_no_invalid_alleles"],
+)
+def test_that_get_allele_validation_message_returns_expected(
+    input_invalid_rows, expected_error, expected_warning
+):
+    error, warning = validate.get_allele_validation_message(
+        input_invalid_rows,
+        invalid_col="REFERENCE_ALLELE",
+        allowed_alleles=["A", "C", "T", "G", " ", "-"],
+        fileformat="maf",
+    )
+    assert error == expected_error
+    assert warning == expected_warning

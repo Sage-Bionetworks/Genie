@@ -137,6 +137,22 @@ class vcf(FileTypeFormat):
         total_error += error
         warning += warn
 
+        # TODO: add this as class attribute or global
+        allele_col = "REF"
+        allowed_alleles = ["A", "T", "C", "G", "N"]
+        if process_functions.checkColExist(vcfdf, allele_col):
+            invalid_indices = validate.get_invalid_allele_rows(
+                vcfdf, allele_col, allowed_alleles=allowed_alleles, ignore_case=True
+            )
+            errors, warnings = validate.get_allele_validation_message(
+                invalid_indices,
+                invalid_col=allele_col,
+                allowed_alleles=allowed_alleles,
+                fileformat="vcf",
+            )
+            total_error += errors
+            warning += warnings
+
         # No white spaces
         white_space = vcfdf.apply(lambda x: contains_whitespace(x), axis=1)
         if sum(white_space) > 0:

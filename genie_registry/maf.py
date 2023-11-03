@@ -294,6 +294,21 @@ class maf(FileTypeFormat):
             )
             total_error.write(errors)
             warning.write(warnings)
+            
+        # TODO: add these lists as class attribute or global
+        allele_cols = ["REFERENCE_ALLELE", "TUMOR_SEQ_ALLELE1", "TUMOR_SEQ_ALLELE2"]
+        allowed_alleles = ['A','T','C','G','N', ' ', '-']
+        for allele_col in allele_cols:
+            if process_functions.checkColExist(mutationDF, allele_col):
+                invalid_indices = validate.get_invalid_allele_rows(
+                    mutationDF, allele_col, allowed_alleles = allowed_alleles, ignore_case = True
+                )
+                errors, warnings = validate.get_allele_validation_message(
+                    invalid_indices, invalid_col = allele_col, allowed_alleles = allowed_alleles, fileformat="maf"
+                )
+                total_error.write(errors)
+                warning.write(warnings)
+                
         return total_error.getvalue(), warning.getvalue()
 
     def _cross_validate(self, mutationDF: pd.DataFrame) -> tuple:

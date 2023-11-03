@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import logging
 from typing import Dict, List, Optional
 
@@ -415,3 +416,61 @@ def standardize_string_for_validation(
         return standardized_str
     else:
         return input_string
+
+
+def get_invalid_allele_rows(
+    input_data: pd.DataFrame,
+    input_col: str,
+    allowed_alleles: list,
+    ignore_case: bool = False,
+) -> pd.Index:
+    """
+    Find invalid indices in a DataFrame column based on allowed allele values.
+
+    Args:
+        input_data (pd.DataFrame): The DataFrame to search.
+        input_col (str): The name of the column to check.
+        allowed_alleles (list): The list of allowed allele values.
+        ignore_case (bool, optional): whether to perform case-insensitive matching
+
+    Returns:
+        pd.Index: A pandas index object indicating the row indices that
+        don't match the allowed alleles
+    """
+    search_str = rf"^[{''.join(allowed_alleles)}]+$"
+    if ignore_case:
+        flags = re.IGNORECASE
+    else:
+        flags = 0  # no flags
+    # NAs should not be considered as a match
+    matching_indices = input_data[input_col].str.match(
+        search_str, flags=flags, na=False
+    )
+    invalid_indices = input_data[~matching_indices].index
+    return invalid_indices
+
+
+def get_allele_validation_message(
+    invalid_indices: pd.Series, invalid_col: str, allowed_alleles: list, fileformat: str
+) -> tuple:
+    """Creates the error/warning message for the check for invalid alleles
+
+    Args:
+        invalid_indices (pd.Series): the row indices that
+            have invalid alleles
+        invalid_col (str): The column with the invalid values
+        allowed_alleles (list): The list of allowed allele values.
+        fileformat (str): Name of the fileformat
+
+    Returns:
+        tuple: The errors and warnings from the allele validation
+               Defaults to blank strings
+    """
+    errors = ""
+    warnings = ""
+    if len(invalid_indices) > 0:
+        errors = (
+            f"{fileformat}: Your {invalid_col} column has invalid allele values. "
+            f"These are the accepted allele values: {allowed_alleles}.\n"
+        )
+    return errors, warnings
