@@ -18,6 +18,8 @@ class vcf(FileTypeFormat):
     _fileType = "vcf"
 
     _process_kwargs = []
+    _allele_col = "REF"
+    _allowed_alleles = ["A", "T", "C", "G", "N"]
 
     def _validateFilename(self, filePath):
         basename = os.path.basename(filePath[0])
@@ -137,18 +139,15 @@ class vcf(FileTypeFormat):
         total_error += error
         warning += warn
 
-        # TODO: add this as class attribute or global
-        allele_col = "REF"
-        allowed_alleles = ["A", "T", "C", "G", "N"]
-        if process_functions.checkColExist(vcfdf, allele_col):
+        if process_functions.checkColExist(vcfdf, self._allele_col):
             invalid_indices = validate.get_invalid_allele_rows(
-                vcfdf, allele_col, allowed_alleles=allowed_alleles, ignore_case=True
+                vcfdf, self._allele_col, allowed_alleles=self._allowed_alleles, ignore_case=True
             )
             errors, warnings = validate.get_allele_validation_message(
                 invalid_indices,
-                invalid_col=allele_col,
-                allowed_alleles=allowed_alleles,
-                fileformat="vcf",
+                invalid_col=self._allele_col,
+                allowed_alleles=self._allowed_alleles,
+                fileformat=self._fileType,
             )
             total_error += errors
             warning += warnings
