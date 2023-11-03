@@ -141,7 +141,10 @@ class vcf(FileTypeFormat):
 
         if process_functions.checkColExist(vcfdf, self._allele_col):
             invalid_indices = validate.get_invalid_allele_rows(
-                vcfdf, self._allele_col, allowed_alleles=self._allowed_alleles, ignore_case=True
+                vcfdf,
+                self._allele_col,
+                allowed_alleles=self._allowed_alleles,
+                ignore_case=True,
             )
             errors, warnings = validate.get_allele_validation_message(
                 invalid_indices,
