@@ -64,7 +64,7 @@ class maf(FileTypeFormat):
     _process_kwargs = []
     _allele_cols = ["REFERENCE_ALLELE", "TUMOR_SEQ_ALLELE1", "TUMOR_SEQ_ALLELE2"]
     _allowed_comb_alleles = ["A", "T", "C", "G", "N"]
-    _allowed_ind_alleles = ['-']
+    _allowed_ind_alleles = ["-"]
 
     def _validateFilename(self, filePath):
         """
@@ -298,7 +298,7 @@ class maf(FileTypeFormat):
                     allowed_comb_alleles=self._allowed_comb_alleles,
                     allowed_ind_alleles=self._allowed_ind_alleles,
                     ignore_case=True,
-                    allow_na=False
+                    allow_na=False,
                 )
                 errors, warnings = validate.get_allele_validation_message(
                     invalid_indices,

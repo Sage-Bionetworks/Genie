@@ -18,7 +18,7 @@ class vcf(FileTypeFormat):
     _fileType = "vcf"
 
     _process_kwargs = []
-    _allele_col = "REF"
+    _allele_cols = ["REF"]
     _allowed_comb_alleles = ["A", "T", "C", "G", "N"]
     _allowed_ind_alleles = []
 
@@ -140,24 +140,25 @@ class vcf(FileTypeFormat):
         total_error += error
         warning += warn
 
-        if process_functions.checkColExist(vcfdf, self._allele_col):
-            invalid_indices = validate.get_invalid_allele_rows(
-                vcfdf,
-                input_col=self._allele_col,
-                allowed_comb_alleles=self._allowed_comb_alleles,
-                allowed_ind_alleles=self._allowed_ind_alleles,
-                ignore_case=True,
-                allow_na=False
+        for allele_col in self._allele_cols:
+            if process_functions.checkColExist(vcfdf, allele_col):
+                invalid_indices = validate.get_invalid_allele_rows(
+                    vcfdf,
+                    input_col=allele_col,
+                    allowed_comb_alleles=self._allowed_comb_alleles,
+                    allowed_ind_alleles=self._allowed_ind_alleles,
+                    ignore_case=True,
+                    allow_na=False,
                 )
-            errors, warnings = validate.get_allele_validation_message(
-                invalid_indices,
-                invalid_col=self._allele_col,
-                allowed_comb_alleles=self._allowed_comb_alleles,
-                allowed_ind_alleles=self._allowed_ind_alleles,
-                fileformat=self._fileType,
-            )
-            total_error += errors
-            warning += warnings
+                errors, warnings = validate.get_allele_validation_message(
+                    invalid_indices,
+                    invalid_col=allele_col,
+                    allowed_comb_alleles=self._allowed_comb_alleles,
+                    allowed_ind_alleles=self._allowed_ind_alleles,
+                    fileformat=self._fileType,
+                )
+                total_error += errors
+                warning += warnings
 
         # No white spaces
         white_space = vcfdf.apply(lambda x: contains_whitespace(x), axis=1)

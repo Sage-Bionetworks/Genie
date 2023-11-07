@@ -19,7 +19,13 @@ def valid_maf_df():
         dict(
             CHROMOSOME=[1, 2, 3, 4, 5],
             START_POSITION=[1, 2, 3, 4, 2],
-            REFERENCE_ALLELE=["A", "A", "A", "A", "A"],
+            REFERENCE_ALLELE=[
+                "C",
+                "G",
+                "NA",
+                "-",
+                "TAAAGATCGTACAGAA",
+            ],
             TUMOR_SAMPLE_BARCODE=[
                 "GENIE-SAGE-ID1-1",
                 "GENIE-SAGE-ID1-1",
