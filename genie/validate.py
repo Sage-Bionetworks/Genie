@@ -421,8 +421,10 @@ def standardize_string_for_validation(
 def get_invalid_allele_rows(
     input_data: pd.DataFrame,
     input_col: str,
-    allowed_alleles: list,
+    allowed_comb_alleles: list,
+    allowed_ind_alleles: list,
     ignore_case: bool = False,
+    allow_na: bool = False,
 ) -> pd.Index:
     """
     Find invalid indices in a DataFrame column based on allowed allele values.
@@ -430,28 +432,43 @@ def get_invalid_allele_rows(
     Args:
         input_data (pd.DataFrame): The DataFrame to search.
         input_col (str): The name of the column to check.
-        allowed_alleles (list): The list of allowed allele values.
+        allowed_comb_alleles (list): The list of allowed allele values
+            (can appear in combinations or individually)
+        allowed_ind_alleles (list): The list of allowed allele values
+            (can only appear individually)
         ignore_case (bool, optional): whether to perform case-insensitive matching
+        allow_na (bool, optional): whether to allow NAs to be an allowed allele
+            value or not.
 
     Returns:
         pd.Index: A pandas index object indicating the row indices that
         don't match the allowed alleles
     """
-    search_str = rf"^[{''.join(allowed_alleles)}]+$"
+    search_str = ""
+    if allowed_comb_alleles:
+        search_str += f'^[{re.escape("".join(allowed_comb_alleles))}]+$'
+
+    if allowed_ind_alleles:
+        search_str += f'|^[{re.escape("".join(allowed_ind_alleles))}]+$'
+
     if ignore_case:
         flags = re.IGNORECASE
     else:
         flags = 0  # no flags
-    # NAs should not be considered as a match
+
     matching_indices = input_data[input_col].str.match(
-        search_str, flags=flags, na=False
+        search_str, flags=flags, na=allow_na
     )
     invalid_indices = input_data[~matching_indices].index
     return invalid_indices
 
 
 def get_allele_validation_message(
-    invalid_indices: pd.Series, invalid_col: str, allowed_alleles: list, fileformat: str
+    invalid_indices: pd.Series,
+    invalid_col: str,
+    allowed_comb_alleles: list,
+    allowed_ind_alleles: list,
+    fileformat: str,
 ) -> tuple:
     """Creates the error/warning message for the check for invalid alleles
 
@@ -459,7 +476,10 @@ def get_allele_validation_message(
         invalid_indices (pd.Series): the row indices that
             have invalid alleles
         invalid_col (str): The column with the invalid values
-        allowed_alleles (list): The list of allowed allele values.
+        allowed_comb_alleles (list): The list of allowed allele values
+            (can appear in combinations or individually)
+        allowed_ind_alleles (list): The list of allowed allele values
+            (can only appear individually)
         fileformat (str): Name of the fileformat
 
     Returns:
@@ -471,6 +491,9 @@ def get_allele_validation_message(
     if len(invalid_indices) > 0:
         errors = (
             f"{fileformat}: Your {invalid_col} column has invalid allele values. "
-            f"These are the accepted allele values: {allowed_alleles}.\n"
+            "This is the list of accepted allele values that can appear individually "
+            f"or in combination with each other: {','.join(allowed_comb_alleles)}.\n"
+            "This is the list of accepted allele values that can only appear individually: "
+            f"{','.join(allowed_ind_alleles)}\n"
         )
     return errors, warnings

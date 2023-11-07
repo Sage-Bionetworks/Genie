@@ -232,7 +232,9 @@ def test_validation_invalid_content(vcf_class):
         "vcf: Please double check your #CHROM column.  This column must only be these values: "
         "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, X, Y, MT\n"
         "vcf: Your REF column has invalid allele values. "
-        "These are the accepted allele values: ['A', 'T', 'C', 'G', 'N'].\n"
+        "This is the list of accepted allele values that can appear individually "
+        "or in combination with each other: A,T,C,G,N.\n"
+        "This is the list of accepted allele values that can only appear individually: \n"
     )
     expectedWarning = "vcf: Should not have the chr prefix in front of chromosomes.\n"
     assert error == expectedError

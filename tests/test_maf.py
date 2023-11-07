@@ -95,7 +95,9 @@ def test_firstcolumn_validation(maf_class):
         "one of these: CHROMOSOME, HUGO_SYMBOL, "
         "TUMOR_SAMPLE_BARCODE.\n"
         "maf: Your REFERENCE_ALLELE column has invalid allele values. "
-        "These are the accepted allele values: ['A', 'T', 'C', 'G', 'N', ' ', '-'].\n"
+        "This is the list of accepted allele values that can appear individually "
+        f"or in combination with each other: A,T,C,G,N.\n"
+        "This is the list of accepted allele values that can only appear individually: -\n"
     )
     assert error == expectedErrors
     assert warning == ""
@@ -150,9 +152,13 @@ def test_errors_validation(maf_class):
         "10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, X, Y, MT\n"
         "maf: TUMOR_SAMPLE_BARCODE must start with GENIE-SAGE\n"
         "maf: Your REFERENCE_ALLELE column has invalid allele values. "
-        "These are the accepted allele values: ['A', 'T', 'C', 'G', 'N', ' ', '-'].\n"
+        "This is the list of accepted allele values that can appear individually "
+        "or in combination with each other: A,T,C,G,N.\n"
+        "This is the list of accepted allele values that can only appear individually: -\n"
         "maf: Your TUMOR_SEQ_ALLELE2 column has invalid allele values. "
-        "These are the accepted allele values: ['A', 'T', 'C', 'G', 'N', ' ', '-'].\n"
+        "This is the list of accepted allele values that can appear individually "
+        "or in combination with each other: A,T,C,G,N.\n"
+        "This is the list of accepted allele values that can only appear individually: -\n"
     )
     expectedWarnings = (
         "maf: "
@@ -202,7 +208,9 @@ def test_invalid_validation(maf_class):
         "TUMOR_SEQ_ALLELE2 can't have any blank or null values.\n"
         "maf: TUMOR_SAMPLE_BARCODE must start with GENIE-SAGE\n"
         "maf: Your TUMOR_SEQ_ALLELE2 column has invalid allele values. "
-        "These are the accepted allele values: ['A', 'T', 'C', 'G', 'N', ' ', '-'].\n"
+        "This is the list of accepted allele values that can appear individually "
+        "or in combination with each other: A,T,C,G,N.\n"
+        "This is the list of accepted allele values that can only appear individually: -\n"
     )
     expectedWarnings = (
         "maf: TUMOR_SEQ_ALLELE2 column contains 'NA' values, "
