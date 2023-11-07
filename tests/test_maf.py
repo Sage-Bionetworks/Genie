@@ -165,10 +165,6 @@ def test_errors_validation(maf_class):
         "Does not have the column headers that can give "
         "extra information to the processed maf: "
         "T_REF_COUNT, N_DEPTH.\n"
-        "maf: "
-        "REFERENCE_ALLELE column contains 'NA' values, "
-        "which cannot be placeholders for blank values.  "
-        "Please put in empty strings for blank values.\n"
     )
 
     assert error == expectedErrors
@@ -213,9 +209,6 @@ def test_invalid_validation(maf_class):
         "This is the list of accepted allele values that can only appear individually: -\n"
     )
     expectedWarnings = (
-        "maf: TUMOR_SEQ_ALLELE2 column contains 'NA' values, "
-        "which cannot be placeholders for blank values.  "
-        "Please put in empty strings for blank values.\n"
         "maf: Does not have the column headers that can give "
         "extra information to the processed maf: T_REF_COUNT.\n"
     )
@@ -226,23 +219,10 @@ def test_invalid_validation(maf_class):
 @pytest.mark.parametrize("col", ["temp", "REFERENCE_ALLELE"])
 def test_noerror__check_allele_col(col):
     """Test error and warning is an empty string if REF col isn't passed in"""
-    df = pd.DataFrame(dict(REFERENCE_ALLELE=["A", "A"]))
+    df = pd.DataFrame(dict(REFERENCE_ALLELE=["NA", "A"]))
     error, warning = genie_registry.maf._check_allele_col(df, col)
     assert error == ""
     assert warning == ""
-
-
-def test_warning__check_allele_col():
-    """Test warning occurs when 'NA' string is passed in"""
-    df = pd.DataFrame(dict(TEMP=["NA", "A"]))
-    error, warning = genie_registry.maf._check_allele_col(df, "TEMP")
-    assert error == ""
-    assert warning == (
-        "maf: "
-        "TEMP column contains 'NA' values, "
-        "which cannot be placeholders for blank values.  "
-        "Please put in empty strings for blank values.\n"
-    )
 
 
 def test_error__check_allele_col():

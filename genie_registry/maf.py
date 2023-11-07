@@ -47,14 +47,6 @@ def _check_allele_col(df, col):
     error = ""
     warning = ""
     if col_exist:
-        # CHECK: The value "NA" can't be used as a placeholder
-        if sum(df[col].fillna("") == "NA") > 0:
-            warning = (
-                "maf: "
-                f"{col} column contains 'NA' values, "
-                "which cannot be placeholders for blank values.  "
-                "Please put in empty strings for blank values.\n"
-            )
         # CHECK: There can't be any null values
         if sum(df[col].isnull()) > 0:
             error = f"maf: {col} can't have any blank or null values.\n"
