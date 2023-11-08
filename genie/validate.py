@@ -424,7 +424,7 @@ def get_invalid_allele_rows(
     allowed_comb_alleles: list,
     allowed_ind_alleles: list,
     ignore_case: bool = False,
-    allow_na: bool = False,
+    allow_na: bool = False
 ) -> pd.Index:
     """
     Find invalid indices in a DataFrame column based on allowed allele values.
@@ -439,7 +439,6 @@ def get_invalid_allele_rows(
         ignore_case (bool, optional): whether to perform case-insensitive matching
         allow_na (bool, optional): whether to allow NAs to be an allowed allele
             value or not.
-
     Returns:
         pd.Index: A pandas index object indicating the row indices that
         don't match the allowed alleles
@@ -456,10 +455,23 @@ def get_invalid_allele_rows(
     else:
         flags = 0  # no flags
 
-    matching_indices = input_data[input_col].str.match(
-        search_str, flags=flags, na=allow_na
-    )
-    invalid_indices = input_data[~matching_indices].index
+    # special handling for all NA column
+    is_all_na = pd.isna(input_data[input_col]).all()
+    if is_all_na and allow_na:
+        invalid_indices = pd.Index([])
+    elif is_all_na and not allow_na:
+        invalid_indices = input_data.index
+    else:
+        # convert numeric cols to string while preserving NAs in order to use str.match
+        transformed_data = input_data.copy()
+        transformed_data[input_col] = transform._convert_col_with_nas_to_str(
+            transformed_data, input_col
+        )
+
+        matching_indices = transformed_data[input_col].str.match(
+            search_str, flags=flags, na=allow_na
+        )
+        invalid_indices = transformed_data[~matching_indices].index
     return invalid_indices
 
 

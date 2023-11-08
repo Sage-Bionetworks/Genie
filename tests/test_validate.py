@@ -866,6 +866,50 @@ def get_invalid_allele_rows_test_cases():
             "ignore_case": True,
             "allow_na": True,
         },
+        {
+            "name": "float_nas_not_allowed",
+            "input": pd.DataFrame(
+                {"REFERENCE_ALLELE": [1.5, 2.0, float("nan"), 3.5, 4.0]}
+            ),
+            "expected_index": pd.Index([0, 1, 2, 3, 4]),
+            "allowed_comb_alleles": ["A", "T", "C", "G", "-"],
+            "allowed_ind_alleles": [],
+            "ignore_case": True,
+            "allow_na": False,
+        },
+        {
+            "name": "float_nas_allowed",
+            "input": pd.DataFrame(
+                {"REFERENCE_ALLELE": [1.5, 2.0, float("nan"), 3.5, 4.0]}
+            ),
+            "expected_index": pd.Index([0, 1, 3, 4]),
+            "allowed_comb_alleles": ["A", "T", "C", "G", "-"],
+            "allowed_ind_alleles": [],
+            "ignore_case": True,
+            "allow_na": True,
+        },
+        {
+            "name": "all_missing_nas_allowed",
+            "input": pd.DataFrame(
+                {"REFERENCE_ALLELE": [float("nan"), float("nan"), float("nan")]}
+            ),
+            "expected_index": pd.Index([]),
+            "allowed_comb_alleles": ["A", "T", "C", "G", "-"],
+            "allowed_ind_alleles": [],
+            "ignore_case": True,
+            "allow_na": True,
+        },
+        {
+            "name": "all_missing_nas_not_allowed",
+            "input": pd.DataFrame(
+                {"REFERENCE_ALLELE": [float("nan"), float("nan"), float("nan")]}
+            ),
+            "expected_index": pd.Index([0, 1, 2]),
+            "allowed_comb_alleles": ["A", "T", "C", "G", "-"],
+            "allowed_ind_alleles": [],
+            "ignore_case": True,
+            "allow_na": False,
+        },
     ]
 
 
