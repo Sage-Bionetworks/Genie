@@ -424,7 +424,7 @@ def get_invalid_allele_rows(
     allowed_comb_alleles: list,
     allowed_ind_alleles: list,
     ignore_case: bool = False,
-    allow_na: bool = False
+    allow_na: bool = False,
 ) -> pd.Index:
     """
     Find invalid indices in a DataFrame column based on allowed allele values.
