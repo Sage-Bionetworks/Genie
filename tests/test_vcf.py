@@ -29,7 +29,7 @@ def test_validation_valid_no_samples(vcf_class):
             "#CHROM": ["2", "9", "12"],
             "POS": [69688533, 99401860, 53701241],
             "ID": ["AAK1", "AAED1", "AAAS"],
-            "REF": ["AAK1", "AAED1", "AAAS"],
+            "REF": ["AANT", "AACG", "AAAN"],
             "ALT": ["AAK1", "AAED1", "AAAS"],
             "QUAL": ["AAK1", "AAED1", "AAAS"],
             "FILTER": ["AAK1", "AAED1", "AAAS"],
@@ -47,7 +47,7 @@ def test_validation_valid_one_sample_tumor(vcf_class):
             "#CHROM": ["2", "9", "12"],
             "POS": [69688533, 99401860, 53701241],
             "ID": ["AAK1", "AAED1", "AAAS"],
-            "REF": ["AAK1", "AAED1", "AAAS"],
+            "REF": ["AANT", "AACG", "AAAN"],
             "ALT": ["AAK1", "AAED1", "AAAS"],
             "QUAL": ["AAK1", "AAED1", "AAAS"],
             "FILTER": ["AAK1", "AAED1", "AAAS"],
@@ -67,7 +67,7 @@ def test_validation_valid_one_sample(vcf_class):
             "#CHROM": ["2", "9", "12"],
             "POS": [69688533, 99401860, 53701241],
             "ID": ["AAK1", "AAED1", "AAAS"],
-            "REF": ["AAK1", "AAED1", "AAAS"],
+            "REF": ["AANT", "AACG", "AAAN"],
             "ALT": ["AAK1", "AAED1", "AAAS"],
             "QUAL": ["AAK1", "AAED1", "AAAS"],
             "FILTER": ["AAK1", "AAED1", "AAAS"],
@@ -88,7 +88,7 @@ def test_validation_missing_format_col(vcf_class):
             "#CHROM": ["2", "9", "12"],
             "POS": [69688533, 99401860, 53701241],
             "ID": ["AAK1", "AAED1", "AAAS"],
-            "REF": ["AAK1", "AAED1", "AAAS"],
+            "REF": ["AANT", "AACG", "AAAN"],
             "ALT": ["AAK1", "AAED1", "AAAS"],
             "QUAL": ["AAK1", "AAED1", "AAAS"],
             "FILTER": ["AAK1", "AAED1", "AAAS"],
@@ -107,7 +107,7 @@ def test_validation_invalid_one_sample(vcf_class):
             "#CHROM": ["2", "9", "12"],
             "POS": [69688533, 99401860, 53701241],
             "ID": ["AAK1", "AAED1", "AAAS"],
-            "REF": ["AAK1", "AAED1", "AAAS"],
+            "REF": ["AANT", "AACG", "AAAN"],
             "ALT": ["AAK1", "AAED1", "AAAS"],
             "QUAL": ["AAK1", "AAED1", "AAAS"],
             "FILTER": ["AAK1", "AAED1", "AAAS"],
@@ -130,7 +130,7 @@ def test_validation_valid_two_samples(vcf_class):
             "#CHROM": ["2", "9", "12"],
             "POS": [69688533, 99401860, 53701241],
             "ID": ["AAK1", "AAED1", "AAAS"],
-            "REF": ["AAK1", "AAED1", "AAAS"],
+            "REF": ["AANT", "AACG", "AAAN"],
             "ALT": ["AAK1", "AAED1", "AAAS"],
             "QUAL": ["AAK1", "AAED1", "AAAS"],
             "FILTER": ["AAK1", "AAED1", "AAAS"],
@@ -151,7 +151,7 @@ def test_validation_invalid_two_samples_tumor(vcf_class):
             "#CHROM": ["2", "9", "12"],
             "POS": [69688533, 99401860, 53701241],
             "ID": ["AAK1", "AAED1", "AAAS"],
-            "REF": ["AAK1", "AAED1", "AAAS"],
+            "REF": ["AANT", "AACG", "AAAN"],
             "ALT": ["AAK1", "AAED1", "AAAS"],
             "QUAL": ["AAK1", "AAED1", "AAAS"],
             "FILTER": ["AAK1", "AAED1", "AAAS"],
@@ -172,7 +172,7 @@ def test_validation_invalid_two_samples_normal(vcf_class):
             "#CHROM": ["2", "9", "12"],
             "POS": [69688533, 99401860, 53701241],
             "ID": ["AAK1", "AAED1", "AAAS"],
-            "REF": ["AAK1", "AAED1", "AAAS"],
+            "REF": ["AANT", "AACG", "AAAN"],
             "ALT": ["AAK1", "AAED1", "AAAS"],
             "QUAL": ["AAK1", "AAED1", "AAAS"],
             "FILTER": ["AAK1", "AAED1", "AAAS"],
@@ -193,7 +193,7 @@ def test_validation_invalid_white_space(vcf_class):
             "#CHROMM": ["2", "9", "12"],
             "POS": [69688533, 99401860, 53701241],
             "ID": ["AAK1", "AAED1", "AAAS"],
-            "REF": ["AAK1", "AAED1", "AAAS"],
+            "REF": ["AANT", "AACG", "AAAN"],
             "ALT": ["AAK1", "AAED1", "AAAS"],
             "QUAL": ["AAK1", "AAED1", "AAAS"],
             "FILTER": ["AAK1", "AA ED1", "AAAS"],
@@ -231,6 +231,10 @@ def test_validation_invalid_content(vcf_class):
         "space delimited instead of tab delimited.\n"
         "vcf: Please double check your #CHROM column.  This column must only be these values: "
         "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, X, Y, MT\n"
+        "vcf: Your REF column has invalid allele values. "
+        "This is the list of accepted allele values that can appear individually "
+        "or in combination with each other: A,T,C,G,N.\n"
+        "This is the list of accepted allele values that can only appear individually: \n"
     )
     expectedWarning = "vcf: Should not have the chr prefix in front of chromosomes.\n"
     assert error == expectedError

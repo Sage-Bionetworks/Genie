@@ -768,3 +768,215 @@ def test_that_standardize_string_for_validation_returns_expected(
         allow_underscore=allow_underscore,
     )
     assert test_str == expected
+
+
+def get_invalid_allele_rows_test_cases():
+    return [
+        {
+            "name": "correct_alleles",
+            "input": pd.DataFrame(
+                {
+                    "REFERENCE_ALLELE": [
+                        "NANANANA",
+                        "ACGTN",
+                        "A",
+                        "C",
+                        "T",
+                        "G",
+                        "-",
+                        "N",
+                    ]
+                }
+            ),
+            "expected_index": pd.Index([]),
+            "allowed_comb_alleles": ["A", "T", "C", "G", "N"],
+            "allowed_ind_alleles": ["-"],
+            "ignore_case": True,
+            "allow_na": True,
+        },
+        {
+            "name": "incorrect_alleles",
+            "input": pd.DataFrame({"REFERENCE_ALLELE": ["@##", "ACGTX", "XXX"]}),
+            "expected_index": pd.Index([0, 1, 2]),
+            "allowed_comb_alleles": ["A", "T", "C", "G"],
+            "allowed_ind_alleles": [],
+            "ignore_case": True,
+            "allow_na": True,
+        },
+        {
+            "name": "case_ignored",
+            "input": pd.DataFrame({"REFERENCE_ALLELE": ["acgtg", "acgt", "-", "a"]}),
+            "expected_index": pd.Index([]),
+            "allowed_comb_alleles": ["A", "T", "C", "G"],
+            "allowed_ind_alleles": ["-"],
+            "ignore_case": True,
+            "allow_na": True,
+        },
+        {
+            "name": "case_not_ignored",
+            "input": pd.DataFrame({"REFERENCE_ALLELE": ["acgt-G"]}),
+            "expected_index": pd.Index([0]),
+            "allowed_comb_alleles": ["A", "T", "C", "G", "-"],
+            "allowed_ind_alleles": [],
+            "ignore_case": False,
+            "allow_na": True,
+        },
+        {
+            "name": "no_ind_alleles_incorrect",
+            "input": pd.DataFrame({"REFERENCE_ALLELE": ["ACG-T", "ACGT", "G-CT"]}),
+            "expected_index": pd.Index([0, 2]),
+            "allowed_comb_alleles": ["A", "T", "C", "G"],
+            "allowed_ind_alleles": [],
+            "ignore_case": True,
+            "allow_na": True,
+        },
+        {
+            "name": "no_ind_alleles_correct",
+            "input": pd.DataFrame({"REFERENCE_ALLELE": ["ACT", "ACGT", "G"]}),
+            "expected_index": pd.Index([]),
+            "allowed_comb_alleles": ["A", "T", "C", "G"],
+            "allowed_ind_alleles": [],
+            "ignore_case": True,
+            "allow_na": True,
+        },
+        {
+            "name": "missing_entries_not_allowed",
+            "input": pd.DataFrame({"REFERENCE_ALLELE": ["ACGT-G", pd.NA, None]}),
+            "expected_index": pd.Index([1, 2]),
+            "allowed_comb_alleles": ["A", "T", "C", "G", "-"],
+            "allowed_ind_alleles": [],
+            "ignore_case": True,
+            "allow_na": False,
+        },
+        {
+            "name": "missing_entries_allowed",
+            "input": pd.DataFrame({"REFERENCE_ALLELE": ["ACGT-G", pd.NA, None]}),
+            "expected_index": pd.Index([]),
+            "allowed_comb_alleles": ["A", "T", "C", "G", "-"],
+            "allowed_ind_alleles": [],
+            "ignore_case": True,
+            "allow_na": True,
+        },
+        {
+            "name": "no_specified_alleles_values",
+            "input": pd.DataFrame({"REFERENCE_ALLELE": ["ACGT-G", "ACGF", "B"]}),
+            "expected_index": pd.Index([]),
+            "allowed_comb_alleles": [],
+            "allowed_ind_alleles": [],
+            "ignore_case": True,
+            "allow_na": True,
+        },
+        {
+            "name": "float_nas_not_allowed",
+            "input": pd.DataFrame(
+                {"REFERENCE_ALLELE": [1.5, 2.0, float("nan"), 3.5, 4.0]}
+            ),
+            "expected_index": pd.Index([0, 1, 2, 3, 4]),
+            "allowed_comb_alleles": ["A", "T", "C", "G", "-"],
+            "allowed_ind_alleles": [],
+            "ignore_case": True,
+            "allow_na": False,
+        },
+        {
+            "name": "float_nas_allowed",
+            "input": pd.DataFrame(
+                {"REFERENCE_ALLELE": [1.5, 2.0, float("nan"), 3.5, 4.0]}
+            ),
+            "expected_index": pd.Index([0, 1, 3, 4]),
+            "allowed_comb_alleles": ["A", "T", "C", "G", "-"],
+            "allowed_ind_alleles": [],
+            "ignore_case": True,
+            "allow_na": True,
+        },
+        {
+            "name": "all_missing_nas_allowed",
+            "input": pd.DataFrame(
+                {"REFERENCE_ALLELE": [float("nan"), float("nan"), float("nan")]}
+            ),
+            "expected_index": pd.Index([]),
+            "allowed_comb_alleles": ["A", "T", "C", "G", "-"],
+            "allowed_ind_alleles": [],
+            "ignore_case": True,
+            "allow_na": True,
+        },
+        {
+            "name": "all_missing_nas_not_allowed",
+            "input": pd.DataFrame(
+                {"REFERENCE_ALLELE": [float("nan"), float("nan"), float("nan")]}
+            ),
+            "expected_index": pd.Index([0, 1, 2]),
+            "allowed_comb_alleles": ["A", "T", "C", "G", "-"],
+            "allowed_ind_alleles": [],
+            "ignore_case": True,
+            "allow_na": False,
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_cases", get_invalid_allele_rows_test_cases(), ids=lambda x: x["name"]
+)
+def test_that_get_invalid_allele_rows_returns_expected(test_cases):
+    invalid_rows = validate.get_invalid_allele_rows(
+        test_cases["input"],
+        input_col="REFERENCE_ALLELE",
+        allowed_comb_alleles=test_cases["allowed_comb_alleles"],
+        allowed_ind_alleles=test_cases["allowed_ind_alleles"],
+        ignore_case=test_cases["ignore_case"],
+        allow_na=test_cases["allow_na"],
+    )
+    assert invalid_rows.equals(test_cases["expected_index"])
+
+
+def get_allele_validation_message_test_cases():
+    return [
+        {
+            "name": "has_invalid_alleles",
+            "input_invalid_rows": pd.Index([1, 2, 3]),
+            "allowed_comb_alleles": ["A", "C", "T", "G"],
+            "allowed_ind_alleles": ["-"],
+            "expected_error": (
+                "maf: Your REFERENCE_ALLELE column has invalid allele values. "
+                "This is the list of accepted allele values that can appear individually "
+                "or in combination with each other: A,C,T,G.\n"
+                "This is the list of accepted allele values that can only appear individually: -\n"
+            ),
+            "expected_warning": "",
+        },
+        {
+            "name": "has_no_invalid_alleles",
+            "input_invalid_rows": [],
+            "allowed_comb_alleles": [],
+            "allowed_ind_alleles": [],
+            "expected_error": "",
+            "expected_warning": "",
+        },
+        {
+            "name": "has_invalid_alleles_empty_ind_alleles",
+            "input_invalid_rows": pd.Index([1, 2, 3]),
+            "allowed_comb_alleles": ["A", "C", "T", "G"],
+            "allowed_ind_alleles": [],
+            "expected_error": (
+                "maf: Your REFERENCE_ALLELE column has invalid allele values. "
+                "This is the list of accepted allele values that can appear individually "
+                "or in combination with each other: A,C,T,G.\n"
+                "This is the list of accepted allele values that can only appear individually: \n"
+            ),
+            "expected_warning": "",
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_cases", get_allele_validation_message_test_cases(), ids=lambda x: x["name"]
+)
+def test_that_get_allele_validation_message_returns_expected(test_cases):
+    error, warning = validate.get_allele_validation_message(
+        invalid_indices=test_cases["input_invalid_rows"],
+        invalid_col="REFERENCE_ALLELE",
+        allowed_comb_alleles=test_cases["allowed_comb_alleles"],
+        allowed_ind_alleles=test_cases["allowed_ind_alleles"],
+        fileformat="maf",
+    )
+    assert error == test_cases["expected_error"]
+    assert warning == test_cases["expected_warning"]

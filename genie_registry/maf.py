@@ -47,14 +47,6 @@ def _check_allele_col(df, col):
     error = ""
     warning = ""
     if col_exist:
-        # CHECK: The value "NA" can't be used as a placeholder
-        if sum(df[col].fillna("") == "NA") > 0:
-            warning = (
-                "maf: "
-                f"{col} column contains 'NA' values, "
-                "which cannot be placeholders for blank values.  "
-                "Please put in empty strings for blank values.\n"
-            )
         # CHECK: There can't be any null values
         if sum(df[col].isnull()) > 0:
             error = f"maf: {col} can't have any blank or null values.\n"
@@ -70,6 +62,9 @@ class maf(FileTypeFormat):
     _fileType = "maf"
 
     _process_kwargs = []
+    _allele_cols = ["REFERENCE_ALLELE", "TUMOR_SEQ_ALLELE1", "TUMOR_SEQ_ALLELE2"]
+    _allowed_comb_alleles = ["A", "T", "C", "G", "N"]
+    _allowed_ind_alleles = ["-"]
 
     def _validateFilename(self, filePath):
         """
@@ -294,6 +289,27 @@ class maf(FileTypeFormat):
             )
             total_error.write(errors)
             warning.write(warnings)
+
+        for allele_col in self._allele_cols:
+            if process_functions.checkColExist(mutationDF, allele_col):
+                invalid_indices = validate.get_invalid_allele_rows(
+                    mutationDF,
+                    allele_col,
+                    allowed_comb_alleles=self._allowed_comb_alleles,
+                    allowed_ind_alleles=self._allowed_ind_alleles,
+                    ignore_case=True,
+                    allow_na=False,
+                )
+                errors, warnings = validate.get_allele_validation_message(
+                    invalid_indices,
+                    invalid_col=allele_col,
+                    allowed_comb_alleles=self._allowed_comb_alleles,
+                    allowed_ind_alleles=self._allowed_ind_alleles,
+                    fileformat=self._fileType,
+                )
+                total_error.write(errors)
+                warning.write(warnings)
+
         return total_error.getvalue(), warning.getvalue()
 
     def _cross_validate(self, mutationDF: pd.DataFrame) -> tuple:

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import logging
 from typing import Dict, List, Optional
 
@@ -415,3 +416,96 @@ def standardize_string_for_validation(
         return standardized_str
     else:
         return input_string
+
+
+def get_invalid_allele_rows(
+    input_data: pd.DataFrame,
+    input_col: str,
+    allowed_comb_alleles: list,
+    allowed_ind_alleles: list,
+    ignore_case: bool = False,
+    allow_na: bool = False,
+) -> pd.Index:
+    """
+    Find invalid indices in a DataFrame column based on allowed allele values.
+
+    Args:
+        input_data (pd.DataFrame): The DataFrame to search.
+        input_col (str): The name of the column to check.
+        allowed_comb_alleles (list): The list of allowed allele values
+            (can appear in combinations or individually)
+        allowed_ind_alleles (list): The list of allowed allele values
+            (can only appear individually)
+        ignore_case (bool, optional): whether to perform case-insensitive matching
+        allow_na (bool, optional): whether to allow NAs to be an allowed allele
+            value or not.
+    Returns:
+        pd.Index: A pandas index object indicating the row indices that
+        don't match the allowed alleles
+    """
+    search_str = ""
+    if allowed_comb_alleles:
+        search_str += f'^[{re.escape("".join(allowed_comb_alleles))}]+$'
+
+    if allowed_ind_alleles:
+        search_str += f'|^[{re.escape("".join(allowed_ind_alleles))}]+$'
+
+    if ignore_case:
+        flags = re.IGNORECASE
+    else:
+        flags = 0  # no flags
+
+    # special handling for all NA column
+    is_all_na = pd.isna(input_data[input_col]).all()
+    if is_all_na and allow_na:
+        invalid_indices = pd.Index([])
+    elif is_all_na and not allow_na:
+        invalid_indices = input_data.index
+    else:
+        # convert numeric cols to string while preserving NAs in order to use str.match
+        transformed_data = input_data.copy()
+        transformed_data[input_col] = transform._convert_col_with_nas_to_str(
+            transformed_data, input_col
+        )
+
+        matching_indices = transformed_data[input_col].str.match(
+            search_str, flags=flags, na=allow_na
+        )
+        invalid_indices = transformed_data[~matching_indices].index
+    return invalid_indices
+
+
+def get_allele_validation_message(
+    invalid_indices: pd.Series,
+    invalid_col: str,
+    allowed_comb_alleles: list,
+    allowed_ind_alleles: list,
+    fileformat: str,
+) -> tuple:
+    """Creates the error/warning message for the check for invalid alleles
+
+    Args:
+        invalid_indices (pd.Series): the row indices that
+            have invalid alleles
+        invalid_col (str): The column with the invalid values
+        allowed_comb_alleles (list): The list of allowed allele values
+            (can appear in combinations or individually)
+        allowed_ind_alleles (list): The list of allowed allele values
+            (can only appear individually)
+        fileformat (str): Name of the fileformat
+
+    Returns:
+        tuple: The errors and warnings from the allele validation
+               Defaults to blank strings
+    """
+    errors = ""
+    warnings = ""
+    if len(invalid_indices) > 0:
+        errors = (
+            f"{fileformat}: Your {invalid_col} column has invalid allele values. "
+            "This is the list of accepted allele values that can appear individually "
+            f"or in combination with each other: {','.join(allowed_comb_alleles)}.\n"
+            "This is the list of accepted allele values that can only appear individually: "
+            f"{','.join(allowed_ind_alleles)}\n"
+        )
+    return errors, warnings

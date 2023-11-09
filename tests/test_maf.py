@@ -19,7 +19,13 @@ def valid_maf_df():
         dict(
             CHROMOSOME=[1, 2, 3, 4, 5],
             START_POSITION=[1, 2, 3, 4, 2],
-            REFERENCE_ALLELE=["A", "A", "A", "A", "A"],
+            REFERENCE_ALLELE=[
+                "C",
+                "G",
+                "NA",
+                "-",
+                "TAAAGATCGTACAGAA",
+            ],
             TUMOR_SAMPLE_BARCODE=[
                 "GENIE-SAGE-ID1-1",
                 "GENIE-SAGE-ID1-1",
@@ -94,6 +100,10 @@ def test_firstcolumn_validation(maf_class):
         "maf: First column header must be "
         "one of these: CHROMOSOME, HUGO_SYMBOL, "
         "TUMOR_SAMPLE_BARCODE.\n"
+        "maf: Your REFERENCE_ALLELE column has invalid allele values. "
+        "This is the list of accepted allele values that can appear individually "
+        f"or in combination with each other: A,T,C,G,N.\n"
+        "This is the list of accepted allele values that can only appear individually: -\n"
     )
     assert error == expectedErrors
     assert warning == ""
@@ -147,16 +157,20 @@ def test_errors_validation(maf_class):
         "This column must only be these values: 1, 2, 3, 4, 5, 6, 7, 8, 9, "
         "10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, X, Y, MT\n"
         "maf: TUMOR_SAMPLE_BARCODE must start with GENIE-SAGE\n"
+        "maf: Your REFERENCE_ALLELE column has invalid allele values. "
+        "This is the list of accepted allele values that can appear individually "
+        "or in combination with each other: A,T,C,G,N.\n"
+        "This is the list of accepted allele values that can only appear individually: -\n"
+        "maf: Your TUMOR_SEQ_ALLELE2 column has invalid allele values. "
+        "This is the list of accepted allele values that can appear individually "
+        "or in combination with each other: A,T,C,G,N.\n"
+        "This is the list of accepted allele values that can only appear individually: -\n"
     )
     expectedWarnings = (
         "maf: "
         "Does not have the column headers that can give "
         "extra information to the processed maf: "
         "T_REF_COUNT, N_DEPTH.\n"
-        "maf: "
-        "REFERENCE_ALLELE column contains 'NA' values, "
-        "which cannot be placeholders for blank values.  "
-        "Please put in empty strings for blank values.\n"
     )
 
     assert error == expectedErrors
@@ -195,11 +209,12 @@ def test_invalid_validation(maf_class):
         "maf: "
         "TUMOR_SEQ_ALLELE2 can't have any blank or null values.\n"
         "maf: TUMOR_SAMPLE_BARCODE must start with GENIE-SAGE\n"
+        "maf: Your TUMOR_SEQ_ALLELE2 column has invalid allele values. "
+        "This is the list of accepted allele values that can appear individually "
+        "or in combination with each other: A,T,C,G,N.\n"
+        "This is the list of accepted allele values that can only appear individually: -\n"
     )
     expectedWarnings = (
-        "maf: TUMOR_SEQ_ALLELE2 column contains 'NA' values, "
-        "which cannot be placeholders for blank values.  "
-        "Please put in empty strings for blank values.\n"
         "maf: Does not have the column headers that can give "
         "extra information to the processed maf: T_REF_COUNT.\n"
     )
@@ -210,23 +225,10 @@ def test_invalid_validation(maf_class):
 @pytest.mark.parametrize("col", ["temp", "REFERENCE_ALLELE"])
 def test_noerror__check_allele_col(col):
     """Test error and warning is an empty string if REF col isn't passed in"""
-    df = pd.DataFrame(dict(REFERENCE_ALLELE=["A", "A"]))
+    df = pd.DataFrame(dict(REFERENCE_ALLELE=["NA", "A"]))
     error, warning = genie_registry.maf._check_allele_col(df, col)
     assert error == ""
     assert warning == ""
-
-
-def test_warning__check_allele_col():
-    """Test warning occurs when 'NA' string is passed in"""
-    df = pd.DataFrame(dict(TEMP=["NA", "A"]))
-    error, warning = genie_registry.maf._check_allele_col(df, "TEMP")
-    assert error == ""
-    assert warning == (
-        "maf: "
-        "TEMP column contains 'NA' values, "
-        "which cannot be placeholders for blank values.  "
-        "Please put in empty strings for blank values.\n"
-    )
 
 
 def test_error__check_allele_col():
