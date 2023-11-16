@@ -1120,6 +1120,7 @@ def get_cross_validate_bed_files_test_cases():
         },
     ]
 
+
 @pytest.mark.parametrize(
     "test_cases", get_cross_validate_bed_files_test_cases(), ids=lambda x: x["name"]
 )
@@ -1127,7 +1128,9 @@ def test_that_cross_validate_bed_files_exist_returns_correct_msgs(
     clin_class, test_cases
 ):
     clin_class.ancillary_files = test_cases["test_ancillary_files"]
-    missing_files = clin_class._cross_validate_bed_files_exist(test_cases["test_clinical_df"])
+    missing_files = clin_class._cross_validate_bed_files_exist(
+        test_cases["test_clinical_df"]
+    )
     assert Counter(test_cases["expected_missing_files"]) == Counter(missing_files)
 
 
