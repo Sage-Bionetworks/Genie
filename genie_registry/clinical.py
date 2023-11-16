@@ -1016,12 +1016,14 @@ class Clinical(FileTypeFormat):
         """Check that a bed file exist per SEQ_ASSAY_ID value in clinical file"""
         missing_files = []
         exception_params = {"ignore_case": True, "allow_underscore": True}
-        
+
         # standardize and get unique seq assay ids before searching bed files
-        seq_assay_ids = set([
-            validate.standardize_string_for_validation(sq_id, **exception_params)
-            for sq_id in clinicaldf["SEQ_ASSAY_ID"].unique()
-        ])
+        seq_assay_ids = set(
+            [
+                validate.standardize_string_for_validation(sq_id, **exception_params)
+                for sq_id in clinicaldf["SEQ_ASSAY_ID"].unique()
+            ]
+        )
 
         for seq_assay_id in seq_assay_ids:
             bed_files = validate.parse_file_info_in_nested_list(
@@ -1033,7 +1035,7 @@ class Clinical(FileTypeFormat):
                 missing_files.append(f"{seq_assay_id}.bed")
         return missing_files
 
-    def _cross_validate_bed_files_exist_message(self, missing_bed_files : list) -> tuple:
+    def _cross_validate_bed_files_exist_message(self, missing_bed_files: list) -> tuple:
         """Gets the warning/error messages given the missing bed files list
 
         Args:
@@ -1103,7 +1105,9 @@ class Clinical(FileTypeFormat):
             clinicaldf
         )
         missing_bed_files = self._cross_validate_bed_files_exist(clinicaldf)
-        errors_bed, warnings_bed = self._cross_validate_bed_files_exist_message(missing_bed_files)
+        errors_bed, warnings_bed = self._cross_validate_bed_files_exist_message(
+            missing_bed_files
+        )
 
         errors = errors_assay + errors_bed
         warnings = warnings_assay + warnings_bed
