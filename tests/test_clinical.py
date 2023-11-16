@@ -1094,7 +1094,7 @@ def get_cross_validate_bed_files_test_cases():
                 [{"name": "SAGE-1-1.bed", "path": ""}],
                 [{"name": "SAGE-1.bed", "path": ""}],
             ],
-            "expected_missing_files": ["sage-1-2.bed"],
+            "expected_missing_files": ["SAGE-1-2.bed"],
         },
         {
             "name": "no_match",
@@ -1106,7 +1106,7 @@ def get_cross_validate_bed_files_test_cases():
                 [{"name": "SAGE-1-1.bed", "path": ""}],
                 [{"name": "SAGE-1.bed", "path": ""}],
             ],
-            "expected_missing_files": ["sage-1-2.bed", "sage-1-3.bed"],
+            "expected_missing_files": ["SAGE-1-2.bed", "SAGE-1-3.bed"],
         },
         {
             "name": "no_bed_files",
@@ -1116,7 +1116,7 @@ def get_cross_validate_bed_files_test_cases():
             "test_ancillary_files": [
                 [{"name": "SAGE-1.txt", "path": ""}],
             ],
-            "expected_missing_files": ["sage-1-2.bed", "sage-1-3.bed"],
+            "expected_missing_files": ["SAGE-1-2.bed", "SAGE-1-3.bed"],
         },
     ]
 

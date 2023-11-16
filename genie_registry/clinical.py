@@ -1032,7 +1032,7 @@ class Clinical(FileTypeFormat):
                 **exception_params,
             )
             if not bed_files["files"]:
-                missing_files.append(f"{seq_assay_id}.bed")
+                missing_files.append(f"{seq_assay_id.upper()}.bed")
         return missing_files
 
     def _cross_validate_bed_files_exist_message(self, missing_bed_files: list) -> tuple:
