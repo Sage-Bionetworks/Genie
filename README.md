@@ -64,17 +64,15 @@ These are instructions on how you would develop and test the pipeline locally.
     pip install -r requirements-dev.txt
     ```
 
-If you are having trouble with the above, try installing via `pipenv`
+    If you are having trouble with the above, try installing via `pipenv`
 
-1. Specify a python version that is supported by this repo:
+    1. Specify a python version that is supported by this repo: 
+        ```pipenv --python <python_version>```
 
-```pipenv --python <python_version>```
+    1. [pipenv install from requirements file](https://docs.pipenv.org/en/latest/advanced.html#importing-from-requirements-txt)
 
-1. [pipenv install from requirements file](https://docs.pipenv.org/en/latest/advanced.html#importing-from-requirements-txt)
-
-1. Activate your `pipenv`:
-
-```pipenv shell```
+    1. Activate your `pipenv`:
+        ```pipenv shell```
 
 1. Configure the Synapse client to authenticate to Synapse.
     1. Create a Synapse [Personal Access token (PAT)](https://help.synapse.org/docs/Managing-Your-Account.2055405596.html#ManagingYourAccount-PersonalAccessTokens).
