@@ -140,7 +140,7 @@ Follow gitflow best practices as linked above.
 
 ### Modifying Docker
 
-Follow this section when modifying the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/develop/Dockerfile)
+Follow this section when modifying the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile):
 
 1. Make sure you have your synapse config setup in your working directory
 1. ```docker build -f Dockerfile -t genie-docker .```
