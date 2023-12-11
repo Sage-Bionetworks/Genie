@@ -94,6 +94,10 @@ This package uses [semantic versioning](https://semver.org/) for releasing new v
 
 ### Testing
 
+#### Running test pipeline
+
+Make sure to run each of the [pipeline steps here](README.md#developing-locally) on the test pipeline and verify that your pipeline runs as expected. This is __not__ automatically run by Github Actions and have to be manually run.
+
 #### Running tests
 
 This package uses [`pytest`](https://pytest.org/en/latest/) to run tests. The test code is located in the [tests](./tests) subdirectory.
@@ -134,6 +138,17 @@ Follow gitflow best practices as linked above.
 1. Merge `main` back into `develop`
 1. Push `develop`
 
-### DockerHub
+### Modifying Docker
+
+Follow this section when modifying the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/develop/Dockerfile)
+
+1. Make sure you have your synapse config setup in your working directory
+1. ```docker build -f Dockerfile -t genie-docker .```
+1. ```docker run --rm -it -e DISABLE_SSL=true -p 4040:4040 -p 18080:18080 -v ~/.synapseConfig:/root/.synapseConfig genie-docker```
+1. Run [test code](README.md#developing-locally) relevant to the dockerfile changes to make sure changes are present and working
+1. Once changes are tested, follow [genie contributing guidelines](#developing) for adding it to the repo
+1. Once deployed to main, make sure docker image was successfully deployed remotely (our docker image gets automatically deployed) [here](https://hub.docker.com/repository/docker/sagebionetworks/genie/builds)
+
+#### Dockerhub
 
 This repository does not use github actions to push docker images.  By adding the `sagebiodockerhub` github user as an Admin to this GitHub repository, we can configure an automated build in DockerHub.  You can view the builds [here](https://hub.docker.com/repository/docker/sagebionetworks/genie/builds).  To get admin access to the DockerHub repository, ask Sage IT to be added to the `genieadmin` DockerHub team.
