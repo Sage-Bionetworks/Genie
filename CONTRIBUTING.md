@@ -142,9 +142,9 @@ Follow gitflow best practices as linked above.
 
 Follow this section when modifying the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile):
 
-1. Make sure you have your synapse config setup in your working directory
-1. ```docker build -f Dockerfile -t genie-docker .```
-1. ```docker run --rm -it -e DISABLE_SSL=true -p 4040:4040 -p 18080:18080 -v ~/.synapseConfig:/root/.synapseConfig genie-docker```
+1. Have your synapse authentication token handy
+1. ```docker build -f Dockerfile -t <some_docker_image_name> .```
+1. ```docker run --rm -it -e SYNAPSE_AUTH_TOKEN=$YOUR_SYNAPSE_TOKEN <some_docker_image_name>```
 1. Run [test code](README.md#developing-locally) relevant to the dockerfile changes to make sure changes are present and working
 1. Once changes are tested, follow [genie contributing guidelines](#developing) for adding it to the repo
 1. Once deployed to main, make sure docker image was successfully deployed remotely (our docker image gets automatically deployed) [here](https://hub.docker.com/repository/docker/sagebionetworks/genie/builds)
