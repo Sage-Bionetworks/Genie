@@ -57,7 +57,7 @@ def build_parser():
         type=str,
         nargs="+",
         help="File(s) that you are validating."
-        "If you validation your clinical files and you have both sample and "
+        "When validating clinical files and you have separate sample and "
         "patient files, you must provide both",
     )
 
@@ -68,11 +68,16 @@ def build_parser():
         type=str,
         nargs="+",
         default=["genie_registry"],
-        help="Python package name(s) to get valid file formats from (default: %(default)s).",
+        help="FOR DEVELOPER USE ONLY: Python package name(s) to get valid file formats"
+        "from (default: %(default)s).",
     )
 
     parser_validate.add_argument(
-        "--oncotree_link", type=str, help="Link to oncotree code"
+        "--oncotree_link", type=str, help="Specify an oncotree url when validating your clinical"
+        "file with a different oncotree code version"
+        "(e.g: https://oncotree.info/api/tumorTypes/tree?version=oncotree_2021_11_02)"
+        "By default the oncotree version used will be specified in this"
+        "entity: syn13890902",
     )
 
     validate_group = parser_validate.add_mutually_exclusive_group()
@@ -80,13 +85,11 @@ def build_parser():
     validate_group.add_argument(
         "--filetype",
         type=str,
-        help="By default, the validator uses the filename to match "
+        help="Use the --filetype FILETYPE parameter to ignore the file naming validation."
+        "By default, the validator uses the filename to match "
         "the file format.  If your filename is incorrectly named, "
-        "it will be invalid.  If you know the file format you are "
-        "validating, you can ignore the filename validation and skip "
-        "to file content validation. "
-        "Note, the filetypes with SP at "
-        "the end are for special sponsored projects.",
+        "it will be invalid."
+        "Options: [maf, vcf, clinical, assayinfo, bed, cna, sv, seg, mutationsInCis]",
     )
 
     validate_group.add_argument(
@@ -103,13 +106,14 @@ def build_parser():
         "--project_id",
         type=str,
         default="syn3380222",
-        help="Synapse Project ID where data is stored. (default: %(default)s).",
+        help="FOR DEVELOPER USE ONLY: Synapse Project ID where data is stored."
+        "(default: %(default)s).",
     )
 
     parser_validate.add_argument(
         "--nosymbol-check",
         action="store_true",
-        help="Do not check hugo symbols of fusion and cna file",
+        help="Do not check hugo symbols of structural variant and cna file",
     )
 
     parser_validate.set_defaults(func=validate._perform_validate)
