@@ -44,51 +44,34 @@ def build_parser():
 
     subparsers = parser.add_subparsers(
         title="commands",
-        description="The following commands are available:",
-        help='For additional help: "genie <COMMAND> -h"',
+        description="The following commands are available: ",
+        help='For additional help use: "genie <COMMAND> -h"',
     )
 
     parser_validate = subparsers.add_parser(
-        "validate", help="Validates GENIE file formats"
+        "validate", help="Validates GENIE file formats. "
     )
 
     parser_validate.add_argument(
         "filepath",
         type=str,
         nargs="+",
-        help="File(s) that you are validating."
-        "When validating clinical files and you have separate sample and "
-        "patient files, you must provide both",
+        help="File(s) that you are validating. "
+        "If you have separate clinical sample and patient files, "
+        "you must provide both files when validating.",
     )
 
     parser_validate.add_argument("center", type=str, help="Contributing Centers")
-
-    parser_validate.add_argument(
-        "--format_registry_packages",
-        type=str,
-        nargs="+",
-        default=["genie_registry"],
-        help="FOR DEVELOPER USE ONLY: Python package name(s) to get valid file formats"
-        "from (default: %(default)s).",
-    )
-
-    parser_validate.add_argument(
-        "--oncotree_link", type=str, help="Specify an oncotree url when validating your clinical"
-        "file with a different oncotree code version"
-        "(e.g: https://oncotree.info/api/tumorTypes/tree?version=oncotree_2021_11_02)"
-        "By default the oncotree version used will be specified in this"
-        "entity: syn13890902",
-    )
 
     validate_group = parser_validate.add_mutually_exclusive_group()
 
     validate_group.add_argument(
         "--filetype",
         type=str,
-        help="Use the --filetype FILETYPE parameter to ignore the file naming validation."
+        help="Use the --filetype {FILETYPE} parameter to ignore filename validation. "
         "By default, the validator uses the filename to match "
         "the file format.  If your filename is incorrectly named, "
-        "it will be invalid."
+        "it will be invalid. "
         "Options: [maf, vcf, clinical, assayinfo, bed, cna, sv, seg, mutationsInCis]",
     )
 
@@ -101,19 +84,37 @@ def build_parser():
         "to this directory.",
     )
 
-    # TODO: remove this default when private genie project is ready
     parser_validate.add_argument(
-        "--project_id",
-        type=str,
-        default="syn3380222",
-        help="FOR DEVELOPER USE ONLY: Synapse Project ID where data is stored."
-        "(default: %(default)s).",
+        "--oncotree_link", type=str, help="Specify an oncotree url when validating your clinical "
+        "file "
+        "(e.g: https://oncotree.info/api/tumorTypes/tree?version=oncotree_2021_11_02). "
+        "By default the oncotree version used will be specified in this entity: "
+        "syn13890902",
     )
 
     parser_validate.add_argument(
         "--nosymbol-check",
         action="store_true",
-        help="Do not check hugo symbols of structural variant and cna file",
+        help="Ignores specific post-processing validation criteria related to HUGO symbols "
+        "in the structural variant and cna files.",
+    )
+
+    # TODO: remove this default when private genie project is ready
+    parser_validate.add_argument(
+        "--project_id",
+        type=str,
+        default="syn3380222",
+        help="FOR DEVELOPER USE ONLY: Synapse Project ID where data is stored. "
+        "(default: %(default)s).",
+    )
+
+    parser_validate.add_argument(
+        "--format_registry_packages",
+        type=str,
+        nargs="+",
+        default=["genie_registry"],
+        help="FOR DEVELOPER USE ONLY: Python package name(s) to get valid file formats "
+        "from (default: %(default)s).",
     )
 
     parser_validate.set_defaults(func=validate._perform_validate)
