@@ -104,11 +104,13 @@ def test_process_mutation_workflow(syn, genie_config):
             "syn22053204",
             ifcollision="overwrite.local",
             downloadLocation=genie_annotation_pkg,
+            version=1, #TODO: This should pull from a config file in the future
         ),
         call(
             "syn22084320",
             ifcollision="overwrite.local",
             downloadLocation=genie_annotation_pkg,
+            version=13, #TODO: This should pull from a config file in the future
         ),
     ]
     center = "SAGE"
@@ -148,6 +150,7 @@ def test_annotate_mutation():
     workdir = "working/dir/path"
     mktemp_calls = [call(dir=workdir)] * 2
     input_dir = "input/dir"
+    error_dir = "input/dir/SAGE_error_reports"
     with patch.object(
         tempfile, "mkdtemp", return_value=input_dir
     ) as patch_mktemp, patch.object(
@@ -169,6 +172,7 @@ def test_annotate_mutation():
                 "annotation/pkg/path/annotation_suite_wrapper.sh",
                 f"-i={input_dir}",
                 f"-o={input_dir}",
+                f"-e={error_dir}",
                 f"-m=input/dir/data_mutations_extended_{center}.txt",
                 f"-c={center}",
                 "-s=WXS",
