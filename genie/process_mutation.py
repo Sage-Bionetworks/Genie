@@ -250,6 +250,7 @@ def annotate_mutation(
     """
     input_files_dir = tempfile.mkdtemp(dir=workdir)
     output_files_dir = tempfile.mkdtemp(dir=workdir)
+    error_dir = os.path.join(output_files_dir, f"{center}_error_reports")
 
     for mutation_file in mutation_files:
         move_mutation(mutation_file, input_files_dir)
@@ -262,6 +263,7 @@ def annotate_mutation(
         os.path.join(genie_annotation_pkg, "annotation_suite_wrapper.sh"),
         f"-i={input_files_dir}",
         f"-o={output_files_dir}",
+        f"-e={error_dir}",
         f"-m={merged_maf_path}",
         f"-c={center}",
         "-s=WXS",
