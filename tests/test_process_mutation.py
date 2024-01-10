@@ -175,7 +175,6 @@ def test_process_mutation_workflow(syn, genie_config, annotation_paths):
             full_error_report=sample_error_report,
             syn=syn,
             errors_folder_synid="syn53239079",
-            release="test",
         )
         assert maf == annotation_paths.merged_maf_path
 
@@ -242,13 +241,11 @@ class TestAnnotationErrorReports:
                 full_error_report=test_error_report,
                 syn=syn,
                 errors_folder_synid=errors_folder_synid,
-                release="test",
             )
             patch_store.assert_called_once_with(
                 syn=syn,
                 filepath="failed_annotations_report.tsv",
                 parentid=errors_folder_synid,
-                version_comment="test",
             )
 
 

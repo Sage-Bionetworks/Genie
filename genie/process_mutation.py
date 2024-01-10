@@ -241,7 +241,6 @@ def process_mutation_workflow(
         full_error_report=full_error_report,
         syn=syn,
         errors_folder_synid=genie_config["center_config"][center]["errorsSynId"],
-        release="test",
     )
     return annotation_paths.merged_maf_path
 
@@ -304,7 +303,6 @@ def store_annotation_error_reports(
     full_error_report: pd.DataFrame,
     syn: Synapse,
     errors_folder_synid: str,
-    release: str,
 ) -> None:
     """Stores the annotation error reports to synapse
 
@@ -313,14 +311,12 @@ def store_annotation_error_reports(
         syn (synapseclient.Synapse): synapse client object
         errors_folder_synid (str): synapse id of error report folder
             to store reports in
-        release (str): name of the release for this processing run
     """
     full_error_report.to_csv("failed_annotations_report.tsv", sep="\t", index=False)
     load.store_file(
         syn=syn,
         filepath="failed_annotations_report.tsv",
         parentid=errors_folder_synid,
-        version_comment=release,
     )
 
 
