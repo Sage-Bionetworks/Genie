@@ -202,12 +202,14 @@ def process_mutation_workflow(
         "syn22053204",
         ifcollision="overwrite.local",
         downloadLocation=genie_config["genie_annotation_pkg"],
+        # version=1,  # TODO: This should pull from a config file in the future
     )
     # Genome Nexus Jar file
     syn.get(
         "syn22084320",
         ifcollision="overwrite.local",
         downloadLocation=genie_config["genie_annotation_pkg"],
+        # version=13,  # TODO: This should pull from a config file in the future
     )
 
     annotated_maf_path = annotate_mutation(
@@ -248,6 +250,7 @@ def annotate_mutation(
     """
     input_files_dir = tempfile.mkdtemp(dir=workdir)
     output_files_dir = tempfile.mkdtemp(dir=workdir)
+    error_dir = os.path.join(output_files_dir, f"{center}_error_reports")
 
     for mutation_file in mutation_files:
         move_mutation(mutation_file, input_files_dir)
@@ -260,6 +263,7 @@ def annotate_mutation(
         os.path.join(genie_annotation_pkg, "annotation_suite_wrapper.sh"),
         f"-i={input_files_dir}",
         f"-o={output_files_dir}",
+        f"-e={error_dir}",
         f"-m={merged_maf_path}",
         f"-c={center}",
         "-s=WXS",
