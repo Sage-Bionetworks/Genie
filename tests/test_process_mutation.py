@@ -11,7 +11,7 @@ import pandas as pd
 import pytest
 import synapseclient
 
-from genie import load, process_mutation
+from genie import extract, load, process_mutation
 
 
 def test_format_maf():
@@ -102,13 +102,24 @@ class TestDtype:
 def annotation_paths():
     Filepaths = namedtuple(
         "Filepaths",
-        ["input_files_dir", "output_files_dir", "error_dir", "merged_maf_path"],
+        [
+            "input_files_dir",
+            "output_files_dir",
+            "error_dir",
+            "merged_maf_path",
+            "narrow_maf_path",
+            "full_maf_path",
+            "full_error_report_path",
+        ],
     )
     yield Filepaths(
         input_files_dir="input/dir",
         output_files_dir="input/dir",
         error_dir="input/dir/SAGE_error_reports",
         merged_maf_path="input/dir/data_mutations_extended_SAGE.txt",
+        narrow_maf_path="input/SAGE/staging/data_mutations_extended_SAGE_MAF_narrow.txt",
+        full_maf_path="input/SAGE/staging/data_mutations_extended_SAGE.txt",
+        full_error_report_path="input/SAGE/staging/failed_annotations_report.txt",
     )
 
 
@@ -134,6 +145,7 @@ def test_process_mutation_workflow(syn, genie_config, annotation_paths):
     ]
     center = "SAGE"
     workdir = "working/dir/path"
+    maf_table_id = "syn22493903"
     sample_error_report = pd.DataFrame({"col1": [1, 2, 3], "col2": [2, 3, 4]})
     with patch.object(
         process_mutation, "create_annotation_paths", return_value=annotation_paths
@@ -146,6 +158,8 @@ def test_process_mutation_workflow(syn, genie_config, annotation_paths):
         "concat_annotation_error_reports",
         return_value=sample_error_report,
     ) as patch_concat_error, patch.object(
+        process_mutation, "check_annotation_error_reports"
+    ) as patch_check_error, patch.object(
         process_mutation, "store_annotation_error_reports"
     ) as patch_store_error:
         maf = process_mutation.process_mutation_workflow(
@@ -162,14 +176,19 @@ def test_process_mutation_workflow(syn, genie_config, annotation_paths):
         patch_split.assert_called_once_with(
             syn=syn,
             center=center,
-            maf_tableid="syn22493903",
-            annotated_maf_path=annotation_paths.merged_maf_path,
+            maf_tableid=maf_table_id,
+            annotated_maf_path=annotation_paths,
             flatfiles_synid="syn12279903",
-            workdir=workdir,
         )
         patch_concat_error.assert_called_once_with(
             center=center,
             input_dir=annotation_paths.error_dir,
+        )
+        patch_check_error.assert_called_once_with(
+            syn=syn,
+            maf_table_synid=maf_table_id,
+            full_error_report=sample_error_report,
+            center=center,
         )
         patch_store_error.assert_called_once_with(
             full_error_report=sample_error_report,
@@ -224,6 +243,46 @@ class TestAnnotationErrorReports:
             }
         )
 
+    def test_check_annotation_error_reports_passes_if_match(
+        self, syn, test_error_report
+    ):
+        maf_table_synid = "synZZZZ"
+        with patch.object(
+            extract, "get_syntabledf", return_value=test_error_report
+        ) as patch_get_syntabledf:
+            process_mutation.check_annotation_error_reports(
+                syn=syn,
+                maf_table_synid="synZZZZ",
+                full_error_report=test_error_report,
+                center="SAGE",
+            )
+            patch_get_syntabledf.assert_called_once_with(
+                syn=syn,
+                query_string=f"SELECT * FROM {maf_table_synid} "
+                "WHERE Center = 'SAGE' AND "
+                "Annotation_Status = 'FAILED'",
+            )
+
+    def test_check_annotation_error_reports_throws_assertion_if_no_match(
+        self, syn, test_error_report
+    ):
+        with patch.object(
+            extract,
+            "get_syntabledf",
+            return_value=pd.DataFrame({"test": [1], "test2": [2]}),
+        ):
+            with pytest.raises(
+                AssertionError,
+                match="Genome nexus's failed annotations error report rows doesn't match"
+                "maf table's failed annotations for SAGE",
+            ):
+                process_mutation.check_annotation_error_reports(
+                    syn=syn,
+                    maf_table_synid="synZZZZ",
+                    full_error_report=test_error_report,
+                    center="SAGE",
+                )
+
     def test_concat_annotation_error_reports_returns_expected(self, test_error_report):
         compiled_report = process_mutation.concat_annotation_error_reports(
             input_dir="source_test_directory",
@@ -236,15 +295,17 @@ class TestAnnotationErrorReports:
 
     def test_store_annotation_error_reports(self, syn, test_error_report):
         errors_folder_synid = "syn11111"
+        full_error_report_path = "test.tsv"
         with patch.object(load, "store_file", return_value=None) as patch_store:
             process_mutation.store_annotation_error_reports(
                 full_error_report=test_error_report,
+                full_error_report_path=full_error_report_path,
                 syn=syn,
                 errors_folder_synid=errors_folder_synid,
             )
             patch_store.assert_called_once_with(
                 syn=syn,
-                filepath="failed_annotations_report.tsv",
+                filepath=full_error_report_path,
                 parentid=errors_folder_synid,
             )
 
@@ -315,7 +376,7 @@ def test_append_or_createdf_create_file_0size():
         patch_tocsv.assert_called_once_with(temp_file.name, sep="\t", index=False)
 
 
-def test_split_and_store_maf(syn):
+def test_split_and_store_maf(syn, annotation_paths):
     """Integration test, check splitting and storing of maf functions are
     called"""
     # getTableColumns
@@ -352,21 +413,20 @@ def test_split_and_store_maf(syn):
             syn=syn,
             center=center,
             maf_tableid="sy12345",
-            annotated_maf_path=annotated_maf_path,
+            annotation_paths=annotation_paths,
             flatfiles_synid="syn2345",
-            workdir="workdir/path",
         )
         patch_getcols.assert_called_once_with("sy12345")
         patch_readcsv.assert_called_once_with(
-            annotated_maf_path, sep="\t", chunksize=100000, comment="#"
+            annotation_paths.merged_maf_path, sep="\t", chunksize=100000, comment="#"
         )
         patch_format.assert_called_once_with(exampledf, center)
 
         assert patch_append.call_count == 2
 
         patch_store_table.assert_called_once_with(
-            syn=syn, filepath=narrow_maf_path, tableid="sy12345"
+            syn=syn, filepath=annotation_paths.narrow_maf_path, tableid="sy12345"
         )
         patch_store_file.assert_called_once_with(
-            syn=syn, filepath=full_maf_path, parentid="syn2345"
+            syn=syn, filepath=annotation_paths.full_maf_path, parentid="syn2345"
         )
