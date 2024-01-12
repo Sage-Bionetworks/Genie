@@ -177,7 +177,7 @@ def test_process_mutation_workflow(syn, genie_config, annotation_paths):
             syn=syn,
             center=center,
             maf_tableid=maf_table_id,
-            annotated_maf_path=annotation_paths,
+            annotation_paths=annotation_paths,
             flatfiles_synid="syn12279903",
         )
         patch_concat_error.assert_called_once_with(
@@ -192,6 +192,7 @@ def test_process_mutation_workflow(syn, genie_config, annotation_paths):
         )
         patch_store_error.assert_called_once_with(
             full_error_report=sample_error_report,
+            full_error_report_path=annotation_paths.full_error_report_path,
             syn=syn,
             errors_folder_synid="syn53239079",
         )
