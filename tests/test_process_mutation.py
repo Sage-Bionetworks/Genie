@@ -123,13 +123,13 @@ def test_process_mutation_workflow(syn, genie_config, annotation_paths):
             "syn22053204",
             ifcollision="overwrite.local",
             downloadLocation=genie_annotation_pkg,
-            version=1,  # TODO: This should pull from a config file in the future
+            # version=1,  # TODO: This should pull from a config file in the future
         ),
         call(
             "syn22084320",
             ifcollision="overwrite.local",
             downloadLocation=genie_annotation_pkg,
-            version=13,  # TODO: This should pull from a config file in the future
+            # version=13,  # TODO: This should pull from a config file in the future
         ),
     ]
     center = "SAGE"

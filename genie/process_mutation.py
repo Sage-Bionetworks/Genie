@@ -203,14 +203,14 @@ def process_mutation_workflow(
         "syn22053204",
         ifcollision="overwrite.local",
         downloadLocation=genie_config["genie_annotation_pkg"],
-        version=1,  # TODO: This should pull from a config file in the future
+        # version=1,  # TODO: This should pull from a config file in the future
     )
     # Genome Nexus Jar file
     syn.get(
         "syn22084320",
         ifcollision="overwrite.local",
         downloadLocation=genie_config["genie_annotation_pkg"],
-        version=13,  # TODO: This should pull from a config file in the future
+        # version=13,  # TODO: This should pull from a config file in the future
     )
     annotation_paths = create_annotation_paths(center=center, workdir=workdir)
     annotate_mutation(
