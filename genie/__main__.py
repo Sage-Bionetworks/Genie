@@ -85,7 +85,9 @@ def build_parser():
     )
 
     parser_validate.add_argument(
-        "--oncotree_link", type=str, help="Specify an oncotree url when validating your clinical "
+        "--oncotree_link",
+        type=str,
+        help="Specify an oncotree url when validating your clinical "
         "file "
         "(e.g: https://oncotree.info/api/tumorTypes/tree?version=oncotree_2021_11_02). "
         "By default the oncotree version used will be specified in this entity: "
