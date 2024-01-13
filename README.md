@@ -66,7 +66,7 @@ These are instructions on how you would develop and test the pipeline locally.
 
     If you are having trouble with the above, try installing via `pipenv`
 
-    1. Specify a python version that is supported by this repo: 
+    1. Specify a python version that is supported by this repo:
         ```pipenv --python <python_version>```
 
     1. [pipenv install from requirements file](https://docs.pipenv.org/en/latest/advanced.html#importing-from-requirements-txt)

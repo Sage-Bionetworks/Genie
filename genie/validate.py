@@ -95,8 +95,13 @@ class ValidationHelper(object):
             valid: Boolean value of validation status
         """
         if self.file_type not in self._format_registry:
+            allowed_filetypes = list(self._format_registry.keys())
+            error_message = (
+                f"Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally. "
+                f"If specifying filetype, options are: [{', '.join(allowed_filetypes)}]\n"
+            )
             valid_result_cls = example_filetype_format.ValidationResults(
-                errors="Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally",
+                errors=error_message,
                 warnings="",
             )
         else:
