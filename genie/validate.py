@@ -98,7 +98,7 @@ class ValidationHelper(object):
             allowed_filetypes = list(self._format_registry.keys())
             error_message = (
                 f"Your filename is incorrect! Please change your filename before you run the validator or specify --filetype if you are running the validator locally. "
-                f"If specifying filetype, options are: [{', '.join(allowed_filetypes)}]"
+                f"If specifying filetype, options are: [{', '.join(allowed_filetypes)}]\n"
             )
             valid_result_cls = example_filetype_format.ValidationResults(
                 errors=error_message,
