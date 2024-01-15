@@ -112,7 +112,7 @@ KNOWN_STRING_COLS = [
     "PICK",
     "Exon_Number",
     "genomic_location_explanation",
-    "Annotation_Status"
+    "Annotation_Status",
 ]
 
 
