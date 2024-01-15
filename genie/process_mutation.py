@@ -105,11 +105,14 @@ KNOWN_STRING_COLS = [
     "CDNA_CHANGE",
     "AMINO_ACID_CHANGE",
     "TRANSCRIPT",
+    "transcript",
     "STRAND_VEP",
     "HGNC_ID",
     "PUBMED",
     "PICK",
     "Exon_Number",
+    "genomic_location_explanation",
+    "Annotation_Status"
 ]
 
 
