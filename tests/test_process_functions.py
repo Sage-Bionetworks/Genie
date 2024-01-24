@@ -2,7 +2,12 @@ from unittest.mock import Mock, patch
 import uuid
 
 import pandas as pd
-from pandas.api.types import is_float_dtype, is_integer_dtype, is_string_dtype
+from pandas.api.types import (
+    is_bool_dtype,
+    is_float_dtype,
+    is_integer_dtype,
+    is_string_dtype,
+)
 from pandas.testing import assert_frame_equal
 import pytest
 import synapseclient
@@ -559,6 +564,26 @@ def get_create_missing_columns_test_cases():
             "expected_na_count": 0,
         },
         {
+            "name": "bool_na",
+            "test_input": pd.DataFrame({"col1": [True, False, None]}),
+            "test_schema": {"col2": "boolean"},
+            "expected_output": pd.DataFrame(
+                {"col2": [None, None, None]}, dtype=pd.BooleanDtype()
+            ),
+            "expected_dtype": is_bool_dtype,
+            "expected_na_count": 3,
+        },
+        {
+            "name": "bool_no_na",
+            "test_input": pd.DataFrame({"col1": [True, False, None]}),
+            "test_schema": {"col1": "boolean"},
+            "expected_output": pd.DataFrame(
+                {"col1": [True, False, None]}, dtype=pd.BooleanDtype()
+            ),
+            "expected_dtype": is_bool_dtype,
+            "expected_na_count": 1,
+        },
+        {
             "name": "empty_col",
             "test_input": pd.DataFrame({"col1": []}),
             "test_schema": {"col2": "string"},
@@ -605,7 +630,7 @@ def test_that_create_missing_columns_gets_expected_output_with_single_col_df(
         dataset=test_cases["test_input"], schema=test_cases["test_schema"]
     )
     assert_frame_equal(result, test_cases["expected_output"], check_exact=True)
-    assert test_cases["expected_dtype"](result.iloc[:, 0].dtype)
+    assert test_cases["expected_dtype"](result.iloc[:, 0])
     assert result.isna().sum().sum() == test_cases["expected_na_count"]
 
 
@@ -615,6 +640,7 @@ def test_that_create_missing_columns_returns_expected_output_with_multi_col_df()
             "col2": ["str1", "str2", "str3"],
             "col1": [2, 3, 4],
             "col3": [2.0, 3.0, float("nan")],
+            "col7": [True, False, None],
         }
     )
     test_schema = {
@@ -624,6 +650,8 @@ def test_that_create_missing_columns_returns_expected_output_with_multi_col_df()
         "col4": "integer",
         "col5": "string",
         "col6": "float",
+        "col7": "boolean",
+        "col8": "boolean",
     }
     result = process_functions.create_missing_columns(
         dataset=test_input, schema=test_schema
@@ -636,10 +664,14 @@ def test_that_create_missing_columns_returns_expected_output_with_multi_col_df()
             "col4": [None, None, None],
             "col5": ["", "", ""],
             "col6": [float("nan"), float("nan"), float("nan")],
+            "col7": [True, False, None],
+            "col8": [None, None, None],
         }
     )
     expected_output["col1"] = expected_output["col1"].astype("Int64")
     expected_output["col4"] = expected_output["col4"].astype("Int64")
+    expected_output["col7"] = expected_output["col7"].astype(pd.BooleanDtype())
+    expected_output["col8"] = expected_output["col8"].astype(pd.BooleanDtype())
 
     assert result["col1"].dtype == pd.Int64Dtype()
     assert is_string_dtype(result["col2"])
@@ -647,6 +679,8 @@ def test_that_create_missing_columns_returns_expected_output_with_multi_col_df()
     assert result["col4"].dtype == pd.Int64Dtype()
     assert is_string_dtype(result["col5"])
     assert is_float_dtype(result["col6"])
-    assert result.isna().sum().sum() == 7
+    assert result["col7"].dtype == pd.BooleanDtype()
+    assert result["col8"].dtype == pd.BooleanDtype()
+    assert result.isna().sum().sum() == 11
 
     assert_frame_equal(result, expected_output, check_exact=True)

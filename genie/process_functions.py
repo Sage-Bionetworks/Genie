@@ -968,12 +968,15 @@ def create_missing_columns(dataset: pd.DataFrame, schema: dict) -> pd.Series:
         "string": "",
         "integer": None,
         "float": float("nan"),
+        "boolean": None,
     }
     for column, data_type in schema.items():
         if column not in dataset.columns:
             dataset = dataset.assign(**{column: missing_values[data_type]})
 
-        # only way to preserve NAs for integer based columns in pandas
+        # only way to preserve NAs for these specific dtype columns
         if data_type == "integer":
             dataset[column] = dataset[column].astype("Int64")
+        elif data_type == "boolean":
+            dataset[column] = dataset[column].astype(pd.BooleanDtype())
     return dataset[list(schema.keys())]
