@@ -2,6 +2,8 @@ from unittest.mock import Mock, patch
 import uuid
 
 import pandas as pd
+from pandas.api.types import is_float_dtype, is_integer_dtype, is_string_dtype
+from pandas.testing import assert_frame_equal
 import pytest
 import synapseclient
 
@@ -500,3 +502,151 @@ class TestCheckColAndValues:
         )
         assert error == ""
         assert warning == ""
+
+
+def get_create_missing_columns_test_cases():
+    return [
+        {
+            "name": "str_no_na",
+            "test_input": pd.DataFrame({"col1": ["str1", "str2", ""]}),
+            "test_schema": {"col1": "string"},
+            "expected_output": pd.DataFrame({"col1": ["str1", "str2", ""]}),
+            "expected_dtype": is_string_dtype,
+            "expected_na_count": 0,
+        },
+        {
+            "name": "str_na",
+            "test_input": pd.DataFrame({"col1": ["str1", "str2", ""]}),
+            "test_schema": {"col2": "string"},
+            "expected_output": pd.DataFrame({"col2": ["", "", ""]}),
+            "expected_dtype": is_string_dtype,
+            "expected_na_count": 0,
+        },
+        {
+            "name": "float_na",
+            "test_input": pd.DataFrame({"col1": ["str1", "str2", ""]}),
+            "test_schema": {"col2": "float"},
+            "expected_output": pd.DataFrame(
+                {"col2": [float("nan"), float("nan"), float("nan")]}
+            ),
+            "expected_dtype": is_float_dtype,
+            "expected_na_count": 3,
+        },
+        {
+            "name": "float_no_na",
+            "test_input": pd.DataFrame({"col1": [1.0, 2.0, float("nan")]}),
+            "test_schema": {"col1": "float"},
+            "expected_output": pd.DataFrame({"col1": [1.0, 2.0, float("nan")]}),
+            "expected_dtype": is_float_dtype,
+            "expected_na_count": 1,
+        },
+        {
+            "name": "int_na",
+            "test_input": pd.DataFrame({"col1": [2, 3, 4]}),
+            "test_schema": {"col2": "integer"},
+            "expected_output": pd.DataFrame(
+                {"col2": [None, None, None]}, dtype=pd.Int64Dtype()
+            ),
+            "expected_dtype": is_integer_dtype,
+            "expected_na_count": 3,
+        },
+        {
+            "name": "int_no_na",
+            "test_input": pd.DataFrame({"col1": [2, 3, 4]}),
+            "test_schema": {"col1": "integer"},
+            "expected_output": pd.DataFrame({"col1": [2, 3, 4]}, dtype=pd.Int64Dtype()),
+            "expected_dtype": is_integer_dtype,
+            "expected_na_count": 0,
+        },
+        {
+            "name": "empty_col",
+            "test_input": pd.DataFrame({"col1": []}),
+            "test_schema": {"col2": "string"},
+            "expected_output": pd.DataFrame({"col2": []}, dtype=str),
+            "expected_dtype": is_string_dtype,
+            "expected_na_count": 0,
+        },
+        {
+            "name": "empty_df",
+            "test_input": pd.DataFrame({}),
+            "test_schema": {"col1": "float"},
+            "expected_output": pd.DataFrame({"col1": []}, index=[]),
+            "expected_dtype": is_float_dtype,
+            "expected_na_count": 0,
+        },
+        {
+            "name": "empty_col_int",
+            "test_input": pd.DataFrame({"col1": []}),
+            "test_schema": {"col2": "integer"},
+            "expected_output": pd.DataFrame({"col2": []}, dtype=pd.Int64Dtype()),
+            "expected_dtype": is_integer_dtype,
+            "expected_na_count": 0,
+        },
+        {
+            "name": "empty_df_int",
+            "test_input": pd.DataFrame({"col1": []}),
+            "test_schema": {"col2": "integer"},
+            "expected_output": pd.DataFrame({"col2": []}, dtype=pd.Int64Dtype()),
+            "expected_dtype": is_integer_dtype,
+            "expected_na_count": 0,
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_cases",
+    get_create_missing_columns_test_cases(),
+    ids=lambda x: x["name"],
+)
+def test_that_create_missing_columns_gets_expected_output_with_single_col_df(
+    test_cases,
+):
+    result = process_functions.create_missing_columns(
+        dataset=test_cases["test_input"], schema=test_cases["test_schema"]
+    )
+    assert_frame_equal(result, test_cases["expected_output"], check_exact=True)
+    assert test_cases["expected_dtype"](result.iloc[:, 0].dtype)
+    assert result.isna().sum().sum() == test_cases["expected_na_count"]
+
+
+def test_that_create_missing_columns_returns_expected_output_with_multi_col_df():
+    test_input = pd.DataFrame(
+        {
+            "col2": ["str1", "str2", "str3"],
+            "col1": [2, 3, 4],
+            "col3": [2.0, 3.0, float("nan")],
+        }
+    )
+    test_schema = {
+        "col1": "integer",
+        "col2": "string",
+        "col3": "float",
+        "col4": "integer",
+        "col5": "string",
+        "col6": "float",
+    }
+    result = process_functions.create_missing_columns(
+        dataset=test_input, schema=test_schema
+    )
+    expected_output = pd.DataFrame(
+        {
+            "col1": [2, 3, 4],
+            "col2": ["str1", "str2", "str3"],
+            "col3": [2.0, 3.0, float("nan")],
+            "col4": [None, None, None],
+            "col5": ["", "", ""],
+            "col6": [float("nan"), float("nan"), float("nan")],
+        }
+    )
+    expected_output["col1"] = expected_output["col1"].astype("Int64")
+    expected_output["col4"] = expected_output["col4"].astype("Int64")
+
+    assert result["col1"].dtype == pd.Int64Dtype()
+    assert is_string_dtype(result["col2"])
+    assert is_float_dtype(result["col3"])
+    assert result["col4"].dtype == pd.Int64Dtype()
+    assert is_string_dtype(result["col5"])
+    assert is_float_dtype(result["col6"])
+    assert result.isna().sum().sum() == 7
+
+    assert_frame_equal(result, expected_output, check_exact=True)

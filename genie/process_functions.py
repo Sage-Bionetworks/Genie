@@ -948,3 +948,32 @@ def create_new_fileformat_table(
         "newdb_mappingdf": newdb_mappingdf,
         "moved_ent": moved_ent,
     }
+
+
+def create_missing_columns(dataset: pd.DataFrame, schema: dict) -> pd.Series:
+    """Creates and fills missing columns with the relevant NA value for the
+        given data type. Note that special handling had to occur for
+        allowing NAs in integer based columns in pandas by converting
+        the integer column into the Int64 (pandas nullable integer data type)
+
+    Args:
+        dataset (pd.DataFrame): input dataset to fill missing columns for
+        schema (dict): the expected schema {column_name(str): data_type(str)}
+            for the input dataset
+
+    Returns:
+        pd.Series: updated dataset
+    """
+    missing_values = {
+        "string": "",
+        "integer": None,
+        "float": float("nan"),
+    }
+    for column, data_type in schema.items():
+        if column not in dataset.columns:
+            dataset = dataset.assign(**{column: missing_values[data_type]})
+
+        # only way to preserve NAs for integer based columns in pandas
+        if data_type == "integer":
+            dataset[column] = dataset[column].astype("Int64")
+    return dataset[list(schema.keys())]

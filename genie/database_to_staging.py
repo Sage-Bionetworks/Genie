@@ -35,6 +35,73 @@ SEG_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_cna_hg19_%s.seg")
 SV_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_sv_%s.txt")
 BED_DIFFS_SEQASSAY_PATH = os.path.join(GENIE_RELEASE_DIR, "diff_%s.csv")
 
+FULL_MAF_RELEASE_SCHEMA = {
+    "Hugo_Symbol": "string",
+    "Entrez_Gene_Id": "float",
+    "Center": "string",
+    "NCBI_Build": "string",
+    "Chromosome": "integer",
+    "Start_Position": "integer",
+    "End_Position": "integer",
+    "Strand": "string",
+    "Consequence": "string",
+    "Variant_Classification": "string",
+    "Variant_Type": "string",
+    "Reference_Allele": "string",
+    "Tumor_Seq_Allele1": "string",
+    "Tumor_Seq_Allele2": "string",
+    "dbSNP_RS": "string",
+    "dbSNP_Val_Status": "float",
+    "Tumor_Sample_Barcode": "string",
+    "Matched_Norm_Sample_Barcode": "string",
+    "Match_Norm_Seq_Allele1": "string",
+    "Match_Norm_Seq_Allele2": "string",
+    "Tumor_Validation_Allele1": "float",
+    "Tumor_Validation_Allele2": "float",
+    "Match_Norm_Validation_Allele1": "float",
+    "Match_Norm_Validation_Allele2": "float",
+    "Verification_Status": "string",
+    "Validation_Status": "float",
+    "Mutation_Status": "string",
+    "Sequencing_Phase": "float",
+    "Sequence_Source": "float",
+    "Validation_Method": "float",
+    "Score": "float",
+    "BAM_File": "float",
+    "Sequencer": "float",
+    "t_ref_count": "float",
+    "t_alt_count": "float",
+    "n_ref_count": "float",
+    "n_alt_count": "float",
+    "HGVSc": "string",
+    "HGVSp": "string",
+    "HGVSp_Short": "string",
+    "Transcript_ID": "string",
+    "RefSeq": "string",
+    "Protein_position": "float",
+    "Codons": "string",
+    "Exon_Number": "string",
+    "gnomAD_AF": "float",
+    "gnomAD_AFR_AF": "float",
+    "gnomAD_AMR_AF": "float",
+    "gnomAD_ASJ_AF": "float",
+    "gnomAD_EAS_AF": "float",
+    "gnomAD_FIN_AF": "float",
+    "gnomAD_NFE_AF": "float",
+    "gnomAD_OTH_AF": "float",
+    "gnomAD_SAS_AF": "float",
+    "FILTER": "string",
+    "Polyphen_Prediction": "string",
+    "Polyphen_Score": "float",
+    "SIFT_Prediction": "string",
+    "SIFT_Score": "float",
+    "SWISSPROT": "float",
+    # "genomic_location_explanation": "string",
+    "n_depth": "float",
+    "t_depth": "float",
+    # "Annotation_Status": "string"
+}
+
 
 # TODO: Add to transform.py
 def _to_redact_interval(df_col):
@@ -757,8 +824,6 @@ def store_maf_files(
     used_entities = []
     # Must get the headers (because can't assume headers are the same order)
     maf_ent = syn.get(centerMafSynIdsDf.id[0])
-    headerdf = pd.read_csv(maf_ent.path, sep="\t", comment="#", nrows=0)
-    column_order = headerdf.columns
     for _, mafSynId in enumerate(centerMafSynIdsDf.id):
         maf_ent = syn.get(mafSynId)
         logger.info(maf_ent.path)
@@ -771,8 +836,9 @@ def store_maf_files(
             )
 
             for mafchunk in mafchunks:
-                # Reorder column headers
-                mafchunk = mafchunk[column_order]
+                mafchunk = process_functions.create_missing_columns(
+                    dataset=mafchunk, schema=FULL_MAF_RELEASE_SCHEMA
+                )
                 # Get center for center staging maf
                 # Configure maf
                 configured_mafdf = configure_maf(
