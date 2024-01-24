@@ -99,7 +99,7 @@ FULL_MAF_RELEASE_SCHEMA = {
     "n_depth": "float",
     "t_depth": "float",
     "mutationInCis_Flag": "boolean",
-    "Annotation_Status": "string"
+    "Annotation_Status": "string",
 }
 
 
@@ -840,12 +840,13 @@ def store_maf_files(
                 configured_mafdf = configure_maf(
                     mafchunk, remove_mafinbed_variants, flagged_mutationInCis_variants
                 )
-                configured_mafdf = configured_mafdf[list(FULL_MAF_RELEASE_SCHEMA.keys())]
+                configured_mafdf = configured_mafdf[
+                    list(FULL_MAF_RELEASE_SCHEMA.keys())
+                ]
                 # Create maf for release
                 merged_mafdf = remove_maf_samples(
                     configured_mafdf, keep_for_merged_consortium_samples
                 )
-                
                 append_or_create_release_maf(merged_mafdf, mutations_path)
                 # Create maf for center staging
                 center_mafdf = remove_maf_samples(
