@@ -457,7 +457,7 @@ def test_perform_validate(syn, genie_config):
         validate._perform_validate(syn, arg)
         patch_check_parentid.assert_called_once_with(syn=syn, parentid=arg.parentid)
         patch_get_config.assert_called_once_with(syn=syn, project_id=arg.project_id)
-        patch_check_center.assert_called_once_with(arg.center, ["SAGE", "TEST"])
+        patch_check_center.assert_called_once_with(arg.center, ["SAGE", "TEST", "GOLD"])
         patch_get_onco.assert_called_once()
         patch_validate.assert_called_once_with(
             nosymbol_check=arg.nosymbol_check, project_id=arg.project_id
