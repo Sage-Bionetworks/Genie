@@ -96,11 +96,10 @@ FULL_MAF_RELEASE_SCHEMA = {
     "SIFT_Prediction": "string",
     "SIFT_Score": "float",
     "SWISSPROT": "float",
-    # "genomic_location_explanation": "string",
     "n_depth": "float",
     "t_depth": "float",
-    "mutationInCis_Flag": "boolean"
-    # "Annotation_Status": "string"
+    "mutationInCis_Flag": "boolean",
+    "Annotation_Status": "string"
 }
 
 
@@ -823,7 +822,6 @@ def store_maf_files(
         with open(MUTATIONS_CENTER_PATH % center, "w"):
             pass
     used_entities = []
-    # Must get the headers (because can't assume headers are the same order)
     maf_ent = syn.get(centerMafSynIdsDf.id[0])
     for _, mafSynId in enumerate(centerMafSynIdsDf.id):
         maf_ent = syn.get(mafSynId)
@@ -842,9 +840,7 @@ def store_maf_files(
                 configured_mafdf = configure_maf(
                     mafchunk, remove_mafinbed_variants, flagged_mutationInCis_variants
                 )
-                configured_mafdf = process_functions.create_missing_columns(
-                    dataset=configured_mafdf, schema=FULL_MAF_RELEASE_SCHEMA
-                )
+                configured_mafdf = configured_mafdf[list(FULL_MAF_RELEASE_SCHEMA.keys())]
                 # Create maf for release
                 merged_mafdf = remove_maf_samples(
                     configured_mafdf, keep_for_merged_consortium_samples
