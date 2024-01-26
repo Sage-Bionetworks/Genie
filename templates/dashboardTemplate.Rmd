@@ -30,6 +30,8 @@ suppressMessages(library(RColorBrewer))
 suppressMessages(library(jsonlite))
 suppressMessages(library(knitr))
 
+source("R/dashboard_template_functions.R")
+
 createCenterColumn <- function(clinicalDf) {
   if (is.null(clinicalDf$CENTER)) {
     centers = unlist(
@@ -401,6 +403,40 @@ For patient retractions submitted between these months, the records will be remo
 * April-June
 * October-December
 
+---
+
+### Genome nexus failed annotations summary
+
+The table below displays the number of failed annotations per center. If a center has no failed annotations, no record will appear in the table for that center.
+
+```{r}
+maf_table_synid = get_syn_id_from_mapped_database(
+  database_name="vcf2maf", 
+  database_synid_mappingid = database_synid_mappingid
+)
+
+# get narrow maf table
+maf_table <- as.data.frame(synTableQuery(sprintf('select * from %s', maf_table_synid)))
+
+counts_table <- get_failed_annotation_table_counts(
+  maf_table, 
+  group_by_cols = "Center", 
+  counts_col_name = "Number of failed annotations"
+  )
+knitr::kable(counts_table, col.names = c("Center", "Number of failed annotations"))
+
+#get project page on synapse
+main_syn_id <- get_syn_id_from_mapped_database(
+    database_name="main", 
+    database_synid_mappingid = database_synid_mappingid
+)
+```
+
+Follow this navigation guide from the `r paste0("[Synapse project files page](https://www.synapse.org/#!Synapse:", main_syn_id, "/files/){target='_blank'}")` to find your center's detailed failed annotations error report.
+
+Files &rarr; Centers &rarr; [Center name] &rarr; Errors &rarr; failed_annotations_error_report.txt
+
+View the version comment column in Synapse for your report to find the version associated with this release.
 
 ---
 

@@ -100,6 +100,8 @@ Make sure to run each of the [pipeline steps here](README.md#developing-locally)
 
 #### Running tests
 
+##### Tests in Python
+
 This package uses [`pytest`](https://pytest.org/en/latest/) to run tests. The test code is located in the [tests](./tests) subdirectory.
 
 Here's how to run the test suite:
@@ -108,7 +110,17 @@ Here's how to run the test suite:
 pytest -vs tests/
 ```
 
-Tests are also run automatically by Github Actions on any pull request and are required to pass before merging.
+Tests in Python are also run automatically by Github Actions on any pull request and are required to pass before merging.
+
+##### Tests in R
+
+This package uses [`testthat`](https://testthat.r-lib.org/) to run tests in R. The test code is located in the [testthat](./R/tests/testthat) subdirectory.
+
+Here's how to run the test suite:
+
+```shell
+Rscript -e "testthat::test_dir('R/tests/testthat/')"
+```
 
 #### Test Development
 
