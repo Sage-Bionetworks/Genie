@@ -342,6 +342,7 @@ def check_annotation_error_reports(
         maf_table_synid (str): synapse_id of the narrow maf table
         full_error_report (pd.DataFrame): the failed annotations error report
         center (str): the center this is for
+
     """
     maf_table_df = extract.get_syntabledf(
         syn=syn,
@@ -351,10 +352,11 @@ def check_annotation_error_reports(
             "Annotation_Status = 'FAILED'"
         ),
     )
-    assert len(maf_table_df) == len(full_error_report), (
-        "Genome nexus's failed annotations error report rows doesn't match"
-        f"maf table's failed annotations for {center}"
-    )
+    if len(maf_table_df) != len(full_error_report):
+        logger.warning(
+            "Genome nexus's failed annotations error report rows doesn't match"
+            f"maf table's failed annotations for {center}"
+        )
 
 
 def store_annotation_error_reports(

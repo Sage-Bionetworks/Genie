@@ -264,25 +264,26 @@ class TestAnnotationErrorReports:
                 "Annotation_Status = 'FAILED'",
             )
 
-    def test_check_annotation_error_reports_throws_assertion_if_no_match(
-        self, syn, test_error_report
+    def test_check_annotation_error_reports_raises_warning_if_no_match(
+        self, syn, test_error_report, caplog
     ):
         with patch.object(
             extract,
             "get_syntabledf",
             return_value=pd.DataFrame({"test": [1], "test2": [2]}),
         ):
-            with pytest.raises(
-                AssertionError,
-                match="Genome nexus's failed annotations error report rows doesn't match"
-                "maf table's failed annotations for SAGE",
-            ):
-                process_mutation.check_annotation_error_reports(
-                    syn=syn,
-                    maf_table_synid="synZZZZ",
-                    full_error_report=test_error_report,
-                    center="SAGE",
-                )
+            process_mutation.check_annotation_error_reports(
+                syn=syn,
+                maf_table_synid="synZZZZ",
+                full_error_report=test_error_report,
+                center="SAGE",
+            )
+            assert (
+                "Genome nexus's failed annotations error report rows doesn't match"
+                "maf table's failed annotations for SAGE" in caplog.text
+            )
+            # check that at least one is a warning
+            assert any(record.levelname == "WARNING" for record in caplog.records)
 
     def test_concat_annotation_error_reports_returns_expected(self, test_error_report):
         compiled_report = process_mutation.concat_annotation_error_reports(

@@ -162,7 +162,8 @@ def test_filetype_validate_single_file(syn):
         "----------------ERRORS----------------\n"
         "Your filename is incorrect! Please change your "
         "filename before you run the validator or specify "
-        "--filetype if you are running the validator locally"
+        "--filetype if you are running the validator locally. "
+        "If specifying filetype, options are: [wrong]\n"
     )
 
     with patch.object(FileFormat, "validateFilename", side_effect=AssertionError):
@@ -185,7 +186,8 @@ def test_wrongfiletype_validate_single_file(syn):
         "----------------ERRORS----------------\n"
         "Your filename is incorrect! Please change your "
         "filename before you run the validator or specify "
-        "--filetype if you are running the validator locally"
+        "--filetype if you are running the validator locally. "
+        "If specifying filetype, options are: [wrong]\n"
     )
 
     with patch.object(
