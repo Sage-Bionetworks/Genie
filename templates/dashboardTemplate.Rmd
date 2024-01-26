@@ -30,7 +30,7 @@ suppressMessages(library(RColorBrewer))
 suppressMessages(library(jsonlite))
 suppressMessages(library(knitr))
 
-source("../R/dashboard_template_functions.R")
+source("R/dashboard_template_functions.R")
 
 createCenterColumn <- function(clinicalDf) {
   if (is.null(clinicalDf$CENTER)) {
