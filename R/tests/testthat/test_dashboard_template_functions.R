@@ -44,10 +44,10 @@ sample_maf_table_no_failed_annotations <- function() {
 test_that("get_syn_id_from_mapped_database_gets_correct_value", {
   synLogin()
   result <- get_syn_id_from_mapped_database(
-    database_name = "vcf2maf", 
+    database_name = "main",
     database_synid_mappingid = "syn11600968"
   )
-  expect_equal(result, "syn53270419")
+  expect_equal(result, "syn7208886")
 })
 
 
