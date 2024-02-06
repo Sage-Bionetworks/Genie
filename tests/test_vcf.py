@@ -284,21 +284,42 @@ def test_that__get_dataframe_reads_in_correct_nas(vcf_class):
         pd.testing.assert_frame_equal(vcf_df, expected)
 
 
-def test_that__get_dataframe_uses_correct_columns_to_replace(vcf_class):
+@pytest.mark.parametrize(
+    "input,expected_columns",
+    [
+        (
+            pd.DataFrame(
+                {
+                    "#CHROM": ["TEST"],
+                    "ALT": ["3845"],
+                    "REF": ["NA"],
+                }
+            ),
+            ["#CHROM", "ALT"],
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "#CHROM": ["TEST"],
+                    "ALT": ["3845"],
+                    "rEf": ["NA"],
+                }
+            ),
+            ["#CHROM", "ALT", "rEf"],
+        ),
+    ],
+    ids=["with_allele_col", "no_allele_col"],
+)
+def test_that__get_dataframe_uses_correct_columns_to_replace(
+    vcf_class, input, expected_columns
+):
     file = "#CHROM\tALT\tref\n" "TEST\t3845\tNA"
-    expected = pd.DataFrame(
-        {
-            "#CHROM": ["TEST"],
-            "ALT": ["3845"],
-            "ref": ["NA"],
-        }
-    )
     with patch("builtins.open", mock_open(read_data=file)), patch.object(
-        pd, "read_csv", return_value=expected
+        pd, "read_csv", return_value=input
     ), patch.object(transform, "_convert_values_to_na") as patch_convert_to_na:
         vcf_class._get_dataframe(["some_path"])
         patch_convert_to_na.assert_called_once_with(
-            input_df=expected,
+            input_df=input,
             values_to_replace=["NA", "nan", "NaN"],
-            columns_to_convert=["#CHROM", "ALT", "ref"],
+            columns_to_convert=expected_columns,
         )
