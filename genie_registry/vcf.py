@@ -28,7 +28,25 @@ class vcf(FileTypeFormat):
         endswith_vcf = basename.endswith(".vcf")
         assert startswith_genie and endswith_vcf
 
-    def _get_dataframe(self, filePathList):
+    def _get_dataframe(self, filePathList: list) -> pd.DataFrame:
+        """Get mutation dataframe
+
+        1) Looks for the line in the file starting with #CHROM, that will be
+        the header line (columns).
+
+        2) When reading in the data, we keep the 'NA', 'nan', and 'NaN'
+        as strings in the data because these are valid allele values
+        then convert the ones in the non-allele columns back to actual NAs
+
+        Args:
+            filePathList (list): _description_
+
+        Raises:
+            ValueError: when line with #CHROM doesn't exist in file
+
+        Returns:
+            pd.DataFrame: mutation data
+        """
         headers = None
         filepath = filePathList[0]
         with open(filepath, "r") as vcffile:
@@ -44,8 +62,6 @@ class vcf(FileTypeFormat):
                 header=None,
                 names=headers,
                 keep_default_na=False,
-                # Keep the value 'NA', 'nan', and 'NaN', as
-                # those are valid allele values
                 na_values=[
                     "-1.#IND",
                     "1.#QNAN",
@@ -64,7 +80,6 @@ class vcf(FileTypeFormat):
         else:
             raise ValueError("Your vcf must start with the header #CHROM")
 
-        # convert back to NAs
         vcfdf = transform._convert_values_to_na(
             input_df=vcfdf,
             values_to_replace=["NA", "nan", "NaN"],

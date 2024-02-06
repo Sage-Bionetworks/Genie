@@ -352,13 +352,38 @@ class maf(FileTypeFormat):
                     )
         return errors, warnings
 
-    def _get_dataframe(self, filePathList):
-        """Get mutation dataframe"""
-        # Must do this because pandas.read_csv will allow for a file to
-        # have more column headers than content.  E.g.
-        # A,B,C,D,E
-        # 1,2
-        # 2,3
+    def _get_dataframe(self, filePathList: list) -> pd.DataFrame:
+        """Get mutation dataframe
+
+        1) Starts reading the first line in the file
+        2) Skips lines that starts with #
+        3) Reads in second line
+        4) Checks that first line fields matches second line. Must do this because
+        pandas.read_csv will allow for a file to have more column headers than content.
+        E.g)  A,B,C,D,E
+              1,2
+              2,3
+
+        5) We keep the 'NA', 'nan', and 'NaN' as strings in the data because
+        these are valid allele values
+        then convert the ones in the non-allele columns back to actual NAs
+
+        NOTE: Because allele columns are case-insensitive in maf data, we must
+        standardize the case of the columns when checking for the non-allele columns
+        to convert the NA strings to NAs
+
+        NOTE: This code allows empty dataframes to pass through
+        without errors
+
+        Args:
+            filePathList (list): list of filepaths
+
+        Raises:
+            ValueError: First line fields doesn't match second line fields in file
+
+        Returns:
+            pd.DataFrame: mutation data
+        """
         with open(filePathList[0], "r") as maf_f:
             firstline = maf_f.readline()
             if firstline.startswith("#"):
@@ -376,8 +401,6 @@ class maf(FileTypeFormat):
             "sep": "\t",
             "comment": "#",
             "keep_default_na": False,
-            # Keep the value 'NA', 'nan', and 'NaN', as
-            # those are valid allele values
             "na_values": [
                 "-1.#IND",
                 "1.#QNAN",
@@ -402,7 +425,6 @@ class maf(FileTypeFormat):
 
         mutationdf = transform._convert_df_with_mixed_dtypes(read_csv_params)
 
-        # convert back to NAs
         mutationdf = transform._convert_values_to_na(
             input_df=mutationdf,
             values_to_replace=["NA", "nan", "NaN"],
