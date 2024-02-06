@@ -76,7 +76,10 @@ def test_that_validate_returns_expected_msg_if__validate_passes(filetype_format_
 
 
 def test_that_validate_throws_exception_if_file_read_error(filetype_format_class):
-    with patch.object(FileTypeFormat, "_validate",) as patch_validate, patch.object(
+    with patch.object(
+        FileTypeFormat,
+        "_validate",
+    ) as patch_validate, patch.object(
         FileTypeFormat,
         "read_file",
         side_effect=Exception("mocked error"),

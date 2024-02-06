@@ -2,6 +2,7 @@
 This module contains all the functions that stores data
 to Synapse
 """
+
 import logging
 import os
 import time

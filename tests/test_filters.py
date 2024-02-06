@@ -1,6 +1,7 @@
 """
 Test GENIE filters
 """
+
 import datetime
 import os
 import sys

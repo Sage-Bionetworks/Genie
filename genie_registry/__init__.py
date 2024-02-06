@@ -1,4 +1,5 @@
 """Initialize GENIE registry"""
+
 # Import logging last to not take in synapseclient logging
 import logging
 

@@ -1,6 +1,7 @@
 """
 Creates case lists per cancer type
 """
+
 from collections import defaultdict
 import csv
 import os

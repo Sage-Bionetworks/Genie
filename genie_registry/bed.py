@@ -1,4 +1,5 @@
 """GENIE bed class and functions"""
+
 import os
 import logging
 import subprocess
