@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import process_functions, validate
+from genie import process_functions, transform, validate
 
 logger = logging.getLogger(__name__)
 
@@ -38,10 +38,40 @@ class vcf(FileTypeFormat):
                     break
         if headers is not None:
             vcfdf = pd.read_csv(
-                filepath, sep="\t", comment="#", header=None, names=headers
+                filepath,
+                sep="\t",
+                comment="#",
+                header=None,
+                names=headers,
+                keep_default_na=False,
+                # Keep the value 'NA', 'nan', and 'NaN', as
+                # those are valid allele values
+                na_values=[
+                    "-1.#IND",
+                    "1.#QNAN",
+                    "1.#IND",
+                    "-1.#QNAN",
+                    "#N/A N/A",
+                    "#N/A",
+                    "N/A",
+                    "#NA",
+                    "NULL",
+                    "-NaN",
+                    "-nan",
+                    "",
+                ],
             )
         else:
             raise ValueError("Your vcf must start with the header #CHROM")
+
+        # convert back to NAs
+        vcfdf = transform._convert_values_to_na(
+            input_df=vcfdf,
+            values_to_replace=["NA", "nan", "NaN"],
+            columns_to_convert=[
+                col for col in vcfdf.columns if col not in self._allele_cols
+            ],
+        )
         return vcfdf
 
     def process_steps(self, df):

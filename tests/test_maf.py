@@ -3,7 +3,7 @@ from unittest.mock import mock_open, patch
 import pandas as pd
 import pytest
 
-from genie import process_functions, validate
+from genie import process_functions, transform, validate
 import genie_registry.maf
 from genie_registry.maf import maf
 
@@ -433,17 +433,44 @@ def test_that__get_dataframe_returns_expected_result(maf_class, test_input, expe
         pd.testing.assert_frame_equal(test, expected)
 
 
-def test_that__get_dataframe_throws_value_error(maf_class):
+def test_that__get_dataframe_reads_in_correct_nas(maf_class):
     file = (
-        "#Hugo_Symbol	Entrez_Gene_Id	Center	NCBI_Build	Chromosome\n"
-        "TEST	3845	TEST	GRCh37	12"
+        "Hugo_Symbol\tEntrez_Gene_Id\tReference_Allele\n"
+        "TEST\t3845\tNA\n"
+        "TEST\tNA\tnan\n"
+        "TEST\t3846\tN/A\n"
+        "NA\tnan\tNaN"
     )
     with patch("builtins.open", mock_open(read_data=file)):
-        with pytest.raises(
-            ValueError,
-            match="Number of fields in a line do not match the expected number of columns",
-        ):
-            maf_class._get_dataframe(["some_path"])
+        expected = pd.DataFrame(
+            {
+                "Hugo_Symbol": ["TEST", "TEST", "TEST", None],
+                "Entrez_Gene_Id": ["3845", None, "3846", None],
+                "Reference_Allele": ["NA", "nan", None, "NaN"],
+            }
+        )
+        maf_df = maf_class._get_dataframe(["some_path"])
+        pd.testing.assert_frame_equal(maf_df, expected)
+
+
+def test_that__get_dataframe_uses_correct_columns_to_replace(maf_class):
+    file = "Hugo_Symbol\tEntrez_Gene_Id\tReference_Allele\n" "TEST\t3845\tNA"
+    expected = pd.DataFrame(
+        {
+            "Hugo_Symbol": ["TEST"],
+            "Entrez_Gene_Id": ["3845"],
+            "Reference_Allele": ["NA"],
+        }
+    )
+    with patch("builtins.open", mock_open(read_data=file)), patch.object(
+        pd, "read_csv", return_value=expected
+    ), patch.object(transform, "_convert_values_to_na") as patch_convert_to_na:
+        maf_class._get_dataframe(["some_path"])
+        patch_convert_to_na.assert_called_once_with(
+            input_df=expected,
+            values_to_replace=["NA", "nan", "NaN"],
+            columns_to_convert=["Hugo_Symbol", "Entrez_Gene_Id"],
+        )
 
 
 @pytest.mark.parametrize(

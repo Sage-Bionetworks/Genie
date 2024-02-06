@@ -370,28 +370,28 @@ class maf(FileTypeFormat):
                 "Number of fields in a line do not match the "
                 "expected number of columns"
             )
+
         read_csv_params = {
             "filepath_or_buffer": filePathList[0],
             "sep": "\t",
             "comment": "#",
-            # Keep the value 'NA'
+            "keep_default_na": False,
+            # Keep the value 'NA', 'nan', and 'NaN', as
+            # those are valid allele values
             "na_values": [
                 "-1.#IND",
                 "1.#QNAN",
                 "1.#IND",
                 "-1.#QNAN",
                 "#N/A N/A",
-                "NaN",
                 "#N/A",
                 "N/A",
                 "#NA",
                 "NULL",
                 "-NaN",
-                "nan",
                 "-nan",
                 "",
             ],
-            "keep_default_na": False,
             # This is to check if people write files
             # with R, quote=T
             "quoting": 3,
@@ -399,5 +399,17 @@ class maf(FileTypeFormat):
             # validator will cause the file to fail
             "skip_blank_lines": False,
         }
+
         mutationdf = transform._convert_df_with_mixed_dtypes(read_csv_params)
+
+        # convert back to NAs
+        mutationdf = transform._convert_values_to_na(
+            input_df=mutationdf,
+            values_to_replace=["NA", "nan", "NaN"],
+            columns_to_convert=[
+                col
+                for col in mutationdf.columns
+                if col.upper() not in self._allele_cols
+            ],
+        )
         return mutationdf
