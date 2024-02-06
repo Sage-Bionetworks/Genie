@@ -40,7 +40,7 @@ def test_format_maf():
 
 
 class TestDtype:
-    def setup(self):
+    def setup_method(self):
         self.testdf = pd.DataFrame({"foo": [1], "bar": ["baz"]})
         self.column_types = {"foo": "int64", "bar": "object"}
         self.mutation_path = "/path/test.csv"
