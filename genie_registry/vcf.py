@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import List
 
 import pandas as pd
 
@@ -28,7 +29,7 @@ class vcf(FileTypeFormat):
         endswith_vcf = basename.endswith(".vcf")
         assert startswith_genie and endswith_vcf
 
-    def _get_dataframe(self, filePathList: list) -> pd.DataFrame:
+    def _get_dataframe(self, filePathList: List[str]) -> pd.DataFrame:
         """Get mutation dataframe
 
         1) Looks for the line in the file starting with #CHROM, that will be
@@ -39,7 +40,7 @@ class vcf(FileTypeFormat):
         then convert the ones in the non-allele columns back to actual NAs
 
         Args:
-            filePathList (list): _description_
+            filePathList (List[str]): list of filepath(s)
 
         Raises:
             ValueError: when line with #CHROM doesn't exist in file

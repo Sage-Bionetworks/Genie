@@ -1,6 +1,7 @@
 from io import StringIO
-import os
 import logging
+import os
+from typing import List
 
 import pandas as pd
 
@@ -352,7 +353,7 @@ class maf(FileTypeFormat):
                     )
         return errors, warnings
 
-    def _get_dataframe(self, filePathList: list) -> pd.DataFrame:
+    def _get_dataframe(self, filePathList: List[str]) -> pd.DataFrame:
         """Get mutation dataframe
 
         1) Starts reading the first line in the file
@@ -376,7 +377,7 @@ class maf(FileTypeFormat):
         without errors
 
         Args:
-            filePathList (list): list of filepaths
+            filePathList (List[str]): list of filepath(s)
 
         Raises:
             ValueError: First line fields doesn't match second line fields in file

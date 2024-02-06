@@ -5,6 +5,8 @@ from unittest.mock import mock_open, patch
 from genie import transform
 from genie_registry.vcf import vcf
 
+OPEN_BUILTIN = "builtins.open"
+
 
 @pytest.fixture
 def vcf_class(syn):
@@ -257,7 +259,7 @@ def test_validation_more_than_11_cols(vcf_class):
 
 def test_that__get_dataframe_throws_value_error_if_no_headers(vcf_class):
     file = "CHROM\tALT\tREF\n" "TEST\t3845\tNA"
-    with patch("builtins.open", mock_open(read_data=file)):
+    with patch(OPEN_BUILTIN, mock_open(read_data=file)):
         with pytest.raises(
             ValueError, match="Your vcf must start with the header #CHROM"
         ):
@@ -272,7 +274,7 @@ def test_that__get_dataframe_reads_in_correct_nas(vcf_class):
         "TEST\t3846\tN/A\n"
         "NA\tnan\tNaN"
     )
-    with patch("builtins.open", mock_open(read_data=file)):
+    with patch(OPEN_BUILTIN, mock_open(read_data=file)):
         expected = pd.DataFrame(
             {
                 "#CHROM": ["TEST", "TEST", "TEST", None],
@@ -314,7 +316,7 @@ def test_that__get_dataframe_uses_correct_columns_to_replace(
     vcf_class, input, expected_columns
 ):
     file = "#CHROM\tALT\tref\n" "TEST\t3845\tNA"
-    with patch("builtins.open", mock_open(read_data=file)), patch.object(
+    with patch(OPEN_BUILTIN, mock_open(read_data=file)), patch.object(
         pd, "read_csv", return_value=input
     ), patch.object(transform, "_convert_values_to_na") as patch_convert_to_na:
         vcf_class._get_dataframe(["some_path"])

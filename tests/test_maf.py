@@ -7,6 +7,8 @@ from genie import process_functions, transform, validate
 import genie_registry.maf
 from genie_registry.maf import maf
 
+OPEN_BUILTIN = "builtins.open"
+
 
 @pytest.fixture
 def maf_class(syn):
@@ -428,7 +430,7 @@ def test_that__cross_validate_returns_expected_msg_if_valid(
     ids=["no_pound_sign", "pound_sign"],
 )
 def test_that__get_dataframe_returns_expected_result(maf_class, test_input, expected):
-    with patch("builtins.open", mock_open(read_data=test_input)):
+    with patch(OPEN_BUILTIN, mock_open(read_data=test_input)):
         test = maf_class._get_dataframe(["some_path"])
         pd.testing.assert_frame_equal(test, expected)
 
@@ -441,7 +443,7 @@ def test_that__get_dataframe_reads_in_correct_nas(maf_class):
         "TEST\t3846\tN/A\n"
         "NA\tnan\tNaN"
     )
-    with patch("builtins.open", mock_open(read_data=file)):
+    with patch(OPEN_BUILTIN, mock_open(read_data=file)):
         expected = pd.DataFrame(
             {
                 "Hugo_Symbol": ["TEST", "TEST", "TEST", None],
@@ -483,7 +485,7 @@ def test_that__get_dataframe_uses_correct_columns_to_replace(
     maf_class, input, expected_columns
 ):
     file = "Hugo_Symbol\tEntrez_Gene_Id\tReference_Allele\n" "TEST\t3845\tNA"
-    with patch("builtins.open", mock_open(read_data=file)), patch.object(
+    with patch(OPEN_BUILTIN, mock_open(read_data=file)), patch.object(
         pd, "read_csv", return_value=input
     ), patch.object(transform, "_convert_values_to_na") as patch_convert_to_na:
         maf_class._get_dataframe(["some_path"])
