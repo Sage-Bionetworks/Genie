@@ -1,4 +1,5 @@
 """Processing functions that are used in the GENIE pipeline"""
+
 import datetime
 import json
 import logging

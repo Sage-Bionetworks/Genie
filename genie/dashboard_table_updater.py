@@ -1,4 +1,5 @@
 """Updates dashboard tables"""
+
 import argparse
 import datetime
 import logging
@@ -347,9 +348,11 @@ def update_oncotree_code_tables(syn, database_mappingdf):
     oncotree_mapping = process_functions.get_oncotree_code_mappings(oncotree_link)
 
     clinicaldf["PRIMARY_CODES"] = [
-        oncotree_mapping[i.upper()]["ONCOTREE_PRIMARY_NODE"]
-        if i.upper() in oncotree_mapping.keys()
-        else "DEPRECATED_CODE"
+        (
+            oncotree_mapping[i.upper()]["ONCOTREE_PRIMARY_NODE"]
+            if i.upper() in oncotree_mapping.keys()
+            else "DEPRECATED_CODE"
+        )
         for i in clinicaldf.ONCOTREE_CODE
     ]
 
@@ -457,9 +460,9 @@ def update_sample_difference_table(syn, database_mappingdf):
         .applymap(int)
     )
 
-    diff_between_releasesdf[
-        ["Clinical", "Mutation", "CNV", "SEG", "Fusions"]
-    ] = new_values
+    diff_between_releasesdf[["Clinical", "Mutation", "CNV", "SEG", "Fusions"]] = (
+        new_values
+    )
 
     load._update_table(
         syn,

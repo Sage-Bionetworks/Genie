@@ -1,4 +1,5 @@
 """Configuration to obtain registry classes"""
+
 import importlib
 import logging
 

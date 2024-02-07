@@ -1,5 +1,6 @@
 """Process mutation files
 TODO deprecate this module and spread functions around"""
+
 from collections import namedtuple
 import logging
 import os

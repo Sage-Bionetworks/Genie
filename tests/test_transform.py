@@ -1,4 +1,5 @@
 """Test genie.transform module"""
+
 import os
 from io import BytesIO
 from unittest import mock
@@ -186,3 +187,60 @@ class TestConvertMixedDtypes:
                 ],
                 any_order=False,
             )
+
+
+def get__convert_values_to_na_test_cases():
+    return [
+        {
+            "name": "single_col",
+            "input_df": pd.DataFrame({"col1": ["N/A", "SAGE-SAGE-1", "-nan"]}),
+            "values_to_replace": ["N/A", "-nan"],
+            "columns_to_convert": ["col1"],
+            "expected_df": pd.DataFrame({"col1": [None, "SAGE-SAGE-1", None]}),
+        },
+        {
+            "name": "multi_col",
+            "input_df": pd.DataFrame(
+                {"col1": ["N/A", "-nan", "1"], "col2": ["-nan", "N/A", "2"]}
+            ),
+            "values_to_replace": ["N/A", "-nan"],
+            "columns_to_convert": ["col1", "col2"],
+            "expected_df": pd.DataFrame(
+                {"col1": [None, None, "1"], "col2": [None, None, "2"]}
+            ),
+        },
+        {
+            "name": "empty_cols",
+            "input_df": pd.DataFrame(columns=["col1", "col2"]),
+            "values_to_replace": ["NaN", "NA", "nan"],
+            "columns_to_convert": ["col1", "col2"],
+            "expected_df": pd.DataFrame(columns=["col1", "col2"]),
+        },
+        {
+            "name": "empty df",
+            "input_df": pd.DataFrame(),
+            "values_to_replace": ["NaN"],
+            "columns_to_convert": ["col3"],
+            "expected_df": pd.DataFrame(),
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_cases", get__convert_values_to_na_test_cases(), ids=lambda x: x["name"]
+)
+def test_that__convert_values_to_na_returns_expected(test_cases):
+    result = transform._convert_values_to_na(
+        test_cases["input_df"],
+        test_cases["values_to_replace"],
+        test_cases["columns_to_convert"],
+    )
+    pd.testing.assert_frame_equal(result, test_cases["expected_df"])
+
+
+def test_that__convert_values_to_na_throws_key_error_if_nonexistent_cols():
+    input_df = pd.DataFrame({"col1": ["N/A", "SAGE-SAGE-1", "-nan"]})
+    values_to_replace = "NaN"
+    columns_to_convert = "col3"
+    with pytest.raises(KeyError):
+        transform._convert_values_to_na(input_df, values_to_replace, columns_to_convert)

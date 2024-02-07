@@ -1,4 +1,5 @@
 """Clinical file format validation and processing"""
+
 # from __future__ import annotations
 import datetime
 from io import StringIO

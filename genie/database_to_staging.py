@@ -1052,30 +1052,38 @@ def store_clinical_files(
     }
 
     clinicaldf["CANCER_TYPE"] = [
-        oncotree_dict[code.upper()]["CANCER_TYPE"]
-        if code.upper() in oncotree_dict.keys()
-        else float("nan")
+        (
+            oncotree_dict[code.upper()]["CANCER_TYPE"]
+            if code.upper() in oncotree_dict.keys()
+            else float("nan")
+        )
         for code in clinicaldf["ONCOTREE_CODE"]
     ]
 
     clinicaldf["CANCER_TYPE_DETAILED"] = [
-        oncotree_dict[code.upper()]["CANCER_TYPE_DETAILED"]
-        if code.upper() in oncotree_dict.keys()
-        else float("nan")
+        (
+            oncotree_dict[code.upper()]["CANCER_TYPE_DETAILED"]
+            if code.upper() in oncotree_dict.keys()
+            else float("nan")
+        )
         for code in clinicaldf["ONCOTREE_CODE"]
     ]
 
     clinicaldf["ONCOTREE_PRIMARY_NODE"] = [
-        oncotree_dict[code.upper()]["ONCOTREE_PRIMARY_NODE"]
-        if code.upper() in oncotree_dict.keys()
-        else float("nan")
+        (
+            oncotree_dict[code.upper()]["ONCOTREE_PRIMARY_NODE"]
+            if code.upper() in oncotree_dict.keys()
+            else float("nan")
+        )
         for code in clinicaldf["ONCOTREE_CODE"]
     ]
 
     clinicaldf["ONCOTREE_SECONDARY_NODE"] = [
-        oncotree_dict[code.upper()]["ONCOTREE_SECONDARY_NODE"]
-        if code.upper() in oncotree_dict.keys()
-        else float("nan")
+        (
+            oncotree_dict[code.upper()]["ONCOTREE_SECONDARY_NODE"]
+            if code.upper() in oncotree_dict.keys()
+            else float("nan")
+        )
         for code in clinicaldf["ONCOTREE_CODE"]
     ]
 
@@ -1086,9 +1094,11 @@ def store_clinical_files(
     # descriptions can match
     clinicaldf["AGE_AT_SEQ_REPORT_DAYS"] = clinicaldf["AGE_AT_SEQ_REPORT"]
     clinicaldf["AGE_AT_SEQ_REPORT"] = [
-        int(math.floor(int(float(age)) / 365.25))
-        if process_functions.checkInt(age)
-        else age
+        (
+            int(math.floor(int(float(age)) / 365.25))
+            if process_functions.checkInt(age)
+            else age
+        )
         for age in clinicaldf["AGE_AT_SEQ_REPORT"]
     ]
     clinicaldf["AGE_AT_SEQ_REPORT"][clinicaldf["AGE_AT_SEQ_REPORT"] == ">32485"] = ">89"

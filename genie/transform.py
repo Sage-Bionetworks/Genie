@@ -1,5 +1,7 @@
 """This module contains all the transformation functions used throughout the GENIE
 package"""
+
+from typing import List
 import warnings
 
 import pandas as pd
@@ -64,3 +66,24 @@ def _convert_df_with_mixed_dtypes(read_csv_params: dict) -> pd.DataFrame:
         df = pd.read_csv(**read_csv_params, low_memory=False, engine="c")
     warnings.resetwarnings()
     return df
+
+
+def _convert_values_to_na(
+    input_df: pd.DataFrame, values_to_replace: List[str], columns_to_convert: List[str]
+) -> pd.DataFrame:
+    """Converts given values to NA in an input dataset
+
+    Args:
+        input_df (pd.DataFrame): input dataset
+        values_to_replace (List[str]): string values to replace with na
+        columns_to_convert (List[str]): subset of columns to convert with na in
+
+    Returns:
+        pd.DataFrame: dataset with specified values replaced with NAs
+    """
+    if not input_df.empty:
+        replace_mapping = {value: None for value in values_to_replace}
+        input_df[columns_to_convert] = input_df[columns_to_convert].replace(
+            replace_mapping
+        )
+    return input_df
