@@ -40,7 +40,7 @@ def valid_maf_df():
             T_REF_COUNT=[1, 2, 3, 4, 3],
             N_DEPTH=[1, 2, 3, float("nan"), 3],
             N_REF_COUNT=[1, 2, 3, 4, 3],
-            N_ALT_COUNT=[1, 2, 3, 4, 3],
+            N_ALT_COUNT=[1, None, 3, 4, 3],
             TUMOR_SEQ_ALLELE2=["A", "A", "A", "A", "A"],
         )
     )
