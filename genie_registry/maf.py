@@ -199,10 +199,6 @@ class maf(FileTypeFormat):
         for col in numerical_cols:
             col_exists = process_functions.checkColExist(mutationDF, col)
             if col_exists:
-                # Since NA is an allowed value, when reading in the dataframe
-                # the 'NA' string is not converted.  This will convert all
-                # 'NA' values in the numerical columns into actual float('nan')
-                mutationDF.loc[mutationDF[col] == "NA", col] = float("nan")
                 # Attempt to convert column to float
                 try:
                     mutationDF[col] = mutationDF[col].astype(float)
