@@ -72,6 +72,8 @@ jobs:
         pip install setuptools wheel build
     - name: Build distributions
       run: python -m build
+    - name: List contents of dist directory
+      run: ls -l dist
 
   publish:
     needs: [test, lint, build-dist]
