@@ -1,4 +1,5 @@
 """Test assay information validation and processing"""
+
 import copy
 from unittest.mock import patch
 

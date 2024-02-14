@@ -668,7 +668,7 @@ class emptytable_mock:
 
 
 class TestValidation:
-    def setup(self):
+    def setup_method(self):
         valid = [
             [
                 sample_clinical_entity.id,

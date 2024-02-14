@@ -1,3 +1,4 @@
+from collections import Counter
 import datetime
 import json
 from unittest import mock
@@ -1061,65 +1062,76 @@ def test__check_int_dead_consistency_inconsistent(inconsistent_df):
     )
 
 
-@pytest.mark.parametrize(
-    "test_clinical_df,test_ancillary_files,expected_error,expected_warning",
-    [
-        (
-            pd.DataFrame(
-                {"SEQ_ASSAY_ID": ["SAGE-1-1", "SAGE-SAGE-1", "SAGE-1", "SAGE-1"]}
+def get_cross_validate_bed_files_test_cases():
+    return [
+        {
+            "name": "all_match",
+            "test_clinical_df": pd.DataFrame(
+                {
+                    "SEQ_ASSAY_ID": [
+                        "SAGE-1-1",
+                        "SAGE-SAGE-1",
+                        "SAGE-1",
+                        "SAGE-1",
+                        "SaGe-1",
+                    ]
+                }
             ),
-            [
+            "test_ancillary_files": [
                 [{"name": "SAGE-SAGE-1.bed", "path": ""}],
                 [{"name": "SAGE-1-1.bed", "path": ""}],
                 [{"name": "SAGE-1.bed", "path": ""}],
             ],
-            "",
-            "",
-        ),
-        (
-            pd.DataFrame({"SEQ_ASSAY_ID": ["SAGE-1-1", "SAGE-1-2"]}),
-            [
+            "expected_missing_files": [],
+        },
+        {
+            "name": "partial_match",
+            "test_clinical_df": pd.DataFrame(
+                {"SEQ_ASSAY_ID": ["SAGE-1-1", "SAGE-1-2", "SaGe-1_1"]}
+            ),
+            "test_ancillary_files": [
                 [{"name": "SAGE-SAGE-1.bed", "path": ""}],
                 [{"name": "SAGE-1-1.bed", "path": ""}],
                 [{"name": "SAGE-1.bed", "path": ""}],
             ],
-            "At least one SEQ_ASSAY_ID in your clinical file does not have an associated BED file. "
-            "Please update your file(s) to be consistent.\n"
-            "Missing BED files: SAGE-1-2.bed\n",
-            "",
-        ),
-        (
-            pd.DataFrame({"SEQ_ASSAY_ID": ["SAGE-1-2", "SAGE-1-3"]}),
-            [
+            "expected_missing_files": ["SAGE-1-2.bed"],
+        },
+        {
+            "name": "no_match",
+            "test_clinical_df": pd.DataFrame(
+                {"SEQ_ASSAY_ID": ["SAGE-1-2", "SAGE-1-3", "SaGe_1_2"]}
+            ),
+            "test_ancillary_files": [
                 [{"name": "SAGE-SAGE-1.bed", "path": ""}],
                 [{"name": "SAGE-1-1.bed", "path": ""}],
                 [{"name": "SAGE-1.bed", "path": ""}],
             ],
-            "At least one SEQ_ASSAY_ID in your clinical file does not have an associated BED file. "
-            "Please update your file(s) to be consistent.\n"
-            "Missing BED files: SAGE-1-2.bed, SAGE-1-3.bed\n",
-            "",
-        ),
-        (
-            pd.DataFrame({"SEQ_ASSAY_ID": ["SAGE-1-2", "SAGE-1-3"]}),
-            [
+            "expected_missing_files": ["SAGE-1-2.bed", "SAGE-1-3.bed"],
+        },
+        {
+            "name": "no_bed_files",
+            "test_clinical_df": pd.DataFrame(
+                {"SEQ_ASSAY_ID": ["SAGE-1-2", "SAGE-1-3", "SAge-1_2"]}
+            ),
+            "test_ancillary_files": [
                 [{"name": "SAGE-1.txt", "path": ""}],
             ],
-            "At least one SEQ_ASSAY_ID in your clinical file does not have an associated BED file. "
-            "Please update your file(s) to be consistent.\n"
-            "Missing BED files: SAGE-1-2.bed, SAGE-1-3.bed\n",
-            "",
-        ),
-    ],
-    ids=["all_match", "partial_match", "no_match", "no_bed_files"],
+            "expected_missing_files": ["SAGE-1-2.bed", "SAGE-1-3.bed"],
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_cases", get_cross_validate_bed_files_test_cases(), ids=lambda x: x["name"]
 )
 def test_that_cross_validate_bed_files_exist_returns_correct_msgs(
-    clin_class, test_clinical_df, test_ancillary_files, expected_error, expected_warning
+    clin_class, test_cases
 ):
-    clin_class.ancillary_files = test_ancillary_files
-    errors, warnings = clin_class._cross_validate_bed_files_exist(test_clinical_df)
-    assert errors == expected_error
-    assert warnings == expected_warning
+    clin_class.ancillary_files = test_cases["test_ancillary_files"]
+    missing_files = clin_class._cross_validate_bed_files_exist(
+        test_cases["test_clinical_df"]
+    )
+    assert Counter(test_cases["expected_missing_files"]) == Counter(missing_files)
 
 
 def test_that_cross_validate_bed_files_exist_calls_expected_methods(clin_class):
@@ -1138,10 +1150,36 @@ def test_that_cross_validate_bed_files_exist_calls_expected_methods(clin_class):
         clin_class._cross_validate_bed_files_exist(test_clinical_df)
         patch_parse_file_info.assert_called_once_with(
             nested_list=clin_class.ancillary_files,
-            search_str="SAGE-SAGE-1.bed",
+            search_str="sage-sage-1.bed",
             ignore_case=True,
             allow_underscore=True,
         )
+
+
+@pytest.mark.parametrize(
+    "missing_files,expected_error,expected_warning",
+    [
+        (
+            [],
+            "",
+            "",
+        ),
+        (
+            ["test1.bed", "test2.bed"],
+            "At least one SEQ_ASSAY_ID in your clinical file does not have an associated BED file. "
+            "Please update your file(s) to be consistent.\n"
+            "Missing BED files: test1.bed, test2.bed\n",
+            "",
+        ),
+    ],
+    ids=["no_missing_files", "missing_files"],
+)
+def test_that_cross_validate_bed_files_exist_message_returns_correct_msgs(
+    clin_class, missing_files, expected_error, expected_warning
+):
+    errors, warnings = clin_class._cross_validate_bed_files_exist_message(missing_files)
+    assert errors == expected_error
+    assert warnings == expected_warning
 
 
 def test_that__cross_validate_calls_expected_methods(clin_class):
@@ -1149,18 +1187,25 @@ def test_that__cross_validate_calls_expected_methods(clin_class):
         Clinical, "_cross_validate_assay_info_has_seq", return_value=("", "")
     ) as patch__cross_validate_assay, mock.patch.object(
         Clinical, "_cross_validate_bed_files_exist", return_value=("", "")
-    ) as patch__cross_validate_bed:
+    ) as patch__cross_validate_bed, mock.patch.object(
+        Clinical, "_cross_validate_bed_files_exist_message", return_value=("", "")
+    ) as patch__cross_validate_bed_msg:
         clin_class._cross_validate(clinicaldf=pd.DataFrame({"something": [1]}))
         patch__cross_validate_assay.assert_called_once()
         patch__cross_validate_bed.assert_called_once()
+        patch__cross_validate_bed_msg.assert_called_once()
 
 
 def test_that__cross_validate_returns_correct_format_for_errors_warnings(clin_class):
     with mock.patch.object(
         Clinical, "_cross_validate_assay_info_has_seq", return_value=("test1", "")
     ) as patch__cross_validate_assay, mock.patch.object(
-        Clinical, "_cross_validate_bed_files_exist", return_value=("test3\n", "")
-    ) as patch__cross_validate_bed:
+        Clinical, "_cross_validate_bed_files_exist", return_value=["something_missing"]
+    ) as patch__cross_validate_bed, mock.patch.object(
+        Clinical,
+        "_cross_validate_bed_files_exist_message",
+        return_value=("test3\n", ""),
+    ) as patch__cross_validate_bed_msg:
         errors, warnings = clin_class._cross_validate(
             clinicaldf=pd.DataFrame({"something": [1]})
         )

@@ -1,4 +1,5 @@
 """Tests validate.py"""
+
 from unittest.mock import Mock, patch
 
 import pandas as pd
@@ -162,7 +163,8 @@ def test_filetype_validate_single_file(syn):
         "----------------ERRORS----------------\n"
         "Your filename is incorrect! Please change your "
         "filename before you run the validator or specify "
-        "--filetype if you are running the validator locally"
+        "--filetype if you are running the validator locally. "
+        "If specifying filetype, options are: [wrong]\n"
     )
 
     with patch.object(FileFormat, "validateFilename", side_effect=AssertionError):
@@ -185,7 +187,8 @@ def test_wrongfiletype_validate_single_file(syn):
         "----------------ERRORS----------------\n"
         "Your filename is incorrect! Please change your "
         "filename before you run the validator or specify "
-        "--filetype if you are running the validator locally"
+        "--filetype if you are running the validator locally. "
+        "If specifying filetype, options are: [wrong]\n"
     )
 
     with patch.object(
@@ -455,7 +458,7 @@ def test_perform_validate(syn, genie_config):
         validate._perform_validate(syn, arg)
         patch_check_parentid.assert_called_once_with(syn=syn, parentid=arg.parentid)
         patch_get_config.assert_called_once_with(syn=syn, project_id=arg.project_id)
-        patch_check_center.assert_called_once_with(arg.center, ["SAGE", "TEST"])
+        patch_check_center.assert_called_once_with(arg.center, ["SAGE", "TEST", "GOLD"])
         patch_get_onco.assert_called_once()
         patch_validate.assert_called_once_with(
             nosymbol_check=arg.nosymbol_check, project_id=arg.project_id

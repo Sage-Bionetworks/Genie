@@ -1,6 +1,7 @@
 from io import StringIO
-import os
 import logging
+import os
+from typing import List
 
 import pandas as pd
 
@@ -198,10 +199,6 @@ class maf(FileTypeFormat):
         for col in numerical_cols:
             col_exists = process_functions.checkColExist(mutationDF, col)
             if col_exists:
-                # Since NA is an allowed value, when reading in the dataframe
-                # the 'NA' string is not converted.  This will convert all
-                # 'NA' values in the numerical columns into actual float('nan')
-                mutationDF.loc[mutationDF[col] == "NA", col] = float("nan")
                 # Attempt to convert column to float
                 try:
                     mutationDF[col] = mutationDF[col].astype(float)
@@ -352,13 +349,38 @@ class maf(FileTypeFormat):
                     )
         return errors, warnings
 
-    def _get_dataframe(self, filePathList):
-        """Get mutation dataframe"""
-        # Must do this because pandas.read_csv will allow for a file to
-        # have more column headers than content.  E.g.
-        # A,B,C,D,E
-        # 1,2
-        # 2,3
+    def _get_dataframe(self, filePathList: List[str]) -> pd.DataFrame:
+        """Get mutation dataframe
+
+        1) Starts reading the first line in the file
+        2) Skips lines that starts with #
+        3) Reads in second line
+        4) Checks that first line fields matches second line. Must do this because
+        pandas.read_csv will allow for a file to have more column headers than content.
+        E.g)  A,B,C,D,E
+              1,2
+              2,3
+
+        5) We keep the 'NA', 'nan', and 'NaN' as strings in the data because
+        these are valid allele values
+        then convert the ones in the non-allele columns back to actual NAs
+
+        NOTE: Because allele columns are case-insensitive in maf data, we must
+        standardize the case of the columns when checking for the non-allele columns
+        to convert the NA strings to NAs
+
+        NOTE: This code allows empty dataframes to pass through
+        without errors
+
+        Args:
+            filePathList (List[str]): list of filepath(s)
+
+        Raises:
+            ValueError: First line fields doesn't match second line fields in file
+
+        Returns:
+            pd.DataFrame: mutation data
+        """
         with open(filePathList[0], "r") as maf_f:
             firstline = maf_f.readline()
             if firstline.startswith("#"):
@@ -370,28 +392,26 @@ class maf(FileTypeFormat):
                 "Number of fields in a line do not match the "
                 "expected number of columns"
             )
+
         read_csv_params = {
             "filepath_or_buffer": filePathList[0],
             "sep": "\t",
             "comment": "#",
-            # Keep the value 'NA'
+            "keep_default_na": False,
             "na_values": [
                 "-1.#IND",
                 "1.#QNAN",
                 "1.#IND",
                 "-1.#QNAN",
                 "#N/A N/A",
-                "NaN",
                 "#N/A",
                 "N/A",
                 "#NA",
                 "NULL",
                 "-NaN",
-                "nan",
                 "-nan",
                 "",
             ],
-            "keep_default_na": False,
             # This is to check if people write files
             # with R, quote=T
             "quoting": 3,
@@ -399,5 +419,16 @@ class maf(FileTypeFormat):
             # validator will cause the file to fail
             "skip_blank_lines": False,
         }
+
         mutationdf = transform._convert_df_with_mixed_dtypes(read_csv_params)
+
+        mutationdf = transform._convert_values_to_na(
+            input_df=mutationdf,
+            values_to_replace=["NA", "nan", "NaN"],
+            columns_to_convert=[
+                col
+                for col in mutationdf.columns
+                if col.upper() not in self._allele_cols
+            ],
+        )
         return mutationdf

@@ -1,4 +1,5 @@
 """Assay information class"""
+
 import os
 import yaml
 

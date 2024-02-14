@@ -1,4 +1,5 @@
 """Test write invalid reasons module"""
+
 from unittest import mock
 from unittest.mock import patch
 

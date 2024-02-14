@@ -41,7 +41,7 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		# texlive-generic-recommended \
 		texlive-latex-extra \
 		# genome nexus
-		openjdk-8-jre \
+		openjdk-11-jre \
 		# This is for reticulate
 		python3.8-venv && \
 	apt-get clean && \
@@ -83,6 +83,6 @@ WORKDIR /root/
 # Must move this git clone to after the install of Genie,
 # because must update cbioportal
 RUN git clone https://github.com/cBioPortal/cbioportal.git -b v5.3.19
-RUN git clone https://github.com/Sage-Bionetworks/annotation-tools.git -b 0.0.2
+RUN git clone https://github.com/Sage-Bionetworks/annotation-tools.git -b 0.0.4
 
 WORKDIR /root/Genie

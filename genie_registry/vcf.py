@@ -1,10 +1,11 @@
 import logging
 import os
+from typing import List
 
 import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import process_functions, validate
+from genie import process_functions, transform, validate
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,25 @@ class vcf(FileTypeFormat):
         endswith_vcf = basename.endswith(".vcf")
         assert startswith_genie and endswith_vcf
 
-    def _get_dataframe(self, filePathList):
+    def _get_dataframe(self, filePathList: List[str]) -> pd.DataFrame:
+        """Get mutation dataframe
+
+        1) Looks for the line in the file starting with #CHROM, that will be
+        the header line (columns).
+
+        2) When reading in the data, we keep the 'NA', 'nan', and 'NaN'
+        as strings in the data because these are valid allele values
+        then convert the ones in the non-allele columns back to actual NAs
+
+        Args:
+            filePathList (List[str]): list of filepath(s)
+
+        Raises:
+            ValueError: when line with #CHROM doesn't exist in file
+
+        Returns:
+            pd.DataFrame: mutation data
+        """
         headers = None
         filepath = filePathList[0]
         with open(filepath, "r") as vcffile:
@@ -38,10 +57,37 @@ class vcf(FileTypeFormat):
                     break
         if headers is not None:
             vcfdf = pd.read_csv(
-                filepath, sep="\t", comment="#", header=None, names=headers
+                filepath,
+                sep="\t",
+                comment="#",
+                header=None,
+                names=headers,
+                keep_default_na=False,
+                na_values=[
+                    "-1.#IND",
+                    "1.#QNAN",
+                    "1.#IND",
+                    "-1.#QNAN",
+                    "#N/A N/A",
+                    "#N/A",
+                    "N/A",
+                    "#NA",
+                    "NULL",
+                    "-NaN",
+                    "-nan",
+                    "",
+                ],
             )
         else:
             raise ValueError("Your vcf must start with the header #CHROM")
+
+        vcfdf = transform._convert_values_to_na(
+            input_df=vcfdf,
+            values_to_replace=["NA", "nan", "NaN"],
+            columns_to_convert=[
+                col for col in vcfdf.columns if col not in self._allele_cols
+            ],
+        )
         return vcfdf
 
     def process_steps(self, df):

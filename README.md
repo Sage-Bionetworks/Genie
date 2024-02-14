@@ -42,7 +42,6 @@ genie validate data_clinical_supp_SAGE.txt SAGE
 ```
 
 
-
 ## Contributing
 
 Please view [contributing guide](CONTRIBUTING.md) to learn how to contribute to the GENIE package.
@@ -65,6 +64,16 @@ These are instructions on how you would develop and test the pipeline locally.
     pip install -r requirements-dev.txt
     ```
 
+    If you are having trouble with the above, try installing via `pipenv`
+
+    1. Specify a python version that is supported by this repo:
+        ```pipenv --python <python_version>```
+
+    1. [pipenv install from requirements file](https://docs.pipenv.org/en/latest/advanced.html#importing-from-requirements-txt)
+
+    1. Activate your `pipenv`:
+        ```pipenv shell```
+
 1. Configure the Synapse client to authenticate to Synapse.
     1. Create a Synapse [Personal Access token (PAT)](https://help.synapse.org/docs/Managing-Your-Account.2055405596.html#ManagingYourAccount-PersonalAccessTokens).
     1. Add a `~/.synapseConfig` file
@@ -83,10 +92,16 @@ These are instructions on how you would develop and test the pipeline locally.
 
 1. Run the different pipelines on the test project.  The `--project_id syn7208886` points to the test project.
 
-    1. Validate all the files.
+    1. Validate all the files **excluding vcf files**:
 
         ```
         python bin/input_to_database.py main --project_id syn7208886 --onlyValidate
+        ```
+
+    1. Validate **all** the files:
+
+        ```
+        python bin/input_to_database.py mutation --project_id syn7208886 --onlyValidate --genie_annotation_pkg ../annotation-tools
         ```
 
     1. Process all the files aside from the mutation (maf, vcf) files.  The mutation processing was split because it takes at least 2 days to process all the production mutation data.  Ideally, there is a parameter to exclude or include file types to process/validate, but that is not implemented.
@@ -95,21 +110,22 @@ These are instructions on how you would develop and test the pipeline locally.
         python bin/input_to_database.py main --project_id syn7208886 --deleteOld
         ```
 
-    1. Process the mutation data.  Be sure to clone this repo: https://github.com/Sage-Bionetworks/annotation-tools.  This repo houses the code that re-annotates the mutation data with genome nexus.  The `--createNewMafDatabase` will create a new mutation tables in the test project.  This flag is necessary for production data for two main reasons:
+    1. Process the mutation data.  Be sure to clone this repo: https://github.com/Sage-Bionetworks/annotation-tools and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile).  This repo houses the code that re-annotates the mutation data with genome nexus.  The `--createNewMafDatabase` will create a new mutation tables in the test project.  This flag is necessary for production data for two main reasons:
         * During processing of mutation data, the data is appended to the data, so without creating an empty table, there will be duplicated data uploaded.
         * By design, Synapse Tables were meant to be appended to.  When a Synapse Tables is updated, it takes time to index the table and return results. This can cause problems for the pipeline when trying to query the mutation table.  It is actually faster to create an entire new table than updating or deleting all rows and appending new rows when dealing with millions of rows.
+        * If you run this more than once on the same day, you'll run into an issue with overwriting the narrow maf table as it already exists. Be sure to rename the current narrow maf database under `Tables` in the test synapse project and try again.
 
         ```
         python bin/input_to_database.py mutation --project_id syn7208886 --deleteOld --genie_annotation_pkg ../annotation-tools --createNewMafDatabase
         ```
 
-    1. Create a consortium release.  Be sure to add the `--test` parameter. Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal
+    1. Create a consortium release.  Be sure to add the `--test` parameter. Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile)
 
         ```
         python bin/database_to_staging.py Jan-2017 ../cbioportal TEST --test
         ```
 
-    1. Create a public release.  Be sure to add the `--test` parameter.  Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal
+    1. Create a public release.  Be sure to add the `--test` parameter.  Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile)
 
         ```
         python bin/consortium_to_public.py Jan-2017 ../cbioportal TEST --test

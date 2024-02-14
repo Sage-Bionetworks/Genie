@@ -1,4 +1,5 @@
 """Test GENIE Bed class"""
+
 import tempfile
 import shutil
 from unittest import mock

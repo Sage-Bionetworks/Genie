@@ -35,6 +35,73 @@ SEG_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_cna_hg19_%s.seg")
 SV_CENTER_PATH = os.path.join(GENIE_RELEASE_DIR, "data_sv_%s.txt")
 BED_DIFFS_SEQASSAY_PATH = os.path.join(GENIE_RELEASE_DIR, "diff_%s.csv")
 
+FULL_MAF_RELEASE_COLUMNS = [
+    "Hugo_Symbol",
+    "Entrez_Gene_Id",
+    "Center",
+    "NCBI_Build",
+    "Chromosome",
+    "Start_Position",
+    "End_Position",
+    "Strand",
+    "Consequence",
+    "Variant_Classification",
+    "Variant_Type",
+    "Reference_Allele",
+    "Tumor_Seq_Allele1",
+    "Tumor_Seq_Allele2",
+    "dbSNP_RS",
+    "dbSNP_Val_Status",
+    "Tumor_Sample_Barcode",
+    "Matched_Norm_Sample_Barcode",
+    "Match_Norm_Seq_Allele1",
+    "Match_Norm_Seq_Allele2",
+    "Tumor_Validation_Allele1",
+    "Tumor_Validation_Allele2",
+    "Match_Norm_Validation_Allele1",
+    "Match_Norm_Validation_Allele2",
+    "Verification_Status",
+    "Validation_Status",
+    "Mutation_Status",
+    "Sequencing_Phase",
+    "Sequence_Source",
+    "Validation_Method",
+    "Score",
+    "BAM_File",
+    "Sequencer",
+    "t_ref_count",
+    "t_alt_count",
+    "n_ref_count",
+    "n_alt_count",
+    "HGVSc",
+    "HGVSp",
+    "HGVSp_Short",
+    "Transcript_ID",
+    "RefSeq",
+    "Protein_position",
+    "Codons",
+    "Exon_Number",
+    "gnomAD_AF",
+    "gnomAD_AFR_AF",
+    "gnomAD_AMR_AF",
+    "gnomAD_ASJ_AF",
+    "gnomAD_EAS_AF",
+    "gnomAD_FIN_AF",
+    "gnomAD_NFE_AF",
+    "gnomAD_OTH_AF",
+    "gnomAD_SAS_AF",
+    "FILTER",
+    "Polyphen_Prediction",
+    "Polyphen_Score",
+    "SIFT_Prediction",
+    "SIFT_Score",
+    "SWISSPROT",
+    "n_depth",
+    "t_depth",
+    "Annotation_Status",
+    "mutationInCis_Flag",
+]
+
 
 # TODO: Add to transform.py
 def _to_redact_interval(df_col):
@@ -755,10 +822,7 @@ def store_maf_files(
         with open(MUTATIONS_CENTER_PATH % center, "w"):
             pass
     used_entities = []
-    # Must get the headers (because can't assume headers are the same order)
     maf_ent = syn.get(centerMafSynIdsDf.id[0])
-    headerdf = pd.read_csv(maf_ent.path, sep="\t", comment="#", nrows=0)
-    column_order = headerdf.columns
     for _, mafSynId in enumerate(centerMafSynIdsDf.id):
         maf_ent = syn.get(mafSynId)
         logger.info(maf_ent.path)
@@ -771,13 +835,12 @@ def store_maf_files(
             )
 
             for mafchunk in mafchunks:
-                # Reorder column headers
-                mafchunk = mafchunk[column_order]
                 # Get center for center staging maf
                 # Configure maf
                 configured_mafdf = configure_maf(
                     mafchunk, remove_mafinbed_variants, flagged_mutationInCis_variants
                 )
+                configured_mafdf = configured_mafdf[FULL_MAF_RELEASE_COLUMNS]
                 # Create maf for release
                 merged_mafdf = remove_maf_samples(
                     configured_mafdf, keep_for_merged_consortium_samples
@@ -989,30 +1052,38 @@ def store_clinical_files(
     }
 
     clinicaldf["CANCER_TYPE"] = [
-        oncotree_dict[code.upper()]["CANCER_TYPE"]
-        if code.upper() in oncotree_dict.keys()
-        else float("nan")
+        (
+            oncotree_dict[code.upper()]["CANCER_TYPE"]
+            if code.upper() in oncotree_dict.keys()
+            else float("nan")
+        )
         for code in clinicaldf["ONCOTREE_CODE"]
     ]
 
     clinicaldf["CANCER_TYPE_DETAILED"] = [
-        oncotree_dict[code.upper()]["CANCER_TYPE_DETAILED"]
-        if code.upper() in oncotree_dict.keys()
-        else float("nan")
+        (
+            oncotree_dict[code.upper()]["CANCER_TYPE_DETAILED"]
+            if code.upper() in oncotree_dict.keys()
+            else float("nan")
+        )
         for code in clinicaldf["ONCOTREE_CODE"]
     ]
 
     clinicaldf["ONCOTREE_PRIMARY_NODE"] = [
-        oncotree_dict[code.upper()]["ONCOTREE_PRIMARY_NODE"]
-        if code.upper() in oncotree_dict.keys()
-        else float("nan")
+        (
+            oncotree_dict[code.upper()]["ONCOTREE_PRIMARY_NODE"]
+            if code.upper() in oncotree_dict.keys()
+            else float("nan")
+        )
         for code in clinicaldf["ONCOTREE_CODE"]
     ]
 
     clinicaldf["ONCOTREE_SECONDARY_NODE"] = [
-        oncotree_dict[code.upper()]["ONCOTREE_SECONDARY_NODE"]
-        if code.upper() in oncotree_dict.keys()
-        else float("nan")
+        (
+            oncotree_dict[code.upper()]["ONCOTREE_SECONDARY_NODE"]
+            if code.upper() in oncotree_dict.keys()
+            else float("nan")
+        )
         for code in clinicaldf["ONCOTREE_CODE"]
     ]
 
@@ -1023,9 +1094,11 @@ def store_clinical_files(
     # descriptions can match
     clinicaldf["AGE_AT_SEQ_REPORT_DAYS"] = clinicaldf["AGE_AT_SEQ_REPORT"]
     clinicaldf["AGE_AT_SEQ_REPORT"] = [
-        int(math.floor(int(float(age)) / 365.25))
-        if process_functions.checkInt(age)
-        else age
+        (
+            int(math.floor(int(float(age)) / 365.25))
+            if process_functions.checkInt(age)
+            else age
+        )
         for age in clinicaldf["AGE_AT_SEQ_REPORT"]
     ]
     clinicaldf["AGE_AT_SEQ_REPORT"][clinicaldf["AGE_AT_SEQ_REPORT"] == ">32485"] = ">89"

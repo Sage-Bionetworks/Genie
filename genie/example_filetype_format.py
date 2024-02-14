@@ -1,6 +1,7 @@
 """TODO: Rename this to model.py
 This contains the GENIE model objects
 """
+
 from abc import ABCMeta
 from dataclasses import dataclass
 import logging

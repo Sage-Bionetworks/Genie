@@ -3,9 +3,11 @@ from unittest.mock import mock_open, patch
 import pandas as pd
 import pytest
 
-from genie import process_functions, validate
+from genie import process_functions, transform, validate
 import genie_registry.maf
 from genie_registry.maf import maf
+
+OPEN_BUILTIN = "builtins.open"
 
 
 @pytest.fixture
@@ -38,7 +40,7 @@ def valid_maf_df():
             T_REF_COUNT=[1, 2, 3, 4, 3],
             N_DEPTH=[1, 2, 3, float("nan"), 3],
             N_REF_COUNT=[1, 2, 3, 4, 3],
-            N_ALT_COUNT=[1, 2, 3, 4, 3],
+            N_ALT_COUNT=[1, None, 3, 4, 3],
             TUMOR_SEQ_ALLELE2=["A", "A", "A", "A", "A"],
         )
     )
@@ -428,22 +430,70 @@ def test_that__cross_validate_returns_expected_msg_if_valid(
     ids=["no_pound_sign", "pound_sign"],
 )
 def test_that__get_dataframe_returns_expected_result(maf_class, test_input, expected):
-    with patch("builtins.open", mock_open(read_data=test_input)):
+    with patch(OPEN_BUILTIN, mock_open(read_data=test_input)):
         test = maf_class._get_dataframe(["some_path"])
         pd.testing.assert_frame_equal(test, expected)
 
 
-def test_that__get_dataframe_throws_value_error(maf_class):
+def test_that__get_dataframe_reads_in_correct_nas(maf_class):
     file = (
-        "#Hugo_Symbol	Entrez_Gene_Id	Center	NCBI_Build	Chromosome\n"
-        "TEST	3845	TEST	GRCh37	12"
+        "Hugo_Symbol\tEntrez_Gene_Id\tReference_Allele\n"
+        "TEST\t3845\tNA\n"
+        "TEST\tNA\tnan\n"
+        "TEST\t3846\tN/A\n"
+        "NA\tnan\tNaN"
     )
-    with patch("builtins.open", mock_open(read_data=file)):
-        with pytest.raises(
-            ValueError,
-            match="Number of fields in a line do not match the expected number of columns",
-        ):
-            maf_class._get_dataframe(["some_path"])
+    with patch(OPEN_BUILTIN, mock_open(read_data=file)):
+        expected = pd.DataFrame(
+            {
+                "Hugo_Symbol": ["TEST", "TEST", "TEST", None],
+                "Entrez_Gene_Id": ["3845", None, "3846", None],
+                "Reference_Allele": ["NA", "nan", None, "NaN"],
+            }
+        )
+        maf_df = maf_class._get_dataframe(["some_path"])
+        pd.testing.assert_frame_equal(maf_df, expected)
+
+
+@pytest.mark.parametrize(
+    "input,expected_columns",
+    [
+        (
+            pd.DataFrame(
+                {
+                    "Hugo_Symbol": ["TEST"],
+                    "Entrez_Gene_Id": ["3845"],
+                    "RefErence_Allele": ["NA"],
+                }
+            ),
+            ["Hugo_Symbol", "Entrez_Gene_Id"],
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "#CHROM": ["TEST"],
+                    "ALT": ["3845"],
+                    "Reference_a": ["NA"],
+                }
+            ),
+            ["#CHROM", "ALT", "Reference_a"],
+        ),
+    ],
+    ids=["with_allele_col", "no_allele_col"],
+)
+def test_that__get_dataframe_uses_correct_columns_to_replace(
+    maf_class, input, expected_columns
+):
+    file = "Hugo_Symbol\tEntrez_Gene_Id\tReference_Allele\n" "TEST\t3845\tNA"
+    with patch(OPEN_BUILTIN, mock_open(read_data=file)), patch.object(
+        pd, "read_csv", return_value=input
+    ), patch.object(transform, "_convert_values_to_na") as patch_convert_to_na:
+        maf_class._get_dataframe(["some_path"])
+        patch_convert_to_na.assert_called_once_with(
+            input_df=input,
+            values_to_replace=["NA", "nan", "NaN"],
+            columns_to_convert=expected_columns,
+        )
 
 
 @pytest.mark.parametrize(

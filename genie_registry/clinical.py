@@ -1,4 +1,5 @@
 """Clinical file format validation and processing"""
+
 # from __future__ import annotations
 import datetime
 from io import StringIO
@@ -1012,28 +1013,45 @@ class Clinical(FileTypeFormat):
 
         return clinicaldf
 
-    def _cross_validate_bed_files_exist(self, clinicaldf) -> tuple:
+    def _cross_validate_bed_files_exist(self, clinicaldf) -> list:
         """Check that a bed file exist per SEQ_ASSAY_ID value in clinical file"""
-        errors = ""
-        warnings = ""
         missing_files = []
-        seq_assay_ids = clinicaldf["SEQ_ASSAY_ID"].unique().tolist()
+        exception_params = {"ignore_case": True, "allow_underscore": True}
+
+        # standardize and get unique seq assay ids before searching bed files
+        seq_assay_ids = set(
+            [
+                validate.standardize_string_for_validation(sq_id, **exception_params)
+                for sq_id in clinicaldf["SEQ_ASSAY_ID"].unique()
+            ]
+        )
 
         for seq_assay_id in seq_assay_ids:
             bed_files = validate.parse_file_info_in_nested_list(
                 nested_list=self.ancillary_files,
                 search_str=f"{seq_assay_id}.bed",  # type: ignore[arg-type]
-                ignore_case=True,
-                allow_underscore=True,
+                **exception_params,
             )
             if not bed_files["files"]:
-                missing_files.append(f"{seq_assay_id}.bed")
+                missing_files.append(f"{seq_assay_id.upper()}.bed")
+        return missing_files
 
-        if missing_files:
+    def _cross_validate_bed_files_exist_message(self, missing_bed_files: list) -> tuple:
+        """Gets the warning/error messages given the missing bed files list
+
+        Args:
+            missing_bed_files (list): list of missing bed files
+
+        Returns:
+            tuple: error + warning
+        """
+        errors = ""
+        warnings = ""
+        if missing_bed_files:
             errors = (
                 "At least one SEQ_ASSAY_ID in your clinical file does not have an associated BED file. "
                 "Please update your file(s) to be consistent.\n"
-                f"Missing BED files: {', '.join(missing_files)}\n"
+                f"Missing BED files: {', '.join(missing_bed_files)}\n"
             )
         return errors, warnings
 
@@ -1087,7 +1105,10 @@ class Clinical(FileTypeFormat):
         errors_assay, warnings_assay = self._cross_validate_assay_info_has_seq(
             clinicaldf
         )
-        errors_bed, warnings_bed = self._cross_validate_bed_files_exist(clinicaldf)
+        missing_bed_files = self._cross_validate_bed_files_exist(clinicaldf)
+        errors_bed, warnings_bed = self._cross_validate_bed_files_exist_message(
+            missing_bed_files
+        )
 
         errors = errors_assay + errors_bed
         warnings = warnings_assay + warnings_bed

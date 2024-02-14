@@ -1,4 +1,5 @@
 """Test genie.extract module"""
+
 from unittest.mock import patch
 
 import pandas as pd

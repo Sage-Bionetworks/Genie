@@ -1,7 +1,11 @@
 import pandas as pd
 import pytest
+from unittest.mock import mock_open, patch
 
+from genie import transform
 from genie_registry.vcf import vcf
+
+OPEN_BUILTIN = "builtins.open"
 
 
 @pytest.fixture
@@ -251,3 +255,73 @@ def test_validation_more_than_11_cols(vcf_class):
         "Only single sample or matched tumor normal vcf files are accepted.\n"
     )
     assert warning == ""
+
+
+def test_that__get_dataframe_throws_value_error_if_no_headers(vcf_class):
+    file = "CHROM\tALT\tREF\n" "TEST\t3845\tNA"
+    with patch(OPEN_BUILTIN, mock_open(read_data=file)):
+        with pytest.raises(
+            ValueError, match="Your vcf must start with the header #CHROM"
+        ):
+            vcf_class._get_dataframe(["some_path"])
+
+
+def test_that__get_dataframe_reads_in_correct_nas(vcf_class):
+    file = (
+        "#CHROM\tALT\tREF\n"
+        "TEST\t3845\tNA\n"
+        "TEST\tNA\tnan\n"
+        "TEST\t3846\tN/A\n"
+        "NA\tnan\tNaN"
+    )
+    with patch(OPEN_BUILTIN, mock_open(read_data=file)):
+        expected = pd.DataFrame(
+            {
+                "#CHROM": ["TEST", "TEST", "TEST", None],
+                "ALT": ["3845", None, "3846", None],
+                "REF": ["NA", "nan", None, "NaN"],
+            }
+        )
+        vcf_df = vcf_class._get_dataframe(["some_path"])
+        pd.testing.assert_frame_equal(vcf_df, expected)
+
+
+@pytest.mark.parametrize(
+    "input,expected_columns",
+    [
+        (
+            pd.DataFrame(
+                {
+                    "#CHROM": ["TEST"],
+                    "ALT": ["3845"],
+                    "REF": ["NA"],
+                }
+            ),
+            ["#CHROM", "ALT"],
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "#CHROM": ["TEST"],
+                    "ALT": ["3845"],
+                    "rEf": ["NA"],
+                }
+            ),
+            ["#CHROM", "ALT", "rEf"],
+        ),
+    ],
+    ids=["with_allele_col", "no_allele_col"],
+)
+def test_that__get_dataframe_uses_correct_columns_to_replace(
+    vcf_class, input, expected_columns
+):
+    file = "#CHROM\tALT\tref\n" "TEST\t3845\tNA"
+    with patch(OPEN_BUILTIN, mock_open(read_data=file)), patch.object(
+        pd, "read_csv", return_value=input
+    ), patch.object(transform, "_convert_values_to_na") as patch_convert_to_na:
+        vcf_class._get_dataframe(["some_path"])
+        patch_convert_to_na.assert_called_once_with(
+            input_df=input,
+            values_to_replace=["NA", "nan", "NaN"],
+            columns_to_convert=expected_columns,
+        )
