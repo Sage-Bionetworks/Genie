@@ -57,9 +57,10 @@ jobs:
       - uses: actions/checkout@v2
       - uses: psf/black@stable
 
-  build-and-publish:
+  deploy:
     needs: [test, lint]
     runs-on: ubuntu-latest
+    if: github.event_name == 'release'
     permissions:
       id-token: write
     steps:
