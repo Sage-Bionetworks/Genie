@@ -57,9 +57,11 @@ jobs:
       - uses: actions/checkout@v2
       - uses: psf/black@stable
 
-  build-dist:
+  build-and-publish:
     needs: [test, lint]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
@@ -74,12 +76,5 @@ jobs:
       run: python -m build
     - name: List contents of dist directory
       run: ls -l dist
-
-  publish:
-    needs: [test, lint, build-dist]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-    steps:
     - name: Publish to pypi
       uses: pypa/gh-action-pypi-publish@release/v1
