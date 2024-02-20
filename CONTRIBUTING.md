@@ -120,11 +120,11 @@ Here's how to run the test suite:
 Rscript -e "testthat::test_dir('R/tests/testthat/')"
 ```
 
-### Test Development
+##### Test Development
 
 Please add tests for new code. These might include unit tests (to test specific functionality of code that was added to support fixing the bug or feature), integration tests (to test that the feature is usable - e.g., it should have complete the expected behavior as reported in the feature request or bug report), or both.
 
-#### Mock Testing
+###### Mock Testing
 
 It is recommended to use the following style (see example below) for mock testing across this package:
 
@@ -136,14 +136,16 @@ patch.object(MODULE_NAME, "FUNCTION_TO_MOCK_NAME".return_value=SOME_RETURN_VALUE
 
 #### Integration tests
 
-Integration tests in Genie involve running all parts of the test pipeline under the following conditions:
-- locally
-- in an ec2 instance using nextflow
-- in Nextflow Tower
+Integration tests in Genie involve running all parts of the **test** pipeline under the following conditions:
 
-Make sure to run each of the [pipeline steps here](README.md#developing-locally) on the test pipeline and verify that your pipeline runs as expected. This is __not__ automatically run by Github Actions and have to be manually run.
+- locally. Run each of the [pipeline steps here](README.md#developing-locally) on the test pipeline and verify that your pipeline runs as expected.
+- in an ec2 instance using nextflow. [See here for how to run nextflow locally](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/README.md#process-and-developing-locally)
+- in Nextflow Tower. [See here for how to run on Nextflow Tower.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/README.md#processing-on-nextflow-tower)
 
-### Modifying Docker
+These are __not__ automatically run by Github Actions and have to be manually run.
+
+#### Modifying Docker
+
 Follow this section when modifying the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile):
 
 There are usually three common conditions when docker needs to be updated:
@@ -152,7 +154,7 @@ There are usually three common conditions when docker needs to be updated:
 - The python version needs to be updated
 - The java version needs to be updated
 
-#### Developing and testing docker updates
+##### Developing and testing docker updates
 
 1. Have your synapse authentication token handy
 1. Make relevant changes to `Dockerfile`
