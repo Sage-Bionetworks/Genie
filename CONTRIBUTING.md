@@ -172,18 +172,23 @@ There are usually three common conditions when docker needs to be updated:
 1. Once changes are tested, follow [genie contributing guidelines](#developing) for adding the docker updates to this repo
 1. Once deployed to main, make sure docker image was successfully deployed remotely (our docker image gets automatically deployed) [here](https://hub.docker.com/repository/docker/sagebionetworks/genie/builds)
 
-
 ### Release Procedure (For Package Maintainers)
 
 Follow gitflow best practices as linked above.
+
+**Background Pages:**
+
+- See [About releases - GitHub Docs](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) for more information about Github releases and their relationship to github tags
+- See [Git - Tagging](https://git-scm.com/book/en/v2/Git-Basics-Tagging) for more information about Github tags
+
+**Instructions:**
 
 1. Always merge all new features into `develop` branch first (unless it is a documentation, readme, or github action patch into `main`)
 1. After initial features are ready in the `develop` branch, create a `release-X.X` branch (do not need to push this branch to remote) to prepare for the release.
     1. update the `__version__` parameter in `genie/__init__.py`
 1. Merge `release-X.X` branch into `main` - Not by pull request!
-1. Create release tag (`v...`) and a brief message
-1. Push tag and change(s) from `main`
-1. Create a new release on the repo. Include release notes.  Also include any known bugs for each release here. Wait for the CI/CD to finish.
+1. [Draft a new release and github tag for the repo here](https://github.com/Sage-Bionetworks/Genie/releases), specify the `main` branch as the target, and choose a tag name. Specify a tag name that doesn't exist to invoke the github auto tag create feature.
+1. Click `Generate release notes`, review the content and be sure to include any known bugs for the release. Wait for the CI/CD to finish.
 1. Merge `main` back into `develop`
 1. Push `develop`
 
