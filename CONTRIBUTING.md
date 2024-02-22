@@ -94,7 +94,21 @@ This package uses [semantic versioning](https://semver.org/) for releasing new v
 
 ### Testing
 
-Testing in GENIE is split between unit tests usually written in Python and R and integration tests.
+Testing in GENIE is split between **unit tests** (usually written in Python and R) and **integration tests**.
+
+#### Test Development
+
+Please add tests for new code. These might include unit tests (to test specific functionality of code that was added to support fixing the bug or feature), integration tests (to test that the feature is usable - e.g., it should have complete the expected behavior as reported in the feature request or bug report), or both.
+
+##### Mock Testing
+
+It is recommended to use the following style (see example below) for mock testing across this package:
+
+```python
+from unittest.mock import patch
+...
+patch.object(MODULE_NAME, "FUNCTION_TO_MOCK_NAME".return_value=SOME_RETURN_VALUE)
+```
 
 #### Unit tests
 
@@ -120,57 +134,15 @@ Here's how to run the test suite:
 Rscript -e "testthat::test_dir('R/tests/testthat/')"
 ```
 
-##### Test Development
-
-Please add tests for new code. These might include unit tests (to test specific functionality of code that was added to support fixing the bug or feature), integration tests (to test that the feature is usable - e.g., it should have complete the expected behavior as reported in the feature request or bug report), or both.
-
-###### Mock Testing
-
-It is recommended to use the following style (see example below) for mock testing across this package:
-
-```python
-from unittest.mock import patch
-...
-patch.object(MODULE_NAME, "FUNCTION_TO_MOCK_NAME".return_value=SOME_RETURN_VALUE)
-```
-
 #### Integration tests
 
-Integration tests in Genie involve running all parts of the **test** pipeline under the following conditions:
+Full integration tests in Genie involve running all parts of the **test** pipeline under the following conditions:
 
-- locally. Run each of the [pipeline steps here](README.md#developing-locally) on the test pipeline and verify that your pipeline runs as expected.
-- in an ec2 instance using nextflow. [See here for how to run nextflow locally](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/README.md#process-and-developing-locally)
-- in Nextflow Tower. [See here for how to run on Nextflow Tower.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/README.md#processing-on-nextflow-tower)
+- Running pipeline locally. Run each of the [pipeline steps here](README.md#developing-locally) on the test pipeline and verify that your pipeline runs as expected.
+- Running pipeline in an ec2 instance using nextflow. [See here for how to run nextflow locally](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/README.md#process-and-developing-locally)
+- Running pipeline on Nextflow Tower. [See here for how to run on Nextflow Tower.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/README.md#processing-on-nextflow-tower)
 
 These are __not__ automatically run by Github Actions and have to be manually run.
-
-#### Modifying Docker
-
-Follow this section when modifying the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile):
-
-There are usually three common conditions when docker needs to be updated:
-
-- The tag version of the `cbioportal` or `annotation-tools` repos needs to be updated (most common)
-- The python version needs to be updated
-- The java version needs to be updated
-
-##### Developing and testing docker updates
-
-1. Have your synapse authentication token handy
-1. Make relevant changes to `Dockerfile`
-1. ```docker build -f Dockerfile -t <some_docker_image_name> .```
-1. ```docker run --rm -it -e SYNAPSE_AUTH_TOKEN=$YOUR_SYNAPSE_TOKEN <some_docker_image_name>```
-1. Run [test code](README.md#developing-locally) relevant to the dockerfile changes to make sure changes are present and working
-1. Push image to dockerhub under your branch of this repo
-1. Follow instructions [here](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/README.md#process-and-developing-locally) for setting up your environment for running the nextflow workflow on [`nf-genie` repo](https://github.com/Sage-Bionetworks-Workflows/nf-genie).
-1. Create new branch off the `main` branch in `nf-genie` repo
-1. Update relevant module docker paths in `nf-genie` to specify your docker image (use `docker images` to see list)
-1. Run `nf-genie` on ec2 under that docker image. [See here for how to run nextflow locally.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/README.md#process-and-developing-locally)
-1. Push your updates to your branch in `nf-genie`
-1. Run the test pipeline on Nextflow Tower, be sure to specify your branch in the `nf-genie` pipeline as the `revision` when running. [See here for how to run on Nextflow Tower.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/README.md#processing-on-nextflow-tower)
-1. Be sure to delete your branch on `nf-genie`
-1. Once changes are tested, follow [genie contributing guidelines](#developing) for adding the docker updates to this repo
-1. Once deployed to main, make sure docker image was successfully deployed remotely (our docker image gets automatically deployed) [here](https://hub.docker.com/repository/docker/sagebionetworks/genie/builds)
 
 ### Release Procedure (For Package Maintainers)
 

@@ -14,14 +14,19 @@ This repository documents code used to gather, QC, standardize, and analyze data
 ## Dependencies
 
 This package contains both R, Python and cli tools.  These are tools or packages you will need, to be able to reproduce these results:
+
 - Python >=3.8 or <3.10
-    - `pip install -r requirements.txt`
 - [bedtools](https://bedtools.readthedocs.io/en/latest/content/installation.html)
 - R 4.2.2
     - `renv::install()`
     - Follow instructions [here](https://r-docs.synapse.org/#note-for-windows-and-mac-users) to install synapser
-- [Java > 8](https://www.java.com/en/download/)
-    - For mac users, it seems to work better to run `brew install java`
+- [Java 11](https://www.java.com/en/download/)
+    - For mac users, [use homebrew to install java](https://formulae.brew.sh/formula/openjdk)
+    - For non-mac users/if `homebrew` doesn't work, [install it from the official Oracle website](https://www.oracle.com/java/technologies/downloads/)
+    - NOTE: If your process still can't find the JDK, for the system Java wrappers to find this JDK, symlink it with:
+    ```
+    sudo ln -sfn /opt/homebrew/opt/openjdk@11/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-11.jdk
+    ```
 - [wget](https://www.gnu.org/software/wget/)
     - For mac users, have to run `brew install wget`
 
@@ -41,19 +46,20 @@ genie validate -h
 genie validate data_clinical_supp_SAGE.txt SAGE
 ```
 
-
 ## Contributing
 
 Please view [contributing guide](CONTRIBUTING.md) to learn how to contribute to the GENIE package.
 
-
 # Sage Bionetworks Only
 
-## Developing locally
+## Development
+
+### Developing locally
 
 These are instructions on how you would develop and test the pipeline locally.
 
 1. Make sure you have read through the [GENIE Onboarding Docs](https://sagebionetworks.jira.com/wiki/spaces/APGD/pages/2163344270/Onboarding) and have access to all of the required repositories, resources and synapse projects for Main GENIE.
+1. Make sure you have the [key dependencies installed](#dependencies)
 1. Be sure you are invited to the Synapse GENIE Admin team.
 1. Make sure you are a Synapse certified user: [Certified User - Synapse User Account Types](https://help.synapse.org/docs/Synapse-User-Account-Types.2007072795.html#SynapseUserAccountTypes-CertifiedUser)
 1. Clone this repo and install the package locally.
@@ -130,6 +136,34 @@ These are instructions on how you would develop and test the pipeline locally.
         ```
         python bin/consortium_to_public.py Jan-2017 ../cbioportal TEST --test
         ```
+
+### Modifying Docker
+
+Follow this section when the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile) needs to be modified:
+
+There are usually three common conditions when docker needs to be updated:
+
+- The tag version of the `cbioportal` or `annotation-tools` repos needs to be updated (most common)
+- The python version needs to be updated
+- The java version needs to be updated
+
+#### Developing and testing docker updates
+
+1. Have your synapse authentication token handy
+1. Make relevant changes to `Dockerfile`
+1. Run ```docker build -f Dockerfile -t <some_docker_image_name> .``` to build the image
+1. Run ```docker run --rm -it -e SYNAPSE_AUTH_TOKEN=$YOUR_SYNAPSE_TOKEN <some_docker_image_name>``` to run the image
+1. Run [test code](#developing-locally) relevant to the Dockerfile changes to make sure changes are present and working
+1. Push image to dockerhub under your branch of this repo
+1. Follow instructions [here](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/README.md#process-and-developing-locally) for setting up your environment for running the nextflow workflow on [`nf-genie` repo](https://github.com/Sage-Bionetworks-Workflows/nf-genie).
+1. Create a new branch off the `main` branch in `nf-genie` repo
+1. Update relevant module docker paths in `nf-genie/modules` to use your docker image (use `docker images` to see list) ![alt text](img/nf_genie_docker_paths.png)
+1. Run `nf-genie` on ec2 under that docker image. [See here for how to run nextflow locally.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/README.md#process-and-developing-locally)
+1. Push your updates to your branch in `nf-genie`
+1. Run the test pipeline on Nextflow Tower, be sure to specify your branch in the `nf-genie` pipeline as the `revision` when running. [See here for how to run on Nextflow Tower.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/README.md#processing-on-nextflow-tower)
+1. Be sure to delete your branch on `nf-genie`
+1. Once changes are tested, follow [genie contributing guidelines](CONTRIBUTING.md#developing) for adding the docker updates to this repo
+1. Once deployed to main, make sure docker image was successfully deployed remotely (our docker image gets automatically deployed) [here](https://hub.docker.com/repository/docker/sagebionetworks/genie/builds)
 
 ## Production
 
