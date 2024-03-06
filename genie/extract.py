@@ -4,6 +4,7 @@ from Synapse
 """
 
 import logging
+import sys
 from typing import List, Optional
 
 import synapseclient
@@ -12,7 +13,7 @@ import pandas as pd
 
 from genie import process_functions
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
 
 
