@@ -54,6 +54,7 @@ def get_center_input_files(
             if name.endswith(".vcf") and process != "mutation":
                 continue
 
+            logger.info(f"GETTING FILE {name} ({ent_synid})")
             ent = syn.get(ent_synid, downloadFile=downloadFile)
 
             # HACK: Clinical file can come as two files.
