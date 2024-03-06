@@ -12,6 +12,7 @@ import pandas as pd
 
 from genie import process_functions
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
