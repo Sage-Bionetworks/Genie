@@ -81,7 +81,7 @@ def test_firstcolumn_validation(maf_class):
             "N_DEPTH": [1, 2, 3, 4, 3],
             "N_REF_COUNT": [1, 2, 3, 4, 3],
             "N_ALT_COUNT": [1, 2, 3, 4, 3],
-            "TUMOR_SEQ_ALLELE2": ["A", "A", "A", "A", "A"],
+            "TUMOR_SEQ_ALLELE2": ["T", "A", "A", "A", "A"],
         }
     )
     order = [
@@ -258,6 +258,39 @@ def test_invalid__check_tsa1_tsa2():
         "REFERENCE_ALLELE or all values in TUMOR_SEQ_ALLELE2.\n"
     )
 
+def test_invalid__check_ref_tsa2():
+    """Test the scenario in which maf file has identical REF and tsa2 and fails"""
+    df = pd.DataFrame(
+        dict(
+            REFERENCE_ALLELE=["A", "A", "A"],
+            TUMOR_SEQ_ALLELE1=["A", "A", "A"],
+            TUMOR_SEQ_ALLELE2=["A", "C", "C"],
+        )
+    )
+    error = genie_registry.maf._check_tsa1_tsa2(df)
+    assert error == (
+        "REFERENCE_ALLELE should not equal to TUMOR_SEQ_ALLELE2. "
+        "Please check row: 1.\n"
+    )
+
+def test_invalid__check_ref_tsa1_tsa2():
+    """Test the scenario in which maf file has TSA1 and TSA2 and fails"""
+    df = pd.DataFrame(
+        dict(
+            REFERENCE_ALLELE=["A", "A", "A"],
+            TUMOR_SEQ_ALLELE1=["B", "B", "B"],
+            TUMOR_SEQ_ALLELE2=["A", "C", "C"],
+        )
+    )
+    error = genie_registry.maf._check_tsa1_tsa2(df)
+    assert error == (
+        "maf: Contains both "
+        "TUMOR_SEQ_ALLELE1 and TUMOR_SEQ_ALLELE2 columns. "
+        "All values in TUMOR_SEQ_ALLELE1 must match all values in "
+        "REFERENCE_ALLELE or all values in TUMOR_SEQ_ALLELE2.\n"
+        "REFERENCE_ALLELE should not equal to TUMOR_SEQ_ALLELE2. "
+        "Please check row: 1.\n"
+    )
 
 @pytest.mark.parametrize(
     "df",

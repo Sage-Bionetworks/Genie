@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 def _check_tsa1_tsa2(df):
     """If maf file has both TSA1 and TSA2,
-    TSA1 must equal REF, or TSA1 must equal TSA2.
+    TSA1 must equal REF, or TSA1 must equal TSA2, and REF must not equal TSA2
     """
     tsa2_col_exist = process_functions.checkColExist(df, "TUMOR_SEQ_ALLELE2")
     tsa1_col_exist = process_functions.checkColExist(df, "TUMOR_SEQ_ALLELE1")
@@ -29,6 +29,9 @@ def _check_tsa1_tsa2(df):
                 "All values in TUMOR_SEQ_ALLELE1 must match all values in "
                 "REFERENCE_ALLELE or all values in TUMOR_SEQ_ALLELE2.\n"
             )
+    if tsa2_col_exist and ref_col_exist and not df.query('REFERENCE_ALLELE == TUMOR_SEQ_ALLELE2').empty:
+        error =(f"{error}REFERENCE_ALLELE should not equal to TUMOR_SEQ_ALLELE2. " 
+                f"Please check row: {', '.join(str(e+1) for e in df.query('REFERENCE_ALLELE == TUMOR_SEQ_ALLELE2').index.values)}.\n")
     return error
 
 
