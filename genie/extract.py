@@ -13,8 +13,10 @@ import pandas as pd
 
 from genie import process_functions
 
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.INFO)
+logger.addHandler(stdout_handler)
 
 
 def get_center_input_files(
