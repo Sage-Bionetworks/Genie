@@ -14,7 +14,7 @@ import pandas as pd
 from genie import process_functions
 
 logger = logging.getLogger(__name__)
-stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler = logging.StreamHandler(stream=sys.stdout)
 stdout_handler.setLevel(logging.INFO)
 logger.addHandler(stdout_handler)
 
