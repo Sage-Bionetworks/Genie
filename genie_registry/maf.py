@@ -30,10 +30,8 @@ def _check_tsa1_tsa2(df):
                 "REFERENCE_ALLELE or all values in TUMOR_SEQ_ALLELE2.\n"
             )
     if tsa2_col_exist and ref_col_exist and not df.query('REFERENCE_ALLELE == TUMOR_SEQ_ALLELE2').empty:
-        error =(f"{error}REFERENCE_ALLELE should not equal to TUMOR_SEQ_ALLELE2. " 
-                f"Please check row: {', '.join(str(e+1) for e in df.query('REFERENCE_ALLELE == TUMOR_SEQ_ALLELE2').index.values)}.\n")
+        error =(f"{error}REFERENCE_ALLELE should not equal to TUMOR_SEQ_ALLELE2. Please check row: {', '.join(str(e+1) for e in df.query('REFERENCE_ALLELE == TUMOR_SEQ_ALLELE2').index.values)}.\n")
     return error
-
 
 def _check_allele_col(df, col):
     """
