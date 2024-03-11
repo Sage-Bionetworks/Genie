@@ -29,9 +29,18 @@ def _check_tsa1_tsa2(df):
                 "All values in TUMOR_SEQ_ALLELE1 must match all values in "
                 "REFERENCE_ALLELE or all values in TUMOR_SEQ_ALLELE2.\n"
             )
-    if tsa2_col_exist and ref_col_exist and not df.query('REFERENCE_ALLELE == TUMOR_SEQ_ALLELE2').empty:
-        error =(f"{error}REFERENCE_ALLELE should not equal to TUMOR_SEQ_ALLELE2. Please check row: {', '.join(str(e+1) for e in df.query('REFERENCE_ALLELE == TUMOR_SEQ_ALLELE2').index.values)}.\n")
+    if (
+        tsa2_col_exist
+        and ref_col_exist
+        and not df.query("REFERENCE_ALLELE == TUMOR_SEQ_ALLELE2").empty
+    ):
+        error = (
+            "maf: Contains instances where values in REFERENCE_ALLELE match values in TUMOR_SEQ_ALLELE2. "
+            "This is invalid. Please correct."
+        )
+        row_index = df.query("REFERENCE_ALLELE == TUMOR_SEQ_ALLELE2").index.values
     return error
+
 
 def _check_allele_col(df, col):
     """
