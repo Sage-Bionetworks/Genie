@@ -241,40 +241,6 @@ def test_error__check_allele_col():
     assert warning == ""
 
 
-def test_invalid__check_tsa1_tsa2():
-    """Test the scenario in which maf file has TSA1 and TSA2 and fails"""
-    df = pd.DataFrame(
-        dict(
-            REFERENCE_ALLELE=["A", "A", "A"],
-            TUMOR_SEQ_ALLELE1=["B", "B", "B"],
-            TUMOR_SEQ_ALLELE2=["C", "C", "C"],
-        )
-    )
-    error = genie_registry.maf._check_tsa1_tsa2(df)
-    assert error == (
-        "maf: Contains both "
-        "TUMOR_SEQ_ALLELE1 and TUMOR_SEQ_ALLELE2 columns. "
-        "All values in TUMOR_SEQ_ALLELE1 must match all values in "
-        "REFERENCE_ALLELE or all values in TUMOR_SEQ_ALLELE2.\n"
-    )
-
-
-def test_invalid__check_ref_tsa2():
-    """Test the scenario in which maf file has identical REF and tsa2 and fails"""
-    df = pd.DataFrame(
-        dict(
-            REFERENCE_ALLELE=["A", "A", "A"],
-            TUMOR_SEQ_ALLELE1=["A", "A", "A"],
-            TUMOR_SEQ_ALLELE2=["A", "C", "C"],
-        )
-    )
-    error = genie_registry.maf._check_tsa1_tsa2(df)
-    assert error == (
-        "maf: Contains instances where values in REFERENCE_ALLELE match values in TUMOR_SEQ_ALLELE2. "
-        "This is invalid. Please correct.\n"
-    )
-
-
 def test_invalid__check_ref_tsa1_tsa2():
     """Test the scenario in which maf file has TSA1 and TSA2 and fails"""
     df = pd.DataFrame(
@@ -296,28 +262,93 @@ def test_invalid__check_ref_tsa1_tsa2():
 
 
 @pytest.mark.parametrize(
-    "df",
+    "test_df,expected_error",
     [
-        pd.DataFrame(
-            dict(
-                REFERENCE_ALLELE=["A", "A", "A"],
-                TUMOR_SEQ_ALLELE1=["C", "C", "C"],
-                TUMOR_SEQ_ALLELE2=["C", "C", "C"],
-            )
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=["A", "A", "A"],
+                    TUMOR_SEQ_ALLELE1=["C", "C", "C"],
+                    TUMOR_SEQ_ALLELE2=["C", "C", "C"],
+                )
+            ),
+            "",
         ),
-        pd.DataFrame(
-            dict(
-                REFERENCE_ALLELE=["C", "C", "C"],
-                TUMOR_SEQ_ALLELE1=["C", "C", "C"],
-                TUMOR_SEQ_ALLELE2=["A", "A", "A"],
-            )
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=["C", "C", "C"],
+                    TUMOR_SEQ_ALLELE1=["C", "C", "C"],
+                    TUMOR_SEQ_ALLELE2=["A", "A", "A"],
+                )
+            ),
+            "",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=["A", "A", "A"],
+                    TUMOR_SEQ_ALLELE1=["B", "B", "B"],
+                    TUMOR_SEQ_ALLELE2=["C", "C", "C"],
+                )
+            ),
+            "maf: Contains both "
+            "TUMOR_SEQ_ALLELE1 and TUMOR_SEQ_ALLELE2 columns. "
+            "All values in TUMOR_SEQ_ALLELE1 must match all values in "
+            "REFERENCE_ALLELE or all values in TUMOR_SEQ_ALLELE2.\n",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=["A", "A", "A"],
+                    TUMOR_SEQ_ALLELE1=["A", "A", "A"],
+                    TUMOR_SEQ_ALLELE2=["A", "C", "C"],
+                )
+            ),
+            "maf: Contains instances where values in REFERENCE_ALLELE match values in TUMOR_SEQ_ALLELE2. "
+            "This is invalid. Please correct.\n",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=["A", "A", "A"],
+                    TUMOR_SEQ_ALLELE2=["A", "C", "C"],
+                )
+            ),
+            "maf: Contains instances where values in REFERENCE_ALLELE match values in TUMOR_SEQ_ALLELE2. "
+            "This is invalid. Please correct.\n",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=["A", "A", "A"],
+                    TUMOR_SEQ_ALLELE2=["C", "C", "C"],
+                )
+            ),
+            "",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    TUMOR_SEQ_ALLELE1=["C", "C", "C"],
+                )
+            ),
+            "",
         ),
     ],
+    ids=[
+        "matching_tsa1_tsa2",
+        "matching_tsa1_ref",
+        "invalid_tsa1",
+        "identical_ref_tsa2",
+        "identical_ref_tsa2_missing_tsa1",
+        "valid_ref_tsa2_missing_tsa1",
+        "missing_tsa2_ref",
+    ],
 )
-def test_valid__check_tsa1_tsa2(df):
-    """Test valid TSA1 and TSA2"""
-    error = genie_registry.maf._check_tsa1_tsa2(df)
-    assert error == ""
+def test__check_tsa1_tsa2(test_df, expected_error):
+    error = genie_registry.maf._check_tsa1_tsa2(test_df)
+    assert error == expected_error
 
 
 def test_that__cross_validate_does_not_read_files_if_no_clinical_files(maf_class):
