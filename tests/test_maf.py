@@ -258,6 +258,7 @@ def test_invalid__check_tsa1_tsa2():
         "REFERENCE_ALLELE or all values in TUMOR_SEQ_ALLELE2.\n"
     )
 
+
 def test_invalid__check_ref_tsa2():
     """Test the scenario in which maf file has identical REF and tsa2 and fails"""
     df = pd.DataFrame(
@@ -269,9 +270,10 @@ def test_invalid__check_ref_tsa2():
     )
     error = genie_registry.maf._check_tsa1_tsa2(df)
     assert error == (
-        "REFERENCE_ALLELE should not equal to TUMOR_SEQ_ALLELE2. "
-        "Please check row: 1.\n"
+        "maf: Contains instances where values in REFERENCE_ALLELE match values in TUMOR_SEQ_ALLELE2. "
+        "This is invalid. Please correct.\n"
     )
+
 
 def test_invalid__check_ref_tsa1_tsa2():
     """Test the scenario in which maf file has TSA1 and TSA2 and fails"""
@@ -291,6 +293,7 @@ def test_invalid__check_ref_tsa1_tsa2():
         "REFERENCE_ALLELE should not equal to TUMOR_SEQ_ALLELE2. "
         "Please check row: 1.\n"
     )
+
 
 @pytest.mark.parametrize(
     "df",

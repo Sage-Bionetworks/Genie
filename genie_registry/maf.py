@@ -36,7 +36,7 @@ def _check_tsa1_tsa2(df):
     ):
         error = (
             "maf: Contains instances where values in REFERENCE_ALLELE match values in TUMOR_SEQ_ALLELE2. "
-            "This is invalid. Please correct."
+            "This is invalid. Please correct.\n"
         )
         row_index = df.query("REFERENCE_ALLELE == TUMOR_SEQ_ALLELE2").index.values
     return error
