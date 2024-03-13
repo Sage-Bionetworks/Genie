@@ -4,6 +4,7 @@ from Synapse
 """
 
 import logging
+import sys
 from typing import List, Optional
 
 import synapseclient
@@ -13,6 +14,9 @@ import pandas as pd
 from genie import process_functions
 
 logger = logging.getLogger(__name__)
+stdout_handler = logging.StreamHandler(stream=sys.stdout)
+stdout_handler.setLevel(logging.INFO)
+logger.addHandler(stdout_handler)
 
 
 def get_center_input_files(
@@ -54,6 +58,7 @@ def get_center_input_files(
             if name.endswith(".vcf") and process != "mutation":
                 continue
 
+            logger.info(f"GETTING FILE {name} ({ent_synid})")
             ent = syn.get(ent_synid, downloadFile=downloadFile)
 
             # HACK: Clinical file can come as two files.
