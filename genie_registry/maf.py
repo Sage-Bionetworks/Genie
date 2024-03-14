@@ -11,9 +11,9 @@ from genie import process_functions, transform, validate
 logger = logging.getLogger(__name__)
 
 
-def _check_tsa1_tsa2(df):
+def _check_allele_col_validity(df):
     """If maf file has both TSA1 and TSA2,
-    TSA1 must equal REF, or TSA1 must equal TSA2.
+    TSA1 must equal REF, or TSA1 must equal TSA2, and REF must not equal TSA2
     """
     tsa2_col_exist = process_functions.checkColExist(df, "TUMOR_SEQ_ALLELE2")
     tsa1_col_exist = process_functions.checkColExist(df, "TUMOR_SEQ_ALLELE1")
@@ -29,6 +29,16 @@ def _check_tsa1_tsa2(df):
                 "All values in TUMOR_SEQ_ALLELE1 must match all values in "
                 "REFERENCE_ALLELE or all values in TUMOR_SEQ_ALLELE2.\n"
             )
+    if (
+        tsa2_col_exist
+        and ref_col_exist
+        and not df.query("REFERENCE_ALLELE == TUMOR_SEQ_ALLELE2").empty
+    ):
+        error = (
+            f"{error}maf: Contains instances where values in REFERENCE_ALLELE match values in TUMOR_SEQ_ALLELE2. "
+            "This is invalid. Please correct.\n"
+        )
+        row_index = df.query("REFERENCE_ALLELE == TUMOR_SEQ_ALLELE2").index.values
     return error
 
 
@@ -260,7 +270,7 @@ class maf(FileTypeFormat):
         #             "start with 'chr' or any 'WT' values.\n"
         #         )
 
-        error = _check_tsa1_tsa2(mutationDF)
+        error = _check_allele_col_validity(mutationDF)
         total_error.write(error)
 
         if process_functions.checkColExist(mutationDF, "TUMOR_SAMPLE_BARCODE"):
