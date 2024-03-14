@@ -11,7 +11,7 @@ from genie import process_functions, transform, validate
 logger = logging.getLogger(__name__)
 
 
-def _check_tsa1_tsa2(df):
+def _check_allele_col_validity(df):
     """If maf file has both TSA1 and TSA2,
     TSA1 must equal REF, or TSA1 must equal TSA2, and REF must not equal TSA2
     """
@@ -270,7 +270,7 @@ class maf(FileTypeFormat):
         #             "start with 'chr' or any 'WT' values.\n"
         #         )
 
-        error = _check_tsa1_tsa2(mutationDF)
+        error = _check_allele_col_validity(mutationDF)
         total_error.write(error)
 
         if process_functions.checkColExist(mutationDF, "TUMOR_SAMPLE_BARCODE"):

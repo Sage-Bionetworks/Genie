@@ -1,3 +1,4 @@
+from cmath import nan
 from unittest.mock import mock_open, patch
 
 import pandas as pd
@@ -196,7 +197,7 @@ def test_invalid_validation(maf_class):
     )
 
     with patch.object(
-        genie_registry.maf, "_check_tsa1_tsa2", return_value=""
+        genie_registry.maf, "_check_allele_col_validity", return_value=""
     ) as check_tsa1_tsa2:
         error, warning = maf_class._validate(mafDf)
         check_tsa1_tsa2.assert_called_once_with(mafDf)
@@ -330,6 +331,19 @@ def test_error__check_allele_col():
             "maf: Contains instances where values in REFERENCE_ALLELE match values in TUMOR_SEQ_ALLELE2. "
             "This is invalid. Please correct.\n",
         ),
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=[nan, "A", "A"],
+                    TUMOR_SEQ_ALLELE1=["B", nan, "B"],
+                    TUMOR_SEQ_ALLELE2=[nan, "C", "C"],
+                )
+            ),
+            "maf: Contains both "
+            "TUMOR_SEQ_ALLELE1 and TUMOR_SEQ_ALLELE2 columns. "
+            "All values in TUMOR_SEQ_ALLELE1 must match all values in "
+            "REFERENCE_ALLELE or all values in TUMOR_SEQ_ALLELE2.\n",
+        ),
     ],
     ids=[
         "matching_tsa1_tsa2",
@@ -340,10 +354,11 @@ def test_error__check_allele_col():
         "valid_ref_tsa2_missing_tsa1",
         "missing_tsa2_ref",
         "invalid_tsa1_identical_ref_tsa2",
+        "NAs_in_allele_cole",
     ],
 )
-def test__check_tsa1_tsa2(test_df, expected_error):
-    error = genie_registry.maf._check_tsa1_tsa2(test_df)
+def test__check_allele_col_validity(test_df, expected_error):
+    error = genie_registry.maf._check_allele_col_validity(test_df)
     assert error == expected_error
 
 
