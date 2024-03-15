@@ -192,15 +192,22 @@ def _update_table(
     # Columns must be in the same order
     new_dataset = new_dataset[orig_database_cols]
     database[primary_key_cols] = database[primary_key_cols].applymap(str)
-    database[primary_key] = database[primary_key_cols].apply(
-        lambda x: " ".join(x), axis=1
+    database[primary_key] = (
+        database[primary_key_cols]
+        .stack()
+        .groupby(level=0)
+        .agg(" ".join)
+        .apply(lambda x: x.strip())
     )
 
     new_dataset[primary_key_cols] = new_dataset[primary_key_cols].applymap(str)
-    new_dataset[primary_key] = new_dataset[primary_key_cols].apply(
-        lambda x: " ".join(x), axis=1
+    new_dataset[primary_key] = (
+        new_dataset[primary_key_cols]
+        .stack()
+        .groupby(level=0)
+        .agg(" ".join)
+        .apply(lambda x: x.strip())
     )
-
     allupdates = pd.DataFrame(columns=col_order)
     to_append_rows = process_functions._append_rows(new_dataset, database, primary_key)
     to_update_rows = process_functions._update_rows(new_dataset, database, primary_key)
