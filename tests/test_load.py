@@ -4,7 +4,6 @@ import synapseclient
 from synapseclient.core.exceptions import SynapseTimeoutError
 
 from genie import load, __version__
-from genie import process_functions
 import pandas as pd
 import tempfile
 import os
@@ -95,7 +94,7 @@ def test__update_table_non_empty_dataframe(syn):
     expected_results = ["ROW_ID,ROW_VERSION,test,foo,baz\n", ",,test4,4,3.2\n"]
     with patch("os.unlink") as mock_unlink, patch(
         "tempfile.NamedTemporaryFile"
-    ) as mock_tempfile, patch.object(syn, "store") as syn_store:
+    ) as mock_tempfile:
         with patch("builtins.open", mock_open()) as mock_file_open:
             # set the tempfile name
             mock_tempfile.return_value.name = "test.csv"
@@ -126,7 +125,7 @@ def test__update_table_empty_dataframe(syn):
     expected_results = ["ROW_ID,ROW_VERSION,test,foo,baz\n"]
     with patch("os.unlink") as mock_unlink, patch(
         "tempfile.NamedTemporaryFile"
-    ) as mock_tempfile, patch.object(syn, "store") as syn_store:
+    ) as mock_tempfile:
         with patch("builtins.open", mock_open()) as mock_file_open:
             # set the tempfile name
             mock_tempfile.return_value.name = "test.csv"
@@ -151,7 +150,7 @@ def test__update_table_empty_dataframes(syn):
     expected_results = ["ROW_ID,ROW_VERSION,test,foo,baz\n"]
     with patch("os.unlink") as mock_unlink, patch(
         "tempfile.NamedTemporaryFile"
-    ) as mock_tempfile, patch.object(syn, "store") as syn_store:
+    ) as mock_tempfile:
         with patch("builtins.open", mock_open()) as mock_file_open:
             # set the tempfile name
             mock_tempfile.return_value.name = "test.csv"
