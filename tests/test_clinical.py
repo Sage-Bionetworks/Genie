@@ -1407,6 +1407,7 @@ def test_that__cross_validate_assay_info_has_seq_returns_expected_msg_if_valid(
 
 
 def test_preprocess(clin_class, newpath=None):
+    """Test preprocess function"""
     expected = {
         "clinicalTemplate": pd.DataFrame(
             columns=["PATIENT_ID", "SEX", "PRIMARY_RACE", "SAMPLE_ID"]
