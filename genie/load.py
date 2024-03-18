@@ -192,22 +192,21 @@ def _update_table(
     # Columns must be in the same order
     new_dataset = new_dataset[orig_database_cols]
     database[primary_key_cols] = database[primary_key_cols].applymap(str)
-    database[primary_key] = (
-        database[primary_key_cols]
-        .stack()
-        .groupby(level=0)
-        .agg(" ".join)
-        .apply(lambda x: x.strip())
-    )
+
+    if database.empty:
+        database[primary_key] = ""
+    else:
+        database[primary_key] = database[primary_key_cols].apply(
+            lambda x: " ".join(x), axis=1
+        )
 
     new_dataset[primary_key_cols] = new_dataset[primary_key_cols].applymap(str)
-    new_dataset[primary_key] = (
-        new_dataset[primary_key_cols]
-        .stack()
-        .groupby(level=0)
-        .agg(" ".join)
-        .apply(lambda x: x.strip())
-    )
+    if new_dataset.empty:
+        new_dataset[primary_key] = ""
+    else:
+        new_dataset[primary_key] = new_dataset[primary_key_cols].apply(
+            lambda x: " ".join(x), axis=1
+        )
     allupdates = pd.DataFrame(columns=col_order)
     to_append_rows = process_functions._append_rows(new_dataset, database, primary_key)
     to_update_rows = process_functions._update_rows(new_dataset, database, primary_key)
@@ -222,7 +221,6 @@ def _update_table(
     update_all_file = tempfile.NamedTemporaryFile(
         dir=process_functions.SCRIPT_DIR, delete=False
     )
-
     with open(update_all_file.name, "w") as updatefile:
         # Must write out the headers in case there are no appends or updates
         updatefile.write(",".join(col_order) + "\n")
