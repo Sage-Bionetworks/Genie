@@ -16,7 +16,7 @@ from synapseclient.core.exceptions import SynapseTimeoutError
 from . import __version__, extract, process_functions
 
 logger = logging.getLogger(__name__)
-import pdb
+
 
 # TODO Edit docstring
 def store_file(
@@ -170,20 +170,27 @@ def _update_table(
     database_synid: str,
     primary_key_cols: List[str],
     to_delete: bool = False,
-): 
+):
     """
     A helper function to compare new dataset with existing data,
     and store any changes that need to be made to the database
     """
     changes = check_database_changes(database, new_dataset, primary_key_cols, to_delete)
-    store_database(syn, database_synid, changes["col_order"], changes["allupdates"], changes["to_delete_rows"])
-    
-def get_col_order(orig_database_cols: List[str]) -> List[str]:
+    store_database(
+        syn,
+        database_synid,
+        changes["col_order"],
+        changes["allupdates"],
+        changes["to_delete_rows"],
+    )
+
+
+def _get_col_order(orig_database_cols: pd.Index) -> List[str]:
     """
     Get column order
 
     Args:
-        orig_database_cols (List[str]): A list of column names of the original database
+        orig_database_cols (pd.Index): A list of column names of the original database
 
     Returns:
         The list of re-ordered column names
@@ -192,54 +199,51 @@ def get_col_order(orig_database_cols: List[str]) -> List[str]:
     col_order.extend(orig_database_cols.tolist())
     return col_order
 
-def _reorder_new_dataset(orig_database_cols: List[str], new_dataset:pd.DataFrame) -> pd.DataFrame:
+
+def _reorder_new_dataset(
+    orig_database_cols: pd.Index, new_dataset: pd.DataFrame
+) -> pd.DataFrame:
     """
     Reorder new dataset based on the original database
 
     Args:
-        orig_database_cols (List[str]): A list of column names of the original database
+        orig_database_cols (pd.Index): A list of column names of the original database
         new_dataset(pd.DataFrame): New Data
 
     Returns:
         The re-ordered new dataset
-    """    
+    """
     # Columns must be in the same order as the original data
     new_dataset = new_dataset[orig_database_cols]
     return new_dataset
 
-def _generate_primary_key(database: pd.DataFrame, new_dataset:pd.DataFrame, primary_key_cols: List[str], primary_key: str) -> Dict[pd.DataFrame]:
+
+def _generate_primary_key(
+    dataset: pd.DataFrame, primary_key_cols: List[str], primary_key: str
+) -> pd.DataFrame:
     """
-    Generate primary key column for both original database and re-ordered new_dataset
+    Generate primary key column a dataframe
 
     Args:
-        database: Original Data
+        dataset(pd.DataFrame): A dataframe
         new_dataset: The re-ordered new dataset
         primary_key_cols (list): Column(s) that make up the primary key
         primary_key: The column name of the primary_key
     Returns:
-        A dictionary of original and new dataset with primary_key column added
-    """    
+        The dataframe with primary_key column added
+    """
     # replace NAs with emtpy string
-    database = database.fillna("")
-    new_dataset = new_dataset.fillna("")
+    dataset = dataset.fillna("")
     # generate primary key column for original database
-    database[primary_key_cols] = database[primary_key_cols].applymap(str)
-    if database.empty:
-        database[primary_key] = ""
+    dataset[primary_key_cols] = dataset[primary_key_cols].applymap(str)
+    if dataset.empty:
+        dataset[primary_key] = ""
     else:
-        database[primary_key] = database[primary_key_cols].apply(
+        dataset[primary_key] = dataset[primary_key_cols].apply(
             lambda x: " ".join(x), axis=1
         )
-    # generate primary key column for new dataset
-    new_dataset[primary_key_cols] = new_dataset[primary_key_cols].applymap(str)
-    if new_dataset.empty:
-        new_dataset[primary_key] = ""
-    else:
-        new_dataset[primary_key] = new_dataset[primary_key_cols].apply(
-            lambda x: " ".join(x), axis=1
-        )
-    datasets = {'original_data': database, 'new_data': new_dataset}
-    return datasets
+    return dataset
+
 
 def check_database_changes(
     database: pd.DataFrame,
@@ -260,32 +264,38 @@ def check_database_changes(
     # get a list of column names of the original database
     orig_database_cols = database.columns
     # get the final column order
-    col_order = get_col_order(orig_database_cols)
+    col_order = _get_col_order(orig_database_cols)
     # reorder new_dataset
     new_dataset = _reorder_new_dataset(orig_database_cols, new_dataset)
     # set the primary_key name
     primary_key = "UNIQUE_KEY"
     # generate primary_key column for dataset comparison
-    datasets = _generate_primary_key(database, new_dataset, primary_key_cols, primary_key)
+    ori_data = _generate_primary_key(database, primary_key_cols, primary_key)
+    new_data = _generate_primary_key(new_dataset, primary_key_cols, primary_key)
     # output dictionary
     changes = {"col_order": col_order, "allupdates": None, "to_delete_rows": None}
     # get rows to be appened or updated
     allupdates = pd.DataFrame(columns=col_order)
-    to_append_rows = process_functions._append_rows(datasets["new_data"], datasets["original_data"], primary_key)
-    to_update_rows = process_functions._update_rows(datasets["new_data"], datasets["original_data"], primary_key)
+    to_append_rows = process_functions._append_rows(new_data, ori_data, primary_key)
+    to_update_rows = process_functions._update_rows(new_data, ori_data, primary_key)
     allupdates = pd.concat([allupdates, to_append_rows, to_update_rows], sort=False)
     changes["allupdates"] = allupdates
     # get rows to be deleted
     if to_delete:
-        to_delete_rows = process_functions._delete_rows(
-            datasets["new_data"], datasets["original_data"], primary_key
-        )
+        to_delete_rows = process_functions._delete_rows(new_data, ori_data, primary_key)
     else:
         to_delete_rows = pd.DataFrame()
     changes["to_delete_rows"] = to_delete_rows
     return changes
 
-def store_database(syn: synapseclient.Synapse, database_synid: str, col_order: List[str], allupdates: pd.DataFrame, to_delete_rows: pd.DataFrame) -> ModuleNotFoundError:
+
+def store_database(
+    syn: synapseclient.Synapse,
+    database_synid: str,
+    col_order: List[str],
+    allupdates: pd.DataFrame,
+    to_delete_rows: pd.DataFrame,
+):
     """
     Store changes to the database
 
@@ -295,10 +305,10 @@ def store_database(syn: synapseclient.Synapse, database_synid: str, col_order: L
         col_order (List[str]): The ordered column names to be saved
         allupdates (pd.DataFrame): rows to be appended and/or updated
         to_deleted_rows (pd.DataFrame): rows to be deleted
-    
+
     Returns:
         None
-    """     
+    """
     storedatabase = False
     update_all_file = tempfile.NamedTemporaryFile(
         dir=process_functions.SCRIPT_DIR, delete=False
