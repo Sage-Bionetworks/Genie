@@ -1,5 +1,4 @@
-from unittest.mock import patch, mock_open, create_autospec
-import unittest
+from unittest.mock import patch, mock_open
 import synapseclient
 from synapseclient.core.exceptions import SynapseTimeoutError
 
