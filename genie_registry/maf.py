@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 def _check_allele_col_validity(df):
-    """ There are two linked validation rules in this function:
-    
+    """There are two linked validation rules in this function:
+
     1) If maf file has ALL three of the following columns:
         - TUMOR_SEQ_ALLELE1 (TSA1)
         - TUMOR_SEQ_ALLELE2 (TSA2)
@@ -27,18 +27,18 @@ def _check_allele_col_validity(df):
         regarding which variant (TSA1 vs TSA2) to use. This is
         why there cannot be mixed rows where some rows have TSA1 == REF and some rows
         have TSA1 == TSA2.
-        
+
         e.g:
         VALID
         | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2
         | C                | C                 | A
         | T                | T                 | C
-        
+
         VALID
         | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2
         | C                | A                 | A
         | T                | C                 | C
-        
+
         INVALID
         | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2
         | C                | C                 | A
