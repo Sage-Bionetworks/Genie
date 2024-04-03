@@ -83,7 +83,7 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
 
 
-  build-container_build:
+  build-container:
     needs: [test, lint]
     runs-on: ubuntu-latest
     permissions:
