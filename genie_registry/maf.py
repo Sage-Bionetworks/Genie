@@ -12,8 +12,27 @@ logger = logging.getLogger(__name__)
 
 
 def _check_allele_col_validity(df):
-    """If maf file has both TSA1 and TSA2,
-    TSA1 must equal REF, or TSA1 must equal TSA2, and REF must not equal TSA2
+    """ There are two linked validation rules in this function:
+    
+    1) If maf file has ALL three of the following columns:
+        - TUMOR_SEQ_ALLELE1 (TSA1)
+        - TUMOR_SEQ_ALLELE2 (TSA2)
+        - REFERENCE ALLELE (REF)
+        THEN
+        ALL rows of TSA1 must equal REF
+        OR
+        ALL rows of TSA1 must equal TSA2
+
+        TSA1 is used by Genome Nexus (GN) to annotate data when it senses there is ambiguity
+        regarding which variant (TSA1 vs TSA2) to use. This is
+        why we cannot have rows where we have TSA1 == REF and rows
+        where we have TSA1 == TSA2.
+
+        See https://github.com/genome-nexus/annotation-tools/issues/26 for
+        more background regarding why this validation rule was implemented.
+
+    2) There can't be ANY rows where REF == TSA2. This is a missense mutation
+    flagged as invalid by GN
     """
     tsa2_col_exist = process_functions.checkColExist(df, "TUMOR_SEQ_ALLELE2")
     tsa1_col_exist = process_functions.checkColExist(df, "TUMOR_SEQ_ALLELE1")
