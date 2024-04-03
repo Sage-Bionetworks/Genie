@@ -25,8 +25,24 @@ def _check_allele_col_validity(df):
 
         TSA1 is used by Genome Nexus (GN) to annotate data when it senses there is ambiguity
         regarding which variant (TSA1 vs TSA2) to use. This is
-        why we cannot have rows where we have TSA1 == REF and rows
-        where we have TSA1 == TSA2.
+        why there cannot be mixed rows where some rows have TSA1 == REF and some rows
+        have TSA1 == TSA2.
+        
+        e.g:
+        VALID
+        | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2
+        | C                | C                 | A
+        | T                | T                 | C
+        
+        VALID
+        | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2
+        | C                | A                 | A
+        | T                | C                 | C
+        
+        INVALID
+        | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2
+        | C                | C                 | A
+        | C                | A                 | A
 
         See https://github.com/genome-nexus/annotation-tools/issues/26 for
         more background regarding why this validation rule was implemented.
