@@ -5,8 +5,7 @@ name: build
 
 on:
   push:
-    branches:
-      - develop
+    branches: [develop, 'GEN*', 'gen*']
 
   pull_request:
 
