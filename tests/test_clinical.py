@@ -441,6 +441,65 @@ def test_sample__process(clin_class):
     assert expected_sampledf.equals(new_sampledf[expected_sampledf.columns])
 
 
+@pytest.mark.parametrize(
+    ("input_df", "expected_invalid_indices"),
+    [
+        (
+            pd.DataFrame(
+                dict(ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"])
+            ),
+            [],
+        ),
+        (
+            pd.DataFrame(
+                dict(ONCOTREE_CODE=["XXXX", "XX", "TEST", "AMPCA"])
+            ),
+            [0,1,2],
+        ),
+    ],
+)
+def test__validate_oncotree_code_mapping(
+    clin_class, input_df, expected_invalid_indices
+):
+    oncotree_mapping = pd.DataFrame(dict(ONCOTREE_CODE=["AMPCA", "ACA"]))
+    invalid_indices = clin_class._validate_oncotree_code_mapping(
+        clinicaldf=input_df, oncotree_mapping=oncotree_mapping
+    )
+    assert expected_invalid_indices == invalid_indices.tolist()
+
+
+@pytest.mark.parametrize(
+    ("input_df", "invalid_indices", "expected_error"),
+    [
+        (
+            pd.DataFrame(
+                dict(ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"])
+            ),
+            [],
+            ""
+        ),
+        (
+            pd.DataFrame(
+                dict(ONCOTREE_CODE=["XXXX", "ZGT", "TEST", "AMPCA"])
+            ),
+            [0,1,2],
+            "Sample Clinical File: Please double check that all your "
+            "ONCOTREE CODES exist in the mapping. You have 3 samples "
+            "that don't map. These are the codes that "
+            "don't map: TEST,XXXX,ZGT\n"
+        ),
+    ],
+)
+def test__validate_oncotree_code_mapping_message(
+    clin_class, input_df, invalid_indices, expected_error
+):
+    errors, warnings = clin_class._validate_oncotree_code_mapping_message(
+        clinicaldf=input_df, unmapped_oncotree_indices=invalid_indices
+    )
+    assert expected_error == errors
+    assert warnings == ""
+
+
 def test_perfect__validate(clin_class, valid_clinical_df):
     """
     Test perfect validation
