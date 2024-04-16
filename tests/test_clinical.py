@@ -442,7 +442,7 @@ def test_sample__process(clin_class):
 
 
 @pytest.mark.parametrize(
-    ("input_df", "expected_invalid_indices"),
+    ("input_df", "expected_unmapped_indices"),
     [
         (
             pd.DataFrame(
@@ -454,20 +454,25 @@ def test_sample__process(clin_class):
             pd.DataFrame(dict(ONCOTREE_CODE=["XXXX", "XX", "TEST", "AMPCA"])),
             [0, 1, 2],
         ),
+        (
+            pd.DataFrame(dict(ONCOTREE_CODE=["XXXX", "XX", "TEST", "AMPCA", "XXXX"])),
+            [0, 1, 2, 4],
+        ),
     ],
+    ids=["no_unmapped", "unmapped_unique", "unmapped_dups"],
 )
-def test__validate_oncotree_code_mapping(
-    clin_class, input_df, expected_invalid_indices
-):
+def test__validate_oncotree_code_mapping_returns_expected_unmapped_indices(
+    clin_class, input_df, expected_unmapped_indices
+) -> None:
     oncotree_mapping = pd.DataFrame(dict(ONCOTREE_CODE=["AMPCA", "ACA"]))
-    invalid_indices = clin_class._validate_oncotree_code_mapping(
+    unmapped_indices = clin_class._validate_oncotree_code_mapping(
         clinicaldf=input_df, oncotree_mapping=oncotree_mapping
     )
-    assert expected_invalid_indices == invalid_indices.tolist()
+    assert expected_unmapped_indices == unmapped_indices.tolist()
 
 
 @pytest.mark.parametrize(
-    ("input_df", "invalid_indices", "expected_error"),
+    ("input_df", "unmapped_indices", "expected_error"),
     [
         (
             pd.DataFrame(
@@ -484,13 +489,22 @@ def test__validate_oncotree_code_mapping(
             "that don't map. These are the codes that "
             "don't map: TEST,XXXX,ZGT\n",
         ),
+        (
+            pd.DataFrame(dict(ONCOTREE_CODE=["XXXX", "ZGT", "TEST", "AMPCA", "XXXX"])),
+            [0, 1, 2, 4],
+            "Sample Clinical File: Please double check that all your "
+            "ONCOTREE CODES exist in the mapping. You have 4 samples "
+            "that don't map. These are the codes that "
+            "don't map: TEST,XXXX,ZGT\n",
+        ),
     ],
+    ids=["no_unmapped", "unmapped_unique", "unmapped_dups"],
 )
-def test__validate_oncotree_code_mapping_message(
-    clin_class, input_df, invalid_indices, expected_error
+def test__validate_oncotree_code_mapping_message_returns_expected_error_messages(
+    clin_class, input_df, unmapped_indices, expected_error
 ):
     errors, warnings = clin_class._validate_oncotree_code_mapping_message(
-        clinicaldf=input_df, unmapped_oncotree_indices=invalid_indices
+        clinicaldf=input_df, unmapped_oncotree_indices=unmapped_indices
     )
     assert expected_error == errors
     assert warnings == ""
