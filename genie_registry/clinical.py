@@ -498,13 +498,12 @@ class Clinical(FileTypeFormat):
         ]
         return unmapped_oncotrees.index
 
-
     def _validate_oncotree_code_mapping_message(
         self: "Clinical",
         clinicaldf: pd.DataFrame,
         unmapped_oncotree_indices: pd.DataFrame,
     ) -> Tuple[str, str]:
-        """ This function returns the error and warning messages 
+        """This function returns the error and warning messages
         if the input clinical data has row indices with unmapped
         oncotree codes
 

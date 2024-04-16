@@ -451,10 +451,8 @@ def test_sample__process(clin_class):
             [],
         ),
         (
-            pd.DataFrame(
-                dict(ONCOTREE_CODE=["XXXX", "XX", "TEST", "AMPCA"])
-            ),
-            [0,1,2],
+            pd.DataFrame(dict(ONCOTREE_CODE=["XXXX", "XX", "TEST", "AMPCA"])),
+            [0, 1, 2],
         ),
     ],
 )
@@ -476,17 +474,15 @@ def test__validate_oncotree_code_mapping(
                 dict(ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"])
             ),
             [],
-            ""
+            "",
         ),
         (
-            pd.DataFrame(
-                dict(ONCOTREE_CODE=["XXXX", "ZGT", "TEST", "AMPCA"])
-            ),
-            [0,1,2],
+            pd.DataFrame(dict(ONCOTREE_CODE=["XXXX", "ZGT", "TEST", "AMPCA"])),
+            [0, 1, 2],
             "Sample Clinical File: Please double check that all your "
             "ONCOTREE CODES exist in the mapping. You have 3 samples "
             "that don't map. These are the codes that "
-            "don't map: TEST,XXXX,ZGT\n"
+            "don't map: TEST,XXXX,ZGT\n",
         ),
     ],
 )
