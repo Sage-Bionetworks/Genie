@@ -392,7 +392,7 @@ class Clinical(FileTypeFormat):
             "sample is True and inClinicalDb is True"
         )
         sample_cols = sample_cols_table.asDataFrame()["fieldName"].tolist()
-        clinicalTemplate = pd.DataFrame(columns=set(patient_cols + sample_cols))
+        clinicalTemplate = pd.DataFrame(columns=list(set(patient_cols + sample_cols)))
         sample = True
         patient = True
 
