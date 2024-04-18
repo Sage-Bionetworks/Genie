@@ -2,8 +2,8 @@
 chardet>=3.0.4
 # known working version 0.20.4
 httplib2>=0.11.3
-pandas>=1.0,<1.5.0
+pandas==2.0.0
 pyranges==0.0.115
 # known working version 6.0
 PyYAML>=5.1
-synapseclient>=2.7.0,<3.0.0
+synapseclient>=3.0.0,<4.0.0
