@@ -529,8 +529,7 @@ class Clinical(FileTypeFormat):
                 "ONCOTREE CODES exist in the mapping. You have {} samples "
                 "that don't map. These are the codes that "
                 "don't map: {}\n".format(
-                    len(unmapped_oncotree_indices),
-                    ",".join(unmapped_oncotree_codes)
+                    len(unmapped_oncotree_indices), ",".join(unmapped_oncotree_codes)
                 )
             )
         return errors, warnings
