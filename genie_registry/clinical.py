@@ -520,21 +520,17 @@ class Clinical(FileTypeFormat):
         errors = ""
         warnings = ""
         if len(unmapped_oncotree_indices) > 0:
+            # sort the unique unmapped oncotree codes
+            unmapped_oncotree_codes = sorted(
+                set(clinicaldf.loc[unmapped_oncotree_indices]["ONCOTREE_CODE"])
+            )
             errors = (
                 "Sample Clinical File: Please double check that all your "
                 "ONCOTREE CODES exist in the mapping. You have {} samples "
                 "that don't map. These are the codes that "
                 "don't map: {}\n".format(
                     len(unmapped_oncotree_indices),
-                    ",".join(
-                        sorted(
-                            set(
-                                clinicaldf.loc[unmapped_oncotree_indices][
-                                    "ONCOTREE_CODE"
-                                ]
-                            )
-                        )
-                    ),
+                    ",".join(unmapped_oncotree_codes)
                 )
             )
         return errors, warnings
