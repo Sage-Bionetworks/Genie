@@ -38,11 +38,33 @@ sexdf = pd.DataFrame(
     )
 )
 
+patientdf = pd.DataFrame(
+    dict(
+        fieldName=["PATIENT_ID", "SEX", "PRIMARY_RACE"],
+        patient=[True, True, True],
+        sample=[True, False, False],
+    )
+)
+sampledf = pd.DataFrame(
+    dict(
+        fieldName=["PATIENT_ID", "SAMPLE_ID"],
+        patient=[True, False],
+        sample=[True, True],
+    )
+)
+
+
 table_query_results_map = {
     ("select * from syn7434222",): createMockTable(sexdf),
     ("select * from syn7434236",): createMockTable(no_nan),
     ("select * from syn7434242",): createMockTable(no_nan),
     ("select * from syn7434273",): createMockTable(no_nan),
+    (
+        "select fieldName from syn8545211 where patient is True and inClinicalDb is True",
+    ): createMockTable(patientdf),
+    (
+        "select fieldName from syn8545211 where sample is True and inClinicalDb is True",
+    ): createMockTable(sampledf),
 }
 
 json_oncotreeurl = (
@@ -439,6 +461,75 @@ def test_sample__process(clin_class):
     new_sampledf = clin_class._process(sampledf, clinical_template)
     assert new_sampledf.columns.isin(expected_sampledf.columns).all()
     assert expected_sampledf.equals(new_sampledf[expected_sampledf.columns])
+
+
+@pytest.mark.parametrize(
+    ("input_df", "expected_unmapped_indices"),
+    [
+        (
+            pd.DataFrame(
+                dict(ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"])
+            ),
+            [],
+        ),
+        (
+            pd.DataFrame(dict(ONCOTREE_CODE=["XXXX", "XX", "TEST", "AMPCA"])),
+            [0, 1, 2],
+        ),
+        (
+            pd.DataFrame(dict(ONCOTREE_CODE=["XXXX", "XX", "TEST", "AMPCA", "XXXX"])),
+            [0, 1, 2, 4],
+        ),
+    ],
+    ids=["no_unmapped", "unmapped_unique", "unmapped_dups"],
+)
+def test__validate_oncotree_code_mapping_returns_expected_unmapped_indices(
+    clin_class, input_df, expected_unmapped_indices
+) -> None:
+    oncotree_mapping = pd.DataFrame(dict(ONCOTREE_CODE=["AMPCA", "ACA"]))
+    unmapped_indices = clin_class._validate_oncotree_code_mapping(
+        clinicaldf=input_df, oncotree_mapping=oncotree_mapping
+    )
+    assert expected_unmapped_indices == unmapped_indices.tolist()
+
+
+@pytest.mark.parametrize(
+    ("input_df", "unmapped_indices", "expected_error"),
+    [
+        (
+            pd.DataFrame(
+                dict(ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"])
+            ),
+            [],
+            "",
+        ),
+        (
+            pd.DataFrame(dict(ONCOTREE_CODE=["XXXX", "ZGT", "TEST", "AMPCA"])),
+            [0, 1, 2],
+            "Sample Clinical File: Please double check that all your "
+            "ONCOTREE CODES exist in the mapping. You have 3 samples "
+            "that don't map. These are the codes that "
+            "don't map: TEST,XXXX,ZGT\n",
+        ),
+        (
+            pd.DataFrame(dict(ONCOTREE_CODE=["XXXX", "ZGT", "TEST", "AMPCA", "XXXX"])),
+            [0, 1, 2, 4],
+            "Sample Clinical File: Please double check that all your "
+            "ONCOTREE CODES exist in the mapping. You have 4 samples "
+            "that don't map. These are the codes that "
+            "don't map: TEST,XXXX,ZGT\n",
+        ),
+    ],
+    ids=["no_unmapped", "unmapped_unique", "unmapped_dups"],
+)
+def test__validate_oncotree_code_mapping_message_returns_expected_error_messages(
+    clin_class, input_df, unmapped_indices, expected_error
+):
+    errors, warnings = clin_class._validate_oncotree_code_mapping_message(
+        clinicaldf=input_df, unmapped_oncotree_indices=unmapped_indices
+    )
+    assert expected_error == errors
+    assert warnings == ""
 
 
 def test_perfect__validate(clin_class, valid_clinical_df):
@@ -1382,3 +1473,26 @@ def test_that__cross_validate_assay_info_has_seq_returns_expected_msg_if_valid(
         )
         assert warnings == expected_warning
         assert errors == expected_error
+
+
+def test_preprocess(clin_class, newpath=None):
+    """Test preprocess function"""
+    expected = {
+        "clinicalTemplate": pd.DataFrame(
+            columns=["PATIENT_ID", "SEX", "PRIMARY_RACE", "SAMPLE_ID"]
+        ),
+        "sample": True,
+        "patient": True,
+        "patientCols": ["PATIENT_ID", "SEX", "PRIMARY_RACE"],
+        "sampleCols": ["PATIENT_ID", "SAMPLE_ID"],
+    }
+    results = clin_class.preprocess(newpath)
+    assert (
+        results["clinicalTemplate"]
+        .sort_index(axis=1)
+        .equals(expected["clinicalTemplate"].sort_index(axis=1))
+    )
+    assert results["sample"] == expected["sample"]
+    assert results["patient"] == expected["patient"]
+    assert results["patientCols"] == expected["patientCols"]
+    assert results["sampleCols"] == expected["sampleCols"]
