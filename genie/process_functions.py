@@ -6,16 +6,15 @@ import logging
 import os
 import time
 from typing import Optional, Union
-import yaml
 
 import pandas as pd
 import requests
 import synapseclient
+import yaml
+from genie import extract
 from requests.adapters import HTTPAdapter
 from synapseclient import Synapse
 from urllib3.util import Retry
-
-from genie import extract
 
 pd.options.mode.chained_assignment = None
 
@@ -166,16 +165,16 @@ def checkUrl(url):
 
 
 # TODO Add to validate.py
-def checkColExist(DF: pd.DataFrame, key: Union[str, int]):
+def checkColExist(DF: pd.DataFrame, key: Union[str, int, list]) -> bool:
     """
-    This function checks if the column exists in a dataframe
+    This function checks if the column(s) exist(s) in a dataframe
 
     Args:
         DF: pandas dataframe
-        key: Expected column header name
+        key: Expected column header name(s)
 
     Returns:
-        bool:  True if column exists
+        bool:  True if column(s) exist(s)
     """
     result = False if DF.get(key) is None else True
     return result
