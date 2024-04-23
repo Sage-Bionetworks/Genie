@@ -186,7 +186,7 @@ def _check_year_death_validity(clinicaldf: pd.DataFrame) -> str:
         Error message if YEAR_DEATH if invalid
     """
     error = ""
-    # generate temp dataframe to handle datatype mismatch in a column
+    # Generate temp dataframe to handle datatype mismatch in a column
     temp = clinicaldf.copy()
     # Convert YEAR_DEATH and YEAR_CONTACT to numeric, coercing errors to NaN
     temp["YEAR_DEATH"] = pd.to_numeric(temp["YEAR_DEATH"], errors="coerce")
