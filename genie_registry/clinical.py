@@ -177,7 +177,11 @@ def _check_int_year_consistency(
 
 def _check_year_death_validity(clinicaldf: pd.DataFrame) -> str:
     """
-    Check if YEAR_DEATH >= YEAR_CONTACT
+    Check if YEAR_DEATH >= YEAR_CONTACT.
+    YEAR_DEATH should alway be equal or large than YEAR_CONTACT if they are both available.
+    This function compares rows with numeric values in both columns and returns comparion results("True"/"False")
+    If either of the column contains NA or nominal data (e.g. "Unknown", "Not Collected", "Unknown", "Not Applicable"),
+    then "N/A" will be outputed.
 
     Args:
         clinicaldf: Clinical Data Frame
@@ -196,8 +200,8 @@ def _check_year_death_validity(clinicaldf: pd.DataFrame) -> str:
         "N/A",
         temp["YEAR_DEATH"] >= temp["YEAR_CONTACT"],
     )
-    index = [",".join(str(idx)) for idx, i in enumerate(check_result) if i == "False"]
-    if "False" in check_result:
+    idx = [",".join(str(idx)) for idx, i in enumerate(check_result) if i == "False"]
+    if idx:
         error = "Patient Clinical File: Please double check your YEAR_DEATH and YEAR_CONTACT columns. YEAR_DEATH must be >= YEAR_CONTACT.\n"
     return error
 
@@ -851,10 +855,10 @@ class Clinical(FileTypeFormat):
         total_error.write(error)
 
         # CHECK: YEAR DEATH against YEAR CONTACT
-        haveColumn = process_functions.checkColExist(
+        has_death_and_contact_years = process_functions.checkColExist(
             clinicaldf, ["YEAR_DEATH", "YEAR_CONTACT"]
         )
-        if haveColumn:
+        if has_death_and_contact_years:
             error = _check_year_death_validity(clinicaldf=clinicaldf)
             total_error.write(error)
 
