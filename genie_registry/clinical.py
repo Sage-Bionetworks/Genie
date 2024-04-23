@@ -196,6 +196,7 @@ def _check_year_death_validity(clinicaldf: pd.DataFrame) -> str:
         "N/A",
         temp["YEAR_DEATH"] >= temp["YEAR_CONTACT"],
     )
+    index = [",".join(str(idx)) for idx, i in enumerate(check_result) if i == "False"]
     if "False" in check_result:
         error = "Patient Clinical File: Please double check your YEAR_DEATH and YEAR_CONTACT columns. YEAR_DEATH must be >= YEAR_CONTACT.\n"
     return error
