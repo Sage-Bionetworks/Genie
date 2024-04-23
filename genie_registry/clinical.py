@@ -2,17 +2,17 @@
 
 # from __future__ import annotations
 import datetime
-from io import StringIO
 import logging
 import os
+from io import StringIO
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 import synapseclient
-
-from genie.example_filetype_format import FileTypeFormat
 from genie import extract, load, process_functions, validate
 from genie.database_to_staging import redact_phi
+from genie.example_filetype_format import FileTypeFormat
 
 logger = logging.getLogger(__name__)
 
@@ -173,6 +173,32 @@ def _check_int_year_consistency(
         return f"Patient: you have inconsistent text values in {col_strs}.\n"
 
     return ""
+
+
+def _check_year_death_validity(clinicaldf: pd.DataFrame) -> str:
+    """
+    Check if YEAR_DEATH >= YEAR_CONTACT
+
+    Args:
+        clinicaldf: Clinical Data Frame
+
+    Returns:
+        Error message if YEAR_DEATH if invalid
+    """
+    error = ""
+    # generate temp dataframe to handle datatype mismatch in a column
+    temp = clinicaldf.copy()
+    # Convert YEAR_DEATH and YEAR_CONTACT to numeric, coercing errors to NaN
+    temp["YEAR_DEATH"] = pd.to_numeric(temp["YEAR_DEATH"], errors="coerce")
+    temp["YEAR_CONTACT"] = pd.to_numeric(temp["YEAR_CONTACT"], errors="coerce")
+    check_result = np.where(
+        (pd.isna(temp["YEAR_DEATH"]) | pd.isna(temp["YEAR_CONTACT"])),
+        "N/A",
+        temp["YEAR_DEATH"] >= temp["YEAR_CONTACT"],
+    )
+    if "False" in check_result:
+        error = "Patient Clinical File: Please double check your YEAR_DEATH and YEAR_CONTACT columns. YEAR_DEATH must be >= YEAR_CONTACT.\n"
+    return error
 
 
 # PROCESSING
@@ -822,6 +848,14 @@ class Clinical(FileTypeFormat):
             ],
         )
         total_error.write(error)
+
+        # CHECK: YEAR DEATH against YEAR CONTACT
+        haveColumn = process_functions.checkColExist(
+            clinicaldf, ["YEAR_DEATH", "YEAR_CONTACT"]
+        )
+        if haveColumn:
+            error = _check_year_death_validity(clinicaldf=clinicaldf)
+            total_error.write(error)
 
         # CHECK: INT CONTACT
         haveColumn = process_functions.checkColExist(clinicaldf, "INT_CONTACT")
