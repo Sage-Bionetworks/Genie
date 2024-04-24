@@ -9,7 +9,6 @@ import pytest
 import synapseclient
 from genie import process_functions, validate
 from genie_registry.clinical import Clinical
-import pdb
 
 
 def createMockTable(dataframe):

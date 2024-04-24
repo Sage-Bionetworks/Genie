@@ -5,7 +5,7 @@ import datetime
 import logging
 import os
 from io import StringIO
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -175,35 +175,57 @@ def _check_int_year_consistency(
     return ""
 
 
-def _check_year_death_validity(clinicaldf: pd.DataFrame) -> str:
+def _check_year_death_validity(clinicaldf: pd.DataFrame) -> pd.Index:
     """
-    Check if YEAR_DEATH >= YEAR_CONTACT.
-    YEAR_DEATH should alway be equal or large than YEAR_CONTACT if they are both available.
-    This function compares rows with numeric values in both columns and returns comparion results("True"/"False")
-    If either of the column contains NA or nominal data (e.g. "Unknown", "Not Collected", "Unknown", "Not Applicable"),
-    then "N/A" will be outputed.
+    YEAR_DEATH should alway be greater than or equal to YEAR_CONTACT when they are both available.
+    This function checks if YEAR_DEATH >= YEAR_CONTACT and returns row indices of invalid YEAR_DEATH rows.
 
     Args:
         clinicaldf: Clinical Data Frame
 
     Returns:
-        Error message if YEAR_DEATH if invalid
+        pd.Index: The row indices of the row with YEAR_DEATH < YEAR_CONTACT in the input clinical data
     """
-    error = ""
     # Generate temp dataframe to handle datatype mismatch in a column
-    temp = clinicaldf.copy()
+    temp = clinicaldf[["YEAR_DEATH", "YEAR_CONTACT"]].copy()
     # Convert YEAR_DEATH and YEAR_CONTACT to numeric, coercing errors to NaN
     temp["YEAR_DEATH"] = pd.to_numeric(temp["YEAR_DEATH"], errors="coerce")
     temp["YEAR_CONTACT"] = pd.to_numeric(temp["YEAR_CONTACT"], errors="coerce")
-    check_result = np.where(
+    # Compare rows with numeric values in both columns and returns comparion results("True"/"False")
+    # If either of the column contains NA or nominal data (e.g. "Unknown", "Not Collected", "Unknown", "Not Applicable"),
+    # "N/A" will be outputed.
+    temp["check_result"] = np.where(
         (pd.isna(temp["YEAR_DEATH"]) | pd.isna(temp["YEAR_CONTACT"])),
         "N/A",
         temp["YEAR_DEATH"] >= temp["YEAR_CONTACT"],
     )
-    idx = [",".join(str(idx)) for idx, i in enumerate(check_result) if i == "False"]
-    if idx:
-        error = "Patient Clinical File: Please double check your YEAR_DEATH and YEAR_CONTACT columns. YEAR_DEATH must be >= YEAR_CONTACT.\n"
-    return error
+    invalid_year_death = temp[temp["check_result"] == "False"]
+    return invalid_year_death.index
+
+
+def _check_year_death_validity_message(
+    invalid_year_death_indices: pd.Index,
+) -> Tuple[str, str]:
+    """This function returns the error and warning messages
+    if the input clinical data has row with YEAR_DEATH < YEAR_CONTACT
+
+    Args:
+        invalid_year_death_indices: The row indices of the rows with YEAR_DEATH < YEAR_CONTACT in the input clinical data
+
+    Returns:
+        Tuple[str, str]: The error message that tells you how many patients with invalid YEAR_DEATH values that your
+        input clinical data has
+    """
+    error = ""
+    warning = ""
+    if len(invalid_year_death_indices) > 0:
+        error = (
+            "Patient Clinical File: Please double check your YEAR_DEATH and YEAR_CONTACT columns. "
+            "YEAR_DEATH must be >= YEAR_CONTACT. "
+            f"There are {len(invalid_year_death_indices)} row(s) with YEAR_DEATH < YEAR_CONTACT. "
+            f"Row {invalid_year_death_indices.tolist()} contain invalid values in the YEAR_DEATH field. Please correct.\n"
+        )
+    return error, warning
 
 
 # PROCESSING
@@ -859,8 +881,11 @@ class Clinical(FileTypeFormat):
             clinicaldf, ["YEAR_DEATH", "YEAR_CONTACT"]
         )
         if has_death_and_contact_years:
-            error = _check_year_death_validity(clinicaldf=clinicaldf)
-            total_error.write(error)
+            invalid_year_death_indices = _check_year_death_validity(clinicaldf)
+            errors, warnings = _check_year_death_validity_message(
+                invalid_year_death_indices
+            )
+            total_error.write(errors)
 
         # CHECK: INT CONTACT
         haveColumn = process_functions.checkColExist(clinicaldf, "INT_CONTACT")
