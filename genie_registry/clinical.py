@@ -2,17 +2,17 @@
 
 # from __future__ import annotations
 import datetime
-from io import StringIO
 import logging
 import os
-from typing import Optional
+from io import StringIO
+from typing import Optional, Tuple
 
+import numpy as np
 import pandas as pd
 import synapseclient
-
-from genie.example_filetype_format import FileTypeFormat
 from genie import extract, load, process_functions, validate
 from genie.database_to_staging import redact_phi
+from genie.example_filetype_format import FileTypeFormat
 
 logger = logging.getLogger(__name__)
 
@@ -173,6 +173,59 @@ def _check_int_year_consistency(
         return f"Patient: you have inconsistent text values in {col_strs}.\n"
 
     return ""
+
+
+def _check_year_death_validity(clinicaldf: pd.DataFrame) -> pd.Index:
+    """
+    YEAR_DEATH should alway be greater than or equal to YEAR_CONTACT when they are both available.
+    This function checks if YEAR_DEATH >= YEAR_CONTACT and returns row indices of invalid YEAR_DEATH rows.
+
+    Args:
+        clinicaldf: Clinical Data Frame
+
+    Returns:
+        pd.Index: The row indices of the row with YEAR_DEATH < YEAR_CONTACT in the input clinical data
+    """
+    # Generate temp dataframe to handle datatype mismatch in a column
+    temp = clinicaldf[["YEAR_DEATH", "YEAR_CONTACT"]].copy()
+    # Convert YEAR_DEATH and YEAR_CONTACT to numeric, coercing errors to NaN
+    temp["YEAR_DEATH"] = pd.to_numeric(temp["YEAR_DEATH"], errors="coerce")
+    temp["YEAR_CONTACT"] = pd.to_numeric(temp["YEAR_CONTACT"], errors="coerce")
+    # Compare rows with numeric values in both columns and returns comparion results("True"/"False")
+    # If either of the column contains NA or nominal data (e.g. "Unknown", "Not Collected", "Unknown", "Not Applicable"),
+    # "N/A" will be outputed.
+    temp["check_result"] = np.where(
+        (pd.isna(temp["YEAR_DEATH"]) | pd.isna(temp["YEAR_CONTACT"])),
+        "N/A",
+        temp["YEAR_DEATH"] >= temp["YEAR_CONTACT"],
+    )
+    invalid_year_death = temp[temp["check_result"] == "False"]
+    return invalid_year_death.index
+
+
+def _check_year_death_validity_message(
+    invalid_year_death_indices: pd.Index,
+) -> Tuple[str, str]:
+    """This function returns the error and warning messages
+    if the input clinical data has row with YEAR_DEATH < YEAR_CONTACT
+
+    Args:
+        invalid_year_death_indices: The row indices of the rows with YEAR_DEATH < YEAR_CONTACT in the input clinical data
+
+    Returns:
+        Tuple[str, str]: The error message that tells you how many patients with invalid YEAR_DEATH values that your
+        input clinical data has
+    """
+    error = ""
+    warning = ""
+    if len(invalid_year_death_indices) > 0:
+        error = (
+            "Patient Clinical File: Please double check your YEAR_DEATH and YEAR_CONTACT columns. "
+            "YEAR_DEATH must be >= YEAR_CONTACT. "
+            f"There are {len(invalid_year_death_indices)} row(s) with YEAR_DEATH < YEAR_CONTACT. "
+            f"Row {invalid_year_death_indices.tolist()} contain invalid values in the YEAR_DEATH field. Please correct.\n"
+        )
+    return error, warning
 
 
 # PROCESSING
@@ -822,6 +875,17 @@ class Clinical(FileTypeFormat):
             ],
         )
         total_error.write(error)
+
+        # CHECK: YEAR DEATH against YEAR CONTACT
+        has_death_and_contact_years = process_functions.checkColExist(
+            clinicaldf, ["YEAR_DEATH", "YEAR_CONTACT"]
+        )
+        if has_death_and_contact_years:
+            invalid_year_death_indices = _check_year_death_validity(clinicaldf)
+            errors, warnings = _check_year_death_validity_message(
+                invalid_year_death_indices
+            )
+            total_error.write(errors)
 
         # CHECK: INT CONTACT
         haveColumn = process_functions.checkColExist(clinicaldf, "INT_CONTACT")
