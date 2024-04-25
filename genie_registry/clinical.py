@@ -192,7 +192,7 @@ def _check_year_death_validity(clinicaldf: pd.DataFrame) -> pd.Index:
     temp["YEAR_DEATH"] = pd.to_numeric(temp["YEAR_DEATH"], errors="coerce")
     temp["YEAR_CONTACT"] = pd.to_numeric(temp["YEAR_CONTACT"], errors="coerce")
     # Compare rows with numeric values in both columns and returns comparion results("True"/"False")
-    # If either of the column contains NA or nominal data (e.g. "Unknown", "Not Collected", "Unknown", "Not Applicable"),
+    # If either of the column contains NA or nominal data (e.g. "Unknown", "Not Collected", "Not Applicable"),
     # "N/A" will be outputed.
     temp["check_result"] = np.where(
         (pd.isna(temp["YEAR_DEATH"]) | pd.isna(temp["YEAR_CONTACT"])),
@@ -224,6 +224,59 @@ def _check_year_death_validity_message(
             "YEAR_DEATH must be >= YEAR_CONTACT. "
             f"There are {len(invalid_year_death_indices)} row(s) with YEAR_DEATH < YEAR_CONTACT. "
             f"Row {invalid_year_death_indices.tolist()} contain invalid values in the YEAR_DEATH field. Please correct.\n"
+        )
+    return error, warning
+
+
+def _check_int_dod_validity(clinicaldf: pd.DataFrame) -> pd.Index:
+    """
+    INT_DOD should alway be greater than or equal to INT_CONTACT when they are both available.
+    This function checks if INT_DOD >= INT_CONTACT and returns row indices of invalid INT_DOD rows.
+
+    Args:
+        clinicaldf: Clinical Data Frame
+
+    Returns:
+        pd.Index: The row indices of the row with INT_DOD < INT_CONTACT in the input clinical data
+    """
+    # Generate temp dataframe to handle datatype mismatch in a column
+    temp = clinicaldf[["INT_DOD", "INT_CONTACT"]].copy()
+    # Convert INT_DOD and INT_CONTACT to numeric, coercing errors to NaN
+    temp["INT_DOD"] = pd.to_numeric(temp["INT_DOD"], errors="coerce")
+    temp["INT_CONTACT"] = pd.to_numeric(temp["INT_CONTACT"], errors="coerce")
+    # Compare rows with numeric values in both columns and returns comparion results("True"/"False")
+    # If either of the column contains NA or nominal data (e.g. "Unknown", "Not Collected", "Not Applicable"),
+    # "N/A" will be outputed.
+    temp["check_result"] = np.where(
+        (pd.isna(temp["INT_DOD"]) | pd.isna(temp["INT_CONTACT"])),
+        "N/A",
+        temp["INT_DOD"] >= temp["INT_CONTACT"],
+    )
+    invalid_int_dod = temp[temp["check_result"] == "False"]
+    return invalid_int_dod.index
+
+
+def _check_int_dod_validity_message(
+    invalid_int_dod_indices: pd.Index,
+) -> Tuple[str, str]:
+    """This function returns the error and warning messages
+    if the input clinical data has row with INT_DOD < INT_CONTACT
+
+    Args:
+        invalid_int_dod_indices: The row indices of the rows with INT_DOD < INT_CONTACT in the input clinical data
+
+    Returns:
+        Tuple[str, str]: The error message that tells you how many patients with invalid INT_DOD values that your
+        input clinical data has
+    """
+    error = ""
+    warning = ""
+    if len(invalid_int_dod_indices) > 0:
+        error = (
+            "Patient Clinical File: Please double check your INT_DOD and INT_CONTACT columns. "
+            "INT_DOD must be >= INT_CONTACT. "
+            f"There are {len(invalid_int_dod_indices)} row(s) with INT_DOD < INT_CONTACT. "
+            f"Row {invalid_int_dod_indices.tolist()} contain invalid values in the INT_DOD field. Please correct.\n"
         )
     return error, warning
 
@@ -956,6 +1009,16 @@ class Clinical(FileTypeFormat):
                 )
         else:
             total_error.write("Patient Clinical File: Must have DEAD column.\n")
+
+        # CHECK: INT DOD against INT CONTACT
+        has_int_dod_and_contact = process_functions.checkColExist(
+            clinicaldf, ["INT_DOD", "INT_CONTACT"]
+        )
+        if has_int_dod_and_contact:
+            invalid_int_dod_indices = _check_int_dod_validity(clinicaldf)
+            errors, warnings = _check_int_dod_validity_message(invalid_int_dod_indices)
+            total_error.write(errors)
+
         # CHECK: contact vital status value consistency
         contact_error = _check_int_year_consistency(
             clinicaldf=clinicaldf,
