@@ -716,7 +716,7 @@ def test_errors__validate(clin_class):
             "Patient Clinical File: Please double check your YEAR_DEATH "
             "and YEAR_CONTACT columns. YEAR_DEATH must be >= YEAR_CONTACT. "
             "There are 1 row(s) with YEAR_DEATH < YEAR_CONTACT. "
-            "Row [4] contain invalid values in the YEAR_DEATH field. Please correct.\n"
+            "The row number(s) this occurs in are: [4]. Please correct.\n"
             "Patient Clinical File: Please double check your INT_CONTACT "
             "column, it must be an integer, '>32485', '<6570', 'Unknown', "
             "'Not Released' or 'Not Collected'.\n"
@@ -729,7 +729,7 @@ def test_errors__validate(clin_class):
             "Patient Clinical File: Please double check your INT_DOD "
             "and INT_CONTACT columns. INT_DOD must be >= INT_CONTACT. "
             "There are 1 row(s) with INT_DOD < INT_CONTACT. "
-            "Row [2] contain invalid values in the INT_DOD field. Please correct.\n"
+            "The row number(s) this occurs in are: [2]. Please correct.\n"
             "Patient: you have inconsistent redaction and text values in "
             "YEAR_CONTACT, INT_CONTACT.\n"
             "Patient: you have inconsistent redaction and text values in "
@@ -1148,7 +1148,7 @@ def test__check_year_death_validity(df, expected_indices):
             "Patient Clinical File: Please double check your YEAR_DEATH and YEAR_CONTACT columns. "
             "YEAR_DEATH must be >= YEAR_CONTACT. "
             "There are 2 row(s) with YEAR_DEATH < YEAR_CONTACT. "
-            "Row [2, 3] contain invalid values in the YEAR_DEATH field. Please correct.\n",
+            "The row number(s) this occurs in are: [2, 3]. Please correct.\n",
         ),
     ],
     ids=[
@@ -1227,7 +1227,7 @@ def test__check_int_dod_validity(df, expected_indices):
             "Patient Clinical File: Please double check your INT_DOD and INT_CONTACT columns. "
             "INT_DOD must be >= INT_CONTACT. "
             "There are 2 row(s) with INT_DOD < INT_CONTACT. "
-            "Row [2, 3] contain invalid values in the INT_DOD field. Please correct.\n",
+            "The row number(s) this occurs in are: [2, 3]. Please correct.\n",
         ),
     ],
     ids=[

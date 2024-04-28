@@ -191,9 +191,7 @@ def _check_year_death_validity(clinicaldf: pd.DataFrame) -> pd.Index:
     # Convert YEAR_DEATH and YEAR_CONTACT to numeric, coercing errors to NaN
     temp["YEAR_DEATH"] = pd.to_numeric(temp["YEAR_DEATH"], errors="coerce")
     temp["YEAR_CONTACT"] = pd.to_numeric(temp["YEAR_CONTACT"], errors="coerce")
-    # Compare rows with numeric values in both columns and returns comparion results("True"/"False")
-    # If either of the column contains NA or nominal data (e.g. "Unknown", "Not Collected", "Not Applicable"),
-    # "N/A" will be outputed.
+    # Compare rows with numeric values in both YEAR_DEATH and YEAR_CONTACT columns
     temp["check_result"] = np.where(
         (pd.isna(temp["YEAR_DEATH"]) | pd.isna(temp["YEAR_CONTACT"])),
         "N/A",
@@ -223,7 +221,7 @@ def _check_year_death_validity_message(
             "Patient Clinical File: Please double check your YEAR_DEATH and YEAR_CONTACT columns. "
             "YEAR_DEATH must be >= YEAR_CONTACT. "
             f"There are {len(invalid_year_death_indices)} row(s) with YEAR_DEATH < YEAR_CONTACT. "
-            f"Row {invalid_year_death_indices.tolist()} contain invalid values in the YEAR_DEATH field. Please correct.\n"
+            f"The row number(s) this occurs in are: {invalid_year_death_indices.tolist()}. Please correct.\n"
         )
     return error, warning
 
@@ -244,9 +242,7 @@ def _check_int_dod_validity(clinicaldf: pd.DataFrame) -> pd.Index:
     # Convert INT_DOD and INT_CONTACT to numeric, coercing errors to NaN
     temp["INT_DOD"] = pd.to_numeric(temp["INT_DOD"], errors="coerce")
     temp["INT_CONTACT"] = pd.to_numeric(temp["INT_CONTACT"], errors="coerce")
-    # Compare rows with numeric values in both columns and returns comparion results("True"/"False")
-    # If either of the column contains NA or nominal data (e.g. "Unknown", "Not Collected", "Not Applicable"),
-    # "N/A" will be outputed.
+    # Compare rows with numeric values in both INT_DOD and INT_CONTACT columns
     temp["check_result"] = np.where(
         (pd.isna(temp["INT_DOD"]) | pd.isna(temp["INT_CONTACT"])),
         "N/A",
@@ -276,7 +272,7 @@ def _check_int_dod_validity_message(
             "Patient Clinical File: Please double check your INT_DOD and INT_CONTACT columns. "
             "INT_DOD must be >= INT_CONTACT. "
             f"There are {len(invalid_int_dod_indices)} row(s) with INT_DOD < INT_CONTACT. "
-            f"Row {invalid_int_dod_indices.tolist()} contain invalid values in the INT_DOD field. Please correct.\n"
+            f"The row number(s) this occurs in are: {invalid_int_dod_indices.tolist()}. Please correct.\n"
         )
     return error, warning
 
