@@ -162,7 +162,7 @@ def update_table(
         syn=syn,
         database=database,
         new_dataset=newData,
-        database_syn_id=databaseSynId,
+        database_synid=databaseSynId,
         primary_key_cols=databaseEnt.primaryKey,
         to_delete=toDelete,
     )

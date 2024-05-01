@@ -123,6 +123,6 @@ def test_that_update_table_has_expected_calls(
         assert called_kwargs["syn"] == syn
         assert_frame_equal(called_kwargs["database"], subsetted_data)
         assert_frame_equal(called_kwargs["new_dataset"], test_new_data)
-        assert called_kwargs["database_syn_id"] == test_table_synid
+        assert called_kwargs["database_synid"] == test_table_synid
         assert called_kwargs["primary_key_cols"] == "PRIMARY_KEY"
         assert called_kwargs["to_delete"] == to_delete
