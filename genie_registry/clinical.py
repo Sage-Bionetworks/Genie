@@ -268,6 +268,9 @@ def _check_int_dod_validity_message(
     if len(invalid_int_dod_indices) > 0:
         error = (
             "Patient Clinical File: Please double check your INT_DOD and INT_CONTACT columns. "
+          
+          
+          
             "INT_DOD must be >= INT_CONTACT.\n"
         )
     return error, warning
