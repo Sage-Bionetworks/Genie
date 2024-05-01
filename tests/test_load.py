@@ -96,10 +96,15 @@ def test_that_update_table_has_expected_calls(
 
     mock_database_ent = Mock()
     mock_database_ent.primaryKey = "PRIMARY_KEY"
-    syn.get.return_value = mock_database_ent
-    syn.tableQuery.return_value.asDataFrame.return_value = test_data
+    mock_database = Mock()
 
-    with patch.object(load, "_update_table") as patch__update_table:
+    with patch.object(syn, "get", return_value=mock_database_ent), patch.object(
+        syn, "tableQuery", return_value=mock_database
+    ) as patch_table_query, patch.object(
+        mock_database, "asDataFrame", return_value=test_data
+    ), patch.object(
+        load, "_update_table"
+    ) as patch__update_table:
         load.update_table(
             syn,
             databaseSynId=test_table_synid,
@@ -109,7 +114,7 @@ def test_that_update_table_has_expected_calls(
             col=cols_subset,
             toDelete=to_delete,
         )
-        syn.tableQuery.assert_called_with(
+        patch_table_query.assert_called_with(
             f"SELECT * FROM {test_table_synid} where CENTER ='test-center'"
         )
 
