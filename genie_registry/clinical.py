@@ -220,8 +220,6 @@ def _check_year_death_validity_message(
         error = (
             "Patient Clinical File: Please double check your YEAR_DEATH and YEAR_CONTACT columns. "
             "YEAR_DEATH must be >= YEAR_CONTACT. "
-            f"There are {len(invalid_year_death_indices)} row(s) with YEAR_DEATH < YEAR_CONTACT. "
-            f"The row number(s) this occurs in are: {invalid_year_death_indices.tolist()}. Please correct.\n"
         )
     return error, warning
 
@@ -271,8 +269,6 @@ def _check_int_dod_validity_message(
         error = (
             "Patient Clinical File: Please double check your INT_DOD and INT_CONTACT columns. "
             "INT_DOD must be >= INT_CONTACT. "
-            f"There are {len(invalid_int_dod_indices)} row(s) with INT_DOD < INT_CONTACT. "
-            f"The row number(s) this occurs in are: {invalid_int_dod_indices.tolist()}. Please correct.\n"
         )
     return error, warning
 
