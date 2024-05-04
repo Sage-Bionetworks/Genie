@@ -1142,7 +1142,7 @@ def test__check_year_death_validity(df, expected_indices):
         (
             pd.Index([2, 3]),
             "Patient Clinical File: Please double check your YEAR_DEATH and YEAR_CONTACT columns. "
-            "YEAR_DEATH must be >= YEAR_CONTACT. "
+            "YEAR_DEATH must be >= YEAR_CONTACT. ",
         ),
     ],
     ids=[
@@ -1219,7 +1219,7 @@ def test__check_int_dod_validity(df, expected_indices):
         (
             pd.Index([2, 3]),
             "Patient Clinical File: Please double check your INT_DOD and INT_CONTACT columns. "
-            "INT_DOD must be >= INT_CONTACT. "
+            "INT_DOD must be >= INT_CONTACT. ",
         ),
     ],
     ids=[
