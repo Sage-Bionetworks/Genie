@@ -219,7 +219,7 @@ def _check_year_death_validity_message(
     if len(invalid_year_death_indices) > 0:
         error = (
             "Patient Clinical File: Please double check your YEAR_DEATH and YEAR_CONTACT columns. "
-            "YEAR_DEATH must be >= YEAR_CONTACT. "
+            "YEAR_DEATH must be >= YEAR_CONTACT.\n"
         )
     return error, warning
 
@@ -268,7 +268,7 @@ def _check_int_dod_validity_message(
     if len(invalid_int_dod_indices) > 0:
         error = (
             "Patient Clinical File: Please double check your INT_DOD and INT_CONTACT columns. "
-            "INT_DOD must be >= INT_CONTACT. "
+            "INT_DOD must be >= INT_CONTACT.\n"
         )
     return error, warning
 
