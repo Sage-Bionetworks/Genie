@@ -12,7 +12,7 @@ import synapseclient
 
 import genie_registry.bed
 from genie_registry.bed import bed
-from genie import validate
+from genie import load, validate
 
 if not shutil.which("bedtools"):
     pytest.skip("bedtools is not found, skipping bed tests", allow_module_level=True)
@@ -201,6 +201,54 @@ def test_clinicalreport___process(bed_class):
         assert_frame_equal(
             expected_beddf, new_beddf[expected_beddf.columns], check_dtype=False
         )
+
+
+def test_process_steps_calls_expected_values(bed_class):
+    bedDf = pd.DataFrame(
+        dict(
+            a=["2", "9", "12"],
+            b=[69688533, 99401860, 53701241],
+            c=[69901480, 99417584, 53718647],
+            d=["AAK1", "AAED1", "AAAS"],
+            e=[True, True, False],
+            f=[True, True, False],
+        )
+    )
+
+    with patch.object(
+        bed, "_process", return_value=bedDf
+    ) as patch__process, patch.object(
+        load, "update_table"
+    ) as patch_load_update_table, patch.object(
+        pd.DataFrame, "to_csv"
+    ) as patch_to_csv:
+        bed_path = "somepath"
+        db_syn_id = "synZZZZZ"
+        seq_assay_id_filter_val = "SAGE-PANEL-1"
+
+        result = bed_class.process_steps(
+            beddf=bedDf,
+            newPath=bed_path,
+            parentId="synAAAAA",
+            databaseSynId=db_syn_id,
+            seq_assay_id=seq_assay_id_filter_val,
+        )
+        patch__process.assert_called_once_with(
+            beddf=bedDf,
+            seq_assay_id=seq_assay_id_filter_val,
+            newpath=bed_path,
+            parentid="synAAAAA",
+        )
+        patch_load_update_table.assert_called_once_with(
+            syn=bed_class.syn,
+            databaseSynId=db_syn_id,
+            newData=bedDf,
+            filterBy=seq_assay_id_filter_val,
+            filterByColumn="SEQ_ASSAY_ID",
+            toDelete=True,
+        )
+        patch_to_csv.assert_called_once_with(bed_path, sep="\t", index=False)
+        assert result == bed_path
 
 
 def test_filetype(bed_class):

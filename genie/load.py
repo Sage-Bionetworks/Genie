@@ -159,7 +159,12 @@ def update_table(
     else:
         newData = newData[database.columns]
     _update_table(
-        syn, database, newData, databaseSynId, databaseEnt.primaryKey, toDelete
+        syn=syn,
+        database=database,
+        new_dataset=newData,
+        database_synid=databaseSynId,
+        primary_key_cols=databaseEnt.primaryKey,
+        to_delete=toDelete,
     )
 
 
