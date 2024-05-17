@@ -1,0 +1,37 @@
+name: Build Github Pages Docs
+on:
+  push:
+    branches:
+      - gen-1109-setup-mkdocs
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Set Cache ID Based on UTC Week Number
+        run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+
+      - name: Cache dependences
+        uses: actions/cache@v3
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
+
+      - name: Install mkdocs and dependencies
+        run: |
+            pip install mkdocs mkdocs-material mkdocstrings mkdocstrings-python mkdocs-open-in-new-tab
+
+      - name: Build and deploy mkdocs site to GitHub Pages
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mkdocs gh-deploy --force
