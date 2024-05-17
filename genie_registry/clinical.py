@@ -306,8 +306,16 @@ def remap_clinical_values(
     sampletype_mapping.index = sampletype_mapping["CODE"]
     sampletype_dict = sampletype_mapping.to_dict()
 
-    if clinicaldf.get("SAMPLE_TYPE") is not None:
-        clinicaldf["SAMPLE_TYPE_DETAILED"] = clinicaldf["SAMPLE_TYPE"]
+    for column in [
+        "PRIMARY_RACE",
+        "SECONDARY_RACE",
+        "TERTIARY_RACE",
+        "SEX",
+        "ETHNICITY",
+        "SAMPLE_TYPE",
+    ]:
+        if column in clinicaldf.columns:
+            clinicaldf[f"{column}_DETAILED"] = clinicaldf[column]
 
     # Use pandas mapping feature
     clinicaldf = clinicaldf.replace(
@@ -316,9 +324,14 @@ def remap_clinical_values(
             "SECONDARY_RACE": race_dict["CBIO_LABEL"],
             "TERTIARY_RACE": race_dict["CBIO_LABEL"],
             "SAMPLE_TYPE": sampletype_dict["CBIO_LABEL"],
-            "SAMPLE_TYPE_DETAILED": sampletype_dict["DESCRIPTION"],
             "SEX": sex_dict["CBIO_LABEL"],
             "ETHNICITY": ethnicity_dict["CBIO_LABEL"],
+            "PRIMARY_RACE_DETAILED": race_dict["DESCRIPTION"],
+            "SECONDARY_RACE_DETAILED": race_dict["DESCRIPTION"],
+            "TERTIARY_RACE_DETAILED": race_dict["DESCRIPTION"],
+            "SAMPLE_TYPE_DETAILED": sampletype_dict["DESCRIPTION"],
+            "SEX_DETAILED": sex_dict["DESCRIPTION"],
+            "ETHNICITY_DETAILED": ethnicity_dict["DESCRIPTION"],
         }
     )
 
@@ -481,12 +494,12 @@ class Clinical(FileTypeFormat):
         # hardcoded because it never changes
         # TODO: Add clinical tier release scope to GENIE config
         patient_cols_table = self.syn.tableQuery(
-            "select fieldName from syn8545211 where "
+            f"select fieldName from {self.genie_config['clinical_tier_release_scope']} where "
             "patient is True and inClinicalDb is True"
         )
         patient_cols = patient_cols_table.asDataFrame()["fieldName"].tolist()
         sample_cols_table = self.syn.tableQuery(
-            "select fieldName from syn8545211 where "
+            f"select fieldName from {self.genie_config['clinical_tier_release_scope']} where "
             "sample is True and inClinicalDb is True"
         )
         sample_cols = sample_cols_table.asDataFrame()["fieldName"].tolist()
