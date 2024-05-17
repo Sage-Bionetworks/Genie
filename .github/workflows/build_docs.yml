@@ -2,7 +2,7 @@ name: Build Github Pages Docs
 on:
   push:
     branches:
-      - gen-1109-setup-mkdocs
+      - main
 
 jobs:
   deploy:
