@@ -12,4 +12,4 @@ This repository documents code used to gather, QC, standardize, and analyze data
 
 ## Additional Documentation
 
-Visit the [Project Genie Data Portal](genie.synapse.org/) to learn more about our data
+Visit the [Project Genie Data Portal](https://genie.synapse.org/) to learn more about our data
