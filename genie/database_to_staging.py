@@ -1013,6 +1013,7 @@ def store_clinical_files(
     release_synid,
     current_release_staging,
     center_mappingdf,
+    databaseSynIdMappingDf,
     used=None,
 ):
     """
@@ -1030,6 +1031,7 @@ def store_clinical_files(
         release_synid: Synapse id to store release file
         current_release_staging: Staging flag
         center_mappingdf: Center mapping dataframe
+        databaseSynIdMappingDf: Database to Synapse Id mapping
 
     Returns:
         pandas.DataFrame: configured clinical dataframe
@@ -1154,7 +1156,12 @@ def store_clinical_files(
     keep_merged_consortium_samples = clinicaldf.SAMPLE_ID
     # This mapping table is the GENIE clinical code to description
     # mapping to generate the headers of the clinical file
-    mapping = extract.get_syntabledf(syn=syn, query_string="SELECT * FROM syn9621600")
+    clinical_code_to_desc_map_synid = databaseSynIdMappingDf["Id"][
+        databaseSynIdMappingDf["Database"] == "clinical_code_to_desc_map"
+    ][0]
+    mapping = extract.get_syntabledf(
+        syn=syn, query_string=f"SELECT * FROM {clinical_code_to_desc_map_synid}"
+    )
     clinical_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical.txt")
     clinical_sample_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical_sample.txt")
     clinical_patient_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical_patient.txt")
@@ -1564,6 +1571,9 @@ def stagingToCbio(
     sv_synid = databaseSynIdMappingDf["Id"][databaseSynIdMappingDf["Database"] == "sv"][
         0
     ]
+    clinical_tier_release_scope_synid = databaseSynIdMappingDf["Id"][
+        databaseSynIdMappingDf["Database"] == "clinical_tier_release_scope"
+    ][0]
     # Grab assay information
     assay_info_ind = databaseSynIdMappingDf["Database"] == "assayinfo"
     assay_info_synid = databaseSynIdMappingDf["Id"][assay_info_ind][0]
@@ -1592,7 +1602,8 @@ def stagingToCbio(
     # Clinical release scope filter
     # If private -> Don't release to public
     clinicalReleaseScopeDf = extract.get_syntabledf(
-        syn, "SELECT * FROM syn8545211 where releaseScope <> 'private'"
+        syn,
+        f"SELECT * FROM {clinical_tier_release_scope_synid} where releaseScope <> 'private'",
     )
 
     patientCols = clinicalReleaseScopeDf["fieldName"][
