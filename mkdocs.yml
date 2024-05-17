@@ -16,21 +16,46 @@ nav:
   - Getting Started: getting_started.md
   - Tutorials: 
     - Local File Validation: tutorials/local_file_validation.md
-  - Reference: 
+  - Reference:
+    # contains reference to all of the technical codebase
+    - Main Pipeline Commands:
+      # contains reference to the scripts with the command line args we call to 
+      # run the pipeline
+      - Input to Database: reference/main_pipeline_commands/input_to_database.md
+      - Database to Staging: reference/main_pipeline_commands/database_to_staging.md
+      - Consortium to Public: reference/main_pipeline_commands/consortium_to_public.md
     - Main Pipeline Steps:
-      - Input to Database: reference/main_pipeline_steps/input_to_database.md
+      # contains all code related to input to database step
+      - Input to Database:
+        - input_to_database: reference/main_pipeline_steps/input_to_database/input_to_database.md
+        - validate: reference/main_pipeline_steps/input_to_database/validate.md
+        - write_invalid_reasons: reference/main_pipeline_steps/input_to_database/write_invalid_reasons.md
+        - process_mutation: reference/main_pipeline_steps/input_to_database/process_mutation.md
+        - to_retract: reference/main_pipeline_steps/input_to_database/toRetract.py
       - Database to Staging: reference/main_pipeline_steps/database_to_staging.md
       - Consortium to Public: reference/main_pipeline_steps/consortium_to_public.md
     - Fileformats:
       - Fileformat: reference/fileformats/fileformat.md
-      - maf: reference/fileformats/maf.md
+      - Assay Information: reference/fileformats/assay.md
+      - Bed: reference/fileformats/bed.md
+      - Clinical: reference/fileformats/clinical.md
+      - Cna: reference/fileformats/cna.md
+      - Maf: reference/fileformats/maf.md
+      - Mutations In Cis: reference/fileformats/mutations_in_cis.md
+      - Patient retraction: reference/fileformats/patient_retraction.md
+      - Sample retraction: reference/fileformats/sample_retraction.md
+      - Segmented: reference/fileformats/seg.md
+      - Structural variant: reference/fileformats/structural_variant.md
+      - Vcf: reference/fileformats/vcf.md
+      - Workflow: reference/fileformats/workflow.md
     - Helper modules:
-      - process_functions: reference/helper_modules/process_functions.md
-      - validate: reference/helper_modules/validate.md
+      # contains all code used in more than one step of the pipeline
+      - create_case_lists: reference/helper_modules/create_case_lists.md
+      - dashboard_table_updater: reference/helper_modules/dashboard_table_updater.md
       - extract: reference/helper_modules/extract.md
       - load: reference/helper_modules/load.md
+      - process_functions: reference/helper_modules/process_functions.md
       - transform: reference/helper_modules/transform.md
-      - process_mutation: reference/helper_modules/process_mutation.md
 
 # Theme configuration
 theme:
@@ -84,6 +109,7 @@ plugins:
       python:
         options:
           members_order: source
+          # shows all functions and attributes even hidden
           members: yes
           show_if_no_docstring: False
           show_root_heading: True
