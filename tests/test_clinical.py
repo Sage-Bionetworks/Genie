@@ -956,8 +956,15 @@ def test_remap_clinical_values_sampletype():
 )
 def test_remap_clinical_values(col):
     """Test Remapping clinical values"""
-    testdf = pd.DataFrame({col: [1, 2, 99]})
-    expecteddf = pd.DataFrame({col: ["Male", "Female", "Unknown"]})
+    testdf = pd.DataFrame({"SEX": [1, 2, 99], "PRIMARY_RACE": [1, 2, 99]})
+    expecteddf = pd.DataFrame(
+        {
+            "SEX": ["Male", "Female", "Unknown"],
+            "PRIMARY_RACE": ["Male", "Female", "Unknown"],
+            "PRIMARY_RACE_DETAILED": ["Male", "Female", "Not coded"],
+            "SEX_DETAILED": ["Male", "Female", "Not coded"],
+        }
+    )
     remappeddf = genie_registry.clinical.remap_clinical_values(
         testdf, sexdf, sexdf, sexdf, sexdf
     )
