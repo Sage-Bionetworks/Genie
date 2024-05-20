@@ -1,0 +1,36 @@
+name: Build Github Pages Docs
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Cache dependences
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          # Unique cache key based on requirements.txt in docs directory
+          key: ${{ runner.os }}-pip-${{ hashFiles('docs/requirements.txt') }}-mkdocs-deps 
+          # Restore partial cache if exact match is not found
+          restore-keys: |
+            ${{ runner.os }}-pip-  
+
+      - name: Install mkdocs and dependencies
+        run: |
+            pip install mkdocs mkdocs-material mkdocstrings mkdocstrings-python mkdocs-open-in-new-tab
+
+      - name: Build and deploy mkdocs site to GitHub Pages
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mkdocs gh-deploy --force
