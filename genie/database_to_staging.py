@@ -1666,6 +1666,7 @@ def stagingToCbio(
         consortiumReleaseSynId,
         current_release_staging,
         CENTER_MAPPING_DF,
+        databaseSynIdMappingDf,
         used=[sample_used, patient_used],
     )
 
