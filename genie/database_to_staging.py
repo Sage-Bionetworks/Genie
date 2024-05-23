@@ -1896,7 +1896,6 @@ def create_link_version(
     ]
     if clinical_ent:
         # Set private permission for the data_clinical.txt link
-        syn.setPermissions(clinical_ent[0], principalId=3346558, accessType=[])
         syn.setPermissions(clinical_ent[0], principalId=3326313, accessType=[])
 
     for ents in case_list_entities:
