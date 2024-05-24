@@ -143,7 +143,8 @@ def consortiumToPublic(
         databaseSynIdMappingDf["Database"] == "clinical_tier_release_scope"
     ][0]
     publicRelease = extract.get_syntabledf(
-        syn=syn, query_string=f"SELECT * FROM {clinical_tier_release_scope_synid} where releaseScope = 'public'"
+        syn=syn,
+        query_string=f"SELECT * FROM {clinical_tier_release_scope_synid} where releaseScope = 'public'",
     )
 
     allClin = clinicalDf[clinicalDf["SAMPLE_ID"].isin(publicReleaseSamples)]
@@ -190,7 +191,9 @@ def consortiumToPublic(
     clinical_code_to_desc_map_synid = databaseSynIdMappingDf["Id"][
         databaseSynIdMappingDf["Database"] == "clinical_code_to_desc_map"
     ][0]
-    mapping = extract.get_syntabledf(syn=syn, query_string=f"SELECT * FROM {clinical_code_to_desc_map_synid}")
+    mapping = extract.get_syntabledf(
+        syn=syn, query_string=f"SELECT * FROM {clinical_code_to_desc_map_synid}"
+    )
     genePanelEntities = []
     for entName, entId in consortiumRelease[2]:
         is_deprecated_file = entName in ["data_fusions.txt"]
