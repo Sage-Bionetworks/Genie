@@ -77,6 +77,7 @@ def genie_config():
         "race_mapping": "syn7434236",
         "sex_mapping": "syn7434222",
         "sampletype_mapping": "syn7434273",
+        "clinical_tier_release_scope": "syn8545211",
     }
     return config
 

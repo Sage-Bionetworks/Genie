@@ -9,6 +9,7 @@ import pytest
 import synapseclient
 from genie import process_functions, validate
 from genie_registry.clinical import Clinical
+import pdb
 
 
 def createMockTable(dataframe):
@@ -37,11 +38,32 @@ sexdf = pd.DataFrame(
     )
 )
 
+patientdf = pd.DataFrame(
+    dict(
+        fieldName=["PATIENT_ID", "SEX", "PRIMARY_RACE"],
+        patient=[True, True, True],
+        sample=[True, False, False],
+    )
+)
+sampledf = pd.DataFrame(
+    dict(
+        fieldName=["PATIENT_ID", "SAMPLE_ID"],
+        patient=[True, False],
+        sample=[True, True],
+    )
+)
+
 table_query_results_map = {
     ("select * from syn7434222",): createMockTable(sexdf),
     ("select * from syn7434236",): createMockTable(no_nan),
     ("select * from syn7434242",): createMockTable(no_nan),
     ("select * from syn7434273",): createMockTable(no_nan),
+    (
+        "select fieldName from syn8545211 where patient is True and inClinicalDb is True",
+    ): createMockTable(patientdf),
+    (
+        "select fieldName from syn8545211 where sample is True and inClinicalDb is True",
+    ): createMockTable(sampledf),
 }
 
 json_oncotreeurl = (
@@ -952,16 +974,61 @@ def test_remap_clinical_values_sampletype():
 
 
 @pytest.mark.parametrize(
-    "col", ["SEX", "PRIMARY_RACE", "SECONDARY_RACE", "TERTIARY_RACE", "ETHNICITY"]
+    ("testdf", "expecteddf"),
+    [
+        (
+            pd.DataFrame(
+                {
+                    "SEX": [1, 2, 99],
+                    "PRIMARY_RACE": [1, 2, 99],
+                    "SECONDARY_RACE": [1, 2, 99],
+                    "TERTIARY_RACE": [1, 2, 99],
+                    "ETHNICITY": [1, 2, 99],
+                }
+            ),
+            pd.DataFrame(
+                {
+                    "SEX": ["Male", "Female", "Unknown"],
+                    "PRIMARY_RACE": ["Male", "Female", "Unknown"],
+                    "SECONDARY_RACE": ["Male", "Female", "Unknown"],
+                    "TERTIARY_RACE": ["Male", "Female", "Unknown"],
+                    "ETHNICITY": ["Male", "Female", "Unknown"],
+                    "ETHNICITY_DETAILED": ["Male", "Female", "Not coded"],
+                    "PRIMARY_RACE_DETAILED": ["Male", "Female", "Not coded"],
+                    "SECONDARY_RACE_DETAILED": ["Male", "Female", "Not coded"],
+                    "SEX_DETAILED": ["Male", "Female", "Not coded"],
+                    "TERTIARY_RACE_DETAILED": ["Male", "Female", "Not coded"],
+                }
+            ),
+        ),
+        (
+            pd.DataFrame({"SEX": [1, 2, 99], "PRIMARY_RACE": [1, 2, 99]}),
+            pd.DataFrame(
+                {
+                    "SEX": ["Male", "Female", "Unknown"],
+                    "PRIMARY_RACE": ["Male", "Female", "Unknown"],
+                    "PRIMARY_RACE_DETAILED": ["Male", "Female", "Not coded"],
+                    "SEX_DETAILED": ["Male", "Female", "Not coded"],
+                }
+            ),
+        ),
+        (
+            pd.DataFrame({"CENTER": [1, 2, 99]}),
+            pd.DataFrame(
+                {
+                    "CENTER": [1, 2, 99],
+                }
+            ),
+        ),
+    ],
+    ids=["all_detailed_columns", "some_detailed_columns", "no_detailed_columns"],
 )
-def test_remap_clinical_values(col):
+def test_remap_clinical_values(testdf, expecteddf):
     """Test Remapping clinical values"""
-    testdf = pd.DataFrame({col: [1, 2, 99]})
-    expecteddf = pd.DataFrame({col: ["Male", "Female", "Unknown"]})
     remappeddf = genie_registry.clinical.remap_clinical_values(
         testdf, sexdf, sexdf, sexdf, sexdf
     )
-    assert expecteddf.equals(remappeddf)
+    assert expecteddf.sort_index(axis=1).equals(remappeddf.sort_index(axis=1))
 
 
 def test__check_int_year_consistency_valid():
@@ -1555,3 +1622,26 @@ def test_that__cross_validate_assay_info_has_seq_returns_expected_msg_if_valid(
         )
         assert warnings == expected_warning
         assert errors == expected_error
+
+
+def test_preprocess(clin_class, newpath=None):
+    """Test preprocess function"""
+    expected = {
+        "clinicalTemplate": pd.DataFrame(
+            columns=["PATIENT_ID", "SEX", "PRIMARY_RACE", "SAMPLE_ID"]
+        ),
+        "sample": True,
+        "patient": True,
+        "patientCols": ["PATIENT_ID", "SEX", "PRIMARY_RACE"],
+        "sampleCols": ["PATIENT_ID", "SAMPLE_ID"],
+    }
+    results = clin_class.preprocess(newpath)
+    assert (
+        results["clinicalTemplate"]
+        .sort_index(axis=1)
+        .equals(expected["clinicalTemplate"].sort_index(axis=1))
+    )
+    assert results["sample"] == expected["sample"]
+    assert results["patient"] == expected["patient"]
+    assert results["patientCols"] == expected["patientCols"]
+    assert results["sampleCols"] == expected["sampleCols"]
