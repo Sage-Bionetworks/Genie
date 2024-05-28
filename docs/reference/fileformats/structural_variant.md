@@ -1,0 +1,1 @@
+::: genie_registry.structural_variant
