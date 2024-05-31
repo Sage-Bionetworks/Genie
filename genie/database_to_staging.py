@@ -411,7 +411,7 @@ def calculate_missing_variant_counts(
 
 
 # TODO: Add to transform.py
-def runMAFinBED(syn, center_mappingdf, test=False, genieVersion="test"):
+def runMAFinBED(syn, center_mappingdf, test=False, staging=False, genieVersion="test"):
     """
     Run MAF in BED script, filter data and update MAFinBED database
 
@@ -419,6 +419,7 @@ def runMAFinBED(syn, center_mappingdf, test=False, genieVersion="test"):
         syn: Synapse object
         center_mappingdf: center mapping dataframe
         test: Testing parameter. Default is False.
+        staging: Staging parameter. Default is False.
         genieVersion: GENIE version. Default is test.
 
     Returns:
@@ -432,6 +433,10 @@ def runMAFinBED(syn, center_mappingdf, test=False, genieVersion="test"):
     command = ["Rscript", mafinbed_script, notinbed_file]
     if test:
         command.append("--testing")
+    elif staging:
+        command.append("--staging")
+    else:
+        pass
     subprocess.check_call(command)
 
     # mutationSynId = databaseSynIdMappingDf['Id'][
@@ -518,6 +523,7 @@ def mutation_in_cis_filter(
     center_mappingdf,
     genieVersion,
     test=False,
+    staging=False,
 ):
     """
     Run mutation in cis filter, look up samples to remove
@@ -529,6 +535,7 @@ def mutation_in_cis_filter(
         center_mappingdf: center mapping dataframe
         genieVersion: GENIE version. Default is test.
         test: Testing parameter. Default is False.
+        staging: Staging parameter. Default is False.
 
     Returns:
         pd.Series: Samples to remove
@@ -540,6 +547,10 @@ def mutation_in_cis_filter(
         command = ["Rscript", mergeCheck_script]
         if test:
             command.append("--testing")
+        elif staging:
+            command.append("--staging")
+        else:
+            pass
         # TODO: use subprocess.run instead
         subprocess.check_call(command)
         # Store each centers mutations in cis to their staging folder
@@ -888,6 +899,7 @@ def run_genie_filters(
     skip_mutationsincis,
     consortium_release_cutoff,
     test,
+    current_release_staging,
 ):
     """
     Run GENIE filters and returns variants and samples to remove
@@ -903,6 +915,7 @@ def run_genie_filters(
         skip_mutationsincis: Skip mutation in cis filter
         consortium_release_cutoff: Release cutoff in days
         test: Test flag
+        current_release_staging: Staging flag
 
     Returns:
         pandas.Series: Variants to remove
@@ -918,7 +931,11 @@ def run_genie_filters(
     # FILTERING
     logger.info("MAF IN BED FILTER")
     remove_mafinbed_variants = runMAFinBED(
-        syn, center_mappingdf, test=test, genieVersion=genie_version
+        syn,
+        center_mappingdf,
+        test=test,
+        staging=current_release_staging,
+        genieVersion=genie_version,
     )
 
     logger.info("MUTATION IN CIS FILTER")
@@ -932,6 +949,7 @@ def run_genie_filters(
         center_mappingdf,
         genieVersion=genie_version,
         test=test,
+        staging=current_release_staging,
     )
     remove_no_genepanel_samples = no_genepanel_filter(clinicaldf, beddf)
 
@@ -1580,6 +1598,7 @@ def stagingToCbio(
 
     # Using center mapping df to gate centers in release fileStage
     center_query_str = "','".join(CENTER_MAPPING_DF.center)
+
     patient_snapshot = syn.create_snapshot_version(patientSynId, comment=genieVersion)
     patient_used = f"{patientSynId}.{patient_snapshot}"
     patientDf = extract.get_syntabledf(
@@ -1648,6 +1667,7 @@ def stagingToCbio(
         skipMutationsInCis,
         consortiumReleaseCutOff,
         test,
+        current_release_staging=current_release_staging,
     )
 
     (
