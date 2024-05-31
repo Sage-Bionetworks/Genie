@@ -411,32 +411,32 @@ def calculate_missing_variant_counts(
 
 
 # TODO: Add to transform.py
-def runMAFinBED(syn, center_mappingdf, test=False, staging=False, genieVersion="test"):
+def runMAFinBED(
+    syn: synapseclient.Synapse,
+    center_mappingdf: pd.DataFrame,
+    test: bool = False,
+    staging: bool = False,
+    genieVersion: str = "test",
+) -> pd.Series:
     """
-    Run MAF in BED script, filter data and update MAFinBED database
+    Run MAF in BED script, filter data and update MAFinBED files
 
     Args:
-        syn: Synapse object
-        center_mappingdf: center mapping dataframe
-        test: Testing parameter. Default is False.
-        staging: Staging parameter. Default is False.
-        genieVersion: GENIE version. Default is test.
+        syn (synapseclient.Synapse): Synapse client connection
+        center_mappingdf (pd.DataFrame): center mapping dataframe
+        test (bool, optional):Testing parameter. Defaults to False.
+        staging (bool, optional): Staging parameter. Defaults to False.
+        genieVersion (str, optional): GENIE version. Defaults to "test".
 
     Returns:
         pd.Series: Variants to remove
     """
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    mafinbed_script = os.path.join(script_dir, "../R/MAFinBED.R")
     # TODO: Use tempfile
     notinbed_file = os.path.join(script_dir, "../R/notinbed.csv")
-    # The MAFinBED script filters out the centers that aren't being processed
-    command = ["Rscript", mafinbed_script, notinbed_file]
-    if test:
-        command.append("--testing")
-    elif staging:
-        command.append("--staging")
-    else:
-        pass
+    command = get_run_maf_in_bed_script_cmd(
+        notinbed_file=notinbed_file, script_dir=script_dir, test=test, staging=staging
+    )
     subprocess.check_call(command)
 
     # mutationSynId = databaseSynIdMappingDf['Id'][
@@ -447,6 +447,63 @@ def runMAFinBED(syn, center_mappingdf, test=False, staging=False, genieVersion="
     #     " is False and Center in ('{}')".format(
     #         mutationSynId, "','".join(center_mappingdf.center)))
     # removedVariantsDf = removedVariants.asDataFrame()
+    removed_variantsdf = store_filtered_variants(
+        syn=syn,
+        notinbed_file=notinbed_file,
+        center_mapping_df=center_mappingdf,
+        genie_version=genieVersion,
+    )
+    return removed_variantsdf["removeVariants"]
+
+
+def get_run_maf_in_bed_script_cmd(
+    notinbed_file: str, script_dir: str, test: bool, staging: bool
+) -> str:
+    """This function gets the MAFinBED R script command call based on
+       whether we are running in test, staging or production mode
+
+    Args:
+        notinbed_file (str): Full path to the notinbed csv
+        script_dir (str): directory of the MAFinBED script
+        test (bool): Testing parameter.
+        staging (bool): Staging parameter
+
+    Returns:
+        str: Full command call for the MAFinBED script
+    """
+    mafinbed_script = os.path.join(script_dir, "../R/MAFinBED.R")
+    # The MAFinBED script filters out the centers that aren't being processed
+    command = ["Rscript", mafinbed_script, notinbed_file]
+    if test:
+        command.append("--testing")
+    elif staging:
+        command.append("--staging")
+    else:
+        pass
+    return command
+
+
+def store_filtered_variants(
+    syn: synapseclient.Synapse,
+    notinbed_file: str,
+    center_mapping_df: pd.DataFrame,
+    genie_version: str,
+) -> pd.DataFrame:
+    """This script retrieves and stores the filtered variants generated
+        from running the MAFinBed script as files on Synapse. This script
+        then returns the not in bed file with the removed variants column
+        added.
+
+    Args:
+        syn (synapseclient.Synapse): Synapse client connection
+        notinbed_file (str): input file
+        center_mapping_df (pd.DataFrame): the center mapping dataframe
+        genie_version (str): version of this genie run
+
+    Returns:
+        pd.DataFrame: filtered variants dataframe with
+            removed variants column added
+    """
     removed_variantsdf = pd.read_csv(notinbed_file)
     removed_variantsdf["removeVariants"] = (
         removed_variantsdf["Chromosome"].astype(str)
@@ -469,13 +526,13 @@ def runMAFinBED(syn, center_mappingdf, test=False, staging=False, genieVersion="
         load.store_file(
             syn=syn,
             filepath="mafinbed_filtered_variants.csv",
-            parentid=center_mappingdf["stagingSynId"][
-                center_mappingdf["center"] == center
+            parentid=center_mapping_df["stagingSynId"][
+                center_mapping_df["center"] == center
             ][0],
-            version_comment=genieVersion,
+            version_comment=genie_version,
         )
         os.unlink("mafinbed_filtered_variants.csv")
-    return removed_variantsdf["removeVariants"]
+    return removed_variantsdf
 
 
 # TODO: Add to transform.py
@@ -540,17 +597,13 @@ def mutation_in_cis_filter(
     Returns:
         pd.Series: Samples to remove
     """
-    if not skipMutationsInCis:
+    if not skipMutationsInCis or not staging:
         mergeCheck_script = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "../R/mergeCheck.R"
         )
         command = ["Rscript", mergeCheck_script]
         if test:
             command.append("--testing")
-        elif staging:
-            command.append("--staging")
-        else:
-            pass
         # TODO: use subprocess.run instead
         subprocess.check_call(command)
         # Store each centers mutations in cis to their staging folder
@@ -602,6 +655,33 @@ def mutation_in_cis_filter(
         + flag_variantsdf["Tumor_Sample_Barcode"].astype(str)
     )
     return (remove_samples, flag_variantsdf["flaggedVariants"])
+
+
+def get_mutation_in_cis_filter_script_cmd(
+    notinbed_file: str, script_dir: str, test: bool, staging: bool
+) -> str:
+    """This function gets the MAFinBED R script command call based on
+       whether we are running in test, staging or production mode
+
+    Args:
+        notinbed_file (str): Full path to the notinbed csv
+        script_dir (str): directory of the MAFinBED script
+        test (bool): Testing parameter.
+        staging (bool): Staging parameter
+
+    Returns:
+        str: Full command call for the MAFinBED script
+    """
+    mafinbed_script = os.path.join(script_dir, "../R/MAFinBED.R")
+    # The MAFinBED script filters out the centers that aren't being processed
+    command = ["Rscript", mafinbed_script, notinbed_file]
+    if test:
+        command.append("--testing")
+    elif staging:
+        command.append("--staging")
+    else:
+        pass
+    return command
 
 
 # TODO: Add to transform.py
