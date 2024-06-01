@@ -585,12 +585,12 @@ def mutation_in_cis_filter(
 ):
     """
     Run mutation in cis filter, look up samples to remove.
-     
-    The mutation in cis script ONLY runs 
+
+    The mutation in cis script ONLY runs
     WHEN the skipMutationsInCis parameter is FALSE
     AND
     WHEN staging parameter is FALSE
-    
+
     This is because we don't have this set up for staging mode
     yet.
 
