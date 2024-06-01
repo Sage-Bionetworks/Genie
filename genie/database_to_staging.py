@@ -447,7 +447,7 @@ def runMAFinBED(
     #     " is False and Center in ('{}')".format(
     #         mutationSynId, "','".join(center_mappingdf.center)))
     # removedVariantsDf = removedVariants.asDataFrame()
-    removed_variantsdf = store_filtered_variants(
+    removed_variantsdf = store_maf_in_bed_filtered_variants(
         syn=syn,
         notinbed_file=notinbed_file,
         center_mapping_df=center_mappingdf,
@@ -483,7 +483,7 @@ def get_run_maf_in_bed_script_cmd(
     return command
 
 
-def store_filtered_variants(
+def store_maf_in_bed_filtered_variants(
     syn: synapseclient.Synapse,
     notinbed_file: str,
     center_mapping_df: pd.DataFrame,
@@ -493,6 +493,7 @@ def store_filtered_variants(
         from running the MAFinBed script as files on Synapse. This script
         then returns the not in bed file with the removed variants column
         added.
+        TODO: Add handling for empty file?
 
     Args:
         syn (synapseclient.Synapse): Synapse client connection
@@ -528,7 +529,7 @@ def store_filtered_variants(
             filepath="mafinbed_filtered_variants.csv",
             parentid=center_mapping_df["stagingSynId"][
                 center_mapping_df["center"] == center
-            ][0],
+            ].values[0],
             version_comment=genie_version,
         )
         os.unlink("mafinbed_filtered_variants.csv")
@@ -583,7 +584,15 @@ def mutation_in_cis_filter(
     staging=False,
 ):
     """
-    Run mutation in cis filter, look up samples to remove
+    Run mutation in cis filter, look up samples to remove.
+     
+    The mutation in cis script ONLY runs 
+    WHEN the skipMutationsInCis parameter is FALSE
+    AND
+    WHEN staging parameter is FALSE
+    
+    This is because we don't have this set up for staging mode
+    yet.
 
     Args:
         syn: Synapse object
@@ -597,36 +606,57 @@ def mutation_in_cis_filter(
     Returns:
         pd.Series: Samples to remove
     """
-    if not skipMutationsInCis or not staging:
-        mergeCheck_script = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../R/mergeCheck.R"
-        )
-        command = ["Rscript", mergeCheck_script]
-        if test:
-            command.append("--testing")
+    if (not skipMutationsInCis) and (not staging):
+        command = get_mutation_in_cis_filter_script_cmd(test=test)
         # TODO: use subprocess.run instead
         subprocess.check_call(command)
-        # Store each centers mutations in cis to their staging folder
-        center_str = "','".join(center_mappingdf.center)
-        query_str = (
-            f"select * from {variant_filtering_synId} where Center in ('{center_str}')"
+        store_mutation_in_cis_files_to_staging(
+            syn=syn,
+            center_mappingdf=center_mappingdf,
+            variant_filtering_synId=variant_filtering_synId,
+            genieVersion=genieVersion,
         )
-        mergeCheckDf = extract.get_syntabledf(syn=syn, query_string=query_str)
-        for center in mergeCheckDf.Center.unique():
-            if not pd.isnull(center):
-                stagingSynId = center_mappingdf.stagingSynId[
-                    center_mappingdf["center"] == center
-                ]
-                mergeCheckDf[mergeCheckDf["Center"] == center].to_csv(
-                    "mutationsInCis_filtered_samples.csv", index=False
-                )
-                load.store_file(
-                    syn=syn,
-                    filepath="mutationsInCis_filtered_samples.csv",
-                    parentid=stagingSynId[0],
-                    version_comment=genieVersion,
-                )
-                os.unlink("mutationsInCis_filtered_samples.csv")
+    remove_samples = get_mutation_in_cis_filtered_samples(
+        syn=syn, variant_filtering_synId=variant_filtering_synId
+    )
+    flagged_variants = get_mutation_in_cis_flagged_variants(
+        syn=syn, variant_filtering_synId=variant_filtering_synId
+    )
+    return (remove_samples, flagged_variants)
+
+
+def get_mutation_in_cis_filter_script_cmd(test: bool) -> str:
+    """This function gets the mutation_in_cis_filter R script
+        command call based on whether we are running in test,
+        or production mode
+
+    Args:
+        test (bool): Testing parameter.
+
+    Returns:
+        str: Full command call for the mergeCheck script
+    """
+    mergeCheck_script = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "../R/mergeCheck.R"
+    )
+    command = ["Rscript", mergeCheck_script]
+    if test:
+        command.append("--testing")
+    return command
+
+
+def get_mutation_in_cis_filtered_samples(
+    syn: synapseclient.Synapse, variant_filtering_synId: str
+) -> list:
+    """Gets the samples to remove in our variant filtering table
+       TODO: Add handling for when we have 0 row query results
+    Args:
+        syn (synapseclient.Synapse): synapse client connection
+        variant_filtering_synId (str): variant filtering synapse id
+
+    Returns:
+        pd.Series: removed samples
+    """
     query_str = (
         f"SELECT Tumor_Sample_Barcode FROM {variant_filtering_synId} where "
         "Flag = 'TOSS' and Tumor_Sample_Barcode is not null"
@@ -634,7 +664,25 @@ def mutation_in_cis_filter(
     filtered_samplesdf = extract.get_syntabledf(syn=syn, query_string=query_str)
     # #Alex script #1 removed patients
     remove_samples = filtered_samplesdf["Tumor_Sample_Barcode"].drop_duplicates()
+    return remove_samples
 
+
+def get_mutation_in_cis_flagged_variants(
+    syn: synapseclient.Synapse, variant_filtering_synId: str
+) -> pd.Series:
+    """Gets the flagged variants in our variant filtering table which is
+       a unique string concatenation of the Chromosome, Start_Position,
+       HGVSp_Short, Reference_Allele, Tumor_Seq_Allele2 and Tumor_Sample_Barcode
+       columns
+       TODO: Add handling for when we have 0 row query results
+
+    Args:
+        syn (synapseclient.Synapse): synapse client connection
+        variant_filtering_synId (str): variant filtering synapse id
+
+    Returns:
+        pd.Series: flagged variants
+    """
     query_str = (
         f"SELECT * FROM {variant_filtering_synId} where "
         "Flag = 'Flag' and Tumor_Sample_Barcode is not null"
@@ -654,34 +702,45 @@ def mutation_in_cis_filter(
         + " "
         + flag_variantsdf["Tumor_Sample_Barcode"].astype(str)
     )
-    return (remove_samples, flag_variantsdf["flaggedVariants"])
+    return flag_variantsdf["flaggedVariants"]
 
 
-def get_mutation_in_cis_filter_script_cmd(
-    notinbed_file: str, script_dir: str, test: bool, staging: bool
-) -> str:
-    """This function gets the MAFinBED R script command call based on
-       whether we are running in test, staging or production mode
+def store_mutation_in_cis_files_to_staging(
+    syn: synapseclient.Synapse,
+    center_mappingdf: pd.DataFrame,
+    variant_filtering_synId: str,
+    genieVersion: str,
+) -> None:
+    """Stores the mutation in cis files to synapse per
+        center
 
     Args:
-        notinbed_file (str): Full path to the notinbed csv
-        script_dir (str): directory of the MAFinBED script
-        test (bool): Testing parameter.
-        staging (bool): Staging parameter
-
-    Returns:
-        str: Full command call for the MAFinBED script
+        syn (synapseclient.Synapse): synapse client connection
+        center_mappingdf (pd.DataFrame): center mapping dataframe
+        variant_filtering_synId (str): variant filtering synapse id
+        genieVersion (str): version of the genie pipeline run
     """
-    mafinbed_script = os.path.join(script_dir, "../R/MAFinBED.R")
-    # The MAFinBED script filters out the centers that aren't being processed
-    command = ["Rscript", mafinbed_script, notinbed_file]
-    if test:
-        command.append("--testing")
-    elif staging:
-        command.append("--staging")
-    else:
-        pass
-    return command
+    # Store each centers mutations in cis to their staging folder
+    center_str = "','".join(center_mappingdf.center)
+    query_str = (
+        f"select * from {variant_filtering_synId} where Center in ('{center_str}')"
+    )
+    mergeCheckDf = extract.get_syntabledf(syn=syn, query_string=query_str)
+    for center in mergeCheckDf.Center.unique():
+        if not pd.isnull(center):
+            stagingSynId = center_mappingdf.stagingSynId[
+                center_mappingdf["center"] == center
+            ]
+            mergeCheckDf[mergeCheckDf["Center"] == center].to_csv(
+                "mutationsInCis_filtered_samples.csv", index=False
+            )
+            load.store_file(
+                syn=syn,
+                filepath="mutationsInCis_filtered_samples.csv",
+                parentid=stagingSynId.values[0],
+                version_comment=genieVersion,
+            )
+            os.unlink("mutationsInCis_filtered_samples.csv")
 
 
 # TODO: Add to transform.py
