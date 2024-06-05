@@ -136,8 +136,8 @@ def get_run_genie_filters_test_cases():
             "processing_date": "TEST_DATE",
             "skip_mutationsincis": True,
             "consortium_release_cutoff": "CUTOFF_DATE",
-            "test": False,
-            "current_release_staging": True,
+            "test": True,
+            "current_release_staging": False,
         },
         {
             "name": "production_true",
