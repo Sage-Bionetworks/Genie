@@ -440,27 +440,6 @@ View the version comment column in Synapse for your report to find the version a
 
 ---
 
-## Flagged Mutations
-This is a count of how many flagged mutations a center has. Most of these variants are potential
-artifacts flagged by manual review of cBioPortal. Please inform Sage Bionetworks about:
-
-* Suggestions for variants that should be part of this list
-* Any variant shouldn't be part of this list
-
-```{r blacklist}
-blacklist_variants = paste(black_list_variantsdf$Hugo_Symbol,
-                           black_list_variantsdf$HGVSp_Short)
-subset_mut = this_mut[this_mut$Hugo_Symbol %in% black_list_variantsdf$Hugo_Symbol, ]
-subset_mut$blacklist = paste(subset_mut$Hugo_Symbol,
-                             subset_mut$HGVSp_Short)
-subset_mut = subset_mut[subset_mut$blacklist %in% blacklist_variants,]
-kable(table(subset_mut$blacklist, subset_mut$Center),
-      caption = "Blacklist variant count")
-```
-
-
----
-
 ## Distribution of Clinical Attributes
 Please use the below distributions to access the validity of your clinical data.  There will be some tips for what to look for in each section.
 
