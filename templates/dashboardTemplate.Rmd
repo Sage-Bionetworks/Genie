@@ -61,14 +61,6 @@ makePanelList = function(assay, bed) {
   return(unique(as.character(bed$Hugo_Symbol[bed$SEQ_PIPELINE_ID == assay])))
 }
 
-plotPanelOverlap <- function(bed, assays) {
-  listInput = lapply(as.list(assays), function(x) { makePanelList(x, bed) })
-  names(listInput) = assays
-  upset(fromList(listInput),
-        order.by = "freq",
-        nsets = length(assays),
-        nintersects = 30)
-}
 
 plotCenterXRace <- function(genieClinData) {
   t = as.data.frame.matrix(table(genieClinData$CENTER,genieClinData$PRIMARY_RACE))
