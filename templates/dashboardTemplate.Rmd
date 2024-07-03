@@ -25,7 +25,6 @@ title: '`r release`'
 suppressMessages(library(synapser))
 foo = capture.output(synLogin())
 suppressMessages(library(ggplot2))
-suppressMessages(library(UpSetR))
 suppressMessages(library(RColorBrewer))
 suppressMessages(library(jsonlite))
 suppressMessages(library(knitr))
@@ -56,11 +55,6 @@ getFileDf <- function(fileName, releaseFiles) {
     return(NULL)
   }
 }
-
-makePanelList = function(assay, bed) {
-  return(unique(as.character(bed$Hugo_Symbol[bed$SEQ_PIPELINE_ID == assay])))
-}
-
 
 plotCenterXRace <- function(genieClinData) {
   t = as.data.frame.matrix(table(genieClinData$CENTER,genieClinData$PRIMARY_RACE))
