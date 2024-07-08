@@ -63,9 +63,6 @@ def consortiumToPublic(
         database_to_staging.GENIE_RELEASE_DIR,
         "data_cna_hg19.seg",
     )
-    combined_bed_path = os.path.join(
-        database_to_staging.GENIE_RELEASE_DIR, "genie_combined.bed"
-    )
 
     if not os.path.exists(database_to_staging.GENIE_RELEASE_DIR):
         os.mkdir(database_to_staging.GENIE_RELEASE_DIR)
@@ -311,17 +308,20 @@ def consortiumToPublic(
                 version_comment=genie_version,
                 name="data_cna_hg19.seg",
             )
-        elif entName == "genomic_information.txt":
-            bed = syn.get(entId, followLink=True)
-            bedDf = pd.read_csv(bed.path, sep="\t")
-            bedDf = bedDf[bedDf.SEQ_ASSAY_ID.isin(allClin.SEQ_ASSAY_ID)]
-            bedDf.to_csv(combined_bed_path, sep="\t", index=False)
+        elif entName in ["genomic_information.txt", "assay_information.txt"]:
+            file_with_seq_assay_ent = syn.get(entId, followLink=True)
+            file_with_seq_assay_df = pd.read_csv(file_with_seq_assay_ent.path, sep="\t")
+            file_with_seq_assay_df = file_with_seq_assay_df[file_with_seq_assay_df.SEQ_ASSAY_ID.isin(allClin.SEQ_ASSAY_ID)]
+            file_path = os.path.join(
+                database_to_staging.GENIE_RELEASE_DIR, entName
+            )
+            file_with_seq_assay_df.to_csv(file_path, sep="\t", index=False)
             load.store_file(
                 syn=syn,
-                filepath=combined_bed_path,
+                filepath=file_path,
                 parentid=public_release_preview,
                 version_comment=genie_version,
-                name="genomic_information.txt",
+                name=entName,
             )
         else:
             ent = syn.get(entId, followLink=True, downloadFile=False)
