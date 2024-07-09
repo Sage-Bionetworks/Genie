@@ -774,7 +774,6 @@ def validation(
     error_trackingdf = build_error_tracking_table(invalid_errors)
 
     new_tables = _update_tables_content(validation_statusdf, error_trackingdf)
-    # updated_validation_snapshot_df = _update_tables_content(validation_status_snapshotdf, error_trackingdf)
 
     validation_statusdf = new_tables["validation_statusdf"]
     error_trackingdf = new_tables["error_trackingdf"]
