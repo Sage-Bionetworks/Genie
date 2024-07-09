@@ -322,10 +322,6 @@ def validatefile(
     error_list = check_file_status["error_list"]
 
     messages_to_send = []
-
-    # Need to figure out to how to remove this
-    # This must pass in filenames, because filetype is determined by entity
-    # name Not by actual path of file
     validator = validate.GenieValidationHelper(
         syn=syn,
         project_id=project_id,
@@ -336,8 +332,12 @@ def validatefile(
         ancillary_files=ancillary_files,
     )
     filetype = validator.file_type
-
     if check_file_status["to_validate"]:
+        # Need to figure out to how to remove this
+        # This must pass in filenames, because filetype is determined by entity
+        # name Not by actual path of file
+        validator.entitylist = [syn.get(entity) for entity in entities]
+
         valid_cls, message = validator.validate_single_file(
             oncotree_link=genie_config["oncotreeLink"], nosymbol_check=False
         )
@@ -525,68 +525,7 @@ def build_validation_status_table(input_valid_statuses: List[dict]):
         "modifiedOn",
         "fileType",
         "center",
-        "entity",
-    ]
-    input_status_rows = []
-    for input_status in input_valid_statuses:
-        entity = input_status["entity"]
-        row = {
-            "id": entity.id,
-            "path": entity.path,
-            "md5": entity.md5,
-            "status": input_status["status"],
-            "name": entity.name,
-            "modifiedOn": entity_date_to_timestamp(entity.properties.modifiedOn),
-            "fileType": input_status["fileType"],
-            "center": input_status["center"],
-            "entity": entity,
-        }
-        input_status_rows.append(row)
-    if input_status_rows:
-        input_valid_statusdf = pd.DataFrame(input_status_rows)
-    else:
-        input_valid_statusdf = pd.DataFrame(
-            input_status_rows, columns=status_table_columns
-        )
-    return input_valid_statusdf
-
-def append_to_table(
-    syn: synapseclient.Synapse,
-    df: pd.DataFrame,
-    syn_id: str
-):
-    """Append to Synapse Table
-
-    Args:
-        syn: Synapse connection
-        df: DataFrame
-        syn_id: Synapse id of table
-    """
-    syn.store(synapseclient.Table(syn_id, df))
-
-
-def build_validation_status_snapshot_table(input_valid_statuses: List[dict], process_start_date: str):
-    """Build validation status dataframe
-
-    Args:
-        input_valid_statuses: list of file validation status
-        process_start_date: Start date of processing
-
-    Returns:
-        Validation status dataframe
-
-    """
-    status_table_columns = [
-        "id",
         "version",
-        "path",
-        "md5",
-        "status",
-        "name",
-        "modifiedOn",
-        "fileType",
-        "center",
-        "process_start_date",
         "entity",
     ]
     input_status_rows = []
@@ -594,7 +533,6 @@ def build_validation_status_snapshot_table(input_valid_statuses: List[dict], pro
         entity = input_status["entity"]
         row = {
             "id": entity.id,
-            "version": entity.versionNumber,
             "path": entity.path,
             "md5": entity.md5,
             "status": input_status["status"],
@@ -602,7 +540,7 @@ def build_validation_status_snapshot_table(input_valid_statuses: List[dict], pro
             "modifiedOn": entity_date_to_timestamp(entity.properties.modifiedOn),
             "fileType": input_status["fileType"],
             "center": input_status["center"],
-            "process_start_date": process_start_date,
+            "version": entity.versionNumber,
             "entity": entity,
         }
         input_status_rows.append(row)
@@ -613,6 +551,7 @@ def build_validation_status_snapshot_table(input_valid_statuses: List[dict], pro
             input_status_rows, columns=status_table_columns
         )
     return input_valid_statusdf
+
 
 # TODO: Add to validation.py
 def build_error_tracking_table(invalid_errors: List[dict]):
@@ -635,6 +574,7 @@ def build_error_tracking_table(invalid_errors: List[dict]):
             "name": entity.name,
             "fileType": invalid_error["fileType"],
             "center": invalid_error["center"],
+            "version": entity.versionNumber,
             "entity": entity,
         }
         invalid_error_rows.append(row)
@@ -826,12 +766,11 @@ def validation(
                     user_message_dict[user].append(file_messages)
 
     validation_statusdf = build_validation_status_table(input_valid_statuses)
-    validation_status_snapshotdf = build_validation_status_snapshot_table(input_valid_statuses=input_valid_statuses, process_start_date=genie_config['processStart'])
 
     error_trackingdf = build_error_tracking_table(invalid_errors)
 
     new_tables = _update_tables_content(validation_statusdf, error_trackingdf)
-    updated_validation_snapshot_df = _update_tables_content(validation_status_snapshotdf, error_trackingdf)
+    # updated_validation_snapshot_df = _update_tables_content(validation_status_snapshotdf, error_trackingdf)
 
     validation_statusdf = new_tables["validation_statusdf"]
     error_trackingdf = new_tables["error_trackingdf"]
@@ -859,12 +798,14 @@ def validation(
         validation_status_table=validation_status_table,
         error_tracker_table=error_tracker_table,
     )
-    append_to_table(
-        syn=syn,
-        df=updated_validation_snapshot_df,
-        syn_id="syn61672246"
-    )
 
+    update_status_and_error_tables(
+        syn=syn,
+        input_valid_statusdf=validation_statusdf,
+        invalid_errorsdf=error_trackingdf,
+        validation_status_table=syn.tableQuery("select * from syn61672246"),
+        error_tracker_table=syn.tableQuery("select * from syn61672708"),
+    )
     valid_filesdf = validation_statusdf.query('status == "VALIDATED"')
     return valid_filesdf[["id", "path", "fileType", "name"]]
 
@@ -939,10 +880,13 @@ def center_input_to_database(
         process_functions.rmFiles(os.path.join(path_to_genie, center))
 
     center_input_synid = genie_config["center_config"][center]["inputSynId"]
-    genie_config['process_start_date'] = str(int(time.time() * 1000))
     logger.info("Center: " + center)
     center_files = extract.get_center_input_files(
-        syn, center_input_synid, center, process
+        syn=syn,
+        synid=center_input_synid,
+        center=center,
+        process=process,
+        downloadFile=False
     )
 
     # ancillary_files = get_ancillary_files(
