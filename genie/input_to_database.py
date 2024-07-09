@@ -568,7 +568,15 @@ def build_error_tracking_table(invalid_errors: List[dict]):
         Error tracking dataframe
 
     """
-    error_table_columns = ["id", "errors", "name", "fileType", "center", "version", "entity"]
+    error_table_columns = [
+        "id",
+        "errors",
+        "name",
+        "fileType",
+        "center",
+        "version",
+        "entity",
+    ]
     invalid_error_rows = []
     for invalid_error in invalid_errors:
         entity = invalid_error["entity"]

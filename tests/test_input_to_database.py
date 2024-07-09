@@ -26,7 +26,7 @@ sample_clinical_entity = synapseclient.File(
     name="data_clinical_supp_sample_SAGE.txt",
     modifiedOn="2019-03-24T12:00:00.Z",
     md5="44444",
-    versionNumber=3
+    versionNumber=3,
 )
 
 patient_clinical_synid = "syn11111"
@@ -725,7 +725,8 @@ class TestValidation:
             ]
         ]
         self.errors_df = pd.DataFrame(
-            error, columns=["id", "errors", "name", "fileType", "center", "version", "entity"]
+            error,
+            columns=["id", "errors", "name", "fileType", "center", "version", "entity"],
         )
         self.empty_errors = pd.DataFrame(
             columns=["id", "errors", "name", "fileType", "center", "version", "entity"]
@@ -847,9 +848,9 @@ class TestValidation:
         dupsdf = input_to_database.get_duplicated_files(self.no_dupsdf)
         # These empty frames won't be equal without these conversions
         # HACK: Convert the index type to the same type
-        self.empty_dup.index = self.empty_dup.index.astype('int')
+        self.empty_dup.index = self.empty_dup.index.astype("int")
         # HACK: Convert the dtype of the "version" column to the same type
-        self.empty_dup["version"] = self.empty_dup["version"].astype('int')
+        self.empty_dup["version"] = self.empty_dup["version"].astype("int")
         pd.testing.assert_frame_equal(dupsdf, self.empty_dup)
 
     def test__update_tables_content(self):
@@ -943,7 +944,14 @@ class TestValidation:
         errortracking_mock = emptytable_mock()
         valiate_cls = Mock()
         with patch.object(
-            syn, "tableQuery", side_effect=[validationstatus_mock, errortracking_mock, validationstatus_mock, errortracking_mock]
+            syn,
+            "tableQuery",
+            side_effect=[
+                validationstatus_mock,
+                errortracking_mock,
+                validationstatus_mock,
+                errortracking_mock,
+            ],
         ) as patch_query, patch.object(
             input_to_database,
             "validatefile",
