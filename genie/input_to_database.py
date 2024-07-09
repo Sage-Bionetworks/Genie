@@ -333,10 +333,14 @@ def validatefile(
     )
     filetype = validator.file_type
     if check_file_status["to_validate"]:
-        # Need to figure out to how to remove this
-        # This must pass in filenames, because filetype is determined by entity
-        # name Not by actual path of file
-        validator.entitylist = [syn.get(entity) for entity in entities]
+        # HACK: Don't download again if only_validate is not True, but all
+        # files need to be downloaded currently when validation + processing
+        # isn't split up
+        if entities[0].get("path") is None:
+            # Need to figure out to how to remove this
+            # This must pass in filenames, because filetype is determined by entity
+            # name not by actual path of file
+            validator.entitylist = [syn.get(entity) for entity in entities]
 
         valid_cls, message = validator.validate_single_file(
             oncotree_link=genie_config["oncotreeLink"], nosymbol_check=False
@@ -803,8 +807,8 @@ def validation(
         syn=syn,
         input_valid_statusdf=validation_statusdf,
         invalid_errorsdf=error_trackingdf,
-        validation_status_table=syn.tableQuery("select * from syn61672246"),
-        error_tracker_table=syn.tableQuery("select * from syn61672708"),
+        validation_status_table=syn.tableQuery(f"select * from syn61672246 where center = '{center}'"),
+        error_tracker_table=syn.tableQuery(f"select * from syn61672708 where center = '{center}'"),
     )
     valid_filesdf = validation_statusdf.query('status == "VALIDATED"')
     return valid_filesdf[["id", "path", "fileType", "name"]]
@@ -881,12 +885,13 @@ def center_input_to_database(
 
     center_input_synid = genie_config["center_config"][center]["inputSynId"]
     logger.info("Center: " + center)
+    # Don't download all the files when only validate
     center_files = extract.get_center_input_files(
         syn=syn,
         synid=center_input_synid,
         center=center,
         process=process,
-        downloadFile=False
+        downloadFile=(not only_validate)
     )
 
     # ancillary_files = get_ancillary_files(
