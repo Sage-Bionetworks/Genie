@@ -913,7 +913,7 @@ class TestValidation:
         entity = synapseclient.Entity(
             id="syn1234",
             md5="44444",
-            version=3,
+            versionNumber=3,
             path="/path/to/foobar.txt",
             name="data_clinical_supp_SAGE.txt",
         )
@@ -928,7 +928,7 @@ class TestValidation:
                 entity.name,
                 modified_on,
                 filetype,
-                entity.version,
+                entity.versionNumber,
                 center,
             ]
         ]
@@ -943,7 +943,7 @@ class TestValidation:
         errortracking_mock = emptytable_mock()
         valiate_cls = Mock()
         with patch.object(
-            syn, "tableQuery", side_effect=[validationstatus_mock, errortracking_mock]
+            syn, "tableQuery", side_effect=[validationstatus_mock, errortracking_mock, validationstatus_mock, errortracking_mock]
         ) as patch_query, patch.object(
             input_to_database,
             "validatefile",
@@ -971,7 +971,7 @@ class TestValidation:
                 genie_config=genie_config,
                 ancillary_files=entities,
             )
-            assert patch_query.call_count == 2
+            assert patch_query.call_count == 4
             patch_validatefile.assert_called_once_with(
                 syn=syn,
                 project_id="syn123",
