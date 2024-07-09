@@ -806,8 +806,12 @@ def validation(
         syn=syn,
         input_valid_statusdf=validation_statusdf,
         invalid_errorsdf=error_trackingdf,
-        validation_status_table=syn.tableQuery(f"select * from syn61672246 where center = '{center}'"),
-        error_tracker_table=syn.tableQuery(f"select * from syn61672708 where center = '{center}'"),
+        validation_status_table=syn.tableQuery(
+            f"select * from syn61672246 where center = '{center}'"
+        ),
+        error_tracker_table=syn.tableQuery(
+            f"select * from syn61672708 where center = '{center}'"
+        ),
     )
     valid_filesdf = validation_statusdf.query('status == "VALIDATED"')
     return valid_filesdf[["id", "path", "fileType", "name"]]
@@ -890,7 +894,7 @@ def center_input_to_database(
         synid=center_input_synid,
         center=center,
         process=process,
-        downloadFile=(not only_validate)
+        downloadFile=(not only_validate),
     )
 
     # ancillary_files = get_ancillary_files(
