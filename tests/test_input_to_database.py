@@ -892,11 +892,10 @@ class TestValidation:
         assert updated_tables["error_trackingdf"].empty
         assert updated_tables["validation_statusdf"].empty
 
-
     @pytest.mark.parametrize(
-        "messages, test_project_id, expected_user_message_dict",
+        "messages, test_project_id, expected_user_message_dict, error_email_cnt",
         [
-            ([], "syn1234", {}),
+            ([], "syn1234", {}, 0),
             (
                 [
                     (
@@ -923,9 +922,38 @@ class TestValidation:
                     ],
                     "user3": [{"filenames": ["file3.txt"], "messages": ["Message 3"]}],
                 },
+                0,
+            ),
+            (
+                [
+                    (
+                        ["file1.txt", "file2.txt"],
+                        ["Message 1", "Message 2"],
+                        ["user1", "user2"],
+                    ),
+                    (["file3.txt"], ["Message 3"], ["user2", "user3"]),
+                ],
+                "syn00000",
+                {
+                    "user1": [
+                        {
+                            "filenames": ["file1.txt", "file2.txt"],
+                            "messages": ["Message 1", "Message 2"],
+                        }
+                    ],
+                    "user2": [
+                        {
+                            "filenames": ["file1.txt", "file2.txt"],
+                            "messages": ["Message 1", "Message 2"],
+                        },
+                        {"filenames": ["file3.txt"], "messages": ["Message 3"]},
+                    ],
+                    "user3": [{"filenames": ["file3.txt"], "messages": ["Message 3"]}],
+                },
+                3,
             ),
         ],
-        ids=["no_messages", "using_staging_project"],
+        ids=["no_messages", "using_staging_project", "with_messages"],
     )
     def test_validation(
         self,
@@ -934,6 +962,7 @@ class TestValidation:
         messages,
         test_project_id,
         expected_user_message_dict,
+        error_email_cnt,
     ):
         """Test validation steps"""
         modified_on = 1561143558000
@@ -982,7 +1011,9 @@ class TestValidation:
         ), patch.object(
             input_to_database, "_update_tables_content", return_value=new_tables
         ), patch.object(
-            input_to_database, "append_duplication_errors"
+            input_to_database,
+            "append_duplication_errors",
+            return_value=expected_user_message_dict,
         ) as patch_append_dups, patch.object(
             input_to_database, "_send_validation_error_email"
         ) as patch_send_email, patch.object(
@@ -990,7 +1021,7 @@ class TestValidation:
         ):
             valid_filedf = input_to_database.validation(
                 syn,
-                "syn123",
+                test_project_id,
                 center,
                 process,
                 entities,
@@ -1001,7 +1032,7 @@ class TestValidation:
             assert patch_query.call_count == 2
             patch_validatefile.assert_called_once_with(
                 syn=syn,
-                project_id="syn123",
+                project_id=test_project_id,
                 entities=entity,
                 validation_status_table=validationstatus_mock,
                 error_tracker_table=errortracking_mock,
@@ -1014,7 +1045,7 @@ class TestValidation:
             patch_append_dups.assert_called_once_with(
                 new_tables["duplicated_filesdf"], expected_user_message_dict
             )
-            patch_send_email.assert_not_called()
+            assert patch_send_email.call_count == error_email_cnt
             assert valid_filedf.equals(
                 self.validation_statusdf[["id", "path", "fileType", "name"]]
             )
