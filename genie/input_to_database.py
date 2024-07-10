@@ -809,18 +809,6 @@ def validation(
         validation_status_table=validation_status_table,
         error_tracker_table=error_tracker_table,
     )
-
-    update_status_and_error_tables(
-        syn=syn,
-        input_valid_statusdf=validation_statusdf,
-        invalid_errorsdf=error_trackingdf,
-        validation_status_table=syn.tableQuery(
-            f"select * from syn61672246 where center = '{center}'"
-        ),
-        error_tracker_table=syn.tableQuery(
-            f"select * from syn61672708 where center = '{center}'"
-        ),
-    )
     valid_filesdf = validation_statusdf.query('status == "VALIDATED"')
     return valid_filesdf[["id", "path", "fileType", "name"]]
 

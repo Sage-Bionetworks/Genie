@@ -108,7 +108,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      
+
       - name: Format tags as registry refs
         id: registry_refs
         env:
