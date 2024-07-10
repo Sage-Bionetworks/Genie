@@ -322,6 +322,9 @@ def validatefile(
     error_list = check_file_status["error_list"]
 
     messages_to_send = []
+    # Need to figure out to how to remove this
+    # This must pass in filenames, because filetype is determined by entity
+    # name not by actual path of file
     validator = validate.GenieValidationHelper(
         syn=syn,
         project_id=project_id,
@@ -337,9 +340,6 @@ def validatefile(
         # files need to be downloaded currently when validation + processing
         # isn't split up
         if entities[0].get("path") is None:
-            # Need to figure out to how to remove this
-            # This must pass in filenames, because filetype is determined by entity
-            # name not by actual path of file
             validator.entitylist = [syn.get(entity) for entity in entities]
 
         valid_cls, message = validator.validate_single_file(
