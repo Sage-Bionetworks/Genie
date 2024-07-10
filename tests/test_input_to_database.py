@@ -979,7 +979,7 @@ class TestValidation:
                 genie_config=genie_config,
                 ancillary_files=entities,
             )
-            assert patch_query.call_count == 4
+            assert patch_query.call_count == 2
             patch_validatefile.assert_called_once_with(
                 syn=syn,
                 project_id="syn123",
