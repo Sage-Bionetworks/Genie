@@ -27,14 +27,15 @@ def validateSymbol(
         table's Hugo_Symbol value for the purpose of validation. The ID column is the
         original Hugo_Symbol column of the bed files before the Hugo_Symbol column gets
         mapped to valid possible gene values in the Actual Gene Positions (GRCh37)
-        database table.
+        database table. See the bed fileformat module's remap_symbols function and
+        how it gets used in processing for more info on this.
 
     The validation throws a WARNING if the gene doesn't satisfy
     either of the above two conditions
 
     Args:
         gene: Gene name
-        bedDf: the bed database table as pandas dataframe
+        bedDf: The bed database table as a pandas dataframe
         returnMappedDf: Return a mapped gene. Defaults to True
 
     Returns:
