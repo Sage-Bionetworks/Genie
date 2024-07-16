@@ -54,12 +54,79 @@ class TestDtype:
             col_types = process_mutation.determine_dtype("test.csv")
             assert col_types == self.column_types
 
-    def test__convert_to_str_dtype(self):
+    @pytest.mark.parametrize(
+        "input_columns_types, known_str_cols, expected_new_column_types",
+        [
+            (
+                {"foo": "int64", "bar": "object"},
+                ["foo"],
+                {"foo": "object", "bar": "object"},
+            ),
+            (
+                {
+                    "Hugo_Symbol": "object",
+                    "Entrez_Gene_Id": "int64",
+                    "Chromosome": "object",
+                    "Start_Position": "int64",
+                    "End_Position": "int64",
+                    "Reference_Allele": "object",
+                    "Variant_Classification": "float64",
+                    "Annotation_Status": "int64",
+                },
+                process_mutation.KNOWN_STRING_COLS,
+                {
+                    "Hugo_Symbol": "object",
+                    "Entrez_Gene_Id": "int64",
+                    "Chromosome": "object",
+                    "Start_Position": "int64",
+                    "End_Position": "int64",
+                    "Reference_Allele": "object",
+                    "Variant_Classification": "object",
+                    "Annotation_Status": "object",
+                },
+            ),
+            (
+                {
+                    "Hugo_Symbol": "object",
+                    "Entrez_Gene_Id": "int64",
+                    "Chromosome": "object",
+                    "Start_Position": "int64",
+                    "End_Position": "int64",
+                    "Reference_Allele": "object",
+                    "Tumor_Seq_Allele1": "object",
+                    "Tumor_Seq_Allele2": "object",
+                    "Tumor_Sample_Barcode": "object",
+                    "Annotation_Status": "object",
+                },
+                process_mutation.KNOWN_STRING_COLS,
+                {
+                    "Hugo_Symbol": "object",
+                    "Entrez_Gene_Id": "int64",
+                    "Chromosome": "object",
+                    "Start_Position": "int64",
+                    "End_Position": "int64",
+                    "Reference_Allele": "object",
+                    "Tumor_Seq_Allele1": "object",
+                    "Tumor_Seq_Allele2": "object",
+                    "Tumor_Sample_Barcode": "object",
+                    "Annotation_Status": "object",
+                },
+            ),
+        ],
+        ids=[
+            "test_int_to_obj",
+            "test_changes_with_constant",
+            "test_no_changes_with_constant",
+        ],
+    )
+    def test__convert_to_str_dtype(
+        self, input_columns_types, known_str_cols, expected_new_column_types
+    ):
         """Tests converting dtypes to str dtypes"""
         new_column_types = process_mutation._convert_to_str_dtype(
-            self.column_types, ["foo"]
+            input_columns_types, known_str_cols
         )
-        assert new_column_types == {"foo": "object", "bar": "object"}
+        assert new_column_types == expected_new_column_types
 
     def test_move_maf_rename(self):
         """Test moving mafs when maf column headers need to be remapped"""
