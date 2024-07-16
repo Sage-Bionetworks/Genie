@@ -339,8 +339,8 @@ def validatefile(
         # HACK: Don't download again if only_validate is not True, but all
         # files need to be downloaded currently when validation + processing
         # isn't split up
-        if entities[0].get("path") is None:
-            validator.entitylist = [syn.get(entity) for entity in entities]
+        # if entities[0].get("path") is None:
+        #    validator.entitylist = [syn.get(entity) for entity in entities]
 
         valid_cls, message = validator.validate_single_file(
             oncotree_link=genie_config["oncotreeLink"], nosymbol_check=False
@@ -884,13 +884,13 @@ def center_input_to_database(
 
     center_input_synid = genie_config["center_config"][center]["inputSynId"]
     logger.info("Center: " + center)
-    # Don't download all the files when only validate
     center_files = extract.get_center_input_files(
         syn=syn,
         synid=center_input_synid,
         center=center,
         process=process,
-        downloadFile=(not only_validate),
+        # HACK: Don't download all the files when only validate
+        # downloadFile=(not only_validate),
     )
 
     # ancillary_files = get_ancillary_files(
