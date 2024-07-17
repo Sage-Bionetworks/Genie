@@ -213,23 +213,30 @@ get_release_synid <- function(release_folder_fileview_synid, release) {
 }
 
 get_latest_public_release <- function(release) {
-  major_release = unlist(strsplit(release, "[.]"))[1]
-  public_major_release = as.numeric(major_release) - 1
-  public_rel = synTableQuery(paste0(
-    "select * from syn22233011 where ",
-    sprintf("name like 'Release %s.", public_major_release),
-    "%-public' order by name DESC"
-  ))
-  public_reldf = public_rel$asDataFrame()
-  nrow_df = nrow(public_reldf)
-  if (nrow_df == 0) {
-    stop(sprintf("Could not find public release for: %s", public_major_release))
-  } else if (nrow_df == 1) {
-    public_reldf$id
-  } else {
-    # The releases are ordered by latest first, so
-    # always take the first element
-    public_reldf$id[1]
+  # HACK: until we create tables for these hardcoded synids in
+  # TEST and STAGING projects, will have to return staging 
+  # version of the public release folder here
+  if (grepl("STAGING", release)){
+    return("syn7871696")
+  } else{
+      major_release = unlist(strsplit(release, "[.]"))[1]
+      public_major_release = as.numeric(major_release) - 1
+      public_rel = synTableQuery(paste0(
+        "select * from syn22233011 where ",
+        sprintf("name like 'Release %s.", public_major_release),
+        "%-public' order by name DESC"
+      ))
+      public_reldf = public_rel$asDataFrame()
+      nrow_df = nrow(public_reldf)
+      if (nrow_df == 0) {
+        stop(sprintf("Could not find public release for: %s", public_major_release))
+      } else if (nrow_df == 1) {
+        public_reldf$id
+      } else {
+        # The releases are ordered by latest first, so
+        # always take the first element
+        public_reldf$id[1]
+      }
   }
 }
 ```
