@@ -6,10 +6,13 @@
 [![Docker Automated](https://img.shields.io/docker/automated/sagebionetworks/genie.svg?style=for-the-badge&logo=docker)](https://hub.docker.com/r/sagebionetworks/genie)
 [![GitHub CI](https://img.shields.io/github/actions/workflow/status/Sage-Bionetworks/Genie/ci.yml?branch=develop&style=for-the-badge&logo=github)](https://github.com/Sage-Bionetworks/Genie)
 
-
 ## Introduction
 
 This repository documents code used to gather, QC, standardize, and analyze data uploaded by institutes participating in AACR's Project GENIE (Genomics, Evidence, Neoplasia, Information, Exchange).
+
+## Documentation
+
+For more information about the AACR genie repository, [visit the GitHub Pages site.](https://sage-bionetworks.github.io/Genie/)
 
 ## Dependencies
 

@@ -579,26 +579,34 @@ class bed(FileTypeFormat):
         seq_assay_id = seq_assay_id.upper().replace("_", "-")
         return {"seq_assay_id": seq_assay_id}
 
-    def process_steps(self, beddf, newPath, parentId, databaseSynId, seq_assay_id):
-        """
-        Process bed file, update bed database, write bed file to path
+    def process_steps(
+        self,
+        beddf: pd.DataFrame,
+        newPath: str,
+        parentId: str,
+        databaseSynId: str,
+        seq_assay_id: str,
+    ) -> str:
+        """Process bed file, update bed database, write bed file to path
 
         Args:
-            beddf: Bed dataframe
-            newPath: Path to new bed file
-            parentId: Synapse id to store gene panel file
-            databaseSynId: Synapse id of bed database
-            seq_assay_id: GENIE seq assay id
+            beddf (pd.DataFrame): input bed data
+            newPath (str): Path to new bed file
+            parentId (str): Synapse id to store gene panel file
+            databaseSynId (str): Synapse id of bed database
+            seq_assay_id (str): GENIE seq assay id
 
         Returns:
-            string: Path to new bed file
+            str: Path to new bed file
         """
-        final_beddf = self._process(beddf, seq_assay_id, newPath, parentId)
+        final_beddf = self._process(
+            beddf=beddf, seq_assay_id=seq_assay_id, newpath=newPath, parentid=parentId
+        )
         load.update_table(
             syn=self.syn,
             databaseSynId=databaseSynId,
             newData=final_beddf,
-            filterBy=self.center,
+            filterBy=seq_assay_id,
             filterByColumn="SEQ_ASSAY_ID",
             toDelete=True,
         )

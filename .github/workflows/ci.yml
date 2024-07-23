@@ -5,14 +5,17 @@ name: build
 
 on:
   push:
-    branches:
-      - develop
+    branches: [main, develop, 'GEN*', 'gen*']
 
   pull_request:
 
   release:
     types:
       - created
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
 
@@ -22,9 +25,9 @@ jobs:
       matrix:
         python-version: [3.8, 3.9]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -44,7 +47,7 @@ jobs:
       run: |
         pytest tests/ --cov=genie --cov=genie_registry --cov-report=html
     - name: Upload pytest test results
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: pytest-results-${{ matrix.python-version }}
         path: htmlcov
@@ -54,7 +57,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: psf/black@stable
 
   deploy:
@@ -64,9 +67,9 @@ jobs:
     permissions:
       id-token: write
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.x'
     - name: Install dependencies
@@ -77,3 +80,51 @@ jobs:
       run: python -m build
     - name: Publish to pypi
       uses: pypa/gh-action-pypi-publish@release/v1
+
+
+  build-container:
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      
+      - name: Format tags as registry refs
+        id: registry_refs
+        env:
+          TAGS: ${{ steps.meta.outputs.json }}
+        run: |
+          echo tags=$(echo $TAGS | jq '.tags[] | "type=registry,ref=" + . + "_cache"| @text') >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v5
+        if: github.event_name != 'pull_request'
+        with:
+          context: .
+          push: true
+          provenance: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: ${{ steps.registry_refs.outputs.tags }},mode=max
+          cache-to: ${{ steps.registry_refs.outputs.tags }},mode=max

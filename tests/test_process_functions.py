@@ -28,6 +28,37 @@ ONCOTREE_ENT = "syn222"
 
 
 @pytest.mark.parametrize(
+    "df,key,expected_error",
+    [
+        (
+            pd.DataFrame({"foo": [420, 666, 390], "baz": [50, 40, 555]}),
+            "foo",
+            True,
+        ),
+        (
+            pd.DataFrame({"foo": [420, 666, 390], "baz": [50, 40, 555]}),
+            ["foo", "baz"],
+            True,
+        ),
+        (
+            pd.DataFrame({"foo": [420, 666, 390], "baz": [50, 40, 555]}),
+            ["foo1"],
+            False,
+        ),
+        (
+            pd.DataFrame({"foo": [420, 666, 390], "baz": [50, 40, 555]}),
+            ["foo1", "baz"],
+            False,
+        ),
+    ],
+    ids=["one_key_pass", "key_list_pass", "one_key_fail", "key_list_fail"],
+)
+def test_checkColExist(df, key, expected_error):
+    error = process_functions.checkColExist(df, key)
+    assert error == expected_error
+
+
+@pytest.mark.parametrize(
     "input_str,output",
     [
         ("1.0\t", "1\t"),

@@ -1,15 +1,15 @@
-from collections import Counter
 import datetime
 import json
+from collections import Counter
 from unittest import mock
 
+import genie_registry
 import pandas as pd
 import pytest
 import synapseclient
-
 from genie import process_functions, validate
-import genie_registry
 from genie_registry.clinical import Clinical
+import pdb
 
 
 def createMockTable(dataframe):
@@ -38,11 +38,32 @@ sexdf = pd.DataFrame(
     )
 )
 
+patientdf = pd.DataFrame(
+    dict(
+        fieldName=["PATIENT_ID", "SEX", "PRIMARY_RACE"],
+        patient=[True, True, True],
+        sample=[True, False, False],
+    )
+)
+sampledf = pd.DataFrame(
+    dict(
+        fieldName=["PATIENT_ID", "SAMPLE_ID"],
+        patient=[True, False],
+        sample=[True, True],
+    )
+)
+
 table_query_results_map = {
-    ("select * from syn7434222",): createMockTable(sexdf),
-    ("select * from syn7434236",): createMockTable(no_nan),
-    ("select * from syn7434242",): createMockTable(no_nan),
-    ("select * from syn7434273",): createMockTable(no_nan),
+    ("select * from syn60548946",): createMockTable(sexdf),
+    ("select * from syn60548944",): createMockTable(no_nan),
+    ("select * from syn60548943",): createMockTable(no_nan),
+    ("select * from syn60548941",): createMockTable(no_nan),
+    (
+        "select fieldName from syn8545211 where patient is True and inClinicalDb is True",
+    ): createMockTable(patientdf),
+    (
+        "select fieldName from syn8545211 where sample is True and inClinicalDb is True",
+    ): createMockTable(sampledf),
 }
 
 json_oncotreeurl = (
@@ -92,19 +113,34 @@ def valid_clinical_df():
                 "GENIE-SAGE-ID3",
                 "GENIE-SAGE-ID4",
                 "GENIE-SAGE-ID5",
+                "GENIE-SAGE-ID6",
             ],
-            SEX=[1, 2, 1, 2, 99],
-            PRIMARY_RACE=[1, 2, 3, 4, 99],
-            SECONDARY_RACE=[1, 2, 3, 4, 99],
-            TERTIARY_RACE=[1, 2, 3, 4, 99],
-            ETHNICITY=[1, 2, 3, 4, 99],
-            BIRTH_YEAR=[1222, "Unknown", 1920, 1990, 1990],
-            CENTER=["FOO", "FOO", "FOO", "FOO", "FOO"],
-            YEAR_CONTACT=["Unknown", "Not Collected", ">89", "<18", 1990],
-            INT_CONTACT=["Unknown", "Not Collected", ">32485", "<6570", 2000],
-            YEAR_DEATH=["Unknown", "Not Collected", "Unknown", "Not Applicable", "<18"],
-            INT_DOD=["Unknown", "Not Collected", "Unknown", "Not Applicable", "<6570"],
-            DEAD=["Unknown", "Not Collected", "Unknown", False, True],
+            SEX=[1, 2, 1, 2, 99, 99],
+            PRIMARY_RACE=[1, 2, 3, 4, 99, 99],
+            SECONDARY_RACE=[1, 2, 3, 4, 99, 99],
+            TERTIARY_RACE=[1, 2, 3, 4, 99, 99],
+            ETHNICITY=[1, 2, 3, 4, 99, 99],
+            BIRTH_YEAR=[1222, "Unknown", 1920, 1990, 1990, 1990],
+            CENTER=["FOO", "FOO", "FOO", "FOO", "FOO", "FOO"],
+            YEAR_CONTACT=["Unknown", "Not Collected", ">89", "<18", 1990, 1990],
+            INT_CONTACT=["Unknown", "Not Collected", ">32485", "<6570", 2000, 2000],
+            YEAR_DEATH=[
+                "Unknown",
+                "Not Collected",
+                "Unknown",
+                "Not Applicable",
+                "<18",
+                "<18",
+            ],
+            INT_DOD=[
+                "Unknown",
+                "Not Collected",
+                "Unknown",
+                "Not Applicable",
+                "<6570",
+                2001,
+            ],
+            DEAD=["Unknown", "Not Collected", "Unknown", False, True, True],
         )
     )
 
@@ -633,7 +669,7 @@ def test_errors__validate(clin_class):
             YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 19930, 1990],
             YEAR_CONTACT=["Unknown", "Not Collected", 1990, 1990, 19940],
             INT_CONTACT=[">32485", "<6570", 1990, "Not Collected", ">foobar"],
-            INT_DOD=[">32485", "<6570", "Unknown", "Not Collected", "<dense"],
+            INT_DOD=[">32485", "<6570", 1911, "Not Collected", "<dense"],
             DEAD=[1, False, "Unknown", "Not Collected", "Not Applicable"],
         )
     )
@@ -662,7 +698,6 @@ def test_errors__validate(clin_class):
     ) as mock_get_onco_map:
         error, warning = clin_class._validate(clinicalDf)
         mock_get_onco_map.called_once_with(json_oncotreeurl)
-
         expectedErrors = (
             "Sample Clinical File: SAMPLE_ID must start with GENIE-SAGE\n"
             "Patient Clinical File: PATIENT_ID must start with GENIE-SAGE\n"
@@ -700,6 +735,8 @@ def test_errors__validate(clin_class):
             "Patient Clinical File: Please double check your YEAR_CONTACT "
             "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', 'Not Collected', 'Not Released', '>89', '<18'.\n"
+            "Patient Clinical File: Please double check your YEAR_DEATH "
+            "and YEAR_CONTACT columns. YEAR_DEATH must be >= YEAR_CONTACT.\n"
             "Patient Clinical File: Please double check your INT_CONTACT "
             "column, it must be an integer, '>32485', '<6570', 'Unknown', "
             "'Not Released' or 'Not Collected'.\n"
@@ -709,6 +746,8 @@ def test_errors__validate(clin_class):
             "Patient Clinical File: Please double check your DEAD column, "
             "it must be True, False, 'Unknown', "
             "'Not Released' or 'Not Collected'.\n"
+            "Patient Clinical File: Please double check your INT_DOD "
+            "and INT_CONTACT columns. INT_DOD must be >= INT_CONTACT.\n"
             "Patient: you have inconsistent redaction and text values in "
             "YEAR_CONTACT, INT_CONTACT.\n"
             "Patient: you have inconsistent redaction and text values in "
@@ -935,16 +974,61 @@ def test_remap_clinical_values_sampletype():
 
 
 @pytest.mark.parametrize(
-    "col", ["SEX", "PRIMARY_RACE", "SECONDARY_RACE", "TERTIARY_RACE", "ETHNICITY"]
+    ("testdf", "expecteddf"),
+    [
+        (
+            pd.DataFrame(
+                {
+                    "SEX": [1, 2, 99],
+                    "PRIMARY_RACE": [1, 2, 99],
+                    "SECONDARY_RACE": [1, 2, 99],
+                    "TERTIARY_RACE": [1, 2, 99],
+                    "ETHNICITY": [1, 2, 99],
+                }
+            ),
+            pd.DataFrame(
+                {
+                    "SEX": ["Male", "Female", "Unknown"],
+                    "PRIMARY_RACE": ["Male", "Female", "Unknown"],
+                    "SECONDARY_RACE": ["Male", "Female", "Unknown"],
+                    "TERTIARY_RACE": ["Male", "Female", "Unknown"],
+                    "ETHNICITY": ["Male", "Female", "Unknown"],
+                    "ETHNICITY_DETAILED": ["Male", "Female", "Not coded"],
+                    "PRIMARY_RACE_DETAILED": ["Male", "Female", "Not coded"],
+                    "SECONDARY_RACE_DETAILED": ["Male", "Female", "Not coded"],
+                    "SEX_DETAILED": ["Male", "Female", "Not coded"],
+                    "TERTIARY_RACE_DETAILED": ["Male", "Female", "Not coded"],
+                }
+            ),
+        ),
+        (
+            pd.DataFrame({"SEX": [1, 2, 99], "PRIMARY_RACE": [1, 2, 99]}),
+            pd.DataFrame(
+                {
+                    "SEX": ["Male", "Female", "Unknown"],
+                    "PRIMARY_RACE": ["Male", "Female", "Unknown"],
+                    "PRIMARY_RACE_DETAILED": ["Male", "Female", "Not coded"],
+                    "SEX_DETAILED": ["Male", "Female", "Not coded"],
+                }
+            ),
+        ),
+        (
+            pd.DataFrame({"CENTER": [1, 2, 99]}),
+            pd.DataFrame(
+                {
+                    "CENTER": [1, 2, 99],
+                }
+            ),
+        ),
+    ],
+    ids=["all_detailed_columns", "some_detailed_columns", "no_detailed_columns"],
 )
-def test_remap_clinical_values(col):
+def test_remap_clinical_values(testdf, expecteddf):
     """Test Remapping clinical values"""
-    testdf = pd.DataFrame({col: [1, 2, 99]})
-    expecteddf = pd.DataFrame({col: ["Male", "Female", "Unknown"]})
     remappeddf = genie_registry.clinical.remap_clinical_values(
         testdf, sexdf, sexdf, sexdf, sexdf
     )
-    assert expecteddf.equals(remappeddf)
+    assert expecteddf.sort_index(axis=1).equals(remappeddf.sort_index(axis=1))
 
 
 def test__check_int_year_consistency_valid():
@@ -1060,6 +1144,162 @@ def test__check_int_dead_consistency_inconsistent(inconsistent_df):
         "Patient Clinical File: DEAD value is inconsistent with "
         "INT_DOD for at least one patient.\n"
     )
+
+
+@pytest.mark.parametrize(
+    "df,expected_indices",
+    [
+        (
+            pd.DataFrame({"YEAR_DEATH": [420, 555, 390], "YEAR_CONTACT": [50, 40, 22]}),
+            [],
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "YEAR_DEATH": [420, float("nan"), 390],
+                    "YEAR_CONTACT": [50, 40, float("nan")],
+                }
+            ),
+            [],
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "YEAR_DEATH": [float("nan"), float("nan"), 390],
+                    "YEAR_CONTACT": [50, 40, float("nan")],
+                }
+            ),
+            [],
+        ),
+        (
+            pd.DataFrame(
+                {"YEAR_DEATH": [420, 666, 390], "YEAR_CONTACT": [50, 40, 555]}
+            ),
+            [2],
+        ),
+        (
+            pd.DataFrame(
+                {"YEAR_DEATH": [420, float("nan"), 390], "YEAR_CONTACT": [50, 40, 555]}
+            ),
+            [2],
+        ),
+    ],
+    ids=[
+        "valid_dataframe_no_NAs",
+        "valid_dataframe_w_NAs",
+        "valid_dataframe_all_NAs",
+        "invalid_dataframe_no_NAs",
+        "invalid_dataframe_w_NAs",
+    ],
+)
+def test__check_year_death_validity(df, expected_indices):
+    invalid_year_death_indices = genie_registry.clinical._check_year_death_validity(
+        clinicaldf=df
+    )
+    assert expected_indices == invalid_year_death_indices.tolist()
+
+
+@pytest.mark.parametrize(
+    "invalid_year_death_indices,expected_error",
+    [
+        (
+            pd.Index([]),
+            "",
+        ),
+        (
+            pd.Index([2, 3]),
+            "Patient Clinical File: Please double check your YEAR_DEATH and YEAR_CONTACT columns. "
+            "YEAR_DEATH must be >= YEAR_CONTACT.\n",
+        ),
+    ],
+    ids=[
+        "valid_dataframe",
+        "invalid_dataframe",
+    ],
+)
+def test__check_year_death_validity_message(invalid_year_death_indices, expected_error):
+    error, warning = genie_registry.clinical._check_year_death_validity_message(
+        invalid_year_death_indices
+    )
+    assert error == expected_error
+    assert warning == ""
+
+
+@pytest.mark.parametrize(
+    "df,expected_indices",
+    [
+        (
+            pd.DataFrame({"INT_DOD": [420, 555, 390], "INT_CONTACT": [50, 40, 22]}),
+            [],
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "INT_DOD": [420, float("nan"), 390],
+                    "INT_CONTACT": [50, 40, float("nan")],
+                }
+            ),
+            [],
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "INT_DOD": [float("nan"), float("nan"), 390],
+                    "INT_CONTACT": [50, 40, float("nan")],
+                }
+            ),
+            [],
+        ),
+        (
+            pd.DataFrame({"INT_DOD": [420, 666, 390], "INT_CONTACT": [50, 40, 555]}),
+            [2],
+        ),
+        (
+            pd.DataFrame(
+                {"INT_DOD": [420, float("nan"), 390], "INT_CONTACT": [50, 40, 555]}
+            ),
+            [2],
+        ),
+    ],
+    ids=[
+        "valid_dataframe_no_NAs",
+        "valid_dataframe_w_NAs",
+        "valid_dataframe_all_NAs",
+        "invalid_dataframe_no_NAs",
+        "invalid_dataframe_w_NAs",
+    ],
+)
+def test__check_int_dod_validity(df, expected_indices):
+    invalid_int_dod_indices = genie_registry.clinical._check_int_dod_validity(
+        clinicaldf=df
+    )
+    assert expected_indices == invalid_int_dod_indices.tolist()
+
+
+@pytest.mark.parametrize(
+    "invalid_int_dod_indices,expected_error",
+    [
+        (
+            pd.Index([]),
+            "",
+        ),
+        (
+            pd.Index([2, 3]),
+            "Patient Clinical File: Please double check your INT_DOD and INT_CONTACT columns. "
+            "INT_DOD must be >= INT_CONTACT.\n",
+        ),
+    ],
+    ids=[
+        "valid_dataframe",
+        "invalid_dataframe",
+    ],
+)
+def test__check_int_dod_validity_message(invalid_int_dod_indices, expected_error):
+    error, warning = genie_registry.clinical._check_int_dod_validity_message(
+        invalid_int_dod_indices
+    )
+    assert error == expected_error
+    assert warning == ""
 
 
 def get_cross_validate_bed_files_test_cases():
@@ -1382,3 +1622,26 @@ def test_that__cross_validate_assay_info_has_seq_returns_expected_msg_if_valid(
         )
         assert warnings == expected_warning
         assert errors == expected_error
+
+
+def test_preprocess(clin_class, newpath=None):
+    """Test preprocess function"""
+    expected = {
+        "clinicalTemplate": pd.DataFrame(
+            columns=["PATIENT_ID", "SEX", "PRIMARY_RACE", "SAMPLE_ID"]
+        ),
+        "sample": True,
+        "patient": True,
+        "patientCols": ["PATIENT_ID", "SEX", "PRIMARY_RACE"],
+        "sampleCols": ["PATIENT_ID", "SAMPLE_ID"],
+    }
+    results = clin_class.preprocess(newpath)
+    assert (
+        results["clinicalTemplate"]
+        .sort_index(axis=1)
+        .equals(expected["clinicalTemplate"].sort_index(axis=1))
+    )
+    assert results["sample"] == expected["sample"]
+    assert results["patient"] == expected["patient"]
+    assert results["patientCols"] == expected["patientCols"]
+    assert results["sampleCols"] == expected["sampleCols"]
