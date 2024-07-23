@@ -460,9 +460,9 @@ def update_sample_difference_table(syn, database_mappingdf):
         .applymap(int)
     )
 
-    diff_between_releasesdf[["Clinical", "Mutation", "CNV", "SEG", "Fusions"]] = (
-        new_values
-    )
+    diff_between_releasesdf[
+        ["Clinical", "Mutation", "CNV", "SEG", "Fusions"]
+    ] = new_values
 
     load._update_table(
         syn,
