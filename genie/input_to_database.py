@@ -777,8 +777,9 @@ def validation(
 
     for user, message_objs in user_message_dict.items():
         logger.debug("Sending messages to user {user}.".format(user=user))
-
-        _send_validation_error_email(syn=syn, user=user, message_objs=message_objs)
+        # HACK: Avoid sending emails for staging project
+        if project_id != "syn22033066":
+            _send_validation_error_email(syn=syn, user=user, message_objs=message_objs)
     # \n write out new lines when they exist in the middle of a column
     # So the \n never gets uploaded into synapse table
     # change the delimiting to '|'.

@@ -411,27 +411,32 @@ def calculate_missing_variant_counts(
 
 
 # TODO: Add to transform.py
-def runMAFinBED(syn, center_mappingdf, test=False, genieVersion="test"):
+def runMAFinBED(
+    syn: synapseclient.Synapse,
+    center_mappingdf: pd.DataFrame,
+    test: bool = False,
+    staging: bool = False,
+    genieVersion: str = "test",
+) -> pd.Series:
     """
-    Run MAF in BED script, filter data and update MAFinBED database
+    Run MAF in BED script, filter data and update MAFinBED files
 
     Args:
-        syn: Synapse object
-        center_mappingdf: center mapping dataframe
-        test: Testing parameter. Default is False.
-        genieVersion: GENIE version. Default is test.
+        syn (synapseclient.Synapse): Synapse client connection
+        center_mappingdf (pd.DataFrame): center mapping dataframe
+        test (bool, optional):Testing parameter. Defaults to False.
+        staging (bool, optional): Staging parameter. Defaults to False.
+        genieVersion (str, optional): GENIE version. Defaults to "test".
 
     Returns:
         pd.Series: Variants to remove
     """
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    mafinbed_script = os.path.join(script_dir, "../R/MAFinBED.R")
     # TODO: Use tempfile
     notinbed_file = os.path.join(script_dir, "../R/notinbed.csv")
-    # The MAFinBED script filters out the centers that aren't being processed
-    command = ["Rscript", mafinbed_script, notinbed_file]
-    if test:
-        command.append("--testing")
+    command = get_run_maf_in_bed_script_cmd(
+        notinbed_file=notinbed_file, script_dir=script_dir, test=test, staging=staging
+    )
     subprocess.check_call(command)
 
     # mutationSynId = databaseSynIdMappingDf['Id'][
@@ -442,6 +447,64 @@ def runMAFinBED(syn, center_mappingdf, test=False, genieVersion="test"):
     #     " is False and Center in ('{}')".format(
     #         mutationSynId, "','".join(center_mappingdf.center)))
     # removedVariantsDf = removedVariants.asDataFrame()
+    removed_variantsdf = store_maf_in_bed_filtered_variants(
+        syn=syn,
+        notinbed_file=notinbed_file,
+        center_mapping_df=center_mappingdf,
+        genie_version=genieVersion,
+    )
+    return removed_variantsdf["removeVariants"]
+
+
+def get_run_maf_in_bed_script_cmd(
+    notinbed_file: str, script_dir: str, test: bool, staging: bool
+) -> str:
+    """This function gets the MAFinBED R script command call based on
+       whether we are running in test, staging or production mode
+
+    Args:
+        notinbed_file (str): Full path to the notinbed csv
+        script_dir (str): directory of the MAFinBED script
+        test (bool): Testing parameter.
+        staging (bool): Staging parameter
+
+    Returns:
+        str: Full command call for the MAFinBED script
+    """
+    mafinbed_script = os.path.join(script_dir, "../R/MAFinBED.R")
+    # The MAFinBED script filters out the centers that aren't being processed
+    command = ["Rscript", mafinbed_script, notinbed_file]
+    if test:
+        command.append("--testing")
+    elif staging:
+        command.append("--staging")
+    else:
+        pass
+    return command
+
+
+def store_maf_in_bed_filtered_variants(
+    syn: synapseclient.Synapse,
+    notinbed_file: str,
+    center_mapping_df: pd.DataFrame,
+    genie_version: str,
+) -> pd.DataFrame:
+    """This script retrieves and stores the filtered variants generated
+        from running the MAFinBed script as files on Synapse. This script
+        then returns the not in bed file with the removed variants column
+        added.
+        TODO: Add handling for empty file?
+
+    Args:
+        syn (synapseclient.Synapse): Synapse client connection
+        notinbed_file (str): input file
+        center_mapping_df (pd.DataFrame): the center mapping dataframe
+        genie_version (str): version of this genie run
+
+    Returns:
+        pd.DataFrame: filtered variants dataframe with
+            removed variants column added
+    """
     removed_variantsdf = pd.read_csv(notinbed_file)
     removed_variantsdf["removeVariants"] = (
         removed_variantsdf["Chromosome"].astype(str)
@@ -464,13 +527,13 @@ def runMAFinBED(syn, center_mappingdf, test=False, genieVersion="test"):
         load.store_file(
             syn=syn,
             filepath="mafinbed_filtered_variants.csv",
-            parentid=center_mappingdf["stagingSynId"][
-                center_mappingdf["center"] == center
-            ][0],
-            version_comment=genieVersion,
+            parentid=center_mapping_df["stagingSynId"][
+                center_mapping_df["center"] == center
+            ].values[0],
+            version_comment=genie_version,
         )
         os.unlink("mafinbed_filtered_variants.csv")
-    return removed_variantsdf["removeVariants"]
+    return removed_variantsdf
 
 
 # TODO: Add to transform.py
@@ -518,9 +581,18 @@ def mutation_in_cis_filter(
     center_mappingdf,
     genieVersion,
     test=False,
+    staging=False,
 ):
     """
-    Run mutation in cis filter, look up samples to remove
+    Run mutation in cis filter, look up samples to remove.
+
+    The mutation in cis script ONLY runs
+    WHEN the skipMutationsInCis parameter is FALSE
+    AND
+    WHEN staging parameter is FALSE
+
+    This is because we don't have this set up for staging mode
+    yet.
 
     Args:
         syn: Synapse object
@@ -529,40 +601,62 @@ def mutation_in_cis_filter(
         center_mappingdf: center mapping dataframe
         genieVersion: GENIE version. Default is test.
         test: Testing parameter. Default is False.
+        staging: Staging parameter. Default is False.
 
     Returns:
         pd.Series: Samples to remove
     """
-    if not skipMutationsInCis:
-        mergeCheck_script = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../R/mergeCheck.R"
-        )
-        command = ["Rscript", mergeCheck_script]
-        if test:
-            command.append("--testing")
+    if (not skipMutationsInCis) and (not staging):
+        command = get_mutation_in_cis_filter_script_cmd(test=test)
         # TODO: use subprocess.run instead
         subprocess.check_call(command)
-        # Store each centers mutations in cis to their staging folder
-        center_str = "','".join(center_mappingdf.center)
-        query_str = (
-            f"select * from {variant_filtering_synId} where Center in ('{center_str}')"
+        store_mutation_in_cis_files_to_staging(
+            syn=syn,
+            center_mappingdf=center_mappingdf,
+            variant_filtering_synId=variant_filtering_synId,
+            genieVersion=genieVersion,
         )
-        mergeCheckDf = extract.get_syntabledf(syn=syn, query_string=query_str)
-        for center in mergeCheckDf.Center.unique():
-            if not pd.isnull(center):
-                stagingSynId = center_mappingdf.stagingSynId[
-                    center_mappingdf["center"] == center
-                ]
-                mergeCheckDf[mergeCheckDf["Center"] == center].to_csv(
-                    "mutationsInCis_filtered_samples.csv", index=False
-                )
-                load.store_file(
-                    syn=syn,
-                    filepath="mutationsInCis_filtered_samples.csv",
-                    parentid=stagingSynId[0],
-                    version_comment=genieVersion,
-                )
-                os.unlink("mutationsInCis_filtered_samples.csv")
+    remove_samples = get_mutation_in_cis_filtered_samples(
+        syn=syn, variant_filtering_synId=variant_filtering_synId
+    )
+    flagged_variants = get_mutation_in_cis_flagged_variants(
+        syn=syn, variant_filtering_synId=variant_filtering_synId
+    )
+    return (remove_samples, flagged_variants)
+
+
+def get_mutation_in_cis_filter_script_cmd(test: bool) -> str:
+    """This function gets the mutation_in_cis_filter R script
+        command call based on whether we are running in test,
+        or production mode
+
+    Args:
+        test (bool): Testing parameter.
+
+    Returns:
+        str: Full command call for the mergeCheck script
+    """
+    mergeCheck_script = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "../R/mergeCheck.R"
+    )
+    command = ["Rscript", mergeCheck_script]
+    if test:
+        command.append("--testing")
+    return command
+
+
+def get_mutation_in_cis_filtered_samples(
+    syn: synapseclient.Synapse, variant_filtering_synId: str
+) -> list:
+    """Gets the samples to remove in our variant filtering table
+       TODO: Add handling for when we have 0 row query results
+    Args:
+        syn (synapseclient.Synapse): synapse client connection
+        variant_filtering_synId (str): variant filtering synapse id
+
+    Returns:
+        pd.Series: removed samples
+    """
     query_str = (
         f"SELECT Tumor_Sample_Barcode FROM {variant_filtering_synId} where "
         "Flag = 'TOSS' and Tumor_Sample_Barcode is not null"
@@ -570,7 +664,25 @@ def mutation_in_cis_filter(
     filtered_samplesdf = extract.get_syntabledf(syn=syn, query_string=query_str)
     # #Alex script #1 removed patients
     remove_samples = filtered_samplesdf["Tumor_Sample_Barcode"].drop_duplicates()
+    return remove_samples
 
+
+def get_mutation_in_cis_flagged_variants(
+    syn: synapseclient.Synapse, variant_filtering_synId: str
+) -> pd.Series:
+    """Gets the flagged variants in our variant filtering table which is
+       a unique string concatenation of the Chromosome, Start_Position,
+       HGVSp_Short, Reference_Allele, Tumor_Seq_Allele2 and Tumor_Sample_Barcode
+       columns
+       TODO: Add handling for when we have 0 row query results
+
+    Args:
+        syn (synapseclient.Synapse): synapse client connection
+        variant_filtering_synId (str): variant filtering synapse id
+
+    Returns:
+        pd.Series: flagged variants
+    """
     query_str = (
         f"SELECT * FROM {variant_filtering_synId} where "
         "Flag = 'Flag' and Tumor_Sample_Barcode is not null"
@@ -590,7 +702,45 @@ def mutation_in_cis_filter(
         + " "
         + flag_variantsdf["Tumor_Sample_Barcode"].astype(str)
     )
-    return (remove_samples, flag_variantsdf["flaggedVariants"])
+    return flag_variantsdf["flaggedVariants"]
+
+
+def store_mutation_in_cis_files_to_staging(
+    syn: synapseclient.Synapse,
+    center_mappingdf: pd.DataFrame,
+    variant_filtering_synId: str,
+    genieVersion: str,
+) -> None:
+    """Stores the mutation in cis files to synapse per
+        center
+
+    Args:
+        syn (synapseclient.Synapse): synapse client connection
+        center_mappingdf (pd.DataFrame): center mapping dataframe
+        variant_filtering_synId (str): variant filtering synapse id
+        genieVersion (str): version of the genie pipeline run
+    """
+    # Store each centers mutations in cis to their staging folder
+    center_str = "','".join(center_mappingdf.center)
+    query_str = (
+        f"select * from {variant_filtering_synId} where Center in ('{center_str}')"
+    )
+    mergeCheckDf = extract.get_syntabledf(syn=syn, query_string=query_str)
+    for center in mergeCheckDf.Center.unique():
+        if not pd.isnull(center):
+            stagingSynId = center_mappingdf.stagingSynId[
+                center_mappingdf["center"] == center
+            ]
+            mergeCheckDf[mergeCheckDf["Center"] == center].to_csv(
+                "mutationsInCis_filtered_samples.csv", index=False
+            )
+            load.store_file(
+                syn=syn,
+                filepath="mutationsInCis_filtered_samples.csv",
+                parentid=stagingSynId.values[0],
+                version_comment=genieVersion,
+            )
+            os.unlink("mutationsInCis_filtered_samples.csv")
 
 
 # TODO: Add to transform.py
@@ -888,6 +1038,7 @@ def run_genie_filters(
     skip_mutationsincis,
     consortium_release_cutoff,
     test,
+    current_release_staging,
 ):
     """
     Run GENIE filters and returns variants and samples to remove
@@ -903,6 +1054,7 @@ def run_genie_filters(
         skip_mutationsincis: Skip mutation in cis filter
         consortium_release_cutoff: Release cutoff in days
         test: Test flag
+        current_release_staging: Staging flag
 
     Returns:
         pandas.Series: Variants to remove
@@ -918,7 +1070,11 @@ def run_genie_filters(
     # FILTERING
     logger.info("MAF IN BED FILTER")
     remove_mafinbed_variants = runMAFinBED(
-        syn, center_mappingdf, test=test, genieVersion=genie_version
+        syn,
+        center_mappingdf,
+        test=test,
+        staging=current_release_staging,
+        genieVersion=genie_version,
     )
 
     logger.info("MUTATION IN CIS FILTER")
@@ -932,6 +1088,7 @@ def run_genie_filters(
         center_mappingdf,
         genieVersion=genie_version,
         test=test,
+        staging=current_release_staging,
     )
     remove_no_genepanel_samples = no_genepanel_filter(clinicaldf, beddf)
 
@@ -1580,6 +1737,7 @@ def stagingToCbio(
 
     # Using center mapping df to gate centers in release fileStage
     center_query_str = "','".join(CENTER_MAPPING_DF.center)
+
     patient_snapshot = syn.create_snapshot_version(patientSynId, comment=genieVersion)
     patient_used = f"{patientSynId}.{patient_snapshot}"
     patientDf = extract.get_syntabledf(
@@ -1648,6 +1806,7 @@ def stagingToCbio(
         skipMutationsInCis,
         consortiumReleaseCutOff,
         test,
+        current_release_staging=current_release_staging,
     )
 
     (
