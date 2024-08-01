@@ -11,34 +11,34 @@ from genie import process_functions, transform, validate
 logger = logging.getLogger(__name__)
 
 
-def _check_allele_col_validity(df : pd.DataFrame) -> str:
+def _check_allele_col_validity(df: pd.DataFrame) -> str:
     """
-    This function checks specific columns in a MAF (Mutation Annotation Format) 
+    This function checks specific columns in a MAF (Mutation Annotation Format)
     file for certain conditions.
-    
+
     The following conditions must be met:
         **If the MAF file has all three of these columns**
-        
+
             - TUMOR_SEQ_ALLELE1 (TSA1)
             - TUMOR_SEQ_ALLELE2 (TSA2)
             - REFERENCE_ALLELE (REF)
-            
+
         **Then, one of the following must be true**
 
             - Every value in TSA1 must be the same as the value in REF
             - Every value in TSA1 must be the same as the value in TSA2
-        
+
         **Additionally, if the MAF file has at least these two columns**
-        
+
             - REFERENCE_ALLELE (REF)
             - TUMOR_SEQ_ALLELE2 (TSA2)
-        
+
         **Then**
-        
+
             NO values in REF can match TSA2
-        
-        These rules are important because Genome Nexus (GN) uses `TSA1` to annotate data 
-        when it's not clear which variant to use. So, there can't be a mix of rows where 
+
+        These rules are important because Genome Nexus (GN) uses `TSA1` to annotate data
+        when it's not clear which variant to use. So, there can't be a mix of rows where
         some have `TSA1` equal to `REF` and some have `TSA1` equal to `TSA2`.
 
     Example: Valid Examples
@@ -55,15 +55,15 @@ def _check_allele_col_validity(df : pd.DataFrame) -> str:
         | C                | A                 | A                 |
         | T                | C                 | C                 |
         ```
-        
+
         ```
         | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE2 |
         | ---------------- | ----------------- |
         | C                | A                 |
         | T                | C                 |
         ```
-        
-        
+
+
     Example: Invalid Examples
         ```
         | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2 |
@@ -71,28 +71,28 @@ def _check_allele_col_validity(df : pd.DataFrame) -> str:
         | C                | C                 | A                 |
         | C                | A                 | A                 |
         ```
-        
+
         ```
         | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2 |
         | ---------------- | ----------------- | ----------------- |
         | A                | C                 | A                 |
         | T                | C                 | T                 |
         ```
-        
+
         ```
         | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE2 |
         | ---------------- | ----------------- |
         | C                | C                 |
         | T                | C                 |
         ```
-        
-        
+
+
     See this [Genome Nexus issue](https://github.com/genome-nexus/annotation-tools/issues/26) for
     more background regarding why this validation rule was implemented.
-    
+
     Args:
         df: input mutation dataframe
-        
+
     Returns:
         str: the error message
     """
@@ -180,31 +180,31 @@ class maf(FileTypeFormat):
         """
         This function validates the mutation file to make sure it
         adheres to the mutation SOP.
-        
+
         t_depth: This column is conditionally optional.
         1. If this column is missing, the data must include the t_ref_count column. Otherwise, it will cause a validation error.
         2. If this column is present, it must have one of the following:
             - A mix of numeric values and NAs
             - All NAs
             - All numeric values
-        
+
         There are no other checks on the actual values in this column.
-        
+
         t_ref_count: This column is conditionally optional.
         1. If this column is missing, the data must include the t_depth column. Otherwise, it will cause a validation error.
         2. If this column is present, it must have one of the following:
             - A mix of numeric values and NAs
             - All NAs
             - All numeric values
-        
+
         There are no other checks on the actual values in this column.
-    
+
         t_alt_count: This column is entirely optional.
         1. If this column is present, it must have one of the following:
             - A mix of numeric values and NAs
             - All NAs
             - All numeric values
-        
+
         There are no other checks on the actual values in this column.
 
         Args:
