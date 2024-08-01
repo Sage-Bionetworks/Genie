@@ -11,44 +11,90 @@ from genie import process_functions, transform, validate
 logger = logging.getLogger(__name__)
 
 
-def _check_allele_col_validity(df):
-    """There are two linked validation rules in this function:
+def _check_allele_col_validity(df: pd.DataFrame) -> str:
+    """
+    This function checks specific columns in a MAF (Mutation Annotation Format)
+    file for certain conditions.
 
-    1) If maf file has ALL three of the following columns:
-        - TUMOR_SEQ_ALLELE1 (TSA1)
-        - TUMOR_SEQ_ALLELE2 (TSA2)
-        - REFERENCE ALLELE (REF)
-        THEN
-        ALL rows of TSA1 must equal REF
-        OR
-        ALL rows of TSA1 must equal TSA2
+    The following conditions must be met:
+        **If the MAF file has all three of these columns**
 
-        TSA1 is used by Genome Nexus (GN) to annotate data when it senses there is ambiguity
-        regarding which variant (TSA1 vs TSA2) to use. This is
-        why there cannot be mixed rows where some rows have TSA1 == REF and some rows
-        have TSA1 == TSA2.
+            - TUMOR_SEQ_ALLELE1 (TSA1)
+            - TUMOR_SEQ_ALLELE2 (TSA2)
+            - REFERENCE_ALLELE (REF)
 
-        e.g:
-        VALID
-        | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2
-        | C                | C                 | A
-        | T                | T                 | C
+        **Then, one of the following must be true**
 
-        VALID
-        | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2
-        | C                | A                 | A
-        | T                | C                 | C
+            - Every value in TSA1 must be the same as the value in REF
+            - Every value in TSA1 must be the same as the value in TSA2
 
-        INVALID
-        | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2
-        | C                | C                 | A
-        | C                | A                 | A
+        **Additionally, if the MAF file has at least these two columns**
 
-        See https://github.com/genome-nexus/annotation-tools/issues/26 for
-        more background regarding why this validation rule was implemented.
+            - REFERENCE_ALLELE (REF)
+            - TUMOR_SEQ_ALLELE2 (TSA2)
 
-    2) There can't be ANY rows where REF == TSA2. This is a missense mutation
-    flagged as invalid by GN
+        **Then**
+
+            NO values in REF can match TSA2
+
+        These rules are important because Genome Nexus (GN) uses `TSA1` to annotate data
+        when it's not clear which variant to use. So, there can't be a mix of rows where
+        some have `TSA1` equal to `REF` and some have `TSA1` equal to `TSA2`.
+
+    Example: Valid Examples
+        ```
+        | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2 |
+        | ---------------- | ----------------- | ----------------- |
+        | C                | C                 | A                 |
+        | T                | T                 | C                 |
+        ```
+
+        ```
+        | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2 |
+        | ---------------- | ----------------- | ----------------- |
+        | C                | A                 | A                 |
+        | T                | C                 | C                 |
+        ```
+
+        ```
+        | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE2 |
+        | ---------------- | ----------------- |
+        | C                | A                 |
+        | T                | C                 |
+        ```
+
+
+    Example: Invalid Examples
+        ```
+        | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2 |
+        | ---------------- | ----------------- | ----------------- |
+        | C                | C                 | A                 |
+        | C                | A                 | A                 |
+        ```
+
+        ```
+        | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE1 | TUMOR_SEQ_ALLELE2 |
+        | ---------------- | ----------------- | ----------------- |
+        | A                | C                 | A                 |
+        | T                | C                 | T                 |
+        ```
+
+        ```
+        | REFERENCE_ALLELE | TUMOR_SEQ_ALLELE2 |
+        | ---------------- | ----------------- |
+        | C                | C                 |
+        | T                | C                 |
+        ```
+
+
+    See this [Genome Nexus issue](https://github.com/genome-nexus/annotation-tools/issues/26) for
+    more background regarding why this validation rule was implemented.
+
+    Args:
+        df: input mutation dataframe
+
+    Returns:
+        str: the error message
     """
     tsa2_col_exist = process_functions.checkColExist(df, "TUMOR_SEQ_ALLELE2")
     tsa1_col_exist = process_functions.checkColExist(df, "TUMOR_SEQ_ALLELE1")
@@ -134,6 +180,32 @@ class maf(FileTypeFormat):
         """
         This function validates the mutation file to make sure it
         adheres to the mutation SOP.
+
+        t_depth: This column is conditionally optional.
+        1. If this column is missing, the data must include the t_ref_count column. Otherwise, it will cause a validation error.
+        2. If this column is present, it must have one of the following:
+            - A mix of numeric values and NAs
+            - All NAs
+            - All numeric values
+
+        There are no other checks on the actual values in this column.
+
+        t_ref_count: This column is conditionally optional.
+        1. If this column is missing, the data must include the t_depth column. Otherwise, it will cause a validation error.
+        2. If this column is present, it must have one of the following:
+            - A mix of numeric values and NAs
+            - All NAs
+            - All numeric values
+
+        There are no other checks on the actual values in this column.
+
+        t_alt_count: This column is entirely optional.
+        1. If this column is present, it must have one of the following:
+            - A mix of numeric values and NAs
+            - All NAs
+            - All numeric values
+
+        There are no other checks on the actual values in this column.
 
         Args:
             mutationDF: mutation dataframe
