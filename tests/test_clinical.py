@@ -54,10 +54,10 @@ sampledf = pd.DataFrame(
 )
 
 table_query_results_map = {
-    ("select * from syn7434222",): createMockTable(sexdf),
-    ("select * from syn7434236",): createMockTable(no_nan),
-    ("select * from syn7434242",): createMockTable(no_nan),
-    ("select * from syn7434273",): createMockTable(no_nan),
+    ("select * from syn60548946",): createMockTable(sexdf),
+    ("select * from syn60548944",): createMockTable(no_nan),
+    ("select * from syn60548943",): createMockTable(no_nan),
+    ("select * from syn60548941",): createMockTable(no_nan),
     (
         "select fieldName from syn8545211 where patient is True and inClinicalDb is True",
     ): createMockTable(patientdf),
