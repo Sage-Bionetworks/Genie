@@ -645,12 +645,12 @@ if (!is.null(assay_infodf) & !is.null(this_bed)) {
   num_submitted_genes = colSums(submitted_bool_per_panel)
   colnames(number_of_genes) = "num_genes_remapped"
   number_of_genes$num_genes_submitted = NA
-  number_of_genes$num_expected_genes = NA
+  number_of_genes$num_genes_expected = NA
   number_of_genes[names(num_submitted_genes), "num_genes_submitted"] = num_submitted_genes
-  number_of_genes[assay_infodf$SEQ_ASSAY_ID, "num_expected_genes"] = assay_infodf$number_of_genes
+  number_of_genes[assay_infodf$SEQ_ASSAY_ID, "num_genes_expected"] = assay_infodf$number_of_genes
 
-  different_from_expected = number_of_genes[c(which(number_of_genes$num_genes_remapped != number_of_genes$num_expected_genes),
-                                              which(is.na(number_of_genes$num_expected_genes))),]
+  different_from_expected = number_of_genes[c(which(number_of_genes$num_genes_remapped != number_of_genes$num_genes_expected),
+                                              which(is.na(number_of_genes$num_genes_expected))),]
   kable(different_from_expected,
         caption = "Number of submitted vs expected genes in a bed file")
 }
