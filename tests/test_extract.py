@@ -1,6 +1,6 @@
 """Test genie.extract module"""
 
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pandas as pd
 import pytest
@@ -72,3 +72,52 @@ def test_none__getoncotreelink(syn, genie_config):
         oncolink = extract._get_oncotreelink(syn, genie_config)
         patch_synget.assert_called_once_with(genie_config["oncotreeLink"])
         assert oncolink == url
+
+
+def test_that_get_genie_config_has_expected_calls(syn):
+    mock_project = MagicMock()
+    mock_project.annotations = {"dbMapping": ["db_syn_id"]}
+    mock_db_mapping_config = {
+        "errorTracker": "syn11601244",
+        "centerMapping": "syn11601248",
+        "processTracker": "syn11604890",
+    }
+    mock_center_config = pd.DataFrame(
+        {
+            "center": ["TEST"],
+            "inputSynId": ["syn11601340"],
+            "stagingSynId": ["syn11601342"],
+            "errorsSynId": ["syn53239081"],
+            "release": [True],
+            "mutationInCisFilter": ["ON"],
+        }
+    )
+    expected_genie_config = {
+        "errorTracker": "syn11601244",
+        "centerMapping": "syn11601248",
+        "processTracker": "syn11604890",
+        "center_config": {
+            "TEST": {
+                "center": "TEST",
+                "inputSynId": "syn11601340",
+                "stagingSynId": "syn11601342",
+                "errorsSynId": "syn53239081",
+                "release": True,
+                "mutationInCisFilter": "ON",
+            },
+        },
+    }
+
+    with patch.object(syn, "get", return_value=mock_project) as patch_get, patch.object(
+        extract, "_get_database_mapping_config", return_value=mock_db_mapping_config
+    ) as patch_get_db_mapping, patch.object(
+        extract, "get_syntabledf", return_value=mock_center_config
+    ) as patch_get_center_mapping:
+        result = extract.get_genie_config(syn, project_id="syn7208886")
+
+        patch_get.assert_called_once_with("syn7208886")
+        patch_get_db_mapping.assert_called_once_with(syn=syn, synid="db_syn_id")
+        patch_get_center_mapping.assert_called_once_with(
+            syn=syn, query_string=f"SELECT * FROM syn11601248 where release is true"
+        )
+        assert result == expected_genie_config
