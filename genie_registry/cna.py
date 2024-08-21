@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Union
 
 import pandas as pd
 import synapseclient
@@ -10,17 +11,37 @@ from genie import process_functions
 logger = logging.getLogger(__name__)
 
 
-def validateSymbol(gene, bedDf, returnMappedDf=True):
+def validateSymbol(
+    gene: str, bedDf: pd.DataFrame, returnMappedDf: bool = True
+) -> Union[str, float, bool]:
     """
-    Validate gene symbol
+    Validates the gene symbol against the gene symbol in the bed database.
+    Note that gene symbols in the bed database have gone through processing and
+    have been remapped to allowed actual genes if needed.
+
+    Two conditions must be met for the gene to be VALID:
+        1. The gene exists in the bed database table's Hugo_Symbol column
+
+        2. The gene exists in the bed database table's ID column. Under this condition,
+        the gene in the cna file will be REMAPPED temporarily to the bed database
+        table's Hugo_Symbol value for the purpose of validation. The ID column is the
+        original Hugo_Symbol column of the bed files before the Hugo_Symbol column gets
+        mapped to valid possible gene values in the Actual Gene Positions (GRCh37)
+        database table. See the bed fileformat module's remap_symbols function and
+        how it gets used in processing for more info on this.
+
+    The validation throws a WARNING if the gene doesn't satisfy
+    either of the above two conditions
 
     Args:
         gene: Gene name
-        bedDf: Bed pandas dataframe
+        bedDf: The bed database table as a pandas dataframe
         returnMappedDf: Return a mapped gene. Defaults to True
 
     Returns:
-        gene name or boolean for whether a gene is valid
+        Union[str, float, bool]:
+        Returns gene symbol (str if valid, a float("nan") if invalid) if returnMappedDf is True
+        Returns boolean for whether a gene is valid if returnMappedDf is False
     """
     valid = False
     if sum(bedDf["Hugo_Symbol"] == gene) > 0:
