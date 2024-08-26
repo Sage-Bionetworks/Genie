@@ -59,7 +59,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: psf/black@stable
-
+        with:
+            version: "~=23.12"
   deploy:
     needs: [test, lint]
     runs-on: ubuntu-latest
@@ -108,7 +109,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      
+
       - name: Format tags as registry refs
         id: registry_refs
         env:

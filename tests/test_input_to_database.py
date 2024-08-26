@@ -26,6 +26,7 @@ sample_clinical_entity = synapseclient.File(
     name="data_clinical_supp_sample_SAGE.txt",
     modifiedOn="2019-03-24T12:00:00.Z",
     md5="44444",
+    versionNumber=3,
 )
 
 patient_clinical_synid = "syn11111"
@@ -679,6 +680,7 @@ class TestValidation:
                 1553428800000,
                 "clinical",
                 center,
+                sample_clinical_entity.versionNumber,
                 sample_clinical_entity,
             ]
         ]
@@ -692,6 +694,7 @@ class TestValidation:
                 "modifiedOn",
                 "fileType",
                 "center",
+                "version",
                 "entity",
             ]
         )
@@ -706,6 +709,7 @@ class TestValidation:
                 "modifiedOn",
                 "fileType",
                 "center",
+                "version",
                 "entity",
             ],
         )
@@ -716,14 +720,16 @@ class TestValidation:
                 sample_clinical_entity.name,
                 "clinical",
                 center,
+                sample_clinical_entity.versionNumber,
                 sample_clinical_entity,
             ]
         ]
         self.errors_df = pd.DataFrame(
-            error, columns=["id", "errors", "name", "fileType", "center", "entity"]
+            error,
+            columns=["id", "errors", "name", "fileType", "center", "version", "entity"],
         )
         self.empty_errors = pd.DataFrame(
-            columns=["id", "errors", "name", "fileType", "center", "entity"]
+            columns=["id", "errors", "name", "fileType", "center", "version", "entity"]
         )
 
         self.with_dupsdf = pd.DataFrame(
@@ -744,6 +750,7 @@ class TestValidation:
                 ],
                 "center": ["SAGE"] * 5,
                 "fileType": ["type"] * 5,
+                "version": [3] * 5,
                 "entity": ["entity"] * 5,
             }
         )
@@ -768,12 +775,15 @@ class TestValidation:
                 ],
                 "center": ["SAGE"] * 5,
                 "fileType": ["type"] * 5,
+                "version": [3] * 5,
                 "entity": ["entity"] * 5,
             }
         )
         self.empty_dup = pd.DataFrame(
-            columns=["id", "name", "center", "fileType", "entity", "errors"]
+            columns=["id", "name", "center", "fileType", "version", "entity", "errors"]
         )
+        # self.empty_dup = self.empty_dup.astype({"version": int})
+        # self.empty_dup.index = self.empty_dup.index.astype('object')
 
     def test_build_validation_status_table(self):
         input_valid_statuses = [
@@ -836,7 +846,12 @@ class TestValidation:
     def test_nodups_get_duplicated_files(self):
         """Test no duplicated"""
         dupsdf = input_to_database.get_duplicated_files(self.no_dupsdf)
-        assert dupsdf.equals(self.empty_dup)
+        # These empty frames won't be equal without these conversions
+        # HACK: Convert the index type to the same type
+        self.empty_dup.index = self.empty_dup.index.astype("int")
+        # HACK: Convert the dtype of the "version" column to the same type
+        self.empty_dup["version"] = self.empty_dup["version"].astype("int")
+        pd.testing.assert_frame_equal(dupsdf, self.empty_dup)
 
     def test__update_tables_content(self):
         """Tests duplicates are added to the tables and errors/statues are
@@ -970,6 +985,7 @@ class TestValidation:
         entity = synapseclient.Entity(
             id="syn1234",
             md5="44444",
+            versionNumber=3,
             path="/path/to/foobar.txt",
             name="data_clinical_supp_SAGE.txt",
         )
@@ -984,6 +1000,7 @@ class TestValidation:
                 entity.name,
                 modified_on,
                 filetype,
+                entity.versionNumber,
                 center,
             ]
         ]
@@ -997,7 +1014,14 @@ class TestValidation:
         errortracking_mock = emptytable_mock()
         valiate_cls = Mock()
         with patch.object(
-            syn, "tableQuery", side_effect=[validationstatus_mock, errortracking_mock]
+            syn,
+            "tableQuery",
+            side_effect=[
+                validationstatus_mock,
+                errortracking_mock,
+                validationstatus_mock,
+                errortracking_mock,
+            ],
         ) as patch_query, patch.object(
             input_to_database,
             "validatefile",
@@ -1006,6 +1030,8 @@ class TestValidation:
             input_to_database,
             "build_validation_status_table",
             return_value=self.validation_statusdf,
+        ), patch.object(
+            syn, "get", return_value=entity
         ), patch.object(
             input_to_database, "build_error_tracking_table", return_value=self.errors_df
         ), patch.object(

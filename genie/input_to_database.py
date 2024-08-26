@@ -322,10 +322,9 @@ def validatefile(
     error_list = check_file_status["error_list"]
 
     messages_to_send = []
-
     # Need to figure out to how to remove this
     # This must pass in filenames, because filetype is determined by entity
-    # name Not by actual path of file
+    # name not by actual path of file
     validator = validate.GenieValidationHelper(
         syn=syn,
         project_id=project_id,
@@ -336,8 +335,13 @@ def validatefile(
         ancillary_files=ancillary_files,
     )
     filetype = validator.file_type
-
     if check_file_status["to_validate"]:
+        # HACK: Don't download again if only_validate is not True, but all
+        # files need to be downloaded currently when validation + processing
+        # isn't split up
+        # if entities[0].get("path") is None:
+        #    validator.entitylist = [syn.get(entity) for entity in entities]
+
         valid_cls, message = validator.validate_single_file(
             oncotree_link=genie_config["oncotreeLink"], nosymbol_check=False
         )
@@ -525,6 +529,7 @@ def build_validation_status_table(input_valid_statuses: List[dict]):
         "modifiedOn",
         "fileType",
         "center",
+        "version",
         "entity",
     ]
     input_status_rows = []
@@ -539,6 +544,7 @@ def build_validation_status_table(input_valid_statuses: List[dict]):
             "modifiedOn": entity_date_to_timestamp(entity.properties.modifiedOn),
             "fileType": input_status["fileType"],
             "center": input_status["center"],
+            "version": entity.versionNumber,
             "entity": entity,
         }
         input_status_rows.append(row)
@@ -562,7 +568,15 @@ def build_error_tracking_table(invalid_errors: List[dict]):
         Error tracking dataframe
 
     """
-    error_table_columns = ["id", "errors", "name", "fileType", "center", "entity"]
+    error_table_columns = [
+        "id",
+        "errors",
+        "name",
+        "fileType",
+        "center",
+        "version",
+        "entity",
+    ]
     invalid_error_rows = []
     for invalid_error in invalid_errors:
         entity = invalid_error["entity"]
@@ -572,6 +586,7 @@ def build_error_tracking_table(invalid_errors: List[dict]):
             "name": entity.name,
             "fileType": invalid_error["fileType"],
             "center": invalid_error["center"],
+            "version": entity.versionNumber,
             "entity": entity,
         }
         invalid_error_rows.append(row)
@@ -763,9 +778,11 @@ def validation(
                     user_message_dict[user].append(file_messages)
 
     validation_statusdf = build_validation_status_table(input_valid_statuses)
+
     error_trackingdf = build_error_tracking_table(invalid_errors)
 
     new_tables = _update_tables_content(validation_statusdf, error_trackingdf)
+
     validation_statusdf = new_tables["validation_statusdf"]
     error_trackingdf = new_tables["error_trackingdf"]
     duplicated_filesdf = new_tables["duplicated_filesdf"]
@@ -793,7 +810,6 @@ def validation(
         validation_status_table=validation_status_table,
         error_tracker_table=error_tracker_table,
     )
-
     valid_filesdf = validation_statusdf.query('status == "VALIDATED"')
     return valid_filesdf[["id", "path", "fileType", "name"]]
 
@@ -870,7 +886,12 @@ def center_input_to_database(
     center_input_synid = genie_config["center_config"][center]["inputSynId"]
     logger.info("Center: " + center)
     center_files = extract.get_center_input_files(
-        syn, center_input_synid, center, process
+        syn=syn,
+        synid=center_input_synid,
+        center=center,
+        process=process,
+        # HACK: Don't download all the files when only validate
+        # downloadFile=(not only_validate),
     )
 
     # ancillary_files = get_ancillary_files(

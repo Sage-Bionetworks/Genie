@@ -250,7 +250,6 @@ def test_that_runMAFinBED_calls_expected_calls(syn, test, staging):
             )
         ),
     ) as patch_store_maf_in_bed_filtered_variants:
-
         # setting some testing vars
         test_script_dir = "test_file_dir/"
         test_notinbed_file_path = os.path.join(test_script_dir, "../R/notinbed.csv")
@@ -479,7 +478,6 @@ def test_that_mutation_in_cis_filter_has_expected_calls_when_mutations_in_cis_is
             name="flaggedVariants",
         ),
     ) as patch_get_flagged_variants:
-
         # setting some testing vars
         test_center_mapping_df = pd.DataFrame(
             dict(Center=["SAGE"], stagingSynId=["synZZZZZ"])
@@ -588,7 +586,6 @@ def test_that_mutation_in_cis_filter_has_expected_calls_when_mutations_in_cis_is
             name="flaggedVariants",
         ),
     ) as patch_get_flagged_variants:
-
         # setting some testing vars
         test_center_mapping_df = pd.DataFrame(
             dict(Center=["SAGE"], stagingSynId=["synZZZZZ"])
@@ -697,7 +694,6 @@ def test_that_get_mutation_in_cis_flagged_variants_returns_expected_flagged_vari
     with patch.object(
         extract, "get_syntabledf", return_value=flagged_df
     ) as patch_get_syntabledf:
-
         result = database_to_staging.get_mutation_in_cis_flagged_variants(
             syn, variant_filtering_synId="synZZZZZ"
         )
@@ -737,7 +733,6 @@ def test_that_get_mutation_in_cis_filtered_samples_returns_expected_variants(
     with patch.object(
         extract, "get_syntabledf", return_value=filtered_df
     ) as patch_get_syntabledf:
-
         result = database_to_staging.get_mutation_in_cis_filtered_samples(
             syn, variant_filtering_synId="synZZZZZ"
         )
