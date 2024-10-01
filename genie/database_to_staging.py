@@ -272,6 +272,15 @@ def get_whitelist_variants_idx(mafdf):
 # TODO: Add to transform.py
 def configure_maf(mafdf, remove_variants, flagged_variants):
     """Configures each maf dataframe, does germline filtering
+    
+    Germline filtering for MAF files uses the gnomAD columns that refer to the 
+    allele frequencies (AF) of variants in different population groups 
+    from the gnomAD (Genome Aggregation Database). This filter will filter out
+    variants with a maximum AF > 0.05% across all populations which are typically 
+    common germline variants.
+    
+    Germline filtering for MAF files occurs during release instead of during processing
+    because the MAF file gets re-annotated during processing via genome nexus annotation.
 
     Args:
         mafdf: Maf dataframe
