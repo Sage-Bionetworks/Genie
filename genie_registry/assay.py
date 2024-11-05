@@ -15,7 +15,7 @@ class Assayinfo(FileTypeFormat):
 
     _process_kwargs = ["newPath", "databaseSynId"]
 
-    _validation_kwargs = ["project_id"]
+    #_validation_kwargs = ["project_id"]
 
     def _validateFilename(self, filepath_list):
         """Validate assay information filename"""
