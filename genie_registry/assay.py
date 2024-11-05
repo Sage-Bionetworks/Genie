@@ -1,12 +1,11 @@
 """Assay information class"""
 
 import os
-import yaml
 
 import pandas as pd
-
-from genie.example_filetype_format import FileTypeFormat
+import yaml
 from genie import extract, load, process_functions
+from genie.example_filetype_format import FileTypeFormat
 
 
 class Assayinfo(FileTypeFormat):
@@ -128,7 +127,7 @@ class Assayinfo(FileTypeFormat):
             all_panel_info = pd.concat([all_panel_info, assay_finaldf])
         return all_panel_info
 
-    def _validate(self, assay_info_df, project_id):
+    def _validate(self, assay_info_df):
         """
         Validates the values of assay information file
 
@@ -202,7 +201,7 @@ class Assayinfo(FileTypeFormat):
         warn, error = process_functions.check_col_and_values(
             assay_info_df,
             "library_strategy",
-            read_group_headers["library_strategy"]["enum"],
+            ["Targeted Sequencing", "WXS"],
             filename="Assay_information.yaml",
             required=True,
         )
