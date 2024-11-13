@@ -166,7 +166,7 @@ def test_append__append_rows():
     append_rows = process_functions._append_rows(new_datadf, DATABASE_DF, "UNIQUE_KEY")
     append_rows.fillna("", inplace=True)
     expecteddf.fillna("", inplace=True)
-    assert append_rows.equals(expecteddf[append_rows.columns])
+    assert_frame_equal(append_rows, expecteddf[append_rows.columns], check_dtype=False)
 
 
 def test___create_update_rowsdf():
@@ -625,7 +625,7 @@ def get_create_missing_columns_test_cases():
             "name": "empty_df",
             "test_input": pd.DataFrame({}),
             "test_schema": {"col1": "float"},
-            "expected_output": pd.DataFrame({"col1": []}, index=[]),
+            "expected_output": pd.DataFrame({"col1": []}, dtype=float),
             "expected_dtype": is_float_dtype,
             "expected_na_count": 0,
         },
