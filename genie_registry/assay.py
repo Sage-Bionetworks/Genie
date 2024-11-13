@@ -230,16 +230,6 @@ class Assayinfo(FileTypeFormat):
         warning += warn
         total_error += error
 
-        # target_capture_kit = read_group_headers['target_capture_kit']['enum']
-        # warn, error = process_functions.check_column_and_values_row_specific(
-        #     assay_info_df,
-        #     'target_capture_kit',
-        #     target_capture_kit,
-        #     filename="Assay_information.yaml",
-        #     required=True)
-        # warning += warn
-        # total_error += error
-
         if not process_functions.checkColExist(assay_info_df, "target_capture_kit"):
             total_error += (
                 "Assay_information.yaml: " "Must have target_capture_kit column.\n"
