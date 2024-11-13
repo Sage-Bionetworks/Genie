@@ -5,8 +5,12 @@ import pandas as pd
 import pytest
 import synapseclient
 from genie import process_functions
-from pandas.api.types import (is_bool_dtype, is_float_dtype, is_integer_dtype,
-                              is_string_dtype)
+from pandas.api.types import (
+    is_bool_dtype,
+    is_float_dtype,
+    is_integer_dtype,
+    is_string_dtype,
+)
 from pandas.testing import assert_frame_equal
 
 DATABASE_DF = pd.DataFrame(
@@ -752,10 +756,20 @@ def get_row_indices_for_invalid_column_values_test_cases():
         },
         {
             "name": "values_in_list",
-            "df": pd.DataFrame({"test_col": ["Val1;Val2", "Val1;Val2;Val3","Val1", "Val1;", "Val1;None"]}),
+            "df": pd.DataFrame(
+                {
+                    "test_col": [
+                        "Val1;Val2",
+                        "Val1;Val2;Val3",
+                        "Val1",
+                        "Val1;",
+                        "Val1;None",
+                    ]
+                }
+            ),
             "col": "test_col",
             "possible_values": ["Val1", "Val2"],
-            "na_allowed": True, 
+            "na_allowed": True,
             "sep": ";",
             "expected_index": pd.Index([1, 3, 4]),
         },
@@ -769,8 +783,12 @@ def get_row_indices_for_invalid_column_values_test_cases():
             "expected_index": pd.Index([]),
         },
     ]
+
+
 @pytest.mark.parametrize(
-    "test_cases", get_row_indices_for_invalid_column_values_test_cases(), ids=lambda x: x["name"]
+    "test_cases",
+    get_row_indices_for_invalid_column_values_test_cases(),
+    ids=lambda x: x["name"],
 )
 def test_get_row_indices_for_invalid_column_values(test_cases):
     df = test_cases["df"]
@@ -778,8 +796,11 @@ def test_get_row_indices_for_invalid_column_values(test_cases):
     possible_values = test_cases["possible_values"]
     na_allowed = test_cases["na_allowed"]
     sep = test_cases["sep"]
-    results = process_functions.get_row_indices_for_invalid_column_values(df, col, possible_values, na_allowed, sep)
+    results = process_functions.get_row_indices_for_invalid_column_values(
+        df, col, possible_values, na_allowed, sep
+    )
     assert results.equals(test_cases["expected_index"])
+
 
 def get_message_for_invalid_column_value_test_cases():
     return [
@@ -789,10 +810,10 @@ def get_message_for_invalid_column_value_test_cases():
             "filename": "test_filename",
             "invalid_indices": pd.Index([1, 2, 3]),
             "possible_values": ["Val1"],
-            "expected_error": "test_filename: Please double check your test_col column. Valid values are Val1. "\
-                              "You have 3 row(s) in your file where test_col column contains invalid values. "\
-                              "The row(s) this occurs in are: [1, 2, 3]. Please correct.\n",
-            "expected_warning": ""
+            "expected_error": "test_filename: Please double check your test_col column. Valid values are Val1. "
+            "You have 3 row(s) in your file where test_col column contains invalid values. "
+            "The row(s) this occurs in are: [1, 2, 3]. Please correct.\n",
+            "expected_warning": "",
         },
         {
             "name": "valid_data",
@@ -801,20 +822,27 @@ def get_message_for_invalid_column_value_test_cases():
             "invalid_indices": pd.Index([]),
             "possible_values": ["Val1", "Val2"],
             "expected_error": "",
-            "expected_warning": ""
+            "expected_warning": "",
         },
     ]
+
+
 @pytest.mark.parametrize(
-    "test_cases", get_message_for_invalid_column_value_test_cases(), ids=lambda x: x["name"]
+    "test_cases",
+    get_message_for_invalid_column_value_test_cases(),
+    ids=lambda x: x["name"],
 )
 def test_get_message_for_invalid_column_value(test_cases):
     col = test_cases["col"]
     filename = test_cases["filename"]
     invalid_indices = test_cases["invalid_indices"]
     possible_values = test_cases["possible_values"]
-    warning, error = process_functions.get_message_for_invalid_column_value(col, filename, invalid_indices, possible_values)
+    warning, error = process_functions.get_message_for_invalid_column_value(
+        col, filename, invalid_indices, possible_values
+    )
     assert warning == test_cases["expected_warning"]
     assert error == test_cases["expected_error"]
+
 
 def check_col_and_values_row_specific_test_cases():
     return [
@@ -828,7 +856,7 @@ def check_col_and_values_row_specific_test_cases():
             "required": True,
             "sep": ";",
             "expected_error": "",
-            "expected_warning": ""
+            "expected_warning": "",
         },
         {
             "name": "valid_data_with_individual_value_na_allowed",
@@ -840,7 +868,7 @@ def check_col_and_values_row_specific_test_cases():
             "required": True,
             "sep": ";",
             "expected_error": "",
-            "expected_warning": ""
+            "expected_warning": "",
         },
         {
             "name": "missing_required_column",
@@ -852,7 +880,7 @@ def check_col_and_values_row_specific_test_cases():
             "required": True,
             "sep": ";",
             "expected_error": "test_filename: Must have test_col1 column.\n",
-            "expected_warning": ""
+            "expected_warning": "",
         },
         {
             "name": "missing_optional_column",
@@ -864,7 +892,7 @@ def check_col_and_values_row_specific_test_cases():
             "required": False,
             "sep": ";",
             "expected_error": "",
-            "expected_warning": "test_filename: Doesn't have test_col1 column. This column will be added.\n"
+            "expected_warning": "test_filename: Doesn't have test_col1 column. This column will be added.\n",
         },
         {
             "name": "invalid_data_with_value_list",
@@ -875,10 +903,10 @@ def check_col_and_values_row_specific_test_cases():
             "na_allowed": True,
             "required": True,
             "sep": ";",
-            "expected_error": "test_filename: Please double check your test_col column. Valid values are Val1. "\
-                              "You have 2 row(s) in your file where test_col column contains invalid values. "\
-                              "The row(s) this occurs in are: [1, 2]. Please correct.\n",
-            "expected_warning": ""
+            "expected_error": "test_filename: Please double check your test_col column. Valid values are Val1. "
+            "You have 2 row(s) in your file where test_col column contains invalid values. "
+            "The row(s) this occurs in are: [1, 2]. Please correct.\n",
+            "expected_warning": "",
         },
         {
             "name": "invalid_data_with_individual_value_na_not_allowed",
@@ -889,10 +917,10 @@ def check_col_and_values_row_specific_test_cases():
             "na_allowed": False,
             "required": True,
             "sep": None,
-            "expected_error": "test_filename: Please double check your test_col column. Valid values are Val1, Val2. "\
-                              "You have 3 row(s) in your file where test_col column contains invalid values. "\
-                              "The row(s) this occurs in are: [2, 3, 4]. Please correct.\n",
-            "expected_warning": ""
+            "expected_error": "test_filename: Please double check your test_col column. Valid values are Val1, Val2. "
+            "You have 3 row(s) in your file where test_col column contains invalid values. "
+            "The row(s) this occurs in are: [2, 3, 4]. Please correct.\n",
+            "expected_warning": "",
         },
         {
             "name": "invalid_data_with_individual_value_na_allowed",
@@ -903,14 +931,18 @@ def check_col_and_values_row_specific_test_cases():
             "na_allowed": True,
             "required": True,
             "sep": None,
-            "expected_error": "test_filename: Please double check your test_col column. Valid values are Val1. "\
-                              "You have 2 row(s) in your file where test_col column contains invalid values. "\
-                              "The row(s) this occurs in are: [1, 2]. Please correct.\n",
-            "expected_warning": ""
+            "expected_error": "test_filename: Please double check your test_col column. Valid values are Val1. "
+            "You have 2 row(s) in your file where test_col column contains invalid values. "
+            "The row(s) this occurs in are: [1, 2]. Please correct.\n",
+            "expected_warning": "",
         },
     ]
+
+
 @pytest.mark.parametrize(
-    "test_cases", check_col_and_values_row_specific_test_cases(), ids=lambda x: x["name"]
+    "test_cases",
+    check_col_and_values_row_specific_test_cases(),
+    ids=lambda x: x["name"],
 )
 def test_check_col_and_values_row_specific(test_cases):
     df = test_cases["df"]
@@ -920,6 +952,8 @@ def test_check_col_and_values_row_specific(test_cases):
     na_allowed = test_cases["na_allowed"]
     required = test_cases["required"]
     sep = test_cases["sep"]
-    warning, error = process_functions.check_column_and_values_row_specific(df, col, possible_values, filename, na_allowed, required, sep)
+    warning, error = process_functions.check_column_and_values_row_specific(
+        df, col, possible_values, filename, na_allowed, required, sep
+    )
     assert warning == test_cases["expected_warning"]
     assert error == test_cases["expected_error"]
