@@ -178,7 +178,7 @@ class Assayinfo(FileTypeFormat):
 
         read_group_dict = process_functions.get_gdc_data_dictionary("read_group")
         read_group_headers = read_group_dict["properties"]
-        warn, error = process_functions.check_column_and_values_row_specific(
+        warn, error = process_functions.check_col_and_values(
             assay_info_df,
             "is_paired_end",
             [True, False],
@@ -188,7 +188,7 @@ class Assayinfo(FileTypeFormat):
         warning += warn
         total_error += error
 
-        warn, error = process_functions.check_column_and_values_row_specific(
+        warn, error = process_functions.check_col_and_values(
             assay_info_df,
             "library_selection",
             read_group_headers["library_selection"]["enum"],
@@ -198,7 +198,7 @@ class Assayinfo(FileTypeFormat):
         warning += warn
         total_error += error
 
-        warn, error = process_functions.check_column_and_values_row_specific(
+        warn, error = process_functions.check_col_and_values(
             assay_info_df,
             "library_strategy",
             ["Targeted Sequencing", "WXS"],
@@ -208,7 +208,7 @@ class Assayinfo(FileTypeFormat):
         warning += warn
         total_error += error
 
-        warn, error = process_functions.check_column_and_values_row_specific(
+        warn, error = process_functions.check_col_and_values(
             assay_info_df,
             "platform",
             read_group_headers["platform"]["enum"],
@@ -220,7 +220,7 @@ class Assayinfo(FileTypeFormat):
 
         instrument_model = read_group_headers["instrument_model"]["enum"]
         instrument_model.extend(["Illumina NovaSeq 6000", None])
-        warn, error = process_functions.check_column_and_values_row_specific(
+        warn, error = process_functions.check_col_and_values(
             assay_info_df,
             "instrument_model",
             instrument_model,
@@ -256,7 +256,7 @@ class Assayinfo(FileTypeFormat):
             "3'Flank",
             None,
         ]
-        warn, error = process_functions.check_column_and_values_row_specific(
+        warn, error = process_functions.check_col_and_values(
             assay_info_df,
             "variant_classifications",
             variant_classes,
@@ -319,7 +319,7 @@ class Assayinfo(FileTypeFormat):
                 "gene_padding is by default 10 if not specified.\n"
             )
 
-        warn, error = process_functions.check_column_and_values_row_specific(
+        warn, error = process_functions.check_col_and_values(
             assay_info_df,
             "calling_strategy",
             ["tumor_only", "tumor_normal", "plasma_normal"],
@@ -354,7 +354,7 @@ class Assayinfo(FileTypeFormat):
             "intragenic_cna",
             "structural_variants",
         ]
-        warn, error = process_functions.check_column_and_values_row_specific(
+        warn, error = process_functions.check_col_and_values(
             assay_info_df,
             "alteration_types",
             alteration_types,
@@ -366,7 +366,7 @@ class Assayinfo(FileTypeFormat):
         total_error += error
 
         preservation_technique = ["FFPE", "fresh_frozen", "NA"]
-        warn, error = process_functions.check_column_and_values_row_specific(
+        warn, error = process_functions.check_col_and_values(
             assay_info_df,
             "preservation_technique",
             preservation_technique,
@@ -378,7 +378,7 @@ class Assayinfo(FileTypeFormat):
         total_error += error
 
         coverage = ["hotspot_regions", "coding_exons", "introns", "promoters"]
-        warn, error = process_functions.check_column_and_values_row_specific(
+        warn, error = process_functions.check_col_and_values(
             assay_info_df,
             "coverage",
             coverage,
