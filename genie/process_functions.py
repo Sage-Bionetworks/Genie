@@ -990,7 +990,6 @@ def get_row_indices_for_invalid_column_values(
     sep: Optional[str] = None,
 ) -> pd.Index:
     """This function checks the column values against possible_values and returns row indices of invalid rows.
-       Currently, this function is only used in assay.py
 
     Args:
         df (pd.DataFrame): Input dataframe
@@ -1021,7 +1020,6 @@ def get_message_for_invalid_column_value(
     col: str, filename: str, invalid_indices: pd.Index, possible_values: list
 ) -> tuple:
     """This function returns the error and warning messages if the target column has rows with invalid values.
-       Currently, this function is only used in assay.py
 
     Args:
         col (str): The column to be checked
