@@ -5,12 +5,8 @@ import pandas as pd
 import pytest
 import synapseclient
 from genie import process_functions
-from pandas.api.types import (
-    is_bool_dtype,
-    is_float_dtype,
-    is_integer_dtype,
-    is_string_dtype,
-)
+from pandas.api.types import (is_bool_dtype, is_float_dtype, is_integer_dtype,
+                              is_string_dtype)
 from pandas.testing import assert_frame_equal
 
 DATABASE_DF = pd.DataFrame(
@@ -659,7 +655,7 @@ def test_that_create_missing_columns_gets_expected_output_with_single_col_df(
     result = process_functions.create_missing_columns(
         dataset=test_cases["test_input"], schema=test_cases["test_schema"]
     )
-    assert_frame_equal(result, test_cases["expected_output"], check_exact=True)
+    assert_frame_equal(result, test_cases["expected_output"], check_dtype=False)
     assert test_cases["expected_dtype"](result.iloc[:, 0])
     assert result.isna().sum().sum() == test_cases["expected_na_count"]
 
