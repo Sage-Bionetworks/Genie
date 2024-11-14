@@ -1054,7 +1054,7 @@ def check_column_and_values_row_specific(
     possible_values: list,
     filename: str,
     na_allowed: bool = False,
-    required=False,
+    required: bool = False,
     sep: Optional[str] = None,
 ) -> tuple:
     """This function checks if the column exists and checks if the values in the column have the valid values.
