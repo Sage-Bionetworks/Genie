@@ -980,3 +980,17 @@ def create_missing_columns(dataset: pd.DataFrame, schema: dict) -> pd.Series:
         elif data_type == "boolean":
             dataset[column] = dataset[column].astype(pd.BooleanDtype())
     return dataset[list(schema.keys())]
+
+
+def has_cfDNA_samples(df: pd.DataFrame) -> bool:
+    """Check if cfDNA exist in SAMPLE_CLASS column of the clinical dataframe.
+    Args:
+        df (pd.DataFrame): The clinical dataframe
+    Returns:
+        bool: True if cfDNA samples exist(s)
+    """
+    if not checkColExist(df, "SAMPLE_CLASS"):
+        logger.error("Must have SAMPLE_CLASS column in the dataframe.")
+    else:
+        result = df.SAMPLE_CLASS.isin(["cfDNA"]).any()
+        return result

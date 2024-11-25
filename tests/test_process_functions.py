@@ -1,7 +1,10 @@
-from unittest.mock import Mock, patch
 import uuid
+from unittest.mock import Mock, patch
 
 import pandas as pd
+import pytest
+import synapseclient
+from genie import process_functions
 from pandas.api.types import (
     is_bool_dtype,
     is_float_dtype,
@@ -9,10 +12,6 @@ from pandas.api.types import (
     is_string_dtype,
 )
 from pandas.testing import assert_frame_equal
-import pytest
-import synapseclient
-
-from genie import process_functions
 
 DATABASE_DF = pd.DataFrame(
     {
@@ -715,3 +714,44 @@ def test_that_create_missing_columns_returns_expected_output_with_multi_col_df()
     assert result.isna().sum().sum() == 11
 
     assert_frame_equal(result, expected_output, check_exact=True)
+
+
+@pytest.mark.parametrize(
+    "input_df",
+    [
+        pd.DataFrame({"some_col": ["Val1", "Val1", "Val2"]}),
+    ],
+    ids=["missing_SAMPLE_CLASS_column"],
+)
+def test_has_cfDNA_samples_no_SAMPLE_CLASS_column(input_df):
+    with patch.object(process_functions, "logger") as mock_logger:
+        results = process_functions.has_cfDNA_samples(input_df)
+    mock_logger.error.assert_called_once_with(
+        "Must have SAMPLE_CLASS column in the dataframe."
+    )
+
+
+@pytest.mark.parametrize(
+    "input_df, expected_results",
+    [
+        (
+            pd.DataFrame(
+                {"SAMPLE_ID": [1, 2, 3], "SAMPLE_CLASS": ["Val1", "Val1", "Val2"]}
+            ),
+            False,
+        ),
+        (
+            pd.DataFrame(
+                {"SAMPLE_ID": [1, 2, 3], "SAMPLE_CLASS": ["cfDNA", "Val1", "Val2"]}
+            ),
+            True,
+        ),
+    ],
+    ids=["no_cfDNA_sampless", "have_cfDNA_samples"],
+)
+def test_has_cfDNA_samples_has_SAMPLE_CLASS_column(input_df, expected_results):
+    results = process_functions.has_cfDNA_samples(input_df)
+    import pdb
+
+    pdb.set_trace()
+    assert results == expected_results
