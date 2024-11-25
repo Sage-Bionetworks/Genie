@@ -751,7 +751,5 @@ def test_has_cfDNA_samples_no_SAMPLE_CLASS_column(input_df):
 )
 def test_has_cfDNA_samples_has_SAMPLE_CLASS_column(input_df, expected_results):
     results = process_functions.has_cfDNA_samples(input_df)
-    import pdb
 
-    pdb.set_trace()
     assert results == expected_results
