@@ -5,13 +5,8 @@ import os
 
 import pandas as pd
 import synapseutils
-from genie import (
-    create_case_lists,
-    database_to_staging,
-    extract,
-    load,
-    process_functions,
-)
+from genie import (create_case_lists, database_to_staging, extract, load,
+                   process_functions)
 
 logger = logging.getLogger(__name__)
 
@@ -145,13 +140,15 @@ def consortiumToPublic(
     )
 
     # check if SAMPLE_CLASS is present
-    if not process_functions.checkColExist(publicRelease, "SAMPLE_CLASS"):
+    if not process_functions.check_values_in_column(
+        publicRelease, "fieldName", "SAMPLE_CLASS"
+    ):
         logger.error("Must have SAMPLE_CLASS column in the public release scope.")
 
     allClin = clinicalDf[clinicalDf["SAMPLE_ID"].isin(publicReleaseSamples)]
     # check if cfDNA samples are present
-    if not process_functions.has_cfDNA_samples(allClin):
-        logger.error("cfDNA samples should not be filtered out.")
+    if not process_functions.check_values_in_column(allClin, "SAMPLE_CLASS", "cfDNA"):
+        logger.error("cfDNA samples should not be filtered out in the clinical dataframe.")
 
     allClin.to_csv(clinical_path, sep="\t", index=False)
 

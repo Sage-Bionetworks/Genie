@@ -982,15 +982,22 @@ def create_missing_columns(dataset: pd.DataFrame, schema: dict) -> pd.Series:
     return dataset[list(schema.keys())]
 
 
-def has_cfDNA_samples(df: pd.DataFrame) -> bool:
-    """Check if cfDNA exist in SAMPLE_CLASS column of the clinical dataframe.
+def check_values_in_column(
+    df: pd.DataFrame, col: str, values: Union[str, list]
+) -> bool:
+    """Check if a column in a dataframe contains specific values
     Args:
         df (pd.DataFrame): The clinical dataframe
+        col (str): The column name
+        values (list): Expected values in the column
     Returns:
-        bool: True if cfDNA samples exist(s)
+        bool: True if the column contains the specified values
     """
-    if not checkColExist(df, "SAMPLE_CLASS"):
-        logger.error("Must have SAMPLE_CLASS column in the dataframe.")
+    if not checkColExist(df, col):
+        logger.error(f"Must have {col} column in the dataframe.")
     else:
-        result = df.SAMPLE_CLASS.isin(["cfDNA"]).any()
+        # Ensure values is always a list for next step
+        if isinstance(values, str):
+            values = [values]
+        result = df[col].isin(values).any()
         return result
