@@ -5,8 +5,13 @@ import os
 
 import pandas as pd
 import synapseutils
-from genie import (create_case_lists, database_to_staging, extract, load,
-                   process_functions)
+from genie import (
+    create_case_lists,
+    database_to_staging,
+    extract,
+    load,
+    process_functions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +153,9 @@ def consortiumToPublic(
     allClin = clinicalDf[clinicalDf["SAMPLE_ID"].isin(publicReleaseSamples)]
     # check if cfDNA samples are present
     if not process_functions.check_values_in_column(allClin, "SAMPLE_CLASS", "cfDNA"):
-        logger.error("cfDNA samples should not be filtered out in the clinical dataframe.")
+        logger.error(
+            "cfDNA samples should not be filtered out in the clinical dataframe."
+        )
 
     allClin.to_csv(clinical_path, sep="\t", index=False)
 
