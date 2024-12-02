@@ -2,6 +2,7 @@
 """
 Functions for releasing GENIE consortium releases
 """
+import datetime
 import logging
 import math
 import os
@@ -166,7 +167,9 @@ def _to_redact_difference(df_col_year1, df_col_year2):
     year1 = pd.to_numeric(df_col_year1, errors="coerce")
     year2 = pd.to_numeric(df_col_year2, errors="coerce")
     to_redact = year2 - year1 > 89
-    return to_redact
+    to_redact_peds = year2 - year1 < 18
+
+    return to_redact, to_redact_peds
 
 
 # TODO: Add to transform.py
@@ -198,15 +201,33 @@ def redact_phi(
     # Redact BIRTH_YEAR values that have < or >
     # Birth year has to be done separately because it is not an interval
     clinicaldf["BIRTH_YEAR"] = _redact_year(clinicaldf["BIRTH_YEAR"])
-    to_redact = _to_redact_difference(
+    to_redact, to_redact_peds = _to_redact_difference(
         clinicaldf["BIRTH_YEAR"], clinicaldf["YEAR_CONTACT"]
     )
     clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
-    to_redact = _to_redact_difference(
+    clinicaldf.loc[to_redact_peds, "BIRTH_YEAR"] = "withheld"
+    clinicaldf.loc[to_redact, interval_cols_to_redact] = ">32485"
+    clinicaldf.loc[to_redact_peds, interval_cols_to_redact] = "<6570"
+
+    to_redact, to_redact_peds = _to_redact_difference(
         clinicaldf["BIRTH_YEAR"], clinicaldf["YEAR_DEATH"]
     )
     clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
+    clinicaldf.loc[to_redact_peds, "BIRTH_YEAR"] = "withheld"
+    clinicaldf.loc[to_redact, interval_cols_to_redact] = ">32485"
+    clinicaldf.loc[to_redact_peds, interval_cols_to_redact] = "<6570"
 
+    # this redaction only makes sense for patients that are alive
+    # Because if a patient dies at age 20, there is no need to calculate
+    # the current age.
+    to_redact, to_redact_peds = _to_redact_difference(
+        clinicaldf["BIRTH_YEAR"], datetime.datetime.utcnow().year
+    )
+    is_alive = clinicaldf["DEAD"].isin(["False", "FALSE"])
+    clinicaldf.loc[(to_redact & is_alive), "BIRTH_YEAR"] = "cannotReleaseHIPAA"
+    clinicaldf.loc[(to_redact_peds & is_alive), "BIRTH_YEAR"] = "withheld"
+    clinicaldf.loc[(to_redact & is_alive), interval_cols_to_redact] = ">32485"
+    clinicaldf.loc[(to_redact_peds & is_alive), interval_cols_to_redact] = "<6570"
     return clinicaldf
 
 
