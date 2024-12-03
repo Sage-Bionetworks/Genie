@@ -2,6 +2,7 @@
 
 import logging
 import os
+import sys
 
 import pandas as pd
 import synapseutils
@@ -14,6 +15,9 @@ from genie import (
 )
 
 logger = logging.getLogger(__name__)
+stdout_handler = logging.StreamHandler(stream=sys.stdout)
+stdout_handler.setLevel(logging.INFO)
+logger.addHandler(stdout_handler)
 
 
 # TODO: Add to transform.py
