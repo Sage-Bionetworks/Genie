@@ -772,6 +772,12 @@ def test_check_values_in_column_no_column(input_df, col, values):
             ["cfDNA", "Tumor", "test_value"],
             True,
         ),
+        (
+            pd.DataFrame({"SAMPLE_ID": [], "SAMPLE_CLASS": []}),
+            "SAMPLE_CLASS",
+            ["cfDNA", "Tumor", "test_value"],
+            False,
+        ),
     ],
     ids=[
         "no_expected_single_value",
@@ -779,6 +785,7 @@ def test_check_values_in_column_no_column(input_df, col, values):
         "have_expected_single_value",
         "have_expected_value_list",
         "have_partial_expected_value_list",
+        "empty_dataframe_with_required_column",
     ],
 )
 def test_check_values_in_column_has_column(input_df, col, values, expected_results):
