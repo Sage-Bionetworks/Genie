@@ -2,10 +2,10 @@
 
 import logging
 import os
+import sys
 
-import synapseutils
 import pandas as pd
-
+import synapseutils
 from genie import (
     create_case_lists,
     database_to_staging,
@@ -15,6 +15,9 @@ from genie import (
 )
 
 logger = logging.getLogger(__name__)
+stdout_handler = logging.StreamHandler(stream=sys.stdout)
+stdout_handler.setLevel(logging.INFO)
+logger.addHandler(stdout_handler)
 
 
 # TODO: Add to transform.py
@@ -119,8 +122,6 @@ def consortiumToPublic(
         clinicalDf, processingDate, publicReleaseCutOff
     )
     logger.info("SAMPLE CLASS FILTER")
-    remove_sc_samples = database_to_staging.sample_class_filter(clinical_df=clinicalDf)
-    removeForPublicSamples = list(set(removeForPublicSamples).union(remove_sc_samples))
     # comment back in when public release filter back on
     # publicReleaseSamples = publicReleaseSamples.append(keepForPublicSamples)
     # Make sure all null oncotree codes are removed
@@ -147,7 +148,19 @@ def consortiumToPublic(
         query_string=f"SELECT * FROM {clinical_tier_release_scope_synid} where releaseScope = 'public'",
     )
 
+    # check if SAMPLE_CLASS is present
+    if not process_functions.check_values_in_column(
+        publicRelease, "fieldName", "SAMPLE_CLASS"
+    ):
+        logger.error("Must have SAMPLE_CLASS column in the public release scope.")
+
     allClin = clinicalDf[clinicalDf["SAMPLE_ID"].isin(publicReleaseSamples)]
+    # check if cfDNA samples are present
+    if not process_functions.check_values_in_column(allClin, "SAMPLE_CLASS", "cfDNA"):
+        logger.error(
+            "cfDNA samples should not be filtered out in the clinical dataframe."
+        )
+
     allClin.to_csv(clinical_path, sep="\t", index=False)
 
     gene_matrixdf = gene_matrixdf[gene_matrixdf["SAMPLE_ID"].isin(publicReleaseSamples)]

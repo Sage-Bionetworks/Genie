@@ -1,7 +1,10 @@
-from unittest.mock import Mock, patch
 import uuid
+from unittest.mock import Mock, patch
 
 import pandas as pd
+import pytest
+import synapseclient
+from genie import process_functions
 from pandas.api.types import (
     is_bool_dtype,
     is_float_dtype,
@@ -9,10 +12,6 @@ from pandas.api.types import (
     is_string_dtype,
 )
 from pandas.testing import assert_frame_equal
-import pytest
-import synapseclient
-
-from genie import process_functions
 
 DATABASE_DF = pd.DataFrame(
     {
@@ -715,3 +714,81 @@ def test_that_create_missing_columns_returns_expected_output_with_multi_col_df()
     assert result.isna().sum().sum() == 11
 
     assert_frame_equal(result, expected_output, check_exact=True)
+
+
+@pytest.mark.parametrize(
+    "input_df,col,values",
+    [(pd.DataFrame({"some_col": ["Val1", "Val1", "Val2"]}), "test_col", "test_value")],
+    ids=["missing_the_column"],
+)
+def test_check_values_in_column_no_column(input_df, col, values):
+    with patch.object(process_functions, "logger") as mock_logger:
+        results = process_functions.check_values_in_column(input_df, col, values)
+    mock_logger.error.assert_called_once_with(
+        "Must have test_col column in the dataframe."
+    )
+
+
+@pytest.mark.parametrize(
+    "input_df,col,values,expected_results",
+    [
+        (
+            pd.DataFrame(
+                {"SAMPLE_ID": [1, 2, 3], "SAMPLE_CLASS": ["Val1", "Val1", "Val2"]}
+            ),
+            "SAMPLE_CLASS",
+            "cfDNA",
+            False,
+        ),
+        (
+            pd.DataFrame(
+                {"SAMPLE_ID": [1, 2, 3], "SAMPLE_CLASS": ["Val1", "Val1", "Val2"]}
+            ),
+            "SAMPLE_CLASS",
+            ["test_value", "cfDNA"],
+            False,
+        ),
+        (
+            pd.DataFrame(
+                {"SAMPLE_ID": [1, 2, 3], "SAMPLE_CLASS": ["cfDNA", "Val1", "Val2"]}
+            ),
+            "SAMPLE_CLASS",
+            "cfDNA",
+            True,
+        ),
+        (
+            pd.DataFrame(
+                {"SAMPLE_ID": [1, 2, 3], "SAMPLE_CLASS": ["cfDNA", "Tumor", "Val2"]}
+            ),
+            "SAMPLE_CLASS",
+            ["cfDNA", "Tumor"],
+            True,
+        ),
+        (
+            pd.DataFrame(
+                {"SAMPLE_ID": [1, 2, 3], "SAMPLE_CLASS": ["cfDNA", "Tumor", "Val2"]}
+            ),
+            "SAMPLE_CLASS",
+            ["cfDNA", "Tumor", "test_value"],
+            True,
+        ),
+        (
+            pd.DataFrame({"SAMPLE_ID": [], "SAMPLE_CLASS": []}),
+            "SAMPLE_CLASS",
+            ["cfDNA", "Tumor", "test_value"],
+            False,
+        ),
+    ],
+    ids=[
+        "no_expected_single_value",
+        "no_expected_value_list",
+        "have_expected_single_value",
+        "have_expected_value_list",
+        "have_partial_expected_value_list",
+        "empty_dataframe_with_required_column",
+    ],
+)
+def test_check_values_in_column_has_column(input_df, col, values, expected_results):
+    results = process_functions.check_values_in_column(input_df, col, values)
+
+    assert results == expected_results
