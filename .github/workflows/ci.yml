@@ -62,7 +62,7 @@ jobs:
 
     - name: Pull Public Docker Image from GHCR
       run: |
-        docker pull docker pull ghcr.io/sage-bionetworks/genie:main
+        docker pull ghcr.io/sage-bionetworks/genie:main
 
 
   lint:
