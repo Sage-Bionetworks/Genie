@@ -144,6 +144,6 @@ jobs:
     
     - name: Run Tests in Docker Container
       run: |
-        docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}  \
+        docker run --rm ghcr.io/sage-bionetworks/${{ env.IMAGE_NAME }}:${{ github.ref_name }}  \
           python bin/input_to_database.py main --project_id syn7208886 --onlyValidate
   
