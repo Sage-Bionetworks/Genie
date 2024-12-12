@@ -144,7 +144,7 @@ jobs:
     
     - name: Run Tests in Docker Container
       run: >
-        docker run --rm -e SYNAPSE_AUTH_TOKEN="${{ secrets.SYNAPSE_AUTH_TOKEN }}" -it \
+        docker run --rm -it -e SYNAPSE_AUTH_TOKEN="${{ secrets.SYNAPSE_AUTH_TOKEN }}" \
         ghcr.io/sage-bionetworks/genie:${{ github.ref_name }} \
         python bin/input_to_database.py main --project_id syn7208886 --onlyValidate
   
