@@ -140,7 +140,7 @@ jobs:
 
     - name: Pull Public Docker Image from GHCR
       run: |
-        docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+        docker pull ghcr.io/sage-bionetworks/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
     
     - name: Run Tests in Docker Container
       run: |
