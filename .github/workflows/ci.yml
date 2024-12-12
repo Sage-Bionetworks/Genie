@@ -54,16 +54,6 @@ jobs:
       # Use always() to always run this step to publish test results when there are test failures
       if: ${{ always() }}
 
-  integration-tests:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Pull Public Docker Image from GHCR
-      run: |
-        docker pull ghcr.io/sage-bionetworks/genie:main
-
 
   lint:
     runs-on: ubuntu-latest
@@ -141,3 +131,19 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: ${{ steps.registry_refs.outputs.tags }},mode=max
           cache-to: ${{ steps.registry_refs.outputs.tags }},mode=max
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Pull Public Docker Image from GHCR
+      run: |
+        docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+    
+    - name: Run Tests in Docker Container
+      run: |
+        docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}  \
+          python bin/input_to_database.py main --project_id syn7208886 --onlyValidate
+  
