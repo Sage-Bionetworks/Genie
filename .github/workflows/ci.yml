@@ -16,6 +16,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  TEST_PROJECT_SYNID: syn7208886
 
 jobs:
 
@@ -141,10 +142,44 @@ jobs:
     - name: Pull Public Docker Image from GHCR
       run: |
         docker pull ghcr.io/sage-bionetworks/genie:${{ github.ref_name }}
-    
-    - name: Run Tests in Docker Container
+
+    - name: Start Docker Container
       run: |
-        docker run --rm -e SYNAPSE_AUTH_TOKEN="${{ secrets.SYNAPSE_AUTH_TOKEN }}" \
-        ghcr.io/sage-bionetworks/genie:${{ github.ref_name }} \
-        python3 bin/input_to_database.py main --project_id syn7208886 --onlyValidate
-  
+        docker run -d --name genie-container \
+          -e SYNAPSE_AUTH_TOKEN="${{ secrets.SYNAPSE_AUTH_TOKEN }}" \
+          ghcr.io/sage-bionetworks/genie:${{ github.ref_name }}
+    
+    - name: Run validation in test pipeline
+      run: |
+        docker exec genie-container \
+        python3 /root/Genie/bin/input_to_database.py \
+            mutation \
+            --project_id ${{ env.TEST_PROJECT_SYNID }} \
+            --onlyValidate \
+            --genie_annotation_pkg /root/annotation-tools
+    
+    - name: Run processing on non-mutation data in test pipeline
+      run: |
+        docker exec genie-container \
+        python3 /root/Genie/bin/input_to_database.py main --project_id ${{ env.TEST_PROJECT_SYNID }} --deleteOld
+
+    - name: Run processing on mutation data in test pipeline
+      run: |
+        docker exec genie-container \
+        python3 /root/Genie/bin/input_to_database.py mutation --project_id ${{ env.TEST_PROJECT_SYNID }} \
+            --deleteOld \
+            --genie_annotation_pkg /root/annotation-tools \
+            --createNewMafDatabase
+    
+    - name: Run consortium release in test pipeline
+      run: |
+        docker exec genie-container \
+        pytho3 /root/Genie/bin/database_to_staging.py Jan-2017 ../cbioportal TEST --test
+
+    - name: Run public release in test pipeline
+      run: |
+        docker exec genie-container \
+        python3 /root/Genie/bin/consortium_to_public.py Jan-2017 ../cbioportal TEST --test
+
+    - name: Stop and Remove Docker Container
+      run: docker stop genie-container && docker rm genie-container
