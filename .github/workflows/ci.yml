@@ -147,7 +147,8 @@ jobs:
       run: |
         docker run -d --name genie-container \
           -e SYNAPSE_AUTH_TOKEN="${{ secrets.SYNAPSE_AUTH_TOKEN }}" \
-          ghcr.io/sage-bionetworks/genie:${{ github.ref_name }}
+          ghcr.io/sage-bionetworks/genie:${{ github.ref_name }} \
+          tail -f /dev/null
     
     - name: Run validation in test pipeline
       run: |
