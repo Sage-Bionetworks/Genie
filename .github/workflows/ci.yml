@@ -148,7 +148,7 @@ jobs:
         docker run -d --name genie-container \
           -e SYNAPSE_AUTH_TOKEN="${{ secrets.SYNAPSE_AUTH_TOKEN }}" \
           ghcr.io/sage-bionetworks/genie:${{ github.ref_name }} \
-          tail -f /dev/null
+          tail -f /dev/nullg
     
     - name: Run validation in test pipeline
       run: |
@@ -175,7 +175,7 @@ jobs:
     - name: Run consortium release in test pipeline
       run: |
         docker exec genie-container \
-        pytho3 /root/Genie/bin/database_to_staging.py Jan-2017 ../cbioportal TEST --test
+        python3 /root/Genie/bin/database_to_staging.py Jan-2017 ../cbioportal TEST --test
 
     - name: Run public release in test pipeline
       run: |
