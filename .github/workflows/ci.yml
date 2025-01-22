@@ -37,14 +37,23 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
-      - name: Determine All Changes
-        id: all-changes
+      - name: Determine Changed Files
+        id: get-changes
         run: |
-          git fetch origin ${{ github.base_ref }}
-          ALL_CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} ${{ github.sha }})
-          echo "ALL_CHANGED_FILES=$ALL_CHANGED_FILES"
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "Handling a push event..."
+            CURRENT_BRANCH=${{ github.ref_name }}
+            ALL_CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "Handling a pull request event..."
+            BASE_BRANCH=${{ github.base_ref }}
+            HEAD_BRANCH=${{ github.head_ref }}
+            git fetch origin $BASE_BRANCH
+            ALL_CHANGED_FILES=$(git diff --name-only origin/$BASE_BRANCH HEAD)
+          fi
+          echo "All Changed Files: $ALL_CHANGED_FILES"
           echo "::set-output name=all-changes::$ALL_CHANGED_FILES"
 
       - name: Filter Non-Test Changes
