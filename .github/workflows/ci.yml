@@ -7,8 +7,10 @@ on:
   push:
     branches: [main, develop, 'GEN*', 'gen*']
     paths-ignore:
-      - '**.md'                # All Markdown files
-      - '**/docs/**'           # Documentation directory
+      - '**.md'                            # All Markdown files
+      - '**/docs/**'                       # Documentation directory
+      - '.github/workflows/codeql.yml'     # Code scanner
+      - '.github/workflows/build_docs.yml' # mkdocs GH workflow
 
   pull_request:
       types:
