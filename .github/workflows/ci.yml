@@ -28,6 +28,31 @@ env:
 
 jobs:
 
+  determine-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      all-changes: ${{ steps.all-changes.outputs.all-changes }}
+      non-test-changes: ${{ steps.non-test-changes.outputs.non-test-changes }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Determine All Changes
+        id: all-changes
+        run: |
+          git fetch origin ${{ github.base_ref }} --depth=1
+          ALL_CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} ${{ github.sha }})
+          echo "ALL_CHANGED_FILES=$ALL_CHANGED_FILES"
+          echo "::set-output name=all-changes::$ALL_CHANGED_FILES"
+
+      - name: Filter Non-Test Changes
+        id: non-test-changes
+        run: |
+          echo "All Changed Files: ${{ steps.all-changes.outputs.all-changes }}"
+          NON_TEST_CHANGES=$(echo "${{ steps.all-changes.outputs.all-changes }}" | grep -v '^tests/' || true)
+          echo "NON_TEST_CHANGES=$NON_TEST_CHANGES"
+          echo "::set-output name=non-test-changes::$NON_TEST_CHANGES"
+
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -120,8 +145,9 @@ jobs:
           cache-to: ${{ steps.registry_refs.outputs.tags }},mode=max
 
   integration-tests:
-    needs: [test, lint, build-container]
+    needs: [determine-changes, lint, test, build-container]
     runs-on: ubuntu-latest
+    if: ${{ needs.determine-changes.outputs.non-test-changes }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
