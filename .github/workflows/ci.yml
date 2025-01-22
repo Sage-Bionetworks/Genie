@@ -6,6 +6,9 @@ name: build
 on:
   push:
     branches: [main, develop, 'GEN*', 'gen*']
+    paths-ignore:
+      - '**.md'                # All Markdown files
+      - '**/docs/**'           # Documentation directory
 
   pull_request:
       types:
@@ -154,15 +157,6 @@ jobs:
         docker exec genie-container \
         python3 /root/Genie/bin/input_to_database.py main --project_id ${{ env.TEST_PROJECT_SYNID }} --deleteOld
 
-    - name: Run processing on mutation data in test pipeline (new MAF database creation on PR creation)
-      if: github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'reopened')
-      run: |
-        docker exec genie-container \
-        python3 /root/Genie/bin/input_to_database.py mutation --project_id ${{ env.TEST_PROJECT_SYNID }} \
-            --deleteOld \
-            --genie_annotation_pkg /root/annotation-tools \
-            --createNewMafDatabase
-
     - name: Run processing on mutation data in test pipeline
       if: github.event_name == 'push'
       run: |
@@ -170,6 +164,7 @@ jobs:
         python3 /root/Genie/bin/input_to_database.py mutation --project_id ${{ env.TEST_PROJECT_SYNID }} \
             --deleteOld \
             --genie_annotation_pkg /root/annotation-tools
+            --createNewMafDatabase
     
     - name: Run consortium release in test pipeline
       run: |
