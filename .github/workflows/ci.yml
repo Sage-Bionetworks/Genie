@@ -8,6 +8,9 @@ on:
     branches: [main, develop, 'GEN*', 'gen*']
 
   pull_request:
+      types:
+        - opened
+        - reopened
 
   release:
     types:
