@@ -134,6 +134,7 @@ jobs:
           cache-to: ${{ steps.registry_refs.outputs.tags }},mode=max
 
   integration-tests:
+    needs: [test, lint, build-container]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -146,7 +147,7 @@ jobs:
         else
           echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
         fi
-        
+
     - name: Pull Public Docker Image from GHCR
       run: |
         docker pull ghcr.io/sage-bionetworks/genie:${{ env.BRANCH_NAME }}
