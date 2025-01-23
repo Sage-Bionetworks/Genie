@@ -31,37 +31,27 @@ jobs:
   determine-changes:
     runs-on: ubuntu-latest
     outputs:
-      all-changes: ${{ steps.all-changes.outputs.all-changes }}
-      non-test-changes: ${{ steps.non-test-changes.outputs.non-test-changes }}
+      non-test-changes: ${{ steps.get-changes.outputs.non-test-changes }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Determine Changed Files
+      - name: Determine Changes
         id: get-changes
         run: |
           if [ "${{ github.event_name }}" == "push" ]; then
             echo "Handling a push event..."
-            CURRENT_BRANCH=${{ github.ref_name }}
             ALL_CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
           elif [ "${{ github.event_name }}" == "pull_request" ]; then
             echo "Handling a pull request event..."
-            BASE_BRANCH=${{ github.base_ref }}
-            HEAD_BRANCH=${{ github.head_ref }}
-            git fetch origin $BASE_BRANCH
-            ALL_CHANGED_FILES=$(git diff --name-only origin/$BASE_BRANCH HEAD)
+            git fetch origin ${{ github.base_ref }}
+            ALL_CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} HEAD)
           fi
           echo "All Changed Files: $ALL_CHANGED_FILES"
-          echo "::set-output name=all-changes::$ALL_CHANGED_FILES"
-
-      - name: Filter Non-Test Changes
-        id: non-test-changes
-        run: |
-          echo "All Changed Files: ${{ steps.all-changes.outputs.all-changes }}"
-          NON_TEST_CHANGES=$(echo "${{ steps.all-changes.outputs.all-changes }}" | grep -v '^tests/' || true)
-          echo "NON_TEST_CHANGES=$NON_TEST_CHANGES"
+          NON_TEST_CHANGES=$(echo "$ALL_CHANGED_FILES" | grep -v '^tests/' || true)
+          echo "Non-Test Changes: $NON_TEST_CHANGES"
           echo "::set-output name=non-test-changes::$NON_TEST_CHANGES"
 
   test:
