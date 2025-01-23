@@ -682,7 +682,9 @@ def store_gene_panel_files(
     return genePanelEntities
 
 
-def filter_out_germline_variants(input_data : pd.DataFrame, status_col : str) -> pd.DataFrame:
+def filter_out_germline_variants(
+    input_data: pd.DataFrame, status_col: str
+) -> pd.DataFrame:
     """Filters out germline variants given a status col. Genie pipeline
         cannot have any of these variants.
 
@@ -749,7 +751,7 @@ def store_sv_files(
                 )
 
     sv_df = sv_df[sv_df["SAMPLE_ID"].isin(keep_for_merged_consortium_samples)]
-    sv_df = filter_out_germline_variants(input_data = sv_df, status_col = "SV_Status")
+    sv_df = filter_out_germline_variants(input_data=sv_df, status_col="SV_Status")
     sv_df.rename(columns=transform._col_name_to_titlecase, inplace=True)
     sv_text = process_functions.removePandasDfFloat(sv_df)
     sv_path = os.path.join(GENIE_RELEASE_DIR, "data_sv.txt")

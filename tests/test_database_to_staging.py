@@ -147,4 +147,4 @@ def test_that_filter_out_germline_variants_returns_expected(
     input_data, filter_col, expected_result
 ):
     result = database_to_staging.filter_out_germline_variants(input_data, filter_col)
-    assert_frame_equal(result, expected_result, check_index_type = False)
+    assert_frame_equal(result, expected_result, check_index_type=False)
