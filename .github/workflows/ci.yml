@@ -181,19 +181,20 @@ jobs:
             --onlyValidate \
             --genie_annotation_pkg /root/annotation-tools
     
-    - name: Run processing on non-mutation data in test pipeline
-      run: |
-        docker exec genie-container \
-        python3 /root/Genie/bin/input_to_database.py main --project_id ${{ env.TEST_PROJECT_SYNID }} --deleteOld
-
     - name: Run processing on mutation data in test pipeline
       run: |
         docker exec genie-container \
-        python3 /root/Genie/bin/input_to_database.py mutation --project_id ${{ env.TEST_PROJECT_SYNID }} \
-            --deleteOld \
+        python3 /root/Genie/bin/input_to_database.py mutation \
+            --project_id ${{ env.TEST_PROJECT_SYNID }} \
             --genie_annotation_pkg /root/annotation-tools \
             --createNewMafDatabase
-    
+
+    - name: Run processing on non-mutation data in test pipeline
+      run: |
+        docker exec genie-container \
+        python3 /root/Genie/bin/input_to_database.py main \
+            --project_id ${{ env.TEST_PROJECT_SYNID }}
+
     - name: Run consortium release in test pipeline
       run: |
         docker exec genie-container \
