@@ -756,7 +756,7 @@ def store_sv_files(
                 )
 
     sv_df = sv_df[sv_df["SAMPLE_ID"].isin(keep_for_merged_consortium_samples)]
-    sv_df = filter_out_germline_variants(input_data=sv_df)
+    sv_df = filter_out_germline_variants(input_data=sv_df, status_col_str = "SV_STATUS")
     sv_df.rename(columns=transform._col_name_to_titlecase, inplace=True)
     sv_text = process_functions.removePandasDfFloat(sv_df)
     sv_path = os.path.join(GENIE_RELEASE_DIR, "data_sv.txt")
