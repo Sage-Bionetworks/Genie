@@ -116,28 +116,28 @@ def test_store_assay_info_files(syn):
         (
             pd.DataFrame(
                 dict(
-                    SV_Status=["GERMLINE", "GERMLINE"], Sample_ID=["GENIE-1", "GENIE-2"]
+                    SV_STATUS=["GERMLINE", "GERMLINE"], Sample_ID=["GENIE-1", "GENIE-2"]
                 )
             ),
-            "SV_Status",
-            pd.DataFrame(columns=["SV_Status", "Sample_ID"]),
+            "SV_STATUS",
+            pd.DataFrame(columns=["SV_STATUS", "Sample_ID"]),
         ),
         (
             pd.DataFrame(
                 dict(
-                    SV_Status=["GERMLINE", "SOMATIC"], Sample_ID=["GENIE-1", "GENIE-2"]
+                    SV_STATUS=["GERMLINE", "SOMATIC"], Sample_ID=["GENIE-1", "GENIE-2"]
                 )
             ),
-            "SV_Status",
-            pd.DataFrame(dict(SV_Status=["SOMATIC"], Sample_ID=["GENIE-2"])),
+            "SV_STATUS",
+            pd.DataFrame(dict(SV_STATUS=["SOMATIC"], Sample_ID=["GENIE-2"])),
         ),
         (
             pd.DataFrame(
-                dict(SV_Status=["SOMATIC", "SOMATIC"], Sample_ID=["GENIE-1", "GENIE-2"])
+                dict(SV_STATUS=["SOMATIC", "SOMATIC"], Sample_ID=["GENIE-1", "GENIE-2"])
             ),
-            "SV_Status",
+            "SV_STATUS",
             pd.DataFrame(
-                dict(SV_Status=["SOMATIC", "SOMATIC"], Sample_ID=["GENIE-1", "GENIE-2"])
+                dict(SV_STATUS=["SOMATIC", "SOMATIC"], Sample_ID=["GENIE-1", "GENIE-2"])
             ),
         ),
     ],
