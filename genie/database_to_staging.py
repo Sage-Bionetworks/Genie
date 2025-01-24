@@ -686,7 +686,7 @@ def filter_out_germline_variants(
     input_data: pd.DataFrame, status_col_str: str
 ) -> pd.DataFrame:
     """Filters out germline variants given a status col str. Genie pipeline
-        cannot have any of these variants. NOTE: We have to search for the 
+        cannot have any of these variants. NOTE: We have to search for the
         status column because there's no column name validation in the release
         steps so the status column may have different casing.
 

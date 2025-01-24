@@ -142,12 +142,12 @@ def test_store_assay_info_files(syn):
         ),
         (
             pd.DataFrame(
-                dict(SV_Status=["GERMLINE", "SOMATIC"], Sample_ID=["GENIE-1", "GENIE-2"])
+                dict(
+                    SV_Status=["GERMLINE", "SOMATIC"], Sample_ID=["GENIE-1", "GENIE-2"]
+                )
             ),
             "SV_STATUS",
-            pd.DataFrame(
-                dict(SV_Status=["SOMATIC"], Sample_ID=["GENIE-2"])
-            ),
+            pd.DataFrame(dict(SV_Status=["SOMATIC"], Sample_ID=["GENIE-2"])),
         ),
     ],
     ids=["all_germline", "some_germline", "no_germline", "diff_status_col_case"],
