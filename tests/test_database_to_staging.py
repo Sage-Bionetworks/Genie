@@ -140,8 +140,17 @@ def test_store_assay_info_files(syn):
                 dict(SV_STATUS=["SOMATIC", "SOMATIC"], Sample_ID=["GENIE-1", "GENIE-2"])
             ),
         ),
+        (
+            pd.DataFrame(
+                dict(SV_Status=["GERMLINE", "SOMATIC"], Sample_ID=["GENIE-1", "GENIE-2"])
+            ),
+            "SV_STATUS",
+            pd.DataFrame(
+                dict(SV_Status=["SOMATIC"], Sample_ID=["GENIE-2"])
+            ),
+        ),
     ],
-    ids=["all_germline", "some_germline", "no_germline"],
+    ids=["all_germline", "some_germline", "no_germline", "diff_status_col_case"],
 )
 def test_that_filter_out_germline_variants_returns_expected(
     input_data, filter_col, expected_result
