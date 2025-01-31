@@ -3,8 +3,10 @@
 import os
 from unittest import mock
 from unittest.mock import patch
+import pytest
 
 import pandas as pd
+from pandas.testing import assert_frame_equal
 import synapseclient
 
 from genie import database_to_staging, extract, load
@@ -106,3 +108,52 @@ def test_store_assay_info_files(syn):
             used=f"{FILEVIEW_SYNID}.2",
         )
         assert wes_ids == ["A"]
+
+
+@pytest.mark.parametrize(
+    "input_data, filter_col, expected_result",
+    [
+        (
+            pd.DataFrame(
+                dict(
+                    SV_STATUS=["GERMLINE", "GERMLINE"], Sample_ID=["GENIE-1", "GENIE-2"]
+                )
+            ),
+            "SV_STATUS",
+            pd.DataFrame(columns=["SV_STATUS", "Sample_ID"]),
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    SV_STATUS=["GERMLINE", "SOMATIC"], Sample_ID=["GENIE-1", "GENIE-2"]
+                )
+            ),
+            "SV_STATUS",
+            pd.DataFrame(dict(SV_STATUS=["SOMATIC"], Sample_ID=["GENIE-2"])),
+        ),
+        (
+            pd.DataFrame(
+                dict(SV_STATUS=["SOMATIC", "SOMATIC"], Sample_ID=["GENIE-1", "GENIE-2"])
+            ),
+            "SV_STATUS",
+            pd.DataFrame(
+                dict(SV_STATUS=["SOMATIC", "SOMATIC"], Sample_ID=["GENIE-1", "GENIE-2"])
+            ),
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    SV_Status=["GERMLINE", "SOMATIC"], Sample_ID=["GENIE-1", "GENIE-2"]
+                )
+            ),
+            "SV_STATUS",
+            pd.DataFrame(dict(SV_Status=["SOMATIC"], Sample_ID=["GENIE-2"])),
+        ),
+    ],
+    ids=["all_germline", "some_germline", "no_germline", "diff_status_col_case"],
+)
+def test_that_filter_out_germline_variants_returns_expected(
+    input_data, filter_col, expected_result
+):
+    result = database_to_staging.filter_out_germline_variants(input_data, filter_col)
+    assert_frame_equal(result, expected_result, check_index_type=False)

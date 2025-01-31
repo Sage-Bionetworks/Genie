@@ -682,6 +682,28 @@ def store_gene_panel_files(
     return genePanelEntities
 
 
+def filter_out_germline_variants(
+    input_data: pd.DataFrame, status_col_str: str
+) -> pd.DataFrame:
+    """Filters out germline variants given a status col str. Genie pipeline
+        cannot have any of these variants. NOTE: We have to search for the
+        status column because there's no column name validation in the release
+        steps so the status column may have different casing.
+
+    Args:
+        input_data (pd.DataFrame): input data with germline variants to filter out
+        status_col_str (str): search string for the status column for the data
+
+    Returns:
+        pd.DataFrame: filtered out germline variant data
+    """
+    # find status col SV_Status
+    status_col = [
+        col for col in input_data.columns if col.lower() == status_col_str.lower()
+    ][0]
+    return input_data[input_data[status_col] != "GERMLINE"].reset_index(drop=True)
+
+
 # TODO: add to load.py
 def store_sv_files(
     syn: synapseclient.Synapse,
@@ -716,7 +738,6 @@ def store_sv_files(
     # sv_df["ENTREZ_GENE_ID"].mask(
     #     sv_df["ENTREZ_GENE_ID"] == 0, float("nan"), inplace=True
     # )
-
     if not current_release_staging:
         sv_staging_df = sv_df[
             sv_df["SAMPLE_ID"].isin(keep_for_center_consortium_samples)
@@ -735,6 +756,7 @@ def store_sv_files(
                 )
 
     sv_df = sv_df[sv_df["SAMPLE_ID"].isin(keep_for_merged_consortium_samples)]
+    sv_df = filter_out_germline_variants(input_data=sv_df, status_col_str="SV_STATUS")
     sv_df.rename(columns=transform._col_name_to_titlecase, inplace=True)
     sv_text = process_functions.removePandasDfFloat(sv_df)
     sv_path = os.path.join(GENIE_RELEASE_DIR, "data_sv.txt")
