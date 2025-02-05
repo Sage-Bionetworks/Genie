@@ -178,7 +178,7 @@ jobs:
       ports:
         - 80
       volumes:
-        - genie-container:/root/Genie/
+        - genie-container:/root/
       options: --cpus 2
     steps:
       - name: Check for dockerenv file
