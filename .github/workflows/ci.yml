@@ -24,7 +24,8 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  TEST_PROJECT_SYNID: syn7208886
+  TEST_PROJECT_SYNID: syn7208886        # synapse_id of the test synapse project
+  TEST_SEQ_DATE: Jul-2022               # SEQ_DATE to use for test pipeline. Should match the one used in nf-genie.
 
 jobs:
 
@@ -198,12 +199,12 @@ jobs:
     - name: Run consortium release in test pipeline
       run: |
         docker exec genie-container \
-        python3 /root/Genie/bin/database_to_staging.py Jan-2017 ../cbioportal TEST --test
+        python3 /root/Genie/bin/database_to_staging.py ${{ env.TEST_SEQ_DATE }} ../cbioportal TEST --test
 
     - name: Run public release in test pipeline
       run: |
         docker exec genie-container \
-        python3 /root/Genie/bin/consortium_to_public.py Jan-2017 ../cbioportal TEST --test
+        python3 /root/Genie/bin/consortium_to_public.py  ${{ env.TEST_SEQ_DATE }} ../cbioportal TEST --test
 
     - name: Stop and Remove Docker Container
       run: docker stop genie-container && docker rm genie-container
