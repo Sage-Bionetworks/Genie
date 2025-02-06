@@ -190,7 +190,7 @@ jobs:
               "process_type": "only_validate",
               "center": "ALL",
               "release": "TEST.consortium",
-              "main_pipeline_docker": "${{ env.REGISTRY }}/sage-bionetworks/genie:${{ env.BRANCH_NAME }}"
+              "main_pipeline_docker": "${{ env.REGISTRY }}/sage-bionetworks/genie:${{ needs.extract-branch-name.outputs.branch_name }}"
             }
           profiles: aws_prod
       
