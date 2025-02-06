@@ -184,7 +184,8 @@ jobs:
           workdir: s3://${{ secrets.TOWER_AWS_S3_BUCKET }}/work
           pipeline: https://github.com/Sage-Bionetworks-Workflows/nf-genie
           run_name: integration-tests
-          pre_run_script: "export NXF_OPTS='-Xms4g -Xmx12g'"
+          #pre_run_script: "export NXF_OPTS='-Xms4g -Xmx12g'"
+          wait: true
           parameters: |
             {
               "process_type": "only_validate",
