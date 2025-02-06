@@ -1,3 +1,5 @@
+"""Test GENIE Clinical class"""
+
 import datetime
 import json
 from collections import Counter

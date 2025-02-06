@@ -122,16 +122,16 @@ These are instructions on how you would develop and test the pipeline locally.
         python bin/input_to_database.py mutation --project_id syn7208886 --deleteOld --genie_annotation_pkg ../annotation-tools --createNewMafDatabase
         ```
 
-    1. Create a consortium release.  Be sure to add the `--test` parameter. Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile)
+    1. Create a consortium release.  Be sure to add the `--test` parameter. Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile). For consistency, the processingDate specified here should match the one used for TEST pipeline in [nf-genie.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/main.nf)
 
         ```
-        python bin/database_to_staging.py Jan-2017 ../cbioportal TEST --test
+        python bin/database_to_staging.py Jul-2022 ../cbioportal TEST --test
         ```
 
-    1. Create a public release.  Be sure to add the `--test` parameter.  Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile)
+    1. Create a public release.  Be sure to add the `--test` parameter.  Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile). For consistency, the processingDate specified here should match the one used for TEST pipeline in [nf-genie.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/main.nf)
 
         ```
-        python bin/consortium_to_public.py Jan-2017 ../cbioportal TEST --test
+        python bin/consortium_to_public.py Jul-2022 ../cbioportal TEST --test
         ```
 
 ## Production
