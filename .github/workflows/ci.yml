@@ -170,45 +170,47 @@ jobs:
   integration-tests:
     needs: [determine-changes, lint, test, build-container, extract-branch-name]
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    outputs:
-      workflow_id: ${{ steps.run.outputs.workflowId }}
-      workspace_id: ${{ steps.run.outputs.workspaceId }}
+    container:
+      image: ghcr.io/sage-bionetworks/genie:${{ needs.extract-branch-name.outputs.branch_name }}
+      env:
+        NODE_ENV: development
+        SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+      ports:
+        - 80
+      volumes:
+        - genie-container:/root/
+      options: --cpus 2
     steps:
-      # Launch workflow using Tower CLI tool action
-      - name: Launch validation workflow via tower
-        uses: seqeralabs/action-tower-launch@v2
-        with:
-          workspace_id: ${{ secrets.TOWER_WORKSPACE_ID }}
-          access_token: ${{ secrets.TOWER_ACCESS_TOKEN }}
-          revision: ${{ needs.extract-branch-name.outputs.branch_name }}
-          workdir: s3://${{ secrets.TOWER_AWS_S3_BUCKET }}/work
-          pipeline: https://github.com/Sage-Bionetworks-Workflows/nf-genie
-          run_name: integration-tests
-          #pre_run_script: "export NXF_OPTS='-Xms4g -Xmx12g'"
-          wait: true
-          parameters: |
-            {
-              "process_type": "only_validate",
-              "center": "ALL",
-              "release": "TEST.consortium",
-              "main_pipeline_docker": "${{ env.REGISTRY }}/sage-bionetworks/genie:${{ needs.extract-branch-name.outputs.branch_name }}"
-            }
-          profiles: aws_prod
+      - name: Check for dockerenv file
+        run: (ls /.dockerenv && echo "Found dockerenv") || (echo "No dockerenv")
+
+      - name: Run validation in test pipeline
+        run: |
+          python3 /root/Genie/bin/input_to_database.py \
+              mutation \
+              --project_id ${{ env.TEST_PROJECT_SYNID }} \
+              --onlyValidate \
+              --genie_annotation_pkg /root/annotation-tools
       
-      - name: Comment PR
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          message: |
-            Pipeline launched, monitor progress [here](${{ steps.runs.outputs.workflowUrl }})
-            Details:
-              - Workflow ID: ${{ steps.runs.outputs.workflowId }}
-              - Workspace: ${{ steps.runs.outputs.WorkspaceRef }}
-              - Workspace ID: ${{ steps.runs.outputs.workspaceId }}
-              - Workflow URL: ${{ steps.runs.outputs.workflowUrl }}
-          comment_tag: towerrun
+      - name: Run processing on mutation data in test pipeline
+        run: |
+          python3 /root/Genie/bin/input_to_database.py mutation \
+              --project_id ${{ env.TEST_PROJECT_SYNID }} \
+              --genie_annotation_pkg /root/annotation-tools \
+              --createNewMafDatabase
+  
+      - name: Run processing on non-mutation data in test pipeline
+        run: |
+          python3 /root/Genie/bin/input_to_database.py main \
+              --project_id ${{ env.TEST_PROJECT_SYNID }}
+  
+      - name: Run consortium release in test pipeline
+        run: |
+          python3 /root/Genie/bin/database_to_staging.py ${{ env.TEST_SEQ_DATE }} /root/cbioportal TEST --test
+  
+      - name: Run public release in test pipeline
+        run: |
+          python3 /root/Genie/bin/consortium_to_public.py  ${{ env.TEST_SEQ_DATE }} /root/cbioportal TEST --test
 
 
   deploy:
