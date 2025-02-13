@@ -131,7 +131,7 @@ jobs:
         env:
           TAGS: ${{ steps.meta.outputs.json }}
         run: |
-          echo tags=$(echo $TAGS | jq '.tags[] | "type=registry,ref=" + . + "_cache"| @text') >> $GITHUB_OUTPUT
+          echo "tags=$(echo $TAGS | jq -r '.tags[] | "type=registry,ref=\(.)_cache"')" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         id: build-and-push
