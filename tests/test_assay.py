@@ -5,9 +5,8 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
-
-from genie_registry.assay import Assayinfo
 from genie import extract, process_functions
+from genie_registry.assay import Assayinfo
 
 GDC_DATA_DICT = {
     "properties": {
@@ -45,7 +44,7 @@ def test_validinput__validate(assay_info):
     assay_info_dict = {
         "SEQ_ASSAY_ID": ["SAGE-1", "SAGE-3"],
         "is_paired_end": [True, False],
-        "library_strategy": ["value1", "value2"],
+        "library_strategy": ["Targeted Sequencing", "WXS"],
         "library_selection": ["value1", "value2"],
         "platform": ["value1", "value2"],
         "instrument_model": ["value1", "value2"],
@@ -68,18 +67,18 @@ def test_validinput__validate(assay_info):
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = assay_info._validate(assay_info_df, "syn9999")
+        error, warning = assay_info._validate(assay_info_df)
         assert error == ""
         assert warning == ""
         patch_get_gdc.assert_called()
 
 
 def test_case__validate(assay_info):
-    """Valid input should have no errors or warnings"""
+    """Valid input with lowercase SEQ_ASSAY_ID, should have no errors or warnings"""
     assay_info_dict = {
         "SEQ_ASSAY_ID": ["sage-1", "SAGE-3"],
         "is_paired_end": [True, False],
-        "library_strategy": ["value1", "value2"],
+        "library_strategy": ["Targeted Sequencing", "WXS"],
         "library_selection": ["value1", "value2"],
         "platform": ["value1", "value2"],
         "instrument_model": ["value1", "value2"],
@@ -102,18 +101,18 @@ def test_case__validate(assay_info):
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = assay_info._validate(assay_info_df, "syn9999")
+        error, warning = assay_info._validate(assay_info_df)
         assert error == ""
         assert warning == ""
         patch_get_gdc.assert_called()
 
 
 def test_underscore__validate(assay_info):
-    """Valid input should have no errors or warnings"""
+    """Valid input with underscore in SEQ_ASSAY_ID, should have no errors or warnings"""
     assay_info_dict = {
         "SEQ_ASSAY_ID": ["SAGE_1", "SAGE-3"],
         "is_paired_end": [True, False],
-        "library_strategy": ["value1", "value2"],
+        "library_strategy": ["Targeted Sequencing", "WXS"],
         "library_selection": ["value1", "value2"],
         "platform": ["value1", "value2"],
         "instrument_model": ["value1", "value2"],
@@ -136,7 +135,7 @@ def test_underscore__validate(assay_info):
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = assay_info._validate(assay_info_df, "syn9999")
+        error, warning = assay_info._validate(assay_info_df)
         assert error == ""
         assert warning == ""
         patch_get_gdc.assert_called()
@@ -149,7 +148,7 @@ def test__missingcols__validate(assay_info):
     with patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = assay_info._validate(assay_info_df, "syn99999")
+        error, warning = assay_info._validate(assay_info_df)
     expected_errors = (
         "Assay_information.yaml: Must have SEQ_ASSAY_ID column.\n"
         "Assay_information.yaml: Must have is_paired_end column.\n"
@@ -230,7 +229,7 @@ def test_invalid__validate(assay_info):
     assay_info_dict = {
         "SEQ_ASSAY_ID": ["SAGE-1", "SAG-2"],
         "is_paired_end": [True, "foo"],
-        "library_strategy": ["foo", "ChIP-Seq"],
+        "library_strategy": ["foo", "WXS"],
         "library_selection": ["foo", "PCR"],
         "platform": ["foo", "Illumina"],
         "instrument_model": ["foo", "Illumina HiSeq 4000"],
@@ -256,7 +255,7 @@ def test_invalid__validate(assay_info):
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = assay_info._validate(assay_info_df, "syn9999")
+        error, warning = assay_info._validate(assay_info_df)
         expected_errors = (
             "Assay_information.yaml: "
             "Please make sure all your SEQ_ASSAY_IDs start with your "
@@ -270,7 +269,7 @@ def test_invalid__validate(assay_info):
             "This column must only be these values: value1, value2\n"
             "Assay_information.yaml: "
             "Please double check your library_strategy column.  "
-            "This column must only be these values: value1, value2\n"
+            "This column must only be these values: Targeted Sequencing, WXS\n"
             "Assay_information.yaml: "
             "Please double check your platform column.  "
             "This column must only be these values: value1, value2\n"
