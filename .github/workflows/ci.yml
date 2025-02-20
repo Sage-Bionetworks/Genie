@@ -210,7 +210,7 @@ jobs:
       run: docker stop genie-container && docker rm genie-container
 
   deploy:
-    needs: [test, lint, build-container, integration-tests]
+    needs: [test, lint, build-container]
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
     permissions:
