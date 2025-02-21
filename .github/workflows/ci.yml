@@ -13,6 +13,7 @@ on:
       - '.github/workflows/build_docs.yml' # mkdocs GH workflow
 
   pull_request:
+    branches: [main, develop, 'GEN*', 'gen*']
     types:
       - opened
       - reopened
@@ -22,7 +23,7 @@ on:
       - '.github/workflows/codeql.yml'     # Code scanner
       - '.github/workflows/build_docs.yml' # mkdocs GH workflow
 
-      
+
   release:
     types:
       - created
