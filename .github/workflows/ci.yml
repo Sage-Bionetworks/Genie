@@ -13,10 +13,16 @@ on:
       - '.github/workflows/build_docs.yml' # mkdocs GH workflow
 
   pull_request:
-      types:
-        - opened
-        - reopened
+    types:
+      - opened
+      - reopened
+    paths-ignore:
+      - '**.md'                            # All Markdown files
+      - '**/docs/**'                       # Documentation directory
+      - '.github/workflows/codeql.yml'     # Code scanner
+      - '.github/workflows/build_docs.yml' # mkdocs GH workflow
 
+      
   release:
     types:
       - created
