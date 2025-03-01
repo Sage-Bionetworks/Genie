@@ -149,7 +149,7 @@ jobs:
   integration-tests:
     needs: [determine-changes, lint, test, build-container]
     runs-on: ubuntu-latest
-    if: ${{ needs.determine-changes.outputs.non-test-changes }} && github.event_name != 'pull_request'
+    if: ${{ needs.determine-changes.outputs.non-test-changes }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
