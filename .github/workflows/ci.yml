@@ -13,16 +13,9 @@ on:
       - '.github/workflows/build_docs.yml' # mkdocs GH workflow
 
   pull_request:
-    branches: [main, develop, 'GEN*', 'gen*']
     types:
       - opened
       - reopened
-    paths-ignore:
-      - '**.md'                            # All Markdown files
-      - '**/docs/**'                       # Documentation directory
-      - '.github/workflows/codeql.yml'     # Code scanner
-      - '.github/workflows/build_docs.yml' # mkdocs GH workflow
-
 
   release:
     types:
@@ -156,7 +149,7 @@ jobs:
   integration-tests:
     needs: [determine-changes, lint, test, build-container]
     runs-on: ubuntu-latest
-    if: ${{ needs.determine-changes.outputs.non-test-changes }}
+    if: ${{ needs.determine-changes.outputs.non-test-changes }} && github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
