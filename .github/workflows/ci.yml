@@ -13,9 +13,9 @@ on:
       - '.github/workflows/build_docs.yml' # mkdocs GH workflow
 
   pull_request:
-      types:
-        - opened
-        - reopened
+    types:
+      - opened
+      - reopened
 
   release:
     types:
