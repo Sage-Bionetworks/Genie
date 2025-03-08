@@ -1,17 +1,16 @@
 """Tests database to staging functions"""
 
+import logging
 import os
 import subprocess
 from unittest import mock
 from unittest.mock import patch
-import pytest
 
 import pandas as pd
-from pandas.testing import assert_frame_equal, assert_series_equal
 import pytest
 import synapseclient
-
 from genie import database_to_staging, extract, load
+from pandas.testing import assert_frame_equal, assert_series_equal
 
 FILEVIEW_SYNID = "syn12345"
 GENIE_VERSION = "vTEST"
@@ -886,3 +885,125 @@ def test_store_mutation_in_cis_files_to_staging_no_centers(
         )
         patch_store_file.assert_not_called()
         patch_unlink.assert_not_called()
+
+
+def test_store_sv_files(syn):
+    svdf = pd.DataFrame(
+        dict(
+            SV_Status=["GERMLINE", "SOMATIC"],
+            SAMPLE_ID=["GENIE-1", "GENIE-2"],
+            CENTER=["C1", "C2"],
+        )
+    )
+    center_mappingdf = pd.DataFrame(
+        {"center": ["C1", "C2"], "stagingSynId": ["syn123", "syn456"]}
+    )
+    database_to_staging.GENIE_RELEASE_DIR = "./"
+    with patch("builtins.open") as mock_open, patch.object(
+        extract, "get_syntabledf", return_value=svdf
+    ) as patch_get_syntabledf, patch.object(
+        syn, "create_snapshot_version", return_value=1
+    ), patch.object(
+        pd.DataFrame, "to_csv"
+    ) as patch_to_csv, patch.object(
+        load, "store_file"
+    ) as patch_store_file:
+        # call the function
+        for current_release_staging in [False]:
+            sv_sample = database_to_staging.store_sv_files(
+                syn,
+                release_synid="syn123",
+                genie_version="TESTING",
+                synid="syn5678",
+                keep_for_center_consortium_samples=["GENIE-1", "GENIE-2"],
+                keep_for_merged_consortium_samples=["GENIE-1", "GENIE-2"],
+                current_release_staging=current_release_staging,
+                center_mappingdf=center_mappingdf,
+            )
+
+            # validate the calls
+            patch_get_syntabledf.assert_called_once_with(syn, "select * from syn5678")
+            if current_release_staging:
+                patch_to_csv.assert_has_calls(
+                    [
+                        mock.call("data_sv_C1.txt", sep="\t", index=False),
+                        mock.call("data_sv_C2.txt", sep="\t", index=False),
+                    ]
+                )
+
+                # Check the store_file call arguments
+                patch_store_file.assert_has_calls(
+                    [
+                        mock.call(
+                            syn=syn,
+                            filepath="data_sv_C1.txt",
+                            version_comment="TESTING",
+                            parentid="syn123",
+                        ),
+                        mock.call(
+                            syn=syn,
+                            filepath="data_sv_C2.txt",
+                            version_comment="TESTING",
+                            parentid="syn456",
+                        ),
+                    ]
+                )
+
+            mock_open.assert_called_once()
+            patch_store_file.assert_called_with(
+                syn=syn,
+                filepath=os.path.join(
+                    database_to_staging.GENIE_RELEASE_DIR, "data_sv.txt"
+                ),
+                parentid="syn123",
+                version_comment="TESTING",
+                name="data_sv.txt",
+                used="syn5678.1",
+            )
+
+            assert sv_sample == ["GENIE-1", "GENIE-2"]
+
+
+def test_store_data_gene_matrix(syn):
+    database_to_staging.GENIE_RELEASE_DIR = "./"
+    clinicaldf = pd.DataFrame(
+        {"SAMPLE_ID": ["GENIE-1", "GENIE-2"], "SEQ_ASSAY_ID": ["ID1", "ID2"]}
+    )
+    with patch.object(pd.DataFrame, "to_csv") as patch_to_csv, patch.object(
+        load, "store_file"
+    ) as patch_store_file:
+        # call the function
+        data_gene_matrix = database_to_staging.store_data_gene_matrix(
+            syn,
+            genie_version="TESTING",
+            clinicaldf=clinicaldf,
+            cna_samples=["GENIE-1"],
+            release_synid="syn123",
+            wes_seqassayids=["ID1"],
+            sv_samples=["GENIE-1", "GENIE-2"],
+        )
+
+        # validate the calls
+        patch_to_csv.assert_called_once_with(
+            "./data_gene_matrix.txt", sep="\t", index=False
+        )
+        patch_store_file.assert_called_once_with(
+            syn=syn,
+            filepath=os.path.join(
+                database_to_staging.GENIE_RELEASE_DIR, "data_gene_matrix.txt"
+            ),
+            parentid="syn123",
+            version_comment="TESTING",
+            name="data_gene_matrix.txt",
+        )
+        assert_frame_equal(
+            data_gene_matrix.reset_index(drop=True),
+            pd.DataFrame(
+                {
+                    "SAMPLE_ID": ["GENIE-2"],
+                    "mutations": ["ID2"],
+                    "cna": ["NA"],
+                    "sv": ["ID2"],
+                }
+            ),
+        )

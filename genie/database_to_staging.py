@@ -877,6 +877,9 @@ def store_sv_files(
         keep_for_merged_consortium_samples: Samples to keep for merged file
         current_release_staging: Staging flag
         center_mappingdf: Center mapping dataframe
+
+    Returns:
+        List of SV Samples
     """
     logger.info("MERING, FILTERING, STORING SV FILES")
     sv_df = extract.get_syntabledf(
@@ -902,7 +905,7 @@ def store_sv_files(
                     version_comment=genie_version,
                     parentid=center_mappingdf["stagingSynId"][
                         center_mappingdf["center"] == center
-                    ][0],
+                    ].values[0],
                 )
 
     sv_df = sv_df[sv_df["SAMPLE_ID"].isin(keep_for_merged_consortium_samples)]
@@ -920,6 +923,7 @@ def store_sv_files(
         name="data_sv.txt",
         used=f"{synid}.{version}",
     )
+    return sv_text["SAMPLE_ID"].tolist()
 
 
 # TODO: Add to transform.py
@@ -1576,7 +1580,7 @@ def store_data_gene_matrix(
     cna_samples,
     release_synid,
     wes_seqassayids,
-    used=None,
+    sv_samples,
 ):
     """
     Create and store data gene matrix file
@@ -1587,6 +1591,8 @@ def store_data_gene_matrix(
         clinicaldf: Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID
         cna_samples: Samples with CNA
         release_synid: Synapse id to store release file
+        wes_seqassayids: Whole exome sequencing SEQ_ASSAY_IDs
+        sv_samples: Samples with SV
 
     Returns:
         pandas.DataFrame: data gene matrix dataframe
@@ -1612,6 +1618,15 @@ def store_data_gene_matrix(
     data_gene_matrix = data_gene_matrix[~wes_panel_mut]
     wes_panel_cna = data_gene_matrix["cna"].isin(wes_seqassayids)
     data_gene_matrix = data_gene_matrix[~wes_panel_cna]
+
+    # Add SV column into gene panel file
+    sv_ids = data_gene_matrix["mutations"][
+        data_gene_matrix["SAMPLE_ID"].isin(sv_samples)
+    ].unique()
+    data_gene_matrix["sv"] = data_gene_matrix["mutations"]
+    data_gene_matrix["sv"][~data_gene_matrix["sv"].isin(sv_ids)] = "NA"
+    wes_panel_sv = data_gene_matrix["sv"].isin(wes_seqassayids)
+    data_gene_matrix = data_gene_matrix[~wes_panel_sv]
 
     data_gene_matrix.to_csv(data_gene_matrix_path, sep="\t", index=False)
 
@@ -1873,8 +1888,25 @@ def stagingToCbio(
         syn, genieVersion, assay_info_synid, clinicalDf, consortiumReleaseSynId
     )
 
+    svSamples = store_sv_files(
+        syn,
+        consortiumReleaseSynId,
+        genieVersion,
+        sv_synid,
+        keepForCenterConsortiumSamples,
+        keepForMergedConsortiumSamples,
+        current_release_staging,
+        CENTER_MAPPING_DF,
+    )
+
     data_gene_matrix = store_data_gene_matrix(
-        syn, genieVersion, clinicalDf, cnaSamples, consortiumReleaseSynId, wes_panelids
+        syn,
+        genieVersion,
+        clinicalDf,
+        cnaSamples,
+        consortiumReleaseSynId,
+        wes_panelids,
+        svSamples,
     )
 
     genePanelEntities = store_gene_panel_files(
@@ -1884,17 +1916,6 @@ def stagingToCbio(
         data_gene_matrix,
         consortiumReleaseSynId,
         wes_panelids,
-    )
-
-    store_sv_files(
-        syn,
-        consortiumReleaseSynId,
-        genieVersion,
-        sv_synid,
-        keepForCenterConsortiumSamples,
-        keepForMergedConsortiumSamples,
-        current_release_staging,
-        CENTER_MAPPING_DF,
     )
 
     store_seg_files(
