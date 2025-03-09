@@ -923,7 +923,7 @@ def store_sv_files(
         name="data_sv.txt",
         used=f"{synid}.{version}",
     )
-    return sv_text["SAMPLE_ID"].tolist()
+    return sv_df["Sample_Id"].tolist()
 
 
 # TODO: Add to transform.py

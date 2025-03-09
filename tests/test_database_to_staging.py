@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 import synapseclient
-from genie import database_to_staging, extract, load
+from genie import database_to_staging, extract, load, process_functions
 from pandas.testing import assert_frame_equal, assert_series_equal
 
 FILEVIEW_SYNID = "syn12345"
@@ -887,18 +887,30 @@ def test_store_mutation_in_cis_files_to_staging_no_centers(
         patch_unlink.assert_not_called()
 
 
-def test_store_sv_files(syn):
+@pytest.mark.parametrize(
+    "current_release_staging",
+    [
+        (True),
+        (False),
+    ],
+    ids=["current_release_staging", "other_release_staging"],
+)
+def test_store_sv_files(syn, current_release_staging):
     svdf = pd.DataFrame(
         dict(
-            SV_Status=["GERMLINE", "SOMATIC"],
-            SAMPLE_ID=["GENIE-1", "GENIE-2"],
-            CENTER=["C1", "C2"],
+            SV_Status=["SOMATIC", "GERMLINE", "SOMATIC"],
+            SAMPLE_ID=["GENIE-1", "GENIE-2", "GENIE-3"],
+            CENTER=["C1", "C2", "C1"],
         )
     )
+
     center_mappingdf = pd.DataFrame(
         {"center": ["C1", "C2"], "stagingSynId": ["syn123", "syn456"]}
     )
     database_to_staging.GENIE_RELEASE_DIR = "./"
+    database_to_staging.SV_CENTER_PATH = os.path.join(
+        database_to_staging.GENIE_RELEASE_DIR, "data_sv_%s.txt"
+    )
     with patch("builtins.open") as mock_open, patch.object(
         extract, "get_syntabledf", return_value=svdf
     ) as patch_get_syntabledf, patch.object(
@@ -907,61 +919,67 @@ def test_store_sv_files(syn):
         pd.DataFrame, "to_csv"
     ) as patch_to_csv, patch.object(
         load, "store_file"
-    ) as patch_store_file:
+    ) as patch_store_file, patch.object(
+        process_functions, "removePandasDfFloat", return_value="test_sv_text"
+    ):
         # call the function
-        for current_release_staging in [False]:
-            sv_sample = database_to_staging.store_sv_files(
-                syn,
-                release_synid="syn123",
-                genie_version="TESTING",
-                synid="syn5678",
-                keep_for_center_consortium_samples=["GENIE-1", "GENIE-2"],
-                keep_for_merged_consortium_samples=["GENIE-1", "GENIE-2"],
-                current_release_staging=current_release_staging,
-                center_mappingdf=center_mappingdf,
+        sv_sample = database_to_staging.store_sv_files(
+            syn,
+            release_synid="syn123",
+            genie_version="TESTING",
+            synid="syn5678",
+            keep_for_center_consortium_samples=["GENIE-1", "GENIE-2"],
+            keep_for_merged_consortium_samples=["GENIE-1", "GENIE-3"],
+            current_release_staging=current_release_staging,
+            center_mappingdf=center_mappingdf,
+        )
+
+        # validate the calls
+        patch_get_syntabledf.assert_called_once_with(syn, "select * from syn5678")
+        if not current_release_staging:
+            patch_to_csv.assert_has_calls(
+                [
+                    mock.call(
+                        database_to_staging.SV_CENTER_PATH % "C1", sep="\t", index=False
+                    ),
+                    mock.call(
+                        database_to_staging.SV_CENTER_PATH % "C2", sep="\t", index=False
+                    ),
+                ]
             )
 
-            # validate the calls
-            patch_get_syntabledf.assert_called_once_with(syn, "select * from syn5678")
-            if current_release_staging:
-                patch_to_csv.assert_has_calls(
-                    [
-                        mock.call("data_sv_C1.txt", sep="\t", index=False),
-                        mock.call("data_sv_C2.txt", sep="\t", index=False),
-                    ]
-                )
-
-                # Check the store_file call arguments
-                patch_store_file.assert_has_calls(
-                    [
-                        mock.call(
-                            syn=syn,
-                            filepath="data_sv_C1.txt",
-                            version_comment="TESTING",
-                            parentid="syn123",
-                        ),
-                        mock.call(
-                            syn=syn,
-                            filepath="data_sv_C2.txt",
-                            version_comment="TESTING",
-                            parentid="syn456",
-                        ),
-                    ]
-                )
-
-            mock_open.assert_called_once()
-            patch_store_file.assert_called_with(
-                syn=syn,
-                filepath=os.path.join(
-                    database_to_staging.GENIE_RELEASE_DIR, "data_sv.txt"
-                ),
-                parentid="syn123",
-                version_comment="TESTING",
-                name="data_sv.txt",
-                used="syn5678.1",
+            # Check the store_file call arguments
+            patch_store_file.assert_has_calls(
+                [
+                    mock.call(
+                        syn=syn,
+                        filepath=database_to_staging.SV_CENTER_PATH % "C1",
+                        version_comment="TESTING",
+                        parentid="syn123",
+                    ),
+                    mock.call(
+                        syn=syn,
+                        filepath=database_to_staging.SV_CENTER_PATH % "C2",
+                        version_comment="TESTING",
+                        parentid="syn456",
+                    ),
+                ]
             )
 
-            assert sv_sample == ["GENIE-1", "GENIE-2"]
+        mock_open.assert_called_once_with(
+            os.path.join(database_to_staging.GENIE_RELEASE_DIR, "data_sv.txt"), "w"
+        )
+        file_handle = mock_open.return_value.__enter__.return_value
+        file_handle.write.assert_called_with("test_sv_text")
+        patch_store_file.assert_called_with(
+            syn=syn,
+            filepath=os.path.join(database_to_staging.GENIE_RELEASE_DIR, "data_sv.txt"),
+            parentid="syn123",
+            version_comment="TESTING",
+            name="data_sv.txt",
+            used="syn5678.1",
+        )
+        assert sv_sample == ["GENIE-1", "GENIE-3"]
 
 
 def test_store_data_gene_matrix(syn):
