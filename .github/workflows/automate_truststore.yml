@@ -47,7 +47,7 @@ jobs:
       - name: Upload updated truststore to Synapse
         run: |
           cd annotation-tools
-          synapse store ./AwsSsl.truststore --parentid syn22105656 --versionComment "Updated automatically via GH workflows using GN team's update truststore code"
+          synapse store ./AwsSsl.truststore --parentid syn22105656
 
 
   check-truststore-update:
