@@ -30,7 +30,7 @@ jobs:
 
       - name: Authenticate with Synapse using token
         run: |
-          synapse login --authToken "$SYNAPSE_AUTH_TOKEN"
+          synapse login -p "$SYNAPSE_AUTH_TOKEN"
 
       - name: Clone annotation-tools repository, checkout truststore branch and get truststore file
         run: |
