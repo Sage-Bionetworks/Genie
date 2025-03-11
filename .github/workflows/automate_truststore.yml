@@ -36,18 +36,18 @@ jobs:
         run: |
           git clone https://github.com/genome-nexus/annotation-tools.git
           cd annotation-tools
-          synapse get syn22053204 --downloadLocation ./AwsSsl.truststore
+          synapse get syn22053204
 
       - name: Update truststore file
         run: |
           cd annotation-tools
           git checkout automate-truststore
-          sh update_truststore.sh ./AwsSsl.truststore "$TRUSTSTORE_PASSWORD"
+          sh update_truststore.sh AwsSsl.truststore "$TRUSTSTORE_PASSWORD"
 
       - name: Upload updated truststore to Synapse
         run: |
           cd annotation-tools
-          synapse store ./AwsSsl.truststore --parentid syn22105656
+          synapse store AwsSsl.truststore --parentid syn22105656
 
 
   check-truststore-update:
