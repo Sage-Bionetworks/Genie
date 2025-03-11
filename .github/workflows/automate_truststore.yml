@@ -1,0 +1,84 @@
+name: Auto-update Genome Nexus Truststore file
+
+on:
+  schedule:
+    - cron: "0 3 * * 1-5" # Runs at 3 AM UTC Monday to Friday
+  workflow_dispatch:
+
+env:
+    PROD_DOCKER: ghcr.io/sage-bionetworks/genie:main
+    SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+    TRUSTSTORE_PASSWORD: ${{ secrets.TRUSTSTORE_PASSWORD }}  # truststore password provided by GN team
+    TEST_PROJECT_SYNID: syn7208886                           # synapse_id of the test synapse project
+    TEST_SEQ_DATE: Jul-2022                                  # SEQ_DATE to use for test pipeline. Should match the one used in nf-genie.
+  
+
+jobs:
+  update_truststore:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y keychain openssl
+          pip install synapseclient
+
+      - name: Authenticate with Synapse using token
+        run: |
+          synapse login --authToken "$SYNAPSE_AUTH_TOKEN"
+
+      - name: Clone annotation-tools repository, checkout truststore branch and get truststore file
+        run: |
+          git clone https://github.com/genome-nexus/annotation-tools.git
+          cd annotation-tools
+          synapse get syn22053204 --downloadLocation ./AwsSsl.truststore
+
+      - name: Update truststore file
+        run: |
+          cd annotation-tools
+          git checkout automate-truststore
+          sh update_truststore.sh ./AwsSsl.truststore "$TRUSTSTORE_PASSWORD"
+
+      - name: Upload updated truststore to Synapse
+        run: |
+          cd annotation-tools
+          synapse store ./AwsSsl.truststore --parentid syn22105656 --versionComment "Updated automatically via GH workflows using GN team's update truststore code"
+
+
+  check-truststore-update:
+    needs: update_truststore
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Pull Public Docker Image from GHCR
+        run: |
+           docker pull ${{ env.PROD_DOCKER }}
+
+      - name: Start Docker Container
+        run: |
+          docker run -d --name genie-container \
+            -e SYNAPSE_AUTH_TOKEN="${{ secrets.SYNAPSE_AUTH_TOKEN }}" \
+            ${{ env.PROD_DOCKER }} \
+            sh -c "while true; do sleep 1; done"
+    
+      - name: Run processing on mutation data in test pipeline
+        run: |
+          docker exec genie-container \
+          python3 /root/Genie/bin/input_to_database.py mutation \
+              --project_id ${{ env.TEST_PROJECT_SYNID }} \
+              --genie_annotation_pkg /root/annotation-tools \
+              --createNewMafDatabase
+
+      - name: Run consortium release in test pipeline
+        run: |
+          docker exec genie-container \
+          python3 /root/Genie/bin/database_to_staging.py ${{ env.TEST_SEQ_DATE }} ../cbioportal TEST --test
+
+      - name: Stop and Remove Docker Container
+        run: docker stop genie-container && docker rm genie-container
