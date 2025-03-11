@@ -9,7 +9,7 @@ on:
 env:
     PROD_DOCKER: ghcr.io/sage-bionetworks/genie:main
     SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
-    TRUSTSTORE_PASSWORD: ${{ secrets.TRUSTSTORE_PASSWORD }}  # truststore password provided by GN team
+    TRUSTSTORE_PASSWORD: ${{ secrets.GENOME_NEXUS_TRUSTSTORE_PWD }}  # truststore password provided by GN team
     TEST_PROJECT_SYNID: syn7208886                           # synapse_id of the test synapse project
     TEST_SEQ_DATE: Jul-2022                                  # SEQ_DATE to use for test pipeline. Should match the one used in nf-genie.
   
