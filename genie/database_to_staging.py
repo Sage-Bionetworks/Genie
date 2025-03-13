@@ -1607,26 +1607,16 @@ def store_data_gene_matrix(
     data_gene_matrix = data_gene_matrix.rename(columns={"SEQ_ASSAY_ID": "mutations"})
     data_gene_matrix = data_gene_matrix[data_gene_matrix["SAMPLE_ID"] != ""]
     data_gene_matrix.drop_duplicates("SAMPLE_ID", inplace=True)
-    # Gene panel file is written below CNA, because of the "cna" column
-    # Add in CNA column into gene panel file
-    cna_seqids = data_gene_matrix["mutations"][
-        data_gene_matrix["SAMPLE_ID"].isin(cna_samples)
-    ].unique()
-    data_gene_matrix["cna"] = data_gene_matrix["mutations"]
-    data_gene_matrix["cna"][~data_gene_matrix["cna"].isin(cna_seqids)] = "NA"
+
+    # exclude wes assay_ids
     wes_panel_mut = data_gene_matrix["mutations"].isin(wes_seqassayids)
     data_gene_matrix = data_gene_matrix[~wes_panel_mut]
-    wes_panel_cna = data_gene_matrix["cna"].isin(wes_seqassayids)
-    data_gene_matrix = data_gene_matrix[~wes_panel_cna]
+
+    # Add in CNA column into gene panel file
+    data_gene_matrix = process_functions.add_columns_to_data_gene_matrix(data_gene_matrix = data_gene_matrix, sample_list= cna_samples, column_name='cna')
 
     # Add SV column into gene panel file
-    sv_ids = data_gene_matrix["mutations"][
-        data_gene_matrix["SAMPLE_ID"].isin(sv_samples)
-    ].unique()
-    data_gene_matrix["sv"] = data_gene_matrix["mutations"]
-    data_gene_matrix["sv"][~data_gene_matrix["sv"].isin(sv_ids)] = "NA"
-    wes_panel_sv = data_gene_matrix["sv"].isin(wes_seqassayids)
-    data_gene_matrix = data_gene_matrix[~wes_panel_sv]
+    data_gene_matrix = process_functions.add_columns_to_data_gene_matrix(data_gene_matrix = data_gene_matrix, sample_list= sv_samples, column_name='sv')
 
     data_gene_matrix.to_csv(data_gene_matrix_path, sep="\t", index=False)
 
