@@ -982,7 +982,36 @@ def test_store_sv_files(syn, current_release_staging):
         assert sv_sample == ["GENIE-1", "GENIE-3"]
 
 
-def test_store_data_gene_matrix(syn):
+@pytest.mark.parametrize(
+    "wes_seqassayids, expected_output",
+    [
+        (
+            ["ID1"],
+        pd.DataFrame(
+            {
+                "SAMPLE_ID": ["GENIE-2"],
+                "mutations": ["ID2"],
+                "cna": ["NA"],
+                "sv": ["ID2"],
+            }
+        )
+        ),
+        (
+            ["ID3"],
+        pd.DataFrame(
+            {
+                "SAMPLE_ID": ["GENIE-1", "GENIE-2"],
+                "mutations": ["ID1", "ID2"],
+                "cna": ["ID1", "NA"],
+                "sv": ["ID1", "ID2"],
+            }
+        )
+        ),
+
+    ],
+    ids=["filter_wes_seqassayids", "no_filter_wes_seqassayids"]
+)
+def test_store_data_gene_matrix(syn, wes_seqassayids, expected_output):
     database_to_staging.GENIE_RELEASE_DIR = "./"
     clinicaldf = pd.DataFrame(
         {"SAMPLE_ID": ["GENIE-1", "GENIE-2"], "SEQ_ASSAY_ID": ["ID1", "ID2"]}
@@ -997,7 +1026,7 @@ def test_store_data_gene_matrix(syn):
             clinicaldf=clinicaldf,
             cna_samples=["GENIE-1"],
             release_synid="syn123",
-            wes_seqassayids=["ID1"],
+            wes_seqassayids=wes_seqassayids,
             sv_samples=["GENIE-1", "GENIE-2"],
         )
 
@@ -1014,14 +1043,4 @@ def test_store_data_gene_matrix(syn):
             version_comment="TESTING",
             name="data_gene_matrix.txt",
         )
-        assert_frame_equal(
-            data_gene_matrix.reset_index(drop=True),
-            pd.DataFrame(
-                {
-                    "SAMPLE_ID": ["GENIE-2"],
-                    "mutations": ["ID2"],
-                    "cna": ["NA"],
-                    "sv": ["ID2"],
-                }
-            ),
-        )
+        pd.testing.assert_frame_equal(data_gene_matrix.reset_index(drop=True),expected_output)
