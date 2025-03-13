@@ -5,8 +5,12 @@ import pandas as pd
 import pytest
 import synapseclient
 from genie import process_functions
-from pandas.api.types import (is_bool_dtype, is_float_dtype, is_integer_dtype,
-                              is_string_dtype)
+from pandas.api.types import (
+    is_bool_dtype,
+    is_float_dtype,
+    is_integer_dtype,
+    is_string_dtype,
+)
 from pandas.testing import assert_frame_equal
 
 DATABASE_DF = pd.DataFrame(
@@ -1033,51 +1037,70 @@ def test_check_col_and_values_row_specific(test_cases):
     assert warning == test_cases["expected_warning"]
     assert error == test_cases["expected_error"]
 
+
 @pytest.mark.parametrize(
     "data_gene_matrix, sample_list, column_name,expected_output",
     [
         (
             pd.DataFrame(
-                {"SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"], "mutations": ["assay_1", "assay_2", "assay_3"]}
+                {
+                    "SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"],
+                    "mutations": ["assay_1", "assay_2", "assay_3"],
+                }
             ),
-            ["Sample_1", "Sample_2","Sample_3"],
+            ["Sample_1", "Sample_2", "Sample_3"],
             "CNA",
             pd.DataFrame(
-                {"SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"], "mutations": ["assay_1", "assay_2", "assay_3"], "CNA": ["assay_1", "assay_2", "assay_3"]}
+                {
+                    "SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"],
+                    "mutations": ["assay_1", "assay_2", "assay_3"],
+                    "CNA": ["assay_1", "assay_2", "assay_3"],
+                }
             ),
         ),
         (
             pd.DataFrame(
-                {"SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"], "mutations": ["assay_1", "assay_2", "assay_3"]}
+                {
+                    "SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"],
+                    "mutations": ["assay_1", "assay_2", "assay_3"],
+                }
             ),
             ["Sample_1", "Sample_2"],
             "CNA",
             pd.DataFrame(
-                {"SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"], "mutations": ["assay_1", "assay_2", "assay_3"], "CNA": ["assay_1", "assay_2", "NA"]}
+                {
+                    "SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"],
+                    "mutations": ["assay_1", "assay_2", "assay_3"],
+                    "CNA": ["assay_1", "assay_2", "NA"],
+                }
             ),
         ),
         (
             pd.DataFrame(
-                {"SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"], "mutations": ["assay_1", "assay_2", "assay_3"]}
+                {
+                    "SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"],
+                    "mutations": ["assay_1", "assay_2", "assay_3"],
+                }
             ),
             ["Sample_4"],
             "CNA",
             pd.DataFrame(
-                {"SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"], "mutations": ["assay_1", "assay_2", "assay_3"], "CNA": ["NA", "NA", "NA"]}
+                {
+                    "SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"],
+                    "mutations": ["assay_1", "assay_2", "assay_3"],
+                    "CNA": ["NA", "NA", "NA"],
+                }
             ),
         ),
-
     ],
-    ids=[
-        "all_mutation_samples",
-        "partial_mutation_samples",
-        "none_mutation_samples"
-    ],
+    ids=["all_mutation_samples", "partial_mutation_samples", "none_mutation_samples"],
 )
-def test_add_columns_to_data_gene_matrix(data_gene_matrix, sample_list, column_name, expected_output):
-    output = process_functions.add_columns_to_data_gene_matrix(data_gene_matrix, sample_list, column_name)
+def test_add_columns_to_data_gene_matrix(
+    data_gene_matrix, sample_list, column_name, expected_output
+):
+    output = process_functions.add_columns_to_data_gene_matrix(
+        data_gene_matrix, sample_list, column_name
+    )
 
     # check the output
     pd.testing.assert_frame_equal(output, expected_output)
-
-

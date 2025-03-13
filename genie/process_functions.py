@@ -1117,8 +1117,11 @@ def check_column_and_values_row_specific(
 
     return (warning, error)
 
-def add_columns_to_data_gene_matrix(data_gene_matrix: pd.DataFrame, sample_list: list, column_name: str):
-    """Add  CNA and SV columns to data gene matrix 
+
+def add_columns_to_data_gene_matrix(
+    data_gene_matrix: pd.DataFrame, sample_list: list, column_name: str
+):
+    """Add  CNA and SV columns to data gene matrix
 
     Args:
         data_gene_matrix (pd.DataFrame): data gene matrix

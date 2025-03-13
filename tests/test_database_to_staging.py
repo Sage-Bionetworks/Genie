@@ -987,29 +987,28 @@ def test_store_sv_files(syn, current_release_staging):
     [
         (
             ["ID1"],
-        pd.DataFrame(
-            {
-                "SAMPLE_ID": ["GENIE-2"],
-                "mutations": ["ID2"],
-                "cna": ["NA"],
-                "sv": ["ID2"],
-            }
-        )
+            pd.DataFrame(
+                {
+                    "SAMPLE_ID": ["GENIE-2"],
+                    "mutations": ["ID2"],
+                    "cna": ["NA"],
+                    "sv": ["ID2"],
+                }
+            ),
         ),
         (
             ["ID3"],
-        pd.DataFrame(
-            {
-                "SAMPLE_ID": ["GENIE-1", "GENIE-2"],
-                "mutations": ["ID1", "ID2"],
-                "cna": ["ID1", "NA"],
-                "sv": ["ID1", "ID2"],
-            }
-        )
+            pd.DataFrame(
+                {
+                    "SAMPLE_ID": ["GENIE-1", "GENIE-2"],
+                    "mutations": ["ID1", "ID2"],
+                    "cna": ["ID1", "NA"],
+                    "sv": ["ID1", "ID2"],
+                }
+            ),
         ),
-
     ],
-    ids=["filter_wes_seqassayids", "no_filter_wes_seqassayids"]
+    ids=["filter_wes_seqassayids", "no_filter_wes_seqassayids"],
 )
 def test_store_data_gene_matrix(syn, wes_seqassayids, expected_output):
     database_to_staging.GENIE_RELEASE_DIR = "./"
@@ -1043,4 +1042,6 @@ def test_store_data_gene_matrix(syn, wes_seqassayids, expected_output):
             version_comment="TESTING",
             name="data_gene_matrix.txt",
         )
-        pd.testing.assert_frame_equal(data_gene_matrix.reset_index(drop=True),expected_output)
+        pd.testing.assert_frame_equal(
+            data_gene_matrix.reset_index(drop=True), expected_output
+        )

@@ -1613,10 +1613,14 @@ def store_data_gene_matrix(
     data_gene_matrix = data_gene_matrix[~wes_panel_mut]
 
     # Add in CNA column into gene panel file
-    data_gene_matrix = process_functions.add_columns_to_data_gene_matrix(data_gene_matrix = data_gene_matrix, sample_list= cna_samples, column_name='cna')
+    data_gene_matrix = process_functions.add_columns_to_data_gene_matrix(
+        data_gene_matrix=data_gene_matrix, sample_list=cna_samples, column_name="cna"
+    )
 
     # Add SV column into gene panel file
-    data_gene_matrix = process_functions.add_columns_to_data_gene_matrix(data_gene_matrix = data_gene_matrix, sample_list= sv_samples, column_name='sv')
+    data_gene_matrix = process_functions.add_columns_to_data_gene_matrix(
+        data_gene_matrix=data_gene_matrix, sample_list=sv_samples, column_name="sv"
+    )
 
     data_gene_matrix.to_csv(data_gene_matrix_path, sep="\t", index=False)
 
