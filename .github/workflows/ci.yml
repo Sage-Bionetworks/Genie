@@ -9,17 +9,22 @@ on:
     paths-ignore:
       - '**.md'                            # All Markdown files
       - '**/docs/**'                       # Documentation directory
-      - '.github/workflows/codeql.yml'     # Code scanner
-      - '.github/workflows/build_docs.yml' # mkdocs GH workflow
+      - '.github/workflows/**'             # Ignore all github workflow file changes
 
   pull_request:
       types:
         - opened
         - reopened
+      paths-ignore:
+        - '**.md'                            # All Markdown files
+        - '**/docs/**'                       # Documentation directory
+        - '.github/workflows/**'             # Ignore all github workflow file changes
 
   release:
     types:
       - created
+
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
