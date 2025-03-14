@@ -1116,3 +1116,25 @@ def check_column_and_values_row_specific(
         )
 
     return (warning, error)
+
+
+def add_columns_to_data_gene_matrix(
+    data_gene_matrix: pd.DataFrame, sample_list: list, column_name: str
+):
+    """Add  CNA and SV columns to data gene matrix
+
+    Args:
+        data_gene_matrix (pd.DataFrame): data gene matrix
+        sample_list (list): The list of cna or sv samples
+        column_name (str): The column name to be added
+    """
+    # extract the sample list
+    seqids = data_gene_matrix["mutations"][
+        data_gene_matrix["SAMPLE_ID"].isin(sample_list)
+    ].unique()
+
+    # add the column to the data gene matrix and set the value to non-CNA or non-SV rows to NA
+    data_gene_matrix[column_name] = data_gene_matrix["mutations"]
+    data_gene_matrix[column_name][~data_gene_matrix[column_name].isin(seqids)] = "NA"
+
+    return data_gene_matrix
