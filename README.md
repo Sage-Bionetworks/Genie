@@ -32,16 +32,47 @@ This package contains both R, Python and cli tools.  These are tools or packages
 
 One of the features of the `aacrgenie` package is that is provides a local validation tool that GENIE data contributors and install and use to validate their files locally prior to uploading to Synapse.
 
+
+### Setting up your environment
+
+These instructions will install all the necessary components for you to run the validator locally on all of your files, including the Synapse client.
+
+1. Create a virtual environment using package manager of your choice (e.g: `conda`, `pipenv`)
+
+2. Install the genie package
+
 ```
 pip install aacrgenie
+```
+
+3. Verify the installation
+
+```
 genie -v
 ```
 
-This will install all the necessary components for you to run the validator locally on all of your files, including the Synapse client.  Please view the help to see how to run to validator.
+4. Set up authentication with Synapse through the [local .synapseConfig](https://python-docs.synapse.org/tutorials/authentication/#use-synapseconfig) or using an [environment variable](https://python-docs.synapse.org/tutorials/authentication/#use-environment-variable)
+
+### Running the validator
+
+Get help of all available commands
 
 ```
 genie validate -h
+```
+
+### Example commands
+
+Running validator on clinical file
+
+```
 genie validate data_clinical_supp_SAGE.txt SAGE
+```
+
+Running validator on cna file. **Note** that the flag `--nosymbol-check` is **REQUIRED** when running the validator for cna files because you would need access to an internal bed database table without it. For DEVELOPERS this is not required.
+
+```
+genie validate data_cna_SAGE.txt SAGE --nosymbol-check
 ```
 
 
