@@ -1,6 +1,63 @@
 #! /usr/bin/env python3
 """Script to crawl Synapse folder for a center, validate, and update database tables.
 
+
+flowchart TD
+    A["For each center"] --> B["Extract center input files"]
+    B --> D{"Has the center uploaded any data"}
+    D -- No --> E["Log: No files uploaded"]
+    E --> F["End"]
+    D -- Yes --> G["Validate files"]
+    G --> H{"Are there valid files?"}
+    H -- No --> I["Log: No valid files"]
+    I --> F
+    H -- Yes --> J{"only_validate flag set?"}
+    J -- Yes --> K["Log: Validation only"]
+    K --> F
+    J -- No --> L["Process valid files"]
+    %% L --> M["Update process tracker with start time"]
+    L --> N["Process files based on fileType"]
+    %% N --> O["Update process tracker with end time"]
+    N --> P["Upload processed data per file type into internal Synapse Tables"]
+    P --> Q["Retract samples and patients based on retraction tables"]
+    Q --> F
+
+    subgraph "File Type Processing"
+        N --> N1["clinical"]
+        N1 --> N1a["Parse clinical data"]
+        N1a --> N1b["Standardize fields"]
+        N1b --> N1c["Redact PHI in samples/patient table"]
+
+        N --> N2["maf"]
+        N2 --> N2a["Preprocessing: light edits to maf"]
+        N2a --> N2b["Re-annotate mutations using Genome Nexus"]
+
+        N --> N3["vcf"]
+        N3 --> N3a["Preprocessing: Convert VCF to MAF"]
+        N3a --> N3b["Re-annotate using Genome Nexus"]
+
+        N --> N4["Structural Variants"]
+        N4 --> N4a["Parse structural variants data"]
+
+        N --> N5["cna"]
+        N5 --> N5a["Parse CNA data"]
+
+        N --> N6["assay information"]
+        N6 --> N6a["Parse assay information"]
+
+        N --> N7["mutation in cis"]
+        N7 --> N7a["Parse mutation in cis"]
+
+        N --> N8["sample / patient retraction"]
+        N8 --> N8a["Parse sample/patient retraction information"]
+
+        N --> N9["BED"]
+        N9 --> N9a["Remap genes to hg19 positions"]
+
+        N --> N10["SEG"]
+        N10 --> N10a["Parse SEG data"]
+    end
+
 """
 import argparse
 from datetime import date
