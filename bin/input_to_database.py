@@ -1,5 +1,20 @@
 #! /usr/bin/env python3
-"""Script to crawl Synapse folder for a center, validate, and update database tables.
+"""Workflow  crawl Synapse folder for a center, validate, and update database tables.
+
+Known issues:
+
+* All data per center is downloaded every time (even if not changed)
+
+    This increases the length of validation because not all data is changed.
+    The complexity is around cross file validation.  There needs to be
+    a way to determine relationships between files so that if a file depends on another
+    only those files are downloaded.  This is harder for VCFs as there may be
+    thousands of them
+
+* Retraction from the sample/patient table is inefficient.  The sample and patient tables will
+first contain the data, and it will shortly be removed from the synapse tables.
+* Newer implementation of cross-file validation is available but clinical data is still using the
+older implementation which unnecesssarily complicates the code.
 
 ``` mermaid
 flowchart TD
@@ -18,7 +33,7 @@ flowchart TD
     %% L --> M["Update process tracker with start time"]
     L --> N["Process files based on fileType"]
     %% N --> O["Update process tracker with end time"]
-    N --> P["Upload processed data per file type into internal Synapse Tables"]
+    N --> P["Upload processed data per file type into internal Synapse Tables and Center staging folders"]
     P --> Q["Retract samples and patients based on retraction tables"]
     Q --> F
 
@@ -53,6 +68,7 @@ flowchart TD
 
         N --> N9["BED"]
         N9 --> N9a["Remap genes to hg19 positions"]
+        N9a --> N9b["Gene panel files are created and uploaded to staging folder"]
 
         N --> N10["SEG"]
         N10 --> N10a["Parse SEG data"]
