@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 """Script to crawl Synapse folder for a center, validate, and update database tables.
 
-
+``` mermaid
 flowchart TD
     A["For each center"] --> B["Extract center input files"]
     B --> D{"Has the center uploaded any data"}
@@ -57,7 +57,7 @@ flowchart TD
         N --> N10["SEG"]
         N10 --> N10a["Parse SEG data"]
     end
-
+```
 """
 import argparse
 from datetime import date
