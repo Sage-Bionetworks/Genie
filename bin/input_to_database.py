@@ -39,39 +39,30 @@ flowchart TD
 
     subgraph "File Type Processing"
         N --> N1["clinical"]
-        N1 --> N1a["Parse clinical data"]
-        N1a --> N1b["Standardize fields"]
-        N1b --> N1c["Redact PHI in samples/patient table"]
+        N1 --> N1a["Remap NAACCR and other values to cbioportal accepted values"]
+        N1a --> N1b["Map SEQ_DATE to SEQ_YEAR"]
+        N1b --> N1d["Redact PHI"]
+        N1d --> N1e["Exclude all samples with invalid oncotree codes"]
 
         N --> N2["maf"]
         N2 --> N2a["Preprocessing: light edits to maf"]
-        N2a --> N2b["Re-annotate mutations using Genome Nexus"]
+        N2a --> N2b["Re-annotate using Genome Nexus"]
 
         N --> N3["vcf"]
         N3 --> N3a["Preprocessing: Convert VCF to MAF"]
-        N3a --> N3b["Re-annotate using Genome Nexus"]
-
-        N --> N4["Structural Variants"]
-        N4 --> N4a["Parse structural variants data"]
+        N3a --> N2b
 
         N --> N5["cna"]
-        N5 --> N5a["Parse CNA data"]
-
-        N --> N6["assay information"]
-        N6 --> N6a["Parse assay information"]
-
-        N --> N7["mutation in cis"]
-        N7 --> N7a["Parse mutation in cis"]
-
-        N --> N8["sample / patient retraction"]
-        N8 --> N8a["Parse sample/patient retraction information"]
+        N5 --> N5a["Remap gene symbols using processed BED data"]
+        N5a --> N5b["Duplicate genes are merged if possible after remapping"]
 
         N --> N9["BED"]
         N9 --> N9a["Remap genes to hg19 positions"]
         N9a --> N9b["Gene panel files are created and uploaded to staging folder"]
 
-        N --> N10["SEG"]
-        N10 --> N10a["Parse SEG data"]
+        N --> N6["assay information, mutation in cis, sample/patient retraction, seg, Structural Variants"]
+        N6 --> N6a["Extract data and mild transforms"]
+
     end
 ```
 """
