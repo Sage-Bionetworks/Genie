@@ -64,6 +64,23 @@ flowchart TD
         N6 --> N6a["Extract data and mild transforms"]
 
     end
+
+    %% %% Subgraph for get_center_input_files function
+    %% subgraph "get_center_input_files Function"
+    %%     B --> B1["Iterate over all files uploaded by center"]
+    %%     B1 --> B6{"Does file name end with '.vcf' and process != 'mutation'?"}
+    %%     B6 -- Yes --> B7["Skip this file"]
+    %%     B6 -- No --> B8["Download file"]
+    %%     B8 --> B10{"Is it a clinical file?"}
+    %%     B10 -- Yes --> B11["Append entity to clinicalpair_entities"]
+    %%     B10 -- No --> B12["Append [entity] to prepared_center_file_list"]
+    %%     B11 --> B13
+    %%     B12 --> B13
+    %%     B13{"Is clinicalpair_entities not empty after loop?"}
+    %%     B13 -- Yes --> B14["Append clinicalpair_entities to prepared_center_file_list"]
+    %%     B14 --> B15["Return prepared_center_file_list"]
+    %%     B13 -- No --> B15
+    %% end
 ```
 """
 import argparse
