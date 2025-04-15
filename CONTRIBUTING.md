@@ -164,3 +164,7 @@ Follow this section when modifying the [Dockerfile](https://github.com/Sage-Bion
 #### Dockerhub
 
 This repository does not use github actions to push docker images.  By adding the `sagebiodockerhub` github user as an Admin to this GitHub repository, we can configure an automated build in DockerHub.  You can view the builds [here](https://hub.docker.com/repository/docker/sagebionetworks/genie/builds).  To get admin access to the DockerHub repository, ask Sage IT to be added to the `genieadmin` DockerHub team.
+
+### Contributing to the docs
+
+This [documentation](https://sagebionetworks.jira.com/wiki/spaces/APGD/pages/3369631808/Contributing+to+Main+GENIE+repository+docs) is internal to Sage employees.
