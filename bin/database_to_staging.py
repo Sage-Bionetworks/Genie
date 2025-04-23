@@ -1,3 +1,69 @@
+"""
+Workflow to trigger a consortium release
+
+``` mermaid
+flowchart TD
+    A["Start consortium release"] --> B["Remove old files in GENIE release dir"]
+    %% B --> C["Login to Synapse"]
+    %% C --> D{"Test / Staging / Prod Environment?"}
+    %% D -->|Test| E["Set test databaseSynIdMappingId"]
+    %% D -->|Staging| F["Set staging databaseSynIdMappingId, skip mutations in cis"]
+    %% D -->|Production| G["Set production databaseSynIdMappingId"]
+    B --> H["Prepare for processing by getting databaseSynIdMapping table, oncotree link, cbioportal folder, database synapse ids, etc"]
+    %% H --> I{"Oncotree link provided?"}
+    %% I -->|No| J["Extract Oncotree URL from database"]
+    %% I -->|Yes| K["Use provided Oncotree URL"]
+    %% J & K --> L["Check Oncotree URL accessibility"]
+    %% L --> M["Validate cBioPortal path exists"]
+    %% M --> N["Get Synapse IDs for consortium, process tracker, etc."]
+    %% N --> O["Create or retrieve case_lists folder"]
+    %% O --> P{"Staging?"}
+    %% P -- No --> Q["Start process tracking"]
+    H --> R["Query for all the centers for which data should be released"]
+
+    %% Expanded stagingToCbio logic
+    %% R --> S2["Create GENIE release directory if missing"]
+    %% S1 --> S2["Extract Synapse Table IDs (patient, sample, maf, bed, seg, etc.)"]
+    R --> S3["Create snapshots & pull patient, sample, bed data"]
+    S3 --> S4["Merge patient + sample tables into clinicalDf"]
+    S4 --> S5["Run GENIE filters"]
+    S5 --> SD1["Variant Filters"]
+    SD1 --> SD2["Germline filter"]
+    SD1 --> SD3["MAF in BED"]
+    SD2 & SD3 --> SD5["List of variants to remove"]
+    S5 --> SE1["Sample Filters"]
+    SE1 --> SE2["SEQ_DATE"]
+    SE1 --> SE3["No Bed file"]
+    SE1 --> SE4["Oncotree"]
+    SE1 --> SE5["Mutation In Cis"]
+    SE2 & SE3 & SE4 & SE5 --> SE6["List of samples to remove"]
+    SE6 --> SS3["Merge/Filter/store clinical file"]
+    %% SS3 --> S6["Merge/Filter/store clinical file"]
+    SD5 & SS3 --> S7["Merge/Filter/store MAF file"]
+    SS3 --> S8["Merge/Filter/store CNA file"]
+    SS3 --> S9["Merge/Filter/store Assay information file"]
+    SS3 --> S10["Merge/Filter/store SV file"]
+    S8 & S7 & S9 & S10 --> S11["Merge/Filter/store Data Gene Matrix"]
+    S11 --> S12["Download and upload gene panel files"]
+    SS3 --> S13["Merge/Filter/store SEG file"]
+    SS3 --> S14["Merge/Filter/store BED files"]
+    %% SS3 --> S15["Return list of gene panel entities"]
+
+    SS3 & S12 & S13 & S14 --> T["Remove old case list files"]
+    T --> U["Generate new case lists and upload to Synapse"]
+    U --> V["Revise metadata files with correct GENIE version"]
+    V --> W["Run cBioPortal validation script"]
+    %% W --> X{"Production?"}
+    %% X -->|Yes| Y["Upload validation logs to Synapse"]
+    W --> Z["Create release folder with links to files"]
+    %% Z --> AA{"Production?"}
+    %% AA -->|Yes| AB["End process tracking"]
+    Z --> AC["Run dashboard updater"]
+    AC --> AD["Generate dashboard HTML"]
+    AD --> AF["End"]
+```
+
+"""
 import argparse
 import datetime
 import logging
@@ -273,7 +339,7 @@ def main(
 
     logger.info("CREATING LINK VERSION")
     # Returns release and case list folder
-    folders = database_to_staging.create_link_version(
+    _ = database_to_staging.create_link_version(
         syn, genie_version, caseListEntities, genePanelEntities, databaseSynIdMappingDf
     )
 

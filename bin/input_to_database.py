@@ -1,6 +1,87 @@
 #! /usr/bin/env python3
-"""Script to crawl Synapse folder for a center, validate, and update database tables.
+"""Workflow  crawl Synapse folder for a center, validate, and update database tables.
 
+Known issues:
+
+* All data per center is downloaded every time (even if not changed)
+
+    This increases the length of validation because not all data is changed.
+    The complexity is around cross file validation.  There needs to be
+    a way to determine relationships between files so that if a file depends on another
+    only those files are downloaded.  This is harder for VCFs as there may be
+    thousands of them
+
+* Retraction from the sample/patient table is inefficient.  The sample and patient tables will
+first contain the data, and it will shortly be removed from the synapse tables.
+* Newer implementation of cross-file validation is available but clinical data is still using the
+older implementation which unnecesssarily complicates the code.
+
+``` mermaid
+flowchart TD
+    A["For each center"] --> B["Extract center input files"]
+    B --> D{"Has the center uploaded any data"}
+    D -- No --> E["Log: No files uploaded"]
+    E --> F["End"]
+    D -- Yes --> G["Validate files"]
+    G --> H{"Are there valid files?"}
+    H -- No --> I["Log: No valid files"]
+    I --> F
+    H -- Yes --> J{"only_validate flag set?"}
+    J -- Yes --> K["Log: Validation only"]
+    K --> F
+    J -- No --> L["Process valid files"]
+    %% L --> M["Update process tracker with start time"]
+    L --> N["Process files based on fileType"]
+    %% N --> O["Update process tracker with end time"]
+    N --> P["Upload processed data per file type into internal Synapse Tables and Center staging folders"]
+    P --> Q["Retract samples and patients based on retraction tables"]
+    Q --> F
+
+    subgraph "File Type Processing"
+        N --> N1["clinical"]
+        N1 --> N1a["Remap NAACCR and other values to cbioportal accepted values"]
+        N1a --> N1b["Map SEQ_DATE to SEQ_YEAR"]
+        N1b --> N1d["Redact PHI"]
+        N1d --> N1e["Exclude all samples with invalid oncotree codes"]
+
+        N --> N2["maf"]
+        N2 --> N2a["Preprocessing: light edits to maf"]
+        N2a --> N2b["Re-annotate using Genome Nexus"]
+
+        N --> N3["vcf"]
+        N3 --> N3a["Preprocessing: Convert VCF to MAF"]
+        N3a --> N2b
+
+        N --> N5["cna"]
+        N5 --> N5a["Remap gene symbols using processed BED data"]
+        N5a --> N5b["Duplicate genes are merged if possible after remapping"]
+
+        N --> N9["BED"]
+        N9 --> N9a["Remap genes to hg19 positions"]
+        N9a --> N9b["Gene panel files are created and uploaded to staging folder"]
+
+        N --> N6["assay information, mutation in cis, sample/patient retraction, seg, Structural Variants"]
+        N6 --> N6a["Extract data and mild transforms"]
+
+    end
+
+    %% %% Subgraph for get_center_input_files function
+    %% subgraph "get_center_input_files Function"
+    %%     B --> B1["Iterate over all files uploaded by center"]
+    %%     B1 --> B6{"Does file name end with '.vcf' and process != 'mutation'?"}
+    %%     B6 -- Yes --> B7["Skip this file"]
+    %%     B6 -- No --> B8["Download file"]
+    %%     B8 --> B10{"Is it a clinical file?"}
+    %%     B10 -- Yes --> B11["Append entity to clinicalpair_entities"]
+    %%     B10 -- No --> B12["Append [entity] to prepared_center_file_list"]
+    %%     B11 --> B13
+    %%     B12 --> B13
+    %%     B13{"Is clinicalpair_entities not empty after loop?"}
+    %%     B13 -- Yes --> B14["Append clinicalpair_entities to prepared_center_file_list"]
+    %%     B14 --> B15["Return prepared_center_file_list"]
+    %%     B13 -- No --> B15
+    %% end
+```
 """
 import argparse
 from datetime import date
