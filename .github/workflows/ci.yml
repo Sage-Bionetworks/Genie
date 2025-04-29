@@ -130,7 +130,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      
+
       - name: Format tags as registry refs
         id: registry_refs
         env:
@@ -177,7 +177,7 @@ jobs:
           -e SYNAPSE_AUTH_TOKEN="${{ secrets.SYNAPSE_AUTH_TOKEN }}" \
           ghcr.io/sage-bionetworks/genie:${{ env.BRANCH_NAME }} \
           sh -c "while true; do sleep 1; done"
-    
+
     - name: Run validation in test pipeline
       run: |
         docker exec genie-container \
@@ -186,7 +186,7 @@ jobs:
             --project_id ${{ env.TEST_PROJECT_SYNID }} \
             --onlyValidate \
             --genie_annotation_pkg /root/annotation-tools
-    
+
     - name: Run processing on mutation data in test pipeline
       run: |
         docker exec genie-container \

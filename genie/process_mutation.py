@@ -116,6 +116,7 @@ KNOWN_STRING_COLS = [
     "genomic_location_explanation",
     "Annotation_Status",
     "Variant_Classification",
+    "Transcript_Exon",
 ]
 
 
