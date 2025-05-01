@@ -1047,96 +1047,122 @@ def test_store_data_gene_matrix(syn, wes_seqassayids, expected_output):
             data_gene_matrix.reset_index(drop=True), expected_output
         )
 
+
 @pytest.mark.parametrize(
     "input_col,expected_to_redact_vector,expected_to_redact_pediatric_vector",
     [
         (
-            pd.Series(
-                [4380, 23725, 32120, 33215] # in years: 12, 65, 88, 91, 
-            ),
-            pd.Series(
-                [False, False, False, True]
-            ),
-            pd.Series(
-                [True, False, False, False]
-            )
+            pd.Series([4380, 23725, 32120, 33215]),  # in years: 12, 65, 88, 91,
+            pd.Series([False, False, False, True]),
+            pd.Series([True, False, False, False]),
+        ),
+        (
+            pd.Series([6570, 32485]),  # in years: 18, 89
+            pd.Series([False, False]),
+            pd.Series([False, False]),
         ),
         (
             pd.Series(
-                [6570, 32485] # in years: 18, 89
+                [
+                    ">32485",
+                    "<6570",
+                    "Not Collected",
+                    "Unknown",
+                    "Not Applicable",
+                ]  # in years: ">89", "<18"
             ),
-            pd.Series(
-                [False, False]
-            ),
-            pd.Series(
-                [False, False]
-            )
+            pd.Series([True, False, False, False, False]),
+            pd.Series([False, True, False, False, False]),
         ),
         (
             pd.Series(
-                [">32485", "<6570", "Not Collected", "Unknown", "Not Applicable"] # in years: ">89", "<18"
+                [
+                    ">32485",
+                    "<6570",
+                    "Not Collected",
+                    "Unknown",
+                    "Not Applicable",
+                    np.nan,
+                ]  # in years: ">89", "<18"
             ),
-            pd.Series(
-                [True, False, False, False, False]
-            ),
-            pd.Series(
-                [False, True, False, False, False]
-            )
+            pd.Series([True, False, False, False, False, False]),
+            pd.Series([False, True, False, False, False, False]),
         ),
-        (
-            pd.Series(
-                [">32485", "<6570", "Not Collected", "Unknown", "Not Applicable", np.nan] # in years: ">89", "<18"
-            ),
-            pd.Series(
-                [True, False, False, False, False, False]
-            ),
-            pd.Series(
-                [False, True, False, False, False, False]
-            )
-        ),
-         
     ],
     ids=["no_cutoff_value", "has_cutoff_value", "non_numeric_values", "has_NAs"],
 )
-def test_to_redact_interval(input_col, expected_to_redact_vector, expected_to_redact_pediatric_vector):
+def test_to_redact_interval(
+    input_col, expected_to_redact_vector, expected_to_redact_pediatric_vector
+):
     # call the function
     to_redact, to_redact_pediatric = database_to_staging._to_redact_interval(input_col)
 
     # validate the calls
     assert to_redact.equals(expected_to_redact_vector)
     assert to_redact_pediatric.equals(expected_to_redact_pediatric_vector)
-    
+
+
 @pytest.mark.parametrize(
     "input_col,expected_col",
     [
         (
             pd.Series(
-                [4380, 23725, 32120, 33215, 32485, 6570] # in years: 12, 65, 88, 91, 89, 18 
+                [
+                    4380,
+                    23725,
+                    32120,
+                    33215,
+                    32485,
+                    6570,
+                ]  # in years: 12, 65, 88, 91, 89, 18
             ),
-            pd.Series(
-                [4380, 23725, 32120, 33215, 32485, 6570]
-            )
+            pd.Series([4380, 23725, 32120, 33215, 32485, 6570]),
         ),
         (
             pd.Series(
-                [">32485", "<6570", "Not Collected", "Unknown", "Not Applicable"] # in years: ">89", "<18"
+                [
+                    ">32485",
+                    "<6570",
+                    "Not Collected",
+                    "Unknown",
+                    "Not Applicable",
+                ]  # in years: ">89", "<18"
             ),
             pd.Series(
-                ["cannotReleaseHIPAA", "withheld", "Not Collected", "Unknown", "Not Applicable"]
-            )
+                [
+                    "cannotReleaseHIPAA",
+                    "withheld",
+                    "Not Collected",
+                    "Unknown",
+                    "Not Applicable",
+                ]
+            ),
         ),
         (
             pd.Series(
-                [">32485", "<6570", "Not Collected", "Unknown", "Not Applicable", np.nan] # in years: ">89", "<18"
+                [
+                    ">32485",
+                    "<6570",
+                    "Not Collected",
+                    "Unknown",
+                    "Not Applicable",
+                    np.nan,
+                ]  # in years: ">89", "<18"
             ),
             pd.Series(
-                ["cannotReleaseHIPAA", "withheld", "Not Collected", "Unknown", "Not Applicable", np.nan]
-            )
+                [
+                    "cannotReleaseHIPAA",
+                    "withheld",
+                    "Not Collected",
+                    "Unknown",
+                    "Not Applicable",
+                    np.nan,
+                ]
+            ),
         ),
-         
     ],
     ids=["numeric_values", "non_numeric_values", "has_NAs"],
-)   
+)
 def test__redact_year(input_col, expected_col):
     # call the function
     output = database_to_staging._redact_year(input_col)
@@ -1144,233 +1170,450 @@ def test__redact_year(input_col, expected_col):
     # validate the calls
     assert output.equals(expected_col)
 
+
 @pytest.mark.parametrize(
-    "df_col_year1,df_col_year2, expected_vector",
+    "df_col_year1,df_col_year2, expected_to_redact,expected_to_redact_ped",
     [
         (
-            pd.Series(
-                [1892, 1993] 
-            ),
-            pd.Series(
-                [2033, 2033]
-            ),
-            pd.Series(
-                [True, False] 
-            ),
-
+            pd.Series([1892, 1993, 1993]),
+            pd.Series([2033, 2033, 2009]),  # in years: 141, 40, 16
+            pd.Series([True, False, False]),
+            pd.Series([False, False, True]),
         ),
         (
-            pd.Series(
-                ["Not Collected", "Unknown", ">89", "<18"]
-            ),
-            pd.Series(
-                [1992, 1993, 1992, 1993]
-            ),
-            pd.Series(
-                [False, False, False, False] 
-            ),
+            pd.Series(["Not Collected", "Unknown", ">89", "<18"]),
+            pd.Series([1992, 1993, 1992, 1993]),
+            pd.Series([False, False, False, False]),
+            pd.Series([False, False, False, False]),
         ),
         (
-            pd.Series(
-                ["Not Collected", np.nan]
-            ),
-            pd.Series(
-                [1992, 1993]
-            ),
-            pd.Series(
-                [False, False] 
-            ),
+            pd.Series(["Not Collected", np.nan]),
+            pd.Series([1992, 1993]),
+            pd.Series([False, False]),
+            pd.Series([False, False]),
         ),
-         
     ],
     ids=["numeric_values", "non_numeric_values", "has_NAs"],
-)   
-def test_to_redact_difference(df_col_year1, df_col_year2, expected_vector):
+)
+def test_to_redact_difference(
+    df_col_year1, df_col_year2, expected_to_redact, expected_to_redact_ped
+):
     # call the function
-    to_redact = database_to_staging._to_redact_difference(df_col_year1, df_col_year2)
+    to_redact, to_redact_ped = database_to_staging._to_redact_difference(
+        df_col_year1, df_col_year2
+    )
 
     # validate the calls
-    assert to_redact.equals(expected_vector)
+    assert to_redact.equals(expected_to_redact)
+    assert to_redact_ped.equals(expected_to_redact_ped)
+
+
+def get_redact_phi_test_cases():
+    return [
+        {
+            "name": "no_redaction",
+            "input_df": pd.DataFrame(
+                {
+                    "BIRTH_YEAR": [1992, 1993, 1992, 1993],
+                    "YEAR_CONTACT": [
+                        2033,
+                        2030,
+                        2010,
+                        2082,
+                    ],  # difference to BIRTH_YEAR: 41, 37, 18, 89
+                    "YEAR_DEATH": [
+                        2044,
+                        2047,
+                        2012,
+                        2082,
+                    ],  # difference to BIRTH_YEAR: 52, 54, 20, 89
+                    "AGE_AT_SEQ_REPORT": [
+                        13870,
+                        17885,
+                        6935,
+                        32485,
+                    ],  # in years 38*365, 49*365, 19*365, 89*365
+                    "INT_CONTACT": [
+                        14966,
+                        13506,
+                        6571,
+                        32485,
+                    ],  # in years: 41*365+1, 37*365+1, 18*365+1, 89*365
+                    "INT_DOD": [
+                        18981,
+                        19712,
+                        7300,
+                        32485,
+                    ],  # in years: 52*365+1, 54*365+2, 20*365, 89*365
+                    "Other_col": ["a", "b", "c", "d"],
+                }
+            ),
+            "expected_df": pd.DataFrame(
+                {
+                    "BIRTH_YEAR": [1992, 1993, 1992, 1993],
+                    "YEAR_CONTACT": [
+                        2033,
+                        2030,
+                        2010,
+                        2082,
+                    ],  # difference to BIRTH_YEAR: 41, 37, 18, 89
+                    "YEAR_DEATH": [
+                        2044,
+                        2047,
+                        2012,
+                        2082,
+                    ],  # difference to BIRTH_YEAR: 52, 54, 20, 89
+                    "AGE_AT_SEQ_REPORT": [
+                        13870,
+                        17885,
+                        6935,
+                        32485,
+                    ],  # in years 38*365, 49*365, 19*365, 89*365
+                    "INT_CONTACT": [
+                        14966,
+                        13506,
+                        6571,
+                        32485,
+                    ],  # in years: 41*365+1, 37*365+1, 18*365+1, 89*365
+                    "INT_DOD": [
+                        18981,
+                        19712,
+                        7300,
+                        32485,
+                    ],  # in years: 52*365+1, 54*365+2, 20*365, 89*365
+                    "Other_col": ["a", "b", "c", "d"],
+                }
+            ),
+        },
+        {
+            "name": "has_column_to_be_redacted",
+            "input_df": pd.DataFrame(
+                {
+                    "BIRTH_YEAR": [1992, 1992, 1992, 1992],
+                    "YEAR_CONTACT": [
+                        2008,
+                        2080,
+                        2008,
+                        2082,
+                    ],  # difference to BIRTH_YEAR: 16, 88, 16, 90
+                    "YEAR_DEATH": [
+                        2011,
+                        2082,
+                        2008,
+                        2082,
+                    ],  # difference to BIRTH_YEAR: 19, 90, 16, 90
+                    "AGE_AT_SEQ_REPORT": [
+                        6570,
+                        32485,
+                        5840,
+                        32850,
+                    ],  # in years: 18*365, 89*365, 16*365, 90*365
+                    "INT_CONTACT": [
+                        5841,
+                        32121,
+                        5841,
+                        32851,
+                    ],  # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
+                    "INT_DOD": [
+                        6935,
+                        32850,
+                        5840,
+                        32850,
+                    ],  # in years: 19*365, 90*365, 16*365, 90*365
+                    "Other_col": ["a", "b", "c", "d"],
+                }
+            ),
+            "expected_df": pd.DataFrame(
+                {
+                    "BIRTH_YEAR": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],
+                    "YEAR_CONTACT": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],  # difference to BIRTH_YEAR: 16, 88, 16, 90
+                    "YEAR_DEATH": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],  # difference to BIRTH_YEAR: 19, 90, 16, 90
+                    "AGE_AT_SEQ_REPORT": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],  # in years: 18*365, 89*365, 16*365, 90*365
+                    "INT_CONTACT": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],  # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
+                    "INT_DOD": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],  # in years: 19*365, 90*365, 16*365, 90*365
+                    "Other_col": ["a", "b", "c", "d"],
+                }
+            ),
+        },
+        {
+            "name": "has_range_values",
+            "input_df": pd.DataFrame(
+                {
+                    "BIRTH_YEAR": [1992, 1992, 1992, 1992],
+                    "YEAR_CONTACT": [
+                        "<18",
+                        2080,
+                        2008,
+                        2082,
+                    ],  # difference to BIRTH_YEAR: 16, 88, 16, 90
+                    "YEAR_DEATH": [
+                        2011,
+                        ">89",
+                        2008,
+                        2082,
+                    ],  # difference to BIRTH_YEAR: 19, 90, 16, 90
+                    "AGE_AT_SEQ_REPORT": [
+                        6570,
+                        32485,
+                        "<6570",
+                        ">32485",
+                    ],  # in years: 18*365, 89*365, 16*365, 90*365
+                    "INT_CONTACT": [
+                        "<6570",
+                        32121,
+                        5841,
+                        32851,
+                    ],  # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
+                    "INT_DOD": [
+                        6935,
+                        ">32485",
+                        5840,
+                        32850,
+                    ],  # in years: 19*365, 90*365, 16*365, 90*365
+                    "Other_col": ["a", "b", "c", "d"],
+                }
+            ),
+            "expected_df": pd.DataFrame(
+                {
+                    "BIRTH_YEAR": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],
+                    "YEAR_CONTACT": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],  # difference to BIRTH_YEAR: 16, 88, 16, 90
+                    "YEAR_DEATH": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],  # difference to BIRTH_YEAR: 19, 90, 16, 90
+                    "AGE_AT_SEQ_REPORT": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],  # in years: 18*365, 89*365, 16*365, 90*365
+                    "INT_CONTACT": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],  # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
+                    "INT_DOD": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],  # in years: 19*365, 90*365, 16*365, 90*365
+                    "Other_col": ["a", "b", "c", "d"],
+                }
+            ),
+        },
+        {
+            "name": "has_NAs",
+            "input_df": pd.DataFrame(
+                {
+                    "BIRTH_YEAR": [1992, 1992, 1992, 1992, 1993, 1994],
+                    "YEAR_CONTACT": [
+                        "<18",
+                        2080,
+                        2008,
+                        2082,
+                        2023,
+                        np.nan,
+                    ],  # difference to BIRTH_YEAR: 16, 88, 16, 90, 30, 31
+                    "YEAR_DEATH": [
+                        2011,
+                        ">89",
+                        2008,
+                        2082,
+                        2025,
+                        2025,
+                    ],  # difference to BIRTH_YEAR: 19, 90, 16, 90, 32, 31
+                    "AGE_AT_SEQ_REPORT": [
+                        6570,
+                        32485,
+                        "<6570",
+                        ">32485",
+                        11315,
+                        np.nan,
+                    ],  # in years: 18*365, 89*365, 16*365, 90*365, 31*365
+                    "INT_CONTACT": [
+                        "<6570",
+                        32121,
+                        5841,
+                        32851,
+                        10951,
+                        np.nan,
+                    ],  # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1, 30*365+1
+                    "INT_DOD": [
+                        6935,
+                        ">32485",
+                        5840,
+                        32850,
+                        11680,
+                        11315,
+                    ],  # in years: 19*365, 90*365, 16*365, 90*365, 32*365, 31*365
+                    "Other_col": ["a", "b", "c", "d", "e", "f"],
+                }
+            ),
+            "expected_df": pd.DataFrame(
+                {
+                    "BIRTH_YEAR": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        1993,
+                        1994,
+                    ],
+                    "YEAR_CONTACT": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        2023,
+                        np.nan,
+                    ],  # difference to BIRTH_YEAR: 16, 88, 16, 90, 30
+                    "YEAR_DEATH": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        2025,
+                        2025,
+                    ],  # difference to BIRTH_YEAR: 19, 90, 16, 90, 32, 31
+                    "AGE_AT_SEQ_REPORT": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        11315,
+                        np.nan,
+                    ],  # in years: 18*365, 89*365, 16*365, 90*365, 31*365
+                    "INT_CONTACT": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        10951,
+                        np.nan,
+                    ],  # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1, 30*365+1
+                    "INT_DOD": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                        11680,
+                        11315,
+                    ],  # in years: 19*365, 90*365, 16*365, 90*365, 32*365, 31*365
+                    "Other_col": ["a", "b", "c", "d", "e", "f"],
+                }
+            ),
+        },
+        {
+            "name": "has_range_in_birth_year",
+            "input_df": pd.DataFrame(
+                {
+                    "BIRTH_YEAR": ["<16", ">89"],
+                    "YEAR_CONTACT": [
+                        2011,
+                        2010,
+                    ],
+                    "YEAR_DEATH": [
+                        2013,
+                        2013,
+                    ],
+                    "AGE_AT_SEQ_REPORT": [
+                        np.nan,
+                        np.nan,
+                    ],
+                    "INT_CONTACT": [
+                        np.nan,
+                        np.nan,
+                    ],
+                    "INT_DOD": [
+                        np.nan,
+                        np.nan,
+                    ],
+                    "Other_col": ["a", "b"],
+                }
+            ),
+            "expected_df": pd.DataFrame(
+                {
+                    "BIRTH_YEAR": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],
+                    "YEAR_CONTACT": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],
+                    "YEAR_DEATH": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],
+                    "AGE_AT_SEQ_REPORT": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],
+                    "INT_CONTACT": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],
+                    "INT_DOD": [
+                        "withheld",
+                        "cannotReleaseHIPAA",
+                    ],
+                    "Other_col": ["a", "b"],
+                }
+            ),
+        },
+    ]
+
 
 @pytest.mark.parametrize(
-    "input_df,expected_df",
-    [
-        (
-            pd.DataFrame(
-                {
-                    "BIRTH_YEAR": [1992, 1993, 1992, 1993],
-                    "YEAR_CONTACT": [2033, 2030, 2010, 2082], # difference to BIRTH_YEAR: 41, 37, 18, 89
-                    "YEAR_DEATH": [2044, 2047, 2012, 2082], # difference to BIRTH_YEAR: 52, 54, 20, 89
-                    "AGE_AT_SEQ_REPORT": [13870, 17885, 6935, 32485], # in years 38*365, 49*365, 19*365, 89*365
-                    "INT_CONTACT": [14966, 13506, 6571, 32485], # in years: 41*365+1, 37*365+1, 18*365+1, 89*365
-                    "INT_DOD": [18981, 19712, 7300, 32485], # in years: 52*365+1, 54*365+2, 20*365, 89*365
-                    "Other_col": ["a", "b", "c", "d"],
-                }
-                ),
-            pd.DataFrame(
-                {
-                    "BIRTH_YEAR": [1992, 1993, 1992, 1993],
-                    "YEAR_CONTACT": [2033, 2030, 2010, 2082], # difference to BIRTH_YEAR: 41, 37, 18, 89
-                    "YEAR_DEATH": [2044, 2047, 2012, 2082], # difference to BIRTH_YEAR: 52, 54, 20, 89
-                    "AGE_AT_SEQ_REPORT": [13870, 17885, 6935, 32485], # in years 38*365, 49*365, 19*365, 89*365
-                    "INT_CONTACT": [14966, 13506, 6571, 32485], # in years: 41*365+1, 37*365+1, 18*365+1, 89*365
-                    "INT_DOD": [18981, 19712, 7300, 32485], # in years: 52*365+1, 54*365+2, 20*365, 89*365
-                    "Other_col": ["a", "b", "c", "d"],
-                }
-                ),
-        ),
-        (
-            pd.DataFrame(
-                {
-                    "BIRTH_YEAR": [1992, 1992, 1992, 1992],
-                    "YEAR_CONTACT": [2008, 2080, 2008, 2082], # difference to BIRTH_YEAR: 16, 88, 16, 90
-                    "YEAR_DEATH": [2011, 2082, 2008, 2082], # difference to BIRTH_YEAR: 19, 90, 16, 90
-                    "AGE_AT_SEQ_REPORT": [6570, 32485, 5840, 32850], # in years: 18*365, 89*365, 16*365, 90*365
-                    "INT_CONTACT": [5841, 32121, 5841, 32851], # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
-                    "INT_DOD": [6935, 32850, 5840, 32850], # in years: 19*365, 90*365, 16*365, 90*365
-                    "Other_col": ["a", "b", "c", "d"],
-                }
-
-        ),
-            pd.DataFrame(
-                {
-                    "BIRTH_YEAR": ["withheld", "cannotReleaseHIPAA", "withheld", "cannotReleaseHIPAA"],
-                    "YEAR_CONTACT": [2008, 2080, 2008, 2082], # difference to BIRTH_YEAR: 16, 88, 16, 90
-                    "YEAR_DEATH": [2011, 2082, 2008, 2082], # difference to BIRTH_YEAR: 19, 90, 16, 90
-                    "AGE_AT_SEQ_REPORT": [6570, 32485, "<6570", ">32485"],  # in years: 18*365, 89*365, 16*365, 90*365
-                    "INT_CONTACT": ["<6570", 32121, "<6570", ">32485"], # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
-                    "INT_DOD": [6935, ">32485", "<6570", ">32485"], # in years: 19*365, 90*365, 16*365, 90*365
-                    "Other_col": ["a", "b", "c", "d"],
-                }
-
-        ),
-        ),
-        (
-            pd.DataFrame(
-                {
-                    "BIRTH_YEAR": [1992, 1992, 1992, 1992],
-                    "YEAR_CONTACT": ["<18", 2080, 2008, 2082], # difference to BIRTH_YEAR: 16, 88, 16, 90
-                    "YEAR_DEATH": [2011, ">89", 2008, 2082], # difference to BIRTH_YEAR: 19, 90, 16, 90
-                    "AGE_AT_SEQ_REPORT": [6570, 32485, "<6570", ">32485"], # in years: 18*365, 89*365, 16*365, 90*365
-                    "INT_CONTACT": ["<6570", 32121, 5841, 32851], # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
-                    "INT_DOD": [6935, ">32485", 5840, 32850], # in years: 19*365, 90*365, 16*365, 90*365
-                    "Other_col": ["a", "b", "c", "d"],
-                }
-
-        ),
-            pd.DataFrame(
-                {
-                    "BIRTH_YEAR": ["withheld", "cannotReleaseHIPAA", "withheld", "cannotReleaseHIPAA"],
-                    "YEAR_CONTACT": ["<18", 2080, 2008, 2082], # difference to BIRTH_YEAR: 16, 88, 16, 90
-                    "YEAR_DEATH": [2011, ">89", 2008, 2082], # difference to BIRTH_YEAR: 19, 90, 16, 90
-                    "AGE_AT_SEQ_REPORT": [6570, 32485, "<6570", ">32485"],  # in years: 18*365, 89*365, 16*365, 90*365
-                    "INT_CONTACT": ["<6570", 32121, "<6570", ">32485"], # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
-                    "INT_DOD": [6935, ">32485", "<6570", ">32485"], # in years: 19*365, 90*365, 16*365, 90*365
-                    "Other_col": ["a", "b", "c", "d"],
-                }
-
-        ),
-        ),
-         
-         
-    ],
-    ids=["no_redaction", "has_column_to_be_redacted", "has_range_values"],
-)   
-def test_redact_phi(input_df, expected_df):
+    "test_cases", get_redact_phi_test_cases(), ids=lambda x: x["name"]
+)
+def test_redact_phi(test_cases):
     # call the function
-    output = database_to_staging.redact_phi(input_df)
+    output = database_to_staging.redact_phi(test_cases["input_df"])
 
     # validate_calss
-    assert_frame_equal(output, expected_df, check_dtype=False)
-
-
-@pytest.mark.parametrize(
-    "input_df,expected_df",
-    [
-        (
-            pd.DataFrame(
-                {
-                    "BIRTH_YEAR": [1992, 1993, 1992, 1993],
-                    "YEAR_CONTACT": [2033, 2030, 2010, 2082], # difference to BIRTH_YEAR: 41, 37, 18, 89
-                    "YEAR_DEATH": [2044, 2047, 2012, 2082], # difference to BIRTH_YEAR: 52, 54, 20, 89
-                    "AGE_AT_SEQ_REPORT": [13870, 17885, 6935, 32485], # in years 38*365, 49*365, 19*365, 89*365
-                    "INT_CONTACT": [14966, 13506, 6571, 32485], # in years: 41*365+1, 37*365+1, 18*365+1, 89*365
-                    "INT_DOD": [18981, 19712, 7300, 32485], # in years: 52*365+1, 54*365+2, 20*365, 89*365
-                    "Other_col": ["a", "b", "c", "d"],
-                }
-                ),
-            pd.DataFrame(
-                {
-                    "BIRTH_YEAR": [1992, 1993, 1992, 1993],
-                    "YEAR_CONTACT": [2033, 2030, 2010, 2082], # difference to BIRTH_YEAR: 41, 37, 18, 89
-                    "YEAR_DEATH": [2044, 2047, 2012, 2082], # difference to BIRTH_YEAR: 52, 54, 20, 89
-                    "AGE_AT_SEQ_REPORT": [13870, 17885, 6935, 32485], # in years 38*365, 49*365, 19*365, 89*365
-                    "INT_CONTACT": [14966, 13506, 6571, 32485], # in years: 41*365+1, 37*365+1, 18*365+1, 89*365
-                    "INT_DOD": [18981, 19712, 7300, 32485], # in years: 52*365+1, 54*365+2, 20*365, 89*365
-                    "Other_col": ["a", "b", "c", "d"],
-                }
-                ),
-        ),
-        (
-            pd.DataFrame(
-                {
-                    "BIRTH_YEAR": [1992, 1992, 1992, 1992],
-                    "YEAR_CONTACT": [2008, 2080, 2008, 2082], # difference to BIRTH_YEAR: 16, 88, 16, 90
-                    "YEAR_DEATH": [2011, 2082, 2008, 2082], # difference to BIRTH_YEAR: 19, 90, 16, 90
-                    "AGE_AT_SEQ_REPORT": [6570, 32485, 5840, 32850], # in years: 18*365, 89*365, 16*365, 90*365
-                    "INT_CONTACT": [5841, 32121, 5841, 32851], # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
-                    "INT_DOD": [6935, 32850, 5840, 32850], # in years: 19*365, 90*365, 16*365, 90*365
-                    "Other_col": ["a", "b", "c", "d"],
-                }
-
-        ),
-            pd.DataFrame(
-                {
-                    "BIRTH_YEAR": ["withheld", "cannotReleaseHIPAA", "withheld", "cannotReleaseHIPAA"],
-                    "YEAR_CONTACT": ["withheld", "cannotReleaseHIPAA", "withheld", "cannotReleaseHIPAA"], # difference to BIRTH_YEAR: 16, 88, 16, 90
-                    "YEAR_DEATH": ["withheld", "cannotReleaseHIPAA", "withheld", "cannotReleaseHIPAA"], # difference to BIRTH_YEAR: 19, 90, 16, 90
-                    "AGE_AT_SEQ_REPORT": ["withheld", "cannotReleaseHIPAA", "<6570", ">32485"],  # in years: 18*365, 89*365, 16*365, 90*365
-                    "INT_CONTACT": ["<6570", "cannotReleaseHIPAA", "<6570", ">32485"], # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
-                    "INT_DOD": ["withheld", ">32485", "<6570", ">32485"], # in years: 19*365, 90*365, 16*365, 90*365
-                    "Other_col": ["a", "b", "c", "d"],
-                }
-
-        ),
-        ),
-        (
-            pd.DataFrame(
-                {
-                    "BIRTH_YEAR": [1992, 1992, 1992, 1992],
-                    "YEAR_CONTACT": ["<18", 2080, 2008, 2082], # difference to BIRTH_YEAR: 16, 88, 16, 90
-                    "YEAR_DEATH": [2011, ">89", 2008, 2082], # difference to BIRTH_YEAR: 19, 90, 16, 90
-                    "AGE_AT_SEQ_REPORT": [6570, 32485, "<6570", ">32485"], # in years: 18*365, 89*365, 16*365, 90*365
-                    "INT_CONTACT": ["<6570", 32121, 5841, 32851], # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
-                    "INT_DOD": [6935, ">32485", 5840, 32850], # in years: 19*365, 90*365, 16*365, 90*365
-                    "Other_col": ["a", "b", "c", "d"],
-                }
-
-        ),
-            pd.DataFrame(
-                {
-                    "BIRTH_YEAR": ["withheld", "cannotReleaseHIPAA", "withheld", "cannotReleaseHIPAA"],
-                    "YEAR_CONTACT": ["<18", "cannotReleaseHIPAA", "withheld", "cannotReleaseHIPAA"], # difference to BIRTH_YEAR: 16, 88, 16, 90
-                    "YEAR_DEATH": ["withheld", ">89", "withheld", "cannotReleaseHIPAA"], # difference to BIRTH_YEAR: 19, 90, 16, 90
-                    "AGE_AT_SEQ_REPORT": ["withheld", "cannotReleaseHIPAA", "<6570", ">32485"],  # in years: 18*365, 89*365, 16*365, 90*365
-                    "INT_CONTACT": ["<6570", "cannotReleaseHIPAA", "<6570", ">32485"], # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
-                    "INT_DOD": ["withheld", ">32485", "<6570", ">32485"], # in years: 19*365, 90*365, 16*365, 90*365
-                    "Other_col": ["a", "b", "c", "d"],
-                }
-
-        ),
-        ),
-         
-         
-    ],
-    ids=["no_redaction", "has_column_to_be_redacted", "has_range_values"],
-)   
-def test_redact_phi_new(input_df, expected_df):
-    # call the function
-    output = database_to_staging.redact_phi_new(input_df)
-
-    # validate_calss
-    assert_frame_equal(output, expected_df, check_dtype=False)
+    assert_frame_equal(output, test_cases["expected_df"], check_dtype=False)

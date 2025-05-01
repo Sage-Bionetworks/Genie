@@ -159,14 +159,16 @@ def _to_redact_difference(df_col_year1, df_col_year2):
         df_col_year2: Dataframe column/pandas.Series of a year column
 
     Returns:
-        pandas.Series: to redact boolean vector
+        tuple: pandas.Series: to redact boolean vector
+               pandas.Series: to redact pediatric boolean vector
 
     """
     # Add in errors='coerce' to turn strings into NaN
     year1 = pd.to_numeric(df_col_year1, errors="coerce")
     year2 = pd.to_numeric(df_col_year2, errors="coerce")
     to_redact = year2 - year1 > 89
-    return to_redact
+    to_redact_ped = year2 - year1 < 18
+    return to_redact, to_redact_ped
 
 
 # TODO: Add to transform.py
@@ -188,72 +190,51 @@ def redact_phi(
     """
     # Moved to cannotReleaseHIPAA and withheld because the HIPAA
     # years would change every single year. (e.g. <1926, >1998 would be
-    for col in interval_cols_to_redact:
-        to_redact, to_redactpeds = _to_redact_interval(clinicaldf[col])
-        clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
-        clinicaldf.loc[to_redact, col] = ">32485"
-        clinicaldf.loc[to_redactpeds, "BIRTH_YEAR"] = "withheld"
-        clinicaldf.loc[to_redactpeds, col] = "<6570"
-        complete_redact = complete_redact & to_redact & to_redactpeds
-    # Redact BIRTH_YEAR values that have < or >
-    # Birth year has to be done separately because it is not an interval
-    clinicaldf["BIRTH_YEAR"] = _redact_year(clinicaldf["BIRTH_YEAR"])
-    to_redact = _to_redact_difference(
-        clinicaldf["BIRTH_YEAR"], clinicaldf["YEAR_CONTACT"]
-    )
-    clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
-    to_redact = _to_redact_difference(
-        clinicaldf["BIRTH_YEAR"], clinicaldf["YEAR_DEATH"]
-    )
-    clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
-
-    return clinicaldf
-
-def redact_phi_new(
-    clinicaldf, interval_cols_to_redact=["AGE_AT_SEQ_REPORT", "INT_CONTACT", "INT_DOD"]
-):
-    """Redacts the PHI by re-annotating the clinical file
-
-    Args:
-        clinicaldf: merged clinical dataframe
-        interval_cols_to_redact: List of interval columns to redact.
-                                 Defaults to ['AGE_AT_SEQ_REPORT',
-                                              'INT_CONTACT',
-                                              'INT_DOD']
-
-    Returns:
-        pandas.DataFrame: Redacted clinical dataframe
-
-    """
-    # Moved to cannotReleaseHIPAA and withheld because the HIPAA
-    # years would change every single year. (e.g. <1926, >1998 would be
     # inaccurate every year)
     complete_redact = pd.Series([False] * len(clinicaldf))
+    complete_redact_ped = pd.Series([False] * len(clinicaldf))
     for col in interval_cols_to_redact:
-        to_redact, to_redactpeds = _to_redact_interval(clinicaldf[col])
-        complete_redact = complete_redact | to_redact | to_redactpeds
-
-    clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
-    clinicaldf.loc[to_redact, col] = ">32485"
-    clinicaldf.loc[to_redactpeds, "BIRTH_YEAR"] = "withheld"
-    clinicaldf.loc[to_redactpeds, col] = "<6570"
-        
+        to_redact, to_redact_peds = _to_redact_interval(clinicaldf[col])
+        complete_redact = complete_redact | to_redact
+        complete_redact_ped = complete_redact_ped | to_redact_peds
     # Redact BIRTH_YEAR values that have < or >
     # Birth year has to be done separately because it is not an interval
     clinicaldf["BIRTH_YEAR"] = _redact_year(clinicaldf["BIRTH_YEAR"])
-    to_redact = _to_redact_difference(
+    to_redact_birth_year = clinicaldf["BIRTH_YEAR"] == "cannotReleaseHIPAA"
+    to_redact_birth_year_ped = clinicaldf["BIRTH_YEAR"] == "withheld"
+
+    # check the difference between BIRTH_YEAR and YEAR_CONTACT/YEAR_DEATH
+    to_redact_year_contact, to_redact_year_contact_ped = _to_redact_difference(
         clinicaldf["BIRTH_YEAR"], clinicaldf["YEAR_CONTACT"]
     )
-    clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
-    complete_redact = complete_redact |to_redact
-    to_redact = _to_redact_difference(
+    to_redact_year_death, to_redact_year_death_ped = _to_redact_difference(
         clinicaldf["BIRTH_YEAR"], clinicaldf["YEAR_DEATH"]
     )
-    clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
-    complete_redact = complete_redact |to_redact
-    clinicaldf.loc[complete_redact, ["YEAR_CONTACT", "YEAR_DEATH", "AGE_AT_SEQ_REPORT", "INT_CONTACT", "INT_DOD"]]= clinicaldf.loc[complete_redact,"BIRTH_YEAR"] 
+    complete_redact = (
+        complete_redact
+        | to_redact_birth_year
+        | to_redact_year_contact
+        | to_redact_year_death
+    )
+    complete_redact_ped = (
+        complete_redact_ped
+        | to_redact_birth_year_ped
+        | to_redact_year_contact_ped
+        | to_redact_year_death_ped
+    )
+
+    # redact all age columns
+    clinicaldf.loc[
+        complete_redact,
+        ["BIRTH_YEAR", "YEAR_CONTACT", "YEAR_DEATH"] + interval_cols_to_redact,
+    ] = "cannotReleaseHIPAA"
+    clinicaldf.loc[
+        complete_redact_ped,
+        ["BIRTH_YEAR", "YEAR_CONTACT", "YEAR_DEATH"] + interval_cols_to_redact,
+    ] = "withheld"
 
     return clinicaldf
+
 
 # TODO: Add to transform.py
 def remove_maf_samples(mafdf: pd.DataFrame, keep_samples: list) -> pd.DataFrame:
