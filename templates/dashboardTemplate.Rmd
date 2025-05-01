@@ -385,7 +385,6 @@ If you see samples that should not be retracted, please upload a fix to your dat
 For patient retractions submitted between these months, a new public release will be generated that removes the affected records. The new release will be issued no later than July or January, respectively:
 
 * January-June
-
 * July-December
 ---
 
