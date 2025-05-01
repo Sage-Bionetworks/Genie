@@ -382,16 +382,11 @@ Please apprise your patients of this schedule so that they are aware of the time
 If you see samples that should not be retracted, please upload a fix to your data or let Tom Yu from Sage know immediately.
 
 
-For patient retractions submitted between these months, a new public release will be generated that removes the affected records. The new release will be issued no later than April or October, respectively:
+For patient retractions submitted between these months, a new public release will be generated that removes the affected records. The new release will be issued no later than July or January, respectively:
 
-* January-March
-* July-September
+* January-June
 
-For patient retractions submitted between these months, the records will be removed from the next regularly-scheduled public release in July or January, respectively:
-
-* April-June
-* October-December
-
+* July-December
 ---
 
 ### Genome nexus failed annotations summary
