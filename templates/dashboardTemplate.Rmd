@@ -386,6 +386,7 @@ For patient retractions submitted between these months, a new public release wil
 
 * January-June
 * July-December
+
 ---
 
 ### Genome nexus failed annotations summary
