@@ -379,7 +379,7 @@ These `r paste0("[sample/patient IDs](https://www.synapse.org/#!Synapse:", ent$p
 have been marked for retraction from GENIE and have been removed from the GENIE database.
 However, removal from public release files occurs according to the following fixed schedule.
 Please apprise your patients of this schedule so that they are aware of the timeline for retraction of their data.
-If you see samples that should not be retracted, please upload a fix to your data or let Tom Yu from Sage know immediately.
+If you see samples that should not be retracted, please upload a fix to your data or email genie.dcc@sagebase.org immediately.
 
 
 For patient retractions submitted between these months, a new public release will be generated that removes the affected records. The new release will be issued no later than July or January, respectively:
