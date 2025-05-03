@@ -1172,40 +1172,32 @@ def test__redact_year(input_col, expected_col):
 
 
 @pytest.mark.parametrize(
-    "df_col_year1,df_col_year2, expected_to_redact,expected_to_redact_ped",
+    "df_col_year1,df_col_year2, expected_to_redact",
     [
         (
             pd.Series([1892, 1993, 1993]),
             pd.Series([2033, 2033, 2009]),  # in years: 141, 40, 16
             pd.Series([True, False, False]),
-            pd.Series([False, False, True]),
         ),
         (
             pd.Series(["Not Collected", "Unknown", ">89", "<18"]),
             pd.Series([1992, 1993, 1992, 1993]),
-            pd.Series([False, False, False, False]),
             pd.Series([False, False, False, False]),
         ),
         (
             pd.Series(["Not Collected", np.nan]),
             pd.Series([1992, 1993]),
             pd.Series([False, False]),
-            pd.Series([False, False]),
         ),
     ],
     ids=["numeric_values", "non_numeric_values", "has_NAs"],
 )
-def test_to_redact_difference(
-    df_col_year1, df_col_year2, expected_to_redact, expected_to_redact_ped
-):
+def test_to_redact_difference(df_col_year1, df_col_year2, expected_to_redact):
     # call the function
-    to_redact, to_redact_ped = database_to_staging._to_redact_difference(
-        df_col_year1, df_col_year2
-    )
+    to_redact = database_to_staging._to_redact_difference(df_col_year1, df_col_year2)
 
     # validate the calls
     assert to_redact.equals(expected_to_redact)
-    assert to_redact_ped.equals(expected_to_redact_ped)
 
 
 def get_redact_phi_test_cases():
@@ -1332,33 +1324,33 @@ def get_redact_phi_test_cases():
                         "cannotReleaseHIPAA",
                     ],
                     "YEAR_CONTACT": [
-                        "withheld",
+                        2008,
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        2008,
                         "cannotReleaseHIPAA",
                     ],  # difference to BIRTH_YEAR: 16, 88, 16, 90
                     "YEAR_DEATH": [
-                        "withheld",
+                        2011,
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        2008,
                         "cannotReleaseHIPAA",
                     ],  # difference to BIRTH_YEAR: 19, 90, 16, 90
                     "AGE_AT_SEQ_REPORT": [
-                        "withheld",
+                        6570,
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        "<6570",
                         "cannotReleaseHIPAA",
                     ],  # in years: 18*365, 89*365, 16*365, 90*365
                     "INT_CONTACT": [
-                        "withheld",
+                        "<6570",
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        "<6570",
                         "cannotReleaseHIPAA",
                     ],  # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
                     "INT_DOD": [
-                        "withheld",
+                        6935,
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        "<6570",
                         "cannotReleaseHIPAA",
                     ],  # in years: 19*365, 90*365, 16*365, 90*365
                     "Other_col": ["a", "b", "c", "d"],
@@ -1412,33 +1404,33 @@ def get_redact_phi_test_cases():
                         "cannotReleaseHIPAA",
                     ],
                     "YEAR_CONTACT": [
-                        "withheld",
+                        "<18",
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        2008,
                         "cannotReleaseHIPAA",
                     ],  # difference to BIRTH_YEAR: 16, 88, 16, 90
                     "YEAR_DEATH": [
-                        "withheld",
+                        2011,
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        2008,
                         "cannotReleaseHIPAA",
                     ],  # difference to BIRTH_YEAR: 19, 90, 16, 90
                     "AGE_AT_SEQ_REPORT": [
-                        "withheld",
+                        6570,
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        "<6570",
                         "cannotReleaseHIPAA",
                     ],  # in years: 18*365, 89*365, 16*365, 90*365
                     "INT_CONTACT": [
-                        "withheld",
+                        "<6570",
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        "<6570",
                         "cannotReleaseHIPAA",
                     ],  # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
                     "INT_DOD": [
-                        "withheld",
+                        6935,
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        "<6570",
                         "cannotReleaseHIPAA",
                     ],  # in years: 19*365, 90*365, 16*365, 90*365
                     "Other_col": ["a", "b", "c", "d"],
@@ -1504,41 +1496,41 @@ def get_redact_phi_test_cases():
                         1994,
                     ],
                     "YEAR_CONTACT": [
-                        "withheld",
+                        "<18",
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        2008,
                         "cannotReleaseHIPAA",
                         2023,
                         np.nan,
                     ],  # difference to BIRTH_YEAR: 16, 88, 16, 90, 30
                     "YEAR_DEATH": [
-                        "withheld",
+                        2011,
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        2008,
                         "cannotReleaseHIPAA",
                         2025,
                         2025,
                     ],  # difference to BIRTH_YEAR: 19, 90, 16, 90, 32, 31
                     "AGE_AT_SEQ_REPORT": [
-                        "withheld",
+                        6570,
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        "<6570",
                         "cannotReleaseHIPAA",
                         11315,
                         np.nan,
                     ],  # in years: 18*365, 89*365, 16*365, 90*365, 31*365
                     "INT_CONTACT": [
-                        "withheld",
+                        "<6570",
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        "<6570",
                         "cannotReleaseHIPAA",
                         10951,
                         np.nan,
                     ],  # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1, 30*365+1
                     "INT_DOD": [
-                        "withheld",
+                        6935,
                         "cannotReleaseHIPAA",
-                        "withheld",
+                        "<6570",
                         "cannotReleaseHIPAA",
                         11680,
                         11315,
@@ -1551,7 +1543,7 @@ def get_redact_phi_test_cases():
             "name": "has_range_in_birth_year",
             "input_df": pd.DataFrame(
                 {
-                    "BIRTH_YEAR": ["<16", ">89"],
+                    "BIRTH_YEAR": ["<18", ">89"],
                     "YEAR_CONTACT": [
                         2011,
                         2010,
@@ -1582,23 +1574,23 @@ def get_redact_phi_test_cases():
                         "cannotReleaseHIPAA",
                     ],
                     "YEAR_CONTACT": [
-                        "withheld",
+                        2011,
                         "cannotReleaseHIPAA",
                     ],
                     "YEAR_DEATH": [
-                        "withheld",
+                        2013,
                         "cannotReleaseHIPAA",
                     ],
                     "AGE_AT_SEQ_REPORT": [
-                        "withheld",
+                        np.nan,
                         "cannotReleaseHIPAA",
                     ],
                     "INT_CONTACT": [
-                        "withheld",
+                        np.nan,
                         "cannotReleaseHIPAA",
                     ],
                     "INT_DOD": [
-                        "withheld",
+                        np.nan,
                         "cannotReleaseHIPAA",
                     ],
                     "Other_col": ["a", "b"],
