@@ -152,7 +152,7 @@ def _redact_year(df_col):
 
 # TODO: Add to transform.py
 def _to_redact_difference(df_col_year1, df_col_year2):
-    """Determine if difference between year2 and year1 is > 89 or is < 18
+    """Determine if difference between year2 and year1 is > 89
 
     Args:
         df_col_year1: Dataframe column/pandas.Series of a year column
