@@ -10,10 +10,14 @@ from unittest.mock import patch
 import pandas as pd
 from genie import database_to_staging
 from genie.consortium_to_public import commonVariantFilter
-from genie.database_to_staging import (_redact_year, _to_redact_difference,
-                                       _to_redact_interval,
-                                       no_genepanel_filter, redact_phi,
-                                       seq_assay_id_filter)
+from genie.database_to_staging import (
+    _redact_year,
+    _to_redact_difference,
+    _to_redact_interval,
+    no_genepanel_filter,
+    redact_phi,
+    seq_assay_id_filter,
+)
 from genie.process_functions import seqDateFilter
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -119,6 +123,7 @@ def test_seqdatefilter():
     processingDate = datetime.datetime.strptime(SEQ_DATE, "%b-%Y")
     samples = seqDateFilter(clinicalDf, processingDate, 184)
     assert all(samples == expected)
+
 
 # def test_MAFinBED():
 #   syn = mock.create_autospec(synapseclient.Synapse)
