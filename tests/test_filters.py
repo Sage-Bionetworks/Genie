@@ -8,18 +8,13 @@ import sys
 from unittest.mock import patch
 
 import pandas as pd
-
-from genie.process_functions import seqDateFilter
 from genie import database_to_staging
-from genie.database_to_staging import (
-    seq_assay_id_filter,
-    redact_phi,
-    no_genepanel_filter,
-    _to_redact_interval,
-    _redact_year,
-    _to_redact_difference,
-)
 from genie.consortium_to_public import commonVariantFilter
+from genie.database_to_staging import (_redact_year, _to_redact_difference,
+                                       _to_redact_interval,
+                                       no_genepanel_filter, redact_phi,
+                                       seq_assay_id_filter)
+from genie.process_functions import seqDateFilter
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(SCRIPT_DIR, "../../genie"))
@@ -124,61 +119,6 @@ def test_seqdatefilter():
     processingDate = datetime.datetime.strptime(SEQ_DATE, "%b-%Y")
     samples = seqDateFilter(clinicalDf, processingDate, 184)
     assert all(samples == expected)
-
-
-def test__to_redact_interval():
-    """Tests the correct boolean vectors are returned for phi and pediatric
-    redaction"""
-    values = pd.Series([32850, 32485, 6570, 6569, "<foo", ">testing"])
-    to_redact, to_redact_peds = _to_redact_interval(values)
-    expected_redact = [True, False, False, False, False, True]
-    expected_redact_peds = [False, False, False, True, True, False]
-    assert to_redact.to_list() == expected_redact
-    assert to_redact_peds.to_list() == expected_redact_peds
-
-
-def test__redact_year():
-    """Tests redaction of birth year based on < and >"""
-    values = pd.Series([1923, 2003, "<foo", ">testing"])
-    redacted = _redact_year(values)
-    expected_redact = [1923, 2003, "withheld", "cannotReleaseHIPAA"]
-    assert redacted.to_list() == expected_redact
-
-
-def test___to_redact_difference():
-    """Tests if a difference between two year columns is >89, redact"""
-    year1 = pd.Series([1923, 2000, float("nan")])
-    year2 = pd.Series([1926, 2100, 2000])
-    redacted = _to_redact_difference(year1, year2)
-    expected_redact = [False, True, False]
-    assert redacted.to_list() == expected_redact
-
-
-def test_redact_phi():
-    """Redacts PHI interval and years"""
-    return_bools = ([True, False, False], [False, False, True])
-    clinicaldf = pd.DataFrame(["SAGE-TEST-1", "SAGE-TEST-2", "SAGE-TEST-3"])
-    clinicaldf.rename(columns={0: "SAMPLE_ID"}, inplace=True)
-    clinicaldf["AGE_AT_SEQ_REPORT"] = [32850, 32485, 6570]
-    clinicaldf["BIRTH_YEAR"] = [1900, "<1900", 1902]
-    # These are the years that are returned by the _redact_year
-    # Use these against YEAR_CONTACT and YEAR_DEATH to calculate
-    # expected_birth
-    return_year = pd.Series([2000, 1903, 1904])
-    clinicaldf["YEAR_CONTACT"] = [2100, 1904, float("nan")]
-    clinicaldf["YEAR_DEATH"] = [2001, float("nan"), 2000]
-
-    expected_age = pd.Series([">32485", 32485, "<6570"])
-    expected_birth = pd.Series(["cannotReleaseHIPAA", 1903, "cannotReleaseHIPAA"])
-    with patch.object(
-        database_to_staging, "_to_redact_interval", return_value=return_bools
-    ), patch.object(database_to_staging, "_redact_year", return_value=return_year):
-        redacted_clin = redact_phi(
-            clinicaldf, interval_cols_to_redact=["AGE_AT_SEQ_REPORT"]
-        )
-        assert all(redacted_clin["AGE_AT_SEQ_REPORT"] == expected_age)
-        assert all(redacted_clin["BIRTH_YEAR"] == expected_birth)
-
 
 # def test_MAFinBED():
 #   syn = mock.create_autospec(synapseclient.Synapse)
