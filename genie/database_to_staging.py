@@ -159,7 +159,7 @@ def _to_redact_difference(df_col_year1, df_col_year2):
         df_col_year2: Dataframe column/pandas.Series of a year column
 
     Returns:
-        tuple: pandas.Series: to redact boolean vector
+        pandas.Series: to redact boolean vector
 
     """
     # Add in errors='coerce' to turn strings into NaN
