@@ -1206,6 +1206,8 @@ def get_redact_phi_test_cases():
             "name": "no_redaction",
             "input_df": pd.DataFrame(
                 {
+                    "PATIENT_ID": ["a", "a", "c", "d"],
+                    "SAMPLE_ID": ["a", "b", "c", "d"],
                     "BIRTH_YEAR": [1992, 1993, 1992, 1993],
                     "YEAR_CONTACT": [
                         2033,
@@ -1242,6 +1244,8 @@ def get_redact_phi_test_cases():
             ),
             "expected_df": pd.DataFrame(
                 {
+                    "PATIENT_ID": ["a", "a", "c", "d"],
+                    "SAMPLE_ID": ["a", "b", "c", "d"],
                     "BIRTH_YEAR": [1992, 1993, 1992, 1993],
                     "YEAR_CONTACT": [
                         2033,
@@ -1281,46 +1285,62 @@ def get_redact_phi_test_cases():
             "name": "has_column_to_be_redacted",
             "input_df": pd.DataFrame(
                 {
-                    "BIRTH_YEAR": [1992, 1992, 1992, 1992],
+                    "PATIENT_ID": ["a", "b", "c", "d", "e", "e"],  # redact b, d, e
+                    "SAMPLE_ID": ["a", "b", "c", "d", "e", "f"],
+                    "BIRTH_YEAR": [1992, 1992, 1992, 1992, 1992, 1992],
                     "YEAR_CONTACT": [
                         2008,
                         2080,
                         2008,
                         2082,
-                    ],  # difference to BIRTH_YEAR: 16, 88, 16, 90
+                        2080,
+                        2081,
+                    ],  # difference to BIRTH_YEAR: 16, 88, 16, 90, 88, 89
                     "YEAR_DEATH": [
                         2011,
                         2082,
                         2008,
                         2082,
-                    ],  # difference to BIRTH_YEAR: 19, 90, 16, 90
+                        2081,
+                        2081,
+                    ],  # difference to BIRTH_YEAR: 19, 90, 16, 90, 89, 89
                     "AGE_AT_SEQ_REPORT": [
                         6570,
                         32485,
                         5840,
                         32850,
-                    ],  # in years: 18*365, 89*365, 16*365, 90*365
+                        32120,
+                        32485,
+                    ],  # in years: 18*365, 89*365, 16*365, 90*365, 88*365, 89*365
                     "INT_CONTACT": [
                         5841,
                         32121,
                         5841,
                         32851,
-                    ],  # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
+                        32121,
+                        32485,
+                    ],  # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1, 88*365+1, 89*365
                     "INT_DOD": [
                         6935,
                         32850,
                         5840,
                         32850,
-                    ],  # in years: 19*365, 90*365, 16*365, 90*365
-                    "Other_col": ["a", "b", "c", "d"],
+                        32485,
+                        32486,
+                    ],  # in years: 19*365, 90*365, 16*365, 90*365, 89*365, 89*365+1
+                    "Other_col": ["a", "b", "c", "d", "e", "f"],
                 }
             ),
             "expected_df": pd.DataFrame(
                 {
+                    "PATIENT_ID": ["a", "b", "c", "d", "e", "e"],
+                    "SAMPLE_ID": ["a", "b", "c", "d", "e", "f"],
                     "BIRTH_YEAR": [
                         "withheld",
                         "cannotReleaseHIPAA",
                         "withheld",
+                        "cannotReleaseHIPAA",
+                        "cannotReleaseHIPAA",
                         "cannotReleaseHIPAA",
                     ],
                     "YEAR_CONTACT": [
@@ -1328,32 +1348,42 @@ def get_redact_phi_test_cases():
                         "cannotReleaseHIPAA",
                         2008,
                         "cannotReleaseHIPAA",
-                    ],  # difference to BIRTH_YEAR: 16, 88, 16, 90
+                        "cannotReleaseHIPAA",
+                        "cannotReleaseHIPAA",
+                    ],  # difference to BIRTH_YEAR: 16, 88, 16, 90, 88, 89
                     "YEAR_DEATH": [
                         2011,
                         "cannotReleaseHIPAA",
                         2008,
                         "cannotReleaseHIPAA",
-                    ],  # difference to BIRTH_YEAR: 19, 90, 16, 90
+                        "cannotReleaseHIPAA",
+                        "cannotReleaseHIPAA",
+                    ],  # difference to BIRTH_YEAR: 19, 90, 16, 90,  89, 89
                     "AGE_AT_SEQ_REPORT": [
                         6570,
                         "cannotReleaseHIPAA",
                         "<6570",
                         "cannotReleaseHIPAA",
-                    ],  # in years: 18*365, 89*365, 16*365, 90*365
+                        "cannotReleaseHIPAA",
+                        "cannotReleaseHIPAA",
+                    ],  # in years: 18*365, 89*365, 16*365, 90*365, 88*365, 89*365
                     "INT_CONTACT": [
                         "<6570",
                         "cannotReleaseHIPAA",
                         "<6570",
                         "cannotReleaseHIPAA",
-                    ],  # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1
+                        "cannotReleaseHIPAA",
+                        "cannotReleaseHIPAA",
+                    ],  # in years: 16*365+1, 88*365+1, 16*365+1, 90*365+1, 88*365+1, 89*365
                     "INT_DOD": [
                         6935,
                         "cannotReleaseHIPAA",
                         "<6570",
                         "cannotReleaseHIPAA",
-                    ],  # in years: 19*365, 90*365, 16*365, 90*365
-                    "Other_col": ["a", "b", "c", "d"],
+                        "cannotReleaseHIPAA",
+                        "cannotReleaseHIPAA",
+                    ],  # in years: 19*365, 90*365, 16*365, 90*365, 89*365, 89*365+1
+                    "Other_col": ["a", "b", "c", "d", "e", "f"],
                 }
             ),
         },
@@ -1361,6 +1391,8 @@ def get_redact_phi_test_cases():
             "name": "has_range_values",
             "input_df": pd.DataFrame(
                 {
+                    "PATIENT_ID": ["a", "b", "c", "d"],
+                    "SAMPLE_ID": ["a", "b", "c", "d"],
                     "BIRTH_YEAR": [1992, 1992, 1992, 1992],
                     "YEAR_CONTACT": [
                         "<18",
@@ -1397,6 +1429,8 @@ def get_redact_phi_test_cases():
             ),
             "expected_df": pd.DataFrame(
                 {
+                    "PATIENT_ID": ["a", "b", "c", "d"],
+                    "SAMPLE_ID": ["a", "b", "c", "d"],
                     "BIRTH_YEAR": [
                         "withheld",
                         "cannotReleaseHIPAA",
@@ -1441,6 +1475,8 @@ def get_redact_phi_test_cases():
             "name": "has_NAs",
             "input_df": pd.DataFrame(
                 {
+                    "PATIENT_ID": ["a", "b", "c", "d", "e", "f"],
+                    "SAMPLE_ID": ["a", "b", "c", "d", "e", "f"],
                     "BIRTH_YEAR": [1992, 1992, 1992, 1992, 1993, 1994],
                     "YEAR_CONTACT": [
                         "<18",
@@ -1487,6 +1523,8 @@ def get_redact_phi_test_cases():
             ),
             "expected_df": pd.DataFrame(
                 {
+                    "PATIENT_ID": ["a", "b", "c", "d", "e", "f"],
+                    "SAMPLE_ID": ["a", "b", "c", "d", "e", "f"],
                     "BIRTH_YEAR": [
                         "withheld",
                         "cannotReleaseHIPAA",
@@ -1543,6 +1581,8 @@ def get_redact_phi_test_cases():
             "name": "has_range_in_birth_year",
             "input_df": pd.DataFrame(
                 {
+                    "PATIENT_ID": ["a", "b"],
+                    "SAMPLE_ID": ["a", "b"],
                     "BIRTH_YEAR": ["<18", ">89"],
                     "YEAR_CONTACT": [
                         2011,
@@ -1569,6 +1609,8 @@ def get_redact_phi_test_cases():
             ),
             "expected_df": pd.DataFrame(
                 {
+                    "PATIENT_ID": ["a", "b"],
+                    "SAMPLE_ID": ["a", "b"],
                     "BIRTH_YEAR": [
                         "withheld",
                         "cannotReleaseHIPAA",
