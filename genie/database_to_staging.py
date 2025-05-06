@@ -166,6 +166,7 @@ def _to_redact_difference(df_col_year1, df_col_year2):
     year1 = pd.to_numeric(df_col_year1, errors="coerce")
     year2 = pd.to_numeric(df_col_year2, errors="coerce")
     to_redact = year2 - year1 > 89
+
     return to_redact
 
 
@@ -189,23 +190,47 @@ def redact_phi(
     # Moved to cannotReleaseHIPAA and withheld because the HIPAA
     # years would change every single year. (e.g. <1926, >1998 would be
     # inaccurate every year)
+    complete_redact = pd.Series([False] * len(clinicaldf))
     for col in interval_cols_to_redact:
-        to_redact, to_redactpeds = _to_redact_interval(clinicaldf[col])
-        clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
-        clinicaldf.loc[to_redact, col] = ">32485"
-        clinicaldf.loc[to_redactpeds, "BIRTH_YEAR"] = "withheld"
-        clinicaldf.loc[to_redactpeds, col] = "<6570"
+        to_redact, to_redact_peds = _to_redact_interval(clinicaldf[col])
+        clinicaldf.loc[to_redact_peds, "BIRTH_YEAR"] = "withheld"
+        clinicaldf.loc[to_redact_peds, col] = "<6570"
+        complete_redact = complete_redact | to_redact
     # Redact BIRTH_YEAR values that have < or >
     # Birth year has to be done separately because it is not an interval
     clinicaldf["BIRTH_YEAR"] = _redact_year(clinicaldf["BIRTH_YEAR"])
-    to_redact = _to_redact_difference(
+    to_redact_birth_year = clinicaldf["BIRTH_YEAR"] == "cannotReleaseHIPAA"
+
+    # check the difference between BIRTH_YEAR and YEAR_CONTACT/YEAR_DEATH
+    to_redact_year_contact = _to_redact_difference(
         clinicaldf["BIRTH_YEAR"], clinicaldf["YEAR_CONTACT"]
     )
-    clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
-    to_redact = _to_redact_difference(
+    to_redact_year_death = _to_redact_difference(
         clinicaldf["BIRTH_YEAR"], clinicaldf["YEAR_DEATH"]
     )
-    clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
+
+    # get complete index list to redact
+    complete_redact = (
+        complete_redact
+        | to_redact_birth_year
+        | to_redact_year_contact
+        | to_redact_year_death
+    )
+    # redact all age columns for >89
+    clinicaldf.loc[
+        complete_redact,
+        ["BIRTH_YEAR", "YEAR_CONTACT", "YEAR_DEATH"] + interval_cols_to_redact,
+    ] = "cannotReleaseHIPAA"
+
+    # get all impacted patient rows
+    patient_ids = clinicaldf.loc[
+        clinicaldf["BIRTH_YEAR"] == "cannotReleaseHIPAA", "PATIENT_ID"
+    ]
+
+    clinicaldf.loc[
+        clinicaldf["PATIENT_ID"].isin(patient_ids),
+        ["BIRTH_YEAR", "YEAR_CONTACT", "YEAR_DEATH"] + interval_cols_to_redact,
+    ] = "cannotReleaseHIPAA"
 
     return clinicaldf
 
