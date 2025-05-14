@@ -6,13 +6,8 @@ import argparse
 import logging
 from datetime import date
 
-from genie import (
-    config,
-    extract,
-    input_to_database,
-    process_functions,
-    write_invalid_reasons,
-)
+from genie import (config, extract, input_to_database, process_functions,
+                   write_invalid_reasons)
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +99,7 @@ def main(
         # filetype = "vcf2maf"
         # save maf table to production project
         new_tables = process_functions.create_new_fileformat_table(
-            syn, "vcf2maf", table_name, project_id, "syn3380222"
+            syn, "vcf2maf", table_name, project_id, project_id
         )
         syn.setPermissions(new_tables["newdb_ent"].id, 3326313, [])
         genie_config["vcf2maf"] = new_tables["newdb_ent"].id
