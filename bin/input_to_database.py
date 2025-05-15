@@ -6,8 +6,13 @@ import argparse
 import logging
 from datetime import date
 
-from genie import (config, extract, input_to_database, process_functions,
-                   write_invalid_reasons)
+from genie import (
+    config,
+    extract,
+    input_to_database,
+    process_functions,
+    write_invalid_reasons,
+)
 
 logger = logging.getLogger(__name__)
 
