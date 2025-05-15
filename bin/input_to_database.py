@@ -102,7 +102,7 @@ def main(
         today = date.today()
         table_name = f"Narrow MAF Database - {today}"
         # filetype = "vcf2maf"
-        # save maf table to production project
+        # save maf table to testing or production project as the mode
         new_tables = process_functions.create_new_fileformat_table(
             syn, "vcf2maf", table_name, project_id, project_id
         )
