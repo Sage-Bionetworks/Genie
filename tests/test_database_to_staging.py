@@ -489,11 +489,9 @@ def test_that_store_maf_in_bed_filtered_variants_has_expected_calls(syn):
     [
         (True, False, False),
         (False, False, False),
+        (False, True, False),
     ],
-    ids=[
-        "testing_mode",
-        "prod_mode",
-    ],
+    ids=["testing_mode", "prod_mode", "staging_mode"],
 )
 def test_that_mutation_in_cis_filter_has_expected_calls_when_mutations_in_cis_is_not_skipped(
     syn, test, staging, skip_mutations_in_cis
@@ -545,7 +543,7 @@ def test_that_mutation_in_cis_filter_has_expected_calls_when_mutations_in_cis_is
             staging=staging,
         )
         # check expected calls with expected params
-        patch_get_cmd.assert_called_once_with(test=test)
+        patch_get_cmd.assert_called_once_with(test=test, staging=staging)
         patch_check_call.assert_called_once_with("test_cmd")
         patch_store_mutation_in_cis_files.assert_called_once_with(
             syn=syn,
@@ -593,13 +591,11 @@ def test_that_mutation_in_cis_filter_has_expected_calls_when_mutations_in_cis_is
     [
         (True, False, True),
         (False, False, True),
-        (False, True, False),
         (False, True, True),
     ],
     ids=[
         "testing_mode_skip_mutations_in_cis",
         "prod_mode_skip_mutations_in_cis",
-        "staging_mode",
         "staging_mode_skip_mutations_in_cis",
     ],
 )
@@ -693,10 +689,11 @@ def test_that_mutation_in_cis_filter_has_expected_calls_when_mutations_in_cis_is
 
 
 @pytest.mark.parametrize(
-    "test, expected_cmd",
+    "test, staging, expected_cmd",
     [
         (
             True,
+            False,
             [
                 "Rscript",
                 "/home/test_dir/Genie/../R/mergeCheck.R",
@@ -705,18 +702,39 @@ def test_that_mutation_in_cis_filter_has_expected_calls_when_mutations_in_cis_is
         ),
         (
             False,
+            False,
             [
                 "Rscript",
                 "/home/test_dir/Genie/../R/mergeCheck.R",
             ],
         ),
+        (
+            False,
+            True,
+            ["Rscript", "/home/test_dir/Genie/../R/mergeCheck.R", "--staging"],
+        ),
     ],
-    ids=["testing_mode", "prod_mode"],
+    ids=["testing_mode", "prod_mode", "staging_mode"],
 )
-def test_that_get_mutation_in_cis_filter_cmd_returns_correct_cmd(test, expected_cmd):
+def test_that_get_mutation_in_cis_filter_cmd_returns_correct_cmd(
+    test, staging, expected_cmd
+):
     with patch.object(os.path, "dirname", return_value="/home/test_dir/Genie/"):
-        cmd = database_to_staging.get_mutation_in_cis_filter_script_cmd(test=test)
+        cmd = database_to_staging.get_mutation_in_cis_filter_script_cmd(
+            test=test, staging=staging
+        )
         assert cmd == expected_cmd
+
+
+def test_that_get_mutation_in_cis_filter_cmd_raises_value_error():
+    with patch.object(os.path, "dirname", return_value="/home/test_dir/Genie/"):
+        with pytest.raises(
+            ValueError,
+            match="Mutation in cis only available in staging or testing mode not both",
+        ):
+            database_to_staging.get_mutation_in_cis_filter_script_cmd(
+                test=True, staging=True
+            )
 
 
 @pytest.mark.parametrize(

@@ -604,11 +604,6 @@ def mutation_in_cis_filter(
 
     The mutation in cis script ONLY runs
     WHEN the skipMutationsInCis parameter is FALSE
-    AND
-    WHEN staging parameter is FALSE
-
-    This is because we don't have this set up for staging mode
-    yet.
 
     Args:
         syn: Synapse object
@@ -622,8 +617,8 @@ def mutation_in_cis_filter(
     Returns:
         pd.Series: Samples to remove
     """
-    if (not skipMutationsInCis) and (not staging):
-        command = get_mutation_in_cis_filter_script_cmd(test=test)
+    if not skipMutationsInCis:
+        command = get_mutation_in_cis_filter_script_cmd(test=test, staging=staging)
         # TODO: use subprocess.run instead
         subprocess.check_call(command)
         store_mutation_in_cis_files_to_staging(
@@ -641,13 +636,14 @@ def mutation_in_cis_filter(
     return (remove_samples, flagged_variants)
 
 
-def get_mutation_in_cis_filter_script_cmd(test: bool) -> str:
+def get_mutation_in_cis_filter_script_cmd(test: bool, staging: bool) -> str:
     """This function gets the mutation_in_cis_filter R script
-        command call based on whether we are running in test,
+        command call based on whether we are running in test, staging
         or production mode
 
     Args:
         test (bool): Testing parameter.
+        staging (bool): Staging parameter. Default is False.
 
     Returns:
         str: Full command call for the mergeCheck script
@@ -656,8 +652,16 @@ def get_mutation_in_cis_filter_script_cmd(test: bool) -> str:
         os.path.dirname(os.path.abspath(__file__)), "../R/mergeCheck.R"
     )
     command = ["Rscript", mergeCheck_script]
-    if test:
+    if test and not staging:
         command.append("--testing")
+    if staging and not test:
+        command.append("--staging")
+    elif test and staging:
+        raise ValueError(
+            "Mutation in cis only available in staging or testing mode not both"
+        )
+    else:
+        pass
     return command
 
 
