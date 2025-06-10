@@ -23,7 +23,7 @@ test_that("get_database_to_synapse_mapping_synid_gets_correct_synid_for_prod", {
   result <- get_database_to_synapse_mapping_synid(
     testing = FALSE, staging = FALSE
   )
-  expect_equal(result, "syn7208886")
+  expect_equal(result, "syn10967259")
 })
 
 test_that("get_database_to_synapse_mapping_synid_throws_error", {

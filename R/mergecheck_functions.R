@@ -3,9 +3,9 @@
 #' @param testing (logical) running in testing mode
 #' @param staging (logical) running in staging mode
 get_database_to_synapse_mapping_synid <- function(testing, staging){
-  if (testing) {
+  if (testing && !staging) {
     databaseSynIdMappingId = 'syn11600968'
-  } else if (staging) {
+  } else if (staging && !testing) {
     databaseSynIdMappingId = 'syn12094210'
   } else if (staging && testing) {
     stop("Mutation in cis only available in staging or testing mode not both")
