@@ -2,8 +2,10 @@ library(argparse)
 parser <- ArgumentParser()
 parser$add_argument("filepath", help = "Filepath to write variants")
 parser$add_argument("--testing", action = "store_true", help = "Use testing files")
+parser$add_argument("--staging", action = "store_true", help = "Use staging files")
 args <- parser$parse_args()
 testing <- args$testing
+staging <- args$staging
 filepath <- args$filepath
 
 
@@ -21,6 +23,8 @@ synLogin()
 #testing = as.logical(args[1])
 if (testing) {
   databaseSynIdMappingId = 'syn11600968'
+} else if (staging) {
+  databaseSynIdMappingId = 'syn12094210'
 } else {
   databaseSynIdMappingId = 'syn10967259'
 }

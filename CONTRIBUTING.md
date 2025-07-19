@@ -141,14 +141,21 @@ patch.object(MODULE_NAME, "FUNCTION_TO_MOCK_NAME".return_value=SOME_RETURN_VALUE
 Follow gitflow best practices as linked above.
 
 1. Always merge all new features into `develop` branch first (unless it is a documentation, readme, or github action patch into `main`)
-1. After initial features are ready in the `develop` branch, create a `release-X.X` branch (do not need to push this branch to remote) to prepare for the release.
+2. After initial features are ready in the `develop` branch, create a `release-X.X` branch (**do not** push this branch to remote) to prepare for the release.
     1. update the `__version__` parameter in `genie/__init__.py`
-1. Merge `release-X.X` branch into `main` - Not by pull request!
-1. Create release tag (`v...`) and a brief message
-1. Push tag and change(s) from `main`
-1. Create a new release on the repo. Include release notes.  Also include any known bugs for each release here. Wait for the CI/CD to finish.
-1. Merge `main` back into `develop`
-1. Push `develop`
+3. Merge `release-X.X.X` branch into `main` - Not by pull request! Resolve any merge conflicts.
+4. Create release tag (`v...`) and a brief message
+
+```bash
+git tag -a v<X.X.X> -m "Release <X.X.X>"
+```
+
+5. Prior to pushing changes into `main`, reset any annotations on the test project/rename maf database table as integration tests will run.
+6. Push tag and change(s) from `main`.
+7. Create a new release on the repo. Include release notes. See [writing release notes for project](https://sagebionetworks.jira.com/wiki/spaces/DPE/pages/3892543489/Writing+release+notes+for+projects) for creating informative technical release notes. See [example release](https://github.com/Sage-Bionetworks/Genie/releases/tag/v16.5.0) for typical sections to include in a Genie release. Also include any known bugs for each release here. Wait for the CI/CD to finish.
+8. Merge `main` back into `develop`
+9. Prior to pushing changes into `develop`, reset any annotations on the test project/rename maf database table as integration tests will run.
+10. Push changes in `develop`. Wait for the CI/CD to finish
 
 ### Modifying Docker
 
@@ -164,3 +171,7 @@ Follow this section when modifying the [Dockerfile](https://github.com/Sage-Bion
 #### Dockerhub
 
 This repository does not use github actions to push docker images.  By adding the `sagebiodockerhub` github user as an Admin to this GitHub repository, we can configure an automated build in DockerHub.  You can view the builds [here](https://hub.docker.com/repository/docker/sagebionetworks/genie/builds).  To get admin access to the DockerHub repository, ask Sage IT to be added to the `genieadmin` DockerHub team.
+
+### Contributing to the docs
+
+This [documentation](https://sagebionetworks.jira.com/wiki/spaces/APGD/pages/3369631808/Contributing+to+Main+GENIE+repository+docs) is internal to Sage employees.

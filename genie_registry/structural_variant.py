@@ -1,11 +1,10 @@
-from io import StringIO
 import logging
 import os
+from io import StringIO
 
-from pandas import DataFrame
-
-from genie.example_filetype_format import FileTypeFormat
 from genie import load, process_functions, validate
+from genie.example_filetype_format import FileTypeFormat
+from pandas import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +90,7 @@ class StructuralVariant(FileTypeFormat):
         warn, error = process_functions.check_col_and_values(
             df=sv_df,
             col="SV_STATUS",
-            possible_values=["SOMATIC", "GERMLINE"],
+            possible_values=["SOMATIC"],
             filename="Structural Variant",
             required=True,
         )

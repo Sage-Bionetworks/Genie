@@ -1,0 +1,132 @@
+# Project
+site_name: AACR Project GENIE Repository Documentation
+site_description: >-
+  This repository documents code used to gather, QC, standardize, and analyze data
+  uploaded by institutes participating in AACR's Project GENIE (Genomics, Evidence,
+  Neoplasia, Information, Exchange).
+site_dir: docs_site
+
+# Repository
+repo_url: https://github.com/Sage-Bionetworks/Genie
+repo_name: AACR Project GENIE
+
+# Navigation
+nav:
+  - Home: index.md
+  - Getting Started: getting_started.md
+  - Tutorials:
+    - Local File Validation: tutorials/local_file_validation.md
+  - Reference:
+    # contains reference to all of the technical codebase
+    - Main Pipeline Commands:
+      # contains reference to the scripts with the command line args we call to
+      # run the pipeline
+      - Input to Database: reference/main_pipeline_commands/input_to_database.md
+      - Database to Staging: reference/main_pipeline_commands/database_to_staging.md
+      - Consortium to Public: reference/main_pipeline_commands/consortium_to_public.md
+    - Main Pipeline Steps:
+      # contains all code related to input to database step
+      - Input to Database:
+        - input_to_database: reference/main_pipeline_steps/input_to_database/input_to_database.md
+        - validate: reference/main_pipeline_steps/input_to_database/validate.md
+        - write_invalid_reasons: reference/main_pipeline_steps/input_to_database/write_invalid_reasons.md
+        - process_mutation: reference/main_pipeline_steps/input_to_database/process_mutation.md
+        - to_retract: reference/main_pipeline_steps/input_to_database/toRetract.py
+      - Database to Staging: reference/main_pipeline_steps/database_to_staging.md
+      - Consortium to Public: reference/main_pipeline_steps/consortium_to_public.md
+    - Fileformats:
+      - Fileformat: reference/fileformats/fileformat.md
+      - Assay Information: reference/fileformats/assay.md
+      - Bed: reference/fileformats/bed.md
+      - Clinical: reference/fileformats/clinical.md
+      - Cna: reference/fileformats/cna.md
+      - Maf: reference/fileformats/maf.md
+      - Mutations In Cis: reference/fileformats/mutations_in_cis.md
+      - Patient retraction: reference/fileformats/patient_retraction.md
+      - Sample retraction: reference/fileformats/sample_retraction.md
+      - Segmented: reference/fileformats/seg.md
+      - Structural variant: reference/fileformats/structural_variant.md
+      - Vcf: reference/fileformats/vcf.md
+      - Workflow: reference/fileformats/workflow.md
+    - Helper modules:
+      # contains all code used in more than one step of the pipeline
+      - create_case_lists: reference/helper_modules/create_case_lists.md
+      - dashboard_table_updater: reference/helper_modules/dashboard_table_updater.md
+      - extract: reference/helper_modules/extract.md
+      - load: reference/helper_modules/load.md
+      - process_functions: reference/helper_modules/process_functions.md
+      - transform: reference/helper_modules/transform.md
+
+# Theme configuration
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - search.highlight
+    - search.share
+    - toc.integrate
+    - content.tabs.link
+    - navigation.indexes
+    - navigation.sections
+    # Enable the color mode toggle
+    - content.code.copy
+    - navigation.sections
+    - navigation.tabs
+    - navigation.top
+    - navigation.tracking
+    - navigation.instant
+    - header.autohide
+    - content.action.edit
+    - content.tabs.link
+    - content.tabs
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.integrate
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: green
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: green
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+plugins:
+- search
+- autorefs
+- mkdocstrings:
+    default_handler: python
+    handlers:
+      python:
+        options:
+          members_order: source
+          # shows all functions and attributes even hidden
+          members: true
+          show_private_members: true
+          show_if_no_docstring: false
+          show_root_heading: true
+          show_root_full_path: true
+          show_category_heading: true
+          docstring_style: google
+          docstring_section_style: spacy
+# Allows external links to open in a new tab
+- open-in-new-tab
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+
+  - toc:
+      permalink: true

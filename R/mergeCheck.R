@@ -5,8 +5,12 @@ parser <- ArgumentParser()
 parser$add_argument("--testing",
                     action = "store_true",
                     help = "Use testing files")
+parser$add_argument("--staging",
+                    action = "store_true",
+                    help = "Use staging files")
 args <- parser$parse_args()
-testing <- args$testing
+testing <- as.logical(args$testing)
+staging <- as.logical(args$staging)
 
 library(synapser)
 library(VariantAnnotation)
@@ -35,11 +39,10 @@ variant_limit = 100000
 tbl_size_limit = 500
 
 #testing = as.logical(args[1])
-if (testing) {
-  databaseSynIdMappingId = 'syn11600968'
-} else {
-  databaseSynIdMappingId = 'syn10967259'
-}
+databaseSynIdMappingId <- get_database_to_synapse_mapping_synid(
+  testing=testing, staging=staging
+)
+
 databaseSynIdMapping = synTableQuery(sprintf('select * from %s', databaseSynIdMappingId),
                                      includeRowIdAndRowVersion = F)
 databaseSynIdMappingDf = synapser::as.data.frame(databaseSynIdMapping)

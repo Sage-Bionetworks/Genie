@@ -26,3 +26,6 @@ data_guide.out
 Genie.Rproj
 build/
 dist/
+
+# MkDocs output
+docs_site/

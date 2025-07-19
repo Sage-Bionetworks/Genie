@@ -6,16 +6,15 @@ import logging
 import os
 import time
 from typing import Optional, Union
-import yaml
 
 import pandas as pd
 import requests
 import synapseclient
+import yaml
+from genie import extract
 from requests.adapters import HTTPAdapter
 from synapseclient import Synapse
 from urllib3.util import Retry
-
-from genie import extract
 
 pd.options.mode.chained_assignment = None
 
@@ -166,16 +165,16 @@ def checkUrl(url):
 
 
 # TODO Add to validate.py
-def checkColExist(DF: pd.DataFrame, key: Union[str, int]):
+def checkColExist(DF: pd.DataFrame, key: Union[str, int, list]) -> bool:
     """
-    This function checks if the column exists in a dataframe
+    This function checks if the column(s) exist(s) in a dataframe
 
     Args:
         DF: pandas dataframe
-        key: Expected column header name
+        key: Expected column header name(s)
 
     Returns:
-        bool:  True if column exists
+        bool:  True if column(s) exist(s)
     """
     result = False if DF.get(key) is None else True
     return result
@@ -981,3 +980,161 @@ def create_missing_columns(dataset: pd.DataFrame, schema: dict) -> pd.Series:
         elif data_type == "boolean":
             dataset[column] = dataset[column].astype(pd.BooleanDtype())
     return dataset[list(schema.keys())]
+
+
+def check_values_in_column(
+    df: pd.DataFrame, col: str, values: Union[str, list]
+) -> bool:
+    """Check if a column in a dataframe contains specific values
+    Args:
+        df (pd.DataFrame): The clinical dataframe
+        col (str): The column name
+        values (list): Expected values in the column
+    Returns:
+        bool: True if the column contains the specified values
+    """
+    if not checkColExist(df, col):
+        logger.error(f"Must have {col} column in the dataframe.")
+    else:
+        # Ensure values is always a list for next step
+        if isinstance(values, str):
+            values = [values]
+        result = df[col].isin(values).any()
+        return result
+
+
+def get_row_indices_for_invalid_column_values(
+    df: pd.DataFrame,
+    col: str,
+    possible_values: list,
+    na_allowed: bool = False,
+    sep: Optional[str] = None,
+) -> pd.Index:
+    """This function checks the column values against possible_values and returns row indices of invalid rows.
+
+    Args:
+        df (pd.DataFrame): Input dataframe
+        col (str): The column to be checked
+        possible_values (list): The list of possible values
+        na_allowed (bool, optional): If NA is allowed. Defaults to False.
+        sep (Optional[str], optional): The string separator. Defaults to None.
+
+    Returns:
+        pd.Index: The row indices of the rows with values that are not in possible_values.
+    """
+    if na_allowed:
+        # this is only useful for dropping NAs for individual values rather than value_list
+        check_values = df[col].dropna()
+    else:
+        check_values = df[col]
+    if sep:
+        # for columns contain lists of values
+        check_values = check_values.apply(
+            lambda x: all(substring in possible_values for substring in x.split(sep))
+        )
+    else:
+        check_values = check_values.apply(lambda x: x in possible_values)
+    return check_values[check_values == False].index
+
+
+def get_message_for_invalid_column_value(
+    col: str, filename: str, invalid_indices: pd.Index, possible_values: list
+) -> tuple:
+    """This function returns the error and warning messages if the target column has rows with invalid values.
+
+    Args:
+        col (str): The column to be checked
+        filename (str): The file name
+        invalid_indices (pd.Index): The row indices of the rows with invalid values
+        possible_values (list): The list of possible values
+
+    Returns:
+        tuple: warning, error
+    """
+    warning = ""
+    error = ""
+    # check the validity of values in the column
+    # concatenated possible values. This is done because of pandas typing. An integer column with one NA/blank value will be cast as a double.
+    possible_values = ", ".join(
+        [str(value).replace(".0", "") for value in possible_values]
+    )
+    if len(invalid_indices) > 0:
+        error = (
+            f"{filename}: Please double check your {col} column. Valid values are {possible_values}. "
+            f"You have {len(invalid_indices)} row(s) in your file where {col} column contains invalid values. "
+            f"The row(s) this occurs in are: {invalid_indices.tolist()}. Please correct.\n"
+        )
+    return (warning, error)
+
+
+def check_column_and_values_row_specific(
+    df: pd.DataFrame,
+    col: str,
+    possible_values: list,
+    filename: str,
+    na_allowed: bool = False,
+    required: bool = False,
+    sep: Optional[str] = None,
+) -> tuple:
+    """This function checks if the column exists and checks if the values in the column have the valid values.
+       Currently, this function is only used in assay.py
+
+    Args:
+        df (pd.DataFrame): Input dataframe
+        col (str): The column to be checked
+        possible_values (list): The list of possible values
+        filename (str): The file name
+        na_allowed (bool, optional): If NA is allowed. Defaults to False.
+        required (bool, optional): If the column is required. Defaults to False.
+        sep (Optional[str], optional): The string separator. Defaults to None.
+
+    Returns:
+        tuple: warning, error
+    """
+    warning = ""
+    error = ""
+    # check the existence of the column
+    have_column = checkColExist(df, col)
+    if not have_column:
+        if required:
+            error = "{filename}: Must have {col} column.\n".format(
+                filename=filename, col=col
+            )
+        else:
+            warning = (
+                "{filename}: Doesn't have {col} column. "
+                "This column will be added.\n".format(filename=filename, col=col)
+            )
+    else:
+        # get the row indices
+        invalid_indices = get_row_indices_for_invalid_column_values(
+            df, col, possible_values, na_allowed, sep
+        )
+        # generate validation message
+        warning, error = get_message_for_invalid_column_value(
+            col, filename, invalid_indices, possible_values
+        )
+
+    return (warning, error)
+
+
+def add_columns_to_data_gene_matrix(
+    data_gene_matrix: pd.DataFrame, sample_list: list, column_name: str
+):
+    """Add  CNA and SV columns to data gene matrix
+
+    Args:
+        data_gene_matrix (pd.DataFrame): data gene matrix
+        sample_list (list): The list of cna or sv samples
+        column_name (str): The column name to be added
+    """
+    # extract the sample list
+    seqids = data_gene_matrix["mutations"][
+        data_gene_matrix["SAMPLE_ID"].isin(sample_list)
+    ].unique()
+
+    # add the column to the data gene matrix and set the value to non-CNA or non-SV rows to NA
+    data_gene_matrix[column_name] = data_gene_matrix["mutations"]
+    data_gene_matrix[column_name][~data_gene_matrix[column_name].isin(seqids)] = "NA"
+
+    return data_gene_matrix

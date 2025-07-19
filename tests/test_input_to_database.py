@@ -26,6 +26,7 @@ sample_clinical_entity = synapseclient.File(
     name="data_clinical_supp_sample_SAGE.txt",
     modifiedOn="2019-03-24T12:00:00.Z",
     md5="44444",
+    versionNumber=3,
 )
 
 patient_clinical_synid = "syn11111"
@@ -679,6 +680,7 @@ class TestValidation:
                 1553428800000,
                 "clinical",
                 center,
+                sample_clinical_entity.versionNumber,
                 sample_clinical_entity,
             ]
         ]
@@ -692,6 +694,7 @@ class TestValidation:
                 "modifiedOn",
                 "fileType",
                 "center",
+                "version",
                 "entity",
             ]
         )
@@ -706,6 +709,7 @@ class TestValidation:
                 "modifiedOn",
                 "fileType",
                 "center",
+                "version",
                 "entity",
             ],
         )
@@ -716,14 +720,16 @@ class TestValidation:
                 sample_clinical_entity.name,
                 "clinical",
                 center,
+                sample_clinical_entity.versionNumber,
                 sample_clinical_entity,
             ]
         ]
         self.errors_df = pd.DataFrame(
-            error, columns=["id", "errors", "name", "fileType", "center", "entity"]
+            error,
+            columns=["id", "errors", "name", "fileType", "center", "version", "entity"],
         )
         self.empty_errors = pd.DataFrame(
-            columns=["id", "errors", "name", "fileType", "center", "entity"]
+            columns=["id", "errors", "name", "fileType", "center", "version", "entity"]
         )
 
         self.with_dupsdf = pd.DataFrame(
@@ -744,6 +750,7 @@ class TestValidation:
                 ],
                 "center": ["SAGE"] * 5,
                 "fileType": ["type"] * 5,
+                "version": [3] * 5,
                 "entity": ["entity"] * 5,
             }
         )
@@ -768,12 +775,15 @@ class TestValidation:
                 ],
                 "center": ["SAGE"] * 5,
                 "fileType": ["type"] * 5,
+                "version": [3] * 5,
                 "entity": ["entity"] * 5,
             }
         )
         self.empty_dup = pd.DataFrame(
-            columns=["id", "name", "center", "fileType", "entity", "errors"]
+            columns=["id", "name", "center", "fileType", "version", "entity", "errors"]
         )
+        # self.empty_dup = self.empty_dup.astype({"version": int})
+        # self.empty_dup.index = self.empty_dup.index.astype('object')
 
     def test_build_validation_status_table(self):
         input_valid_statuses = [
@@ -836,7 +846,12 @@ class TestValidation:
     def test_nodups_get_duplicated_files(self):
         """Test no duplicated"""
         dupsdf = input_to_database.get_duplicated_files(self.no_dupsdf)
-        assert dupsdf.equals(self.empty_dup)
+        # These empty frames won't be equal without these conversions
+        # HACK: Convert the index type to the same type
+        self.empty_dup.index = self.empty_dup.index.astype("int")
+        # HACK: Convert the dtype of the "version" column to the same type
+        self.empty_dup["version"] = self.empty_dup["version"].astype("int")
+        pd.testing.assert_frame_equal(dupsdf, self.empty_dup)
 
     def test__update_tables_content(self):
         """Tests duplicates are added to the tables and errors/statues are
@@ -892,13 +907,85 @@ class TestValidation:
         assert updated_tables["error_trackingdf"].empty
         assert updated_tables["validation_statusdf"].empty
 
-    def test_validation(self, syn, genie_config):
+    @pytest.mark.parametrize(
+        "messages, test_project_id, expected_user_message_dict, error_email_cnt",
+        [
+            ([], "syn1234", {}, 0),
+            (
+                [
+                    (
+                        ["file1.txt", "file2.txt"],
+                        ["Message 1", "Message 2"],
+                        ["user1", "user2"],
+                    ),
+                    (["file3.txt"], ["Message 3"], ["user2", "user3"]),
+                ],
+                "syn22033066",
+                {
+                    "user1": [
+                        {
+                            "filenames": ["file1.txt", "file2.txt"],
+                            "messages": ["Message 1", "Message 2"],
+                        }
+                    ],
+                    "user2": [
+                        {
+                            "filenames": ["file1.txt", "file2.txt"],
+                            "messages": ["Message 1", "Message 2"],
+                        },
+                        {"filenames": ["file3.txt"], "messages": ["Message 3"]},
+                    ],
+                    "user3": [{"filenames": ["file3.txt"], "messages": ["Message 3"]}],
+                },
+                0,
+            ),
+            (
+                [
+                    (
+                        ["file1.txt", "file2.txt"],
+                        ["Message 1", "Message 2"],
+                        ["user1", "user2"],
+                    ),
+                    (["file3.txt"], ["Message 3"], ["user2", "user3"]),
+                ],
+                "syn00000",
+                {
+                    "user1": [
+                        {
+                            "filenames": ["file1.txt", "file2.txt"],
+                            "messages": ["Message 1", "Message 2"],
+                        }
+                    ],
+                    "user2": [
+                        {
+                            "filenames": ["file1.txt", "file2.txt"],
+                            "messages": ["Message 1", "Message 2"],
+                        },
+                        {"filenames": ["file3.txt"], "messages": ["Message 3"]},
+                    ],
+                    "user3": [{"filenames": ["file3.txt"], "messages": ["Message 3"]}],
+                },
+                3,
+            ),
+        ],
+        ids=["no_messages", "using_staging_project", "with_messages"],
+    )
+    def test_validation(
+        self,
+        syn,
+        genie_config,
+        messages,
+        test_project_id,
+        expected_user_message_dict,
+        error_email_cnt,
+    ):
         """Test validation steps"""
         modified_on = 1561143558000
         process = "main"
         entity = synapseclient.Entity(
             id="syn1234",
             md5="44444",
+            versionNumber=3,
             path="/path/to/foobar.txt",
             name="data_clinical_supp_SAGE.txt",
         )
@@ -913,11 +1000,11 @@ class TestValidation:
                 entity.name,
                 modified_on,
                 filetype,
+                entity.versionNumber,
                 center,
             ]
         ]
         invalid_errors_list = []
-        messages = []
         new_tables = {
             "validation_statusdf": self.validation_statusdf,
             "error_trackingdf": self.errors_df,
@@ -927,7 +1014,14 @@ class TestValidation:
         errortracking_mock = emptytable_mock()
         valiate_cls = Mock()
         with patch.object(
-            syn, "tableQuery", side_effect=[validationstatus_mock, errortracking_mock]
+            syn,
+            "tableQuery",
+            side_effect=[
+                validationstatus_mock,
+                errortracking_mock,
+                validationstatus_mock,
+                errortracking_mock,
+            ],
         ) as patch_query, patch.object(
             input_to_database,
             "validatefile",
@@ -937,15 +1031,23 @@ class TestValidation:
             "build_validation_status_table",
             return_value=self.validation_statusdf,
         ), patch.object(
+            syn, "get", return_value=entity
+        ), patch.object(
             input_to_database, "build_error_tracking_table", return_value=self.errors_df
         ), patch.object(
             input_to_database, "_update_tables_content", return_value=new_tables
         ), patch.object(
+            input_to_database,
+            "append_duplication_errors",
+            return_value=expected_user_message_dict,
+        ) as patch_append_dups, patch.object(
+            input_to_database, "_send_validation_error_email"
+        ) as patch_send_email, patch.object(
             input_to_database, "update_status_and_error_tables"
         ):
             valid_filedf = input_to_database.validation(
                 syn,
-                "syn123",
+                test_project_id,
                 center,
                 process,
                 entities,
@@ -956,7 +1058,7 @@ class TestValidation:
             assert patch_query.call_count == 2
             patch_validatefile.assert_called_once_with(
                 syn=syn,
-                project_id="syn123",
+                project_id=test_project_id,
                 entities=entity,
                 validation_status_table=validationstatus_mock,
                 error_tracker_table=errortracking_mock,
@@ -965,7 +1067,11 @@ class TestValidation:
                 genie_config=genie_config,
                 ancillary_files=entities,
             )
-
+            # empty messages
+            patch_append_dups.assert_called_once_with(
+                new_tables["duplicated_filesdf"], expected_user_message_dict
+            )
+            assert patch_send_email.call_count == error_email_cnt
             assert valid_filedf.equals(
                 self.validation_statusdf[["id", "path", "fileType", "name"]]
             )

@@ -2,17 +2,17 @@
 
 # from __future__ import annotations
 import datetime
-from io import StringIO
 import logging
 import os
+from io import StringIO
 from typing import Optional, Tuple
 
+import numpy as np
 import pandas as pd
 import synapseclient
-
-from genie.example_filetype_format import FileTypeFormat
 from genie import extract, load, process_functions, validate
 from genie.database_to_staging import redact_phi
+from genie.example_filetype_format import FileTypeFormat
 
 logger = logging.getLogger(__name__)
 
@@ -175,6 +175,104 @@ def _check_int_year_consistency(
     return ""
 
 
+def _check_year_death_validity(clinicaldf: pd.DataFrame) -> pd.Index:
+    """
+    YEAR_DEATH should alway be greater than or equal to YEAR_CONTACT when they are both available.
+    This function checks if YEAR_DEATH >= YEAR_CONTACT and returns row indices of invalid YEAR_DEATH rows.
+
+    Args:
+        clinicaldf: Clinical Data Frame
+
+    Returns:
+        pd.Index: The row indices of the row with YEAR_DEATH < YEAR_CONTACT in the input clinical data
+    """
+    # Generate temp dataframe to handle datatype mismatch in a column
+    temp = clinicaldf[["YEAR_DEATH", "YEAR_CONTACT"]].copy()
+    # Convert YEAR_DEATH and YEAR_CONTACT to numeric, coercing errors to NaN
+    temp["YEAR_DEATH"] = pd.to_numeric(temp["YEAR_DEATH"], errors="coerce")
+    temp["YEAR_CONTACT"] = pd.to_numeric(temp["YEAR_CONTACT"], errors="coerce")
+    # Compare rows with numeric values in both YEAR_DEATH and YEAR_CONTACT columns
+    temp["check_result"] = np.where(
+        (pd.isna(temp["YEAR_DEATH"]) | pd.isna(temp["YEAR_CONTACT"])),
+        "N/A",
+        temp["YEAR_DEATH"] >= temp["YEAR_CONTACT"],
+    )
+    invalid_year_death = temp[temp["check_result"] == "False"]
+    return invalid_year_death.index
+
+
+def _check_year_death_validity_message(
+    invalid_year_death_indices: pd.Index,
+) -> Tuple[str, str]:
+    """This function returns the error and warning messages
+    if the input clinical data has row with YEAR_DEATH < YEAR_CONTACT
+
+    Args:
+        invalid_year_death_indices: The row indices of the rows with YEAR_DEATH < YEAR_CONTACT in the input clinical data
+
+    Returns:
+        Tuple[str, str]: The error message that tells you how many patients with invalid YEAR_DEATH values that your
+        input clinical data has
+    """
+    error = ""
+    warning = ""
+    if len(invalid_year_death_indices) > 0:
+        error = (
+            "Patient Clinical File: Please double check your YEAR_DEATH and YEAR_CONTACT columns. "
+            "YEAR_DEATH must be >= YEAR_CONTACT.\n"
+        )
+    return error, warning
+
+
+def _check_int_dod_validity(clinicaldf: pd.DataFrame) -> pd.Index:
+    """
+    INT_DOD should alway be greater than or equal to INT_CONTACT when they are both available.
+    This function checks if INT_DOD >= INT_CONTACT and returns row indices of invalid INT_DOD rows.
+
+    Args:
+        clinicaldf: Clinical Data Frame
+
+    Returns:
+        pd.Index: The row indices of the row with INT_DOD < INT_CONTACT in the input clinical data
+    """
+    # Generate temp dataframe to handle datatype mismatch in a column
+    temp = clinicaldf[["INT_DOD", "INT_CONTACT"]].copy()
+    # Convert INT_DOD and INT_CONTACT to numeric, coercing errors to NaN
+    temp["INT_DOD"] = pd.to_numeric(temp["INT_DOD"], errors="coerce")
+    temp["INT_CONTACT"] = pd.to_numeric(temp["INT_CONTACT"], errors="coerce")
+    # Compare rows with numeric values in both INT_DOD and INT_CONTACT columns
+    temp["check_result"] = np.where(
+        (pd.isna(temp["INT_DOD"]) | pd.isna(temp["INT_CONTACT"])),
+        "N/A",
+        temp["INT_DOD"] >= temp["INT_CONTACT"],
+    )
+    invalid_int_dod = temp[temp["check_result"] == "False"]
+    return invalid_int_dod.index
+
+
+def _check_int_dod_validity_message(
+    invalid_int_dod_indices: pd.Index,
+) -> Tuple[str, str]:
+    """This function returns the error and warning messages
+    if the input clinical data has row with INT_DOD < INT_CONTACT
+
+    Args:
+        invalid_int_dod_indices: The row indices of the rows with INT_DOD < INT_CONTACT in the input clinical data
+
+    Returns:
+        Tuple[str, str]: The error message that tells you how many patients with invalid INT_DOD values that your
+        input clinical data has
+    """
+    error = ""
+    warning = ""
+    if len(invalid_int_dod_indices) > 0:
+        error = (
+            "Patient Clinical File: Please double check your INT_DOD and INT_CONTACT columns. "
+            "INT_DOD must be >= INT_CONTACT.\n"
+        )
+    return error, warning
+
+
 # PROCESSING
 def remap_clinical_values(
     clinicaldf: pd.DataFrame,
@@ -208,8 +306,16 @@ def remap_clinical_values(
     sampletype_mapping.index = sampletype_mapping["CODE"]
     sampletype_dict = sampletype_mapping.to_dict()
 
-    if clinicaldf.get("SAMPLE_TYPE") is not None:
-        clinicaldf["SAMPLE_TYPE_DETAILED"] = clinicaldf["SAMPLE_TYPE"]
+    for column in [
+        "PRIMARY_RACE",
+        "SECONDARY_RACE",
+        "TERTIARY_RACE",
+        "SEX",
+        "ETHNICITY",
+        "SAMPLE_TYPE",
+    ]:
+        if column in clinicaldf.columns:
+            clinicaldf[f"{column}_DETAILED"] = clinicaldf[column]
 
     # Use pandas mapping feature
     clinicaldf = clinicaldf.replace(
@@ -218,9 +324,14 @@ def remap_clinical_values(
             "SECONDARY_RACE": race_dict["CBIO_LABEL"],
             "TERTIARY_RACE": race_dict["CBIO_LABEL"],
             "SAMPLE_TYPE": sampletype_dict["CBIO_LABEL"],
-            "SAMPLE_TYPE_DETAILED": sampletype_dict["DESCRIPTION"],
             "SEX": sex_dict["CBIO_LABEL"],
             "ETHNICITY": ethnicity_dict["CBIO_LABEL"],
+            "PRIMARY_RACE_DETAILED": race_dict["DESCRIPTION"],
+            "SECONDARY_RACE_DETAILED": race_dict["DESCRIPTION"],
+            "TERTIARY_RACE_DETAILED": race_dict["DESCRIPTION"],
+            "SAMPLE_TYPE_DETAILED": sampletype_dict["DESCRIPTION"],
+            "SEX_DETAILED": sex_dict["DESCRIPTION"],
+            "ETHNICITY_DETAILED": ethnicity_dict["DESCRIPTION"],
         }
     )
 
@@ -383,12 +494,12 @@ class Clinical(FileTypeFormat):
         # hardcoded because it never changes
         # TODO: Add clinical tier release scope to GENIE config
         patient_cols_table = self.syn.tableQuery(
-            "select fieldName from syn8545211 where "
+            f"select fieldName from {self.genie_config['clinical_tier_release_scope']} where "
             "patient is True and inClinicalDb is True"
         )
         patient_cols = patient_cols_table.asDataFrame()["fieldName"].tolist()
         sample_cols_table = self.syn.tableQuery(
-            "select fieldName from syn8545211 where "
+            f"select fieldName from {self.genie_config['clinical_tier_release_scope']} where "
             "sample is True and inClinicalDb is True"
         )
         sample_cols = sample_cols_table.asDataFrame()["fieldName"].tolist()
@@ -870,6 +981,17 @@ class Clinical(FileTypeFormat):
         )
         total_error.write(error)
 
+        # CHECK: YEAR DEATH against YEAR CONTACT
+        has_death_and_contact_years = process_functions.checkColExist(
+            clinicaldf, ["YEAR_DEATH", "YEAR_CONTACT"]
+        )
+        if has_death_and_contact_years:
+            invalid_year_death_indices = _check_year_death_validity(clinicaldf)
+            errors, warnings = _check_year_death_validity_message(
+                invalid_year_death_indices
+            )
+            total_error.write(errors)
+
         # CHECK: INT CONTACT
         haveColumn = process_functions.checkColExist(clinicaldf, "INT_CONTACT")
         if haveColumn:
@@ -939,6 +1061,16 @@ class Clinical(FileTypeFormat):
                 )
         else:
             total_error.write("Patient Clinical File: Must have DEAD column.\n")
+
+        # CHECK: INT DOD against INT CONTACT
+        has_int_dod_and_contact = process_functions.checkColExist(
+            clinicaldf, ["INT_DOD", "INT_CONTACT"]
+        )
+        if has_int_dod_and_contact:
+            invalid_int_dod_indices = _check_int_dod_validity(clinicaldf)
+            errors, warnings = _check_int_dod_validity_message(invalid_int_dod_indices)
+            total_error.write(errors)
+
         # CHECK: contact vital status value consistency
         contact_error = _check_int_year_consistency(
             clinicaldf=clinicaldf,

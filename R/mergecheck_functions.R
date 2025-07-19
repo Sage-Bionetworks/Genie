@@ -1,3 +1,20 @@
+#' Gets the database to synapse mapping table's synapse id based on
+#' if running in production, testing or staging mode
+#' @param testing (logical) running in testing mode
+#' @param staging (logical) running in staging mode
+get_database_to_synapse_mapping_synid <- function(testing, staging){
+  if (testing && !staging) {
+    databaseSynIdMappingId = 'syn11600968'
+  } else if (staging && !testing) {
+    databaseSynIdMappingId = 'syn12094210'
+  } else if (staging && testing) {
+    stop("Mutation in cis only available in staging or testing mode not both")
+  } else {
+    databaseSynIdMappingId = 'syn10967259'
+  }
+  return(databaseSynIdMappingId)
+}
+
 # Update mutation in cis table
 uploadToTable <- function(tbl, databaseSynId, subSetSamples, centerMappingDf) {
   # Old samples

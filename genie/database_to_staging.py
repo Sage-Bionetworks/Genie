@@ -273,6 +273,15 @@ def get_whitelist_variants_idx(mafdf):
 def configure_maf(mafdf, remove_variants, flagged_variants):
     """Configures each maf dataframe, does germline filtering
 
+    Germline filtering for MAF files uses the gnomAD columns that refer to the
+    allele frequencies (AF) of variants in different population groups
+    from the gnomAD (Genome Aggregation Database). This filter will filter out
+    variants with a maximum AF > 0.05% across all populations which are typically
+    common germline variants.
+
+    Germline filtering for MAF files occurs during release instead of during processing
+    because the MAF file gets re-annotated during processing via genome nexus annotation.
+
     Args:
         mafdf: Maf dataframe
         remove_variants: Variants to remove
@@ -411,27 +420,32 @@ def calculate_missing_variant_counts(
 
 
 # TODO: Add to transform.py
-def runMAFinBED(syn, center_mappingdf, test=False, genieVersion="test"):
+def runMAFinBED(
+    syn: synapseclient.Synapse,
+    center_mappingdf: pd.DataFrame,
+    test: bool = False,
+    staging: bool = False,
+    genieVersion: str = "test",
+) -> pd.Series:
     """
-    Run MAF in BED script, filter data and update MAFinBED database
+    Run MAF in BED script, filter data and update MAFinBED files
 
     Args:
-        syn: Synapse object
-        center_mappingdf: center mapping dataframe
-        test: Testing parameter. Default is False.
-        genieVersion: GENIE version. Default is test.
+        syn (synapseclient.Synapse): Synapse client connection
+        center_mappingdf (pd.DataFrame): center mapping dataframe
+        test (bool, optional):Testing parameter. Defaults to False.
+        staging (bool, optional): Staging parameter. Defaults to False.
+        genieVersion (str, optional): GENIE version. Defaults to "test".
 
     Returns:
         pd.Series: Variants to remove
     """
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    mafinbed_script = os.path.join(script_dir, "../R/MAFinBED.R")
     # TODO: Use tempfile
     notinbed_file = os.path.join(script_dir, "../R/notinbed.csv")
-    # The MAFinBED script filters out the centers that aren't being processed
-    command = ["Rscript", mafinbed_script, notinbed_file]
-    if test:
-        command.append("--testing")
+    command = get_run_maf_in_bed_script_cmd(
+        notinbed_file=notinbed_file, script_dir=script_dir, test=test, staging=staging
+    )
     subprocess.check_call(command)
 
     # mutationSynId = databaseSynIdMappingDf['Id'][
@@ -442,6 +456,64 @@ def runMAFinBED(syn, center_mappingdf, test=False, genieVersion="test"):
     #     " is False and Center in ('{}')".format(
     #         mutationSynId, "','".join(center_mappingdf.center)))
     # removedVariantsDf = removedVariants.asDataFrame()
+    removed_variantsdf = store_maf_in_bed_filtered_variants(
+        syn=syn,
+        notinbed_file=notinbed_file,
+        center_mapping_df=center_mappingdf,
+        genie_version=genieVersion,
+    )
+    return removed_variantsdf["removeVariants"]
+
+
+def get_run_maf_in_bed_script_cmd(
+    notinbed_file: str, script_dir: str, test: bool, staging: bool
+) -> str:
+    """This function gets the MAFinBED R script command call based on
+       whether we are running in test, staging or production mode
+
+    Args:
+        notinbed_file (str): Full path to the notinbed csv
+        script_dir (str): directory of the MAFinBED script
+        test (bool): Testing parameter.
+        staging (bool): Staging parameter
+
+    Returns:
+        str: Full command call for the MAFinBED script
+    """
+    mafinbed_script = os.path.join(script_dir, "../R/MAFinBED.R")
+    # The MAFinBED script filters out the centers that aren't being processed
+    command = ["Rscript", mafinbed_script, notinbed_file]
+    if test:
+        command.append("--testing")
+    elif staging:
+        command.append("--staging")
+    else:
+        pass
+    return command
+
+
+def store_maf_in_bed_filtered_variants(
+    syn: synapseclient.Synapse,
+    notinbed_file: str,
+    center_mapping_df: pd.DataFrame,
+    genie_version: str,
+) -> pd.DataFrame:
+    """This script retrieves and stores the filtered variants generated
+        from running the MAFinBed script as files on Synapse. This script
+        then returns the not in bed file with the removed variants column
+        added.
+        TODO: Add handling for empty file?
+
+    Args:
+        syn (synapseclient.Synapse): Synapse client connection
+        notinbed_file (str): input file
+        center_mapping_df (pd.DataFrame): the center mapping dataframe
+        genie_version (str): version of this genie run
+
+    Returns:
+        pd.DataFrame: filtered variants dataframe with
+            removed variants column added
+    """
     removed_variantsdf = pd.read_csv(notinbed_file)
     removed_variantsdf["removeVariants"] = (
         removed_variantsdf["Chromosome"].astype(str)
@@ -464,13 +536,13 @@ def runMAFinBED(syn, center_mappingdf, test=False, genieVersion="test"):
         load.store_file(
             syn=syn,
             filepath="mafinbed_filtered_variants.csv",
-            parentid=center_mappingdf["stagingSynId"][
-                center_mappingdf["center"] == center
-            ][0],
-            version_comment=genieVersion,
+            parentid=center_mapping_df["stagingSynId"][
+                center_mapping_df["center"] == center
+            ].values[0],
+            version_comment=genie_version,
         )
         os.unlink("mafinbed_filtered_variants.csv")
-    return removed_variantsdf["removeVariants"]
+    return removed_variantsdf
 
 
 # TODO: Add to transform.py
@@ -492,24 +564,6 @@ def seq_date_filter(clinicalDf, processingDate, consortiumReleaseCutOff):
     return removeSeqDateSamples
 
 
-def sample_class_filter(clinical_df: pd.DataFrame) -> list:
-    """Filter samples by SAMPLE_CLASS
-
-    Args:
-        clinical_df (pd.DataFrame): Clinical dataframe
-
-    Returns:
-        list: List of samples to filter out
-    """
-    if clinical_df.get("SAMPLE_CLASS") is not None:
-        remove_samples = clinical_df["SAMPLE_ID"][
-            clinical_df["SAMPLE_CLASS"] == "cfDNA"
-        ].tolist()
-    else:
-        remove_samples = []
-    return remove_samples
-
-
 # TODO: Add to transform.py
 def mutation_in_cis_filter(
     syn,
@@ -518,9 +572,13 @@ def mutation_in_cis_filter(
     center_mappingdf,
     genieVersion,
     test=False,
+    staging=False,
 ):
     """
-    Run mutation in cis filter, look up samples to remove
+    Run mutation in cis filter, look up samples to remove.
+
+    The mutation in cis script ONLY runs
+    WHEN the skipMutationsInCis parameter is FALSE
 
     Args:
         syn: Synapse object
@@ -529,40 +587,71 @@ def mutation_in_cis_filter(
         center_mappingdf: center mapping dataframe
         genieVersion: GENIE version. Default is test.
         test: Testing parameter. Default is False.
+        staging: Staging parameter. Default is False.
 
     Returns:
         pd.Series: Samples to remove
     """
     if not skipMutationsInCis:
-        mergeCheck_script = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../R/mergeCheck.R"
-        )
-        command = ["Rscript", mergeCheck_script]
-        if test:
-            command.append("--testing")
+        command = get_mutation_in_cis_filter_script_cmd(test=test, staging=staging)
         # TODO: use subprocess.run instead
         subprocess.check_call(command)
-        # Store each centers mutations in cis to their staging folder
-        center_str = "','".join(center_mappingdf.center)
-        query_str = (
-            f"select * from {variant_filtering_synId} where Center in ('{center_str}')"
+        store_mutation_in_cis_files_to_staging(
+            syn=syn,
+            center_mappingdf=center_mappingdf,
+            variant_filtering_synId=variant_filtering_synId,
+            genieVersion=genieVersion,
         )
-        mergeCheckDf = extract.get_syntabledf(syn=syn, query_string=query_str)
-        for center in mergeCheckDf.Center.unique():
-            if not pd.isnull(center):
-                stagingSynId = center_mappingdf.stagingSynId[
-                    center_mappingdf["center"] == center
-                ]
-                mergeCheckDf[mergeCheckDf["Center"] == center].to_csv(
-                    "mutationsInCis_filtered_samples.csv", index=False
-                )
-                load.store_file(
-                    syn=syn,
-                    filepath="mutationsInCis_filtered_samples.csv",
-                    parentid=stagingSynId[0],
-                    version_comment=genieVersion,
-                )
-                os.unlink("mutationsInCis_filtered_samples.csv")
+    remove_samples = get_mutation_in_cis_filtered_samples(
+        syn=syn, variant_filtering_synId=variant_filtering_synId
+    )
+    flagged_variants = get_mutation_in_cis_flagged_variants(
+        syn=syn, variant_filtering_synId=variant_filtering_synId
+    )
+    return (remove_samples, flagged_variants)
+
+
+def get_mutation_in_cis_filter_script_cmd(test: bool, staging: bool) -> str:
+    """This function gets the mutation_in_cis_filter R script
+        command call based on whether we are running in test, staging
+        or production mode
+
+    Args:
+        test (bool): Testing parameter.
+        staging (bool): Staging parameter. Default is False.
+
+    Returns:
+        str: Full command call for the mergeCheck script
+    """
+    mergeCheck_script = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "../R/mergeCheck.R"
+    )
+    command = ["Rscript", mergeCheck_script]
+    if test and not staging:
+        command.append("--testing")
+    if staging and not test:
+        command.append("--staging")
+    elif test and staging:
+        raise ValueError(
+            "Mutation in cis only available in staging or testing mode not both"
+        )
+    else:
+        pass
+    return command
+
+
+def get_mutation_in_cis_filtered_samples(
+    syn: synapseclient.Synapse, variant_filtering_synId: str
+) -> list:
+    """Gets the samples to remove in our variant filtering table
+       TODO: Add handling for when we have 0 row query results
+    Args:
+        syn (synapseclient.Synapse): synapse client connection
+        variant_filtering_synId (str): variant filtering synapse id
+
+    Returns:
+        pd.Series: removed samples
+    """
     query_str = (
         f"SELECT Tumor_Sample_Barcode FROM {variant_filtering_synId} where "
         "Flag = 'TOSS' and Tumor_Sample_Barcode is not null"
@@ -570,7 +659,25 @@ def mutation_in_cis_filter(
     filtered_samplesdf = extract.get_syntabledf(syn=syn, query_string=query_str)
     # #Alex script #1 removed patients
     remove_samples = filtered_samplesdf["Tumor_Sample_Barcode"].drop_duplicates()
+    return remove_samples
 
+
+def get_mutation_in_cis_flagged_variants(
+    syn: synapseclient.Synapse, variant_filtering_synId: str
+) -> pd.Series:
+    """Gets the flagged variants in our variant filtering table which is
+       a unique string concatenation of the Chromosome, Start_Position,
+       HGVSp_Short, Reference_Allele, Tumor_Seq_Allele2 and Tumor_Sample_Barcode
+       columns
+       TODO: Add handling for when we have 0 row query results
+
+    Args:
+        syn (synapseclient.Synapse): synapse client connection
+        variant_filtering_synId (str): variant filtering synapse id
+
+    Returns:
+        pd.Series: flagged variants
+    """
     query_str = (
         f"SELECT * FROM {variant_filtering_synId} where "
         "Flag = 'Flag' and Tumor_Sample_Barcode is not null"
@@ -590,7 +697,45 @@ def mutation_in_cis_filter(
         + " "
         + flag_variantsdf["Tumor_Sample_Barcode"].astype(str)
     )
-    return (remove_samples, flag_variantsdf["flaggedVariants"])
+    return flag_variantsdf["flaggedVariants"]
+
+
+def store_mutation_in_cis_files_to_staging(
+    syn: synapseclient.Synapse,
+    center_mappingdf: pd.DataFrame,
+    variant_filtering_synId: str,
+    genieVersion: str,
+) -> None:
+    """Stores the mutation in cis files to synapse per
+        center
+
+    Args:
+        syn (synapseclient.Synapse): synapse client connection
+        center_mappingdf (pd.DataFrame): center mapping dataframe
+        variant_filtering_synId (str): variant filtering synapse id
+        genieVersion (str): version of the genie pipeline run
+    """
+    # Store each centers mutations in cis to their staging folder
+    center_str = "','".join(center_mappingdf.center)
+    query_str = (
+        f"select * from {variant_filtering_synId} where Center in ('{center_str}')"
+    )
+    mergeCheckDf = extract.get_syntabledf(syn=syn, query_string=query_str)
+    for center in mergeCheckDf.Center.unique():
+        if not pd.isnull(center):
+            stagingSynId = center_mappingdf.stagingSynId[
+                center_mappingdf["center"] == center
+            ]
+            mergeCheckDf[mergeCheckDf["Center"] == center].to_csv(
+                "mutationsInCis_filtered_samples.csv", index=False
+            )
+            load.store_file(
+                syn=syn,
+                filepath="mutationsInCis_filtered_samples.csv",
+                parentid=stagingSynId.values[0],
+                version_comment=genieVersion,
+            )
+            os.unlink("mutationsInCis_filtered_samples.csv")
 
 
 # TODO: Add to transform.py
@@ -691,6 +836,28 @@ def store_gene_panel_files(
     return genePanelEntities
 
 
+def filter_out_germline_variants(
+    input_data: pd.DataFrame, status_col_str: str
+) -> pd.DataFrame:
+    """Filters out germline variants given a status col str. Genie pipeline
+        cannot have any of these variants. NOTE: We have to search for the
+        status column because there's no column name validation in the release
+        steps so the status column may have different casing.
+
+    Args:
+        input_data (pd.DataFrame): input data with germline variants to filter out
+        status_col_str (str): search string for the status column for the data
+
+    Returns:
+        pd.DataFrame: filtered out germline variant data
+    """
+    # find status col SV_Status
+    status_col = [
+        col for col in input_data.columns if col.lower() == status_col_str.lower()
+    ][0]
+    return input_data[input_data[status_col] != "GERMLINE"].reset_index(drop=True)
+
+
 # TODO: add to load.py
 def store_sv_files(
     syn: synapseclient.Synapse,
@@ -714,6 +881,9 @@ def store_sv_files(
         keep_for_merged_consortium_samples: Samples to keep for merged file
         current_release_staging: Staging flag
         center_mappingdf: Center mapping dataframe
+
+    Returns:
+        List of SV Samples
     """
     logger.info("MERING, FILTERING, STORING SV FILES")
     sv_df = extract.get_syntabledf(
@@ -725,7 +895,6 @@ def store_sv_files(
     # sv_df["ENTREZ_GENE_ID"].mask(
     #     sv_df["ENTREZ_GENE_ID"] == 0, float("nan"), inplace=True
     # )
-
     if not current_release_staging:
         sv_staging_df = sv_df[
             sv_df["SAMPLE_ID"].isin(keep_for_center_consortium_samples)
@@ -740,10 +909,11 @@ def store_sv_files(
                     version_comment=genie_version,
                     parentid=center_mappingdf["stagingSynId"][
                         center_mappingdf["center"] == center
-                    ][0],
+                    ].values[0],
                 )
 
     sv_df = sv_df[sv_df["SAMPLE_ID"].isin(keep_for_merged_consortium_samples)]
+    sv_df = filter_out_germline_variants(input_data=sv_df, status_col_str="SV_STATUS")
     sv_df.rename(columns=transform._col_name_to_titlecase, inplace=True)
     sv_text = process_functions.removePandasDfFloat(sv_df)
     sv_path = os.path.join(GENIE_RELEASE_DIR, "data_sv.txt")
@@ -757,6 +927,7 @@ def store_sv_files(
         name="data_sv.txt",
         used=f"{synid}.{version}",
     )
+    return sv_df["Sample_Id"].tolist()
 
 
 # TODO: Add to transform.py
@@ -888,6 +1059,7 @@ def run_genie_filters(
     skip_mutationsincis,
     consortium_release_cutoff,
     test,
+    current_release_staging,
 ):
     """
     Run GENIE filters and returns variants and samples to remove
@@ -903,6 +1075,7 @@ def run_genie_filters(
         skip_mutationsincis: Skip mutation in cis filter
         consortium_release_cutoff: Release cutoff in days
         test: Test flag
+        current_release_staging: Staging flag
 
     Returns:
         pandas.Series: Variants to remove
@@ -918,7 +1091,11 @@ def run_genie_filters(
     # FILTERING
     logger.info("MAF IN BED FILTER")
     remove_mafinbed_variants = runMAFinBED(
-        syn, center_mappingdf, test=test, genieVersion=genie_version
+        syn,
+        center_mappingdf,
+        test=test,
+        staging=current_release_staging,
+        genieVersion=genie_version,
     )
 
     logger.info("MUTATION IN CIS FILTER")
@@ -932,6 +1109,7 @@ def run_genie_filters(
         center_mappingdf,
         genieVersion=genie_version,
         test=test,
+        staging=current_release_staging,
     )
     remove_no_genepanel_samples = no_genepanel_filter(clinicaldf, beddf)
 
@@ -1013,6 +1191,7 @@ def store_clinical_files(
     release_synid,
     current_release_staging,
     center_mappingdf,
+    databaseSynIdMappingDf,
     used=None,
 ):
     """
@@ -1030,6 +1209,7 @@ def store_clinical_files(
         release_synid: Synapse id to store release file
         current_release_staging: Staging flag
         center_mappingdf: Center mapping dataframe
+        databaseSynIdMappingDf: Database to Synapse Id mapping
 
     Returns:
         pandas.DataFrame: configured clinical dataframe
@@ -1154,7 +1334,12 @@ def store_clinical_files(
     keep_merged_consortium_samples = clinicaldf.SAMPLE_ID
     # This mapping table is the GENIE clinical code to description
     # mapping to generate the headers of the clinical file
-    mapping = extract.get_syntabledf(syn=syn, query_string="SELECT * FROM syn9621600")
+    clinical_code_to_desc_map_synid = databaseSynIdMappingDf["Id"][
+        databaseSynIdMappingDf["Database"] == "clinical_code_to_desc_map"
+    ][0]
+    mapping = extract.get_syntabledf(
+        syn=syn, query_string=f"SELECT * FROM {clinical_code_to_desc_map_synid}"
+    )
     clinical_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical.txt")
     clinical_sample_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical_sample.txt")
     clinical_patient_path = os.path.join(GENIE_RELEASE_DIR, "data_clinical_patient.txt")
@@ -1399,7 +1584,7 @@ def store_data_gene_matrix(
     cna_samples,
     release_synid,
     wes_seqassayids,
-    used=None,
+    sv_samples,
 ):
     """
     Create and store data gene matrix file
@@ -1410,6 +1595,8 @@ def store_data_gene_matrix(
         clinicaldf: Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID
         cna_samples: Samples with CNA
         release_synid: Synapse id to store release file
+        wes_seqassayids: Whole exome sequencing SEQ_ASSAY_IDs
+        sv_samples: Samples with SV
 
     Returns:
         pandas.DataFrame: data gene matrix dataframe
@@ -1424,17 +1611,20 @@ def store_data_gene_matrix(
     data_gene_matrix = data_gene_matrix.rename(columns={"SEQ_ASSAY_ID": "mutations"})
     data_gene_matrix = data_gene_matrix[data_gene_matrix["SAMPLE_ID"] != ""]
     data_gene_matrix.drop_duplicates("SAMPLE_ID", inplace=True)
-    # Gene panel file is written below CNA, because of the "cna" column
-    # Add in CNA column into gene panel file
-    cna_seqids = data_gene_matrix["mutations"][
-        data_gene_matrix["SAMPLE_ID"].isin(cna_samples)
-    ].unique()
-    data_gene_matrix["cna"] = data_gene_matrix["mutations"]
-    data_gene_matrix["cna"][~data_gene_matrix["cna"].isin(cna_seqids)] = "NA"
+
+    # exclude wes assay_ids
     wes_panel_mut = data_gene_matrix["mutations"].isin(wes_seqassayids)
     data_gene_matrix = data_gene_matrix[~wes_panel_mut]
-    wes_panel_cna = data_gene_matrix["cna"].isin(wes_seqassayids)
-    data_gene_matrix = data_gene_matrix[~wes_panel_cna]
+
+    # Add in CNA column into gene panel file
+    data_gene_matrix = process_functions.add_columns_to_data_gene_matrix(
+        data_gene_matrix=data_gene_matrix, sample_list=cna_samples, column_name="cna"
+    )
+
+    # Add SV column into gene panel file
+    data_gene_matrix = process_functions.add_columns_to_data_gene_matrix(
+        data_gene_matrix=data_gene_matrix, sample_list=sv_samples, column_name="sv"
+    )
 
     data_gene_matrix.to_csv(data_gene_matrix_path, sep="\t", index=False)
 
@@ -1564,12 +1754,16 @@ def stagingToCbio(
     sv_synid = databaseSynIdMappingDf["Id"][databaseSynIdMappingDf["Database"] == "sv"][
         0
     ]
+    clinical_tier_release_scope_synid = databaseSynIdMappingDf["Id"][
+        databaseSynIdMappingDf["Database"] == "clinical_tier_release_scope"
+    ][0]
     # Grab assay information
     assay_info_ind = databaseSynIdMappingDf["Database"] == "assayinfo"
     assay_info_synid = databaseSynIdMappingDf["Id"][assay_info_ind][0]
 
     # Using center mapping df to gate centers in release fileStage
     center_query_str = "','".join(CENTER_MAPPING_DF.center)
+
     patient_snapshot = syn.create_snapshot_version(patientSynId, comment=genieVersion)
     patient_used = f"{patientSynId}.{patient_snapshot}"
     patientDf = extract.get_syntabledf(
@@ -1592,7 +1786,8 @@ def stagingToCbio(
     # Clinical release scope filter
     # If private -> Don't release to public
     clinicalReleaseScopeDf = extract.get_syntabledf(
-        syn, "SELECT * FROM syn8545211 where releaseScope <> 'private'"
+        syn,
+        f"SELECT * FROM {clinical_tier_release_scope_synid} where releaseScope <> 'private'",
     )
 
     patientCols = clinicalReleaseScopeDf["fieldName"][
@@ -1637,6 +1832,7 @@ def stagingToCbio(
         skipMutationsInCis,
         consortiumReleaseCutOff,
         test,
+        current_release_staging=current_release_staging,
     )
 
     (
@@ -1655,6 +1851,7 @@ def stagingToCbio(
         consortiumReleaseSynId,
         current_release_staging,
         CENTER_MAPPING_DF,
+        databaseSynIdMappingDf,
         used=[sample_used, patient_used],
     )
 
@@ -1689,8 +1886,25 @@ def stagingToCbio(
         syn, genieVersion, assay_info_synid, clinicalDf, consortiumReleaseSynId
     )
 
+    svSamples = store_sv_files(
+        syn,
+        consortiumReleaseSynId,
+        genieVersion,
+        sv_synid,
+        keepForCenterConsortiumSamples,
+        keepForMergedConsortiumSamples,
+        current_release_staging,
+        CENTER_MAPPING_DF,
+    )
+
     data_gene_matrix = store_data_gene_matrix(
-        syn, genieVersion, clinicalDf, cnaSamples, consortiumReleaseSynId, wes_panelids
+        syn,
+        genieVersion,
+        clinicalDf,
+        cnaSamples,
+        consortiumReleaseSynId,
+        wes_panelids,
+        svSamples,
     )
 
     genePanelEntities = store_gene_panel_files(
@@ -1700,17 +1914,6 @@ def stagingToCbio(
         data_gene_matrix,
         consortiumReleaseSynId,
         wes_panelids,
-    )
-
-    store_sv_files(
-        syn,
-        consortiumReleaseSynId,
-        genieVersion,
-        sv_synid,
-        keepForCenterConsortiumSamples,
-        keepForMergedConsortiumSamples,
-        current_release_staging,
-        CENTER_MAPPING_DF,
     )
 
     store_seg_files(
@@ -1884,7 +2087,6 @@ def create_link_version(
     ]
     if clinical_ent:
         # Set private permission for the data_clinical.txt link
-        syn.setPermissions(clinical_ent[0], principalId=3346558, accessType=[])
         syn.setPermissions(clinical_ent[0], principalId=3326313, accessType=[])
 
     for ents in case_list_entities:

@@ -6,18 +6,59 @@ name: build
 on:
   push:
     branches: [main, develop, 'GEN*', 'gen*']
+    paths-ignore:
+      - '**.md'                            # All Markdown files
+      - '**/docs/**'                       # Documentation directory
+      - '.github/workflows/**'             # Ignore all github workflow file changes
 
   pull_request:
+      types:
+        - opened
+        - reopened
+      paths-ignore:
+        - '**.md'                            # All Markdown files
+        - '**/docs/**'                       # Documentation directory
+        - '.github/workflows/**'             # Ignore all github workflow file changes
 
   release:
     types:
       - created
 
+  workflow_dispatch:
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  TEST_PROJECT_SYNID: syn7208886        # synapse_id of the test synapse project
+  TEST_SEQ_DATE: Jul-2022               # SEQ_DATE to use for test pipeline. Should match the one used in nf-genie.
 
 jobs:
+
+  determine-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      non-test-changes: ${{ steps.get-changes.outputs.non-test-changes }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Determine Changes
+        id: get-changes
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "Handling a push event..."
+            ALL_CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "Handling a pull request event..."
+            git fetch origin ${{ github.base_ref }}
+            ALL_CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} HEAD)
+          fi
+          echo "All Changed Files: $ALL_CHANGED_FILES"
+          NON_TEST_CHANGES=$(echo "$ALL_CHANGED_FILES" | grep -v '^tests/' || true)
+          echo "Non-Test Changes: $NON_TEST_CHANGES"
+          echo "::set-output name=non-test-changes::$NON_TEST_CHANGES"
 
   test:
     runs-on: ubuntu-latest
@@ -25,9 +66,9 @@ jobs:
       matrix:
         python-version: [3.8, 3.9]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -47,40 +88,21 @@ jobs:
       run: |
         pytest tests/ --cov=genie --cov=genie_registry --cov-report=html
     - name: Upload pytest test results
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: pytest-results-${{ matrix.python-version }}
         path: htmlcov
       # Use always() to always run this step to publish test results when there are test failures
       if: ${{ always() }}
 
+
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: psf/black@stable
-
-  deploy:
-    needs: [test, lint]
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release'
-    permissions:
-      id-token: write
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install setuptools wheel build
-    - name: Build distributions
-      run: python -m build
-    - name: Publish to pypi
-      uses: pypa/gh-action-pypi-publish@release/v1
-
+        with:
+            version: "~=23.12"
 
   build-container:
     needs: [test, lint]
@@ -108,13 +130,13 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      
+
       - name: Format tags as registry refs
         id: registry_refs
         env:
           TAGS: ${{ steps.meta.outputs.json }}
         run: |
-          echo tags=$(echo $TAGS | jq '.tags[] | "type=registry,ref=" + . + "_cache"| @text') >> $GITHUB_OUTPUT
+          echo "tags=$(echo $TAGS | jq -r '.tags[] | "type=registry,ref=\(.)_cache"')" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         id: build-and-push
@@ -128,3 +150,87 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: ${{ steps.registry_refs.outputs.tags }},mode=max
           cache-to: ${{ steps.registry_refs.outputs.tags }},mode=max
+
+  integration-tests:
+    needs: [determine-changes, lint, test, build-container]
+    runs-on: ubuntu-latest
+    if: ${{ needs.determine-changes.outputs.non-test-changes }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Extract Branch Name
+      run: |
+        if [ "$GITHUB_HEAD_REF" != "" ]; then
+          echo "BRANCH_NAME=$GITHUB_HEAD_REF" >> $GITHUB_ENV
+        else
+          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+        fi
+
+    - name: Pull Public Docker Image from GHCR
+      run: |
+        docker pull ghcr.io/sage-bionetworks/genie:${{ env.BRANCH_NAME }}
+
+    - name: Start Docker Container
+      run: |
+        docker run -d --name genie-container \
+          -e SYNAPSE_AUTH_TOKEN="${{ secrets.SYNAPSE_AUTH_TOKEN }}" \
+          ghcr.io/sage-bionetworks/genie:${{ env.BRANCH_NAME }} \
+          sh -c "while true; do sleep 1; done"
+
+    - name: Run validation in test pipeline
+      run: |
+        docker exec genie-container \
+        python3 /root/Genie/bin/input_to_database.py \
+            mutation \
+            --project_id ${{ env.TEST_PROJECT_SYNID }} \
+            --onlyValidate \
+            --genie_annotation_pkg /root/annotation-tools
+
+    - name: Run processing on mutation data in test pipeline
+      run: |
+        docker exec genie-container \
+        python3 /root/Genie/bin/input_to_database.py mutation \
+            --project_id ${{ env.TEST_PROJECT_SYNID }} \
+            --genie_annotation_pkg /root/annotation-tools \
+            --createNewMafDatabase
+
+    - name: Run processing on non-mutation data in test pipeline
+      run: |
+        docker exec genie-container \
+        python3 /root/Genie/bin/input_to_database.py main \
+            --project_id ${{ env.TEST_PROJECT_SYNID }}
+
+    - name: Run consortium release in test pipeline
+      run: |
+        docker exec genie-container \
+        python3 /root/Genie/bin/database_to_staging.py ${{ env.TEST_SEQ_DATE }} ../cbioportal TEST --test
+
+    - name: Run public release in test pipeline
+      run: |
+        docker exec genie-container \
+        python3 /root/Genie/bin/consortium_to_public.py  ${{ env.TEST_SEQ_DATE }} ../cbioportal TEST --test
+
+    - name: Stop and Remove Docker Container
+      run: docker stop genie-container && docker rm genie-container
+
+  deploy:
+    needs: [test, lint, build-container]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    permissions:
+      id-token: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel build
+    - name: Build distributions
+      run: python -m build
+    - name: Publish to pypi
+      uses: pypa/gh-action-pypi-publish@release/v1

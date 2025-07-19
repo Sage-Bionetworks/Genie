@@ -1,7 +1,10 @@
-from unittest.mock import Mock, patch
 import uuid
+from unittest.mock import Mock, patch
 
 import pandas as pd
+import pytest
+import synapseclient
+from genie import process_functions
 from pandas.api.types import (
     is_bool_dtype,
     is_float_dtype,
@@ -9,10 +12,6 @@ from pandas.api.types import (
     is_string_dtype,
 )
 from pandas.testing import assert_frame_equal
-import pytest
-import synapseclient
-
-from genie import process_functions
 
 DATABASE_DF = pd.DataFrame(
     {
@@ -25,6 +24,37 @@ DATABASE_DF = pd.DataFrame(
 DATABASE_DF.index = ["1_3", "2_3", "3_5"]
 ENTITY = synapseclient.Project("foo", annotations={"dbMapping": ["syn1234"]})
 ONCOTREE_ENT = "syn222"
+
+
+@pytest.mark.parametrize(
+    "df,key,expected_error",
+    [
+        (
+            pd.DataFrame({"foo": [420, 666, 390], "baz": [50, 40, 555]}),
+            "foo",
+            True,
+        ),
+        (
+            pd.DataFrame({"foo": [420, 666, 390], "baz": [50, 40, 555]}),
+            ["foo", "baz"],
+            True,
+        ),
+        (
+            pd.DataFrame({"foo": [420, 666, 390], "baz": [50, 40, 555]}),
+            ["foo1"],
+            False,
+        ),
+        (
+            pd.DataFrame({"foo": [420, 666, 390], "baz": [50, 40, 555]}),
+            ["foo1", "baz"],
+            False,
+        ),
+    ],
+    ids=["one_key_pass", "key_list_pass", "one_key_fail", "key_list_fail"],
+)
+def test_checkColExist(df, key, expected_error):
+    error = process_functions.checkColExist(df, key)
+    assert error == expected_error
 
 
 @pytest.mark.parametrize(
@@ -139,7 +169,7 @@ def test_append__append_rows():
     append_rows = process_functions._append_rows(new_datadf, DATABASE_DF, "UNIQUE_KEY")
     append_rows.fillna("", inplace=True)
     expecteddf.fillna("", inplace=True)
-    assert append_rows.equals(expecteddf[append_rows.columns])
+    assert_frame_equal(append_rows, expecteddf[append_rows.columns], check_dtype=False)
 
 
 def test___create_update_rowsdf():
@@ -598,7 +628,7 @@ def get_create_missing_columns_test_cases():
             "name": "empty_df",
             "test_input": pd.DataFrame({}),
             "test_schema": {"col1": "float"},
-            "expected_output": pd.DataFrame({"col1": []}, index=[]),
+            "expected_output": pd.DataFrame({"col1": []}, dtype=float),
             "expected_dtype": is_float_dtype,
             "expected_na_count": 0,
         },
@@ -635,7 +665,8 @@ def test_that_create_missing_columns_gets_expected_output_with_single_col_df(
     result = process_functions.create_missing_columns(
         dataset=test_cases["test_input"], schema=test_cases["test_schema"]
     )
-    assert_frame_equal(result, test_cases["expected_output"], check_exact=True)
+    result.reset_index(drop=True, inplace=True)
+    assert_frame_equal(result, test_cases["expected_output"], check_dtype=False)
     assert test_cases["expected_dtype"](result.iloc[:, 0])
     assert result.isna().sum().sum() == test_cases["expected_na_count"]
 
@@ -693,3 +724,392 @@ def test_that_create_missing_columns_returns_expected_output_with_multi_col_df()
     assert result.isna().sum().sum() == 11
 
     assert_frame_equal(result, expected_output, check_exact=True)
+
+
+@pytest.mark.parametrize(
+    "input_df,col,values",
+    [(pd.DataFrame({"some_col": ["Val1", "Val1", "Val2"]}), "test_col", "test_value")],
+    ids=["missing_the_column"],
+)
+def test_check_values_in_column_no_column(input_df, col, values):
+    with patch.object(process_functions, "logger") as mock_logger:
+        _ = process_functions.check_values_in_column(input_df, col, values)
+        mock_logger.error.assert_called_once_with(
+            "Must have test_col column in the dataframe."
+        )
+
+
+@pytest.mark.parametrize(
+    "input_df,col,values,expected_results",
+    [
+        (
+            pd.DataFrame(
+                {"SAMPLE_ID": [1, 2, 3], "SAMPLE_CLASS": ["Val1", "Val1", "Val2"]}
+            ),
+            "SAMPLE_CLASS",
+            "cfDNA",
+            False,
+        ),
+        (
+            pd.DataFrame(
+                {"SAMPLE_ID": [1, 2, 3], "SAMPLE_CLASS": ["Val1", "Val1", "Val2"]}
+            ),
+            "SAMPLE_CLASS",
+            ["test_value", "cfDNA"],
+            False,
+        ),
+        (
+            pd.DataFrame(
+                {"SAMPLE_ID": [1, 2, 3], "SAMPLE_CLASS": ["cfDNA", "Val1", "Val2"]}
+            ),
+            "SAMPLE_CLASS",
+            "cfDNA",
+            True,
+        ),
+        (
+            pd.DataFrame(
+                {"SAMPLE_ID": [1, 2, 3], "SAMPLE_CLASS": ["cfDNA", "Tumor", "Val2"]}
+            ),
+            "SAMPLE_CLASS",
+            ["cfDNA", "Tumor"],
+            True,
+        ),
+        (
+            pd.DataFrame(
+                {"SAMPLE_ID": [1, 2, 3], "SAMPLE_CLASS": ["cfDNA", "Tumor", "Val2"]}
+            ),
+            "SAMPLE_CLASS",
+            ["cfDNA", "Tumor", "test_value"],
+            True,
+        ),
+        (
+            pd.DataFrame({"SAMPLE_ID": [], "SAMPLE_CLASS": []}),
+            "SAMPLE_CLASS",
+            ["cfDNA", "Tumor", "test_value"],
+            False,
+        ),
+    ],
+    ids=[
+        "no_expected_single_value",
+        "no_expected_value_list",
+        "have_expected_single_value",
+        "have_expected_value_list",
+        "have_partial_expected_value_list",
+        "empty_dataframe_with_required_column",
+    ],
+)
+def test_check_values_in_column_has_column(input_df, col, values, expected_results):
+    results = process_functions.check_values_in_column(input_df, col, values)
+
+    assert results == expected_results
+
+
+def get_row_indices_for_invalid_column_values_test_cases():
+    return [
+        {
+            "name": "has_na_and_allowed",
+            "df": pd.DataFrame({"test_col": ["Val1", "Val2", float("nan"), None]}),
+            "col": "test_col",
+            "possible_values": ["Val1"],
+            "na_allowed": True,
+            "sep": None,
+            "expected_index": pd.Index([1]),
+        },
+        {
+            "name": "has_na_but_not_allowed",
+            "df": pd.DataFrame({"test_col": ["Val1", "Val2", float("nan"), None]}),
+            "col": "test_col",
+            "possible_values": ["Val1"],
+            "na_allowed": False,
+            "sep": None,
+            "expected_index": pd.Index([1, 2, 3]),
+        },
+        {
+            "name": "invalid_values_na_allowed",
+            "df": pd.DataFrame({"test_col": ["val1", "VAL1", float("nan"), None]}),
+            "col": "test_col",
+            "possible_values": ["Val1"],
+            "na_allowed": True,
+            "sep": None,
+            "expected_index": pd.Index([0, 1]),
+        },
+        {
+            "name": "invalid_values_na_not_allowed",
+            "df": pd.DataFrame({"test_col": ["val1", "VAL1", float("nan"), None]}),
+            "col": "test_col",
+            "possible_values": ["Val1"],
+            "na_allowed": False,
+            "sep": None,
+            "expected_index": pd.Index([0, 1, 2, 3]),
+        },
+        {
+            "name": "values_in_list",
+            "df": pd.DataFrame(
+                {
+                    "test_col": [
+                        "Val1;Val2",
+                        "Val1;Val2;Val3",
+                        "Val1",
+                        "Val1;",
+                        "Val1;None",
+                    ]
+                }
+            ),
+            "col": "test_col",
+            "possible_values": ["Val1", "Val2"],
+            "na_allowed": True,
+            "sep": ";",
+            "expected_index": pd.Index([1, 3, 4]),
+        },
+        {
+            "name": "valid_data",
+            "df": pd.DataFrame({"test_col": ["Val1", "Val2", "Val1;Val2"]}),
+            "col": "test_col",
+            "possible_values": ["Val1", "Val2"],
+            "na_allowed": False,
+            "sep": ";",
+            "expected_index": pd.Index([]),
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_cases",
+    get_row_indices_for_invalid_column_values_test_cases(),
+    ids=lambda x: x["name"],
+)
+def test_get_row_indices_for_invalid_column_values(test_cases):
+    df = test_cases["df"]
+    col = test_cases["col"]
+    possible_values = test_cases["possible_values"]
+    na_allowed = test_cases["na_allowed"]
+    sep = test_cases["sep"]
+    results = process_functions.get_row_indices_for_invalid_column_values(
+        df, col, possible_values, na_allowed, sep
+    )
+    assert results.equals(test_cases["expected_index"])
+
+
+def get_message_for_invalid_column_value_test_cases():
+    return [
+        {
+            "name": "invalid_data",
+            "col": "test_col",
+            "filename": "test_filename",
+            "invalid_indices": pd.Index([1, 2, 3]),
+            "possible_values": ["Val1"],
+            "expected_error": "test_filename: Please double check your test_col column. Valid values are Val1. "
+            "You have 3 row(s) in your file where test_col column contains invalid values. "
+            "The row(s) this occurs in are: [1, 2, 3]. Please correct.\n",
+            "expected_warning": "",
+        },
+        {
+            "name": "valid_data",
+            "col": "test_col",
+            "filename": "test_filename",
+            "invalid_indices": pd.Index([]),
+            "possible_values": ["Val1", "Val2"],
+            "expected_error": "",
+            "expected_warning": "",
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_cases",
+    get_message_for_invalid_column_value_test_cases(),
+    ids=lambda x: x["name"],
+)
+def test_get_message_for_invalid_column_value(test_cases):
+    col = test_cases["col"]
+    filename = test_cases["filename"]
+    invalid_indices = test_cases["invalid_indices"]
+    possible_values = test_cases["possible_values"]
+    warning, error = process_functions.get_message_for_invalid_column_value(
+        col, filename, invalid_indices, possible_values
+    )
+    assert warning == test_cases["expected_warning"]
+    assert error == test_cases["expected_error"]
+
+
+def check_col_and_values_row_specific_test_cases():
+    return [
+        {
+            "name": "valid_data_with_value_list",
+            "df": pd.DataFrame({"test_col": ["Val1", "Val2", "Val1;Val2"]}),
+            "col": "test_col",
+            "possible_values": ["Val1", "Val2"],
+            "filename": "test_filename",
+            "na_allowed": True,
+            "required": True,
+            "sep": ";",
+            "expected_error": "",
+            "expected_warning": "",
+        },
+        {
+            "name": "valid_data_with_individual_value_na_allowed",
+            "df": pd.DataFrame({"test_col": ["Val1", "Val2", float("nan"), None]}),
+            "col": "test_col",
+            "possible_values": ["Val1", "Val2"],
+            "filename": "test_filename",
+            "na_allowed": True,
+            "required": True,
+            "sep": ";",
+            "expected_error": "",
+            "expected_warning": "",
+        },
+        {
+            "name": "missing_required_column",
+            "df": pd.DataFrame({"test_col": ["Val1", "Val2", "Val1;Val2"]}),
+            "col": "test_col1",
+            "possible_values": ["Val1"],
+            "filename": "test_filename",
+            "na_allowed": True,
+            "required": True,
+            "sep": ";",
+            "expected_error": "test_filename: Must have test_col1 column.\n",
+            "expected_warning": "",
+        },
+        {
+            "name": "missing_optional_column",
+            "df": pd.DataFrame({"test_col": ["Val1", "Val2", "Val1;Val2"]}),
+            "col": "test_col1",
+            "possible_values": ["Val1"],
+            "filename": "test_filename",
+            "na_allowed": True,
+            "required": False,
+            "sep": ";",
+            "expected_error": "",
+            "expected_warning": "test_filename: Doesn't have test_col1 column. This column will be added.\n",
+        },
+        {
+            "name": "invalid_data_with_value_list",
+            "df": pd.DataFrame({"test_col": ["Val1", "Val2", "Val1;Val2"]}),
+            "col": "test_col",
+            "possible_values": ["Val1"],
+            "filename": "test_filename",
+            "na_allowed": True,
+            "required": True,
+            "sep": ";",
+            "expected_error": "test_filename: Please double check your test_col column. Valid values are Val1. "
+            "You have 2 row(s) in your file where test_col column contains invalid values. "
+            "The row(s) this occurs in are: [1, 2]. Please correct.\n",
+            "expected_warning": "",
+        },
+        {
+            "name": "invalid_data_with_individual_value_na_not_allowed",
+            "df": pd.DataFrame({"test_col": ["Val1", "Val2", "", float("nan"), None]}),
+            "col": "test_col",
+            "possible_values": ["Val1", "Val2"],
+            "filename": "test_filename",
+            "na_allowed": False,
+            "required": True,
+            "sep": None,
+            "expected_error": "test_filename: Please double check your test_col column. Valid values are Val1, Val2. "
+            "You have 3 row(s) in your file where test_col column contains invalid values. "
+            "The row(s) this occurs in are: [2, 3, 4]. Please correct.\n",
+            "expected_warning": "",
+        },
+        {
+            "name": "invalid_data_with_individual_value_na_allowed",
+            "df": pd.DataFrame({"test_col": ["Val1", "Val2", "", float("nan"), None]}),
+            "col": "test_col",
+            "possible_values": ["Val1"],
+            "filename": "test_filename",
+            "na_allowed": True,
+            "required": True,
+            "sep": None,
+            "expected_error": "test_filename: Please double check your test_col column. Valid values are Val1. "
+            "You have 2 row(s) in your file where test_col column contains invalid values. "
+            "The row(s) this occurs in are: [1, 2]. Please correct.\n",
+            "expected_warning": "",
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_cases",
+    check_col_and_values_row_specific_test_cases(),
+    ids=lambda x: x["name"],
+)
+def test_check_col_and_values_row_specific(test_cases):
+    df = test_cases["df"]
+    col = test_cases["col"]
+    possible_values = test_cases["possible_values"]
+    filename = test_cases["filename"]
+    na_allowed = test_cases["na_allowed"]
+    required = test_cases["required"]
+    sep = test_cases["sep"]
+    warning, error = process_functions.check_column_and_values_row_specific(
+        df, col, possible_values, filename, na_allowed, required, sep
+    )
+    assert warning == test_cases["expected_warning"]
+    assert error == test_cases["expected_error"]
+
+
+@pytest.mark.parametrize(
+    "data_gene_matrix, sample_list, column_name,expected_output",
+    [
+        (
+            pd.DataFrame(
+                {
+                    "SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"],
+                    "mutations": ["assay_1", "assay_2", "assay_3"],
+                }
+            ),
+            ["Sample_1", "Sample_2", "Sample_3"],
+            "CNA",
+            pd.DataFrame(
+                {
+                    "SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"],
+                    "mutations": ["assay_1", "assay_2", "assay_3"],
+                    "CNA": ["assay_1", "assay_2", "assay_3"],
+                }
+            ),
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"],
+                    "mutations": ["assay_1", "assay_2", "assay_3"],
+                }
+            ),
+            ["Sample_1", "Sample_2"],
+            "CNA",
+            pd.DataFrame(
+                {
+                    "SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"],
+                    "mutations": ["assay_1", "assay_2", "assay_3"],
+                    "CNA": ["assay_1", "assay_2", "NA"],
+                }
+            ),
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"],
+                    "mutations": ["assay_1", "assay_2", "assay_3"],
+                }
+            ),
+            ["Sample_4"],
+            "CNA",
+            pd.DataFrame(
+                {
+                    "SAMPLE_ID": ["Sample_1", "Sample_2", "Sample_3"],
+                    "mutations": ["assay_1", "assay_2", "assay_3"],
+                    "CNA": ["NA", "NA", "NA"],
+                }
+            ),
+        ),
+    ],
+    ids=["all_mutation_samples", "partial_mutation_samples", "none_mutation_samples"],
+)
+def test_add_columns_to_data_gene_matrix(
+    data_gene_matrix, sample_list, column_name, expected_output
+):
+    output = process_functions.add_columns_to_data_gene_matrix(
+        data_gene_matrix, sample_list, column_name
+    )
+
+    # check the output
+    pd.testing.assert_frame_equal(output, expected_output)

@@ -1,0 +1,1 @@
+::: bin.consortium_to_public

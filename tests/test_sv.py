@@ -1,9 +1,8 @@
 from unittest.mock import patch
 
 import pandas as pd
-
-from genie_registry.structural_variant import StructuralVariant
 from genie import validate
+from genie_registry.structural_variant import StructuralVariant
 
 
 class TestSv:
@@ -52,7 +51,7 @@ class TestSv:
         sv_df = pd.DataFrame(
             {
                 "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID1-1", "ID3-1"],
-                "SV_STATUS": ["SOMATIC", "SOMATIC", "GERMLINE"],
+                "SV_STATUS": ["SOMATIC", "SOMATIC", "SOMATIC"],
             }
         )
         error, warning = self.sv_cls._validate(sv_df)
@@ -80,7 +79,7 @@ class TestSv:
         sv_df = pd.DataFrame(
             {
                 "sample_id": ["GENIE-SAGE-ID1-1", "GENIE-SAGE-ID2-1"],
-                "SV_STATUS": ["SOMATIC", "GERMLINE"],
+                "SV_STATUS": ["SOMATIC", "SOMATIC"],
                 "SITE1_ENTREZ_GENE_ID": [1, "foo"],
                 "SITE2_ENTREZ_GENE_ID": [1, "foo"],
                 "SITE1_REGION_NUMBER": [1, "foo"],
@@ -118,7 +117,7 @@ class TestSv:
                     "GENIE-SAGE-ID2-1",
                     "GENIE-SAGE-ID3-1",
                 ],
-                "SV_STATUS": ["SOMATIC", "GERMLINE", "GERMLINE"],
+                "SV_STATUS": ["SOMATIC", "SOMATIC", "SOMATIC"],
                 "SITE1_ENTREZ_GENE_ID": [1, 2, 2],
                 "SITE2_ENTREZ_GENE_ID": [1, 3, 3],
                 "SITE1_REGION_NUMBER": [1, 2, 2],
@@ -154,3 +153,20 @@ class TestSv:
                 "_validate_chromosome should be called twice for sv file"
                 "since it has two potential chromosome columns to check"
             )
+
+    def test_validation_flag_GERMLINE_in_SV_STATUS(self):
+        sv_df = pd.DataFrame(
+            {
+                "sample_id": [
+                    "GENIE-SAGE-ID1-1",
+                    "GENIE-SAGE-ID2-1",
+                    "GENIE-SAGE-ID3-1",
+                ],
+                "SV_STATUS": ["SOMATIC", "SOMATIC", "GERMLINE"],
+            }
+        )
+        error, warning = self.sv_cls._validate(sv_df)
+        assert error == (
+            "Structural Variant: Please double check your SV_STATUS column.  This column must only be these values: SOMATIC\n"
+        )
+        assert warning == ""

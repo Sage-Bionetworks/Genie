@@ -46,6 +46,7 @@ def genie_config():
         "releaseFolder": "syn17079016",
         "assayinfo": "syn18404286",
         "logs": "syn10155804",
+        "sv": "syn51663925",
         "center_config": {
             "SAGE": {
                 "center": "SAGE",
@@ -73,10 +74,12 @@ def genie_config():
             },
         },
         "genie_annotation_pkg": "/path/to/nexus",
-        "ethnicity_mapping": "syn7434242",
-        "race_mapping": "syn7434236",
-        "sex_mapping": "syn7434222",
-        "sampletype_mapping": "syn7434273",
+        "ethnicity_mapping": "syn60548943",
+        "race_mapping": "syn60548944",
+        "sex_mapping": "syn60548946",
+        "sampletype_mapping": "syn60548941",
+        "clinical_tier_release_scope": "syn8545211",
+        "clinical_code_to_desc_map": "syn59486337",
     }
     return config
 

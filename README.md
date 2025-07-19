@@ -6,10 +6,13 @@
 [![Docker Automated](https://img.shields.io/docker/automated/sagebionetworks/genie.svg?style=for-the-badge&logo=docker)](https://hub.docker.com/r/sagebionetworks/genie)
 [![GitHub CI](https://img.shields.io/github/actions/workflow/status/Sage-Bionetworks/Genie/ci.yml?branch=develop&style=for-the-badge&logo=github)](https://github.com/Sage-Bionetworks/Genie)
 
-
 ## Introduction
 
 This repository documents code used to gather, QC, standardize, and analyze data uploaded by institutes participating in AACR's Project GENIE (Genomics, Evidence, Neoplasia, Information, Exchange).
+
+## Documentation
+
+For more information about the AACR genie repository, [visit the GitHub Pages site.](https://sage-bionetworks.github.io/Genie/)
 
 ## Dependencies
 
@@ -29,16 +32,47 @@ This package contains both R, Python and cli tools.  These are tools or packages
 
 One of the features of the `aacrgenie` package is that is provides a local validation tool that GENIE data contributors and install and use to validate their files locally prior to uploading to Synapse.
 
+
+### Setting up your environment
+
+These instructions will install all the necessary components for you to run the validator locally on all of your files, including the Synapse client.
+
+1. Create a virtual environment using package manager of your choice (e.g: `conda`, `pipenv`)
+
+2. Install the genie package
+
 ```
 pip install aacrgenie
+```
+
+3. Verify the installation
+
+```
 genie -v
 ```
 
-This will install all the necessary components for you to run the validator locally on all of your files, including the Synapse client.  Please view the help to see how to run to validator.
+4. Set up authentication with Synapse through the [local .synapseConfig](https://python-docs.synapse.org/tutorials/authentication/#use-synapseconfig) or using an [environment variable](https://python-docs.synapse.org/tutorials/authentication/#use-environment-variable)
+
+### Running the validator
+
+Get help of all available commands
 
 ```
 genie validate -h
+```
+
+### Example commands
+
+Running validator on clinical file
+
+```
 genie validate data_clinical_supp_SAGE.txt SAGE
+```
+
+Running validator on cna file. **Note** that the flag `--nosymbol-check` is **REQUIRED** when running the validator for cna files because you would need access to an internal bed database table without it. For DEVELOPERS this is not required.
+
+```
+genie validate data_cna_SAGE.txt SAGE --nosymbol-check
 ```
 
 
@@ -119,16 +153,16 @@ These are instructions on how you would develop and test the pipeline locally.
         python bin/input_to_database.py mutation --project_id syn7208886 --deleteOld --genie_annotation_pkg ../annotation-tools --createNewMafDatabase
         ```
 
-    1. Create a consortium release.  Be sure to add the `--test` parameter. Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile)
+    1. Create a consortium release.  Be sure to add the `--test` parameter. Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile). For consistency, the processingDate specified here should match the one used for TEST pipeline in [nf-genie.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/main.nf)
 
         ```
-        python bin/database_to_staging.py Jan-2017 ../cbioportal TEST --test
+        python bin/database_to_staging.py Jul-2022 ../cbioportal TEST --test
         ```
 
-    1. Create a public release.  Be sure to add the `--test` parameter.  Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile)
+    1. Create a public release.  Be sure to add the `--test` parameter.  Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile). For consistency, the processingDate specified here should match the one used for TEST pipeline in [nf-genie.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/main.nf)
 
         ```
-        python bin/consortium_to_public.py Jan-2017 ../cbioportal TEST --test
+        python bin/consortium_to_public.py Jul-2022 ../cbioportal TEST --test
         ```
 
 ## Production
