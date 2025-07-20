@@ -556,7 +556,7 @@ def test_perfect__validate(clin_class, valid_clinical_df):
         "genie.process_functions.get_oncotree_code_mappings", return_value=onco_map_dict
     ) as mock_get_onco_map:
         error, warning = clin_class._validate(valid_clinical_df)
-        mock_get_onco_map.called_once_with(json_oncotreeurl)
+        mock_get_onco_map.assert_called_once_with(json_oncotreeurl)
         assert error == ""
         assert warning == ""
 
@@ -625,7 +625,7 @@ def test_nonull__validate(clin_class):
         "genie.process_functions.get_oncotree_code_mappings", return_value=onco_map_dict
     ) as mock_get_onco_map:
         error, warning = clin_class._validate(clinicaldf)
-        mock_get_onco_map.called_once_with(json_oncotreeurl)
+        mock_get_onco_map.assert_called_once_with(json_oncotreeurl)
         expected_errors = (
             "Sample Clinical File: Please double check your "
             "AGE_AT_SEQ_REPORT. It must be an integer, 'Unknown', "
@@ -680,7 +680,7 @@ def test_missingcols__validate(clin_class):
         "genie.process_functions.get_oncotree_code_mappings", return_value=onco_map_dict
     ) as mock_get_onco_map:
         error, warning = clin_class._validate(clinicaldf)
-        mock_get_onco_map.called_once_with(json_oncotreeurl)
+        mock_get_onco_map.assert_called_once_with(json_oncotreeurl)
         expected_errors = (
             "Sample Clinical File: Must have SAMPLE_ID column.\n"
             "Patient Clinical File: Must have PATIENT_ID column.\n"
@@ -768,7 +768,7 @@ def test_errors__validate(clin_class):
         "genie.process_functions.get_oncotree_code_mappings", return_value=onco_map_dict
     ) as mock_get_onco_map:
         error, warning = clin_class._validate(clinicalDf)
-        mock_get_onco_map.called_once_with(json_oncotreeurl)
+        mock_get_onco_map.assert_called_once_with(json_oncotreeurl)
         expectedErrors = (
             "Sample Clinical File: SAMPLE_ID must start with GENIE-SAGE\n"
             "Patient Clinical File: PATIENT_ID must start with GENIE-SAGE\n"
@@ -915,7 +915,7 @@ def test_duplicated__validate(clin_class):
         "genie.process_functions.get_oncotree_code_mappings", return_value=onco_map_dict
     ) as mock_get_onco_map:
         error, warning = clin_class._validate(clinicalDf)
-        mock_get_onco_map.called_once_with(json_oncotreeurl)
+        mock_get_onco_map.assert_called_once_with(json_oncotreeurl)
         expectedErrors = (
             "Clinical file(s): No empty rows allowed.\n"
             "Sample Clinical File: No duplicated SAMPLE_ID allowed.\n"
@@ -987,7 +987,7 @@ def test_get_oncotree_code_mappings():
         "genie.process_functions.retry_get_url", return_value=fake_oncotree
     ) as retry_get_url:
         onco_mapping = process_functions.get_oncotree_code_mappings(json_oncotreeurl)
-        retry_get_url.called_once_with(json_oncotreeurl)
+        retry_get_url.assert_called_once_with(json_oncotreeurl)
         assert onco_mapping == expected_onco_mapping
 
 

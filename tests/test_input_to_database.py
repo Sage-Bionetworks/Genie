@@ -677,7 +677,7 @@ class TestValidation:
                 sample_clinical_entity.md5,
                 "VALIDATED",
                 sample_clinical_entity.name,
-                1553428800000,
+                1553454000000,
                 "clinical",
                 center,
                 sample_clinical_entity.versionNumber,
