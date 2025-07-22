@@ -45,7 +45,7 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		openjdk-11-jre \
 		# This is for reticulate
 		# TODO: update this
-		python3.8-venv && \
+		python3.11-venv && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 
