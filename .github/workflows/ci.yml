@@ -9,7 +9,7 @@ on:
     paths-ignore:
       - '**.md'                            # All Markdown files
       - '**/docs/**'                       # Documentation directory
-      - '.github/workflows/**'             # Ignore all github workflow file changes
+      # - '.github/workflows/**'             # Ignore all github workflow file changes
 
   pull_request:
       types:
@@ -18,7 +18,7 @@ on:
       paths-ignore:
         - '**.md'                            # All Markdown files
         - '**/docs/**'                       # Documentation directory
-        - '.github/workflows/**'             # Ignore all github workflow file changes
+        # - '.github/workflows/**'             # Ignore all github workflow file changes
 
   release:
     types:
