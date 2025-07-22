@@ -1,5 +1,5 @@
 # TODO: update this
-FROM ubuntu:focal-20220113
+FROM ubuntu:noble-20250714
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Must install this because gpg not installed
