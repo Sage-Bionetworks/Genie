@@ -670,6 +670,7 @@ class emptytable_mock:
 
 class TestValidation:
     def setup_method(self):
+        # TODO: Look into 1553428800000, locally it needs to be 1553454000000 to pass
         valid = [
             [
                 sample_clinical_entity.id,
@@ -677,7 +678,7 @@ class TestValidation:
                 sample_clinical_entity.md5,
                 "VALIDATED",
                 sample_clinical_entity.name,
-                1553454000000,
+                1553428800000,
                 "clinical",
                 center,
                 sample_clinical_entity.versionNumber,
