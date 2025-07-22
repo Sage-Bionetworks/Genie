@@ -1,5 +1,5 @@
 # TODO: update this
-FROM ubuntu:noble-20250714
+FROM ubuntu:jammy-20250714
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Must install this because gpg not installed
