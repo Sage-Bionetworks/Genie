@@ -75,7 +75,7 @@ jobs:
       run: |
         sudo apt-get install -y bedtools
         python -m pip install --upgrade pip
-        # pip install pytest pytest-cov cython
+        #  pip install pytest pytest-cov cython
         pip install pytest pytest-cov
         pip install .
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
