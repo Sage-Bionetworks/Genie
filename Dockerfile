@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | gpg --dearmor -o /usr/share/keyrings/cran-archive-keyring.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/cran-archive-keyring.gpg] https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/" \
     > /etc/apt/sources.list.d/cran-r.list
-	
+
 # General sys dependencies
 RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-recommends \
 		bedtools \
@@ -32,8 +32,8 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		python3-pip \
 		python3-dev \
 		git \
-		r-base-core=4.3.3-1.2004.0 \
-		r-base-dev=4.3.3-1.2004.0 \
+		r-base-core=4.3.3* \
+		r-base-dev=4.3.3* \
 		cmake \
 		curl \
 		# synapser client dependencies
