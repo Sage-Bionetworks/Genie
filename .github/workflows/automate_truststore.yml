@@ -2,7 +2,7 @@ name: Auto-update Genome Nexus Truststore file
 
 on:
   schedule:
-    - cron: "0 3 * * 2,5" # Runs at 3 AM UTC on Tuesday (2) and Friday (5)
+    - cron: "0 3 * * 1-5"  # Runs at 3 AM UTC on Monday through Friday
   workflow_dispatch:
 
 env:
