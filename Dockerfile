@@ -16,6 +16,14 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
 RUN add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
 
+# Add CRAN repo and key for R
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    dirmngr gnupg curl software-properties-common ca-certificates
+
+RUN curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | gpg --dearmor -o /usr/share/keyrings/cran-archive-keyring.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/cran-archive-keyring.gpg] https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/" \
+    > /etc/apt/sources.list.d/cran-r.list
+	
 # General sys dependencies
 RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-recommends \
 		bedtools \
@@ -24,8 +32,8 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		python3-pip \
 		python3-dev \
 		git \
-		r-base-core=4.1.2 \
-		r-base-dev=4.1.2 \
+		r-base-core=4.3.3-1.2004.0 \
+		r-base-dev=4.3.3-1.2004.0 \
 		cmake \
 		curl \
 		# synapser client dependencies
