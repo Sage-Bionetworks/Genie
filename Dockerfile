@@ -32,8 +32,8 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		python3-pip \
 		python3-dev \
 		git \
-		r-base-core=4.3.3* \
-		r-base-dev=4.3.3* \
+		r-base-core=4.3.3-1.2204.0 \
+		r-base-dev=4.3.3-1.2204.0 \
 		cmake \
 		curl \
 		# synapser client dependencies
@@ -53,7 +53,7 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		openjdk-11-jre \
 		# This is for reticulate
 		# TODO: update this
-		python3.11-venv && \
+		python3.10-venv && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 
