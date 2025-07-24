@@ -24,8 +24,8 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		python3-pip \
 		python3-dev \
 		git \
-		r-base-core=4.3.3-1.2004.0 \
-		r-base-dev=4.3.3-1.2004.0 \
+		r-base-core=4.1.2 \
+		r-base-dev=4.1.2 \
 		cmake \
 		curl \
 		# synapser client dependencies
