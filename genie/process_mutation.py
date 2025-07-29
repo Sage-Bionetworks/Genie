@@ -197,6 +197,9 @@ def process_mutation_workflow(
         Annotated Maf Path. None if there are no valid mutation files.
 
     """
+    # setting maf table upload timeout time
+    syn.table_query_timeout = 50000
+
     # Get valid files
     mutation_files = validfiles["fileType"].isin(["maf", "vcf"])
     valid_mutation_files = validfiles["path"][mutation_files].tolist()
