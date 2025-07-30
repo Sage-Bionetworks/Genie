@@ -583,8 +583,9 @@ class Clinical(FileTypeFormat):
         newClinicalDf.to_csv(newPath, sep="\t", index=False)
         return newPath
 
+    @staticmethod
     def _validate_oncotree_code_mapping(
-        self: "Clinical", clinicaldf: pd.DataFrame, oncotree_mapping: pd.DataFrame
+        clinicaldf: pd.DataFrame, oncotree_mapping: pd.DataFrame
     ) -> pd.Index:
         """Checks that the oncotree codes in the input clinical
         data is a valid oncotree code from the official oncotree site
@@ -609,8 +610,8 @@ class Clinical(FileTypeFormat):
         ]
         return unmapped_oncotrees.index
 
+    @staticmethod
     def _validate_oncotree_code_mapping_message(
-        self: "Clinical",
         clinicaldf: pd.DataFrame,
         unmapped_oncotree_indices: pd.DataFrame,
     ) -> Tuple[str, str]:

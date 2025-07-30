@@ -670,7 +670,6 @@ class emptytable_mock:
 
 class TestValidation:
     def setup_method(self):
-        # TODO: Look into 1553428800000, locally it needs to be 1553454000000 to pass
         valid = [
             [
                 sample_clinical_entity.id,
