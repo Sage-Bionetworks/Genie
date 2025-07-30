@@ -226,16 +226,15 @@ def _reorder_new_dataset(
 def _generate_primary_key(
     dataset: pd.DataFrame, primary_key_cols: List[str], primary_key: str
 ) -> pd.DataFrame:
-    """
-    Generate primary key column a dataframe
+    """Generate primary key column a dataframe
 
     Args:
-        dataset(pd.DataFrame): A dataframe
-        new_dataset: The re-ordered new dataset
-        primary_key_cols (list): Column(s) that make up the primary key
-        primary_key: The column name of the primary_key
+        dataset (pd.DataFrame): A dataframe
+        primary_key_cols (List[str]): Column(s) that make up the primary key
+        primary_key (str): The column name of the primary_key
+
     Returns:
-        The dataframe with primary_key column added
+        pd.DataFrame: The dataframe with primary_key column added
     """
     # replace NAs with emtpy string
     dataset = dataset.fillna("")
@@ -298,21 +297,18 @@ def store_database(
     syn: synapseclient.Synapse,
     database_synid: str,
     col_order: List[str],
-    allupdates: pd.DataFrame,
+    all_updates: pd.DataFrame,
     to_delete_rows: pd.DataFrame,
-):
+) -> None:
     """
     Store changes to the database
 
     Args:
-        syn (synapseclient.Synaps): Synapse object
+        syn (synapseclient.Synapse): Synapse object
         database_synid (str): Synapse Id of the Synapse table
         col_order (List[str]): The ordered column names to be saved
-        allupdates (pd.DataFrame): rows to be appended and/or updated
+        all_updates (pd.DataFrame): rows to be appended and/or updated
         to_deleted_rows (pd.DataFrame): rows to be deleted
-
-    Returns:
-        None
     """
     storedatabase = False
     update_all_file = tempfile.NamedTemporaryFile(
@@ -321,14 +317,14 @@ def store_database(
     with open(update_all_file.name, "w") as updatefile:
         # Must write out the headers in case there are no appends or updates
         updatefile.write(",".join(col_order) + "\n")
-        if not allupdates.empty:
+        if not all_updates.empty:
             """
             This is done because of pandas typing.
             An integer column with one NA/blank value
             will be cast as a double.
             """
             updatefile.write(
-                allupdates[col_order]
+                all_updates[col_order]
                 .to_csv(index=False, header=None)
                 .replace(".0,", ",")
                 .replace(".0\n", "\n")
