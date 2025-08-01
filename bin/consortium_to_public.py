@@ -199,7 +199,11 @@ def main(args):
 
     logger.info("DASHBOARD UPDATE")
     dashboard_table_updater.run_dashboard(
-        syn, databaseSynIdMappingDf, args.genieVersion, staging=args.staging, testing=args.test
+        syn,
+        databaseSynIdMappingDf,
+        args.genieVersion,
+        staging=args.staging,
+        testing=args.test,
     )
     generate_dashboard_html(args.genieVersion, staging=args.staging, testing=args.test)
     logger.info("DASHBOARD UPDATE COMPLETE")
