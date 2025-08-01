@@ -198,12 +198,14 @@ def main(args):
         )
 
     logger.info("DASHBOARD UPDATE")
-    dashboard_table_updater.run_dashboard(
-        syn,
-        databaseSynIdMappingDf,
-        args.genieVersion,
-        staging=args.staging,
-    )
+    # Only run dashboard update if not testing or staging
+    if not args.test and not args.staging:
+        dashboard_table_updater.run_dashboard(
+            syn,
+            databaseSynIdMappingDf,
+            args.genieVersion,
+            staging=args.staging,
+        )
     generate_dashboard_html(args.genieVersion, staging=args.staging, testing=args.test)
     logger.info("DASHBOARD UPDATE COMPLETE")
     logger.info("AUTO GENERATE DATA GUIDE")
