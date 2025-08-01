@@ -356,7 +356,7 @@ def main(
 
     logger.info("DASHBOARD UPDATE")
     dashboard_table_updater.run_dashboard(
-        syn, databaseSynIdMappingDf, genie_version, staging=staging, testing=test
+        syn, databaseSynIdMappingDf, genie_version, staging=staging
     )
     generate_dashboard_html(genie_version, staging=staging, testing=test)
     logger.info("DASHBOARD UPDATE COMPLETE")

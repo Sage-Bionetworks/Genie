@@ -203,7 +203,6 @@ def main(args):
         databaseSynIdMappingDf,
         args.genieVersion,
         staging=args.staging,
-        testing=args.test,
     )
     generate_dashboard_html(args.genieVersion, staging=args.staging, testing=args.test)
     logger.info("DASHBOARD UPDATE COMPLETE")
