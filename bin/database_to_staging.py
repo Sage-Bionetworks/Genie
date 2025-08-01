@@ -86,7 +86,7 @@ logger = logging.getLogger(__name__)
 PWD = os.path.dirname(os.path.abspath(__file__))
 
 
-def generate_dashboard_html(genie_version, staging=False):
+def generate_dashboard_html(genie_version, staging=False, testing=False):
     """Generates dashboard html writeout that gets uploaded to the
     release folder
 
@@ -105,6 +105,8 @@ def generate_dashboard_html(genie_version, staging=False):
 
     if staging:
         markdown_render_cmd.append("--staging")
+    if testing:
+        markdown_render_cmd.append("--testing")
     subprocess.check_call(markdown_render_cmd)
 
 
@@ -352,14 +354,13 @@ def main(
             start=False,
         )
 
-    if not test:
-        logger.info("DASHBOARD UPDATE")
-        dashboard_table_updater.run_dashboard(
-            syn, databaseSynIdMappingDf, genie_version, staging=staging
-        )
-        generate_dashboard_html(genie_version, staging=staging)
-        logger.info("DASHBOARD UPDATE COMPLETE")
-        logger.info("AUTO GENERATE DATA GUIDE")
+    logger.info("DASHBOARD UPDATE")
+    dashboard_table_updater.run_dashboard(
+        syn, databaseSynIdMappingDf, genie_version, staging=staging, testing=test
+    )
+    generate_dashboard_html(genie_version, staging=staging, testing=test)
+    logger.info("DASHBOARD UPDATE COMPLETE")
+    logger.info("AUTO GENERATE DATA GUIDE")
 
     # TODO: remove data guide code
     # oncotree_version = oncotree_link.split("=")[1]

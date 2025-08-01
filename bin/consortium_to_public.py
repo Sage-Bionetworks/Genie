@@ -18,7 +18,7 @@ PWD = os.path.dirname(os.path.abspath(__file__))
 
 
 # TODO: Move to genie.database_to_staging.py
-def generate_dashboard_html(genie_version, staging=False):
+def generate_dashboard_html(genie_version, staging=False, testing=False):
     """Generates dashboard html writeout that gets uploaded to the
     release folder
 
@@ -36,6 +36,8 @@ def generate_dashboard_html(genie_version, staging=False):
     ]
     if staging:
         markdown_render_cmd.append("--staging")
+    if testing:
+        markdown_render_cmd.append("--testing")
     subprocess.check_call(markdown_render_cmd)
 
 
@@ -195,14 +197,13 @@ def main(args):
             start=False,
         )
 
-    if not args.test:
-        logger.info("DASHBOARD UPDATE")
-        dashboard_table_updater.run_dashboard(
-            syn, databaseSynIdMappingDf, args.genieVersion, staging=args.staging
-        )
-        generate_dashboard_html(args.genieVersion, staging=args.staging)
-        logger.info("DASHBOARD UPDATE COMPLETE")
-        logger.info("AUTO GENERATE DATA GUIDE")
+    logger.info("DASHBOARD UPDATE")
+    dashboard_table_updater.run_dashboard(
+        syn, databaseSynIdMappingDf, args.genieVersion, staging=args.staging, testing=args.test
+    )
+    generate_dashboard_html(args.genieVersion, staging=args.staging, testing=args.test)
+    logger.info("DASHBOARD UPDATE COMPLETE")
+    logger.info("AUTO GENERATE DATA GUIDE")
 
     # TODO: remove data guide code
     # onco_link = databaseSynIdMappingDf["Id"][
@@ -254,7 +255,7 @@ if __name__ == "__main__":
         "--staging", action="store_true", help="Store into staging folder"
     )
 
-    parser.add_argument("--test", action="store_true", help="Store into staging folder")
+    parser.add_argument("--test", action="store_true", help="Store into testing folder")
     parser.add_argument("--debug", action="store_true", help="Synapse debug feature")
     args = parser.parse_args()
     main(args)
