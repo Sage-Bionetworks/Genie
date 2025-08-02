@@ -179,7 +179,6 @@ def main(
         databaseSynIdMappingId = "syn11600968"
         genie_version = "TESTING"
     elif staging:
-        skip_mutationsincis = True
         databaseSynIdMappingId = "syn12094210"
     else:
         databaseSynIdMappingId = "syn10967259"
