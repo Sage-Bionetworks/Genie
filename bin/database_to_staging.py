@@ -176,11 +176,14 @@ def main(
     syn = process_functions.synapse_login(debug=debug)
     # HACK: Use project id instead of this...
     if test:
+        skip_mutationsincis = False
         databaseSynIdMappingId = "syn11600968"
         genie_version = "TESTING"
     elif staging:
+        skip_mutationsincis = False
         databaseSynIdMappingId = "syn12094210"
     else:
+        skip_mutationsincis = False
         databaseSynIdMappingId = "syn10967259"
     # Database/folder syn id mapping
     databaseSynIdMapping = syn.tableQuery(
