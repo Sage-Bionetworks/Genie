@@ -69,10 +69,8 @@ import datetime
 import logging
 import os
 import subprocess
+
 import synapseclient
-
-# import time
-
 from genie import (
     create_case_lists,
     dashboard_table_updater,
@@ -80,6 +78,9 @@ from genie import (
     load,
     process_functions,
 )
+
+# import time
+
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +94,7 @@ def generate_dashboard_html(genie_version, staging=False, testing=False):
     Args:
         genie_version: GENIE release
         staging: Use staging files. Default is False
+        testing: Use testing files. Default is False
 
     """
     markdown_render_cmd = [

@@ -2,15 +2,17 @@ import argparse
 import datetime
 import logging
 import os
-import synapseclient
 import subprocess
 
-from genie import dashboard_table_updater
-from genie import process_functions
-from genie import consortium_to_public
-from genie import database_to_staging
-from genie import extract
-from genie import load
+import synapseclient
+from genie import (
+    consortium_to_public,
+    dashboard_table_updater,
+    database_to_staging,
+    extract,
+    load,
+    process_functions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +27,7 @@ def generate_dashboard_html(genie_version, staging=False, testing=False):
     Args:
         genie_version: GENIE release
         staging: Use staging files. Default is False
+        testing: Use testing files. Default is False
 
     """
     markdown_render_cmd = [
