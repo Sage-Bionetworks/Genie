@@ -87,7 +87,7 @@ logger = logging.getLogger(__name__)
 PWD = os.path.dirname(os.path.abspath(__file__))
 
 
-def generate_dashboard_html(genie_version, staging=False, testing=False):
+def generate_dashboard_html(genie_version: str, staging=False, testing=False):
     """Generates dashboard html writeout that gets uploaded to the
     release folder
 
