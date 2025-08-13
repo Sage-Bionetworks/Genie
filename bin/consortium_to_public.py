@@ -20,7 +20,9 @@ PWD = os.path.dirname(os.path.abspath(__file__))
 
 
 # TODO: Move to genie.database_to_staging.py
-def generate_dashboard_html(genie_version: str, staging=False, testing=False):
+def generate_dashboard_html(
+    genie_version: str, staging: bool = False, testing: bool = False
+):
     """Generates dashboard html writeout that gets uploaded to the
     release folder
 
