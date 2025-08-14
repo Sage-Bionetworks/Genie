@@ -47,7 +47,9 @@ def test_processing(sr, pr):
             ]
         }
     )
-
+    # TODO: look into this test as when it's executed on local machine
+    # the results are different. which means
+    # the pandas to_datetime function is taking account into local vs GMT time now
     newsrDf = sr._process(srDf, "2018-04-06T18:30:00")
     assert expectedsrDf.equals(newsrDf[expectedsrDf.columns])
 

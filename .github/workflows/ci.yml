@@ -9,7 +9,7 @@ on:
     paths-ignore:
       - '**.md'                            # All Markdown files
       - '**/docs/**'                       # Documentation directory
-      - '.github/workflows/**'             # Ignore all github workflow file changes
+      # - '.github/workflows/**'             # Ignore all github workflow file changes
 
   pull_request:
       types:
@@ -18,7 +18,7 @@ on:
       paths-ignore:
         - '**.md'                            # All Markdown files
         - '**/docs/**'                       # Documentation directory
-        - '.github/workflows/**'             # Ignore all github workflow file changes
+        # - '.github/workflows/**'             # Ignore all github workflow file changes
 
   release:
     types:
@@ -64,7 +64,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9]
+        python-version: ['3.10', 3.11]
+        # python-version: ['3.10', 3.11, 3.12]
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
@@ -75,15 +76,9 @@ jobs:
       run: |
         sudo apt-get install -y bedtools
         python -m pip install --upgrade pip
-        pip install flake8 pytest pytest-cov cython
+        pip install pytest pytest-cov
         pip install .
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    # - name: Lint with flake8
-    #   run: |
-    #     # stop the build if there are Python syntax errors or undefined names
-    #     flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-    #     # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-    #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
         pytest tests/ --cov=genie --cov=genie_registry --cov-report=html
