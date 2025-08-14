@@ -2,15 +2,17 @@ import argparse
 import datetime
 import logging
 import os
-import synapseclient
 import subprocess
 
-from genie import dashboard_table_updater
-from genie import process_functions
-from genie import consortium_to_public
-from genie import database_to_staging
-from genie import extract
-from genie import load
+import synapseclient
+from genie import (
+    consortium_to_public,
+    dashboard_table_updater,
+    database_to_staging,
+    extract,
+    load,
+    process_functions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -18,13 +20,16 @@ PWD = os.path.dirname(os.path.abspath(__file__))
 
 
 # TODO: Move to genie.database_to_staging.py
-def generate_dashboard_html(genie_version, staging=False):
+def generate_dashboard_html(
+    genie_version: str, staging: bool = False, testing: bool = False
+):
     """Generates dashboard html writeout that gets uploaded to the
     release folder
 
     Args:
         genie_version: GENIE release
         staging: Use staging files. Default is False
+        testing: Use testing files. Default is False
 
     """
     markdown_render_cmd = [
@@ -36,6 +41,8 @@ def generate_dashboard_html(genie_version, staging=False):
     ]
     if staging:
         markdown_render_cmd.append("--staging")
+    if testing:
+        markdown_render_cmd.append("--testing")
     subprocess.check_call(markdown_render_cmd)
 
 
@@ -195,14 +202,18 @@ def main(args):
             start=False,
         )
 
-    if not args.test:
-        logger.info("DASHBOARD UPDATE")
+    logger.info("DASHBOARD UPDATE")
+    # Only run dashboard update if not testing or staging
+    if not args.test and not args.staging:
         dashboard_table_updater.run_dashboard(
-            syn, databaseSynIdMappingDf, args.genieVersion, staging=args.staging
+            syn,
+            databaseSynIdMappingDf,
+            args.genieVersion,
+            staging=args.staging,
         )
-        generate_dashboard_html(args.genieVersion, staging=args.staging)
-        logger.info("DASHBOARD UPDATE COMPLETE")
-        logger.info("AUTO GENERATE DATA GUIDE")
+    generate_dashboard_html(args.genieVersion, staging=args.staging, testing=args.test)
+    logger.info("DASHBOARD UPDATE COMPLETE")
+    logger.info("AUTO GENERATE DATA GUIDE")
 
     # TODO: remove data guide code
     # onco_link = databaseSynIdMappingDf["Id"][
@@ -254,7 +265,7 @@ if __name__ == "__main__":
         "--staging", action="store_true", help="Store into staging folder"
     )
 
-    parser.add_argument("--test", action="store_true", help="Store into staging folder")
+    parser.add_argument("--test", action="store_true", help="Store into testing folder")
     parser.add_argument("--debug", action="store_true", help="Synapse debug feature")
     args = parser.parse_args()
     main(args)

@@ -69,10 +69,8 @@ import datetime
 import logging
 import os
 import subprocess
+
 import synapseclient
-
-# import time
-
 from genie import (
     create_case_lists,
     dashboard_table_updater,
@@ -81,18 +79,24 @@ from genie import (
     process_functions,
 )
 
+# import time
+
+
 logger = logging.getLogger(__name__)
 
 PWD = os.path.dirname(os.path.abspath(__file__))
 
 
-def generate_dashboard_html(genie_version, staging=False):
+def generate_dashboard_html(
+    genie_version: str, staging: bool = False, testing: bool = False
+):
     """Generates dashboard html writeout that gets uploaded to the
     release folder
 
     Args:
         genie_version: GENIE release
         staging: Use staging files. Default is False
+        testing: Use testing files. Default is False
 
     """
     markdown_render_cmd = [
@@ -105,6 +109,8 @@ def generate_dashboard_html(genie_version, staging=False):
 
     if staging:
         markdown_render_cmd.append("--staging")
+    if testing:
+        markdown_render_cmd.append("--testing")
     subprocess.check_call(markdown_render_cmd)
 
 
@@ -351,14 +357,15 @@ def main(
             start=False,
         )
 
-    if not test:
-        logger.info("DASHBOARD UPDATE")
+    logger.info("DASHBOARD UPDATE")
+    # Only run dashboard update if not testing or staging
+    if not args.test and not args.staging:
         dashboard_table_updater.run_dashboard(
             syn, databaseSynIdMappingDf, genie_version, staging=staging
         )
-        generate_dashboard_html(genie_version, staging=staging)
-        logger.info("DASHBOARD UPDATE COMPLETE")
-        logger.info("AUTO GENERATE DATA GUIDE")
+    generate_dashboard_html(genie_version, staging=staging, testing=test)
+    logger.info("DASHBOARD UPDATE COMPLETE")
+    logger.info("AUTO GENERATE DATA GUIDE")
 
     # TODO: remove data guide code
     # oncotree_version = oncotree_link.split("=")[1]

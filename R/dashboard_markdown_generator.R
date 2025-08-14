@@ -15,6 +15,7 @@ parser$add_argument("--testing",
 
 args <- parser$parse_args()
 release <- args$release
+testing <- args$testing
 template_path <- args$template_path
 suppressPackageStartupMessages(library(synapser))
 suppressPackageStartupMessages(library(rmarkdown))
@@ -42,7 +43,7 @@ rmarkdown_path = sprintf('%s.Rmd', release)
 file.copy(template_path, rmarkdown_path, overwrite = T)
 rmarkdown::render(rmarkdown_path,
                   params = list("database_synid_mappingid" = database_synid_mappingid,
-                                "release" = release))
+                                "release" = release, "testing" = testing))
 # Obtain release folder
 database_synid_mapping = synTableQuery(sprintf('select * from %s',
                                                database_synid_mappingid))
