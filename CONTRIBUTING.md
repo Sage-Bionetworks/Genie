@@ -144,7 +144,7 @@ Follow gitflow best practices as linked above.
 2. After initial features are ready in the `develop` branch, create a `release-X.X.X` branch (**do not** push this branch to remote) to prepare for the release.
 3. Update the `__version__` parameter in `genie/__init__.py`. Create a commit with a message like `"Release <X.X.X>"`
 4. Merge `release-X.X.X` branch into `main` - Not by pull request! Resolve any merge conflicts.
-5. Prior to pushing changes into `main`, reset any annotations on the test project/rename maf database table as integration tests will run.
+5. Prior to pushing changes into `main`, reset any [annotations on the test project](https://www.synapse.org/Synapse:syn11601248/tables/)/[rename maf database table](https://www.synapse.org/Synapse:syn7208886/tables/) as integration tests will run.
 6. Push change(s) from `main`.
 7. You can do the following either through git or through the Github UI
    1. Create release tag (`v...`) and a brief message
@@ -162,7 +162,7 @@ Follow gitflow best practices as linked above.
     - You will also have to add a `Highlights` section and summarize it as you see git.
 9. Wait for the CI/CD to finish. You should see a new pypi release here: https://pypi.org/project/aacrgenie/.
 10. Merge `main` back into `develop`.
-11. Prior to pushing changes into `develop`, reset any annotations on the test project/rename maf database table as integration tests will run.
+11. Prior to pushing changes into `develop`, reset any [annotations on the test project](https://www.synapse.org/Synapse:syn11601248/tables/)/[rename maf database table](https://www.synapse.org/Synapse:syn7208886/tables/) as integration tests will run.
 12. Push changes in `develop`.
 13. Wait for the CI/CD to finish.
 
