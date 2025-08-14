@@ -141,21 +141,30 @@ patch.object(MODULE_NAME, "FUNCTION_TO_MOCK_NAME".return_value=SOME_RETURN_VALUE
 Follow gitflow best practices as linked above.
 
 1. Always merge all new features into `develop` branch first (unless it is a documentation, readme, or github action patch into `main`)
-2. After initial features are ready in the `develop` branch, create a `release-X.X` branch (**do not** push this branch to remote) to prepare for the release.
-    1. update the `__version__` parameter in `genie/__init__.py`
-3. Merge `release-X.X.X` branch into `main` - Not by pull request! Resolve any merge conflicts.
-4. Create release tag (`v...`) and a brief message
+2. After initial features are ready in the `develop` branch, create a `release-X.X.X` branch (**do not** push this branch to remote) to prepare for the release.
+3. Update the `__version__` parameter in `genie/__init__.py`. Create a commit with a message like `"Release <X.X.X>"`
+4. Merge `release-X.X.X` branch into `main` - Not by pull request! Resolve any merge conflicts.
+5. Prior to pushing changes into `main`, reset any [annotations on the test project](https://www.synapse.org/Synapse:syn11601248/tables/)/[rename maf database table](https://www.synapse.org/Synapse:syn7208886/tables/) as integration tests will run.
+6. Push change(s) from `main`.
+7. You can do the following either through git or through the Github UI
+   1. Create release tag (`v...`) and a brief message
+  
+    ```bash
+    git tag -a v<X.X.X> -m "Release <X.X.X>"
+    ```
+   2. Push tag from `main` to remote.
 
-```bash
-git tag -a v<X.X.X> -m "Release <X.X.X>"
-```
+   OR
 
-5. Prior to pushing changes into `main`, reset any annotations on the test project/rename maf database table as integration tests will run.
-6. Push tag and change(s) from `main`.
-7. Create a new release on the repo. Include release notes. See [writing release notes for project](https://sagebionetworks.jira.com/wiki/spaces/DPE/pages/3892543489/Writing+release+notes+for+projects) for creating informative technical release notes. See [example release](https://github.com/Sage-Bionetworks/Genie/releases/tag/v16.5.0) for typical sections to include in a Genie release. Also include any known bugs for each release here. Wait for the CI/CD to finish.
-8. Merge `main` back into `develop`
-9. Prior to pushing changes into `develop`, reset any annotations on the test project/rename maf database table as integration tests will run.
-10. Push changes in `develop`. Wait for the CI/CD to finish
+   1. Create your tag via the release notes UI on github by creating the tag name `vX.X.X`. **Be sure to set `target branch` as `main`!**
+8. Create a new release on the repo (if you created your tag through git prior, select your tag here). Include release notes. See [writing release notes for project](https://sagebionetworks.jira.com/wiki/spaces/DPE/pages/3892543489/Writing+release+notes+for+projects) for creating informative technical release notes.
+    - See [example release](https://github.com/Sage-Bionetworks/Genie/releases/tag/v16.5.0) for typical sections to include in a Genie release.
+    - You will also have to add a `Highlights` section and summarize it as you see git.
+9. Wait for the CI/CD to finish. You should see a new pypi release here: https://pypi.org/project/aacrgenie/.
+10. Merge `main` back into `develop`.
+11. Prior to pushing changes into `develop`, reset any [annotations on the test project](https://www.synapse.org/Synapse:syn11601248/tables/)/[rename maf database table](https://www.synapse.org/Synapse:syn7208886/tables/) as integration tests will run.
+12. Push changes in `develop`.
+13. Wait for the CI/CD to finish.
 
 ### Modifying Docker
 
