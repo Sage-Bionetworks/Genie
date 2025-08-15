@@ -3,10 +3,9 @@ import logging
 import os
 
 import pandas as pd
-from synapseclient.core.utils import to_unix_epoch_time
 
 from genie.example_filetype_format import FileTypeFormat
-from genie import load
+from genie import load, process_functions
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +34,7 @@ class sampleRetraction(FileTypeFormat):
             else "geniePatientId"
         )
         deleteSamplesDf.rename(columns={0: col}, inplace=True)
-        modifiedOn = to_unix_epoch_time(
+        modifiedOn = process_functions.to_unix_epoch_time_utc(
             datetime.datetime.strptime(modifiedOn, "%Y-%m-%dT%H:%M:%S")
         )
         deleteSamplesDf["retractionDate"] = modifiedOn
