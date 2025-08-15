@@ -91,6 +91,22 @@ error_trackerdf = pd.DataFrame(
 emptydf = pd.DataFrame(columns=["id"], dtype=str)
 
 
+@pytest.mark.parametrize(
+    "input_entity_date, output_expected_timestamp",
+    [
+        ("2025-08-15T19:05:03.417Z", 1755284703000),
+        ("2025-08-15T19:05:03.417", 1755284703000),
+        ("2025-08-15T19:05:03", 1755284703000),
+    ],
+    ids=["utc_time", "local_time", "no_miliseconds"],
+)
+def test_that_entity_date_to_timestamp_converts_as_expected(
+    input_entity_date, output_expected_timestamp
+):
+    output = input_to_database.entity_date_to_timestamp(input_entity_date)
+    assert output == output_expected_timestamp
+
+
 class mock_csv_query_result(object):
     def __init__(self, df):
         self.df = df
