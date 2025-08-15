@@ -14,6 +14,7 @@ import yaml
 from genie import extract
 from requests.adapters import HTTPAdapter
 from synapseclient import Synapse
+from synapseclient.core.utils import to_unix_epoch_time
 from urllib3.util import Retry
 
 pd.options.mode.chained_assignment = None
@@ -21,6 +22,18 @@ pd.options.mode.chained_assignment = None
 logger = logging.getLogger(__name__)
 # TODO: Add to constants.py
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def to_unix_epoch_time_utc(dt: Union[datetime.date, datetime.datetime, str]) -> int:
+    """Wrapper for Synapse to_unix_epoch_time that forces UTC tzinfo
+
+    Args:
+        dt (Union[datetime.date, datetime.datetime, str]): input datetime time object
+
+    Returns:
+        int: Converted UTC datetime object to UNIX time
+    """
+    return to_unix_epoch_time(dt.replace(tzinfo=datetime.timezone.utc))
 
 
 def get_clinical_dataframe(filePathList: list) -> pd.DataFrame:

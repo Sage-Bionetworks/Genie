@@ -8,7 +8,6 @@ from typing import List, Optional
 
 import synapseclient
 from synapseclient import Synapse
-from synapseclient.core.utils import to_unix_epoch_time
 import pandas as pd
 
 from genie import (
@@ -41,7 +40,7 @@ def entity_date_to_timestamp(entity_date_time):
 
     date_and_time = entity_date_time.split(".")[0]
     date_time_obj = datetime.datetime.strptime(date_and_time, "%Y-%m-%dT%H:%M:%S")
-    return to_unix_epoch_time(date_time_obj)
+    return process_functions.to_unix_epoch_time_utc(date_time_obj)
 
 
 # TODO: Add to validation.py

@@ -7,7 +7,6 @@ import os
 
 import pandas as pd
 import synapseclient
-from synapseclient.core.utils import to_unix_epoch_time
 
 from genie import extract, load, process_functions
 
@@ -570,7 +569,7 @@ def string_to_unix_epoch_time_milliseconds(string_time):
     datetime_obj = datetime.datetime.strptime(
         string_time.split(".")[0], "%Y-%m-%dT%H:%M:%S"
     )
-    return to_unix_epoch_time(datetime_obj)
+    return process_functions.to_unix_epoch_time_utc(datetime_obj)
 
 
 def update_data_release_file_table(syn, database_mappingdf):
