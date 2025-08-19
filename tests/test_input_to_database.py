@@ -100,10 +100,10 @@ emptydf = pd.DataFrame(columns=["id"], dtype=str)
     ],
     ids=["utc_time", "local_time", "no_miliseconds"],
 )
-def test_that_entity_date_to_timestamp_converts_as_expected(
+def test_that_entity_date_to_unix_epoch_time_converts_as_expected(
     input_entity_date, output_expected_timestamp
 ):
-    output = input_to_database.entity_date_to_timestamp(input_entity_date)
+    output = input_to_database.entity_date_to_unix_epoch_time(input_entity_date)
     assert output == output_expected_timestamp
 
 
