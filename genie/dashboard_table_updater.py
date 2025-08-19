@@ -555,7 +555,7 @@ def update_wiki(syn, database_mappingdf):
     syn.store(wikipage)
 
 
-def string_to_unix_epoch_time_milliseconds(string_time : str) -> int:
+def string_to_unix_epoch_time_milliseconds(string_time: str) -> int:
     """
     Takes dates in this format: 2018-10-25T20:16:07.959Z
     and turns it into unix epoch time in milliseconds

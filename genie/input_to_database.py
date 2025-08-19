@@ -35,11 +35,11 @@ To avoid the syn.get rest call later which doesn't actually download the file
 
 
 # TODO: add to transform.py
-def entity_date_to_unix_epoch_time(entity_date_time : str):
+def entity_date_to_unix_epoch_time(entity_date_time: str):
     """Convert Synapse object date/time string (from modifiedOn or createdOn properties) to UNIX time
 
     Args:
-        entity_date_time: Synapse object date/time string in this format: 
+        entity_date_time: Synapse object date/time string in this format:
             2018-10-25T20:16:07.959Z
 
     Returns:
