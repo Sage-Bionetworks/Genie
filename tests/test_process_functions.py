@@ -1,3 +1,4 @@
+import datetime
 import uuid
 from unittest.mock import Mock, patch
 
@@ -24,6 +25,27 @@ DATABASE_DF = pd.DataFrame(
 DATABASE_DF.index = ["1_3", "2_3", "3_5"]
 ENTITY = synapseclient.Project("foo", annotations={"dbMapping": ["syn1234"]})
 ONCOTREE_ENT = "syn222"
+
+
+@pytest.mark.parametrize(
+    "input_string_time, expected_output_time",
+    [
+        (
+            datetime.datetime.strptime("2018-10-25T20:16:07", "%Y-%m-%dT%H:%M:%S"),
+            1540498567000,
+        ),
+        (
+            datetime.datetime.strptime("2018-04-06T18:30:00", "%Y-%m-%dT%H:%M:%S"),
+            1523039400000,
+        ),
+    ],
+    ids=["utc_time", "local_time_zone"],
+)
+def test_that_to_unix_epoch_time_utc_gives_expected_time(
+    input_string_time, expected_output_time
+):
+    output = process_functions.to_unix_epoch_time_utc(input_string_time)
+    assert output == expected_output_time
 
 
 @pytest.mark.parametrize(
