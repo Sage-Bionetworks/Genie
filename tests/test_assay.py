@@ -313,6 +313,6 @@ def test_invalid__validate(assay_info):
             "hotspot_regions, coding_exons, introns, promoters\n"
         )
 
-        patch_get_gdc.called_once_with("read_group")
+        patch_get_gdc.assert_called_once_with("read_group")
         assert error == expected_errors
         assert warning == ""

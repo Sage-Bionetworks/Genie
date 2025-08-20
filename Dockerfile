@@ -1,4 +1,5 @@
-FROM ubuntu:focal-20220113
+# TODO: update this
+FROM ubuntu:jammy-20250714
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Must install this because gpg not installed
@@ -23,8 +24,8 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		python3-pip \
 		python3-dev \
 		git \
-		r-base-core=4.3.3-1.2004.0 \
-		r-base-dev=4.3.3-1.2004.0 \
+		r-base-core=4.3.3-1.2204.0 \
+		r-base-dev=4.3.3-1.2204.0 \
 		cmake \
 		curl \
 		# synapser client dependencies
@@ -43,7 +44,8 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		# genome nexus
 		openjdk-11-jre \
 		# This is for reticulate
-		python3.8-venv && \
+		# TODO: update this
+		python3.10-venv && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 

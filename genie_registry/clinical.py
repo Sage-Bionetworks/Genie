@@ -503,7 +503,7 @@ class Clinical(FileTypeFormat):
             "sample is True and inClinicalDb is True"
         )
         sample_cols = sample_cols_table.asDataFrame()["fieldName"].tolist()
-        clinicalTemplate = pd.DataFrame(columns=set(patient_cols + sample_cols))
+        clinicalTemplate = pd.DataFrame(columns=list(set(patient_cols + sample_cols)))
         sample = True
         patient = True
 
@@ -582,6 +582,69 @@ class Clinical(FileTypeFormat):
             )
         newClinicalDf.to_csv(newPath, sep="\t", index=False)
         return newPath
+
+    @staticmethod
+    def _validate_oncotree_code_mapping(
+        clinicaldf: pd.DataFrame, oncotree_mapping: pd.DataFrame
+    ) -> pd.Index:
+        """Checks that the oncotree codes in the input clinical
+        data is a valid oncotree code from the official oncotree site
+
+        Args:
+            clinicaldf (pd.DataFrame): clinical input data to validate
+            oncotree_mapping (pd.DataFrame): table of official oncotree
+                mappings
+
+        Returns:
+            pd.Index: row indices of unmapped oncotree codes in the
+            input clinical data
+        """
+        # Make oncotree codes uppercase (SpCC/SPCC)
+        clinicaldf["ONCOTREE_CODE"] = (
+            clinicaldf["ONCOTREE_CODE"].astype(str).str.upper()
+        )
+
+        unmapped_oncotrees = clinicaldf[
+            (clinicaldf["ONCOTREE_CODE"] != "UNKNOWN")
+            & ~(clinicaldf["ONCOTREE_CODE"].isin(oncotree_mapping["ONCOTREE_CODE"]))
+        ]
+        return unmapped_oncotrees.index
+
+    @staticmethod
+    def _validate_oncotree_code_mapping_message(
+        clinicaldf: pd.DataFrame,
+        unmapped_oncotree_indices: pd.DataFrame,
+    ) -> Tuple[str, str]:
+        """This function returns the error and warning messages
+        if the input clinical data has row indices with unmapped
+        oncotree codes
+
+        Args:
+            clinicaldf (pd.DataFrame): input clinical data
+            unmapped_oncotree_indices (pd.DataFrame): row indices of the
+                input clinical data with unmapped oncotree codes
+
+        Returns:
+            Tuple[str, str]: error message that tells you how many
+                samples AND the unique unmapped oncotree codes that your
+                input clinical data has
+        """
+        errors = ""
+        warnings = ""
+        if len(unmapped_oncotree_indices) > 0:
+            # sort the unique unmapped oncotree codes
+            unmapped_oncotree_codes = sorted(
+                set(clinicaldf.loc[unmapped_oncotree_indices]["ONCOTREE_CODE"])
+            )
+            errors = (
+                "Sample Clinical File: Please double check that all your "
+                "ONCOTREE CODES exist in the mapping. You have {} samples "
+                "that don't map. These are the codes that "
+                "don't map: {}\n".format(
+                    len(unmapped_oncotree_indices), ",".join(unmapped_oncotree_codes)
+                )
+            )
+        return errors, warnings
 
     # VALIDATION
     def _validate(self, clinicaldf):
@@ -752,28 +815,13 @@ class Clinical(FileTypeFormat):
         maleOncoCodes = ["TESTIS", "PROSTATE", "PENIS"]
         womenOncoCodes = ["CERVIX", "VULVA", "UTERUS", "OVARY"]
         if haveColumn:
-            # Make oncotree codes uppercase (SpCC/SPCC)
-            clinicaldf["ONCOTREE_CODE"] = (
-                clinicaldf["ONCOTREE_CODE"].astype(str).str.upper()
+            unmapped_indices = self._validate_oncotree_code_mapping(
+                clinicaldf, oncotree_mapping
             )
-
-            oncotree_codes = clinicaldf["ONCOTREE_CODE"][
-                clinicaldf["ONCOTREE_CODE"] != "UNKNOWN"
-            ]
-
-            if not all(oncotree_codes.isin(oncotree_mapping["ONCOTREE_CODE"])):
-                unmapped_oncotrees = oncotree_codes[
-                    ~oncotree_codes.isin(oncotree_mapping["ONCOTREE_CODE"])
-                ]
-                total_error.write(
-                    "Sample Clinical File: Please double check that all your "
-                    "ONCOTREE CODES exist in the mapping. You have {} samples "
-                    "that don't map. These are the codes that "
-                    "don't map: {}\n".format(
-                        len(unmapped_oncotrees),
-                        ",".join(set(unmapped_oncotrees)),
-                    )
-                )
+            errors, warnings = self._validate_oncotree_code_mapping_message(
+                clinicaldf, unmapped_indices
+            )
+            total_error.write(errors)
             # Should add the SEX mismatch into the dashboard file
             if (
                 process_functions.checkColExist(clinicaldf, "SEX")

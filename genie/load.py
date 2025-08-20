@@ -180,61 +180,154 @@ def _update_table(
     to_delete: bool = False,
 ):
     """
-    Updates synapse tables by a row identifier with another
-    dataset that has the same number and order of columns
+    A helper function to compare new dataset with existing data,
+    and store any changes that need to be made to the database
+    """
+    changes = check_database_changes(database, new_dataset, primary_key_cols, to_delete)
+    store_database(
+        syn,
+        database_synid,
+        changes["col_order"],
+        changes["allupdates"],
+        changes["to_delete_rows"],
+    )
+
+
+def _get_col_order(orig_database_cols: pd.Index) -> List[str]:
+    """
+    Get column order
 
     Args:
-        syn (synapseclient.Synaps): Synapse object
+        orig_database_cols (pd.Index): A list of column names of the original database
+
+    Returns:
+        The list of re-ordered column names
+    """
+    col_order = ["ROW_ID", "ROW_VERSION"]
+    col_order.extend(orig_database_cols.tolist())
+    return col_order
+
+
+def _reorder_new_dataset(
+    orig_database_cols: pd.Index, new_dataset: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Reorder new dataset based on the original database
+
+    Args:
+        orig_database_cols (pd.Index): A list of column names of the original database
+        new_dataset(pd.DataFrame): New Data
+
+    Returns:
+        The re-ordered new dataset
+    """
+    # Columns must be in the same order as the original data
+    new_dataset = new_dataset[orig_database_cols]
+    return new_dataset
+
+
+def _generate_primary_key(
+    dataset: pd.DataFrame, primary_key_cols: List[str], primary_key: str
+) -> pd.DataFrame:
+    """Generate primary key column a dataframe
+
+    Args:
+        dataset (pd.DataFrame): A dataframe
+        primary_key_cols (List[str]): Column(s) that make up the primary key
+        primary_key (str): The column name of the primary_key
+
+    Returns:
+        pd.DataFrame: The dataframe with primary_key column added
+    """
+    # replace NAs with emtpy string
+    dataset = dataset.fillna("")
+    # generate primary key column for original database
+    dataset[primary_key_cols] = dataset[primary_key_cols].applymap(str)
+    if dataset.empty:
+        dataset[primary_key] = ""
+    else:
+        dataset[primary_key] = dataset[primary_key_cols].apply(
+            lambda x: " ".join(x), axis=1
+        )
+    return dataset
+
+
+def check_database_changes(
+    database: pd.DataFrame,
+    new_dataset: pd.DataFrame,
+    primary_key_cols: List[str],
+    to_delete: bool = False,
+) -> Dict[pd.DataFrame, List[str]]:
+    """
+    Check changes that need to be made, i.e. append/update/delete rows to the database
+    based on its comparison with new data
+
+    Args:
         database (pd.DataFrame): Original Data
         new_dataset (pd.DataFrame): New Data
-        database_synid (str): Synapse Id of the Synapse table
         primary_key_cols (list): Column(s) that make up the primary key
         to_delete (bool, optional): Delete rows. Defaults to False
     """
-    primary_key = "UNIQUE_KEY"
-    database = database.fillna("")
+    # get a list of column names of the original database
     orig_database_cols = database.columns
-    col_order = ["ROW_ID", "ROW_VERSION"]
-    col_order.extend(orig_database_cols.tolist())
-    new_dataset = new_dataset.fillna("")
-    # Columns must be in the same order
-    new_dataset = new_dataset[orig_database_cols]
-    database[primary_key_cols] = database[primary_key_cols].applymap(str)
-    database[primary_key] = database[primary_key_cols].apply(
-        lambda x: " ".join(x), axis=1
-    )
-
-    new_dataset[primary_key_cols] = new_dataset[primary_key_cols].applymap(str)
-    new_dataset[primary_key] = new_dataset[primary_key_cols].apply(
-        lambda x: " ".join(x), axis=1
-    )
-
+    # get the final column order
+    col_order = _get_col_order(orig_database_cols)
+    # reorder new_dataset
+    new_dataset = _reorder_new_dataset(orig_database_cols, new_dataset)
+    # set the primary_key name
+    primary_key = "UNIQUE_KEY"
+    # generate primary_key column for dataset comparison
+    ori_data = _generate_primary_key(database, primary_key_cols, primary_key)
+    new_data = _generate_primary_key(new_dataset, primary_key_cols, primary_key)
+    # output dictionary
+    changes = {"col_order": col_order, "allupdates": None, "to_delete_rows": None}
+    # get rows to be appened or updated
     allupdates = pd.DataFrame(columns=col_order)
-    to_append_rows = process_functions._append_rows(new_dataset, database, primary_key)
-    to_update_rows = process_functions._update_rows(new_dataset, database, primary_key)
+    to_append_rows = process_functions._append_rows(new_data, ori_data, primary_key)
+    to_update_rows = process_functions._update_rows(new_data, ori_data, primary_key)
+    allupdates = pd.concat([allupdates, to_append_rows, to_update_rows], sort=False)
+    changes["allupdates"] = allupdates
+    # get rows to be deleted
     if to_delete:
-        to_delete_rows = process_functions._delete_rows(
-            new_dataset, database, primary_key
-        )
+        to_delete_rows = process_functions._delete_rows(new_data, ori_data, primary_key)
     else:
         to_delete_rows = pd.DataFrame()
-    allupdates = pd.concat([allupdates, to_append_rows, to_update_rows], sort=False)
+    changes["to_delete_rows"] = to_delete_rows
+    return changes
+
+
+def store_database(
+    syn: synapseclient.Synapse,
+    database_synid: str,
+    col_order: List[str],
+    all_updates: pd.DataFrame,
+    to_delete_rows: pd.DataFrame,
+) -> None:
+    """
+    Store changes to the database
+
+    Args:
+        syn (synapseclient.Synapse): Synapse object
+        database_synid (str): Synapse Id of the Synapse table
+        col_order (List[str]): The ordered column names to be saved
+        all_updates (pd.DataFrame): rows to be appended and/or updated
+        to_deleted_rows (pd.DataFrame): rows to be deleted
+    """
     storedatabase = False
     update_all_file = tempfile.NamedTemporaryFile(
         dir=process_functions.SCRIPT_DIR, delete=False
     )
-
     with open(update_all_file.name, "w") as updatefile:
         # Must write out the headers in case there are no appends or updates
         updatefile.write(",".join(col_order) + "\n")
-        if not allupdates.empty:
+        if not all_updates.empty:
             """
             This is done because of pandas typing.
             An integer column with one NA/blank value
             will be cast as a double.
             """
             updatefile.write(
-                allupdates[col_order]
+                all_updates[col_order]
                 .to_csv(index=False, header=None)
                 .replace(".0,", ",")
                 .replace(".0\n", "\n")

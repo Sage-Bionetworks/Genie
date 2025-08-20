@@ -5,13 +5,13 @@ import json
 from collections import Counter
 from unittest import mock
 
-import genie_registry
 import pandas as pd
 import pytest
 import synapseclient
+
 from genie import process_functions, validate
+import genie_registry
 from genie_registry.clinical import Clinical
-import pdb
 
 
 def createMockTable(dataframe):
@@ -479,6 +479,75 @@ def test_sample__process(clin_class):
     assert expected_sampledf.equals(new_sampledf[expected_sampledf.columns])
 
 
+@pytest.mark.parametrize(
+    ("input_df", "expected_unmapped_indices"),
+    [
+        (
+            pd.DataFrame(
+                dict(ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"])
+            ),
+            [],
+        ),
+        (
+            pd.DataFrame(dict(ONCOTREE_CODE=["XXXX", "XX", "TEST", "AMPCA"])),
+            [0, 1, 2],
+        ),
+        (
+            pd.DataFrame(dict(ONCOTREE_CODE=["XXXX", "XX", "TEST", "AMPCA", "XXXX"])),
+            [0, 1, 2, 4],
+        ),
+    ],
+    ids=["no_unmapped", "unmapped_unique", "unmapped_dups"],
+)
+def test__validate_oncotree_code_mapping_returns_expected_unmapped_indices(
+    clin_class, input_df, expected_unmapped_indices
+) -> None:
+    oncotree_mapping = pd.DataFrame(dict(ONCOTREE_CODE=["AMPCA", "ACA"]))
+    unmapped_indices = clin_class._validate_oncotree_code_mapping(
+        clinicaldf=input_df, oncotree_mapping=oncotree_mapping
+    )
+    assert expected_unmapped_indices == unmapped_indices.tolist()
+
+
+@pytest.mark.parametrize(
+    ("input_df", "unmapped_indices", "expected_error"),
+    [
+        (
+            pd.DataFrame(
+                dict(ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"])
+            ),
+            [],
+            "",
+        ),
+        (
+            pd.DataFrame(dict(ONCOTREE_CODE=["XXXX", "ZGT", "TEST", "AMPCA"])),
+            [0, 1, 2],
+            "Sample Clinical File: Please double check that all your "
+            "ONCOTREE CODES exist in the mapping. You have 3 samples "
+            "that don't map. These are the codes that "
+            "don't map: TEST,XXXX,ZGT\n",
+        ),
+        (
+            pd.DataFrame(dict(ONCOTREE_CODE=["XXXX", "ZGT", "TEST", "AMPCA", "XXXX"])),
+            [0, 1, 2, 4],
+            "Sample Clinical File: Please double check that all your "
+            "ONCOTREE CODES exist in the mapping. You have 4 samples "
+            "that don't map. These are the codes that "
+            "don't map: TEST,XXXX,ZGT\n",
+        ),
+    ],
+    ids=["no_unmapped", "unmapped_unique", "unmapped_dups"],
+)
+def test__validate_oncotree_code_mapping_message_returns_expected_error_messages(
+    clin_class, input_df, unmapped_indices, expected_error
+):
+    errors, warnings = clin_class._validate_oncotree_code_mapping_message(
+        clinicaldf=input_df, unmapped_oncotree_indices=unmapped_indices
+    )
+    assert expected_error == errors
+    assert warnings == ""
+
+
 def test_perfect__validate(clin_class, valid_clinical_df):
     """
     Test perfect validation
@@ -487,7 +556,7 @@ def test_perfect__validate(clin_class, valid_clinical_df):
         "genie.process_functions.get_oncotree_code_mappings", return_value=onco_map_dict
     ) as mock_get_onco_map:
         error, warning = clin_class._validate(valid_clinical_df)
-        mock_get_onco_map.called_once_with(json_oncotreeurl)
+        mock_get_onco_map.assert_called_once_with(json_oncotreeurl)
         assert error == ""
         assert warning == ""
 
@@ -556,7 +625,7 @@ def test_nonull__validate(clin_class):
         "genie.process_functions.get_oncotree_code_mappings", return_value=onco_map_dict
     ) as mock_get_onco_map:
         error, warning = clin_class._validate(clinicaldf)
-        mock_get_onco_map.called_once_with(json_oncotreeurl)
+        mock_get_onco_map.assert_called_once_with(json_oncotreeurl)
         expected_errors = (
             "Sample Clinical File: Please double check your "
             "AGE_AT_SEQ_REPORT. It must be an integer, 'Unknown', "
@@ -611,7 +680,7 @@ def test_missingcols__validate(clin_class):
         "genie.process_functions.get_oncotree_code_mappings", return_value=onco_map_dict
     ) as mock_get_onco_map:
         error, warning = clin_class._validate(clinicaldf)
-        mock_get_onco_map.called_once_with(json_oncotreeurl)
+        mock_get_onco_map.assert_called_once_with(json_oncotreeurl)
         expected_errors = (
             "Sample Clinical File: Must have SAMPLE_ID column.\n"
             "Patient Clinical File: Must have PATIENT_ID column.\n"
@@ -699,7 +768,7 @@ def test_errors__validate(clin_class):
         "genie.process_functions.get_oncotree_code_mappings", return_value=onco_map_dict
     ) as mock_get_onco_map:
         error, warning = clin_class._validate(clinicalDf)
-        mock_get_onco_map.called_once_with(json_oncotreeurl)
+        mock_get_onco_map.assert_called_once_with(json_oncotreeurl)
         expectedErrors = (
             "Sample Clinical File: SAMPLE_ID must start with GENIE-SAGE\n"
             "Patient Clinical File: PATIENT_ID must start with GENIE-SAGE\n"
@@ -846,7 +915,7 @@ def test_duplicated__validate(clin_class):
         "genie.process_functions.get_oncotree_code_mappings", return_value=onco_map_dict
     ) as mock_get_onco_map:
         error, warning = clin_class._validate(clinicalDf)
-        mock_get_onco_map.called_once_with(json_oncotreeurl)
+        mock_get_onco_map.assert_called_once_with(json_oncotreeurl)
         expectedErrors = (
             "Clinical file(s): No empty rows allowed.\n"
             "Sample Clinical File: No duplicated SAMPLE_ID allowed.\n"
@@ -918,7 +987,7 @@ def test_get_oncotree_code_mappings():
         "genie.process_functions.retry_get_url", return_value=fake_oncotree
     ) as retry_get_url:
         onco_mapping = process_functions.get_oncotree_code_mappings(json_oncotreeurl)
-        retry_get_url.called_once_with(json_oncotreeurl)
+        retry_get_url.assert_called_once_with(json_oncotreeurl)
         assert onco_mapping == expected_onco_mapping
 
 
@@ -1453,6 +1522,9 @@ def test_that__cross_validate_returns_correct_format_for_errors_warnings(clin_cl
         )
         assert errors == "test1test3\n"
         assert warnings == ""
+        patch__cross_validate_assay.assert_called_once()
+        patch__cross_validate_bed.assert_called_once()
+        patch__cross_validate_bed_msg.assert_called_once()
 
 
 def test_that__cross_validate_assay_info_has_seq_does_not_read_files_if_no_assay_files(
@@ -1472,6 +1544,7 @@ def test_that__cross_validate_assay_info_has_seq_does_not_read_files_if_no_assay
         assert warnings == ""
         assert errors == ""
         patch_get_df.assert_not_called()
+        patch_assay_files.assert_called_once()
 
 
 def test_that__cross_validate_assay_info_has_seq_does_not_call_check_col_exist_if_assay_df_read_error(
@@ -1494,6 +1567,8 @@ def test_that__cross_validate_assay_info_has_seq_does_not_call_check_col_exist_i
         assert warnings == ""
         assert errors == ""
         patch_check_col_exist.assert_not_called()
+        patch_assay_files.assert_called_once()
+        patch_get_df.assert_called_once()
 
 
 def test_that__cross_validate_assay_info_has_seq_does_not_call_check_values_if_id_cols_do_not_exist(
@@ -1518,6 +1593,9 @@ def test_that__cross_validate_assay_info_has_seq_does_not_call_check_values_if_i
         assert warnings == ""
         assert errors == ""
         patch_check_values.assert_not_called()
+        patch_assay_files.assert_called_once()
+        patch_get_df.assert_called_once()
+        patch_check_col_exist.assert_called_once()
 
 
 def test_that__cross_validate_assay_info_has_seq_calls_check_values_between_two_df(
@@ -1548,6 +1626,9 @@ def test_that__cross_validate_assay_info_has_seq_calls_check_values_between_two_
             ignore_case=True,
             allow_underscore=True,
         )
+        patch_assay_files.assert_called_once()
+        patch_get_df.assert_called_once()
+        patch_check_col_exist.assert_called_once()
 
 
 @pytest.mark.parametrize(
@@ -1624,6 +1705,8 @@ def test_that__cross_validate_assay_info_has_seq_returns_expected_msg_if_valid(
         )
         assert warnings == expected_warning
         assert errors == expected_error
+        patch_assay_files.assert_called_once()
+        patch_get_df.assert_called_once()
 
 
 def test_preprocess(clin_class, newpath=None):
