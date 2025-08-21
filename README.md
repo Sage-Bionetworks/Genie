@@ -17,10 +17,10 @@ For more information about the AACR genie repository, [visit the GitHub Pages si
 ## Dependencies
 
 This package contains both R, Python and cli tools.  These are tools or packages you will need, to be able to reproduce these results:
-- Python >=3.8 or <3.10
+- Python >=3.10 or <3.12
     - `pip install -r requirements.txt`
 - [bedtools](https://bedtools.readthedocs.io/en/latest/content/installation.html)
-- R 4.2.2
+- R 4.3.3
     - `renv::install()`
     - Follow instructions [here](https://r-docs.synapse.org/#note-for-windows-and-mac-users) to install synapser
 - [Java > 8](https://www.java.com/en/download/)
