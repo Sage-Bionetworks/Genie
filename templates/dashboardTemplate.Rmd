@@ -24,7 +24,6 @@ title: '`r release`'
 ---
 
 ```{r intro}
-Sys.setenv(SYNAPSE_CACHE_DIR = file.path(Sys.getenv("HOME"), ".synapseCache_r"))
 suppressMessages(library(synapser))
 foo = capture.output(synLogin())
 suppressMessages(library(ggplot2))

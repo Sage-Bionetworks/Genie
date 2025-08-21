@@ -20,6 +20,10 @@ template_path <- args$template_path
 suppressPackageStartupMessages(library(synapser))
 suppressPackageStartupMessages(library(rmarkdown))
 
+# clear synapse cache
+cache_dir <- file.path(Sys.getenv("HOME"), ".synapseCache")
+unlink(file.path(cache_dir, "*"), recursive = TRUE, force = TRUE)
+
 synLogin()
 
 if (args$staging) {
