@@ -206,7 +206,7 @@ get_latest_public_release <- function(release) {
   # version of the public release folder here
   if (grepl("STAGING", release)){
     return("syn7871696")
-  } else if (grepl("TESTING", release)){
+  } else if (grepl("TEST", release)){
     return("syn12299959")
   } else{
       major_release = unlist(strsplit(release, "[.]"))[1]
