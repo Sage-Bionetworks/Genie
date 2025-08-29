@@ -23,7 +23,7 @@ This package contains both R, Python and cli tools.  These are tools or packages
 - R 4.2.2
     - `renv::install()`
     - Follow instructions [here](https://r-docs.synapse.org/#note-for-windows-and-mac-users) to install synapser
-- [Java > 8](https://www.java.com/en/download/)
+- [Java = 21](https://www.java.com/en/download/)
     - For mac users, it seems to work better to run `brew install java`
 - [wget](https://www.gnu.org/software/wget/)
     - For mac users, have to run `brew install wget`

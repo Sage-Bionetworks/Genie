@@ -41,7 +41,7 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		# texlive-generic-recommended \
 		texlive-latex-extra \
 		# genome nexus
-		openjdk-11-jre \
+		openjdk-21-jre \
 		# This is for reticulate
 		python3.8-venv && \
 	apt-get clean && \
