@@ -8,7 +8,6 @@ from typing import List, Optional
 
 import synapseclient
 from synapseclient import Synapse
-from synapseclient.core.utils import to_unix_epoch_time
 import pandas as pd
 
 from genie import (
@@ -36,12 +35,19 @@ To avoid the syn.get rest call later which doesn't actually download the file
 
 
 # TODO: add to transform.py
-def entity_date_to_timestamp(entity_date_time):
-    """Convert Synapse object date/time string (from modifiedOn or createdOn properties) to a timestamp."""
+def entity_date_to_unix_epoch_time(entity_date_time: str):
+    """Convert Synapse object date/time string (from modifiedOn or createdOn properties) to UNIX time
 
+    Args:
+        entity_date_time: Synapse object date/time string in this format:
+            2018-10-25T20:16:07.959Z
+
+    Returns:
+        int: unix epoch time
+    """
     date_and_time = entity_date_time.split(".")[0]
     date_time_obj = datetime.datetime.strptime(date_and_time, "%Y-%m-%dT%H:%M:%S")
-    return to_unix_epoch_time(date_time_obj)
+    return process_functions.to_unix_epoch_time_utc(date_time_obj)
 
 
 # TODO: Add to validation.py
@@ -541,7 +547,7 @@ def build_validation_status_table(input_valid_statuses: List[dict]):
             "md5": entity.md5,
             "status": input_status["status"],
             "name": entity.name,
-            "modifiedOn": entity_date_to_timestamp(entity.properties.modifiedOn),
+            "modifiedOn": entity_date_to_unix_epoch_time(entity.properties.modifiedOn),
             "fileType": input_status["fileType"],
             "center": input_status["center"],
             "version": entity.versionNumber,

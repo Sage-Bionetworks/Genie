@@ -8,6 +8,8 @@ params:
     value: x
   release:
     value: x
+  testing:
+    value: x
 ---
 
 ```{r setup, include=FALSE}
@@ -204,6 +206,8 @@ get_latest_public_release <- function(release) {
   # version of the public release folder here
   if (grepl("STAGING", release)){
     return("syn7871696")
+  } else if (grepl("TEST", release)){
+    return("syn12299959")
   } else{
       major_release = unlist(strsplit(release, "[.]"))[1]
       public_major_release = as.numeric(major_release) - 1
@@ -274,7 +278,13 @@ Please confirm that the the number of samples and variants in this release is wh
 sampleCounts = table(this_samples$CENTER)
 samplesPerReleaseDf = as.data.frame(sampleCounts)
 colnames(samplesPerReleaseDf) = c("Center", "Samples")
-variant_counts = table(this_mut$Center)
+if (testing) {
+  # generate a temp variant_counts for later step
+  temp <- factor(rep(c("GOLD", "SAGE"), c(3,4)), levels = c("GOLD", "SAGE"))
+  variant_counts = table(temp)
+} else{
+  variant_counts = table(this_mut$Center)
+}
 variant_countsdf = as.data.frame(variant_counts)
 colnames(variant_countsdf) = c("Center", "Variants")
 release_infodf = merge.data.frame(samplesPerReleaseDf, variant_countsdf, by="Center", all=T)
@@ -549,7 +559,7 @@ filtered_mafdf <- filter_maf(this_mut)
 ```
 
 
-```{r top_5_mutated, echo=FALSE}
+```{r top_5_mutated, echo=FALSE, eval = !testing}
 mergeddf = merge.data.frame(filtered_mafdf[,c("Tumor_Sample_Barcode", "Hugo_Symbol")],
                             this_samples[,c("SAMPLE_ID", "SEQ_ASSAY_ID")],
                             by.x = "Tumor_Sample_Barcode",
@@ -577,7 +587,6 @@ final_matrix = cbind(transposed_matrix, table(mergeddf$SEQ_PIPELINE_ID)[row.name
 colnames(final_matrix) = c(1, 2, 3, 4, 5, "Total Variants")
 kable(final_matrix,
       caption = "Distribution of top 5 most frequently mutated genes per SEQ_PIPELINE_ID")
-
 ```
 
 
@@ -590,7 +599,8 @@ These are all the pipelines that cover TP53 that don't have TP53 as the top muta
 this_bed = merge.data.frame(this_bed,
                             assay_infodf[,c("SEQ_ASSAY_ID", "SEQ_PIPELINE_ID")],
                             by = "SEQ_ASSAY_ID")
-if (!is.null(this_bed)) {
+if (!testing){
+  if (!is.null(this_bed)) {
   panels_covering_tp53 = unique(this_bed$SEQ_PIPELINE_ID[this_bed$Hugo_Symbol == "TP53"])
   # Exclude panels if TP53 is top mutated
   tp53_not_top = sapply(names(top_5_mutated_genes), function(seq_assay) {
@@ -609,6 +619,7 @@ if (!is.null(this_bed)) {
   colnames(final_matrix) = c(1, 2, 3, 4, 5, "Total Variants")
   kable(final_matrix,
         caption = "Distribution of top 5 most frequently mutated genes per SEQ_PIPELINE_ID")
+}
 }
 ```
 

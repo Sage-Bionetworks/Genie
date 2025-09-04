@@ -5,6 +5,7 @@ import os
 import sys
 
 import pandas as pd
+import synapseclient
 import synapseutils
 from genie import (
     create_case_lists,
@@ -18,6 +19,9 @@ logger = logging.getLogger(__name__)
 stdout_handler = logging.StreamHandler(stream=sys.stdout)
 stdout_handler.setLevel(logging.INFO)
 logger.addHandler(stdout_handler)
+from typing import Dict
+
+from genie.load import _copyRecursive
 
 
 # TODO: Add to transform.py
@@ -338,7 +342,7 @@ def consortiumToPublic(
             )
         else:
             ent = syn.get(entId, followLink=True, downloadFile=False)
-            copiedId = synapseutils.copy(
+            copiedId = _copyRecursive(
                 syn,
                 ent,
                 public_release_preview,

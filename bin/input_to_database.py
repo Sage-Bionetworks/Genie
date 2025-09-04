@@ -84,8 +84,8 @@ flowchart TD
 ```
 """
 import argparse
-from datetime import date
 import logging
+from datetime import date
 
 from genie import (
     config,
@@ -183,9 +183,9 @@ def main(
         today = date.today()
         table_name = f"Narrow MAF Database - {today}"
         # filetype = "vcf2maf"
-        # syn7208886 is the GENIE staging project to archive maf table
+        # save maf table to testing or production project as the mode
         new_tables = process_functions.create_new_fileformat_table(
-            syn, "vcf2maf", table_name, project_id, "syn7208886"
+            syn, "vcf2maf", table_name, project_id, project_id
         )
         syn.setPermissions(new_tables["newdb_ent"].id, 3326313, [])
         genie_config["vcf2maf"] = new_tables["newdb_ent"].id
