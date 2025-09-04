@@ -1107,7 +1107,7 @@ def test_store_data_gene_matrix(syn, wes_seqassayids, expected_output):
             pd.Series([False, True, False, False, False, False]),
         ),
     ],
-    ids=["no_cutoff_value", "has_cutoff_value", "non_numeric_values", "has_NAs"],
+    ids=["redact_89+_not_ped", "no_redaction_for_cutoff_value", "redact_range_values", "no_redaction_for_NAs"],
 )
 def test_to_redact_interval(
     input_col, expected_to_redact_vector, expected_to_redact_pediatric_vector
@@ -1179,7 +1179,7 @@ def test_to_redact_interval(
             ),
         ),
     ],
-    ids=["numeric_values", "non_numeric_values", "has_NAs"],
+    ids=["no_redaction_for_numeric_values", "redact_range_values", "no_redaction_for_NAs"],
 )
 def test__redact_year(input_col, expected_col):
     # call the function
@@ -1208,7 +1208,7 @@ def test__redact_year(input_col, expected_col):
             pd.Series([False, False]),
         ),
     ],
-    ids=["numeric_values", "non_numeric_values", "has_NAs"],
+    ids=["redact_89+_diff", "no_redaction_cuz_no_diff_calculated_for_string", "no_redaction_cuz_no_diff_calculated_for_NAs"],
 )
 def test_to_redact_difference(df_col_year1, df_col_year2, expected_to_redact):
     # call the function
@@ -1300,7 +1300,7 @@ def get_redact_phi_test_cases():
             ),
         },
         {
-            "name": "has_column_to_be_redacted",
+            "name": "redact_89+_not_ped",
             "input_df": pd.DataFrame(
                 {
                     "PATIENT_ID": ["a", "b", "c", "d", "e", "e"],  # redact b, d, e
@@ -1406,7 +1406,7 @@ def get_redact_phi_test_cases():
             ),
         },
         {
-            "name": "has_range_values",
+            "name": "redact_range_values_for_ped",
             "input_df": pd.DataFrame(
                 {
                     "PATIENT_ID": ["a", "b", "c", "d"],
@@ -1490,7 +1490,7 @@ def get_redact_phi_test_cases():
             ),
         },
         {
-            "name": "has_NAs",
+            "name": "no_redaction_for_NAs",
             "input_df": pd.DataFrame(
                 {
                     "PATIENT_ID": ["a", "b", "c", "d", "e", "f"],
@@ -1596,7 +1596,7 @@ def get_redact_phi_test_cases():
             ),
         },
         {
-            "name": "has_range_in_birth_year",
+            "name": "redact_range_birth_year",
             "input_df": pd.DataFrame(
                 {
                     "PATIENT_ID": ["a", "b"],
