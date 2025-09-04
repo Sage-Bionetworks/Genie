@@ -17,6 +17,8 @@ from synapseclient import Synapse
 from synapseclient.core.utils import to_unix_epoch_time
 from urllib3.util import Retry
 
+from . import __version__
+
 pd.options.mode.chained_assignment = None
 
 logger = logging.getLogger(__name__)
@@ -789,7 +791,7 @@ def synapse_login(debug: Optional[bool] = False) -> Synapse:
     """
     # If debug is True, then silent should be False
     silent = False if debug else False
-    syn = synapseclient.Synapse(debug=debug, silent=silent)
+    syn = synapseclient.Synapse(debug=debug, silent=silent, user_agent = f"aacrgenie/{__version__}")
     try:
         syn.login()
     except Exception:
