@@ -106,7 +106,7 @@ FULL_MAF_RELEASE_COLUMNS = [
 # TODO: Add to transform.py
 def _to_redact_interval(df_col):
     """
-    Determines interval values that are <18 and >89 that need to be redacted
+    Determines year values that are "<18" and interval values >89 that need to be redacted
     Returns bool because BIRTH_YEAR needs to be redacted as well based
     on the results
 
@@ -119,7 +119,6 @@ def _to_redact_interval(df_col):
 
     """
     phi_cutoff = 365 * 89
-    pediatric_cutoff = 365 * 18
     # Some centers pre-redact their values by adding < or >. These
     # must be redacted
     contain_greaterthan = df_col.astype(str).str.contains(">", na=False)
@@ -127,7 +126,7 @@ def _to_redact_interval(df_col):
     # Add in errors='coerce' to turn strings into NaN
     col_int = pd.to_numeric(df_col, errors="coerce")
     to_redact = (col_int > phi_cutoff) | contain_greaterthan
-    to_redact_pediatric = (col_int < pediatric_cutoff) | contain_lessthan
+    to_redact_pediatric = contain_lessthan
     return to_redact, to_redact_pediatric
 
 
@@ -193,8 +192,7 @@ def redact_phi(
         to_redact, to_redactpeds = _to_redact_interval(clinicaldf[col])
         clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
         clinicaldf.loc[to_redact, col] = ">32485"
-        clinicaldf.loc[to_redactpeds, "BIRTH_YEAR"] = "withheld"
-        clinicaldf.loc[to_redactpeds, col] = "<6570"
+        clinicaldf.loc[to_redactpeds, col] = "withheld"
     # Redact BIRTH_YEAR values that have < or >
     # Birth year has to be done separately because it is not an interval
     clinicaldf["BIRTH_YEAR"] = _redact_year(clinicaldf["BIRTH_YEAR"])
