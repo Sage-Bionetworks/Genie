@@ -791,7 +791,9 @@ def synapse_login(debug: Optional[bool] = False) -> Synapse:
     """
     # If debug is True, then silent should be False
     silent = False if debug else False
-    syn = synapseclient.Synapse(debug=debug, silent=silent, user_agent = f"aacrgenie/{__version__}")
+    syn = synapseclient.Synapse(
+        debug=debug, silent=silent, user_agent=f"aacrgenie/{__version__}"
+    )
     try:
         syn.login()
     except Exception:
