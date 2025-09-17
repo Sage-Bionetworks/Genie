@@ -7,7 +7,7 @@ import math
 import os
 import re
 import subprocess
-from typing import List
+from typing import List, Tuple
 
 import pandas as pd
 import pyranges
@@ -104,7 +104,7 @@ FULL_MAF_RELEASE_COLUMNS = [
 
 
 # TODO: Add to transform.py
-def _to_redact_interval(df_col):
+def _to_redact_interval(df_col: : pd.Series) -> Tuple[pd.Series, pd.Series]:
     """
     Determines year values that are "<18" and interval values >89 that need to be redacted
     Returns bool because BIRTH_YEAR needs to be redacted as well based
@@ -131,7 +131,7 @@ def _to_redact_interval(df_col):
 
 
 # TODO: Add to transform.py
-def _redact_year(df_col):
+def _redact_year(df_col: pd.Series) -> pd.Series:
     """Redacts year values that have < or >
 
     Args:
@@ -149,7 +149,7 @@ def _redact_year(df_col):
     return df_col
 
 
-def _redact_ped_year(df_col):
+def _redact_ped_year(df_col: pd.Series) -> pd.Series:
     """Redacts year values that have <
 
     Args:
@@ -166,7 +166,7 @@ def _redact_ped_year(df_col):
 
 
 # TODO: Add to transform.py
-def _to_redact_difference(df_col_year1, df_col_year2):
+def _to_redact_difference(df_col_year1: pd.Series, df_col_year2: pd.Series) -> pd.Series:
     """Determine if difference between year2 and year1 is > 89
 
     Args:
@@ -186,8 +186,8 @@ def _to_redact_difference(df_col_year1, df_col_year2):
 
 # TODO: Add to transform.py
 def redact_phi(
-    clinicaldf, interval_cols_to_redact=["AGE_AT_SEQ_REPORT", "INT_CONTACT", "INT_DOD"]
-):
+    clinicaldf: pd.DataFrame, interval_cols_to_redact=["AGE_AT_SEQ_REPORT", "INT_CONTACT", "INT_DOD"]: list
+) -> pd.DataFrame:
     """Redacts the PHI by re-annotating the clinical file
 
     Args:
