@@ -166,7 +166,9 @@ def _redact_ped_year(df_col: pd.Series) -> pd.Series:
 
 
 # TODO: Add to transform.py
-def _to_redact_difference(df_col_year1: pd.Series, df_col_year2: pd.Series) -> pd.Series:
+def _to_redact_difference(
+    df_col_year1: pd.Series, df_col_year2: pd.Series
+) -> pd.Series:
     """Determine if difference between year2 and year1 is > 89
 
     Args:
@@ -186,7 +188,8 @@ def _to_redact_difference(df_col_year1: pd.Series, df_col_year2: pd.Series) -> p
 
 # TODO: Add to transform.py
 def redact_phi(
-    clinicaldf: pd.DataFrame, interval_cols_to_redact=["AGE_AT_SEQ_REPORT", "INT_CONTACT", "INT_DOD"]: list
+    clinicaldf: pd.DataFrame,
+    interval_cols_to_redact: list = ["AGE_AT_SEQ_REPORT", "INT_CONTACT", "INT_DOD"],
 ) -> pd.DataFrame:
     """Redacts the PHI by re-annotating the clinical file
 
