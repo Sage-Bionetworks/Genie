@@ -1232,6 +1232,79 @@ def test__redact_year(input_col, expected_col):
 
 
 @pytest.mark.parametrize(
+    "input_col,expected_col",
+    [
+        (
+            pd.Series(
+                [
+                    4380,
+                    23725,
+                    32120,
+                    33215,
+                    32485,
+                    6570,
+                ]  # in years: 12, 65, 88, 91, 89, 18
+            ),
+            pd.Series([4380, 23725, 32120, 33215, 32485, 6570]),
+        ),
+        (
+            pd.Series(
+                [
+                    ">32485",
+                    "<6570",
+                    "Not Collected",
+                    "Unknown",
+                    "Not Applicable",
+                ]  # in years: ">89", "<18"
+            ),
+            pd.Series(
+                [
+                    ">32485",
+                    "withheld",
+                    "Not Collected",
+                    "Unknown",
+                    "Not Applicable",
+                ]
+            ),
+        ),
+        (
+            pd.Series(
+                [
+                    ">32485",
+                    "<6570",
+                    "Not Collected",
+                    "Unknown",
+                    "Not Applicable",
+                    np.nan,
+                ]  # in years: ">89", "<18"
+            ),
+            pd.Series(
+                [
+                    ">32485",
+                    "withheld",
+                    "Not Collected",
+                    "Unknown",
+                    "Not Applicable",
+                    np.nan,
+                ]
+            ),
+        ),
+    ],
+    ids=[
+        "no_redaction_for_numeric_values",
+        "redact_range_values",
+        "no_redaction_for_NAs",
+    ],
+)
+def test_redact_ped_year(input_col, expected_col):
+    # call the function
+    output = database_to_staging._redact_ped_year(input_col)
+
+    # validate the calls
+    assert output.equals(expected_col)
+
+
+@pytest.mark.parametrize(
     "df_col_year1,df_col_year2, expected_to_redact",
     [
         (
