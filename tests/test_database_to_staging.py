@@ -32,17 +32,22 @@ def test_store_gene_panel_files(syn):
     data_gene_panel = pd.DataFrame({"mutations": ["PANEL1"]})
     gene_paneldf = pd.DataFrame({"id": ["syn3333"]})
 
-    with mock.patch.object(
-        syn, "tableQuery", return_value=Tablequerydf(gene_paneldf)
-    ) as patch_syn_table_query, mock.patch.object(
-        load, "store_file", return_value=synapseclient.Entity()
-    ) as patch_storefile, mock.patch.object(
-        syn,
-        "get",
-        return_value=synapseclient.Entity(path="/foo/bar/PANEL1.txt", versionNumber=2),
-    ) as patch_syn_get, mock.patch.object(
-        os, "rename"
-    ) as patch_os_rename:
+    with (
+        mock.patch.object(
+            syn, "tableQuery", return_value=Tablequerydf(gene_paneldf)
+        ) as patch_syn_table_query,
+        mock.patch.object(
+            load, "store_file", return_value=synapseclient.Entity()
+        ) as patch_storefile,
+        mock.patch.object(
+            syn,
+            "get",
+            return_value=synapseclient.Entity(
+                path="/foo/bar/PANEL1.txt", versionNumber=2
+            ),
+        ) as patch_syn_get,
+        mock.patch.object(os, "rename") as patch_os_rename,
+    ):
         database_to_staging.store_gene_panel_files(
             syn,
             FILEVIEW_SYNID,
@@ -85,13 +90,17 @@ def test_store_assay_info_files(syn):
     clinicaldf = pd.DataFrame({"SEQ_ASSAY_ID": ["A"]})
     database_to_staging.GENIE_RELEASE_DIR = "./"
     path = os.path.join(database_to_staging.GENIE_RELEASE_DIR, "assay_information.txt")
-    with patch.object(
-        syn, "create_snapshot_version", return_value=2
-    ) as patch_create_version, patch.object(
-        extract, "get_syntabledf", return_value=assay_infodf
-    ) as patch_table_query, patch.object(
-        load, "store_file", return_value=synapseclient.Entity()
-    ) as patch_storefile:
+    with (
+        patch.object(
+            syn, "create_snapshot_version", return_value=2
+        ) as patch_create_version,
+        patch.object(
+            extract, "get_syntabledf", return_value=assay_infodf
+        ) as patch_table_query,
+        patch.object(
+            load, "store_file", return_value=synapseclient.Entity()
+        ) as patch_storefile,
+    ):
         wes_ids = database_to_staging.store_assay_info_files(
             syn, GENIE_VERSION, FILEVIEW_SYNID, clinicaldf, CONSORTIUM_SYNID
         )
@@ -209,19 +218,26 @@ def get_run_genie_filters_test_cases():
     "test_cases", get_run_genie_filters_test_cases(), ids=lambda x: x["name"]
 )
 def test_that_run_genie_filters_has_expected_calls(syn, test_cases):
-    with patch.object(
-        database_to_staging,
-        "runMAFinBED",
-        return_value=pd.DataFrame(dict(VARIANTS_TO_REMOVE=["GENIE-1", "GENIE-2"])),
-    ) as patch_run_mafinbed, patch.object(
-        database_to_staging,
-        "mutation_in_cis_filter",
-        return_value=(set(["GENIE-SAMPLE-1"]), set(["GENIE-SAMPLE-4"])),
-    ) as patch_mut_in_cis, patch.object(
-        database_to_staging, "no_genepanel_filter", return_value=set(["GENIE-SAMPLE-2"])
-    ) as patch_no_genepanel_filter, patch.object(
-        database_to_staging, "seq_date_filter", return_value=set(["GENIE-SAMPLE-3"])
-    ) as patch_seq_date_filter:
+    with (
+        patch.object(
+            database_to_staging,
+            "runMAFinBED",
+            return_value=pd.DataFrame(dict(VARIANTS_TO_REMOVE=["GENIE-1", "GENIE-2"])),
+        ) as patch_run_mafinbed,
+        patch.object(
+            database_to_staging,
+            "mutation_in_cis_filter",
+            return_value=(set(["GENIE-SAMPLE-1"]), set(["GENIE-SAMPLE-4"])),
+        ) as patch_mut_in_cis,
+        patch.object(
+            database_to_staging,
+            "no_genepanel_filter",
+            return_value=set(["GENIE-SAMPLE-2"]),
+        ) as patch_no_genepanel_filter,
+        patch.object(
+            database_to_staging, "seq_date_filter", return_value=set(["GENIE-SAMPLE-3"])
+        ) as patch_seq_date_filter,
+    ):
         filters_results = database_to_staging.run_genie_filters(
             syn,
             test_cases["genie_version"],
@@ -282,24 +298,29 @@ def test_that_run_genie_filters_has_expected_calls(syn, test_cases):
     ids=["testing_mode", "staging_mode", "prod_mode", "both_test_and_staging_mode"],
 )
 def test_that_runMAFinBED_calls_expected_calls(syn, test, staging):
-    with patch.object(os.path, "dirname", return_value="test_file_dir/"), patch.object(
-        database_to_staging, "get_run_maf_in_bed_script_cmd", return_value="test_cmd"
-    ) as patch_get_cmd, patch.object(
-        subprocess, "check_call"
-    ) as patch_check_call, patch.object(
-        database_to_staging,
-        "store_maf_in_bed_filtered_variants",
-        return_value=pd.DataFrame(
-            dict(
-                Chromosome=["1", "X", "Y"],
-                removeVariants=[
-                    "1 1278471 127818 A G GENIE-1",
-                    "X 1278471 127818 A G GENIE-1",
-                    "Y 1278471 127818 A G GENIE-1",
-                ],
-            )
-        ),
-    ) as patch_store_maf_in_bed_filtered_variants:
+    with (
+        patch.object(os.path, "dirname", return_value="test_file_dir/"),
+        patch.object(
+            database_to_staging,
+            "get_run_maf_in_bed_script_cmd",
+            return_value="test_cmd",
+        ) as patch_get_cmd,
+        patch.object(subprocess, "check_call") as patch_check_call,
+        patch.object(
+            database_to_staging,
+            "store_maf_in_bed_filtered_variants",
+            return_value=pd.DataFrame(
+                dict(
+                    Chromosome=["1", "X", "Y"],
+                    removeVariants=[
+                        "1 1278471 127818 A G GENIE-1",
+                        "X 1278471 127818 A G GENIE-1",
+                        "Y 1278471 127818 A G GENIE-1",
+                    ],
+                )
+            ),
+        ) as patch_store_maf_in_bed_filtered_variants,
+    ):
         # setting some testing vars
         test_script_dir = "test_file_dir/"
         test_notinbed_file_path = os.path.join(test_script_dir, "../R/notinbed.csv")
@@ -412,15 +433,14 @@ def test_that_store_maf_in_bed_filtered_variants_has_expected_calls(syn):
     mock_center_mapping_df = pd.DataFrame(
         dict(center=["SAGE", "TEST"], stagingSynId=["syn001", "syn002"])
     )
-    with patch.object(
-        pd, "read_csv", return_value=mock_removed_variants_df
-    ) as patch_read_csv, patch.object(
-        load, "store_file"
-    ) as patch_store_file, patch.object(
-        os, "unlink"
-    ) as patch_unlink, patch.object(
-        pd.DataFrame, "to_csv"
-    ) as patch_to_csv:
+    with (
+        patch.object(
+            pd, "read_csv", return_value=mock_removed_variants_df
+        ) as patch_read_csv,
+        patch.object(load, "store_file") as patch_store_file,
+        patch.object(os, "unlink") as patch_unlink,
+        patch.object(pd.DataFrame, "to_csv") as patch_to_csv,
+    ):
         test_file_path = "mafinbed_filtered_variants.csv"
         # Call the function
         result = database_to_staging.store_maf_in_bed_filtered_variants(
@@ -496,36 +516,41 @@ def test_that_store_maf_in_bed_filtered_variants_has_expected_calls(syn):
 def test_that_mutation_in_cis_filter_has_expected_calls_when_mutations_in_cis_is_not_skipped(
     syn, test, staging, skip_mutations_in_cis
 ):
-    with patch.object(os.path, "dirname", return_value="test_file_dir/"), patch.object(
-        database_to_staging,
-        "get_mutation_in_cis_filter_script_cmd",
-        return_value="test_cmd",
-    ) as patch_get_cmd, patch.object(
-        subprocess, "check_call"
-    ) as patch_check_call, patch.object(
-        database_to_staging, "store_mutation_in_cis_files_to_staging"
-    ) as patch_store_mutation_in_cis_files, patch.object(
-        database_to_staging,
-        "get_mutation_in_cis_filtered_samples",
-        return_value=pd.Series(
-            [
-                "GENIE-SAGE-1",
-                "GENIE-SAGE-2",
-            ],
-            name="Tumor_Sample_Barcode",
-        ),
-    ) as patch_get_filtered_samples, patch.object(
-        database_to_staging,
-        "get_mutation_in_cis_flagged_variants",
-        return_value=pd.Series(
-            [
-                "1 1278471 127818 A G GENIE-1",
-                "X 1278471 127818 A G GENIE-1",
-                "Y 1278471 127818 A G GENIE-1",
-            ],
-            name="flaggedVariants",
-        ),
-    ) as patch_get_flagged_variants:
+    with (
+        patch.object(os.path, "dirname", return_value="test_file_dir/"),
+        patch.object(
+            database_to_staging,
+            "get_mutation_in_cis_filter_script_cmd",
+            return_value="test_cmd",
+        ) as patch_get_cmd,
+        patch.object(subprocess, "check_call") as patch_check_call,
+        patch.object(
+            database_to_staging, "store_mutation_in_cis_files_to_staging"
+        ) as patch_store_mutation_in_cis_files,
+        patch.object(
+            database_to_staging,
+            "get_mutation_in_cis_filtered_samples",
+            return_value=pd.Series(
+                [
+                    "GENIE-SAGE-1",
+                    "GENIE-SAGE-2",
+                ],
+                name="Tumor_Sample_Barcode",
+            ),
+        ) as patch_get_filtered_samples,
+        patch.object(
+            database_to_staging,
+            "get_mutation_in_cis_flagged_variants",
+            return_value=pd.Series(
+                [
+                    "1 1278471 127818 A G GENIE-1",
+                    "X 1278471 127818 A G GENIE-1",
+                    "Y 1278471 127818 A G GENIE-1",
+                ],
+                name="flaggedVariants",
+            ),
+        ) as patch_get_flagged_variants,
+    ):
         # setting some testing vars
         test_center_mapping_df = pd.DataFrame(
             dict(Center=["SAGE"], stagingSynId=["synZZZZZ"])
@@ -602,36 +627,41 @@ def test_that_mutation_in_cis_filter_has_expected_calls_when_mutations_in_cis_is
 def test_that_mutation_in_cis_filter_has_expected_calls_when_mutations_in_cis_is_skipped(
     syn, test, staging, skip_mutations_in_cis
 ):
-    with patch.object(os.path, "dirname", return_value="test_file_dir/"), patch.object(
-        database_to_staging,
-        "get_mutation_in_cis_filter_script_cmd",
-        return_value="test_cmd",
-    ) as patch_get_cmd, patch.object(
-        subprocess, "check_call"
-    ) as patch_check_call, patch.object(
-        database_to_staging, "store_mutation_in_cis_files_to_staging"
-    ) as patch_store_mutation_in_cis_files, patch.object(
-        database_to_staging,
-        "get_mutation_in_cis_filtered_samples",
-        return_value=pd.Series(
-            [
-                "GENIE-SAGE-1",
-                "GENIE-SAGE-2",
-            ],
-            name="Tumor_Sample_Barcode",
-        ),
-    ) as patch_get_filtered_samples, patch.object(
-        database_to_staging,
-        "get_mutation_in_cis_flagged_variants",
-        return_value=pd.Series(
-            [
-                "1 1278471 127818 A G GENIE-1",
-                "X 1278471 127818 A G GENIE-1",
-                "Y 1278471 127818 A G GENIE-1",
-            ],
-            name="flaggedVariants",
-        ),
-    ) as patch_get_flagged_variants:
+    with (
+        patch.object(os.path, "dirname", return_value="test_file_dir/"),
+        patch.object(
+            database_to_staging,
+            "get_mutation_in_cis_filter_script_cmd",
+            return_value="test_cmd",
+        ) as patch_get_cmd,
+        patch.object(subprocess, "check_call") as patch_check_call,
+        patch.object(
+            database_to_staging, "store_mutation_in_cis_files_to_staging"
+        ) as patch_store_mutation_in_cis_files,
+        patch.object(
+            database_to_staging,
+            "get_mutation_in_cis_filtered_samples",
+            return_value=pd.Series(
+                [
+                    "GENIE-SAGE-1",
+                    "GENIE-SAGE-2",
+                ],
+                name="Tumor_Sample_Barcode",
+            ),
+        ) as patch_get_filtered_samples,
+        patch.object(
+            database_to_staging,
+            "get_mutation_in_cis_flagged_variants",
+            return_value=pd.Series(
+                [
+                    "1 1278471 127818 A G GENIE-1",
+                    "X 1278471 127818 A G GENIE-1",
+                    "Y 1278471 127818 A G GENIE-1",
+                ],
+                name="flaggedVariants",
+            ),
+        ) as patch_get_flagged_variants,
+    ):
         # setting some testing vars
         test_center_mapping_df = pd.DataFrame(
             dict(Center=["SAGE"], stagingSynId=["synZZZZZ"])
@@ -829,15 +859,14 @@ def test_store_mutation_in_cis_files_to_staging(
     mock_center_mappingdf,
     mock_merge_check_df,
 ):
-    with patch.object(
-        extract, "get_syntabledf", return_value=mock_merge_check_df
-    ) as patch_get_syntabledf, patch.object(
-        load, "store_file"
-    ) as patch_store_file, patch.object(
-        os, "unlink"
-    ) as patch_unlink, patch.object(
-        pd.DataFrame, "to_csv"
-    ) as patch_to_csv:
+    with (
+        patch.object(
+            extract, "get_syntabledf", return_value=mock_merge_check_df
+        ) as patch_get_syntabledf,
+        patch.object(load, "store_file") as patch_store_file,
+        patch.object(os, "unlink") as patch_unlink,
+        patch.object(pd.DataFrame, "to_csv") as patch_to_csv,
+    ):
         test_file_path = "mutationsInCis_filtered_samples.csv"
         # Call the function
         database_to_staging.store_mutation_in_cis_files_to_staging(
@@ -885,9 +914,11 @@ def test_store_mutation_in_cis_files_to_staging_no_centers(
     syn,
     mock_center_mappingdf,
 ):
-    with patch.object(extract, "get_syntabledf") as patch_get_syntabledf, patch.object(
-        load, "store_file"
-    ) as patch_store_file, patch.object(os, "unlink") as patch_unlink:
+    with (
+        patch.object(extract, "get_syntabledf") as patch_get_syntabledf,
+        patch.object(load, "store_file") as patch_store_file,
+        patch.object(os, "unlink") as patch_unlink,
+    ):
         # Set up mocks
         mock_mergeCheckDf = pd.DataFrame({"Center": [], "test_col": []})
         patch_get_syntabledf.return_value = mock_mergeCheckDf
@@ -930,16 +961,17 @@ def test_store_sv_files(syn, current_release_staging):
     database_to_staging.SV_CENTER_PATH = os.path.join(
         database_to_staging.GENIE_RELEASE_DIR, "data_sv_%s.txt"
     )
-    with patch("builtins.open") as mock_open, patch.object(
-        extract, "get_syntabledf", return_value=svdf
-    ) as patch_get_syntabledf, patch.object(
-        syn, "create_snapshot_version", return_value=1
-    ), patch.object(
-        pd.DataFrame, "to_csv"
-    ) as patch_to_csv, patch.object(
-        load, "store_file"
-    ) as patch_store_file, patch.object(
-        process_functions, "removePandasDfFloat", return_value="test_sv_text"
+    with (
+        patch("builtins.open") as mock_open,
+        patch.object(
+            extract, "get_syntabledf", return_value=svdf
+        ) as patch_get_syntabledf,
+        patch.object(syn, "create_snapshot_version", return_value=1),
+        patch.object(pd.DataFrame, "to_csv") as patch_to_csv,
+        patch.object(load, "store_file") as patch_store_file,
+        patch.object(
+            process_functions, "removePandasDfFloat", return_value="test_sv_text"
+        ),
     ):
         # call the function
         sv_sample = database_to_staging.store_sv_files(
@@ -1034,9 +1066,10 @@ def test_store_data_gene_matrix(syn, wes_seqassayids, expected_output):
     clinicaldf = pd.DataFrame(
         {"SAMPLE_ID": ["GENIE-1", "GENIE-2"], "SEQ_ASSAY_ID": ["ID1", "ID2"]}
     )
-    with patch.object(pd.DataFrame, "to_csv") as patch_to_csv, patch.object(
-        load, "store_file"
-    ) as patch_store_file:
+    with (
+        patch.object(pd.DataFrame, "to_csv") as patch_to_csv,
+        patch.object(load, "store_file") as patch_store_file,
+    ):
         # call the function
         data_gene_matrix = database_to_staging.store_data_gene_matrix(
             syn,
@@ -1469,7 +1502,7 @@ def get_redact_phi_test_cases():
                         "cannotReleaseHIPAA",
                     ],
                     "YEAR_CONTACT": [
-                        "<18",
+                        "withheld",
                         2080,
                         2008,
                         2082,
@@ -1565,7 +1598,7 @@ def get_redact_phi_test_cases():
                         1994,
                     ],
                     "YEAR_CONTACT": [
-                        "<18",
+                        "withheld",
                         2080,
                         2008,
                         2082,

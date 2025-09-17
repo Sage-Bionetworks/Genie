@@ -149,6 +149,22 @@ def _redact_year(df_col):
     return df_col
 
 
+def _redact_ped_year(df_col):
+    """Redacts year values that have <
+
+    Args:
+        df_col: Dataframe column/pandas.Series of a year column
+
+    Returns:
+        pandas.Series: Redacted series
+
+    """
+    year = df_col.astype(str)
+    contain_lessthan = year.str.contains("<", na=False)
+    df_col[contain_lessthan] = "withheld"
+    return df_col
+
+
 # TODO: Add to transform.py
 def _to_redact_difference(df_col_year1, df_col_year2):
     """Determine if difference between year2 and year1 is > 89
@@ -204,6 +220,10 @@ def redact_phi(
         clinicaldf["BIRTH_YEAR"], clinicaldf["YEAR_DEATH"]
     )
     clinicaldf.loc[to_redact, "BIRTH_YEAR"] = "cannotReleaseHIPAA"
+
+    # redact range year for pediatric data
+    clinicaldf["YEAR_CONTACT"] = _redact_ped_year(clinicaldf["YEAR_CONTACT"])
+    clinicaldf["YEAR_DEATH"] = _redact_ped_year(clinicaldf["YEAR_DEATH"])
 
     return clinicaldf
 
