@@ -104,7 +104,7 @@ FULL_MAF_RELEASE_COLUMNS = [
 
 
 # TODO: Add to transform.py
-def _to_redact_interval(df_col: : pd.Series) -> Tuple[pd.Series, pd.Series]:
+def _to_redact_interval(df_col: pd.Series) -> Tuple[pd.Series, pd.Series]:
     """
     Determines year values that are "<18" and interval values >89 that need to be redacted
     Returns bool because BIRTH_YEAR needs to be redacted as well based
