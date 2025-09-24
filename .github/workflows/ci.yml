@@ -1,4 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# This workflow will install Python dependencies, run tests (unit and integration), lint, build env with a single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 #
 # Only triggers the lint, tests, build container, determine-changes and integration tests jobs for the following conditions: 
