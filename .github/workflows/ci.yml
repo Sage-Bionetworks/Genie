@@ -5,7 +5,7 @@ name: build
 
 on:
   push:
-    branches: [main, develop, 'GEN*', 'gen*']
+    branches: [main, develop]
     paths-ignore:
       - '**.md'                            # All Markdown files
       - '**/docs/**'                       # Documentation directory
@@ -44,6 +44,9 @@ jobs:
         (
           github.event_name == 'push' &&
           (github.ref_name == 'main' || github.ref_name == 'develop')
+        ) ||
+        (
+          github.event_name == 'release'
         )
       )
     runs-on: ubuntu-latest
@@ -73,7 +76,20 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
+    if: >- 
+      (
+        (
+          contains(github.event.pull_request.labels.*.name, 'run_integration_tests') && 
+          github.event.pull_request.state == 'open'
+        ) ||
+        (
+          github.event_name == 'push' &&
+          (github.ref_name == 'main' || github.ref_name == 'develop')
+        ) ||
+        (
+          github.event_name == 'release'
+        )
+      )
     strategy:
       matrix:
         python-version: ['3.10', 3.11]
@@ -105,7 +121,20 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
+    if: >- 
+      (
+        (
+          contains(github.event.pull_request.labels.*.name, 'run_integration_tests') && 
+          github.event.pull_request.state == 'open'
+        ) ||
+        (
+          github.event_name == 'push' &&
+          (github.ref_name == 'main' || github.ref_name == 'develop')
+        ) ||
+        (
+          github.event_name == 'release'
+        )
+      )
     steps:
       - uses: actions/checkout@v4
       - uses: psf/black@stable
@@ -114,7 +143,20 @@ jobs:
 
   build-container:
     needs: [test, lint]
-    if: github.event_name != 'pull_request'
+    if: >- 
+      (
+        (
+          contains(github.event.pull_request.labels.*.name, 'run_integration_tests') && 
+          github.event.pull_request.state == 'open'
+        ) ||
+        (
+          github.event_name == 'push' &&
+          (github.ref_name == 'main' || github.ref_name == 'develop')
+        ) ||
+        (
+          github.event_name == 'release'
+        )
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -176,6 +218,9 @@ jobs:
         (
           github.event_name == 'push' &&
           (github.ref_name == 'main' || github.ref_name == 'develop')
+        ) ||
+        (
+          github.event_name == 'release'
         )
       )
     steps:
