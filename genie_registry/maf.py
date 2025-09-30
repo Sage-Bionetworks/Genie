@@ -119,7 +119,7 @@ def _check_allele_col_validity(df: pd.DataFrame) -> str:
             f"{error}maf: Contains instances where values in REFERENCE_ALLELE match values in TUMOR_SEQ_ALLELE2. "
             "This is invalid. Please correct.\n"
         )
-        row_index = df.query("REFERENCE_ALLELE == TUMOR_SEQ_ALLELE2").index.values
+        row_index = df[df["REFERENCE_ALLELE"] == df["TUMOR_SEQ_ALLELE2"]].index.values
     return error
 
 
