@@ -1,18 +1,3 @@
-# This workflow will install Python dependencies, run tests (unit and integration), lint, build env with a single version of Python
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-#
-# Only triggers the lint, tests, build container, determine-changes and integration tests jobs for the following conditions: 
-#  - When the PR has the github label "run_integration_tests" AND commits during when pull request is open 
-#  - When it's a push into main or develop branches
-#  - When it's a release event
-# 
-# integration-tests
-# - In addition, the integration-tests job only runs when determine-changes job determines that
-#   there are non-unit tests changes
-#
-# deploy
-# - deploy job only runs when there is a release event
-
 name: build
 
 on:

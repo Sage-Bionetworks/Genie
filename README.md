@@ -168,3 +168,7 @@ These are instructions on how you would develop and test the pipeline locally.
 ## Production
 
 The production pipeline is run on Nextflow Tower and the Nextflow workflow is captured in [nf-genie](https://github.com/Sage-Bionetworks-Workflows/nf-genie).  It is wise to create an ec2 via the Sage Bionetworks service catalog to work with the production data, because there is limited PHI in GENIE.
+
+## Github Workflows
+
+For technical details about our CI/CD, please see [the github workflows README](.github/workflows/README.md)
