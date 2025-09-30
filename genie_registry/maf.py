@@ -113,7 +113,7 @@ def _check_allele_col_validity(df: pd.DataFrame) -> str:
     if (
         tsa2_col_exist
         and ref_col_exist
-        and not df.query("REFERENCE_ALLELE == TUMOR_SEQ_ALLELE2").empty
+        and any(df["REFERENCE_ALLELE"] == df["TUMOR_SEQ_ALLELE2"])
     ):
         error = (
             f"{error}maf: Contains instances where values in REFERENCE_ALLELE match values in TUMOR_SEQ_ALLELE2. "
