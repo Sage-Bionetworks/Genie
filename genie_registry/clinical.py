@@ -5,7 +5,7 @@ import datetime
 import logging
 import os
 from io import StringIO
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -110,19 +110,63 @@ def _check_int_dead_consistency(clinicaldf: pd.DataFrame) -> str:
 
 
 def _check_int_year_consistency(
-    clinicaldf: pd.DataFrame, cols: list, string_vals: list
+    clinicaldf: pd.DataFrame, cols: List[str], string_vals: List[str]
 ) -> str:
     """
     Check if vital status interval and year columns are consistent in
-    their values
+    their values.
+
+    What determines text consistency:
+        - IF exactly one column in the columns being checked is "Unknown" in that row,
+            THEN that column with the "Unknown" value has to be the interval column
+        - OTHERWISE values must be either all numeric or the SAME string value in
+            for each row for all cols that are being checked
+
+    Here we will show examples of invalid vs valid text consistency:
+
+    ```
+    Note: INT_CONTACT and YEAR_CONTACT are the columns being checked, and INT_CONTACT
+    is the interval column while YEAR_CONTACT is the year column.
+    ```
+
+    Example: VALID Examples
+        | INT_CONTACT | YEAR_CONTACT |
+        | ----------- | -------------|
+        |   Unknown   |      2012    |
+
+        | INT_CONTACT | YEAR_CONTACT |
+        | ----------- | -------------|
+        |   Unknown   |    Unknown   |
+
+        | INT_CONTACT | YEAR_CONTACT |
+        | ----------- | -------------|
+        |     2012    |      2012    |
+
+        | INT_CONTACT   | YEAR_CONTACT   |
+        | --------------| ---------------|
+        | Not Collected | Not Collected  |
+
+    Example: INVALID Examples
+        | INT_CONTACT | YEAR_CONTACT |
+        | ----------- | -------------|
+        |     2012    |    Unknown   |
+
+        | INT_CONTACT   | YEAR_CONTACT   |
+        | --------------| ---------------|
+        |     2012      | Not Collected  |
+
+        | INT_CONTACT   | YEAR_CONTACT   |
+        | --------------| ---------------|
+        | Not collected | Not Released   |
 
     Args:
-        clinicaldf: Clinical Data Frame
-        cols: Columns in the clinical data frame
-        string_vals: String values that aren't integers
+        clinicaldf (pd.DataFrame): input Clinical Data Frame
+        cols (List[str]): Columns in the clinical data frame to be
+            checked for consistency
+        string_vals (List[str]): String values that aren't integers
 
     Returns:
-        Error message if values and inconsistent or blank string
+        Error message if values are inconsistent or blank string
     """
     interval_col = ""
     year_col = ""
@@ -131,7 +175,7 @@ def _check_int_year_consistency(
         # INT/YEAR
         interval_col = col if col.startswith("INT") else interval_col
         year_col = col if col.startswith("YEAR") else year_col
-        # Return empty string is columns don't exist because this error
+        # Return empty string if columns don't exist because this error
         # is already handled.
         if not process_functions.checkColExist(clinicaldf, col):
             return ""
