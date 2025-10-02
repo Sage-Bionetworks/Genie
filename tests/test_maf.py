@@ -292,8 +292,8 @@ def test_error__check_allele_col():
         (
             pd.DataFrame(
                 dict(
-                    REFERENCE_ALLELE=["A", "A", "A"],
-                    TUMOR_SEQ_ALLELE2=["A", "C", "C"],
+                    REFERENCE_ALLELE=["A", "A", "A", "-"],
+                    TUMOR_SEQ_ALLELE2=["A", "C", "C", "A"],
                 )
             ),
             "maf: Contains instances where values in REFERENCE_ALLELE match values in TUMOR_SEQ_ALLELE2. "
@@ -362,15 +362,169 @@ def test__check_allele_col_validity(test_df, expected_error):
     assert error == expected_error
 
 
+@pytest.mark.parametrize(
+    "test_df,expected_error",
+    [
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=["A", "A", "A"],
+                    TUMOR_SEQ_ALLELE1=["C", "C", "C"],
+                    TUMOR_SEQ_ALLELE2=["C", "C", "C"],
+                    comments=["C", "C", "C"],
+                    COMMENTS=["C", "C", "C"],
+                    Comments=["C", "C", "C"],
+                )
+            ),
+            "",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=["C", "C", "C"],
+                    TUMOR_SEQ_ALLELE1=["C", "C", "C"],
+                    TUMOR_SEQ_ALLELE2=["A", "A", "A"],
+                    comments=["C", "C", "C"],
+                    COMMENTS=["C", "C", "C"],
+                    Comments=["C", "C", "C"],
+                )
+            ),
+            "",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=["A", "A", "A"],
+                    TUMOR_SEQ_ALLELE1=["B", "B", "B"],
+                    TUMOR_SEQ_ALLELE2=["C", "C", "C"],
+                    comments=["C", "C", "C"],
+                    COMMENTS=["C", "C", "C"],
+                    Comments=["C", "C", "C"],
+                )
+            ),
+            "maf: Contains both "
+            "TUMOR_SEQ_ALLELE1 and TUMOR_SEQ_ALLELE2 columns. "
+            "All values in TUMOR_SEQ_ALLELE1 must match all values in "
+            "REFERENCE_ALLELE or all values in TUMOR_SEQ_ALLELE2.\n",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=["A", "A", "A"],
+                    TUMOR_SEQ_ALLELE1=["A", "A", "A"],
+                    TUMOR_SEQ_ALLELE2=["A", "C", "C"],
+                    comments=["C", "C", "C"],
+                    COMMENTS=["C", "C", "C"],
+                    Comments=["C", "C", "C"],
+                )
+            ),
+            "maf: Contains instances where values in REFERENCE_ALLELE match values in TUMOR_SEQ_ALLELE2. "
+            "This is invalid. Please correct.\n",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=["A", "A", "-"],
+                    TUMOR_SEQ_ALLELE2=["A", "C", "C"],
+                    comments=["C", "C", "C"],
+                    COMMENTS=["C", "C", "C"],
+                    Comments=["C", "C", "C"],
+                )
+            ),
+            "maf: Contains instances where values in REFERENCE_ALLELE match values in TUMOR_SEQ_ALLELE2. "
+            "This is invalid. Please correct.\n",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=["A", "A", "A"],
+                    TUMOR_SEQ_ALLELE2=["C", "C", "C"],
+                    comments=["C", "C", "C"],
+                    COMMENTS=["C", "C", "C"],
+                    Comments=["C", "C", "C"],
+                )
+            ),
+            "",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    TUMOR_SEQ_ALLELE1=["C", "C", "C"],
+                    comments=["C", "C", "C"],
+                    COMMENTS=["C", "C", "C"],
+                    Comments=["C", "C", "C"],
+                )
+            ),
+            "",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=["A", "A", "A"],
+                    TUMOR_SEQ_ALLELE1=["B", "B", "B"],
+                    TUMOR_SEQ_ALLELE2=["A", "C", "C"],
+                    comments=["C", "C", "C"],
+                    COMMENTS=["C", "C", "C"],
+                    Comments=["C", "C", "C"],
+                )
+            ),
+            "maf: Contains both "
+            "TUMOR_SEQ_ALLELE1 and TUMOR_SEQ_ALLELE2 columns. "
+            "All values in TUMOR_SEQ_ALLELE1 must match all values in "
+            "REFERENCE_ALLELE or all values in TUMOR_SEQ_ALLELE2.\n"
+            "maf: Contains instances where values in REFERENCE_ALLELE match values in TUMOR_SEQ_ALLELE2. "
+            "This is invalid. Please correct.\n",
+        ),
+        (
+            pd.DataFrame(
+                dict(
+                    REFERENCE_ALLELE=[nan, "A", "A"],
+                    TUMOR_SEQ_ALLELE1=["B", nan, "B"],
+                    TUMOR_SEQ_ALLELE2=[nan, "C", "C"],
+                    comments=["C", "C", "C"],
+                    COMMENTS=["C", "C", "C"],
+                    Comments=["C", "C", "C"],
+                )
+            ),
+            "maf: Contains both "
+            "TUMOR_SEQ_ALLELE1 and TUMOR_SEQ_ALLELE2 columns. "
+            "All values in TUMOR_SEQ_ALLELE1 must match all values in "
+            "REFERENCE_ALLELE or all values in TUMOR_SEQ_ALLELE2.\n",
+        ),
+    ],
+    ids=[
+        "matching_tsa1_tsa2",
+        "matching_tsa1_ref",
+        "invalid_tsa1",
+        "identical_ref_tsa2",
+        "identical_ref_tsa2_missing_tsa1",
+        "valid_ref_tsa2_missing_tsa1",
+        "missing_tsa2_ref",
+        "invalid_tsa1_identical_ref_tsa2",
+        "NAs_in_allele_cole",
+    ],
+)
+def test__check_allele_col_validity_with_duplicate_cols(test_df, expected_error):
+    # Convert columns with different cases to upper case to simulate duplicate columns
+    test_df.columns = [col.upper() for col in test_df.columns]
+
+    # call the function and check the result
+    error = genie_registry.maf._check_allele_col_validity(test_df)
+    assert error == expected_error
+
+
 def test_that__cross_validate_does_not_read_files_if_no_clinical_files(maf_class):
-    with patch.object(
-        validate,
-        "parse_file_info_in_nested_list",
-        return_value={"files": {}, "file_info": {"name": "", "path": ""}},
-    ), patch.object(
-        process_functions,
-        "get_clinical_dataframe",
-    ) as patch_get_df:
+    with (
+        patch.object(
+            validate,
+            "parse_file_info_in_nested_list",
+            return_value={"files": {}, "file_info": {"name": "", "path": ""}},
+        ),
+        patch.object(
+            process_functions,
+            "get_clinical_dataframe",
+        ) as patch_get_df,
+    ):
         errors, warnings = maf_class._cross_validate(pd.DataFrame({}))
         assert warnings == ""
         assert errors == ""
@@ -380,17 +534,22 @@ def test_that__cross_validate_does_not_read_files_if_no_clinical_files(maf_class
 def test_that__cross_validate_does_not_call_check_col_exist_if_clinical_df_read_error(
     maf_class,
 ):
-    with patch.object(
-        validate,
-        "parse_file_info_in_nested_list",
-        return_value={"files": {"some_file"}, "file_info": {"name": "", "path": ""}},
-    ), patch.object(
-        process_functions,
-        "get_clinical_dataframe",
-        side_effect=Exception("mocked error"),
-    ), patch.object(
-        process_functions, "checkColExist"
-    ) as patch_check_col_exist:
+    with (
+        patch.object(
+            validate,
+            "parse_file_info_in_nested_list",
+            return_value={
+                "files": {"some_file"},
+                "file_info": {"name": "", "path": ""},
+            },
+        ),
+        patch.object(
+            process_functions,
+            "get_clinical_dataframe",
+            side_effect=Exception("mocked error"),
+        ),
+        patch.object(process_functions, "checkColExist") as patch_check_col_exist,
+    ):
         errors, warnings = maf_class._cross_validate(pd.DataFrame({}))
         assert warnings == ""
         assert errors == ""
@@ -400,19 +559,23 @@ def test_that__cross_validate_does_not_call_check_col_exist_if_clinical_df_read_
 def test_that__cross_validate_does_not_call_check_values_if_id_cols_do_not_exist(
     maf_class,
 ):
-    with patch.object(
-        validate,
-        "parse_file_info_in_nested_list",
-        return_value={"files": {"some_file"}, "file_info": {"name": "", "path": ""}},
-    ), patch.object(
-        process_functions,
-        "get_clinical_dataframe",
-        return_value=pd.DataFrame({"test_col": [2, 3, 4]}),
-    ), patch.object(
-        process_functions, "checkColExist", return_value=False
-    ), patch.object(
-        validate, "check_values_between_two_df"
-    ) as patch_check_values:
+    with (
+        patch.object(
+            validate,
+            "parse_file_info_in_nested_list",
+            return_value={
+                "files": {"some_file"},
+                "file_info": {"name": "", "path": ""},
+            },
+        ),
+        patch.object(
+            process_functions,
+            "get_clinical_dataframe",
+            return_value=pd.DataFrame({"test_col": [2, 3, 4]}),
+        ),
+        patch.object(process_functions, "checkColExist", return_value=False),
+        patch.object(validate, "check_values_between_two_df") as patch_check_values,
+    ):
         errors, warnings = maf_class._cross_validate(pd.DataFrame({}))
         assert warnings == ""
         assert errors == ""
@@ -453,17 +616,20 @@ def test_that__cross_validate_does_not_call_check_values_if_id_cols_do_not_exist
 def test_that__cross_validate_returns_expected_msg_if_valid(
     maf_class, valid_maf_df, test_clinical_df, expected_warning, expected_error
 ):
-    with patch.object(
-        validate,
-        "parse_file_info_in_nested_list",
-        return_value={
-            "files": {"some_file"},
-            "file_info": {"name": "data_clinical_supp.txt", "path": ""},
-        },
-    ), patch.object(
-        process_functions,
-        "get_clinical_dataframe",
-        return_value=test_clinical_df,
+    with (
+        patch.object(
+            validate,
+            "parse_file_info_in_nested_list",
+            return_value={
+                "files": {"some_file"},
+                "file_info": {"name": "data_clinical_supp.txt", "path": ""},
+            },
+        ),
+        patch.object(
+            process_functions,
+            "get_clinical_dataframe",
+            return_value=test_clinical_df,
+        ),
     ):
         errors, warnings = maf_class._cross_validate(mutationDF=valid_maf_df)
         assert warnings == expected_warning
@@ -563,9 +729,11 @@ def test_that__get_dataframe_uses_correct_columns_to_replace(
     maf_class, input, expected_columns
 ):
     file = "Hugo_Symbol\tEntrez_Gene_Id\tReference_Allele\n" "TEST\t3845\tNA"
-    with patch(OPEN_BUILTIN, mock_open(read_data=file)), patch.object(
-        pd, "read_csv", return_value=input
-    ), patch.object(transform, "_convert_values_to_na") as patch_convert_to_na:
+    with (
+        patch(OPEN_BUILTIN, mock_open(read_data=file)),
+        patch.object(pd, "read_csv", return_value=input),
+        patch.object(transform, "_convert_values_to_na") as patch_convert_to_na,
+    ):
         maf_class._get_dataframe(["some_path"])
         patch_convert_to_na.assert_called_once_with(
             input_df=input,
