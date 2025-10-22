@@ -37,7 +37,14 @@ One of the features of the `aacrgenie` package is that is provides a local valid
 
 These instructions will install all the necessary components for you to run the validator locally on all of your files, including the Synapse client.
 
-1. Create a virtual environment using package manager of your choice (e.g: `conda`, `pipenv`)
+1. Create a virtual environment using package manager of your choice (e.g: `conda`, `pipenv`, `pip`)
+
+Example of creating a simple python environment
+
+```
+python3 -m venv <env_name>
+source <env_name>/bin/activate
+```
 
 2. Install the genie package
 
