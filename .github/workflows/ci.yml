@@ -1,28 +1,20 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
 name: build
 
 on:
   push:
-    branches: [main, develop, 'GEN*', 'gen*']
+    branches: [main, develop]
     paths-ignore:
       - '**.md'                            # All Markdown files
       - '**/docs/**'                       # Documentation directory
-      # - '.github/workflows/**'             # Ignore all github workflow file changes
 
   pull_request:
-      types:
-        - opened
-        - reopened
+      types: [opened, reopened, labeled, synchronize]
       paths-ignore:
         - '**.md'                            # All Markdown files
         - '**/docs/**'                       # Documentation directory
-        # - '.github/workflows/**'             # Ignore all github workflow file changes
 
   release:
-    types:
-      - created
+    types: [created]
 
   workflow_dispatch:
 
@@ -35,6 +27,20 @@ env:
 jobs:
 
   determine-changes:
+    if: >- 
+      (
+        (
+          contains(github.event.pull_request.labels.*.name, 'run_integration_tests') && 
+          github.event.pull_request.state == 'open'
+        ) ||
+        (
+          github.event_name == 'push' &&
+          (github.ref_name == 'main' || github.ref_name == 'develop')
+        ) ||
+        (
+          github.event_name == 'release'
+        )
+      )
     runs-on: ubuntu-latest
     outputs:
       non-test-changes: ${{ steps.get-changes.outputs.non-test-changes }}
@@ -62,6 +68,20 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    if: >- 
+      (
+        (
+          contains(github.event.pull_request.labels.*.name, 'run_integration_tests') && 
+          github.event.pull_request.state == 'open'
+        ) ||
+        (
+          github.event_name == 'push' &&
+          (github.ref_name == 'main' || github.ref_name == 'develop')
+        ) ||
+        (
+          github.event_name == 'release'
+        )
+      )
     strategy:
       matrix:
         python-version: ['3.10', 3.11]
@@ -93,6 +113,20 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    if: >- 
+      (
+        (
+          contains(github.event.pull_request.labels.*.name, 'run_integration_tests') && 
+          github.event.pull_request.state == 'open'
+        ) ||
+        (
+          github.event_name == 'push' &&
+          (github.ref_name == 'main' || github.ref_name == 'develop')
+        ) ||
+        (
+          github.event_name == 'release'
+        )
+      )
     steps:
       - uses: actions/checkout@v4
       - uses: psf/black@stable
@@ -101,6 +135,20 @@ jobs:
 
   build-container:
     needs: [test, lint]
+    if: >- 
+      (
+        (
+          contains(github.event.pull_request.labels.*.name, 'run_integration_tests') && 
+          github.event.pull_request.state == 'open'
+        ) ||
+        (
+          github.event_name == 'push' &&
+          (github.ref_name == 'main' || github.ref_name == 'develop')
+        ) ||
+        (
+          github.event_name == 'release'
+        )
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -147,9 +195,26 @@ jobs:
           cache-to: ${{ steps.registry_refs.outputs.tags }},mode=max
 
   integration-tests:
+    # Only runs for the following conditions: 
+    #  - if github label "run_integration_tests"
+    #  - for commits during when pull request is open OR when it's a push into main or develop branches
     needs: [determine-changes, lint, test, build-container]
     runs-on: ubuntu-latest
-    if: ${{ needs.determine-changes.outputs.non-test-changes }}
+    if: >- 
+      needs.determine-changes.outputs.non-test-changes &&
+      (
+        (
+          contains(github.event.pull_request.labels.*.name, 'run_integration_tests') && 
+          github.event.pull_request.state == 'open'
+        ) ||
+        (
+          github.event_name == 'push' &&
+          (github.ref_name == 'main' || github.ref_name == 'develop')
+        ) ||
+        (
+          github.event_name == 'release'
+        )
+      )
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
