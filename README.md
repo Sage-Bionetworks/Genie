@@ -3,7 +3,8 @@
 # AACR Project GENIE
 
 [![PyPi](https://img.shields.io/pypi/v/aacrgenie.svg?style=for-the-badge&label=PyPi&logo=PyPi)](https://pypi.org/project/aacrgenie)
-[![Docker Automated](https://img.shields.io/docker/automated/sagebionetworks/genie.svg?style=for-the-badge&logo=docker)](https://hub.docker.com/r/sagebionetworks/genie)
+[![Build & Push](https://github.com/sage-bionetworks/genie/actions/workflows/ci.yml/badge.svg?style=for-the-badge&logo=github)](https://github.com/sage-bionetworks/genie/actions/workflows/ci.yml)
+[![GHCR Docker Package](https://img.shields.io/badge/ghcr.io-sage--bionetworks%2Fgenie-blue?style=for-the-badge&logo=github)](https://github.com/orgs/sage-bionetworks/packages/container/package/genie)
 [![GitHub CI](https://img.shields.io/github/actions/workflow/status/Sage-Bionetworks/Genie/ci.yml?branch=develop&style=for-the-badge&logo=github)](https://github.com/Sage-Bionetworks/Genie)
 
 ## Introduction

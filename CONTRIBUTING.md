@@ -175,11 +175,8 @@ Follow this section when modifying the [Dockerfile](https://github.com/Sage-Bion
 1. ```docker run --rm -it -e SYNAPSE_AUTH_TOKEN=$YOUR_SYNAPSE_TOKEN <some_docker_image_name>```
 1. Run [test code](README.md#developing-locally) relevant to the dockerfile changes to make sure changes are present and working
 1. Once changes are tested, follow [genie contributing guidelines](#developing) for adding it to the repo
-1. Once deployed to main, make sure docker image was successfully deployed remotely (our docker image gets automatically deployed) [here](https://hub.docker.com/repository/docker/sagebionetworks/genie/builds)
-
-#### Dockerhub
-
-This repository does not use github actions to push docker images.  By adding the `sagebiodockerhub` github user as an Admin to this GitHub repository, we can configure an automated build in DockerHub.  You can view the builds [here](https://hub.docker.com/repository/docker/sagebionetworks/genie/builds).  To get admin access to the DockerHub repository, ask Sage IT to be added to the `genieadmin` DockerHub team.
+1. Once deployed to main, make sure the CI/CD build successfully completed (our docker image gets automatically deployed via Github Actions CI/CD) [here](https://github.com/Sage-Bionetworks/Genie/actions/workflows/ci.yml)
+1. Check that your docker image got successfully deployed [here](https://github.com/Sage-Bionetworks/Genie/pkgs/container/genie)
 
 ### Contributing to the docs
 
