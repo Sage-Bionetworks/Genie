@@ -5,7 +5,7 @@ from pandas.testing import assert_frame_equal
 import pytest
 import synapseclient
 from synapseclient.core.exceptions import SynapseTimeoutError
-
+from synapseclient.models import Table, SchemaStorageStrategy
 from genie import load, __version__, process_functions
 
 
@@ -199,73 +199,17 @@ def test_check_database_changes(to_delete, expected_to_delete_rows):
         )
 
 
-@pytest.mark.parametrize(
-    "allupdates,to_delete_rows,expected_results",
-    [
-        (
-            pd.DataFrame(
-                {
-                    "test": ["test", "test2"],
-                    "foo": [1, 3],
-                    "baz": ["", 5],
-                    "ROW_ID": ["1", "2"],
-                    "ROW_VERSION": ["3", "3"],
-                }
-            ),
-            pd.DataFrame({0: ["3"], 1: ["5"]}),
-            [
-                "ROW_ID,ROW_VERSION,test,foo,baz\n",
-                "1,3,test,1,\n2,3,test2,3,5\n",
-                "3,5\n",
-            ],
-        ),
-        (
-            pd.DataFrame(),
-            pd.DataFrame({0: ["3"], 1: ["5"]}),
-            ["ROW_ID,ROW_VERSION,test,foo,baz\n", "3,5\n"],
-        ),
-        (
-            pd.DataFrame(
-                {
-                    "test": ["test", "test2"],
-                    "foo": [1, 3],
-                    "baz": ["", 5],
-                    "ROW_ID": ["1", "2"],
-                    "ROW_VERSION": ["3", "3"],
-                }
-            ),
-            pd.DataFrame(),
-            ["ROW_ID,ROW_VERSION,test,foo,baz\n", "1,3,test,1,\n2,3,test2,3,5\n"],
-        ),
-        (pd.DataFrame(), pd.DataFrame(), ["ROW_ID,ROW_VERSION,test,foo,baz\n"]),
-    ],
-    ids=[
-        "non_empty dataframes",
-        "empty allupdates dataframe",
-        "empty to_delete_rows dataframe",
-        "empty dataframes",
-    ],
-)
-def test_store_database(syn, allupdates, to_delete_rows, expected_results):
-    """Test _update_table function with both new_dataset and database as non_empty dataframe"""
+def test_store_database(syn):
+    """Test store_database function"""
     database_synid = "syn123"
-    col_order = ["ROW_ID", "ROW_VERSION", "test", "foo", "baz"]
-    with patch("os.unlink") as mock_unlink, patch(
-        "tempfile.NamedTemporaryFile"
-    ) as mock_tempfile:
-        with patch("builtins.open", mock_open()) as mock_file_open:
-            # set the tempfile name
-            mock_tempfile.return_value.name = "test.csv"
-            load.store_database(
-                syn, database_synid, col_order, allupdates, to_delete_rows
-            )
-            mock_file_open.assert_called_once_with("test.csv", "w")
-            mock_file_handle = mock_file_open()
-            write_calls = mock_file_handle.write.call_args_list
-            results = [call_args[0][0] for call_args in write_calls]
-            assert results == expected_results
-            mock_unlink.assert_called_once_with("test.csv")
-
+    all_updates = pd.DataFrame({"test": ["test", "test2"], "foo": [1, 3], "baz": ["", 5]})
+    to_delete_rows = pd.DataFrame({0: ["3"], 1: ["5"]})
+    # get the table entity
+    with patch.object(syn, "get", return_value=Mock()) as patch_get, patch.object(Table, "store_rows") as patch_store_rows, patch.object(Table, "delete_rows") as patch_delete_rows:
+        load.store_database(syn, database_synid, all_updates, to_delete_rows)
+        patch_get.assert_called_once_with(database_synid)
+        patch_store_rows.assert_called_once_with(all_updates, to_csv_kwargs= {"float_format": "%.12g"}, schema_storage_strategy=SchemaStorageStrategy.INFER_FROM_DATA)
+        patch_delete_rows.assert_called_once_with(to_delete_rows)
 
 @pytest.mark.parametrize(
     "cols_subset, to_delete, subsetted_data",

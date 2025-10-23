@@ -557,8 +557,8 @@ def _create_update_rowsdf(updating_databasedf, updatesetdf, rowids, differentrow
     Create the update dataset dataframe
 
     Args:
-        updating_databasedf: Update database dataframe
-        updatesetdf:  Update dataset dataframe
+        updating_databasedf: Existing database dataframe with matched indices to database with updated values
+        updatesetdf:  dataframe with updated values with matched indices to database to be updated
         rowids: rowids of the database (Synapse ROW_ID, ROW_VERSION)
         differentrows: vector of booleans for rows that need to be updated
                        True for update, False for not

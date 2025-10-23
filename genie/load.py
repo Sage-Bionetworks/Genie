@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 import synapseutils as synu
 from synapseclient import Entity, File, Folder, Link, Project, Schema
+from synapseclient.models import Table, SchemaStorageStrategy
 
 
 # TODO Edit docstring
@@ -187,7 +188,6 @@ def _update_table(
     store_database(
         syn,
         database_synid,
-        changes["col_order"],
         changes["allupdates"],
         changes["to_delete_rows"],
     )
@@ -257,7 +257,7 @@ def check_database_changes(
     new_dataset: pd.DataFrame,
     primary_key_cols: List[str],
     to_delete: bool = False,
-) -> Dict[pd.DataFrame, List[str]]:
+    ) -> Dict[pd.DataFrame, List[str]]:
     """
     Check changes that need to be made, i.e. append/update/delete rows to the database
     based on its comparison with new data
@@ -299,7 +299,6 @@ def check_database_changes(
 def store_database(
     syn: synapseclient.Synapse,
     database_synid: str,
-    col_order: List[str],
     all_updates: pd.DataFrame,
     to_delete_rows: pd.DataFrame,
 ) -> None:
@@ -309,42 +308,19 @@ def store_database(
     Args:
         syn (synapseclient.Synapse): Synapse object
         database_synid (str): Synapse Id of the Synapse table
-        col_order (List[str]): The ordered column names to be saved
         all_updates (pd.DataFrame): rows to be appended and/or updated
         to_deleted_rows (pd.DataFrame): rows to be deleted
     """
-    storedatabase = False
-    update_all_file = tempfile.NamedTemporaryFile(
-        dir=process_functions.SCRIPT_DIR, delete=False
-    )
-    with open(update_all_file.name, "w") as updatefile:
-        # Must write out the headers in case there are no appends or updates
-        updatefile.write(",".join(col_order) + "\n")
-        if not all_updates.empty:
-            """
-            This is done because of pandas typing.
-            An integer column with one NA/blank value
-            will be cast as a double.
-            """
-            updatefile.write(
-                all_updates[col_order]
-                .to_csv(index=False, header=None)
-                .replace(".0,", ",")
-                .replace(".0\n", "\n")
-            )
-            storedatabase = True
-        if not to_delete_rows.empty:
-            updatefile.write(
-                to_delete_rows.to_csv(index=False, header=None)
-                .replace(".0,", ",")
-                .replace(".0\n", "\n")
-            )
-            storedatabase = True
-    if storedatabase:
-        syn.store(synapseclient.Table(database_synid, update_all_file.name))
-    # Delete the update file
-    os.unlink(update_all_file.name)
-
+    # get the table entity
+    table_key = syn.get(database_synid)
+    # upsert table with new and updated rows
+    if not all_updates.empty:
+        Table(id = database_synid).store_rows(all_updates, to_csv_kwargs= {"float_format": "%.12g"}, schema_storage_strategy=SchemaStorageStrategy.INFER_FROM_DATA)
+        logger.info(f"Upserting {len(all_updates)} rows from {table_key} table")
+    # delete rows from the database
+    if not to_delete_rows.empty:
+        Table(id = database_synid).delete_rows(to_delete_rows)
+        logger.info(f"Deleting {len(to_delete_rows)} rows from {table_key} table")
 
 def _copyRecursive(
     syn: synapseclient.Synapse,
