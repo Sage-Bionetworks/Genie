@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 import synapseutils as synu
 from synapseclient import Entity, File, Folder, Link, Project, Schema
-from synapseclient.models import Table, SchemaStorageStrategy
+from synapseclient.models import Table
 
 
 # TODO Edit docstring
