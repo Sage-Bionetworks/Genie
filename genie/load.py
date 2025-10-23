@@ -280,7 +280,7 @@ def check_database_changes(
     ori_data = _generate_primary_key(database, primary_key_cols, primary_key)
     new_data = _generate_primary_key(new_dataset, primary_key_cols, primary_key)
     # output dictionary
-    changes = {"col_order": col_order, "allupdates": None, "to_delete_rows": None}
+    changes = {"allupdates": None, "to_delete_rows": None}
     # get rows to be appened or updated
     allupdates = pd.DataFrame(columns=col_order)
     to_append_rows = process_functions._append_rows(new_data, ori_data, primary_key)
@@ -297,7 +297,7 @@ def check_database_changes(
 
 def store_database(
     syn: synapseclient.Synapse,
-    database_synid: str,
+    database_table_synid: str,
     all_updates: pd.DataFrame,
     to_delete_rows: pd.DataFrame,
 ) -> None:
@@ -306,20 +306,20 @@ def store_database(
 
     Args:
         syn (synapseclient.Synapse): Synapse object
-        database_synid (str): Synapse Id of the Synapse table
+        database_table_synid (str): Synapse Id of the Synapse table
         all_updates (pd.DataFrame): rows to be appended and/or updated
         to_deleted_rows (pd.DataFrame): rows to be deleted
     """
     # get the table entity
-    table_key = syn.get(database_synid)
+    table_entity = syn.get(database_table_synid)
     # upsert table with new and updated rows
     if not all_updates.empty:
-        Table(id = database_synid).store_rows(all_updates, to_csv_kwargs= {"float_format": "%.12g"}, schema_storage_strategy=SchemaStorageStrategy.INFER_FROM_DATA)
-        logger.info(f"Upserting {len(all_updates)} rows from {table_key.name} table")
+        Table(id = database_table_synid).store_rows(all_updates, to_csv_kwargs= {"float_format": "%.12g"})
+        logger.info(f"Upserting {len(all_updates)} rows from {table_entity.name} table")
     # delete rows from the database
     if not to_delete_rows.empty:
-        Table(id = database_synid).delete_rows(to_delete_rows)
-        logger.info(f"Deleting {len(to_delete_rows)} rows from {table_key.name} table")
+        Table(id = database_table_synid).delete_rows(to_delete_rows)
+        logger.info(f"Deleting {len(to_delete_rows)} rows from {table_entity.name} table")
 
 def _copyRecursive(
     syn: synapseclient.Synapse,
