@@ -1,5 +1,5 @@
 {
-    "image": "sagebionetworks/genie:latest",
+    "image": "ghcr.io/sage-bionetworks/genie:develop",
     "mounts": [
         "source=${localEnv:HOME}/.synapseConfig,target=/root/.synapseConfig,type=bind,consistency=cached"
     ]
