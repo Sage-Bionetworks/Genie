@@ -552,7 +552,12 @@ def _delete_rows(new_datasetdf, databasedf, checkby):
     return delete_rowid_version
 
 
-def _create_update_rowsdf(updating_databasedf: pd.DataFrame, updatesetdf: pd.DataFrame, rowids: pd.Series, differentrows: pd.Series) -> pd.DataFrame:
+def _create_update_rowsdf(
+    updating_databasedf: pd.DataFrame,
+    updatesetdf: pd.DataFrame,
+    rowids: pd.Series,
+    differentrows: pd.Series,
+) -> pd.DataFrame:
     """
     Create the update dataset dataframe
 
