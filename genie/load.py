@@ -257,7 +257,7 @@ def check_database_changes(
     new_dataset: pd.DataFrame,
     primary_key_cols: List[str],
     to_delete: bool = False,
-    ) -> Dict[pd.DataFrame, List[str]]:
+) -> Dict[pd.DataFrame, List[str]]:
     """
     Check changes that need to be made, i.e. append/update/delete rows to the database
     based on its comparison with new data
@@ -295,7 +295,6 @@ def check_database_changes(
     changes["to_delete_rows"] = to_delete_rows
     return changes
 
-
 def store_database(
     syn: synapseclient.Synapse,
     database_synid: str,
@@ -316,11 +315,11 @@ def store_database(
     # upsert table with new and updated rows
     if not all_updates.empty:
         Table(id = database_synid).store_rows(all_updates, to_csv_kwargs= {"float_format": "%.12g"}, schema_storage_strategy=SchemaStorageStrategy.INFER_FROM_DATA)
-        logger.info(f"Upserting {len(all_updates)} rows from {table_key} table")
+        logger.info(f"Upserting {len(all_updates)} rows from {table_key.name} table")
     # delete rows from the database
     if not to_delete_rows.empty:
         Table(id = database_synid).delete_rows(to_delete_rows)
-        logger.info(f"Deleting {len(to_delete_rows)} rows from {table_key} table")
+        logger.info(f"Deleting {len(to_delete_rows)} rows from {table_key.name} table")
 
 def _copyRecursive(
     syn: synapseclient.Synapse,
