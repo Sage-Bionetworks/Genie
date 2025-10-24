@@ -89,8 +89,8 @@ jobs:
             --parentid "$SYNAPSE_ENTITY_ID" \
             --versionComment "Automated Genome Nexus annotator build from commit $COMMIT_HASH"
 
-  check-truststore-update:
-    needs: update_truststore
+  check-annotator-build:
+    needs: build-annotator
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -103,7 +103,7 @@ jobs:
     - name: Start Docker Container
       run: |
         docker run -d --name genie-container \
-            -e SYNAPSE_AUTH_TOKEN="${{ secrets.SYNAPSE_AUTH_TOKEN }}" \
+            -e SYNAPSE_AUTH_TOKEN="${{ env.SYNAPSE_AUTH_TOKEN }}" \
             ${{ env.PROD_DOCKER }} \
             sh -c "while true; do sleep 1; done"
     
