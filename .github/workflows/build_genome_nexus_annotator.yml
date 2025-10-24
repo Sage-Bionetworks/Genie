@@ -1,10 +1,11 @@
 name: Build and Upload Genome Nexus Annotator
 
 on:
+  push:
   workflow_dispatch:
     inputs:
       commit_hash:
-        description: "Genome Nexus pipeline commit hash"
+        description: "Genome Nexus pipeline commit hash to use for version of annotator.jar"
         required: true
         default: "main"
 
@@ -13,21 +14,27 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      MAVEN_VERSION: 3.9.9
+      # versions for dependencies used in annotator.jar build
+      MAVEN_VERSION: '3.9.9'
+      COMMIT_HASH: ${{ github.event.inputs.commit_hash }}
+      JAVA_VERSION: "21"
+      JAVA_DISTRIBUTION: "corretto"
+      # synapse id of the annotator.jar
       SYNAPSE_ENTITY_ID: syn22084320
-      SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+      # env vars related to testing the annotator.jar
       PROD_DOCKER: ghcr.io/sage-bionetworks/genie:main
+      SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
       TEST_PROJECT_SYNID: syn7208886
 
     steps:
       - name: Checkout workflow repo
         uses: actions/checkout@v4
 
-      - name: Set up Java (Amazon Corretto 21)
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          java-version: "21"
-          distribution: "corretto"
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
 
       - name: Install Maven
         run: |
@@ -40,13 +47,13 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install synapseclient chardet
 
-      - name: Clone Genome Nexus Annotation Pipeline
+      - name: Clone Genome Nexus Annotation Pipeline and check out commit hash
         run: |
           git clone genome-nexus-annotation-pipeline
           cd genome-nexus-annotation-pipeline
           git checkout ${{ github.event.inputs.commit_hash }}
 
-      - name: Configure application.properties and log4j.properties
+      - name: Configure application.properties and log4j.properties to be genie specific
         run: |
           cd genome-nexus-annotation-pipeline
           CONFIG_PATH="annotationPipeline/src/main/resources"
@@ -69,21 +76,19 @@ jobs:
 
           echo "[INFO] Application and log configs written."
 
-      - name: Build annotator.jar
+      - name: Build annotator.jar (skips tests)
         run: |
           cd genome-nexus-annotation-pipeline
           mvn clean install -DskipTests
           find . -name annotator.jar
 
       - name: Upload annotator.jar to Synapse
-        env:
-          COMMIT_HASH: ${{ github.event.inputs.commit_hash }}
         run: |
           cd genome-nexus-annotation-pipeline
           FILE_PATH=$(find . -name annotator.jar | head -n 1)
           echo "Uploading $FILE_PATH to Synapse entity $SYNAPSE_ENTITY_ID..."
 
-          synapse login --authToken "$SYNAPSE_AUTH_TOKEN"
+          synapse login
           # Upload with version comment
           synapse store "$FILE_PATH" \
             --parentid "$SYNAPSE_ENTITY_ID" \
