@@ -541,7 +541,8 @@ def _delete_rows(new_datasetdf, databasedf, checkby):
     if not deletedf.empty:
         logger.info("Deleting Rows")
         delete_rowid_version = pd.DataFrame(
-            [[rowid.split("_")[0], rowid.split("_")[1]] for rowid in deletedf.index]
+            [[rowid.split("_")[0], rowid.split("_")[1]] for rowid in deletedf.index],
+            columns=["ROW_ID", "ROW_VERSION"],
         )
         delete_rowid_version.reset_index(drop=True, inplace=True)
     else:
