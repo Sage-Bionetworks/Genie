@@ -1,0 +1,119 @@
+name: Build and Upload Genome Nexus Annotator
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_hash:
+        description: "Genome Nexus pipeline commit hash"
+        required: true
+        default: "main"
+
+jobs:
+  build-annotator:
+    runs-on: ubuntu-latest
+
+    env:
+      MAVEN_VERSION: 3.9.9
+      SYNAPSE_ENTITY_ID: syn22084320
+      SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+      PROD_DOCKER: ghcr.io/sage-bionetworks/genie:main
+      TEST_PROJECT_SYNID: syn7208886
+
+    steps:
+      - name: Checkout workflow repo
+        uses: actions/checkout@v4
+
+      - name: Set up Java (Amazon Corretto 21)
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "corretto"
+
+      - name: Install Maven
+        run: |
+          wget https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.zip
+          unzip apache-maven-${MAVEN_VERSION}-bin.zip
+          echo "$PWD/apache-maven-${MAVEN_VERSION}/bin" >> $GITHUB_PATH
+
+      - name: Install Python & Synapse client
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install synapseclient chardet
+
+      - name: Clone Genome Nexus Annotation Pipeline
+        run: |
+          git clone genome-nexus-annotation-pipeline
+          cd genome-nexus-annotation-pipeline
+          git checkout ${{ github.event.inputs.commit_hash }}
+
+      - name: Configure application.properties and log4j.properties
+        run: |
+          cd genome-nexus-annotation-pipeline
+          CONFIG_PATH="annotationPipeline/src/main/resources"
+          mkdir -p $CONFIG_PATH
+
+          # Create or overwrite application.properties
+          cat <<EOF > ${CONFIG_PATH}/application.properties
+            spring.batch.job.enabled=false
+            spring.jmx.enabled=false
+            chunk=100
+            genomenexus.enrichment_fields=annotation_summary,sift,polyphen,my_variant_info
+            genomenexus.isoform_query_parameter=isoformOverrideSource
+            genomenexus.base=https://genie.genomenexus.org/
+            EOF
+
+          # Create or overwrite log4j.properties
+          cat <<EOF > ${CONFIG_PATH}/log4j.properties
+            log4j.appender.a.File=/tmp/genomenexus-logfile.log
+            EOF
+
+          echo "[INFO] Application and log configs written."
+
+      - name: Build annotator.jar
+        run: |
+          cd genome-nexus-annotation-pipeline
+          mvn clean install -DskipTests
+          find . -name annotator.jar
+
+      - name: Upload annotator.jar to Synapse
+        env:
+          COMMIT_HASH: ${{ github.event.inputs.commit_hash }}
+        run: |
+          cd genome-nexus-annotation-pipeline
+          FILE_PATH=$(find . -name annotator.jar | head -n 1)
+          echo "Uploading $FILE_PATH to Synapse entity $SYNAPSE_ENTITY_ID..."
+
+          synapse login --authToken "$SYNAPSE_AUTH_TOKEN"
+          # Upload with version comment
+          synapse store "$FILE_PATH" \
+            --parentid "$SYNAPSE_ENTITY_ID" \
+            --versionComment "Automated Genome Nexus annotator build from commit $COMMIT_HASH"
+
+  check-truststore-update:
+    needs: update_truststore
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Pull Public Docker Image from GHCR
+      run: |
+        docker pull ${{ env.PROD_DOCKER }}
+
+    - name: Start Docker Container
+      run: |
+        docker run -d --name genie-container \
+            -e SYNAPSE_AUTH_TOKEN="${{ secrets.SYNAPSE_AUTH_TOKEN }}" \
+            ${{ env.PROD_DOCKER }} \
+            sh -c "while true; do sleep 1; done"
+    
+    - name: Run processing on mutation data in test pipeline
+      run: |
+        docker exec genie-container \
+        python3 /root/Genie/bin/input_to_database.py mutation \
+            --project_id ${{ env.TEST_PROJECT_SYNID }} \
+            --genie_annotation_pkg /root/annotation-tools \
+            --createNewMafDatabase
+
+    - name: Stop and Remove Docker Container
+      run: docker stop genie-container && docker rm genie-container
