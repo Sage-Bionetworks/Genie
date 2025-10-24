@@ -49,7 +49,7 @@ jobs:
 
       - name: Clone Genome Nexus Annotation Pipeline and check out commit hash
         run: |
-          git clone genome-nexus-annotation-pipeline
+          git clone https://github.com/genome-nexus/genome-nexus-annotation-pipeline.git
           cd genome-nexus-annotation-pipeline
           git checkout ${{ github.event.inputs.commit_hash }}
 
