@@ -60,21 +60,18 @@ jobs:
 
           # Create or overwrite application.properties
           cat <<'EOF' > "${CONFIG_PATH}/application.properties"
-spring.batch.job.enabled=false
-spring.jmx.enabled=false
-chunk=100
-genomenexus.enrichment_fields=annotation_summary,sift,polyphen,my_variant_info
-genomenexus.isoform_query_parameter=isoformOverrideSource
-genomenexus.base=https://genie.genomenexus.org/
-EOF
+          spring.batch.job.enabled=false
+          spring.jmx.enabled=false
+          chunk=100
+          genomenexus.enrichment_fields=annotation_summary,sift,polyphen,my_variant_info
+          genomenexus.isoform_query_parameter=isoformOverrideSource
+          genomenexus.base=https://genie.genomenexus.org/
+          EOF
 
           # Create or overwrite log4j.properties
           cat <<'EOF' > "${CONFIG_PATH}/log4j.properties"
-log4j.appender.a.File=/tmp/genomenexus-logfile.log
-EOF
-
-          echo "[INFO] Application and log configs written."
-
+          log4j.appender.a.File=/tmp/genomenexus-logfile.log
+          EOF
 
           echo "[INFO] Application and log configs written."
 
