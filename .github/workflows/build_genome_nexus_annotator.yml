@@ -2,6 +2,8 @@ name: Build and Upload Genome Nexus Annotator
 
 on:
   push:
+    paths:
+      - '.github/workflows/build_genome_nexus_annotator.yml'
   workflow_dispatch:
     inputs:
       commit_hash:
