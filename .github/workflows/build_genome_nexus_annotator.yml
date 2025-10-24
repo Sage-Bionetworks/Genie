@@ -7,7 +7,7 @@ on:
       commit_hash:
         description: "Genome Nexus pipeline commit hash to use for version of annotator.jar"
         required: true
-        default: "main"
+        default: "2e67ebd08cf7c26bf1f55f2baf4b73ac36531119"
 
 jobs:
   build-annotator:
@@ -91,9 +91,7 @@ jobs:
           synapse login
           # Upload with version comment
           synapse store "$FILE_PATH" \
-            --parentid "$SYNAPSE_ENTITY_ID" \
-            --versionComment "Automated Genome Nexus annotator build from commit $COMMIT_HASH"
-
+            --parentid "$SYNAPSE_ENTITY_ID"
   check-annotator-build:
     needs: build-annotator
     runs-on: ubuntu-latest
