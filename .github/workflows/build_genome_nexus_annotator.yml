@@ -9,22 +9,21 @@ on:
         required: true
         default: "2e67ebd08cf7c26bf1f55f2baf4b73ac36531119"
 
+env:
+    # versions for dependencies used in annotator.jar build
+    MAVEN_VERSION: '3.9.9'
+    COMMIT_HASH: 2e67ebd08cf7c26bf1f55f2baf4b73ac36531119
+    JAVA_VERSION: "21"
+    JAVA_DISTRIBUTION: "corretto"
+    # synapse id of the Genome Nexus folder
+    OUTPUT_FOLDER_SYNAPSE_ID: syn22105656
+    # env vars related to testing the annotator.jar
+    PROD_DOCKER: ghcr.io/sage-bionetworks/genie:main
+    SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+    TEST_PROJECT_SYNID: syn7208886
 jobs:
   build-annotator:
     runs-on: ubuntu-latest
-
-    env:
-      # versions for dependencies used in annotator.jar build
-      MAVEN_VERSION: '3.9.9'
-      COMMIT_HASH: ${{ github.event.inputs.commit_hash }}
-      JAVA_VERSION: "21"
-      JAVA_DISTRIBUTION: "corretto"
-      # synapse id of the Genome Nexus folder
-      OUTPUT_FOLDER_SYNAPSE_ID: syn22105656
-      # env vars related to testing the annotator.jar
-      PROD_DOCKER: ghcr.io/sage-bionetworks/genie:main
-      SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
-      TEST_PROJECT_SYNID: syn7208886
 
     steps:
       - name: Checkout workflow repo
@@ -51,7 +50,7 @@ jobs:
         run: |
           git clone https://github.com/genome-nexus/genome-nexus-annotation-pipeline.git
           cd genome-nexus-annotation-pipeline
-          git checkout ${{ github.event.inputs.commit_hash }}
+          git checkout ${{ env.COMMIT_HASH }}
 
       - name: Configure application.properties and log4j.properties to be genie specific
         run: |
@@ -60,19 +59,22 @@ jobs:
           mkdir -p $CONFIG_PATH
 
           # Create or overwrite application.properties
-          cat <<EOF > ${CONFIG_PATH}/application.properties
-            spring.batch.job.enabled=false
-            spring.jmx.enabled=false
-            chunk=100
-            genomenexus.enrichment_fields=annotation_summary,sift,polyphen,my_variant_info
-            genomenexus.isoform_query_parameter=isoformOverrideSource
-            genomenexus.base=https://genie.genomenexus.org/
-            EOF
+          cat <<'EOF' > "${CONFIG_PATH}/application.properties"
+spring.batch.job.enabled=false
+spring.jmx.enabled=false
+chunk=100
+genomenexus.enrichment_fields=annotation_summary,sift,polyphen,my_variant_info
+genomenexus.isoform_query_parameter=isoformOverrideSource
+genomenexus.base=https://genie.genomenexus.org/
+EOF
 
           # Create or overwrite log4j.properties
-          cat <<EOF > ${CONFIG_PATH}/log4j.properties
-            log4j.appender.a.File=/tmp/genomenexus-logfile.log
-            EOF
+          cat <<'EOF' > "${CONFIG_PATH}/log4j.properties"
+log4j.appender.a.File=/tmp/genomenexus-logfile.log
+EOF
+
+          echo "[INFO] Application and log configs written."
+
 
           echo "[INFO] Application and log configs written."
 
