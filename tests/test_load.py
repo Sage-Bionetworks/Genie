@@ -221,9 +221,7 @@ def test_store_database_with_rows_to_update_and_delete(syn):
     ):
         load.store_database(syn, database_synid, all_updates, to_delete_rows)
         patch_get.assert_called_once_with(database_synid)
-        patch_store_rows.assert_called_once_with(
-            all_updates, to_csv_kwargs={"float_format": "%.12g"}
-        )
+        patch_store_rows.assert_called_once_with(all_updates)
         patch_delete_rows.assert_called_once_with(to_delete_rows)
         patch_info.assert_has_calls(
             [
@@ -255,9 +253,7 @@ def test_store_database_only_rows_to_update(syn):
     ):
         load.store_database(syn, database_synid, all_updates, to_delete_rows)
         patch_get.assert_called_once_with(database_synid)
-        patch_store_rows.assert_called_once_with(
-            all_updates, to_csv_kwargs={"float_format": "%.12g"}
-        )
+        patch_store_rows.assert_called_once_with(all_updates)
         patch_delete_rows.assert_not_called()
         patch_info.assert_called_once_with(
             f"Upserting {len(all_updates)} rows from {mock_database_ent.name} table"
