@@ -85,13 +85,24 @@ jobs:
       - name: Upload annotator.jar to Synapse
         run: |
           cd genome-nexus-annotation-pipeline
-          FILE_PATH=$(find . -name annotator.jar | head -n 1)
-          echo "Uploading $FILE_PATH to Synapse entity $SYNAPSE_ENTITY_ID..."
+          # Locate the built JAR dynamically
+          FILE_PATH=$(ls -t annotationPipeline/target/annotationPipeline-*.jar | head -n 1)
+
+          if [ ! -f "$FILE_PATH" ]; then
+            echo "Could not find annotationPipeline JAR under annotationPipeline/target/"
+            echo "Available .jar files:"
+            find annotationPipeline/target -type f -name "*.jar" || true
+            exit 1
+          fi
+
+          echo "Found JAR: $FILE_PATH"
+          echo "Uploading to Synapse entity $SYNAPSE_ENTITY_ID..."
 
           synapse login
-          # Upload with version comment
+
+          # Apload!
           synapse store "$FILE_PATH" \
-            --parentid "$SYNAPSE_ENTITY_ID"
+            --parentid "$SYNAPSE_ENTITY_ID" \
   check-annotator-build:
     needs: build-annotator
     runs-on: ubuntu-latest
