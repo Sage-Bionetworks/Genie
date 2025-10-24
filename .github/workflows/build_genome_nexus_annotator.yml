@@ -19,8 +19,8 @@ jobs:
       COMMIT_HASH: ${{ github.event.inputs.commit_hash }}
       JAVA_VERSION: "21"
       JAVA_DISTRIBUTION: "corretto"
-      # synapse id of the annotator.jar
-      SYNAPSE_ENTITY_ID: syn22084320
+      # synapse id of the Genome Nexus folder
+      OUTPUT_FOLDER_SYNAPSE_ID: syn22105656
       # env vars related to testing the annotator.jar
       PROD_DOCKER: ghcr.io/sage-bionetworks/genie:main
       SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
@@ -96,13 +96,20 @@ jobs:
           fi
 
           echo "Found JAR: $FILE_PATH"
-          echo "Uploading to Synapse entity $SYNAPSE_ENTITY_ID..."
+
+          # Rename to annotator.jar
+          TARGET_PATH="annotationPipeline/target/annotator.jar"
+          cp "$FILE_PATH" "$TARGET_PATH"
+
+          echo "Renamed to: $TARGET_PATH"
+          ls -lh "$TARGET_PATH"
+
+          echo "Uploading to Synapse entity ${{ env.OUTPUT_FOLDER_SYNAPSE_ID }}..."
 
           synapse login
 
-          # Apload!
-          synapse store "$FILE_PATH" \
-            --parentid "$SYNAPSE_ENTITY_ID" \
+          # Upload!
+          synapse store "$TARGET_PATH" --parentid ${{ env.OUTPUT_FOLDER_SYNAPSE_ID }}
   check-annotator-build:
     needs: build-annotator
     runs-on: ubuntu-latest
