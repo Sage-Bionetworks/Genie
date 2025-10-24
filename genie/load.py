@@ -315,9 +315,7 @@ def store_database(
     table_entity = syn.get(database_table_synid)
     # upsert table with new and updated rows
     if not all_updates.empty:
-        Table(id=database_table_synid).store_rows(
-            all_updates, to_csv_kwargs={"float_format": "%.12g"}
-        )
+        Table(id=database_table_synid).store_rows(all_updates)
         logger.info(f"Upserting {len(all_updates)} rows from {table_entity.name} table")
     # delete rows from the database
     if not to_delete_rows.empty:
