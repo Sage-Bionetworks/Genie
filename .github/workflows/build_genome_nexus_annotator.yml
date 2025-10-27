@@ -4,13 +4,6 @@ on:
   push:
     paths:
       - '.github/workflows/build_genome_nexus_annotator.yml'
-  workflow_dispatch:
-    inputs:
-      commit_hash:
-        description: "Genome Nexus pipeline commit hash to use for version of annotator.jar"
-        required: true
-        default: "2e67ebd08cf7c26bf1f55f2baf4b73ac36531119"
-
 env:
     # versions for dependencies used in annotator.jar build
     MAVEN_VERSION: '3.9.9'
