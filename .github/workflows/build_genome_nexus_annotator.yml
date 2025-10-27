@@ -14,7 +14,7 @@ on:
 env:
     # versions for dependencies used in annotator.jar build
     MAVEN_VERSION: '3.9.9'
-    COMMIT_HASH: 2e67ebd08cf7c26bf1f55f2baf4b73ac36531119
+    COMMIT_HASH: ${{ github.event.inputs.commit_hash || 'default_value' }}
     JAVA_VERSION: "21"
     JAVA_DISTRIBUTION: "corretto"
     # synapse id of the Genome Nexus folder
