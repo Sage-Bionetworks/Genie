@@ -4,14 +4,15 @@ on:
   push:
     paths:
       - '.github/workflows/build_genome_nexus_annotator.yml'
+
 env:
     # versions for dependencies used in annotator.jar build
     MAVEN_VERSION: '3.9.9'
     COMMIT_HASH: "2e67ebd08cf7c26bf1f55f2baf4b73ac36531119"
     JAVA_VERSION: "21"
     JAVA_DISTRIBUTION: "corretto"
-    # synapse id of the Genome Nexus folder
-    OUTPUT_FOLDER_SYNAPSE_ID: syn22105656
+    # synapse id of the Genome Nexus Testing folder
+    OUTPUT_FOLDER_SYNAPSE_ID: syn70781006
     # env vars related to testing the annotator.jar
     PROD_DOCKER: ghcr.io/sage-bionetworks/genie:main
     SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
@@ -47,28 +48,32 @@ jobs:
           cd genome-nexus-annotation-pipeline
           git checkout ${{ env.COMMIT_HASH }}
 
-      - name: Configure application.properties and log4j.properties to be genie specific
+      - name: Configure application.properties and log4j.properties to be GENIE-specific
         run: |
-          cd genome-nexus-annotation-pipeline
-          CONFIG_PATH="annotationPipeline/src/main/resources"
-          mkdir -p $CONFIG_PATH
+            cd genome-nexus-annotation-pipeline
+            CONFIG_PATH="annotationPipeline/src/main/resources"
+            mkdir -p "$CONFIG_PATH"
 
-          # Create or overwrite application.properties
-          cat <<'EOF' > "${CONFIG_PATH}/application.properties"
-          spring.batch.job.enabled=false
-          spring.jmx.enabled=false
-          chunk=100
-          genomenexus.enrichment_fields=annotation_summary,sift,polyphen,my_variant_info
-          genomenexus.isoform_query_parameter=isoformOverrideSource
-          genomenexus.base=https://genie.genomenexus.org/
-          EOF
+            # Copy example configs first
+            cp "${CONFIG_PATH}/application.properties.EXAMPLE" "${CONFIG_PATH}/application.properties"
+            cp "${CONFIG_PATH}/log4j.properties.EXAMPLE" "${CONFIG_PATH}/log4j.properties"
 
-          # Create or overwrite log4j.properties
-          cat <<'EOF' > "${CONFIG_PATH}/log4j.properties"
-          log4j.appender.a.File=/tmp/genomenexus-logfile.log
-          EOF
+            # Modify application.properties lines in place
+            sed -i \
+            -e 's|^spring.batch.job.enabled=.*|spring.batch.job.enabled=false|' \
+            -e 's|^spring.jmx.enabled=.*|spring.jmx.enabled=false|' \
+            -e 's|^chunk=.*|chunk=100|' \
+            -e 's|^genomenexus.enrichment_fields=.*|genomenexus.enrichment_fields=annotation_summary,sift,polyphen,my_variant_info|' \
+            -e 's|^genomenexus.isoform_query_parameter=.*|genomenexus.isoform_query_parameter=isoformOverrideSource|' \
+            -e 's|^genomenexus.base=.*|genomenexus.base=https://genie.genomenexus.org/|' \
+            "${CONFIG_PATH}/application.properties"
 
-          echo "[INFO] Application and log configs written."
+            # Modify log4j.properties line
+            sed -i \
+            -e 's|^log4j.appender.a.File.*|log4j.appender.a.File=/tmp/genomenexus-logfile.log|' \
+            "${CONFIG_PATH}/log4j.properties"
+
+            echo "[INFO] Application and log configs updated from EXAMPLE files."
 
       - name: Build annotator.jar (skips tests)
         run: |
@@ -76,7 +81,7 @@ jobs:
           mvn clean install -DskipTests
           find . -name annotator.jar
 
-      - name: Upload annotator.jar to Synapse
+      - name: Upload annotator.jar, application.properties and log4j.properties to Synapse
         run: |
           cd genome-nexus-annotation-pipeline
           # Locate the built JAR dynamically
@@ -102,8 +107,14 @@ jobs:
 
           synapse login
 
-          # Upload!
+          # Upload annotator.jar file!
           synapse store "$TARGET_PATH" --parentid ${{ env.OUTPUT_FOLDER_SYNAPSE_ID }}
+          
+          # Upload application and log4j files
+          CONFIG_PATH="annotationPipeline/src/main/resources"
+          synapse store "${CONFIG_PATH}/application.properties" --parentid ${{ env.OUTPUT_FOLDER_SYNAPSE_ID }}
+          synapse store "${CONFIG_PATH}/log4j.properties" --parentid ${{ env.OUTPUT_FOLDER_SYNAPSE_ID }}
+          
   check-annotator-build:
     needs: build-annotator
     runs-on: ubuntu-latest
