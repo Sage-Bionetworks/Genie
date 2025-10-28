@@ -104,9 +104,22 @@ Only triggers the `lint`, `tests`, `build-container`, `determine-changes` and `i
 
 ## automate_truststore.yml
 
-This workflow will update the Genome nexus truststor file on a schedule and then run the mutation processing AND consortium release steps of the pipeline to make sure the pipeline is workfing with the new truststore.
+This workflow will update the Genome nexus truststore file on a schedule and then run the mutation processing AND consortium release steps of the pipeline to make sure the pipeline is working with the new truststore.
 
 The truststore used in our pipeline to run the genome nexus annotator on MAF data.
 
 For more background on the truststore and troubleshooting, please see:
 [Updating Genome Nexus Annotator and Dependencies](https://sagebionetworks.jira.com/wiki/spaces/APGD/pages/3016687662/Updating+Genome+Nexus+Annotator+and+Dependencies#Updating-the-trust-ssl-file)
+
+
+## build_genome_nexus_annotator.yml
+
+This workflow will update and build the Genome Nexus `annotator.jar` file from a
+user inputted param: `commit_hash`. This `commit_hash` value comes from pulling from a specific commit in the [genome-nexus-annotation-pipeline](github.com/genome-nexus/genome-nexus-annotation-pipeline).
+
+This workflow runs **on demand** [through triggering the workflow via a pull request to either modify the commit hash or updating something else](https://github.com/Sage-Bionetworks/Genie/actions/workflows/build_genome_nexus_annotator.yml).
+
+After a successful build and upload to the [Genome Nexus Testing folder on synapse](https://www.synapse.org/Synapse:syn70781006), it will run the mutation processing step of the pipeline to annotate the test data. The manual part will be checking the annotated test data after this to make sure the results are expected.
+
+For more background on the `annotator.jar`, validating the annotated results after the build and troubleshooting, please see:
+[Updating Genome Nexus Annotator and Dependencies](https://sagebionetworks.jira.com/wiki/spaces/APGD/pages/3016687662/Updating+Genome+Nexus+Annotator+and+Dependencies#Updating-the-annotator.jar)
