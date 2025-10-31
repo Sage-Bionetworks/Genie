@@ -129,7 +129,6 @@ def test_that_update_samples_in_release_table_existing_column_calls_update_direc
         ) as mock_extract,
         mock.patch.object(dash_update.load, "_update_table") as mock_update,
     ):
-
         dash_update.update_samples_in_release_table(
             syn=mock_syn,
             file_mapping=file_mapping,
