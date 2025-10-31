@@ -320,10 +320,12 @@ def store_database(
             tmpfile = os.path.join(tmpdir, "all_updates.csv")
             all_updates.to_csv(tmpfile)
             Table(id=database_table_synid).store_rows(tmpfile)
-            logger.info(f"Upserting {len(all_updates)} rows from {table_entity.name} table")
+            logger.info(
+                f"Upserting {len(all_updates)} rows from {table_entity.name} table"
+            )
     # delete rows from the database
     if not to_delete_rows.empty:
-        Table(id=database_table_synid).delete_rows(df = to_delete_rows)
+        Table(id=database_table_synid).delete_rows(df=to_delete_rows)
         logger.info(
             f"Deleting {len(to_delete_rows)} rows from {table_entity.name} table"
         )

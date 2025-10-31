@@ -351,7 +351,7 @@ def test_delete__delete_rows():
     new_datadf = pd.DataFrame(
         {"UNIQUE_KEY": ["test1"], "test": ["test1"], "foo": [1], "baz": [float("nan")]}
     )
-    expecteddf = pd.DataFrame({"ROW_ID": ["2", "3"], "ROW_VERSION": ["3", "5"]})
+    expecteddf = pd.DataFrame({"ROW_ID": [2, 3], "ROW_VERSION": [3, 5]})
     delete_rows = process_functions._delete_rows(new_datadf, DATABASE_DF, "UNIQUE_KEY")
     assert delete_rows.equals(expecteddf)
 
