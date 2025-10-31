@@ -51,18 +51,26 @@ def get_center_data_completion(center, df):
 
 
 def update_samples_in_release_table(
-    syn, file_mapping, release, samples_in_release_synid
-):
+    syn: synapseclient.Synapse,
+    file_mapping: dict,
+    release: str,
+    samples_in_release_synid: str,
+) -> None:
     """
     Updates the sample in release table
     This tracks the samples of each release.  1 means it exists, and 0
-    means it doesn't
+    means it doesn't. For releases without a column in the sample
+    in release table, a new release column will be created for
+    that release.
+
+    New samples will be displayed on top of old samples (pre-existing samples
+    already in the sample in release table) in the release column.
 
     Args:
-        syn: synapse object
-        file_mapping: file mapping generated from file mapping function
-        release:  GENIE release number (ie. 5.3-consortium)
-        samples_in_release_synid: Synapse Id of 'samples in release' Table
+        syn (synapseclient.Synapse): synapse object
+        file_mapping (dict): file mapping generated from file mapping function
+        release (str):  GENIE release number (ie. 5.3-consortium)
+        samples_in_release_synid (str): Synapse Id of 'samples in release' Table
     """
     clinical_ent = syn.get(file_mapping["sample"], followLink=True)
     clinicaldf = pd.read_csv(clinical_ent.path, sep="\t", comment="#")
@@ -92,7 +100,7 @@ def update_samples_in_release_table(
     ]
 
     old_samples[release] = 1
-    samples_in_releasedf = new_samples.append(old_samples)
+    samples_in_releasedf = pd.concat([new_samples, old_samples])
     load._update_table(
         syn,
         samples_per_releasedf,
@@ -459,9 +467,9 @@ def update_sample_difference_table(syn, database_mappingdf):
         .applymap(int)
     )
 
-    diff_between_releasesdf[
-        ["Clinical", "Mutation", "CNV", "SEG", "Fusions"]
-    ] = new_values
+    diff_between_releasesdf[["Clinical", "Mutation", "CNV", "SEG", "Fusions"]] = (
+        new_values
+    )
 
     load._update_table(
         syn,
@@ -796,15 +804,22 @@ def print_clinical_values_difference_table(syn, database_mappingdf):
     )
 
 
-def run_dashboard(syn, database_mappingdf, release, staging=False, public=False):
+def run_dashboard(
+    syn: synapseclient.Synapse,
+    database_mappingdf: pd.DataFrame,
+    release: str,
+    staging: bool = False,
+    public: bool = False,
+) -> None:
     """
     Runs the dashboard scripts
 
     Args:
-        syn: synapse object
-        database_mappingdf: mapping between synapse ids and database
-        release: GENIE release (ie. 5.3-consortium)
-
+        syn (synapseclient.Synapse): synapse object
+        database_mappingdf (pd.DataFrame): mapping between synapse ids and database
+        release (str): GENIE release (ie. 5.3-consortium)
+        public (bool): whether to run for public release or not
+        staging (bool): whether to run in staging mode or not
     """
     update_release_numbers(syn, database_mappingdf, release=release)
 
