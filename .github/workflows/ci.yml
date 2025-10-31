@@ -173,6 +173,10 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # Override the tag source for PRs
+          tags: |
+            type=ref,event=branch
+            type=raw,value=${{ github.head_ref || github.ref_name }}
 
       - name: Format tags as registry refs
         id: registry_refs
@@ -184,7 +188,6 @@ jobs:
       - name: Build and push Docker image
         id: build-and-push
         uses: docker/build-push-action@v5
-        if: github.event_name != 'pull_request'
         with:
           context: .
           push: true
