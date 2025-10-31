@@ -315,7 +315,7 @@ def store_database(
     table_entity = syn.get(database_table_synid)
     # upsert table with new and updated rows
     if not all_updates.empty:
-        # TEST convert to csv to enforce float_format="%.12g" in store_rows
+        # TEST: convert to csv to enforce float_format="%.12g" in store_rows
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpfile = os.path.join(tmpdir, "all_updates.csv")
             all_updates.to_csv(tmpfile)
