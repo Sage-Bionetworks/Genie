@@ -315,8 +315,12 @@ def store_database(
     table_entity = syn.get(database_table_synid)
     # upsert table with new and updated rows
     if not all_updates.empty:
-        Table(id=database_table_synid).store_rows(all_updates)
-        logger.info(f"Upserting {len(all_updates)} rows from {table_entity.name} table")
+        # TEST convert to csv to enforce float_format="%.12g" in store_rows
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpfile = os.path.join(tmpdir, "all_updates.csv")
+            all_updates.to_csv(tmpfile)
+            Table(id=database_table_synid).store_rows(tmpfile)
+            logger.info(f"Upserting {len(all_updates)} rows from {table_entity.name} table")
     # delete rows from the database
     if not to_delete_rows.empty:
         Table(id=database_table_synid).delete_rows(df = to_delete_rows)
