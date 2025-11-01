@@ -351,7 +351,7 @@ def test_delete__delete_rows():
     new_datadf = pd.DataFrame(
         {"UNIQUE_KEY": ["test1"], "test": ["test1"], "foo": [1], "baz": [float("nan")]}
     )
-    expecteddf = pd.DataFrame({0: ["2", "3"], 1: ["3", "5"]})
+    expecteddf = pd.DataFrame({"ROW_ID": [2, 3], "ROW_VERSION": [3, 5]})
     delete_rows = process_functions._delete_rows(new_datadf, DATABASE_DF, "UNIQUE_KEY")
     assert delete_rows.equals(expecteddf)
 
@@ -439,20 +439,24 @@ def test_create_new_fileformat_table(syn):
     )
     update_return = Mock()
     move_entity_return = Mock()
-    with patch.object(
-        process_functions, "get_dbmapping", return_value=db_mapping_info
-    ) as patch_getdb, patch.object(
-        syn, "get", return_value=table_ent
-    ) as patch_syn_get, patch.object(
-        syn, "getTableColumns", return_value=["foo", "ddooo"]
-    ) as patch_get_table_cols, patch.object(
-        process_functions, "_create_schema", return_value=new_table_ent
-    ) as patch_create_schema, patch.object(
-        process_functions, "_update_database_mapping", return_value=update_return
-    ) as patch_update, patch.object(
-        process_functions, "_move_entity", return_value=move_entity_return
-    ) as patch_move, patch.object(
-        process_functions.time, "time", return_value=2
+    with (
+        patch.object(
+            process_functions, "get_dbmapping", return_value=db_mapping_info
+        ) as patch_getdb,
+        patch.object(syn, "get", return_value=table_ent) as patch_syn_get,
+        patch.object(
+            syn, "getTableColumns", return_value=["foo", "ddooo"]
+        ) as patch_get_table_cols,
+        patch.object(
+            process_functions, "_create_schema", return_value=new_table_ent
+        ) as patch_create_schema,
+        patch.object(
+            process_functions, "_update_database_mapping", return_value=update_return
+        ) as patch_update,
+        patch.object(
+            process_functions, "_move_entity", return_value=move_entity_return
+        ) as patch_move,
+        patch.object(process_functions.time, "time", return_value=2),
     ):
         new_table = process_functions.create_new_fileformat_table(
             syn, fileformat, new_table_name, project_id, archived_project_id

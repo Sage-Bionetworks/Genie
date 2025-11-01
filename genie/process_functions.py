@@ -541,7 +541,11 @@ def _delete_rows(new_datasetdf, databasedf, checkby):
     if not deletedf.empty:
         logger.info("Deleting Rows")
         delete_rowid_version = pd.DataFrame(
-            [[rowid.split("_")[0], rowid.split("_")[1]] for rowid in deletedf.index]
+            [
+                [int(rowid.split("_")[0]), int(rowid.split("_")[1])]
+                for rowid in deletedf.index
+            ],
+            columns=["ROW_ID", "ROW_VERSION"],
         )
         delete_rowid_version.reset_index(drop=True, inplace=True)
     else:
@@ -552,19 +556,23 @@ def _delete_rows(new_datasetdf, databasedf, checkby):
     return delete_rowid_version
 
 
-def _create_update_rowsdf(updating_databasedf, updatesetdf, rowids, differentrows):
+def _create_update_rowsdf(
+    updating_databasedf: pd.DataFrame,
+    updatesetdf: pd.DataFrame,
+    rowids: pd.Series,
+    differentrows: pd.Series,
+) -> pd.DataFrame:
     """
     Create the update dataset dataframe
 
     Args:
-        updating_databasedf: Update database dataframe
-        updatesetdf:  Update dataset dataframe
+        updating_databasedf: Subset of the existing dataset containing records whose checkby values also exist in the new dataset. Represents entries that are eligible for update or replacement based on the incoming dataset.
+        updatesetdf: Subset of the incoming dataset containing records whose checkby values also exist in the existing dataset. Represents entries that will be used for update or replacement for the existing dataset.
         rowids: rowids of the database (Synapse ROW_ID, ROW_VERSION)
-        differentrows: vector of booleans for rows that need to be updated
-                       True for update, False for not
+        differentrows: Vector of booleans indicating which rows in the updating_databasedf need to be updated. True for rows that need to be updated, False for rows that do not need to be updated.
 
     Returns:
-        dataframe: Update dataframe
+        dataframe: Subset of the updating_databasedf dataframe containing rows that need to be updated.
     """
     if sum(differentrows) > 0:
         updating_databasedf.loc[differentrows] = updatesetdf.loc[differentrows]
