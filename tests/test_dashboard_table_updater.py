@@ -155,3 +155,128 @@ def test_that_update_samples_in_release_table_existing_column_calls_update_direc
             samples_in_releasedf.reset_index(drop=True),
             pd.DataFrame({"SAMPLE_ID": ["S1", "S2"], "5.3-consortium": [1, 1]}),
         )
+
+
+def test_update_oncotree_code_tables_calls_update_with_expected_dataframes():
+    """Ensure both _update_table calls receive correctly formatted data."""
+    syn = mock.MagicMock()
+
+    db_map = pd.DataFrame(
+        {
+            "Database": ["oncotree", "oncotreeLink", "primaryCode"],
+            "Id": ["syn111", "syn222", "syn333"],
+        }
+    )
+
+    # clinicaldf returned from first extract.get_syntabledf
+    clinicaldf = pd.DataFrame(
+        {
+            "SAMPLE_ID": ["A1", "A2", "A3", "A4"],
+            "CENTER": ["DFCI", "DFCI", "MSK", "MSK"],
+            "ONCOTREE_CODE": ["BRCA", "LUNG", "LUNG", "SKIN"],
+        }
+    )
+
+    # Mock oncotree mapping from external URL
+    oncotree_mapping = {
+        "BRCA": {"ONCOTREE_PRIMARY_NODE": "BREAST"},
+        "LUNG": {"ONCOTREE_PRIMARY_NODE": "LUNG"},
+        "SKIN": {"ONCOTREE_PRIMARY_NODE": "SKIN"},
+    }
+
+    # mock entity returned by syn.get for oncotreeLinkSynId
+    oncotree_ent = mock.MagicMock()
+    oncotree_ent.externalURL = "http://mock-oncotree.org"
+
+    with (
+        mock.patch.object(dash_update.extract, "get_syntabledf") as mock_extract,
+        mock.patch.object(dash_update.load, "_update_table") as mock_update,
+        mock.patch.object(
+            dash_update.process_functions,
+            "get_oncotree_code_mappings",
+            return_value=oncotree_mapping,
+        ),
+        mock.patch.object(syn, "get", return_value=oncotree_ent),
+    ):
+        # Configure get_syntabledf to return clinicaldf first, then mock DB snapshots later
+        mock_extract.side_effect = [
+            clinicaldf,  # first call: select * from syn7517674
+            pd.DataFrame(
+                columns=["Oncotree_Code", "DFCI", "MSK", "Total"]
+            ),  # second: oncotree DB
+            pd.DataFrame(
+                columns=["Oncotree_Code", "DFCI", "MSK", "Total"]
+            ),  # third: primaryCode DB
+        ]
+
+        dash_update.update_oncotree_code_tables(syn, db_map)
+
+        # Two calls to load._update_table
+        assert mock_update.call_count == 2
+
+        # First call = oncotree_code_distributiondf update
+        args1, kwargs1 = mock_update.call_args_list[0]
+        (
+            passed_syn1,
+            existing_df1,
+            new_df1,
+            synid1,
+            key_cols1,
+        ) = args1
+
+        assert synid1 == "syn111"
+        assert key_cols1 == ["Oncotree_Code"]
+        assert passed_syn1 is syn
+
+        # expected oncotree_code_distributiondf
+        expected_df1 = pd.DataFrame(
+            {
+                "Oncotree_Code": ["BRCA", "LUNG", "SKIN"],
+                "DFCI": [1, 1, 0],
+                "MSK": [0, 1, 1],
+                "Total": [1, 2, 1],
+            }
+        ).set_index("Oncotree_Code")
+        expected_df1 = expected_df1.reset_index()  # match the original index format
+
+        # sort by Oncotree_Code to ensure deterministic order
+        assert_frame_equal(
+            new_df1.sort_values("Oncotree_Code").reset_index(drop=True),
+            expected_df1.sort_values("Oncotree_Code").reset_index(drop=True),
+            check_dtype=False,
+        )
+
+        # Second call = primary_code_distributiondf update
+        args2, kwargs2 = mock_update.call_args_list[1]
+        (
+            passed_syn2,
+            existing_df2,
+            new_df2,
+            synid2,
+            key_cols2,
+        ) = args2
+
+        assert synid2 == "syn333"
+        assert key_cols2 == ["Oncotree_Code"]
+        assert passed_syn2 is syn
+
+        # expected primary_code_distributiondf
+        expected_df2 = pd.DataFrame(
+            {
+                "Oncotree_Code": ["BREAST", "LUNG", "SKIN"],
+                "DFCI": [1, 1, 0],
+                "MSK": [0, 1, 1],
+                "Total": [1, 2, 1],
+            }
+        ).set_index("Oncotree_Code")
+        expected_df2 = expected_df2.reset_index()
+
+        assert_frame_equal(
+            new_df2.sort_values("Oncotree_Code").reset_index(drop=True),
+            expected_df2.sort_values("Oncotree_Code").reset_index(drop=True),
+            check_dtype=False,
+        )
+
+        # Verify _update_table was called with to_delete=True
+        for _, kwargs in mock_update.call_args_list:
+            assert kwargs["to_delete"] is True
