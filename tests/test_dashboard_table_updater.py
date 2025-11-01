@@ -231,19 +231,18 @@ def test_update_oncotree_code_tables_calls_update_with_expected_dataframes():
         # expected oncotree_code_distributiondf
         expected_df1 = pd.DataFrame(
             {
-                "Oncotree_Code": ["BRCA", "LUNG", "SKIN"],
                 "DFCI": [1, 1, 0],
                 "MSK": [0, 1, 1],
                 "Total": [1, 2, 1],
-            }
-        ).set_index("Oncotree_Code")
-        expected_df1 = expected_df1.reset_index()  # match the original index format
+                "Oncotree_Code": ["BRCA", "LUNG", "SKIN"],
+            },
+            index=["BRCA", "LUNG", "SKIN"],
+        )
 
         # sort by Oncotree_Code to ensure deterministic order
         assert_frame_equal(
-            new_df1.sort_values("Oncotree_Code").reset_index(drop=True),
-            expected_df1.sort_values("Oncotree_Code").reset_index(drop=True),
-            check_dtype=False,
+            new_df1,
+            expected_df1,
         )
 
         # Second call = primary_code_distributiondf update
@@ -263,18 +262,17 @@ def test_update_oncotree_code_tables_calls_update_with_expected_dataframes():
         # expected primary_code_distributiondf
         expected_df2 = pd.DataFrame(
             {
-                "Oncotree_Code": ["BREAST", "LUNG", "SKIN"],
                 "DFCI": [1, 1, 0],
                 "MSK": [0, 1, 1],
                 "Total": [1, 2, 1],
-            }
-        ).set_index("Oncotree_Code")
-        expected_df2 = expected_df2.reset_index()
+                "Oncotree_Code": ["BREAST", "LUNG", "SKIN"],
+            },
+            index=["BREAST", "LUNG", "SKIN"],
+        )
 
         assert_frame_equal(
-            new_df2.sort_values("Oncotree_Code").reset_index(drop=True),
-            expected_df2.sort_values("Oncotree_Code").reset_index(drop=True),
-            check_dtype=False,
+            new_df2,
+            expected_df2,
         )
 
         # Verify _update_table was called with to_delete=True
