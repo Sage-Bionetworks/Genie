@@ -312,8 +312,8 @@ def update_oncotree_code_tables(syn, database_mappingdf):
 
     # DISTRIBUTION OF ONCOTREE CODE TABLE UPDATE
     oncotree_code_distributiondf = pd.DataFrame(
-        columns=list(set(clinicaldf["CENTER"])),
-        index=list(set(clinicaldf["ONCOTREE_CODE"])),
+        columns=sorted(set(clinicaldf["CENTER"])),
+        index=sorted(set(clinicaldf["ONCOTREE_CODE"])),
     )
     for center in oncotree_code_distributiondf.columns:
         onc_counts = clinicaldf["ONCOTREE_CODE"][
@@ -366,8 +366,8 @@ def update_oncotree_code_tables(syn, database_mappingdf):
 
     # ### DISTRIBUTION OF PRIMARY ONCOTREE CODE TABLE UPDATE
     primary_code_distributiondf = pd.DataFrame(
-        columns=list(set(clinicaldf["CENTER"])),
-        index=list(set(clinicaldf["PRIMARY_CODES"])),
+        columns=sorted(set(clinicaldf["CENTER"])),
+        index=sorted(set(clinicaldf["PRIMARY_CODES"])),
     )
 
     for center in primary_code_distributiondf.columns:
