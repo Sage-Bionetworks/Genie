@@ -259,10 +259,10 @@ class vcf(FileTypeFormat):
             )
 
         # validate the values in the tumor and/or normal sample columns if present
-        if sample_id:
+        if process_functions.checkColExist(input_df, key = sample_id):
             if input_df[sample_id].isnull().values.any():
                 error += f"vcf: Must not have missing values in {sample_id} column.\n"
-        if normal_id:
+        if process_functions.checkColExist(input_df, key = normal_id):
             if input_df[normal_id].isnull().values.any():
                 error += f"vcf: Must not have missing values in {normal_id} column.\n"
         return error
