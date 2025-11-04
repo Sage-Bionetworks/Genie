@@ -133,9 +133,7 @@ class vcf(FileTypeFormat):
                 )
             if vcfdf["FORMAT"].isnull().values.any():
                 total_error += "vcf: Must not have missing values in FORMAT column.\n"
-        total_error += self.validate_tumor_and_normal_sample_columns_exist(
-            input_df=vcfdf
-        )
+        total_error += self.validate_tumor_and_normal_sample_columns(input_df=vcfdf)
         # Require that they report variants mapped to
         # either GRCh37 or hg19 without
         # the chr-prefix.
@@ -175,37 +173,33 @@ class vcf(FileTypeFormat):
         # and output with warnings or errors if the format is not adhered too
         return total_error, warning
 
-    def validate_tumor_and_normal_sample_columns_exist(
-        self, input_df: pd.DataFrame
-    ) -> str:
-        """Validates that the expected tumor sample column and optional normal
-            sample columns are present in the VCF depending on how many
-            columns you have present in the VCF and they have no missing values
+    def validate_tumor_and_normal_sample_columns(self, input_df: pd.DataFrame) -> str:
+        """
+        Validates that the expected tumor sample column and optional normal
+        sample columns are present in the VCF depending on how many
+        columns you have present in the VCF and they have no missing values
 
-            Rules:
-                - VCFs can only have a max of 11 columns including the 9 required columns
-                - For 11 columns VCFs, it is assumed this is a matched tumor normal vcf file
-                    which means there should be a tumor sample and normal sample
-                    column present
-                - For 10 column VCFs, it is assumed this is a single sample vcf file
-                    which means there should be a tumor sample column present
-                - Anything lower than 10 columns is INVALID because you must have at
-                least a tumor sample column on top of the 9 required VCF columns
+        Rules:
+            - VCFs can only have a max of 11 columns including the 9 required columns
+            - For 11 columns VCFs, it is assumed this is a matched tumor normal vcf file
+                which means there should be a tumor sample and normal sample
+                column present
+            - For 10 column VCFs, it is assumed this is a single sample vcf file
+                which means there should be a tumor sample column present
+            - Anything lower than 10 columns is INVALID because you must have at
+            least a tumor sample column on top of the 9 required VCF columns
+            - If tumor sample and/or normal sample columns are present, they must not have
+            any missing values.
 
-                - If tumor sample and normal sample columns are present, they must not have
-                any missing values.
+        Example: VCF with Matched Tumor Normal columns
+            | OTHER_VCF_COLUMNS | GENIE-GOLD-1-1-tumor | GENIE-GOLD-1-1-normal |
+            | ----------------- | -------------------- | --------------------- |
+            |        ...        |         ...          |          ...          |
 
-            Examples:
-
-            VCF with Matched Tumor Normal columns:
-            | GENIE-GOLD-1-1-tumor | GENIE-GOLD-1-1-normal |
-            | -------------------- | --------------------- |
-            |                      |                       |
-
-            VCF with Single Tumor VCF column:
-            | TUMOR |
-            | ----- |
-            |       |
+        Example: VCF with Single Tumor VCF column
+            | OTHER_VCF_COLUMNS | TUMOR |
+            | ----------------- | ----- |
+            |        ...        |  ...  |
 
         Args:
             input_df (pd.DataFrame): input vcf data to be validated

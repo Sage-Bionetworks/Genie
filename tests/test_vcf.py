@@ -198,6 +198,26 @@ def test_validation_invalid_two_samples_normal(vcf_class):
     assert warning == ""
 
 
+def test_validation_invalid_format_has_nas(vcf_class):
+    vcfDf = pd.DataFrame(
+        {
+            "#CHROM": ["2", "9", "12"],
+            "POS": [69688533, 99401860, 53701241],
+            "ID": ["AAK1", "AAED1", "AAAS"],
+            "REF": ["AANT", "AACG", "AAAN"],
+            "ALT": ["AAK1", "AAED1", "AAAS"],
+            "QUAL": ["AAK1", "AAED1", "AAAS"],
+            "FILTER": ["AAK1", "AAED1", "AAAS"],
+            "INFO": ["AAK1", "AAED1", "AAAS"],
+            "FORMAT": [None, "AAED1", "AAAS"],
+            "TUMOR": ["AAK1", "AAED1", "AAAS"],
+        }
+    )
+    error, warning = vcf_class._validate(vcfDf)
+    assert error == "vcf: Must not have missing values in FORMAT column.\n"
+    assert warning == ""
+
+
 def test_validation_invalid_white_space(vcf_class):
     vcfDf = pd.DataFrame(
         {
@@ -427,11 +447,11 @@ def test_that__get_dataframe_uses_correct_columns_to_replace(
                 "FILTER",
                 "INFO",
                 "FORMAT",
-                "GENIE-SAGE-1-1-normal",
                 "GENIE-SAGE-1-1-tumor",
+                "GENIE-SAGE-1-1-normal",
             ],
             [[1, 2, 3, 4, 5, 6, 7, 8, 9, "a", None]],
-            "vcf: Must not have missing values in GENIE-SAGE-1-1-tumor column.\n",
+            "vcf: Must not have missing values in GENIE-SAGE-1-1-normal column.\n",
         ),
         # Case 7: 11 columns, wrong normal/tumor naming
         (
@@ -480,13 +500,14 @@ def test_that__get_dataframe_uses_correct_columns_to_replace(
         "invalid_tumor_sample_name",
         "tumor_sample_col_has_nas",
         "valid_matched_tumor_normal",
+        "normal_sample_col_has_nas",
         "invalid_normal_sample_name",
         "more_than_11_cols",
     ],
 )
-def test_validate_tumor_and_normal_sample_columns_exist(
+def test_validate_tumor_and_normal_sample_columns(
     columns, data, expected_in_error, vcf_class
 ):
     df = pd.DataFrame(data, columns=columns)
-    result = vcf_class.validate_tumor_and_normal_sample_columns_exist(df)
+    result = vcf_class.validate_tumor_and_normal_sample_columns(df)
     assert expected_in_error == result
