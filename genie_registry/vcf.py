@@ -111,14 +111,14 @@ class vcf(FileTypeFormat):
             warning - warning messages
         """
         required_headers = pd.Series(
-            ["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"]
+            ["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT"]
         )
         total_error = ""
         warning = ""
         if not all(required_headers.isin(vcfdf.columns)):
             total_error += (
                 "vcf: Must have these headers: "
-                "CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO.\n"
+                "CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT.\n"
             )
         else:
             # No duplicated values
@@ -131,52 +131,11 @@ class vcf(FileTypeFormat):
                     "vcf: May contain rows that are "
                     "space delimited instead of tab delimited.\n"
                 )
-        # Vcf can only have max of 11 columns
-        if len(vcfdf.columns) > 11:
-            total_error += (
-                "vcf: Should not have more than 11 columns. Only "
-                "single sample or matched tumor normal vcf files are accepted.\n"
-            )
-        elif len(vcfdf.columns) > 8:
-            # If there are greater than 8 columns, there must be the FORMAT column
-            if "FORMAT" not in vcfdf.columns:
-                total_error += "vcf: Must have FORMAT header if sample columns exist.\n"
-            # If 11 columns, this is assumed to be a tumor normal vcf
-            if len(vcfdf.columns) == 11:
-                sample_id = vcfdf.columns[-2]
-                normal_id = vcfdf.columns[-1]
-                error = process_functions.validate_genie_identifier(
-                    identifiers=pd.Series([sample_id]),
-                    center=self.center,
-                    filename="vcf",
-                    col="tumor sample column",
-                )
-                total_error += error
-                error = process_functions.validate_genie_identifier(
-                    identifiers=pd.Series([normal_id]),
-                    center=self.center,
-                    filename="vcf",
-                    col="normal sample column",
-                )
-                total_error += error
-            else:
-                # Everything else above 8 columns that isn't 11 columns
-                # will be assumed to be a single sample vcf.
-                # if TUMOR is not the sample column header, then validate
-                # the sample column header.
-                if "TUMOR" not in vcfdf.columns:
-                    sample_id = vcfdf.columns[-1]
-                    error = process_functions.validate_genie_identifier(
-                        identifiers=pd.Series([sample_id]),
-                        center=self.center,
-                        filename="vcf",
-                        col="tumor sample column",
-                    )
-                    if error:
-                        error = error.replace("\n", "")
-                        error += " if vcf represents a single sample and TUMOR is not the sample column header.\n"
-                        total_error += error
-
+            if vcfdf["FORMAT"].isnull().values.any():
+                total_error += "vcf: Must not have missing values in FORMAT column.\n"
+        total_error += self.validate_tumor_and_normal_sample_columns_exist(
+            input_df=vcfdf
+        )
         # Require that they report variants mapped to
         # either GRCh37 or hg19 without
         # the chr-prefix.
@@ -215,3 +174,101 @@ class vcf(FileTypeFormat):
         # will parse a VCF in a detailed way,
         # and output with warnings or errors if the format is not adhered too
         return total_error, warning
+
+    def validate_tumor_and_normal_sample_columns_exist(
+        self, input_df: pd.DataFrame
+    ) -> str:
+        """Validates that the expected tumor sample column and optional normal
+            sample columns are present in the VCF depending on how many
+            columns you have present in the VCF and they have no missing values
+
+            Rules:
+                - VCFs can only have a max of 11 columns including the 9 required columns
+                - For 11 columns VCFs, it is assumed this is a matched tumor normal vcf file
+                    which means there should be a tumor sample and normal sample
+                    column present
+                - For 10 column VCFs, it is assumed this is a single sample vcf file
+                    which means there should be a tumor sample column present
+                - Anything lower than 10 columns is INVALID because you must have at
+                least a tumor sample column on top of the 9 required VCF columns
+
+                - If tumor sample and normal sample columns are present, they must not have
+                any missing values.
+
+            Examples:
+
+            VCF with Matched Tumor Normal columns:
+            | GENIE-GOLD-1-1-tumor | GENIE-GOLD-1-1-normal |
+            | -------------------- | --------------------- |
+            |                      |                       |
+
+            VCF with Single Tumor VCF column:
+            | TUMOR |
+            | ----- |
+            |       |
+
+        Args:
+            input_df (pd.DataFrame): input vcf data to be validated
+
+        Returns:
+            str: error message
+        """
+        error = ""
+        sample_id = None
+        normal_id = None
+        # vcf can only have max of 11 columns
+        if len(input_df.columns) > 11:
+            error = (
+                "vcf: Should not have more than 11 columns. Only "
+                "single sample or matched tumor normal vcf files are accepted.\n"
+            )
+        # If 11 columns, this is assumed to be a tumor normal vcf
+        # so it must have tumor sample and normal sample columns
+        elif len(input_df.columns) == 11:
+            sample_id = input_df.columns[-2]
+            normal_id = input_df.columns[-1]
+            error = process_functions.validate_genie_identifier(
+                identifiers=pd.Series([sample_id]),
+                center=self.center,
+                filename="vcf",
+                col="tumor sample column",
+            )
+            error += process_functions.validate_genie_identifier(
+                identifiers=pd.Series([normal_id]),
+                center=self.center,
+                filename="vcf",
+                col="normal sample column",
+            )
+        elif len(input_df.columns) == 10:
+            # If 10 columns, it will be assumed to be a single sample vcf.
+            # if TUMOR is not the sample column header, then validate
+            # the sample column header.
+            if "TUMOR" not in input_df.columns:
+                sample_id = input_df.columns[-1]
+                error = process_functions.validate_genie_identifier(
+                    identifiers=pd.Series([sample_id]),
+                    center=self.center,
+                    filename="vcf",
+                    col="tumor sample column",
+                )
+                if error:
+                    error = error.replace("\n", "")
+                    error += " if vcf represents a single sample and TUMOR is not the sample column header.\n"
+            else:
+                sample_id = "TUMOR"
+        else:
+            # Must have a column called TUMOR or sample column in the header
+            error = (
+                "vcf: Must have at least 10 columns. "
+                "If the vcf represents a single sample, then it's missing a tumor sample column. "
+                "If the vcf represents a matched tumor normal, then it's missing both normal sample and tumor sample columns.\n"
+            )
+
+        # validate the values in the tumor and/or normal sample columns if present
+        if sample_id:
+            if input_df[sample_id].isnull().values.any():
+                error += f"vcf: Must not have missing values in {sample_id} column.\n"
+        if normal_id:
+            if input_df[normal_id].isnull().values.any():
+                error += f"vcf: Must not have missing values in {normal_id} column.\n"
+        return error
