@@ -8,6 +8,7 @@ import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
 from genie import load, process_functions, validate
+from synapseclient.models import query
 
 LOGGER = logging.getLogger(__name__)
 
@@ -549,8 +550,8 @@ class bed(FileTypeFormat):
         beddf["Start_Position"] = beddf["Start_Position"].apply(int)
         beddf["End_Position"] = beddf["End_Position"].apply(int)
 
-        gene_position_table = self.syn.tableQuery("SELECT * FROM syn11806563")
-        gene_positiondf = gene_position_table.asDataFrame()
+        gene_position_table = query("SELECT * FROM syn11806563")
+        gene_positiondf = gene_position_table.convert_dtypes()
         beddf["ID"] = beddf["Hugo_Symbol"]
         # The apply function of a DataFrame is called twice on the first
         # row (known pandas behavior)
@@ -561,6 +562,7 @@ class bed(FileTypeFormat):
         final_bed = add_feature_type(temp_bed_path, exon_gtf_path, gene_gtf_path)
         final_bed["CENTER"] = self.center
         final_bed["Chromosome"] = final_bed["Chromosome"].astype(str)
+        import pdb; pdb.set_trace()
         if create_panel:
             self.create_gene_panel(final_bed, seq_assay_id, gene_panel_path, parentid)
         return final_bed
@@ -599,9 +601,11 @@ class bed(FileTypeFormat):
         Returns:
             str: Path to new bed file
         """
+        import pdb; pdb.set_trace()
         final_beddf = self._process(
             beddf=beddf, seq_assay_id=seq_assay_id, newpath=newPath, parentid=parentId
         )
+        import pdb; pdb.set_trace()
         load.update_table(
             syn=self.syn,
             databaseSynId=databaseSynId,
@@ -686,12 +690,13 @@ class bed(FileTypeFormat):
             total_error += error
 
             if to_validate_symbol:
-                gene_position_table = self.syn.tableQuery("SELECT * FROM syn11806563")
-                gene_positiondf = gene_position_table.asDataFrame()
+                gene_position_table = query("SELECT * FROM syn11806563")
+                gene_positiondf = gene_position_table.convert_dtypes()
                 # The apply function of a DataFrame is called twice on the first row (known
                 # pandas behavior)
+                import pdb; pdb.set_trace()
                 beddf = beddf.apply(lambda x: remap_symbols(x, gene_positiondf), axis=1)
-
+                import pdb; pdb.set_trace()
                 if any(beddf["Hugo_Symbol"].isnull()):
                     warning += (
                         "BED file: "

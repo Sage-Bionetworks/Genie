@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 import synapseutils as synu
 from synapseclient import Entity, File, Folder, Link, Project, Schema
-from synapseclient.models import Table
+from synapseclient.models import Table, query
 
 
 # TODO Edit docstring
@@ -148,10 +148,9 @@ def update_table(
         toDelete (bool, optional): Delete rows given the primary key. Defaults to False.
     """
     databaseEnt = syn.get(databaseSynId)
-    database = syn.tableQuery(
+    database = query(
         f"SELECT * FROM {databaseSynId} where {filterByColumn} ='{filterBy}'"
-    )
-    database = database.asDataFrame()
+    ).convert_dtypes()
     db_cols = set(database.columns)
     if col is not None:
         new_data_cols = set(col)
@@ -315,14 +314,10 @@ def store_database(
     table_entity = syn.get(database_table_synid)
     # upsert table with new and updated rows
     if not all_updates.empty:
-        # TEST: convert to csv to enforce float_format="%.12g" in store_rows
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmpfile = os.path.join(tmpdir, "all_updates.csv")
-            all_updates.to_csv(tmpfile)
-            Table(id=database_table_synid).store_rows(tmpfile)
-            logger.info(
-                f"Upserting {len(all_updates)} rows from {table_entity.name} table"
-            )
+        Table(id=database_table_synid).store_rows(values=all_updates)
+        logger.info(
+            f"Upserting {len(all_updates)} rows from {table_entity.name} table"
+        )
     # delete rows from the database
     if not to_delete_rows.empty:
         Table(id=database_table_synid).delete_rows(df=to_delete_rows)

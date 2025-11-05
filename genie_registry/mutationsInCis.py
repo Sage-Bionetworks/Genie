@@ -5,7 +5,7 @@ import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
 from genie import load, process_functions
-
+from synapseclient.models import query
 logger = logging.getLogger(__name__)
 
 # def updateMutationInCisData(syn, databaseSynId, newData, center, col, toDelete=False):
@@ -48,12 +48,12 @@ class mutationsInCis(FileTypeFormat):
     def _validate(self, mutationInCisDf):
         mutationInCisSynId = self.genie_config["mutationsInCis"]
         # Pull down the correct database
-        existingMergeCheck = self.syn.tableQuery(
+        existingMergeCheck = query(
             "select * from {} where Center = '{}'".format(
                 mutationInCisSynId, self.center
             )
         )
-        existingMergeCheckDf = existingMergeCheck.asDataFrame()
+        existingMergeCheckDf = existingMergeCheck.convert_dtypes()
 
         total_error = ""
         warning = ""
