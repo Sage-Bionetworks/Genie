@@ -8,6 +8,7 @@ import synapseclient
 from genie.example_filetype_format import FileTypeFormat
 from genie import process_functions
 from synapseclient.models import query
+
 logger = logging.getLogger(__name__)
 
 
