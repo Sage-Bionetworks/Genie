@@ -6,6 +6,7 @@ import pandas as pd
 from genie.example_filetype_format import FileTypeFormat
 from genie import load, process_functions
 from synapseclient.models import query
+
 logger = logging.getLogger(__name__)
 
 # def updateMutationInCisData(syn, databaseSynId, newData, center, col, toDelete=False):

@@ -14,6 +14,7 @@ from genie import extract, load, process_functions, validate
 from genie.database_to_staging import redact_phi
 from genie.example_filetype_format import FileTypeFormat
 from synapseclient.models import query
+
 logger = logging.getLogger(__name__)
 
 
