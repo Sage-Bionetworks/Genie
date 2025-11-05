@@ -151,7 +151,7 @@ def update_table(
     database = query(
         f"SELECT * FROM {databaseSynId} where {filterByColumn} ='{filterBy}'"
     ).convert_dtypes()
-    db_cols = set(database.columns)
+    db_cols = set(database.columns).drop(["ROW_ID", "ROW_VERSION"])
     if col is not None:
         new_data_cols = set(col)
         # Make sure columns from file exists in database columns
@@ -160,7 +160,7 @@ def update_table(
         # column that will exist in the database
         database = database[list(use_cols)]
     else:
-        newData = newData[database.columns]
+        newData = newData[db_cols]
     _update_table(
         syn=syn,
         database=database,
@@ -221,7 +221,7 @@ def _reorder_new_dataset(
         The re-ordered new dataset
     """
     # Columns must be in the same order as the original data
-    new_dataset = new_dataset[orig_database_cols]
+    new_dataset = new_dataset[orig_database_cols.drop(["ROW_ID", "ROW_VERSION"])]
     return new_dataset
 
 
@@ -315,9 +315,7 @@ def store_database(
     # upsert table with new and updated rows
     if not all_updates.empty:
         Table(id=database_table_synid).store_rows(values=all_updates)
-        logger.info(
-            f"Upserting {len(all_updates)} rows from {table_entity.name} table"
-        )
+        logger.info(f"Upserting {len(all_updates)} rows from {table_entity.name} table")
     # delete rows from the database
     if not to_delete_rows.empty:
         Table(id=database_table_synid).delete_rows(df=to_delete_rows)

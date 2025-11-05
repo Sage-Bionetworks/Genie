@@ -6,7 +6,7 @@ import logging
 import os
 import time
 from typing import Optional, Union
-
+import numpy as np
 import pandas as pd
 import requests
 import synapseclient
@@ -517,6 +517,9 @@ def _append_rows(new_datasetdf, databasedf, checkby):
         logger.info("No new rows")
     del appenddf[checkby]
     appenddf.reset_index(drop=True, inplace=True)
+    # update the ROW_ID and ROW_VERSION columns to be NaN since they are not in the original database
+    appenddf["ROW_ID"] = np.nan
+    appenddf["ROW_VERSION"] = np.nan
     return appenddf
 
 
@@ -540,13 +543,7 @@ def _delete_rows(new_datasetdf, databasedf, checkby):
     deletedf = _get_left_diff_df(databasedf, new_datasetdf, checkby)
     if not deletedf.empty:
         logger.info("Deleting Rows")
-        delete_rowid_version = pd.DataFrame(
-            [
-                [int(rowid.split("_")[0]), int(rowid.split("_")[1])]
-                for rowid in deletedf.index
-            ],
-            columns=["ROW_ID", "ROW_VERSION"],
-        )
+        delete_rowid_version = deletedf[["ROW_ID", "ROW_VERSION"]]
         delete_rowid_version.reset_index(drop=True, inplace=True)
     else:
         delete_rowid_version = pd.DataFrame()
@@ -559,7 +556,6 @@ def _delete_rows(new_datasetdf, databasedf, checkby):
 def _create_update_rowsdf(
     updating_databasedf: pd.DataFrame,
     updatesetdf: pd.DataFrame,
-    rowids: pd.Series,
     differentrows: pd.Series,
 ) -> pd.DataFrame:
     """
@@ -568,28 +564,21 @@ def _create_update_rowsdf(
     Args:
         updating_databasedf: Subset of the existing dataset containing records whose checkby values also exist in the new dataset. Represents entries that are eligible for update or replacement based on the incoming dataset.
         updatesetdf: Subset of the incoming dataset containing records whose checkby values also exist in the existing dataset. Represents entries that will be used for update or replacement for the existing dataset.
-        rowids: rowids of the database (Synapse ROW_ID, ROW_VERSION)
         differentrows: Vector of booleans indicating which rows in the updating_databasedf need to be updated. True for rows that need to be updated, False for rows that do not need to be updated.
 
     Returns:
         dataframe: Subset of the updating_databasedf dataframe containing rows that need to be updated.
     """
     if sum(differentrows) > 0:
-        updating_databasedf.loc[differentrows] = updatesetdf.loc[differentrows]
+        # Only update non-index columns
+        cols_to_update = updating_databasedf.columns.drop(["ROW_ID", "ROW_VERSION"])
+        updating_databasedf.loc[differentrows, cols_to_update] = updatesetdf.loc[
+            differentrows, cols_to_update
+        ]
         toupdatedf = updating_databasedf.loc[differentrows]
         logger.info("Updating rows")
-        rowid_version = pd.DataFrame(
-            [
-                [rowid.split("_")[0], rowid.split("_")[1]]
-                for rowid, row in zip(rowids, differentrows)
-                if row
-            ]
-        )
-        toupdatedf["ROW_ID"] = rowid_version[0].values
-        toupdatedf["ROW_VERSION"] = rowid_version[1].values
         toupdatedf.reset_index(drop=True, inplace=True)
     else:
-        toupdatedf = pd.DataFrame()
         logger.info("No updated rows")
     return toupdatedf
 
@@ -612,10 +601,6 @@ def _update_rows(new_datasetdf, databasedf, checkby):
     new_datasetdf.fillna("", inplace=True)
     updatesetdf = _get_left_union_df(new_datasetdf, databasedf, checkby)
     updating_databasedf = _get_left_union_df(databasedf, new_datasetdf, checkby)
-
-    # If you input the exact same dataframe theres nothing to update
-    # must save row version and ids for later
-    rowids = updating_databasedf.index.values
     # Set index values to be 'checkby' values
     updatesetdf.index = updatesetdf[checkby]
     updating_databasedf.index = updating_databasedf[checkby]
@@ -627,12 +612,13 @@ def _update_rows(new_datasetdf, databasedf, checkby):
     # Reorder dataset index
     updatesetdf = updatesetdf.loc[updating_databasedf.index]
     # Index comparison
-    differences = updatesetdf != updating_databasedf
+    # check row content differences only
+    differences = updatesetdf.drop(
+        columns=["ROW_ID", "ROW_VERSION"]
+    ) != updating_databasedf.drop(columns=["ROW_ID", "ROW_VERSION"])
     differentrows = differences.apply(sum, axis=1) > 0
 
-    toupdatedf = _create_update_rowsdf(
-        updating_databasedf, updatesetdf, rowids, differentrows
-    )
+    toupdatedf = _create_update_rowsdf(updating_databasedf, updatesetdf, differentrows)
 
     return toupdatedf
 
