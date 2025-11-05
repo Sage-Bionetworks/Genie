@@ -97,6 +97,8 @@ These are instructions on how you would develop and test the pipeline locally.
 1. Make sure you have read through the [GENIE Onboarding Docs](https://sagebionetworks.jira.com/wiki/spaces/APGD/pages/2163344270/Onboarding) and have access to all of the required repositories, resources and synapse projects for Main GENIE.
 1. Be sure you are invited to the Synapse GENIE Admin team.
 1. Make sure you are a Synapse certified user: [Certified User - Synapse User Account Types](https://help.synapse.org/docs/Synapse-User-Account-Types.2007072795.html#SynapseUserAccountTypes-CertifiedUser)
+1. Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile)
+1. Be sure to clone the annotation-tools repo: https://github.com/Sage-Bionetworks/annotation-tools and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile).
 1. Clone this repo and install the package locally.
 
     ```
@@ -131,7 +133,7 @@ These are instructions on how you would develop and test the pipeline locally.
         synapse login
         ```
 
-1. Run the different pipelines on the test project.  The `--project_id syn7208886` points to the test project.
+1. Run the different steps of the pipeline on the test project.  The `--project_id syn7208886` points to the test project. You should always be using the test project when developing, testing and running locally.
 
     1. Validate all the files **excluding vcf files**:
 
@@ -151,7 +153,7 @@ These are instructions on how you would develop and test the pipeline locally.
         python bin/input_to_database.py main --project_id syn7208886 --deleteOld
         ```
 
-    1. Process the mutation data.  Be sure to clone this repo: https://github.com/Sage-Bionetworks/annotation-tools and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile).  This repo houses the code that re-annotates the mutation data with genome nexus.  The `--createNewMafDatabase` will create a new mutation tables in the test project.  This flag is necessary for production data for two main reasons:
+    1. Process the mutation data. This command uses the `annotation-tools` repo that you cloned previously which houses the code that standardizes/merges the mutation (both maf and vcf) files and re-annotates the mutation data with genome nexus.  The `--createNewMafDatabase` will create a new mutation tables in the test project.  This flag is necessary for production data for two main reasons:
         * During processing of mutation data, the data is appended to the data, so without creating an empty table, there will be duplicated data uploaded.
         * By design, Synapse Tables were meant to be appended to.  When a Synapse Tables is updated, it takes time to index the table and return results. This can cause problems for the pipeline when trying to query the mutation table.  It is actually faster to create an entire new table than updating or deleting all rows and appending new rows when dealing with millions of rows.
         * If you run this more than once on the same day, you'll run into an issue with overwriting the narrow maf table as it already exists. Be sure to rename the current narrow maf database under `Tables` in the test synapse project and try again.
@@ -160,16 +162,16 @@ These are instructions on how you would develop and test the pipeline locally.
         python bin/input_to_database.py mutation --project_id syn7208886 --deleteOld --genie_annotation_pkg ../annotation-tools --createNewMafDatabase
         ```
 
-    1. Create a consortium release.  Be sure to add the `--test` parameter. Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile). For consistency, the processingDate specified here should match the one used for TEST pipeline in [nf-genie.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/main.nf)
+    1. Create a consortium release.  Be sure to add the `--test` parameter. For consistency, the `processingDate` specified here should match the one used in the `consortium_map` for the `TEST` key [nf-genie.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/main.nf)
 
         ```
-        python bin/database_to_staging.py Jul-2022 ../cbioportal TEST --test
+        python bin/database_to_staging.py <processingDate> ../cbioportal TEST --test
         ```
 
-    1. Create a public release.  Be sure to add the `--test` parameter.  Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile). For consistency, the processingDate specified here should match the one used for TEST pipeline in [nf-genie.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/main.nf)
+    1. Create a public release.  Be sure to add the `--test` parameter. For consistency, the `processingDate` specified here should match the one used in the `public_map` for the `TEST` key [nf-genie.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/main.nf)
 
         ```
-        python bin/consortium_to_public.py Jul-2022 ../cbioportal TEST --test
+        python bin/consortium_to_public.py <processingDate> ../cbioportal TEST --test
         ```
 
 ## Production
