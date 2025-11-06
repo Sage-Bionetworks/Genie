@@ -20,7 +20,7 @@ from genie import (
 )
 
 logger = logging.getLogger(__name__)
-
+from synapseclient.models import query
 
 DUPLICATED_FILE_ERROR = (
     "Duplicated filename! Files should be uploaded as new versions "
@@ -74,8 +74,8 @@ def check_existing_file_status(validation_status_table, error_tracker_table, ent
     statuses = []
     errors = []
 
-    validation_statusdf = validation_status_table.asDataFrame()
-    error_trackerdf = error_tracker_table.asDataFrame()
+    validation_statusdf = validation_status_table
+    error_trackerdf = error_tracker_table
     # This should be outside fo the forloop so that it doesn't
     # get reset
     to_validate = False
@@ -609,7 +609,9 @@ def update_status_and_error_tables(
     input_valid_statusdf,
     invalid_errorsdf,
     validation_status_table,
+    validation_status_table_synid,
     error_tracker_table,
+    error_tracker_table_synid,
 ):
     """
     Update validation status and error tracking table
@@ -620,25 +622,27 @@ def update_status_and_error_tables(
         input_valid_status: list of lists of validation status
         invalid_errors: List of lists of invalid errors
         validation_status_table: Synapse table query of validation status
+        validation_status_table_synid: Synapse table id of validation status
         error_tracker_table: Synapse table query of error tracker
+        error_tracker_table_synid: Synapse table id of error tracker
 
     """
     logger.info("UPDATE VALIDATION STATUS DATABASE")
 
     load._update_table(
         syn,
-        error_tracker_table.asDataFrame(),
+        error_tracker_table,
         invalid_errorsdf,
-        error_tracker_table.tableId,
+        error_tracker_table_synid,
         ["id"],
         to_delete=True,
     )
 
     load._update_table(
         syn,
-        validation_status_table.asDataFrame(),
+        validation_status_table,
         input_valid_statusdf,
-        validation_status_table.tableId,
+        validation_status_table_synid,
         ["id"],
         to_delete=True,
     )
@@ -740,15 +744,15 @@ def validation(
     # TODO: Add parameter to exclude types
     exclude_type = "vcf" if process != "mutation" else ""
     # id, md5, status, name, center, modifiedOn, fileType
-    validation_status_table = syn.tableQuery(
+    validation_status_table = query(
         f"SELECT * FROM {validation_status_synid} where "
         f"center = '{center}' and fileType <> '{exclude_type}'"
-    )
+    ).convert_dtypes()
     # id, center, errors, name, fileType
-    error_tracker_table = syn.tableQuery(
+    error_tracker_table = query(
         f"SELECT * FROM {error_tracker_synid} where "
         f"center = '{center}' and fileType <> '{exclude_type}'"
-    )
+    ).convert_dtypes()
 
     input_valid_statuses = []
     invalid_errors = []
@@ -814,7 +818,9 @@ def validation(
         input_valid_statusdf=validation_statusdf,
         invalid_errorsdf=error_trackingdf,
         validation_status_table=validation_status_table,
+        validation_status_table_synid=validation_status_synid,
         error_tracker_table=error_tracker_table,
+        error_tracker_table_synid=error_tracker_synid,
     )
     valid_filesdf = validation_statusdf.query('status == "VALIDATED"')
     return valid_filesdf[["id", "path", "fileType", "name"]]
