@@ -196,10 +196,15 @@ class vcf(FileTypeFormat):
             | ----------------- | -------------------- | --------------------- |
             |        ...        |         ...          |          ...          |
 
-        Example: VCF with Single Tumor VCF column
+        Example: VCFs with Single Sample Column
             | OTHER_VCF_COLUMNS | TUMOR |
             | ----------------- | ----- |
             |        ...        |  ...  |
+            
+            | OTHER_VCF_COLUMNS | GENIE-GOLD-1-1 |
+            | ----------------- | -------------- |
+            |        ...        |       ...      |
+
 
         Args:
             input_df (pd.DataFrame): input vcf data to be validated

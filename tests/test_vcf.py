@@ -27,26 +27,6 @@ def test__validate_filename(vcf_class):
     assert vcf_class.validateFilename(["GENIE-SAGE-ID1.vcf"]) == "vcf"
 
 
-def test_validation_valid_no_samples(vcf_class):
-    vcfDf = pd.DataFrame(
-        {
-            "#CHROM": ["2", "9", "12"],
-            "POS": [69688533, 99401860, 53701241],
-            "ID": ["AAK1", "AAED1", "AAAS"],
-            "REF": ["AANT", "AACG", "AAAN"],
-            "ALT": ["AAK1", "AAED1", "AAAS"],
-            "QUAL": ["AAK1", "AAED1", "AAAS"],
-            "FILTER": ["AAK1", "AAED1", "AAAS"],
-            "INFO": ["AAK1", "AAED1", "AAAS"],
-            "FORMAT": ["AAK1", "AAED1", "AAAS"],
-            "TUMOR": ["AAK1", "AAED1", "AAAS"],
-        }
-    )
-    error, warning = vcf_class._validate(vcfDf)
-    assert error == ""
-    assert warning == ""
-
-
 def test_validation_valid_one_sample_tumor(vcf_class):
     vcfDf = pd.DataFrame(
         {
