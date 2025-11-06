@@ -23,18 +23,6 @@ This package uses `flake8` - it's settings are described in [setup.cfg](setup.cf
 
 This will install all the dependencies of the package including the active branch of `Genie`.  We highly recommend that you leverage some form of python version management like [pyenv](https://github.com/pyenv/pyenv) or [anaconda](https://www.anaconda.com/products/individual). There are two ways you can install the dependencies for this package.
 
-#### pip
-This is the more traditional way of installing dependencies. Follow instructions [here](https://pip.pypa.io/en/stable/installation/) to learn how to install pip.
-
-```
-pip install -r requirements-dev.txt
-pip install -r requirements.txt
-```
-
-#### pipenv
-`pipenv` is a Python package manager.  Learn more about [pipenv](https://pipenv.pypa.io/en/latest/) and how to install it.
-
-
 ### Developing
 
 The GENIE project follows the standard [git flow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) development strategy.

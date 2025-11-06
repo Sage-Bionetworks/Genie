@@ -90,16 +90,73 @@ Please view [contributing guide](CONTRIBUTING.md) to learn how to contribute to 
 
 # Sage Bionetworks Only
 
-## Developing locally
+## Running locally
 
-These are instructions on how you would develop and test the pipeline locally.
+These are instructions on how you would setup your environment and run the pipeline locally.
 
 1. Make sure you have read through the [GENIE Onboarding Docs](https://sagebionetworks.jira.com/wiki/spaces/APGD/pages/2163344270/Onboarding) and have access to all of the required repositories, resources and synapse projects for Main GENIE.
 1. Be sure you are invited to the Synapse GENIE Admin team.
 1. Make sure you are a Synapse certified user: [Certified User - Synapse User Account Types](https://help.synapse.org/docs/Synapse-User-Account-Types.2007072795.html#SynapseUserAccountTypes-CertifiedUser)
 1. Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile)
 1. Be sure to clone the annotation-tools repo: https://github.com/Sage-Bionetworks/annotation-tools and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile).
+
+### Using `conda`
+
+Follow instructions to install conda on your computer:
+
+Install `conda-forge` and [`mamba`](https://github.com/mamba-org/mamba)
+```
+conda install -n base -c conda-forge mamba
+```
+
+Install Python and R versions via `mamba`
+```
+mamba create -n genie_dev -c conda-forge python=3.10 r-base=4.3  
+```
+
+### Using `pipenv`
+
+Installing via [pipenv](https://pipenv.pypa.io/en/latest/installation.html)
+
+1. Specify a python version that is supported by this repo:
+
+    ```
+    pipenv --python <python_version>
+    ```
+
+1. [pipenv install from requirements file](https://docs.pipenv.org/en/latest/advanced.html#importing-from-requirements-txt)
+
+1. Activate your `pipenv`:
+
+    ```
+    pipenv shell
+    ```
+
+### Using `docker` (**HIGHLY** Recommended)
+
+This is the most reproducible method even though it will be the most tedious to develop with. See [CONTRIBUTING docs for how to locally develop with docker.](/CONTRIBUTING.md). This will setup the docker image in your environment.
+
+1. Pull pre-existing docker image or build from Dockerfile:
+    Pull pre-existing docker image. You can find the list of images [from here.](https://github.com/Sage-Bionetworks/Genie/pkgs/container/genie)
+    ```
+    docker pull <some_docker_image_name>
+    ```
+
+    Build from Dockerfile
+    ```
+    docker build -f Dockerfile -t <some_docker_image_name> .
+    ```
+
+1. Run docker image:
+    ```
+    docker run --rm -it -e SYNAPSE_AUTH_TOKEN=$YOUR_SYNAPSE_TOKEN <some_docker_image_name>
+    ```
+
+### Setting up
+
 1. Clone this repo and install the package locally.
+
+    Install Python packages. This is the more traditional way of installing dependencies. Follow instructions [here](https://pip.pypa.io/en/stable/installation/) to learn how to install pip.
 
     ```
     pip install -e .
@@ -107,15 +164,10 @@ These are instructions on how you would develop and test the pipeline locally.
     pip install -r requirements-dev.txt
     ```
 
-    If you are having trouble with the above, try installing via [pipenv](https://pipenv.pypa.io/en/latest/installation.html)
-
-    1. Specify a python version that is supported by this repo:
-        ```pipenv --python <python_version>```
-
-    1. [pipenv install from requirements file](https://docs.pipenv.org/en/latest/advanced.html#importing-from-requirements-txt)
-
-    1. Activate your `pipenv`:
-        ```pipenv shell```
+    Install R packages. Note that the R package setup of this is the most unpredictable so it's likely you have to manually install specific packages first before the rest of it will install.
+    ```
+    Rscript R/install_packages.R
+    ```
 
 1. Configure the Synapse client to authenticate to Synapse.
     1. Create a Synapse [Personal Access token (PAT)](https://help.synapse.org/docs/Managing-Your-Account.2055405596.html#ManagingYourAccount-PersonalAccessTokens).
@@ -138,19 +190,19 @@ These are instructions on how you would develop and test the pipeline locally.
     1. Validate all the files **excluding vcf files**:
 
         ```
-        python bin/input_to_database.py main --project_id syn7208886 --onlyValidate
+        python3 bin/input_to_database.py main --project_id syn7208886 --onlyValidate
         ```
 
     1. Validate **all** the files:
 
         ```
-        python bin/input_to_database.py mutation --project_id syn7208886 --onlyValidate --genie_annotation_pkg ../annotation-tools
+        python3 bin/input_to_database.py mutation --project_id syn7208886 --onlyValidate --genie_annotation_pkg ../annotation-tools
         ```
 
     1. Process all the files aside from the mutation (maf, vcf) files.  The mutation processing was split because it takes at least 2 days to process all the production mutation data.  Ideally, there is a parameter to exclude or include file types to process/validate, but that is not implemented.
 
         ```
-        python bin/input_to_database.py main --project_id syn7208886 --deleteOld
+        python3 bin/input_to_database.py main --project_id syn7208886 --deleteOld
         ```
 
     1. Process the mutation data. This command uses the `annotation-tools` repo that you cloned previously which houses the code that standardizes/merges the mutation (both maf and vcf) files and re-annotates the mutation data with genome nexus.  The `--createNewMafDatabase` will create a new mutation tables in the test project.  This flag is necessary for production data for two main reasons:
@@ -159,19 +211,19 @@ These are instructions on how you would develop and test the pipeline locally.
         * If you run this more than once on the same day, you'll run into an issue with overwriting the narrow maf table as it already exists. Be sure to rename the current narrow maf database under `Tables` in the test synapse project and try again.
 
         ```
-        python bin/input_to_database.py mutation --project_id syn7208886 --deleteOld --genie_annotation_pkg ../annotation-tools --createNewMafDatabase
+        python3 bin/input_to_database.py mutation --project_id syn7208886 --deleteOld --genie_annotation_pkg ../annotation-tools --createNewMafDatabase
         ```
 
     1. Create a consortium release.  Be sure to add the `--test` parameter. For consistency, the `processingDate` specified here should match the one used in the `consortium_map` for the `TEST` key [nf-genie.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/main.nf)
 
         ```
-        python bin/database_to_staging.py <processingDate> ../cbioportal TEST --test
+        python3 bin/database_to_staging.py <processingDate> ../cbioportal TEST --test
         ```
 
     1. Create a public release.  Be sure to add the `--test` parameter. For consistency, the `processingDate` specified here should match the one used in the `public_map` for the `TEST` key [nf-genie.](https://github.com/Sage-Bionetworks-Workflows/nf-genie/blob/main/main.nf)
 
         ```
-        python bin/consortium_to_public.py <processingDate> ../cbioportal TEST --test
+        python3 bin/consortium_to_public.py <processingDate> ../cbioportal TEST --test
         ```
 
 ## Production
