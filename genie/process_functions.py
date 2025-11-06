@@ -579,6 +579,7 @@ def _create_update_rowsdf(
         logger.info("Updating rows")
         toupdatedf.reset_index(drop=True, inplace=True)
     else:
+        toupdatedf = pd.DataFrame()
         logger.info("No updated rows")
     return toupdatedf
 
@@ -613,11 +614,15 @@ def _update_rows(new_datasetdf, databasedf, checkby):
     updatesetdf = updatesetdf.loc[updating_databasedf.index]
     # Index comparison
     # check row content differences only
-    differences = updatesetdf.drop(
-        columns=["ROW_ID", "ROW_VERSION"]
-    ) != updating_databasedf.drop(columns=["ROW_ID", "ROW_VERSION"])
+    if "ROW_ID" in updatesetdf.columns and "ROW_VERSION" in updatesetdf.columns:
+        differences = updatesetdf.drop(
+            columns=["ROW_ID", "ROW_VERSION"]
+        ) != updating_databasedf.drop(columns=["ROW_ID", "ROW_VERSION"])
+    else:
+        differences = updatesetdf != updating_databasedf.drop(
+            columns=["ROW_ID", "ROW_VERSION"]
+        )
     differentrows = differences.apply(sum, axis=1) > 0
-
     toupdatedf = _create_update_rowsdf(updating_databasedf, updatesetdf, differentrows)
 
     return toupdatedf
