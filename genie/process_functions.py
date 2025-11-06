@@ -507,9 +507,6 @@ def _append_rows(new_datasetdf, databasedf, checkby):
     Return:
         Dataframe: Dataframe of rows to append
     """
-    databasedf.fillna("", inplace=True)
-    new_datasetdf.fillna("", inplace=True)
-
     appenddf = _get_left_diff_df(new_datasetdf, databasedf, checkby)
     if not appenddf.empty:
         logger.info("Adding Rows")
@@ -537,8 +534,6 @@ def _delete_rows(new_datasetdf, databasedf, checkby):
         Dataframe: Dataframe of rows to delete
     """
 
-    databasedf.fillna("", inplace=True)
-    new_datasetdf.fillna("", inplace=True)
     # If the new dataset is empty, delete everything in the database
     deletedf = _get_left_diff_df(databasedf, new_datasetdf, checkby)
     if not deletedf.empty:
@@ -598,8 +593,6 @@ def _update_rows(new_datasetdf, databasedf, checkby):
         Dataframe: Dataframe of rows to update
     """
     # initial_database = databasedf.copy()
-    databasedf.fillna("", inplace=True)
-    new_datasetdf.fillna("", inplace=True)
     updatesetdf = _get_left_union_df(new_datasetdf, databasedf, checkby)
     updating_databasedf = _get_left_union_df(databasedf, new_datasetdf, checkby)
     # Set index values to be 'checkby' values
