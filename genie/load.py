@@ -151,7 +151,7 @@ def update_table(
     database = query(
         f"SELECT * FROM {databaseSynId} where {filterByColumn} ='{filterBy}'"
     ).convert_dtypes()
-    db_cols = set(database.columns).drop(["ROW_ID", "ROW_VERSION"])
+    db_cols = set(database.columns.drop(["ROW_ID", "ROW_VERSION"]))
     if col is not None:
         new_data_cols = set(col)
         # Make sure columns from file exists in database columns
@@ -273,7 +273,7 @@ def check_database_changes(
     # get a list of column names of the original database
     orig_database_cols = database.columns
     # get the final column order
-    col_order = _get_col_order(orig_database_cols)
+    col_order = orig_database_cols.tolist()
     # reorder new_dataset
     new_dataset = _reorder_new_dataset(orig_database_cols, new_dataset)
     # set the primary_key name
