@@ -151,7 +151,7 @@ def update_table(
     database = query(
         f"SELECT * FROM {databaseSynId} where {filterByColumn} ='{filterBy}'"
     ).convert_dtypes()
-    db_cols = set(database.columns.drop(["ROW_ID", "ROW_VERSION"])).tolist()
+    db_cols = set(database.columns.drop(["ROW_ID", "ROW_VERSION"]))
     if col is not None:
         new_data_cols = set(col)
         # Make sure columns from file exists in database columns
@@ -160,7 +160,7 @@ def update_table(
         # column that will exist in the database
         database = database[list(use_cols)]
     else:
-        newData = newData[db_cols]
+        newData = newData[list(db_cols)]
     _update_table(
         syn=syn,
         database=database,
@@ -241,10 +241,10 @@ def _generate_primary_key(
     Returns:
         pd.DataFrame: The dataframe with primary_key column added
     """
-    # replace NAs with emtpy string
-    dataset = dataset.fillna("")
     # generate primary key column for original database
     dataset[primary_key_cols] = dataset[primary_key_cols].applymap(str)
+    # replace NAs with emtpy string
+    dataset[primary_key_cols] = dataset[primary_key_cols].fillna("")
     if dataset.empty:
         dataset[primary_key] = ""
     else:
