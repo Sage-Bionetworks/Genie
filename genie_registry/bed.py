@@ -513,7 +513,6 @@ class bed(FileTypeFormat):
         """
         seq_assay_id = seq_assay_id.upper()
         seq_assay_id = seq_assay_id.replace("_", "-")
-
         # Add in 6th column which is the clinicalReported
         if len(beddf.columns) > 5:
             if all(beddf[5].apply(lambda x: x in [True, False])):
@@ -549,7 +548,6 @@ class bed(FileTypeFormat):
         # Change all start and end to int
         beddf["Start_Position"] = beddf["Start_Position"].apply(int)
         beddf["End_Position"] = beddf["End_Position"].apply(int)
-
         gene_position_table = query("SELECT * FROM syn11806563")
         gene_positiondf = gene_position_table.convert_dtypes()
         beddf["ID"] = beddf["Hugo_Symbol"]
