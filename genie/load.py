@@ -241,15 +241,13 @@ def _generate_primary_key(
     Returns:
         pd.DataFrame: The dataframe with primary_key column added
     """
-    # generate primary key column for original database
-    dataset[primary_key_cols] = dataset[primary_key_cols].applymap(str)
-    # replace NAs with emtpy string
-    dataset[primary_key_cols] = dataset[primary_key_cols].fillna("")
     if dataset.empty:
         dataset[primary_key] = ""
     else:
+        # Convert to string and join, converting NaN values to empty strings
+        # When using apply(axis=1), x is a Series (row) - iterate over each value
         dataset[primary_key] = dataset[primary_key_cols].apply(
-            lambda x: " ".join(x), axis=1
+            lambda x: " ".join("" if pd.isna(v) else str(v) for v in x), axis=1
         )
     return dataset
 
