@@ -151,7 +151,7 @@ def update_table(
     database = query(
         f"SELECT * FROM {databaseSynId} where {filterByColumn} ='{filterBy}'"
     ).convert_dtypes()
-    db_cols = set(database.columns.drop(["ROW_ID", "ROW_VERSION"]))
+    db_cols = set(database.columns.drop(["ROW_ID", "ROW_VERSION"])).tolist()
     if col is not None:
         new_data_cols = set(col)
         # Make sure columns from file exists in database columns
