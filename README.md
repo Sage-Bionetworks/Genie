@@ -107,7 +107,7 @@ These are instructions on how you would develop and test the pipeline locally.
     pip install -r requirements-dev.txt
     ```
 
-    If you are having trouble with the above, try installing via `pipenv`
+    If you are having trouble with the above, try installing via [pipenv](https://pipenv.pypa.io/en/latest/installation.html)
 
     1. Specify a python version that is supported by this repo:
         ```pipenv --python <python_version>```

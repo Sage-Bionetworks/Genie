@@ -1,6 +1,9 @@
 {
-    "image": "ghcr.io/sage-bionetworks/genie:develop",
-    "mounts": [
-        "source=${localEnv:HOME}/.synapseConfig,target=/root/.synapseConfig,type=bind,consistency=cached"
-    ]
+  "name": "genie-dev",
+  "image": "ghcr.io/sage-bionetworks/genie:${localEnv:BRANCH_NAME}",
+  "mounts": [
+    "source=${localEnv:HOME}/.synapseConfig,target=/root/.synapseConfig,type=bind,consistency=cached"
+  ],
+  "runArgs": ["--env", "BRANCH_NAME=${localEnv:BRANCH_NAME}"],
+  "workspaceFolder": "/workspace"
 }
