@@ -221,7 +221,10 @@ def _reorder_new_dataset(
         The re-ordered new dataset
     """
     # Columns must be in the same order as the original data
-    new_dataset = new_dataset[orig_database_cols.drop(["ROW_ID", "ROW_VERSION"])]
+    if "ROW_ID" in orig_database_cols and "ROW_VERSION" in orig_database_cols:
+        new_dataset = new_dataset[orig_database_cols.drop(["ROW_ID", "ROW_VERSION"])]
+    else:
+        new_dataset = new_dataset[orig_database_cols]
     return new_dataset
 
 
