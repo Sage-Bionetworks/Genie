@@ -3,6 +3,22 @@
 
 We welcome all contributions!  Please head to [issues](https://github.com/Sage-Bionetworks/Genie/issues) to either file any bugs/feature requests or find a task you want to assist with.  Make sure to assign yourself the task if you decide to work on it.
 
+## Table of Contents
+
+- [Coding Style](#coding-style)
+- [The Development Life Cycle](#the-development-life-cycle)
+  - [Fork and clone this repository](#fork-and-clone-this-repository)
+  - [Install development dependencies](#install-development-dependencies)
+  - [Developing](#developing)
+  - [Testing](#testing)
+    - [Running tests](#running-tests)
+      - [Tests in Python](#tests-in-python)
+      - [Tests in R](#tests-in-r)
+    - [Test Development](#test-development)
+      - [Mock Testing](#mock-testing)
+  - [Release Procedure (For Package Maintainers)](#release-procedure-for-package-maintainers)
+  - [Contributing to the docs](#contributing-to-the-docs)
+
 ## Coding Style
 
 This package uses `flake8` - it's settings are described in [setup.cfg](setup.cfg).  The code in this package is also automatically formatted by `black` for consistency.
@@ -26,7 +42,6 @@ This package uses `flake8` - it's settings are described in [setup.cfg](setup.cf
 This will install all the dependencies of the package including the active branch of `Genie`.  We highly recommend that you leverage some form of python version management like [pyenv](https://github.com/pyenv/pyenv) or [anaconda](https://www.anaconda.com/products/individual). Follow [dependencies installation instruction here](./README.md#running-locally)
 
 ### Developing
-
 
 The GENIE project follows the standard [git flow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) development strategy.
 > To ensure the most fluid development, try not to push to your `develop` or `main` branch.
@@ -78,46 +93,8 @@ The GENIE project follows the standard [git flow](https://www.atlassian.com/git/
 
 This package uses [semantic versioning](https://semver.org/) for releasing new versions. The version should be updated on the `develop` branch as changes are reviewed and merged in by a code maintainer. The version for the package is maintained in the [genie/__init__.py](genie/__init__.py) file.  A github release should also occur every time `develop` is pushed into `main` and it should match the version for the package.
 
-### Developing with Docker
-
-See [using `docker`](./README.md#using-docker-highly-recommended) for setting up the initial docker environment.
-
-A docker build will be created for your feature branch every time you have an open PR on github and add the label `run_integration_tests` to it.
-
-It is recommended to develop with docker. You can either write the code changes locally, push it to your remote and wait for docker to rebuild OR do the following:
-
-1. Make any code changes. These cannot be dependency changes - those would require a docker rebuild.
-1. Create a running docker container with the image that you pulled down or created earlier
-
-    ```
-    docker run -d <docker_image_name> /bin/bash -c "while true; do sleep 1; done"
-    ```
-
-1. Copy your code changes to the docker image:
-
-    ```
-    docker cp <folder or name of file> <docker_image_name>:/root/Genie/<folder or name of files>
-    ```
-
-1. Run your image in interactive mode:
-
-    ```
-    docker exec -it -e SYNAPSE_AUTH_TOKEN=$YOUR_SYNAPSE_TOKEN <docker_image_name> /bin/bash
-    ```
-
-1. Do any commands or tests you need to do
 
 ### Testing
-
-#### Running test pipeline
-
-Currently our Github Actions will run each of the [pipeline steps here](README.md#developing-locally) on the test pipeline. This is triggered by adding the Github label `run_integration_tests` on your open PR.
-
-To trigger `run_integration_tests`:
-
-- Add  `run_integration_tests` for the first time when you just open your PR
-- Remove `run_integration_tests` label and re-add it
-- Make any commit and pushes when the PR is still open
 
 #### Running tests
 
@@ -130,8 +107,6 @@ Here's how to run the test suite:
 ```shell
 pytest -vs tests/
 ```
-
-Tests in Python are also run automatically by Github Actions on any pull request and are required to pass before merging.
 
 ##### Tests in R
 
@@ -186,18 +161,6 @@ Follow gitflow best practices as linked above.
 11. Prior to pushing changes into `develop`, reset any [annotations on the test project](https://www.synapse.org/Synapse:syn11601248/tables/)/[rename maf database table](https://www.synapse.org/Synapse:syn7208886/tables/) as integration tests will run.
 12. Push changes in `develop`.
 13. Wait for the CI/CD to finish.
-
-### Modifying Docker
-
-Follow this section when modifying the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile):
-
-1. Have your synapse authentication token handy
-1. ```docker build -f Dockerfile -t <some_docker_image_name> .```
-1. ```docker run --rm -it -e SYNAPSE_AUTH_TOKEN=$YOUR_SYNAPSE_TOKEN <some_docker_image_name>```
-1. Run [test code](README.md#developing-locally) relevant to the dockerfile changes to make sure changes are present and working
-1. Once changes are tested, follow [genie contributing guidelines](#developing) for adding it to the repo
-1. Once deployed to main, make sure the CI/CD build successfully completed (our docker image gets automatically deployed via Github Actions CI/CD) [here](https://github.com/Sage-Bionetworks/Genie/actions/workflows/ci.yml)
-1. Check that your docker image got successfully deployed [here](https://github.com/Sage-Bionetworks/Genie/pkgs/container/genie)
 
 ### Contributing to the docs
 
