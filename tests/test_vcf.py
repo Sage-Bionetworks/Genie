@@ -27,24 +27,6 @@ def test__validate_filename(vcf_class):
     assert vcf_class.validateFilename(["GENIE-SAGE-ID1.vcf"]) == "vcf"
 
 
-def test_validation_valid_no_samples(vcf_class):
-    vcfDf = pd.DataFrame(
-        {
-            "#CHROM": ["2", "9", "12"],
-            "POS": [69688533, 99401860, 53701241],
-            "ID": ["AAK1", "AAED1", "AAAS"],
-            "REF": ["AANT", "AACG", "AAAN"],
-            "ALT": ["AAK1", "AAED1", "AAAS"],
-            "QUAL": ["AAK1", "AAED1", "AAAS"],
-            "FILTER": ["AAK1", "AAED1", "AAAS"],
-            "INFO": ["AAK1", "AAED1", "AAAS"],
-        }
-    )
-    error, warning = vcf_class._validate(vcfDf)
-    assert error == ""
-    assert warning == ""
-
-
 def test_validation_valid_one_sample_tumor(vcf_class):
     vcfDf = pd.DataFrame(
         {
@@ -101,7 +83,12 @@ def test_validation_missing_format_col(vcf_class):
         }
     )
     error, warning = vcf_class._validate(vcfDf)
-    assert error == "vcf: Must have FORMAT header if sample columns exist.\n"
+    assert error == (
+        "vcf: Must have these headers: CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT.\n"
+        "vcf: Must have at least 10 columns. "
+        "If the vcf represents a single sample, then it's missing a tumor sample column. "
+        "If the vcf represents a matched tumor normal, then it's missing both normal sample and tumor sample columns.\n"
+    )
     assert warning == ""
 
 
@@ -191,10 +178,30 @@ def test_validation_invalid_two_samples_normal(vcf_class):
     assert warning == ""
 
 
+def test_validation_invalid_format_has_nas(vcf_class):
+    vcfDf = pd.DataFrame(
+        {
+            "#CHROM": ["2", "9", "12"],
+            "POS": [69688533, 99401860, 53701241],
+            "ID": ["AAK1", "AAED1", "AAAS"],
+            "REF": ["AANT", "AACG", "AAAN"],
+            "ALT": ["AAK1", "AAED1", "AAAS"],
+            "QUAL": ["AAK1", "AAED1", "AAAS"],
+            "FILTER": ["AAK1", "AAED1", "AAAS"],
+            "INFO": ["AAK1", "AAED1", "AAAS"],
+            "FORMAT": [None, "AAED1", "AAAS"],
+            "TUMOR": ["AAK1", "AAED1", "AAAS"],
+        }
+    )
+    error, warning = vcf_class._validate(vcfDf)
+    assert error == "vcf: Must not have missing values in FORMAT column.\n"
+    assert warning == ""
+
+
 def test_validation_invalid_white_space(vcf_class):
     vcfDf = pd.DataFrame(
         {
-            "#CHROMM": ["2", "9", "12"],
+            "#CHROM": ["2", "9", "12"],
             "POS": [69688533, 99401860, 53701241],
             "ID": ["AAK1", "AAED1", "AAAS"],
             "REF": ["AANT", "AACG", "AAAN"],
@@ -202,13 +209,12 @@ def test_validation_invalid_white_space(vcf_class):
             "QUAL": ["AAK1", "AAED1", "AAAS"],
             "FILTER": ["AAK1", "AA ED1", "AAAS"],
             "INFO": ["AAK1", "AAED1", "AAAS"],
+            "FORMAT": ["AG", "AG", "AG"],
+            "GENIE-SAGE-1-1": ["AG", "AG", "AG"],
         }
     )
     error, warning = vcf_class._validate(vcfDf)
-    expectedError = (
-        "vcf: Must have these headers: CHROM, POS, ID, REF, "
-        "ALT, QUAL, FILTER, INFO.\n"
-    )
+    expectedError = ""
     expectedWarning = "vcf: Should not have any white spaces in any of the columns.\n"
     assert error == expectedError
     assert warning == expectedWarning
@@ -226,6 +232,8 @@ def test_validation_invalid_content(vcf_class):
             "QUAL": ["AAK1", "AAED1", "AAAS", "AAK1"],
             "FILTER": ["AAK1", "AAED1", "AAAS", "AAK1"],
             "INFO": ["AAK1", "AAED1", "AAAS", "AAK1"],
+            "FORMAT": ["AG", "AG", "AG", "AG"],
+            "GENIE-SAGE-1-1": ["AG", "AG", "AG", "AG"],
         }
     )
     error, warning = vcf_class._validate(vcfDf)
@@ -250,7 +258,7 @@ def test_validation_more_than_11_cols(vcf_class):
     larger_df = pd.DataFrame(columns=list(range(0, 12)))
     error, warning = vcf_class._validate(larger_df)
     assert error == (
-        "vcf: Must have these headers: CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO.\n"
+        "vcf: Must have these headers: CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT.\n"
         "vcf: Should not have more than 11 columns. "
         "Only single sample or matched tumor normal vcf files are accepted.\n"
     )
@@ -325,3 +333,161 @@ def test_that__get_dataframe_uses_correct_columns_to_replace(
             values_to_replace=["NA", "nan", "NaN"],
             columns_to_convert=expected_columns,
         )
+
+
+@pytest.mark.parametrize(
+    "columns, data, expected_in_error",
+    [
+        # Case 1: only 9 columns — invalid
+        (
+            ["#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT"],
+            [[1, 2, 3, 4, 5, 6, 7, 8, 9]],
+            "vcf: Must have at least 10 columns. "
+            "If the vcf represents a single sample, then it's missing a tumor sample column. "
+            "If the vcf represents a matched tumor normal, then it's missing both normal sample and tumor sample columns.\n",
+        ),
+        # Case 2: 10 columns, last is TUMOR — valid (no error)
+        (
+            [
+                "#CHROM",
+                "POS",
+                "ID",
+                "REF",
+                "ALT",
+                "QUAL",
+                "FILTER",
+                "INFO",
+                "FORMAT",
+                "TUMOR",
+            ],
+            [[1, 2, 3, 4, 5, 6, 7, 8, 9, "X"]],
+            "",
+        ),
+        # Case 3: 10 columns, non-TUMOR sample name — should call validate_genie_identifier
+        (
+            [
+                "#CHROM",
+                "POS",
+                "ID",
+                "REF",
+                "ALT",
+                "QUAL",
+                "FILTER",
+                "INFO",
+                "FORMAT",
+                "GENIE-TEST-1-1",
+            ],
+            [[1, 2, 3, 4, 5, 6, 7, 8, 9, "X"]],
+            "vcf: tumor sample column must start with GENIE-SAGE if vcf represents a single sample and TUMOR is not the sample column header.\n",
+        ),
+        # Case 4: same but sample col has NA — should include missing value error
+        (
+            [
+                "#CHROM",
+                "POS",
+                "ID",
+                "REF",
+                "ALT",
+                "QUAL",
+                "FILTER",
+                "INFO",
+                "FORMAT",
+                "GENIE-SAGE-1-1",
+            ],
+            [[1, 2, 3, 4, 5, 6, 7, 8, 9, None]],
+            "vcf: Must not have missing values in GENIE-SAGE-1-1 column.\n",
+        ),
+        # Case 5: 11 columns (tumor-normal) — valid
+        (
+            [
+                "#CHROM",
+                "POS",
+                "ID",
+                "REF",
+                "ALT",
+                "QUAL",
+                "FILTER",
+                "INFO",
+                "FORMAT",
+                "GENIE-SAGE-1-1-normal",
+                "GENIE-SAGE-1-1-tumor",
+            ],
+            [[1, 2, 3, 4, 5, 6, 7, 8, 9, "a", "b"]],
+            "",  # no missing values
+        ),
+        # Case 6: 11 columns, tumor column has NA
+        (
+            [
+                "#CHROM",
+                "POS",
+                "ID",
+                "REF",
+                "ALT",
+                "QUAL",
+                "FILTER",
+                "INFO",
+                "FORMAT",
+                "GENIE-SAGE-1-1-tumor",
+                "GENIE-SAGE-1-1-normal",
+            ],
+            [[1, 2, 3, 4, 5, 6, 7, 8, 9, "a", None]],
+            "vcf: Must not have missing values in GENIE-SAGE-1-1-normal column.\n",
+        ),
+        # Case 7: 11 columns, wrong normal/tumor naming
+        (
+            [
+                "#CHROM",
+                "POS",
+                "ID",
+                "REF",
+                "ALT",
+                "QUAL",
+                "FILTER",
+                "INFO",
+                "FORMAT",
+                "GENIE-SAGE-1-1-tumor",
+                "random_column",
+            ],
+            [[1, 2, 3, 4, 5, 6, 7, 8, 9, "x", "y"]],
+            "vcf: normal sample column must start with GENIE-SAGE\n",
+        ),
+        # Case 8: More than 11 columns
+        (
+            [
+                "#CHROM",
+                "POS",
+                "ID",
+                "REF",
+                "ALT",
+                "QUAL",
+                "FILTER",
+                "INFO",
+                "FORMAT",
+                "GENIE-SAGE-1-1-normal",
+                "GENIE-SAGE-1-1-tumor",
+                "extra_column",
+            ],
+            [[1, 2, 3, 4, 5, 6, 7, 8, 9, "x", "y", "z"]],
+            (
+                "vcf: Should not have more than 11 columns. Only "
+                "single sample or matched tumor normal vcf files are accepted.\n"
+            ),
+        ),
+    ],
+    ids=[
+        "only_nine_cols",
+        "valid_tumor_sample",
+        "invalid_tumor_sample_name",
+        "tumor_sample_col_has_nas",
+        "valid_matched_tumor_normal",
+        "normal_sample_col_has_nas",
+        "invalid_normal_sample_name",
+        "more_than_11_cols",
+    ],
+)
+def test_validate_tumor_and_normal_sample_columns(
+    columns, data, expected_in_error, vcf_class
+):
+    df = pd.DataFrame(data, columns=columns)
+    result = vcf_class.validate_tumor_and_normal_sample_columns(df)
+    assert expected_in_error == result
