@@ -9,32 +9,35 @@ This package uses `flake8` - it's settings are described in [setup.cfg](setup.cf
 
 ## The Development Life Cycle
 
-### Clone this repository
+### Fork and clone this repository
 
-1. [Clone the repository](https://help.github.com/articles/cloning-a-repository/) to your local machine so you can begin making changes.
+1. See the [Github docs](https://help.github.com/articles/fork-a-repo/) for how to make a copy (a fork) of a repository to your own Github account.
+1. Then, [clone the repository](https://help.github.com/articles/cloning-a-repository/) to your local machine so you can begin making changes.
+1. Add this repository as an [upstream remote](https://help.github.com/en/articles/configuring-a-remote-for-a-fork) on your local git repository so that you are able to fetch the latest commits.
 1. On your local machine make sure you have the latest version of the `develop` branch:
 
     ```
     git checkout develop
-    git pull
+    git pull upstream develop
     ```
 
 ### Install development dependencies
 
-This will install all the dependencies of the package including the active branch of `Genie`.  We highly recommend that you leverage some form of python version management like [pyenv](https://github.com/pyenv/pyenv) or [anaconda](https://www.anaconda.com/products/individual). There are two ways you can install the dependencies for this package.
+This will install all the dependencies of the package including the active branch of `Genie`.  We highly recommend that you leverage some form of python version management like [pyenv](https://github.com/pyenv/pyenv) or [anaconda](https://www.anaconda.com/products/individual). Follow [dependencies installation instruction here](./README.md#running-locally)
 
 ### Developing
+
 
 The GENIE project follows the standard [git flow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) development strategy.
 > To ensure the most fluid development, try not to push to your `develop` or `main` branch.
 
-1. Navigate to your cloned repository on your computer/server.
+1. (Assuming you have followed all 4 steps above in the "fork and clone this repository" section). Navigate to your cloned repository on your computer/server.
 1. Make sure your `develop` branch is up to date with the `Sage-Bionetworks/Genie` `develop` branch.
 
     ```
-    cd Genie
+    cd {your-github-username}/Genie
     git checkout develop
-    git pull
+    git pull upstream develop
     ```
 
 1. Create a feature branch which off the `develop` branch. If there is a GitHub/JIRA issue that you are addressing, name the branch after the issue with some more detail (like `{GH|GEN}-123-add-some-new-feature`).
@@ -44,10 +47,10 @@ The GENIE project follows the standard [git flow](https://www.atlassian.com/git/
     git checkout -b GEN-123-new-feature
     ```
 
-1. At this point, you have only created the branch locally, you need to push this to your fork on GitHub.
+1. At this point, you have only created the branch locally, you need to push this remotely to Github.
 
     ```
-    git push --set-upstream origin GEN-123-new-feature
+    git push
     ```
 
     You should now be able to see the branch on GitHub. Make commits as you deem necessary. It helps to provide useful commit messages - a commit message saying 'Update' is a lot less helpful than saying 'Remove X parameter because it was unused'.
@@ -69,17 +72,52 @@ The GENIE project follows the standard [git flow](https://www.atlassian.com/git/
     black ./
     ```
 
-1. Once you have completed all the steps above, in Github, create a pull request from the feature branch to the `develop` branch of Sage-Bionetworks/Genie.
+1. Once you have completed all the steps above, in Github, create a pull request from the feature branch of your fork to the `develop` branch of Sage-Bionetworks/Genie.
 
 > *A code maintainer must review and accept your pull request.* A code review ideally happens with both the contributor and the reviewer present, but is not strictly required for contributing. This can be performed remotely (e.g., Zoom, Hangout, or other video or phone conference).
 
 This package uses [semantic versioning](https://semver.org/) for releasing new versions. The version should be updated on the `develop` branch as changes are reviewed and merged in by a code maintainer. The version for the package is maintained in the [genie/__init__.py](genie/__init__.py) file.  A github release should also occur every time `develop` is pushed into `main` and it should match the version for the package.
 
+### Developing with Docker
+
+See [using `docker`](./README.md#using-docker-highly-recommended) for setting up the initial docker environment.
+
+A docker build will be created for your feature branch every time you have an open PR on github and add the label `run_integration_tests` to it.
+
+It is recommended to develop with docker. You can either write the code changes locally, push it to your remote and wait for docker to rebuild OR do the following:
+
+1. Make any code changes. These cannot be dependency changes - those would require a docker rebuild.
+1. Create a running docker container with the image that you pulled down or created earlier
+
+    ```
+    docker run -d <docker_image_name> /bin/bash -c "while true; do sleep 1; done"
+    ```
+
+1. Copy your code changes to the docker image:
+
+    ```
+    docker cp <folder or name of file> <docker_image_name>:/root/Genie/<folder or name of files>
+    ```
+
+1. Run your image in interactive mode:
+
+    ```
+    docker exec -it -e SYNAPSE_AUTH_TOKEN=$YOUR_SYNAPSE_TOKEN <docker_image_name> /bin/bash
+    ```
+
+1. Do any commands or tests you need to do
+
 ### Testing
 
 #### Running test pipeline
 
-Make sure to run each of the [pipeline steps here](README.md#developing-locally) on the test pipeline and verify that your pipeline runs as expected. This is __not__ automatically run by Github Actions and have to be manually run.
+Currently our Github Actions will run each of the [pipeline steps here](README.md#developing-locally) on the test pipeline. This is triggered by adding the Github label `run_integration_tests` on your open PR.
+
+To trigger `run_integration_tests`:
+
+- Add  `run_integration_tests` for the first time when you just open your PR
+- Remove `run_integration_tests` label and re-add it
+- Make any commit and pushes when the PR is still open
 
 #### Running tests
 
