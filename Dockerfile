@@ -85,7 +85,7 @@ WORKDIR /root/
 # Must move this git clone to after the install of Genie,
 # because must update cbioportal
 RUN git clone https://github.com/cBioPortal/cbioportal.git -b v5.3.19
-RUN git clone https://github.com/Sage-Bionetworks/annotation-tools.git -b 0.0.6
+RUN git clone https://github.com/Sage-Bionetworks/annotation-tools.git -b gen-2399-add-gn-wrapper
 
 
 WORKDIR /root/Genie
