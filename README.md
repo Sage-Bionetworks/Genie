@@ -3,7 +3,7 @@
 # AACR Project GENIE
 
 [![PyPi](https://img.shields.io/pypi/v/aacrgenie.svg?style=for-the-badge&label=PyPi&logo=PyPi)](https://pypi.org/project/aacrgenie)
-[![Docker Automated](https://img.shields.io/docker/automated/sagebionetworks/genie.svg?style=for-the-badge&logo=docker)](https://hub.docker.com/r/sagebionetworks/genie)
+[![GHCR Docker Package](https://img.shields.io/badge/ghcr.io-sage--bionetworks%2Fgenie-blue?style=for-the-badge&logo=github)](https://github.com/orgs/sage-bionetworks/packages/container/package/genie)
 [![GitHub CI](https://img.shields.io/github/actions/workflow/status/Sage-Bionetworks/Genie/ci.yml?branch=develop&style=for-the-badge&logo=github)](https://github.com/Sage-Bionetworks/Genie)
 
 ## Introduction
@@ -175,3 +175,7 @@ These are instructions on how you would develop and test the pipeline locally.
 ## Production
 
 The production pipeline is run on Nextflow Tower and the Nextflow workflow is captured in [nf-genie](https://github.com/Sage-Bionetworks-Workflows/nf-genie).  It is wise to create an ec2 via the Sage Bionetworks service catalog to work with the production data, because there is limited PHI in GENIE.
+
+## Github Workflows
+
+For technical details about our CI/CD, please see [the github workflows README](.github/workflows/README.md)
