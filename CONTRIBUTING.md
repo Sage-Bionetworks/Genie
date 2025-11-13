@@ -3,6 +3,22 @@
 
 We welcome all contributions!  Please head to [issues](https://github.com/Sage-Bionetworks/Genie/issues) to either file any bugs/feature requests or find a task you want to assist with.  Make sure to assign yourself the task if you decide to work on it.
 
+## Table of Contents
+
+- [Coding Style](#coding-style)
+- [The Development Life Cycle](#the-development-life-cycle)
+  - [Fork and clone this repository](#fork-and-clone-this-repository)
+  - [Install development dependencies](#install-development-dependencies)
+  - [Developing](#developing)
+  - [Testing](#testing)
+    - [Running tests](#running-tests)
+      - [Tests in Python](#tests-in-python)
+      - [Tests in R](#tests-in-r)
+    - [Test Development](#test-development)
+      - [Mock Testing](#mock-testing)
+  - [Release Procedure (For Package Maintainers)](#release-procedure-for-package-maintainers)
+  - [Contributing to the docs](#contributing-to-the-docs)
+
 ## Coding Style
 
 This package uses `flake8` - it's settings are described in [setup.cfg](setup.cfg).  The code in this package is also automatically formatted by `black` for consistency.
@@ -23,22 +39,7 @@ This package uses `flake8` - it's settings are described in [setup.cfg](setup.cf
 
 ### Install development dependencies
 
-This will install all the dependencies of the package including the active branch of `Genie`.  We highly recommend that you leverage some form of python version management like [pyenv](https://github.com/pyenv/pyenv) or [anaconda](https://www.anaconda.com/products/individual). There are two ways you can install the dependencies for this package.
-
-#### pip
-This is the more traditional way of installing dependencies. Follow instructions [here](https://pip.pypa.io/en/stable/installation/) to learn how to install pip.
-
-```
-pip install -r requirements-dev.txt
-pip install -r requirements.txt
-```
-
-#### pipenv
-`pipenv` is a Python package manager.  Learn more about [pipenv](https://pipenv.pypa.io/en/latest/) and how to install it.
-
-```
-# Coming soon
-```
+This will install all the dependencies of the package including the active branch of `Genie`.  We highly recommend that you leverage some form of python version management like [pyenv](https://github.com/pyenv/pyenv) or [anaconda](https://www.anaconda.com/products/individual). Follow [dependencies installation instruction here](./README.md#running-locally)
 
 ### Developing
 
@@ -54,17 +55,17 @@ The GENIE project follows the standard [git flow](https://www.atlassian.com/git/
     git pull upstream develop
     ```
 
-1. Create a feature branch which off the `develop` branch. If there is a GitHub/JIRA issue that you are addressing, name the branch after the issue with some more detail (like `{GH|JIRA}-123-add-some-new-feature`).
+1. Create a feature branch which off the `develop` branch. If there is a GitHub/JIRA issue that you are addressing, name the branch after the issue with some more detail (like `{GH|GEN}-123-add-some-new-feature`).
 
     ```
     git checkout develop
-    git checkout -b JIRA-123-new-feature
+    git checkout -b GEN-123-new-feature
     ```
 
-1. At this point, you have only created the branch locally, you need to push this to your fork on GitHub.
+1. At this point, you have only created the branch locally, you need to push this remotely to Github.
 
     ```
-    git push --set-upstream origin JIRA-123-new-feature
+    git push
     ```
 
     You should now be able to see the branch on GitHub. Make commits as you deem necessary. It helps to provide useful commit messages - a commit message saying 'Update' is a lot less helpful than saying 'Remove X parameter because it was unused'.
@@ -92,11 +93,8 @@ The GENIE project follows the standard [git flow](https://www.atlassian.com/git/
 
 This package uses [semantic versioning](https://semver.org/) for releasing new versions. The version should be updated on the `develop` branch as changes are reviewed and merged in by a code maintainer. The version for the package is maintained in the [genie/__init__.py](genie/__init__.py) file.  A github release should also occur every time `develop` is pushed into `main` and it should match the version for the package.
 
+
 ### Testing
-
-#### Running test pipeline
-
-Make sure to run each of the [pipeline steps here](README.md#developing-locally) on the test pipeline and verify that your pipeline runs as expected. This is __not__ automatically run by Github Actions and have to be manually run.
 
 #### Running tests
 
@@ -109,8 +107,6 @@ Here's how to run the test suite:
 ```shell
 pytest -vs tests/
 ```
-
-Tests in Python are also run automatically by Github Actions on any pull request and are required to pass before merging.
 
 ##### Tests in R
 
@@ -165,18 +161,6 @@ Follow gitflow best practices as linked above.
 11. Prior to pushing changes into `develop`, reset any [annotations on the test project](https://www.synapse.org/Synapse:syn11601248/tables/)/[rename maf database table](https://www.synapse.org/Synapse:syn7208886/tables/) as integration tests will run.
 12. Push changes in `develop`.
 13. Wait for the CI/CD to finish.
-
-### Modifying Docker
-
-Follow this section when modifying the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile):
-
-1. Have your synapse authentication token handy
-1. ```docker build -f Dockerfile -t <some_docker_image_name> .```
-1. ```docker run --rm -it -e SYNAPSE_AUTH_TOKEN=$YOUR_SYNAPSE_TOKEN <some_docker_image_name>```
-1. Run [test code](README.md#developing-locally) relevant to the dockerfile changes to make sure changes are present and working
-1. Once changes are tested, follow [genie contributing guidelines](#developing) for adding it to the repo
-1. Once deployed to main, make sure the CI/CD build successfully completed (our docker image gets automatically deployed via Github Actions CI/CD) [here](https://github.com/Sage-Bionetworks/Genie/actions/workflows/ci.yml)
-1. Check that your docker image got successfully deployed [here](https://github.com/Sage-Bionetworks/Genie/pkgs/container/genie)
 
 ### Contributing to the docs
 
