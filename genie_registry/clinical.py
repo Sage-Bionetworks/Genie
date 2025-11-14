@@ -13,7 +13,6 @@ import synapseclient
 from genie import extract, load, process_functions, validate
 from genie.database_to_staging import redact_phi
 from genie.example_filetype_format import FileTypeFormat
-from synapseclient.models import query
 
 logger = logging.getLogger(__name__)
 
@@ -474,10 +473,10 @@ class Clinical(FileTypeFormat):
             process_functions.SCRIPT_DIR, f"{self._fileType}_missing_{col}.csv"
         )
         # PLFM-7428 - there are limits on a "not in" function on Synapse tables
-        center_samples = query(
+        center_samples = self.syn.tableQuery(
             f"select {col} from {dbSynId} where " f"CENTER='{self.center}'"
         )
-        center_samples_df = center_samples.convert_dtypes()
+        center_samples_df = center_samples.asDataFrame()
         # Get all the samples that are in the database but missing from
         # the input file
         missing_df = center_samples_df[col][~center_samples_df[col].isin(df[col])]

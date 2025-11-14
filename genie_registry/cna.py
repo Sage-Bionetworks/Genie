@@ -7,7 +7,6 @@ import synapseclient
 
 from genie.example_filetype_format import FileTypeFormat
 from genie import process_functions
-from synapseclient.models import query
 
 logger = logging.getLogger(__name__)
 
@@ -132,10 +131,10 @@ class cna(FileTypeFormat):
             del cnaDf[cnaDf.columns[index][0]]
 
         bedSynId = self.genie_config["bed"]
-        bed = query(
+        bed = self.syn.tableQuery(
             f"select Hugo_Symbol, ID from {bedSynId} where CENTER = '{self.center}'"
         )
-        bedDf = bed.convert_dtypes()
+        bedDf = bed.asDataFrame()
         cnaDf["Hugo_Symbol"] = cnaDf["Hugo_Symbol"].apply(
             lambda x: validateSymbol(x, bedDf)
         )
@@ -223,11 +222,11 @@ class cna(FileTypeFormat):
             cnvDF["HUGO_SYMBOL"] = keepSymbols
             if haveColumn and not nosymbol_check:
                 bedSynId = self.genie_config["bed"]
-                bed = query(
+                bed = self.syn.tableQuery(
                     f"select Hugo_Symbol, ID from {bedSynId} "
                     f"where CENTER = '{self.center}'"
                 )
-                bedDf = bed.convert_dtypes()
+                bedDf = bed.asDataFrame()
                 cnvDF["remapped"] = cnvDF["HUGO_SYMBOL"].apply(
                     lambda x: validateSymbol(x, bedDf)
                 )

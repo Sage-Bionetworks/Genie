@@ -8,7 +8,6 @@ import pandas as pd
 
 from genie.example_filetype_format import FileTypeFormat
 from genie import load, process_functions, validate
-from synapseclient.models import query
 
 LOGGER = logging.getLogger(__name__)
 
@@ -513,6 +512,7 @@ class bed(FileTypeFormat):
         """
         seq_assay_id = seq_assay_id.upper()
         seq_assay_id = seq_assay_id.replace("_", "-")
+
         # Add in 6th column which is the clinicalReported
         if len(beddf.columns) > 5:
             if all(beddf[5].apply(lambda x: x in [True, False])):
@@ -548,8 +548,9 @@ class bed(FileTypeFormat):
         # Change all start and end to int
         beddf["Start_Position"] = beddf["Start_Position"].apply(int)
         beddf["End_Position"] = beddf["End_Position"].apply(int)
-        gene_position_table = query("SELECT * FROM syn11806563")
-        gene_positiondf = gene_position_table.convert_dtypes()
+
+        gene_position_table = self.syn.tableQuery("SELECT * FROM syn11806563")
+        gene_positiondf = gene_position_table.asDataFrame()
         beddf["ID"] = beddf["Hugo_Symbol"]
         # The apply function of a DataFrame is called twice on the first
         # row (known pandas behavior)
@@ -685,11 +686,12 @@ class bed(FileTypeFormat):
             total_error += error
 
             if to_validate_symbol:
-                gene_position_table = query("SELECT * FROM syn11806563")
-                gene_positiondf = gene_position_table.convert_dtypes()
+                gene_position_table = self.syn.tableQuery("SELECT * FROM syn11806563")
+                gene_positiondf = gene_position_table.asDataFrame()
                 # The apply function of a DataFrame is called twice on the first row (known
                 # pandas behavior)
                 beddf = beddf.apply(lambda x: remap_symbols(x, gene_positiondf), axis=1)
+
                 if any(beddf["Hugo_Symbol"].isnull()):
                     warning += (
                         "BED file: "
