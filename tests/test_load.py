@@ -114,8 +114,8 @@ def test__reorder_new_dataset(ori_dataset, new_dataset):
             pd.DataFrame(
                 {
                     "test": ["test1", "test2", "test3", "test4"],
-                    "foo": ["1.0", "2.0", "", ""],
-                    "baz": ["b", "", "c", ""],
+                    "foo": [1.0, 2.0, float("nan"), float("nan")],
+                    "baz": ["b", float("nan"), "c", float("nan")],
                     "UNIQUE_KEY": ["test1 1.0 b", "test2 2.0 ", "test3  c", "test4  "],
                 }
             ),
@@ -133,7 +133,7 @@ def test__generate_primary_key(dataset, expected):
         primary_key_cols=["test", "foo", "baz"],
         primary_key="UNIQUE_KEY",
     )
-    pd.testing.assert_frame_equal(results, expected)
+    pd.testing.assert_frame_equal(results, expected, check_dtype=False)
 
 
 @pytest.mark.parametrize(
@@ -203,105 +203,105 @@ def test_check_database_changes(to_delete, expected_to_delete_rows):
         )
 
 
-# def test_store_database_with_rows_to_update_and_delete(syn):
-#     """Test store_database function"""
-#     database_synid = "syn123"
-#     all_updates = pd.DataFrame(
-#         {"test": ["test", "test2"], "foo": [1, 3], "baz": ["", 5]}
-#     )
-#     to_delete_rows = pd.DataFrame({0: ["3"], 1: ["5"]})
-#     mock_database_ent = Mock()
-#     mock_database_ent.name = "test_table"
-#     # get the table entity
-#     with (
-#         patch.object(syn, "get", return_value=mock_database_ent) as patch_get,
-#         patch.object(Table, "store_rows") as patch_store_rows,
-#         patch.object(Table, "delete_rows") as patch_delete_rows,
-#         patch.object(load.logger, "info") as patch_info,
-#     ):
-#         load.store_database(syn, database_synid, all_updates, to_delete_rows)
-#         patch_get.assert_called_once_with(database_synid)
-#         patch_store_rows.assert_called_once_with(all_updates)
-#         patch_delete_rows.assert_called_once_with(to_delete_rows)
-#         patch_info.assert_has_calls(
-#             [
-#                 call(
-#                     f"Upserting {len(all_updates)} rows from {mock_database_ent.name} table"
-#                 ),
-#                 call(
-#                     f"Deleting {len(to_delete_rows)} rows from {mock_database_ent.name} table"
-#                 ),
-#             ]
-#         )
+def test_store_database_with_rows_to_update_and_delete(syn):
+    """Test store_database function"""
+    database_synid = "syn123"
+    all_updates = pd.DataFrame(
+        {"test": ["test", "test2"], "foo": [1, 3], "baz": ["", 5]}
+    )
+    to_delete_rows = pd.DataFrame({0: ["3"], 1: ["5"]})
+    mock_database_ent = Mock()
+    mock_database_ent.name = "test_table"
+    # get the table entity
+    with (
+        patch.object(syn, "get", return_value=mock_database_ent) as patch_get,
+        patch.object(Table, "store_rows") as patch_store_rows,
+        patch.object(Table, "delete_rows") as patch_delete_rows,
+        patch.object(load.logger, "info") as patch_info,
+    ):
+        load.store_database(syn, database_synid, all_updates, to_delete_rows)
+        patch_get.assert_called_once_with(database_synid)
+        patch_store_rows.assert_called_once_with(values =all_updates)
+        patch_delete_rows.assert_called_once_with(df=to_delete_rows)
+        patch_info.assert_has_calls(
+            [
+                call(
+                    f"Upserting {len(all_updates)} rows from {mock_database_ent.name} table"
+                ),
+                call(
+                    f"Deleting {len(to_delete_rows)} rows from {mock_database_ent.name} table"
+                ),
+            ]
+        )
 
 
-# def test_store_database_only_rows_to_update(syn):
-#     """Test store_database function"""
-#     database_synid = "syn123"
-#     all_updates = pd.DataFrame(
-#         {"test": ["test", "test2"], "foo": [1, 3], "baz": ["", 5]}
-#     )
-#     to_delete_rows = pd.DataFrame()
-#     mock_database_ent = Mock()
-#     mock_database_ent.name = "test_table"
-#     # get the table entity
-#     with (
-#         patch.object(syn, "get", return_value=mock_database_ent) as patch_get,
-#         patch.object(Table, "store_rows") as patch_store_rows,
-#         patch.object(Table, "delete_rows") as patch_delete_rows,
-#         patch.object(load.logger, "info") as patch_info,
-#     ):
-#         load.store_database(syn, database_synid, all_updates, to_delete_rows)
-#         patch_get.assert_called_once_with(database_synid)
-#         patch_store_rows.assert_called_once_with(all_updates)
-#         patch_delete_rows.assert_not_called()
-#         patch_info.assert_called_once_with(
-#             f"Upserting {len(all_updates)} rows from {mock_database_ent.name} table"
-#         )
+def test_store_database_only_rows_to_update(syn):
+    """Test store_database function"""
+    database_synid = "syn123"
+    all_updates = pd.DataFrame(
+        {"test": ["test", "test2"], "foo": [1, 3], "baz": ["", 5]}
+    )
+    to_delete_rows = pd.DataFrame()
+    mock_database_ent = Mock()
+    mock_database_ent.name = "test_table"
+    # get the table entity
+    with (
+        patch.object(syn, "get", return_value=mock_database_ent) as patch_get,
+        patch.object(Table, "store_rows") as patch_store_rows,
+        patch.object(Table, "delete_rows") as patch_delete_rows,
+        patch.object(load.logger, "info") as patch_info,
+    ):
+        load.store_database(syn, database_synid, all_updates, to_delete_rows)
+        patch_get.assert_called_once_with(database_synid)
+        patch_store_rows.assert_called_once_with(values =all_updates)
+        patch_delete_rows.assert_not_called()
+        patch_info.assert_called_once_with(
+            f"Upserting {len(all_updates)} rows from {mock_database_ent.name} table"
+        )
 
 
-# def test_store_database_only_rows_to_delete(syn):
-#     """Test store_database function"""
-#     database_synid = "syn123"
-#     all_updates = pd.DataFrame()
-#     to_delete_rows = pd.DataFrame({0: ["3"], 1: ["5"]})
-#     mock_database_ent = Mock()
-#     mock_database_ent.name = "test_table"
-#     # get the table entity
-#     with (
-#         patch.object(syn, "get", return_value=mock_database_ent) as patch_get,
-#         patch.object(Table, "store_rows") as patch_store_rows,
-#         patch.object(Table, "delete_rows") as patch_delete_rows,
-#         patch.object(load.logger, "info") as patch_info,
-#     ):
-#         load.store_database(syn, database_synid, all_updates, to_delete_rows)
-#         patch_get.assert_called_once_with(database_synid)
-#         patch_store_rows.assert_not_called()
-#         patch_delete_rows.assert_called_once_with(to_delete_rows)
-#         patch_info.assert_called_once_with(
-#             f"Deleting {len(to_delete_rows)} rows from {mock_database_ent.name} table"
-#         )
+def test_store_database_only_rows_to_delete(syn):
+    """Test store_database function"""
+    database_synid = "syn123"
+    all_updates = pd.DataFrame()
+    to_delete_rows = pd.DataFrame({0: ["3"], 1: ["5"]})
+    mock_database_ent = Mock()
+    mock_database_ent.name = "test_table"
+    # get the table entity
+    with (
+        patch.object(syn, "get", return_value=mock_database_ent) as patch_get,
+        patch.object(Table, "store_rows") as patch_store_rows,
+        patch.object(Table, "delete_rows") as patch_delete_rows,
+        patch.object(load.logger, "info") as patch_info,
+    ):
+        load.store_database(syn, database_synid, all_updates, to_delete_rows)
+        patch_get.assert_called_once_with(database_synid)
+        patch_store_rows.assert_not_called()
+        patch_delete_rows.assert_called_once_with(df=to_delete_rows)
+        patch_info.assert_called_once_with(
+            f"Deleting {len(to_delete_rows)} rows from {mock_database_ent.name} table"
+        )
 
 
-# def test_store_database_no_rows_to_update_and_delete(syn):
-#     """Test store_database function"""
-#     database_synid = "syn123"
-#     all_updates = pd.DataFrame()
-#     to_delete_rows = pd.DataFrame()
-#     mock_database_ent = Mock()
-#     mock_database_ent.name = "test_table"
-#     # get the table entity
-#     with (
-#         patch.object(syn, "get", return_value=mock_database_ent) as patch_get,
-#         patch.object(Table, "store_rows") as patch_store_rows,
-#         patch.object(Table, "delete_rows") as patch_delete_rows,
-#         patch.object(load.logger, "info") as patch_info,
-#     ):
-#         load.store_database(syn, database_synid, all_updates, to_delete_rows)
-#         patch_get.assert_called_once_with(database_synid)
-#         patch_store_rows.assert_not_called()
-#         patch_delete_rows.assert_not_called()
-#         patch_info.assert_not_called()
+def test_store_database_no_rows_to_update_and_delete(syn):
+    """Test store_database function"""
+    database_synid = "syn123"
+    all_updates = pd.DataFrame()
+    to_delete_rows = pd.DataFrame()
+    mock_database_ent = Mock()
+    mock_database_ent.name = "test_table"
+    # get the table entity
+    with (
+        patch.object(syn, "get", return_value=mock_database_ent) as patch_get,
+        patch.object(Table, "store_rows") as patch_store_rows,
+        patch.object(Table, "delete_rows") as patch_delete_rows,
+        patch.object(load.logger, "info") as patch_info,
+    ):
+        load.store_database(syn, database_synid, all_updates, to_delete_rows)
+        patch_get.assert_called_once_with(database_synid)
+        patch_store_rows.assert_not_called()
+        patch_delete_rows.assert_not_called()
+        patch_info.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -322,9 +322,9 @@ def test_check_database_changes(to_delete, expected_to_delete_rows):
 def test_that_update_table_has_expected_calls(
     syn, cols_subset, to_delete, subsetted_data
 ):
-    test_table_synid = "synZZZZ"
-    test_data = pd.DataFrame({"CENTER": ["test-center"], "data": [123]})
-    test_new_data = pd.DataFrame({"CENTER": ["test-center"], "data": [123]})
+    test_table_synid = "synZZZ"
+    test_data = pd.DataFrame({"ROW_ID": ["1"], "ROW_VERSION": ["1"], "CENTER": ["test-center"], "data": [123]})
+    test_new_data = pd.DataFrame({"ROW_ID": ["1"], "ROW_VERSION": ["1"], "CENTER": ["test-center"], "data": [123]})
 
     mock_database_ent = Mock()
     mock_database_ent.primaryKey = "PRIMARY_KEY"
@@ -332,10 +332,8 @@ def test_that_update_table_has_expected_calls(
 
     with (
         patch.object(syn, "get", return_value=mock_database_ent),
-        patch.object(
-            syn, "tableQuery", return_value=mock_database
+        patch("synapseclient.models.mixins.table_components.QueryMixin.query_async", return_value=test_data
         ) as patch_table_query,
-        patch.object(mock_database, "asDataFrame", return_value=test_data),
         patch.object(load, "_update_table") as patch__update_table,
     ):
         load.update_table(

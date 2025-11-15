@@ -150,7 +150,7 @@ def update_table(
     databaseEnt = syn.get(databaseSynId)
     database = query(
         f"SELECT * FROM {databaseSynId} where {filterByColumn} ='{filterBy}'"
-    ).convert_dtypes()
+    )
     db_cols = set(database.columns.drop(["ROW_ID", "ROW_VERSION"]))
     if col is not None:
         new_data_cols = set(col)
