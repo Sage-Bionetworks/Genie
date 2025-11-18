@@ -221,7 +221,7 @@ def test_store_database_with_rows_to_update_and_delete(syn):
     ):
         load.store_database(syn, database_synid, all_updates, to_delete_rows)
         patch_get.assert_called_once_with(database_synid)
-        patch_store_rows.assert_called_once_with(values =all_updates)
+        patch_store_rows.assert_called_once_with(values=all_updates)
         patch_delete_rows.assert_called_once_with(df=to_delete_rows)
         patch_info.assert_has_calls(
             [
@@ -253,7 +253,7 @@ def test_store_database_only_rows_to_update(syn):
     ):
         load.store_database(syn, database_synid, all_updates, to_delete_rows)
         patch_get.assert_called_once_with(database_synid)
-        patch_store_rows.assert_called_once_with(values =all_updates)
+        patch_store_rows.assert_called_once_with(values=all_updates)
         patch_delete_rows.assert_not_called()
         patch_info.assert_called_once_with(
             f"Upserting {len(all_updates)} rows from {mock_database_ent.name} table"
@@ -323,8 +323,22 @@ def test_that_update_table_has_expected_calls(
     syn, cols_subset, to_delete, subsetted_data
 ):
     test_table_synid = "synZZZ"
-    test_data = pd.DataFrame({"ROW_ID": ["1"], "ROW_VERSION": ["1"], "CENTER": ["test-center"], "data": [123]})
-    test_new_data = pd.DataFrame({"ROW_ID": ["1"], "ROW_VERSION": ["1"], "CENTER": ["test-center"], "data": [123]})
+    test_data = pd.DataFrame(
+        {
+            "ROW_ID": ["1"],
+            "ROW_VERSION": ["1"],
+            "CENTER": ["test-center"],
+            "data": [123],
+        }
+    )
+    test_new_data = pd.DataFrame(
+        {
+            "ROW_ID": ["1"],
+            "ROW_VERSION": ["1"],
+            "CENTER": ["test-center"],
+            "data": [123],
+        }
+    )
 
     mock_database_ent = Mock()
     mock_database_ent.primaryKey = "PRIMARY_KEY"
@@ -332,7 +346,9 @@ def test_that_update_table_has_expected_calls(
 
     with (
         patch.object(syn, "get", return_value=mock_database_ent),
-        patch("synapseclient.models.mixins.table_components.QueryMixin.query_async", return_value=test_data
+        patch(
+            "synapseclient.models.mixins.table_components.QueryMixin.query_async",
+            return_value=test_data,
         ) as patch_table_query,
         patch.object(load, "_update_table") as patch__update_table,
     ):
