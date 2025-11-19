@@ -5,5 +5,5 @@ httplib2>=0.11.3
 pyranges==0.1.4
 # known working version 6.0
 PyYAML>=5.1
-synapseclient[pandas]>=4.8.0, <5.0.0
+synapseclient[pandas] @ git+https://github.com/Sage-Bionetworks/synapsePythonClient.git@gen-2381-table-typing
 opentelemetry-semantic-conventions==0.56b0
