@@ -134,7 +134,7 @@ jobs:
             version: "~=23.12"
 
   build-container:
-    needs: [test, lint]
+    needs: [lint]
     if: >- 
       (
         (
