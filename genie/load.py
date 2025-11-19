@@ -211,7 +211,10 @@ def _reorder_new_dataset(
     orig_database_cols: pd.Index, new_dataset: pd.DataFrame
 ) -> pd.DataFrame:
     """
-    Reorder new dataset based on the original database
+    Reorder new dataset based on the original database. Original
+    database table must have ["ROW_ID", "ROW_VERSION"] columns and the new dataset
+    can have ["ROW_ID", "ROW_VERSION"] or not depending on if it's queried from
+    another database, used to delete rows etc.
 
     Args:
         orig_database_cols (pd.Index): A list of column names of the original database
@@ -221,10 +224,26 @@ def _reorder_new_dataset(
         The re-ordered new dataset
     """
     # Columns must be in the same order as the original data
-    if "ROW_ID" in orig_database_cols and "ROW_VERSION" in orig_database_cols:
-        new_dataset = new_dataset[orig_database_cols.drop(["ROW_ID", "ROW_VERSION"])]
-    else:
+    required = {"ROW_ID", "ROW_VERSION"}
+    orig_has = required.issubset(orig_database_cols)
+    new_has = required.issubset(new_dataset.columns)
+
+    # Case 1: both have ROW_ID + ROW_VERSION
+    if orig_has and new_has:
         new_dataset = new_dataset[orig_database_cols]
+
+    # Case 2: original has them, new does NOT
+    elif orig_has and not new_has:
+        new_dataset = new_dataset[orig_database_cols.drop(list(required))]
+
+    # Any other situation is invalid
+    else:
+        raise Exception(
+            "No handling for this scenario. Must either contain both "
+            "'ROW_ID', 'ROW_VERSION' in new and old data, OR "
+            "'ROW_ID', 'ROW_VERSION' in old data but not in new"
+        )
+
     return new_dataset
 
 

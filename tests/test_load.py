@@ -81,23 +81,72 @@ def test__get_col_order():
 
 
 @pytest.mark.parametrize(
-    "ori_dataset,new_dataset",
+    "orig_cols,new_cols,expected_cols",
     [
+        # Case 1: Both have required columns -> keep full order
         (
-            pd.DataFrame(columns=["a", "b", "c"]),
-            pd.DataFrame(columns=["b", "c", "a"]),
+            ["ROW_ID", "ROW_VERSION", "A", "B"],
+            ["ROW_ID", "ROW_VERSION", "A", "B"],
+            ["ROW_ID", "ROW_VERSION", "A", "B"],
+        ),
+        # Case 2: original has required, new does NOT -> drop them
+        (
+            ["ROW_ID", "ROW_VERSION", "A", "B"],
+            ["A", "B"],
+            ["A", "B"],
+        ),
+        # Case 3: Check column reordering is correct
+        (
+            ["ROW_ID", "ROW_VERSION", "a", "b", "c"],
+            ["b", "c", "a"],
+            ["a", "b", "c"],
         ),
     ],
 )
-def test__reorder_new_dataset(ori_dataset, new_dataset):
+def test_reorder_valid_cases(orig_cols, new_cols, expected_cols):
     """Test if new dataset is re-ordered as the column order of original dataset.
     No need to check different number of columns since we are using commmon columns as
     specified in load.update_table()
-
     """
-    orig_database_cols = ori_dataset.columns
-    reorder_new_dataset = load._reorder_new_dataset(orig_database_cols, new_dataset)
-    pd.testing.assert_index_equal(reorder_new_dataset.columns, orig_database_cols)
+    orig_index = pd.Index(orig_cols)
+    df = pd.DataFrame({col: [1] for col in new_cols})
+    result = load._reorder_new_dataset(orig_index, df)
+
+    assert list(result.columns) == expected_cols
+
+
+@pytest.mark.parametrize(
+    "orig_cols,new_cols",
+    [
+        # Case 1: original missing ROW_VERSION
+        (
+            ["ROW_ID", "A", "B"],
+            ["ROW_ID", "ROW_VERSION", "A"],
+        ),
+        # Case 2: original missing ROW_ID
+        (
+            ["ROW_VERSION", "A", "B"],
+            ["ROW_ID", "A"],
+        ),
+        # Case 3: original and new missing both
+        (["A", "B"], ["A", "B"]),
+        # Case 4: original missing both, new has both
+        (["A", "B"], ["A", "B", "ROW_ID", "ROW_VERSION"]),
+    ],
+)
+def test_reorder_invalid_cases(orig_cols, new_cols):
+    orig_index = pd.Index(orig_cols)
+    df = pd.DataFrame({col: [1] for col in new_cols})
+
+    with pytest.raises(
+        Exception,
+        match=(
+            "No handling for this scenario. Must either contain both "
+            "'ROW_ID', 'ROW_VERSION' in new and old data, OR "
+            "'ROW_ID', 'ROW_VERSION' in old data but not in new"
+        ),
+    ):
+        load._reorder_new_dataset(orig_index, df)
 
 
 @pytest.mark.parametrize(
