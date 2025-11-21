@@ -123,8 +123,9 @@ These are instructions on how you would setup your environment and run the pipel
 1. Make sure you have read through the [GENIE Onboarding Docs](https://sagebionetworks.jira.com/wiki/spaces/APGD/pages/2163344270/Onboarding) and have access to all of the required repositories, resources and synapse projects for Main GENIE.
 1. Be sure you are invited to the Synapse GENIE Admin team.
 1. Make sure you are a Synapse certified user: [Certified User - Synapse User Account Types](https://help.synapse.org/docs/Synapse-User-Account-Types.2007072795.html#SynapseUserAccountTypes-CertifiedUser)
-1. Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile)
-1. Be sure to clone the annotation-tools repo: https://github.com/Sage-Bionetworks/annotation-tools and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile).
+1. (**OPTIONAL** if developing with `docker`) Be sure to clone the cbioportal repo: https://github.com/cBioPortal/cbioportal and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile)
+1. (**OPTIONAL** if developing with `docker`) Be sure to clone the annotation-tools repo: https://github.com/Sage-Bionetworks/annotation-tools and `git checkout` the version of the repo pinned to the [Dockerfile](https://github.com/Sage-Bionetworks/Genie/blob/main/Dockerfile). (Not needed if developing with `docker`)
+1. (**HIGHLY RECOMMENDED**) It is highly recommended to develop in an ec2-instance as the dockerfile building/other environment setup is not as stable under Mac/Windows local computer environments (specifically the dockerfile building is unstable in Mac/Windows). Follow instructions using [Service-Catalog-Provisioning](https://help.sc.sageit.org/sc/Service-Catalog-Provisioning.938836322.html) to create an ec2 on service catalog.
 
 ### Using `conda`
 
@@ -168,7 +169,7 @@ This is the most reproducible method even though it will be the most tedious to 
     docker pull <some_docker_image_name>
     ```
 
-    Build from Dockerfile
+    Build from Dockerfile. 
     ```
     docker build -f Dockerfile -t <some_docker_image_name> .
     ```
