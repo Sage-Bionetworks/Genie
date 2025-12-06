@@ -381,11 +381,14 @@ class Assayinfo(FileTypeFormat):
         """Validates that all SEQ_ASSAY_IDs in the clinical sample database
             for that center exists in the assay information file for that center.
 
-            Breakdown:
-            - Assay information file has more SEQ_ASSAY_IDs than in clinical database -> PASS
-            - Assay information file has the same SEQ_ASSAY_IDs as in clinical database -> PASS
-            - Assay information file has less SEQ_ASSAY_IDs than in clinical database -> FAIL
+        **Conditions**
 
+        | Condition | Result |
+        |---|:---:|
+        | Assay information file has more SEQ_ASSAY_IDs than in clinical database | ✅ PASS |
+        | Assay information file has the same SEQ_ASSAY_IDs as in clinical database | ✅ PASS |
+        | Assay information file has less SEQ_ASSAY_IDs than in clinical database | ❌ FAIL |
+        
         Args:
             all_seq_assays (dict): list of all the SEQ_ASSAY_IDs in
                 the assay information file
