@@ -138,7 +138,7 @@ def test_valid_validate_single_file(syn, genie_config):
             format_registry={"clinical": FileFormat},
             genie_config=genie_config,
         )
-        valid_cls, message = validator.validate_single_file(nosymbol_check=False)
+        valid_cls, message = validator.validate_single_file(skip_database_checks=False)
 
         assert valid_cls == results
         assert message == expected_message
@@ -147,7 +147,7 @@ def test_valid_validate_single_file(syn, genie_config):
         mock_determine_ftype.assert_called_once_with()
 
         mock_genie_class.assert_called_once_with(
-            filePathList=[CLIN_ENT.path], nosymbol_check=False, project_id="syn1234"
+            filePathList=[CLIN_ENT.path], skip_database_checks=False, project_id="syn1234"
         )
 
         mock_determine.assert_called_once_with()
@@ -422,7 +422,7 @@ class argparser:
     filetype = None
     center = "try"
     filepath = ["path.csv"]
-    nosymbol_check = False
+    skip_database_checks = False
     format_registry_packages = ["genie"]
     project_id = "syn1234"
 
@@ -461,7 +461,7 @@ def test_perform_validate(syn, genie_config):
         patch_check_center.assert_called_once_with(arg.center, ["SAGE", "TEST", "GOLD"])
         patch_get_onco.assert_called_once()
         patch_validate.assert_called_once_with(
-            nosymbol_check=arg.nosymbol_check, project_id=arg.project_id
+            skip_database_checks=arg.skip_database_checks, project_id=arg.project_id
         )
         patch_syn_upload.assert_called_once_with(
             syn=syn, filepaths=arg.filepath, parentid=arg.parentid

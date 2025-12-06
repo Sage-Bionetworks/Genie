@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class StructuralVariant(FileTypeFormat):
     _fileType = "sv"
 
-    # _validation_kwargs = ["nosymbol_check", "project_id"]
+    # _validation_kwargs = ["skip_database_checks", "project_id"]
 
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
@@ -60,7 +60,7 @@ class StructuralVariant(FileTypeFormat):
         sv_df.to_csv(newPath, sep="\t", index=False)
         return newPath
 
-    # def _validate(self, sv_df, nosymbol_check, project_id):
+    # def _validate(self, sv_df, skip_database_checks, project_id):
     def _validate(self, sv_df):
         total_error = StringIO()
         total_warning = StringIO()

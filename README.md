@@ -103,10 +103,16 @@ Running validator on clinical file
 genie validate data_clinical_supp_SAGE.txt SAGE
 ```
 
-Running validator on cna file. **Note** that the flag `--nosymbol-check` is **REQUIRED** when running the validator for cna files because you would need access to an internal bed database table without it. For DEVELOPERS this is not required.
+Running validator on cna file. **Note** that the flag `--skip-database-checks` is **REQUIRED** when running the validator for cna and assay information files because you would need access to internal bed and clinical database tables respectively without it. For DEVELOPERS this is not required.
 
 ```
-genie validate data_cna_SAGE.txt SAGE --nosymbol-check
+genie validate data_cna_SAGE.txt SAGE --skip-database-checks
+```
+
+Running validator on assay_information file.
+
+```
+genie validate assay_information.yaml SAGE --skip-database-checks
 ```
 
 ## Contributing

@@ -114,7 +114,7 @@ class cna(FileTypeFormat):
 
     _process_kwargs = ["newPath"]
 
-    _validation_kwargs = ["nosymbol_check"]
+    _validation_kwargs = ["skip_database_checks"]
 
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
@@ -175,7 +175,7 @@ class cna(FileTypeFormat):
             self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
         return newPath
 
-    def _validate(self, cnvDF, nosymbol_check):
+    def _validate(self, cnvDF, skip_database_checks):
         total_error = ""
         warning = ""
         cnvDF.columns = [col.upper() for col in cnvDF.columns]
@@ -220,7 +220,7 @@ class cna(FileTypeFormat):
             )
         else:
             cnvDF["HUGO_SYMBOL"] = keepSymbols
-            if haveColumn and not nosymbol_check:
+            if haveColumn and not skip_database_checks:
                 bedSynId = self.genie_config["bed"]
                 bed = self.syn.tableQuery(
                     f"select Hugo_Symbol, ID from {bedSynId} "

@@ -15,7 +15,7 @@ class Assayinfo(FileTypeFormat):
 
     _process_kwargs = ["newPath", "databaseSynId"]
 
-    # _validation_kwargs = ["project_id"]
+    _validation_kwargs = ["skip_database_checks"]  # project_id
 
     def _validateFilename(self, filepath_list):
         """Validate assay information filename"""
@@ -127,7 +127,7 @@ class Assayinfo(FileTypeFormat):
             all_panel_info = pd.concat([all_panel_info, assay_finaldf])
         return all_panel_info
 
-    def _validate(self, assay_info_df):
+    def _validate(self, assay_info_df, skip_database_checks):
         """
         Validates the values of assay information file
 
@@ -153,25 +153,9 @@ class Assayinfo(FileTypeFormat):
                     "SEQ_ASSAY_IDs start with your center abbreviation.\n"
                 )
 
-            uniq_seq_df = extract.get_syntabledf(
-                self.syn,
-                f"select distinct(SEQ_ASSAY_ID) as seq from {self.genie_config['sample']} "
-                f"where CENTER = '{self.center}'",
+            total_error += self.validate_all_seq_assay_ids_exist_in_clinical_database(
+                all_seq_assays=all_seq_assays, skip_database_checks=skip_database_checks
             )
-            # These are all the SEQ_ASSAY_IDs that are in the clinical database
-            # but not in the assay_information file
-            missing_seqs = uniq_seq_df["seq"][
-                ~uniq_seq_df["seq"]
-                .replace({"_": "-"}, regex=True)
-                .str.upper()
-                .isin(all_seq_assays)
-            ]
-            missing_seqs_str = ", ".join(missing_seqs)
-            if missing_seqs.to_list():
-                total_error += (
-                    "Assay_information.yaml: You are missing SEQ_ASSAY_IDs: "
-                    f"{missing_seqs_str}\n"
-                )
 
         else:
             total_error += "Assay_information.yaml: Must have SEQ_ASSAY_ID column.\n"
@@ -390,3 +374,46 @@ class Assayinfo(FileTypeFormat):
         total_error += error
 
         return total_error, warning
+
+    def validate_all_seq_assay_ids_exist_in_clinical_database(
+        self, all_seq_assays: dict, skip_database_checks: bool
+    ) -> str:
+        """Validates that all SEQ_ASSAY_IDs in the clinical sample database
+            for that center exists in the assay information file for that center.
+
+            Breakdown:
+            - Assay information file has more SEQ_ASSAY_IDs than in clinical database -> PASS
+            - Assay information file has the same SEQ_ASSAY_IDs as in clinical database -> PASS
+            - Assay information file has less SEQ_ASSAY_IDs than in clinical database -> FAIL
+
+        Args:
+            all_seq_assays (dict): list of all the SEQ_ASSAY_IDs in
+                the assay information file
+            skip_database_checks (bool): Whether to skip this validation check
+                since it requires access to the internal clinical sample database
+
+        Returns:
+            str: error message
+        """
+        error = ""
+        if not skip_database_checks:
+            uniq_seq_df = extract.get_syntabledf(
+                self.syn,
+                f"select distinct(SEQ_ASSAY_ID) as seq from {self.genie_config['sample']} "
+                f"where CENTER = '{self.center}'",
+            )
+            # These are all the SEQ_ASSAY_IDs that are in the clinical database
+            # but not in the assay_information file
+            missing_seqs = uniq_seq_df["seq"][
+                ~uniq_seq_df["seq"]
+                .replace({"_": "-"}, regex=True)
+                .str.upper()
+                .isin(all_seq_assays)
+            ]
+            missing_seqs_str = ", ".join(missing_seqs)
+            if missing_seqs.to_list():
+                error += (
+                    "Assay_information.yaml: You are missing SEQ_ASSAY_IDs: "
+                    f"{missing_seqs_str}\n"
+                )
+        return error

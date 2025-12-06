@@ -349,7 +349,7 @@ def validatefile(
         #    validator.entitylist = [syn.get(entity) for entity in entities]
 
         valid_cls, message = validator.validate_single_file(
-            oncotree_link=genie_config["oncotreeLink"], nosymbol_check=False
+            oncotree_link=genie_config["oncotreeLink"], skip_database_checks=False
         )
 
         logger.info("VALIDATION COMPLETE")
