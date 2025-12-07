@@ -147,7 +147,9 @@ def test_valid_validate_single_file(syn, genie_config):
         mock_determine_ftype.assert_called_once_with()
 
         mock_genie_class.assert_called_once_with(
-            filePathList=[CLIN_ENT.path], skip_database_checks=False, project_id="syn1234"
+            filePathList=[CLIN_ENT.path],
+            skip_database_checks=False,
+            project_id="syn1234",
         )
 
         mock_determine.assert_called_once_with()
