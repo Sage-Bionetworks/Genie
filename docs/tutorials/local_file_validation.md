@@ -15,19 +15,19 @@ python3 -m venv <env_name>
 source <env_name>/bin/activate
 ```
 
-1. Install the genie package
+2. Install the genie package
 
 ```bash
 pip install aacrgenie
 ```
 
-1. Verify the installation
+3. Verify the installation
 
 ```bash
 genie -v
 ```
 
-1. Set up authentication with Synapse through the [local .synapseConfig](https://python-docs.synapse.org/tutorials/authentication/#use-synapseconfig) or using an [environment variable](https://python-docs.synapse.org/tutorials/authentication/#use-environment-variable)
+4. Set up authentication with Synapse through the [local .synapseConfig](https://python-docs.synapse.org/tutorials/authentication/#use-synapseconfig) or using an [environment variable](https://python-docs.synapse.org/tutorials/authentication/#use-environment-variable)
 
 
 This will install all the necessary components for you to run the validator locally on all of your files, including the Synapse client.
