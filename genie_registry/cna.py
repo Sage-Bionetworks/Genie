@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Union
+from typing import Tuple, Union
 
 import pandas as pd
 import synapseclient
@@ -114,7 +114,7 @@ class cna(FileTypeFormat):
 
     _process_kwargs = ["newPath"]
 
-    _validation_kwargs = ["nosymbol_check"]
+    _validation_kwargs = ["skip_database_checks"]
 
     # VALIDATE FILENAME
     def _validateFilename(self, filePath):
@@ -175,7 +175,18 @@ class cna(FileTypeFormat):
             self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
         return newPath
 
-    def _validate(self, cnvDF, nosymbol_check):
+    def _validate(self, cnvDF: pd.DataFrame, skip_database_checks: bool) -> Tuple:
+        """
+        Validates the values of the input cna file
+
+        Args:
+            cnvDF (pd.DataFrame): input CNA file
+            skip_database_checks (bool): Whether to skip this validation check
+                since it requires access to the internal clinical sample database
+
+        Returns:
+            Tuple: complete error and warning messages
+        """
         total_error = ""
         warning = ""
         cnvDF.columns = [col.upper() for col in cnvDF.columns]
@@ -220,27 +231,49 @@ class cna(FileTypeFormat):
             )
         else:
             cnvDF["HUGO_SYMBOL"] = keepSymbols
-            if haveColumn and not nosymbol_check:
-                bedSynId = self.genie_config["bed"]
-                bed = self.syn.tableQuery(
-                    f"select Hugo_Symbol, ID from {bedSynId} "
-                    f"where CENTER = '{self.center}'"
+            if haveColumn:
+                total_error += self.validate_no_dup_symbols_after_remapping(
+                    cnvDF=cnvDF, skip_database_checks=skip_database_checks
                 )
-                bedDf = bed.asDataFrame()
-                cnvDF["remapped"] = cnvDF["HUGO_SYMBOL"].apply(
-                    lambda x: validateSymbol(x, bedDf)
-                )
-                cnvDF = cnvDF[~cnvDF["remapped"].isnull()]
-
-                # Do not allow any duplicated genes after symbols
-                # have been remapped
-                if sum(cnvDF["remapped"].duplicated()) > 0:
-                    duplicated = cnvDF["remapped"].duplicated(keep=False)
-                    total_error += (
-                        "Your CNA file has duplicated Hugo_Symbols "
-                        "(After remapping of genes): {} -> {}.\n".format(
-                            ",".join(cnvDF["HUGO_SYMBOL"][duplicated]),
-                            ",".join(cnvDF["remapped"][duplicated]),
-                        )
-                    )
         return (total_error, warning)
+
+    def validate_no_dup_symbols_after_remapping(
+        self, cnvDF: pd.DataFrame, skip_database_checks: bool
+    ) -> str:
+        """Validates that there are no duplicated Hugo_Symbol values
+            after remapping the previous Hugo_Symbol column using the
+            bed database table. See validateSymbol for more details
+            on the remapping method.
+
+        Args:
+            skip_database_checks (bool): Whether to skip this validation check
+                since it requires access to the internal bed database
+
+        Returns:
+            str: error message
+        """
+        error = ""
+        if not skip_database_checks:
+            bedSynId = self.genie_config["bed"]
+            bed = self.syn.tableQuery(
+                f"select Hugo_Symbol, ID from {bedSynId} "
+                f"where CENTER = '{self.center}'"
+            )
+            bedDf = bed.asDataFrame()
+            cnvDF["remapped"] = cnvDF["HUGO_SYMBOL"].apply(
+                lambda x: validateSymbol(x, bedDf)
+            )
+            cnvDF = cnvDF[~cnvDF["remapped"].isnull()]
+
+            # Do not allow any duplicated genes after symbols
+            # have been remapped
+            if sum(cnvDF["remapped"].duplicated()) > 0:
+                duplicated = cnvDF["remapped"].duplicated(keep=False)
+                error += (
+                    "Your CNA file has duplicated Hugo_Symbols "
+                    "(After remapping of genes): {} -> {}.\n".format(
+                        ",".join(cnvDF["HUGO_SYMBOL"][duplicated]),
+                        ",".join(cnvDF["remapped"][duplicated]),
+                    )
+                )
+        return error

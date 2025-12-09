@@ -67,7 +67,7 @@ def test_validinput__validate(assay_info):
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = assay_info._validate(assay_info_df)
+        error, warning = assay_info._validate(assay_info_df, skip_database_checks=False)
         assert error == ""
         assert warning == ""
         patch_get_gdc.assert_called()
@@ -101,7 +101,7 @@ def test_case__validate(assay_info):
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = assay_info._validate(assay_info_df)
+        error, warning = assay_info._validate(assay_info_df, skip_database_checks=False)
         assert error == ""
         assert warning == ""
         patch_get_gdc.assert_called()
@@ -135,7 +135,7 @@ def test_underscore__validate(assay_info):
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = assay_info._validate(assay_info_df)
+        error, warning = assay_info._validate(assay_info_df, skip_database_checks=False)
         assert error == ""
         assert warning == ""
         patch_get_gdc.assert_called()
@@ -148,7 +148,7 @@ def test__missingcols__validate(assay_info):
     with patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = assay_info._validate(assay_info_df)
+        error, warning = assay_info._validate(assay_info_df, skip_database_checks=False)
     expected_errors = (
         "Assay_information.yaml: Must have SEQ_ASSAY_ID column.\n"
         "Assay_information.yaml: Must have is_paired_end column.\n"
@@ -255,7 +255,7 @@ def test_invalid__validate(assay_info):
     ), patch.object(
         process_functions, "get_gdc_data_dictionary", return_value=test_dict
     ) as patch_get_gdc:
-        error, warning = assay_info._validate(assay_info_df)
+        error, warning = assay_info._validate(assay_info_df, skip_database_checks=False)
         expected_errors = (
             "Assay_information.yaml: "
             "Please make sure all your SEQ_ASSAY_IDs start with your "
@@ -316,3 +316,71 @@ def test_invalid__validate(assay_info):
         patch_get_gdc.assert_called_once_with("read_group")
         assert error == expected_errors
         assert warning == ""
+
+
+@pytest.mark.parametrize(
+    "skip_database_checks, all_seq_assays, clinical_db_ids, expected_error, expect_called",
+    [
+        # 1) skip_database_checks=True -> always "", even if IDs "missing"
+        (
+            True,
+            {"A-1": {}, "B-2": {}},
+            ["A-1", "C-3"],
+            "",
+            False,
+        ),
+        # 2) skip_database_checks=False AND all assay IDs are present in DB -> ""
+        (
+            False,
+            {"A-1": {}, "B-2": {}},
+            ["A-1", "B-2"],
+            "",
+            True,
+        ),
+        # 3) skip_database_checks=False AND there are more assay ids than in DB -> ""
+        (
+            False,
+            {"A-1": {}, "B-2": {}, "C-2": {}},
+            ["A-1", "B-2"],
+            "",
+            True,
+        ),
+        # 4) skip_database_checks=False AND DB has at least one ID not in assay file -> error
+        (
+            False,
+            {"A-1": {}, "B-2": {}},
+            ["A-1", "B-2", "C-3"],
+            "Assay_information.yaml: You are missing SEQ_ASSAY_IDs: C-3\n",
+            True,
+        ),
+    ],
+    ids=[
+        "skip_database_check_is_true",
+        "seq_assay_ids_match_db",
+        "assay_has_extra_seq_assay_ids",
+        "assay_has_missing_seq_assay_ids",
+    ],
+)
+def test_validate_all_seq_assay_ids_exist_in_clinical_database_patch_object(
+    assay_info,
+    skip_database_checks,
+    all_seq_assays,
+    clinical_db_ids,
+    expected_error,
+    expect_called,
+):
+    fake_df = pd.DataFrame({"seq": clinical_db_ids})
+
+    # Patch extract.get_syntabledf right where the function looks it up
+    with patch.object(extract, "get_syntabledf", return_value=fake_df) as mocked_get:
+        err = assay_info.validate_all_seq_assay_ids_exist_in_clinical_database(
+            all_seq_assays=all_seq_assays,
+            skip_database_checks=skip_database_checks,
+        )
+
+    assert err == expected_error
+
+    if expect_called:
+        mocked_get.assert_called_once()
+    else:
+        mocked_get.assert_not_called()
