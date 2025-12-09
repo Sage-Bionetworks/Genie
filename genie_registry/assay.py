@@ -1,6 +1,7 @@
 """Assay information class"""
 
 import os
+from typing import Tuple
 
 import pandas as pd
 import yaml
@@ -127,15 +128,19 @@ class Assayinfo(FileTypeFormat):
             all_panel_info = pd.concat([all_panel_info, assay_finaldf])
         return all_panel_info
 
-    def _validate(self, assay_info_df, skip_database_checks):
+    def _validate(
+        self, assay_info_df: pd.DataFrame, skip_database_checks: bool
+    ) -> Tuple[str, str]:
         """
         Validates the values of assay information file
 
         Args:
-            assay_info_df: assay information dataframe
+            assay_info_df (pd.DataFrame): input assay information dataframe
+            skip_database_checks (bool): Whether to skip certain validation checks
+                since they requires access to the internal database tables
 
         Returns:
-            tuple: error and warning
+            Tuple[str, str]: complete error and warning messages
         """
 
         total_error = ""

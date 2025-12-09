@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Union
+from typing import Tuple, Union
 
 import pandas as pd
 import synapseclient
@@ -175,7 +175,18 @@ class cna(FileTypeFormat):
             self.syn.store(synapseclient.File(newPath, parent=centerMafSynId))
         return newPath
 
-    def _validate(self, cnvDF, skip_database_checks):
+    def _validate(self, cnvDF: pd.DataFrame, skip_database_checks: bool) -> Tuple:
+        """
+        Validates the values of the input cna file
+
+        Args:
+            cnvDF (pd.DataFrame): input CNA file
+            skip_database_checks (bool): Whether to skip this validation check
+                since it requires access to the internal clinical sample database
+
+        Returns:
+            Tuple: complete error and warning messages
+        """
         total_error = ""
         warning = ""
         cnvDF.columns = [col.upper() for col in cnvDF.columns]
@@ -230,14 +241,16 @@ class cna(FileTypeFormat):
         self, cnvDF: pd.DataFrame, skip_database_checks: bool
     ) -> str:
         """Validates that there are no duplicated Hugo_Symbol values
-            after remapping the previous Hugo_Symbol column using the
-            gene symv
+            after remapping the previous Hugo_Symbol column using the 
+            bed database table. See validateSymbol for more details 
+            on the remapping method. 
 
         Args:
-            skip_database_checks (bool): _description_
+            skip_database_checks (bool): Whether to skip this validation check
+                since it requires access to the internal bed database
 
         Returns:
-            str: _description_
+            str: error message
         """
         error = ""
         if not skip_database_checks:
