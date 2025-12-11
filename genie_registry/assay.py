@@ -152,7 +152,7 @@ class Assayinfo(FileTypeFormat):
                     "Assay_information.yaml: Please make sure all your "
                     "SEQ_ASSAY_IDs start with your center abbreviation.\n"
                 )
-
+            print(self.syn.getUserProfile())
             uniq_seq_df = extract.get_syntabledf(
                 self.syn,
                 f"select distinct(SEQ_ASSAY_ID) as seq from {self.genie_config['sample']} "
