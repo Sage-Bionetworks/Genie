@@ -7,19 +7,21 @@ from unittest.mock import patch
 
 from genie import write_invalid_reasons
 
+
 @pytest.fixture
 def mock_centers_mapping():
     df = pd.DataFrame(
         {
             "center": ["A", "B"],
             "errorsSynId": ["synErrA", "synErrB"],
-            "stagingSynId":["synStageA", "synStageB"],
-            "inputSynId":["synInputA", "synInputB"],
+            "stagingSynId": ["synStageA", "synStageB"],
+            "inputSynId": ["synInputA", "synInputB"],
         },
     )
     df.index = ["0_1", "1_1"]
     return df
-    
+
+
 CENTER_ERRORSDF = pd.DataFrame(
     {
         "id": ["syn1234", "syn2345"],
@@ -67,15 +69,23 @@ def test_get_center_invalid_errors(syn):
         assert patch_combine.call_count == 2
 
 
-def test_write_writes_no_errors_and_correct_errors_and_uses_correct_parent_ids(mock_centers_mapping):
+def test_write_writes_no_errors_and_correct_errors_and_uses_correct_parent_ids(
+    mock_centers_mapping,
+):
     syn = mock.Mock()
     center_errors = {"A": "A had errors"}  # no errors for center B
 
-    with mock.patch.object(write_invalid_reasons.extract, "get_syntabledf", return_value=mock_centers_mapping), \
-         mock.patch.object(write_invalid_reasons, "get_center_invalid_errors", return_value=center_errors), \
-         mock.patch.object(write_invalid_reasons.synapseclient, "File") as m_file_cls, \
-         mock.patch.object(write_invalid_reasons.os, "remove") as m_remove:
-
+    with mock.patch.object(
+        write_invalid_reasons.extract,
+        "get_syntabledf",
+        return_value=mock_centers_mapping,
+    ), mock.patch.object(
+        write_invalid_reasons, "get_center_invalid_errors", return_value=center_errors
+    ), mock.patch.object(
+        write_invalid_reasons.synapseclient, "File"
+    ) as m_file_cls, mock.patch.object(
+        write_invalid_reasons.os, "remove"
+    ) as m_remove:
         # Make open() return a different handle per file so we can assert per-center writes
         file_handles = {}
 
@@ -103,7 +113,9 @@ def test_write_writes_no_errors_and_correct_errors_and_uses_correct_parent_ids(m
     m_open.assert_any_call("A_validation_errors.txt", "w")
     m_open.assert_any_call("B_validation_errors.txt", "w")
 
-    file_handles["A_validation_errors.txt"].write.assert_called_once_with("A had errors")
+    file_handles["A_validation_errors.txt"].write.assert_called_once_with(
+        "A had errors"
+    )
     file_handles["B_validation_errors.txt"].write.assert_called_once_with("No errors!")
 
     # assertions: correct Synapse folder IDs used (parentId)
