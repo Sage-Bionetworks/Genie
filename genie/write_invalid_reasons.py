@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 def write(
     syn: synapseclient.Synapse, center_mapping_synid: str, error_tracker_synid: str
 ):
-    """Write center errors to a file
+    """Write center errors to a file and save in the 
+        errors folder in the center's folder
 
     Args:
         syn (synapseclient.Synapse): Synapse connection
@@ -29,7 +30,7 @@ def write(
     center_errors = get_center_invalid_errors(syn, error_tracker_synid)
     for center in center_mapping_df["center"]:
         logger.info(center)
-        staging_synid = center_mapping_df["stagingSynId"][
+        errors_synid = center_mapping_df["errorsSynId"][
             center_mapping_df["center"] == center
         ][0]
         with open(center + "_errors.txt", "w") as errorfile:
@@ -38,7 +39,7 @@ def write(
             else:
                 errorfile.write(center_errors[center])
 
-        ent = synapseclient.File(center + "_errors.txt", parentId=staging_synid)
+        ent = synapseclient.File(center + "_errors.txt", parentId=errors_synid)
         syn.store(ent)
         os.remove(center + "_errors.txt")
 
