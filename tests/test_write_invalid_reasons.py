@@ -100,17 +100,17 @@ def test_write_writes_no_errors_and_correct_errors_and_uses_correct_parent_ids(m
             )
 
     # assertions: open + writes
-    m_open.assert_any_call("A_errors.txt", "w")
-    m_open.assert_any_call("B_errors.txt", "w")
+    m_open.assert_any_call("A_validation_errors.txt", "w")
+    m_open.assert_any_call("B_validation_errors.txt", "w")
 
-    file_handles["A_errors.txt"].write.assert_called_once_with("A had errors")
-    file_handles["B_errors.txt"].write.assert_called_once_with("No errors!")
+    file_handles["A_validation_errors.txt"].write.assert_called_once_with("A had errors")
+    file_handles["B_validation_errors.txt"].write.assert_called_once_with("No errors!")
 
     # assertions: correct Synapse folder IDs used (parentId)
-    m_file_cls.assert_any_call("A_errors.txt", parentId="synErrA")
-    m_file_cls.assert_any_call("B_errors.txt", parentId="synErrB")
+    m_file_cls.assert_any_call("A_validation_errors.txt", parentId="synErrA")
+    m_file_cls.assert_any_call("B_validation_errors.txt", parentId="synErrB")
 
     # Synapse store + cleanup
     assert syn.store.call_args_list == [mock.call(ent_a), mock.call(ent_b)]
-    m_remove.assert_any_call("A_errors.txt")
-    m_remove.assert_any_call("B_errors.txt")
+    m_remove.assert_any_call("A_validation_errors.txt")
+    m_remove.assert_any_call("B_validation_errors.txt")

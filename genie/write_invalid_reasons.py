@@ -33,15 +33,15 @@ def write(
         errors_synid = center_mapping_df["errorsSynId"][
             center_mapping_df["center"] == center
         ][0]
-        with open(center + "_errors.txt", "w") as errorfile:
+        with open(center + "_validation_errors.txt", "w") as errorfile:
             if center not in center_errors:
                 errorfile.write("No errors!")
             else:
                 errorfile.write(center_errors[center])
 
-        ent = synapseclient.File(center + "_errors.txt", parentId=errors_synid)
+        ent = synapseclient.File(center + "_validation_errors.txt", parentId=errors_synid)
         syn.store(ent)
-        os.remove(center + "_errors.txt")
+        os.remove(center + "_validation_errors.txt")
 
 
 def _combine_center_file_errors(
