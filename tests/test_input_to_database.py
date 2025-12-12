@@ -417,7 +417,7 @@ def test_valid_validatefile(syn, genie_config):
 
         assert expected_results == validate_results
         patch_validate.assert_called_once_with(
-            oncotree_link=oncotree_link, nosymbol_check=False
+            oncotree_link=oncotree_link, skip_database_checks=False
         )
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities
@@ -496,7 +496,7 @@ def test_invalid_validatefile(syn, genie_config):
 
         assert expected_results == validate_results
         patch_validate.assert_called_once_with(
-            oncotree_link=oncotree_link, nosymbol_check=False
+            oncotree_link=oncotree_link, skip_database_checks=False
         )
         patch_check.assert_called_once_with(
             validation_statusdf, error_trackerdf, entities

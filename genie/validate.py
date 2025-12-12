@@ -132,7 +132,7 @@ class ValidationHelper(object):
 class GenieValidationHelper(ValidationHelper):
     """A validator helper class for AACR Project Genie."""
 
-    _validate_kwargs = ["nosymbol_check"]
+    _validate_kwargs = ["skip_database_checks"]
 
 
 # TODO: Currently only checks if a user has READ permissions
@@ -249,7 +249,7 @@ def _perform_validate(syn, args):
         genie_config=genie_config,
     )
     mykwargs = dict(
-        nosymbol_check=args.nosymbol_check,
+        skip_database_checks=args.skip_database_checks,
         project_id=args.project_id,
     )
     valid, message = validator.validate_single_file(**mykwargs)

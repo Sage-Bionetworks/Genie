@@ -95,10 +95,9 @@ def build_parser():
     )
 
     parser_validate.add_argument(
-        "--nosymbol-check",
+        "--skip-database-checks",
         action="store_true",
-        help="Ignores specific post-processing validation criteria related to HUGO symbols "
-        "in the structural variant and cna files.",
+        help="Ignores validation checks that require internal database access",
     )
 
     # TODO: remove this default when private genie project is ready

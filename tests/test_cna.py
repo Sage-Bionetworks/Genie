@@ -1,7 +1,8 @@
+from types import SimpleNamespace
 from unittest import mock
 from unittest.mock import patch
-import pytest
 
+import pytest
 import pandas as pd
 import synapseclient
 
@@ -147,3 +148,72 @@ def test_validation(syn, cna_class):
         )
         assert error == expectedErrors
         assert warning == ""
+
+
+@pytest.mark.parametrize(
+    "skip_database_checks, cnv_hugo_symbols, remap_dict, expected_error, expect_tablequery_called",
+    [
+        # 1) skip_database_checks=False, no duplicates after remap -> ""
+        (
+            False,
+            ["TP53", "EGFR", "BRCA1"],
+            {"TP53": "TP53", "EGFR": "EGFR", "BRCA1": "BRCA1"},
+            "",
+            True,
+        ),
+        # 2) skip_database_checks=False, duplicates after remap -> error
+        (
+            False,
+            ["TP53", "TP53_ALT", "EGFR"],
+            {"TP53": "TP53", "TP53_ALT": "TP53", "EGFR": "EGFR"},
+            "Your CNA file has duplicated Hugo_Symbols (After remapping of genes): "
+            "TP53,TP53_ALT -> TP53,TP53.\n",
+            True,
+        ),
+        # 3) skip_database_checks=True, duplicates exist but check skipped -> ""
+        (
+            True,
+            ["TP53", "TP53_ALT", "EGFR"],
+            {"TP53": "TP53", "TP53_ALT": "TP53", "EGFR": "EGFR"},
+            "",
+            False,
+        ),
+    ],
+    ids=["no_dups", "dups", "dups_but_skip_database_checks"],
+)
+def test_validate_no_dup_symbols_after_remapping(
+    cna_class,
+    skip_database_checks,
+    cnv_hugo_symbols,
+    remap_dict,
+    expected_error,
+    expect_tablequery_called,
+):
+    cnvDF = pd.DataFrame({"HUGO_SYMBOL": cnv_hugo_symbols})
+
+    # mock bed table returned by Synapse tableQuery
+    bedDf = pd.DataFrame(
+        {"Hugo_Symbol": list(remap_dict.values()), "ID": range(len(remap_dict))}
+    )
+    mock_bed_query_result = SimpleNamespace(asDataFrame=lambda: bedDf)
+
+    def mock_validateSymbol(sym, bedDf):
+        return remap_dict.get(sym)
+
+    with patch.object(
+        cna_class.syn, "tableQuery", return_value=mock_bed_query_result
+    ) as mocked_tq, patch(
+        "genie_registry.cna.validateSymbol", side_effect=mock_validateSymbol
+    ) as mocked_vs:
+        err = cna_class.validate_no_dup_symbols_after_remapping(
+            cnvDF, skip_database_checks
+        )
+
+    assert err == expected_error
+
+    if expect_tablequery_called:
+        mocked_tq.assert_called_once()
+        mocked_vs.assert_called()
+    else:
+        mocked_tq.assert_not_called()
+        mocked_vs.assert_not_called()
