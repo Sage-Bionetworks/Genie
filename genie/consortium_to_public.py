@@ -5,7 +5,6 @@ import os
 import sys
 
 import pandas as pd
-import synapseclient
 import synapseutils
 from genie import (
     create_case_lists,
@@ -14,15 +13,14 @@ from genie import (
     load,
     process_functions,
 )
+from genie.load import _copyRecursive
 
 logger = logging.getLogger(__name__)
 stdout_handler = logging.StreamHandler(stream=sys.stdout)
 stdout_handler.setLevel(logging.INFO)
 logger.addHandler(stdout_handler)
-from typing import Dict
 
-from genie.load import _copyRecursive
-
+DEPRECATED_PUBLIC_RELEASE_FILES = ["data_fusions.txt", "meta_fusions.txt"]
 
 # TODO: Add to transform.py
 def commonVariantFilter(mafDf):
@@ -213,7 +211,7 @@ def consortiumToPublic(
     )
     genePanelEntities = []
     for entName, entId in consortiumRelease[2]:
-        is_deprecated_file = entName in ["data_fusions.txt"]
+        is_deprecated_file = entName in DEPRECATED_PUBLIC_RELEASE_FILES
         # skip files to convert
         if (
             entName.startswith("data_linear")
