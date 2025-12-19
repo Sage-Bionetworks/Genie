@@ -22,6 +22,7 @@ logger.addHandler(stdout_handler)
 
 DEPRECATED_PUBLIC_RELEASE_FILES = ["data_fusions.txt", "meta_fusions.txt"]
 
+
 # TODO: Add to transform.py
 def commonVariantFilter(mafDf):
     """

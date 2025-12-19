@@ -104,6 +104,7 @@ FULL_MAF_RELEASE_COLUMNS = [
 
 DEPRECATED_CONSORTIUM_RELEASE_FILES = ["data_fusions.txt", "meta_fusions.txt"]
 
+
 # TODO: Add to transform.py
 def _to_redact_interval(df_col: pd.Series) -> Tuple[pd.Series, pd.Series]:
     """
