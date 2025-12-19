@@ -13,13 +13,14 @@ logger = logging.getLogger(__name__)
 
 def write(
     syn: synapseclient.Synapse, center_mapping_synid: str, error_tracker_synid: str
-):
-    """Write center errors to a file
+) -> None:
+    """Write center errors to a file called {center}_validation_errors.txt and
+        save it to the errors folder in the center's folder
 
     Args:
         syn (synapseclient.Synapse): Synapse connection
-        center_mapping_synid (str): Center mapping Synapse id
-        error_tracker_synid (str): Error tracking Synapse id
+        center_mapping_synid (str): Center mapping table's synapse id
+        error_tracker_synid (str): Error tracking table's synapse id
 
     """
     center_mapping_df = extract.get_syntabledf(
@@ -29,18 +30,19 @@ def write(
     center_errors = get_center_invalid_errors(syn, error_tracker_synid)
     for center in center_mapping_df["center"]:
         logger.info(center)
-        staging_synid = center_mapping_df["stagingSynId"][
+        center_errors_report_name = f"{center}_validation_errors.txt"
+        errors_synid = center_mapping_df["errorsSynId"][
             center_mapping_df["center"] == center
         ][0]
-        with open(center + "_errors.txt", "w") as errorfile:
+        with open(center_errors_report_name, "w") as errorfile:
             if center not in center_errors:
                 errorfile.write("No errors!")
             else:
                 errorfile.write(center_errors[center])
 
-        ent = synapseclient.File(center + "_errors.txt", parentId=staging_synid)
+        ent = synapseclient.File(center_errors_report_name, parentId=errors_synid)
         syn.store(ent)
-        os.remove(center + "_errors.txt")
+        os.remove(center_errors_report_name)
 
 
 def _combine_center_file_errors(
