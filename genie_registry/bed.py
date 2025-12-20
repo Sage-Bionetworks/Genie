@@ -456,9 +456,12 @@ class bed(FileTypeFormat):
         """
         LOGGER.info("CREATING GENE PANEL")
         if not beddf.empty:
-            exonsdf = beddf[beddf["Feature_Type"] == "exon"]
+            # exonsdf = beddf[beddf["Feature_Type"] == "exon"]
             # Only include genes that should be included in the panels
-            include_exonsdf = exonsdf[exonsdf["includeInPanel"]]
+            #include_exonsdf = exonsdf[exonsdf["includeInPanel"]]
+            
+            # Include all genes in the panels
+            include_exonsdf =  beddf[beddf["Feature_Type"] == "exon"]
             # Write gene panel
             null_genes = include_exonsdf["Hugo_Symbol"].isnull()
             unique_genes = set(include_exonsdf["Hugo_Symbol"][~null_genes])
@@ -631,11 +634,11 @@ class bed(FileTypeFormat):
             "Start_Position",
             "End_Position",
             "Hugo_Symbol",
-            "includeInPanel",
+            #"includeInPanel",
         ]
         if len(beddf.columns) < len(newcols):
             total_error += (
-                "BED file: Must at least have five columns in this "
+                "BED file: Must at least have four columns in this "
                 "order: {}. Make sure there are "
                 "no headers.\n".format(", ".join(newcols))
             )
@@ -675,15 +678,15 @@ class bed(FileTypeFormat):
                     "Hugo_Symbol column, not the strand column\n"
                 )
 
-            warn, error = process_functions.check_col_and_values(
-                beddf,
-                "includeInPanel",
-                [True, False],
-                filename="BED file",
-                required=True,
-            )
-            warning += warn
-            total_error += error
+            #warn, error = process_functions.check_col_and_values(
+            #    beddf,
+            #    "includeInPanel",
+            #    [True, False],
+            #    filename="BED file",
+            #    required=True,
+            #)
+            #warning += warn
+            #total_error += error
 
             if to_validate_symbol:
                 gene_position_table = self.syn.tableQuery("SELECT * FROM syn11806563")

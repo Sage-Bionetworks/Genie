@@ -309,9 +309,9 @@ def test_missingcols_failure__validate(bed_class):
     emptydf = pd.DataFrame()
     error, warning = bed_class._validate(emptydf)
     expected_errors = (
-        "BED file: Must at least have five columns in this order: "
-        "Chromosome, Start_Position, End_Position, Hugo_Symbol, "
-        "includeInPanel. Make sure there are no headers.\n"
+        "BED file: Must at least have four columns in this order: "
+        "Chromosome, Start_Position, End_Position, Hugo_Symbol. "
+        "Make sure there are no headers.\n"
     )
     assert error == expected_errors
     assert warning == ""
@@ -353,8 +353,6 @@ def test_badinputs_failure__validate(bed_class):
         "Make sure there are no headers.\n"
         "BED file: The End_Position column must only be integers. "
         "Make sure there are no headers.\n"
-        "BED file: Please double check your includeInPanel column.  "
-        "This column must only be these values: True, False\n"
         "BED file: Please double check your Chromosome column.  "
         "This column must only be these values: {possible_vals}\n".format(
             possible_vals=", ".join(validate.ACCEPTED_CHROMOSOMES)

@@ -645,7 +645,7 @@ A user of the GENIE data pointed out that the expected gene count numbers in the
 
 ```{r genepanel_diff, echo=F}
 if (!is.null(assay_infodf) & !is.null(this_bed)) {
-  gene_panel_bed = this_bed[this_bed$Feature_Type == "exon" & this_bed$includeInPanel == "True" & this_bed$Hugo_Symbol != "", ]
+  gene_panel_bed = this_bed[this_bed$Feature_Type == "exon" & this_bed$Hugo_Symbol != "", ]
   # Get count of symbols per panel
   symbol_count_per_panel = table(gene_panel_bed$Hugo_Symbol, gene_panel_bed$SEQ_ASSAY_ID)
   # Get whether or not a panel contains a certain symbol

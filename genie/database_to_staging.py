@@ -1802,7 +1802,7 @@ def stagingToCbio(
     bedDf = extract.get_syntabledf(
         syn,
         "SELECT Chromosome,Start_Position,End_Position,Hugo_Symbol,ID,"
-        "SEQ_ASSAY_ID,Feature_Type,includeInPanel,clinicalReported FROM"
+        "SEQ_ASSAY_ID,Feature_Type,clinicalReported FROM"
         f" {bedSynId} where CENTER in ('{center_query_str}')",
     )
 
