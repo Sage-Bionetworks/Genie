@@ -111,9 +111,9 @@ def test_perfect___process(bed_class):
         )
 
 
-def test_includeinpanel___process(bed_class):
+def test__process_input_contains_includeinpanel(bed_class):
     """
-    Make sure includeInPanel column is propogated and
+    Make sure includeInPanel column is propogated if included in input and
     intergenic region is captured
     """
 
@@ -144,6 +144,51 @@ def test_includeinpanel___process(bed_class):
             2: [69689532, 1111, 53719548, 44084624],
             3: ["foo", "bar", "baz", "boo"],
             4: [True, True, 0, 1],
+        }
+    )
+    with patch.object(
+        genie_registry.bed, "create_gtf", return_value=(EXON_TEMP.name, GENE_TEMP.name)
+    ):
+        new_beddf = bed_class._process(
+            beddf, seq_assay_id, new_path, parentid, create_panel=False
+        )
+        new_beddf.sort_values("Chromosome", inplace=True)
+        new_beddf.reset_index(drop=True, inplace=True)
+        assert_frame_equal(
+            expected_beddf, new_beddf[expected_beddf.columns], check_dtype=False
+        )
+        
+def test__process_input_does_not_contain_includeinpanel(bed_class):
+    """
+    Make sure placeholder includeInPanel column is created
+    """
+
+    expected_beddf = pd.DataFrame(
+        dict(
+            Chromosome=["2", "9", "12", "19"],
+            Start_Position=[69688432, 1111, 53700240, 44080953],
+            End_Position=[69689532, 1111, 53719548, 44084624],
+            Hugo_Symbol=["AAK1", float("nan"), "AAAS", float("nan")],
+            includeInPanel=[True, True, True, True],
+            clinicalReported=[float("nan")] * 4,
+            ID=["foo", "bar", "baz", "boo"],
+            SEQ_ASSAY_ID=["SAGE-TEST", "SAGE-TEST", "SAGE-TEST", "SAGE-TEST"],
+            Feature_Type=["exon", "intergenic", "exon", "exon"],
+            CENTER=["SAGE", "SAGE", "SAGE", "SAGE"],
+        )
+    )
+
+    expected_beddf.sort_values("Chromosome", inplace=True)
+    expected_beddf.reset_index(drop=True, inplace=True)
+
+    # symbols that can't be map should be null,
+    # includeInPanel column should be included if it exists
+    beddf = pd.DataFrame(
+        {
+            0: ["2", "9", "12", "19"],
+            1: [69688432, 1111, 53700240, 44080953],
+            2: [69689532, 1111, 53719548, 44084624],
+            3: ["foo", "bar", "baz", "boo"],
         }
     )
     with patch.object(

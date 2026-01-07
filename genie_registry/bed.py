@@ -516,8 +516,8 @@ class bed(FileTypeFormat):
         seq_assay_id = seq_assay_id.replace("_", "-")
 
         # add in placeholder includeInPanel column and value if it doesn't exits
-        if len(beddf.columns == 4):
-            beddf[len(beddf.columns)-1] = True
+        if len(beddf.columns) == 4:
+            beddf[4] = True
         
         # Add in 6th column which is the clinicalReported
         if len(beddf.columns) > 5:
