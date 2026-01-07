@@ -392,6 +392,7 @@ def remap_symbols(row, gene_positiondf):
                 row["Hugo_Symbol"] = symbol
     return row
 
+
 class bed(FileTypeFormat):
     """GENIE bed format"""
 
@@ -457,10 +458,10 @@ class bed(FileTypeFormat):
         if not beddf.empty:
             # exonsdf = beddf[beddf["Feature_Type"] == "exon"]
             # Only include genes that should be included in the panels
-            #include_exonsdf = exonsdf[exonsdf["includeInPanel"]]
-            
+            # include_exonsdf = exonsdf[exonsdf["includeInPanel"]]
+
             # Include all genes in the panels
-            include_exonsdf =  beddf[beddf["Feature_Type"] == "exon"]
+            include_exonsdf = beddf[beddf["Feature_Type"] == "exon"]
             # Write gene panel
             null_genes = include_exonsdf["Hugo_Symbol"].isnull()
             unique_genes = set(include_exonsdf["Hugo_Symbol"][~null_genes])
@@ -515,10 +516,10 @@ class bed(FileTypeFormat):
         seq_assay_id = seq_assay_id.upper()
         seq_assay_id = seq_assay_id.replace("_", "-")
 
-        # add in placeholder includeInPanel column and value if it doesn't exits
+        # add in placeholder includeInPanel column and value if it doesn't exist
         if len(beddf.columns) == 4:
             beddf[4] = True
-        
+
         # Add in 6th column which is the clinicalReported
         if len(beddf.columns) > 5:
             if all(beddf[5].apply(lambda x: x in [True, False])):
@@ -535,7 +536,7 @@ class bed(FileTypeFormat):
         exon_gtf_path, gene_gtf_path = create_gtf(process_functions.SCRIPT_DIR)
         LOGGER.info("REMAPPING {}".format(seq_assay_id))
         # bedname = seq_assay_id + ".bed"
-        
+
         beddf.columns = [
             "Chromosome",
             "Start_Position",
@@ -638,7 +639,7 @@ class bed(FileTypeFormat):
             "Start_Position",
             "End_Position",
             "Hugo_Symbol",
-            #"includeInPanel",
+            # "includeInPanel",
         ]
         if len(beddf.columns) < len(newcols):
             total_error += (
@@ -682,15 +683,15 @@ class bed(FileTypeFormat):
                     "Hugo_Symbol column, not the strand column\n"
                 )
 
-            #warn, error = process_functions.check_col_and_values(
+            # warn, error = process_functions.check_col_and_values(
             #    beddf,
             #    "includeInPanel",
             #    [True, False],
             #    filename="BED file",
             #    required=True,
-            #)
-            #warning += warn
-            #total_error += error
+            # )
+            # warning += warn
+            # total_error += error
 
             if to_validate_symbol:
                 gene_position_table = self.syn.tableQuery("SELECT * FROM syn11806563")

@@ -157,7 +157,8 @@ def test__process_input_contains_includeinpanel(bed_class):
         assert_frame_equal(
             expected_beddf, new_beddf[expected_beddf.columns], check_dtype=False
         )
-        
+
+
 def test__process_input_does_not_contain_includeinpanel(bed_class):
     """
     Make sure placeholder includeInPanel column is created
