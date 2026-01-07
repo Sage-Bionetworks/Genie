@@ -392,7 +392,6 @@ def remap_symbols(row, gene_positiondf):
                 row["Hugo_Symbol"] = symbol
     return row
 
-
 class bed(FileTypeFormat):
     """GENIE bed format"""
 
@@ -516,6 +515,10 @@ class bed(FileTypeFormat):
         seq_assay_id = seq_assay_id.upper()
         seq_assay_id = seq_assay_id.replace("_", "-")
 
+        # add in placeholder includeInPanel column and value if it doesn't exits
+        if len(beddf.columns == 4):
+            beddf[len(beddf.columns)-1] = True
+        
         # Add in 6th column which is the clinicalReported
         if len(beddf.columns) > 5:
             if all(beddf[5].apply(lambda x: x in [True, False])):
@@ -532,6 +535,7 @@ class bed(FileTypeFormat):
         exon_gtf_path, gene_gtf_path = create_gtf(process_functions.SCRIPT_DIR)
         LOGGER.info("REMAPPING {}".format(seq_assay_id))
         # bedname = seq_assay_id + ".bed"
+        
         beddf.columns = [
             "Chromosome",
             "Start_Position",
