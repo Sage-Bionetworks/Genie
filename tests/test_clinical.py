@@ -14,6 +14,11 @@ import genie_registry
 from genie_registry.clinical import Clinical
 
 
+@pytest.fixture
+def sampletype_mapping() -> pd.DataFrame:
+    # Mapping table: CBIO_LABEL=8 -> CODE='cfDNA'
+    return pd.DataFrame({"CBIO_LABEL": [8], "CODE": ["cfDNA"]})
+
 def createMockTable(dataframe):
     table = mock.create_autospec(synapseclient.table.CsvFileTable)
     table.asDataFrame.return_value = dataframe
@@ -1730,3 +1735,96 @@ def test_preprocess(clin_class, newpath=None):
     assert results["patient"] == expected["patient"]
     assert results["patientCols"] == expected["patientCols"]
     assert results["sampleCols"] == expected["sampleCols"]
+
+
+@pytest.mark.parametrize(
+    "clinicaldf, expected_substrings",
+    [
+        pytest.param(
+            pd.DataFrame(
+                [
+                    (8, "tumor"),   # invalid SAMPLE_TYPE for class 8
+                    (8, "tissue"),  # invalid SAMPLE_TYPE for class 8
+                    (7, "tumor"),   # irrelevant row
+                ]
+            ),
+            [
+                "Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = 8",
+                "Found: ['tissue', 'tumor']",
+                "SAMPLE_TYPE must be 'cfDNA'",
+            ],
+            id="invalid_sample_type_for_class_8",
+        ),
+        pytest.param(
+            pd.DataFrame(
+                [
+                    (7, "cfDNA"),   # invalid SAMPLE_CLASS for cfDNA
+                    (6, "cfdna"),   # invalid SAMPLE_CLASS for cfDNA (case-insensitive)
+                    (8, "cfDNA"),   # valid row
+                ]
+            ),
+            [
+                "Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = 'cfDNA'",
+                "Found: [6, 7]",
+                "When SAMPLE_TYPE is 'cfDNA', SAMPLE_CLASS must be 8",
+            ],
+            id="invalid_sample_class_for_cfdna",
+        ),
+        pytest.param(
+            pd.DataFrame(
+                [
+                    (8, "tumor"),   # invalid type for class 8
+                    (7, "cfDNA"),   # invalid class for cfDNA
+                    (8, "cfDNA"),   # valid
+                ]
+            ),
+            [
+                # both messages should appear
+                "Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = 8",
+                "Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = 'cfDNA'",
+            ],
+            id="both_invalid",
+        ),
+        pytest.param(
+            pd.DataFrame(
+                [
+                    (8, "cfDNA"),
+                    (8, "cfdna"),   # should be accepted (case-insensitive compare)
+                    (7, "tumor"),
+                    (None, None),   # should be ignored by validation logic
+                ]
+            ),
+            [],
+            id="passes",
+        ),
+    ],
+)
+def test__validate_sample_class_and_type_cases(
+    clin_class, sampletype_mapping, clinicaldf, expected_substrings
+):
+    result = clin_class._validate_sample_class_and_type(clinicaldf, sampletype_mapping)
+
+    if expected_substrings:
+        assert isinstance(result, str)
+        for s in expected_substrings:
+            assert s in result
+    else:
+        # passing case: should return empty/None/falsey
+        assert not result
+
+
+def test__validate_sample_class_and_type_uses_mapping_code_value(
+    validator, sampletype_mapping
+):
+    """
+    Ensures the function uses the mapping CODE (allowed_sample_type_val)
+    in the error message (not hard-coded 'cfDNA' in that part).
+    """
+    clinicaldf = pd.DataFrame([(8, "tumor")])  # forces SAMPLE_TYPE error for class 8
+
+    # Make mapping CODE something distinctive
+    mapping = sampletype_mapping.copy()
+    mapping.loc[mapping["CBIO_LABEL"] == 8, "CODE"] = "CFDNA_CODE"
+
+    result = validator._validate_sample_class_and_type(clinicaldf, mapping)
+    assert "SAMPLE_TYPE must be 'CFDNA_CODE'" in result
