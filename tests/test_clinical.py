@@ -26,6 +26,15 @@ def table_query_results(*args):
 
 no_nan = pd.DataFrame(
     dict(
+        CODE=[1, 2, 3, 4, 99],
+        CBIO_LABEL=["Test", "Why", "foo", "Me", "Unknown"],
+        DESCRIPTION=["non", "asdf", "asdf", "asdff", "asdfasdf"],
+    )
+)
+
+
+sample_type_df = pd.DataFrame(
+    dict(
         CODE=[1, 2, 3, 4, 99, 8],
         CBIO_LABEL=["Test", "Why", "foo", "Me", "Unknown", "cfDNA"],
         DESCRIPTION=["non", "asdf", "asdf", "asdff", "asdfasdf", "cfDNA"],
@@ -59,7 +68,7 @@ table_query_results_map = {
     ("select * from syn60548946",): createMockTable(sexdf),
     ("select * from syn60548944",): createMockTable(no_nan),
     ("select * from syn60548943",): createMockTable(no_nan),
-    ("select * from syn60548941",): createMockTable(no_nan),
+    ("select * from syn60548941",): createMockTable(sample_type_df),
     (
         "select fieldName from syn8545211 where patient is True and inClinicalDb is True",
     ): createMockTable(patientdf),
@@ -1733,93 +1742,64 @@ def test_preprocess(clin_class, newpath=None):
 
 
 @pytest.mark.parametrize(
-    "clinicaldf, expected_substrings",
+    "clinicaldf, expected_error",
     [
-        pytest.param(
+        (
             pd.DataFrame(
-                [
-                    (8, "tumor"),   # invalid SAMPLE_TYPE for class 8
-                    (8, "tissue"),  # invalid SAMPLE_TYPE for class 8
-                    (7, "tumor"),   # irrelevant row
-                ]
+                {
+                    "SAMPLE_TYPE":[8, 8, 2],
+                    "SAMPLE_CLASS":["tissue", "tumor", "other"],
+                }
             ),
-            [
-                "Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = 8",
-                "Found: ['tissue', 'tumor']",
-                "SAMPLE_TYPE must be 'cfDNA'",
-            ],
-            id="invalid_sample_type_for_class_8",
+            (
+                "Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = 8. "
+                "Found: tissue, tumor. "
+                "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
+            ),
         ),
-        pytest.param(
+        (
             pd.DataFrame(
-                [
-                    (7, "cfDNA"),   # invalid SAMPLE_CLASS for cfDNA
-                    (6, "cfdna"),   # invalid SAMPLE_CLASS for cfDNA (case-insensitive)
-                    (8, "cfDNA"),   # valid row
-                ]
+                {
+                    "SAMPLE_TYPE":[2, 3, 2],
+                    "SAMPLE_CLASS":["cfDNA", "cfDNA", "other"],
+                }
             ),
-            [
-                "Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = 'cfDNA'",
-                "Found: [6, 7]",
-                "When SAMPLE_TYPE is 'cfDNA', SAMPLE_CLASS must be 8",
-            ],
-            id="invalid_sample_class_for_cfdna",
+            (
+                "Sample Clinical File: Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = 'cfDNA'. "
+                "Found: 2, 3. "
+                "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
+            ),
         ),
-        pytest.param(
+        (
             pd.DataFrame(
-                [
-                    (8, "tumor"),   # invalid type for class 8
-                    (7, "cfDNA"),   # invalid class for cfDNA
-                    (8, "cfDNA"),   # valid
-                ]
+                {
+                    "SAMPLE_TYPE":[8, 8, 2],
+                    "SAMPLE_CLASS":["cfDNA", "cfDNA", "other"],
+                }
             ),
-            [
-                # both messages should appear
-                "Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = 8",
-                "Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = 'cfDNA'",
-            ],
-            id="both_invalid",
+            ""
         ),
-        pytest.param(
+        (
             pd.DataFrame(
-                [
-                    (8, "cfDNA"),
-                    (8, "cfdna"),   # should be accepted (case-insensitive compare)
-                    (7, "tumor"),
-                    (None, None),   # should be ignored by validation logic
-                ]
+                {
+                    "SAMPLE_TYPE":[2, 3, 8],
+                    "SAMPLE_CLASS":["cfDNA", "cfDNA", "other"],
+                }
             ),
-            [],
-            id="passes",
+            (
+                "Sample Clinical File: Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = 'cfDNA'. "
+                "Found: 2, 3. "
+                "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
+                "Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = 8. "
+                "Found: other. "
+                "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
+            ),
         ),
-    ],
+    ], ids = ["invalid_sample_class", "invalid_sample_type", "valid", "both_errors"],
 )
 def test__validate_sample_class_and_type_cases(
-    clin_class, sampletype_mapping, clinicaldf, expected_substrings
+    clin_class, clinicaldf, expected_error
 ):
-    result = clin_class._validate_sample_class_and_type(clinicaldf, sampletype_mapping)
+    result = clin_class._validate_sample_class_and_type(clinicaldf, sample_type_df)
 
-    if expected_substrings:
-        assert isinstance(result, str)
-        for s in expected_substrings:
-            assert s in result
-    else:
-        # passing case: should return empty/None/falsey
-        assert not result
-
-
-def test__validate_sample_class_and_type_uses_mapping_code_value(
-    validator, sampletype_mapping
-):
-    """
-    Ensures the function uses the mapping CODE (allowed_sample_type_val)
-    in the error message (not hard-coded 'cfDNA' in that part).
-    """
-    clinicaldf = pd.DataFrame([(8, "tumor")])  # forces SAMPLE_TYPE error for class 8
-
-    # Make mapping CODE something distinctive
-    mapping = sampletype_mapping.copy()
-    mapping.loc[mapping["CBIO_LABEL"] == 8, "CODE"] = "CFDNA_CODE"
-
-    result = validator._validate_sample_class_and_type(clinicaldf, mapping)
-    assert "SAMPLE_TYPE must be 'CFDNA_CODE'" in result
+    assert result == expected_error

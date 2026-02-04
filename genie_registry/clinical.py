@@ -703,46 +703,44 @@ class Clinical(FileTypeFormat):
         Returns:
             str: error message
         """
+        errors = ""
         df = clinicaldf.copy()
         allowed_sample_type_val = 8
         allowed_sample_class_val = sampletype_mapping.loc[
             sampletype_mapping["CODE"] == allowed_sample_type_val, "CBIO_LABEL"
         ].iloc[0]
-
         invalid_types_for_class = sorted(
             df.loc[df["SAMPLE_CLASS"] == allowed_sample_class_val, "SAMPLE_TYPE"]
             .dropna()
             .unique()
         )
         invalid_types_for_class = [
-            t for t in invalid_types_for_class if t != allowed_sample_class_val
+            str(t) for t in invalid_types_for_class if t != allowed_sample_type_val
         ]
+        invalid_types_for_class = ", ".join(invalid_types_for_class)
 
         invalid_classes = sorted(
-            df.loc[df["SAMPLE_TYPE"] == allowed_sample_type_val, "SAMPLE_CLASS"]
+            df.loc[df["SAMPLE_TYPE"] == int(allowed_sample_type_val), "SAMPLE_CLASS"]
             .dropna()
             .unique()
         )
-        invalid_classes = [c for c in invalid_classes if c != allowed_sample_type_val]
-
-        error_messages = []
+        invalid_classes = [c for c in invalid_classes if c != allowed_sample_class_val]
+        invalid_classes = ", ".join(invalid_classes)
 
         if invalid_types_for_class:
-            error_messages.append(
-                f"Sample Clinical File: Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = {allowed_sample_class_val}. "
+            errors += (
+                f"Sample Clinical File: Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = '{allowed_sample_class_val}'. "
                 f"Found: {invalid_types_for_class}. "
-                f"When SAMPLE_CLASS is {allowed_sample_class_val}, SAMPLE_TYPE must be '{allowed_sample_type_val}'.\n"
+                f"When SAMPLE_CLASS is '{allowed_sample_class_val}', SAMPLE_TYPE must be {allowed_sample_type_val}.\n"
             )
 
         if invalid_classes:
-            error_messages.append(
-                f"Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = '{allowed_sample_type_val}'. "
+            errors += (
+                f"Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = {allowed_sample_type_val}. "
                 f"Found: {invalid_classes}. "
                 f"When SAMPLE_CLASS is '{allowed_sample_class_val}', SAMPLE_TYPE must be {allowed_sample_type_val}.\n"
             )
 
-        if error_messages:
-            errors = " ".join(error_messages)
         return errors
 
     # VALIDATION
