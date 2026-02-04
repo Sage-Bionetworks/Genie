@@ -690,13 +690,13 @@ class Clinical(FileTypeFormat):
             )
         return errors, warnings
 
-
     def _validate_sample_class_and_type(
         self, clinicaldf: pd.DataFrame, sampletype_mapping: pd.DataFrame
     ) -> str:
-        """Validates that the values of SAMPLE_CLASS and SAMPLE_TYPE in the 
-            clinical data is consistent.
-            
+        """Validates that the values of SAMPLE_CLASS and SAMPLE_TYPE in the
+            clinical data is consistent and returns error message with
+            the error(s).
+
             Current rules:
                 When SAMPLE_CLASS is `cfDNA`, SAMPLE_TYPE must be 8 and vice versa
 

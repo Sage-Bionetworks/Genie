@@ -1747,8 +1747,8 @@ def test_preprocess(clin_class, newpath=None):
         (
             pd.DataFrame(
                 {
-                    "SAMPLE_TYPE":[8, 8, 2],
-                    "SAMPLE_CLASS":["tissue", "tumor", "other"],
+                    "SAMPLE_TYPE": [8, 8, 2],
+                    "SAMPLE_CLASS": ["tissue", "tumor", "other"],
                 }
             ),
             (
@@ -1760,8 +1760,8 @@ def test_preprocess(clin_class, newpath=None):
         (
             pd.DataFrame(
                 {
-                    "SAMPLE_TYPE":[2, 3, 2],
-                    "SAMPLE_CLASS":["cfDNA", "cfDNA", "other"],
+                    "SAMPLE_TYPE": [2, 3, 2],
+                    "SAMPLE_CLASS": ["cfDNA", "cfDNA", "other"],
                 }
             ),
             (
@@ -1773,17 +1773,17 @@ def test_preprocess(clin_class, newpath=None):
         (
             pd.DataFrame(
                 {
-                    "SAMPLE_TYPE":[8, 8, 2],
-                    "SAMPLE_CLASS":["cfDNA", "cfDNA", "other"],
+                    "SAMPLE_TYPE": [8, 8, 2],
+                    "SAMPLE_CLASS": ["cfDNA", "cfDNA", "other"],
                 }
             ),
-            ""
+            "",
         ),
         (
             pd.DataFrame(
                 {
-                    "SAMPLE_TYPE":[2, 3, 8],
-                    "SAMPLE_CLASS":["cfDNA", "cfDNA", "other"],
+                    "SAMPLE_TYPE": [2, 3, 8],
+                    "SAMPLE_CLASS": ["cfDNA", "cfDNA", "other"],
                 }
             ),
             (
@@ -1795,11 +1795,10 @@ def test_preprocess(clin_class, newpath=None):
                 "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
             ),
         ),
-    ], ids = ["invalid_sample_class", "invalid_sample_type", "valid", "both_errors"],
+    ],
+    ids=["invalid_sample_class", "invalid_sample_type", "valid", "both_errors"],
 )
-def test__validate_sample_class_and_type_cases(
-    clin_class, clinicaldf, expected_error
-):
+def test__validate_sample_class_and_type_cases(clin_class, clinicaldf, expected_error):
     result = clin_class._validate_sample_class_and_type(clinicaldf, sample_type_df)
 
     assert result == expected_error
