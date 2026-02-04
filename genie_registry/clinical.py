@@ -757,7 +757,7 @@ class Clinical(FileTypeFormat):
         invalid_types_for_class = ", ".join(invalid_types_for_class)
 
         invalid_classes = sorted(
-            df.loc[df["SAMPLE_TYPE"] == int(allowed_sample_type_val), "SAMPLE_CLASS"]
+            df.loc[df["SAMPLE_TYPE"] == allowed_sample_type_val, "SAMPLE_CLASS"]
             .dropna()
             .unique()
         )
