@@ -744,6 +744,7 @@ def test_errors__validate(clin_class):
             INT_CONTACT=[">32485", "<6570", 1990, "Not Collected", ">foobar"],
             INT_DOD=[">32485", "<6570", 1911, "Not Collected", "<dense"],
             DEAD=[1, False, "Unknown", "Not Collected", "Not Applicable"],
+            SAMPLE_CLASS=["Tumor", "cfDNA", "Tumor", "cfDNA", "Tumor"],
         )
     )
 
@@ -909,6 +910,7 @@ def test_duplicated__validate(clin_class):
             SAMPLE_TYPE=[1, 3, 4, float("nan")],
             SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-1", "SAGE-1", float("nan")],
             SEQ_DATE=["Jan-2013", "Jul-2013", "Oct-2013", float("nan")],
+            SAMPLE_CLASS=["Tumor", "cfDNA", "Tumor", float("nan")],
         )
     )
 
