@@ -697,16 +697,57 @@ class Clinical(FileTypeFormat):
             clinical data is consistent and returns error message with
             the error(s).
 
-            Current rules:
-                When SAMPLE_CLASS is `cfDNA`, SAMPLE_TYPE must be 8 and vice versa
+            The following conditions must be met:
+                - When SAMPLE_CLASS is `cfDNA`, SAMPLE_TYPE must be 8
+                - When SAMPLE_TYPE is 8, SAMPLE_CLASS must be `cfDNA`
+                
+            
+            Example: Valid Examples
+            ```
+            | SAMPLE_TYPE  | SAMPLE_CLASS |
+            | ------------ | -------------| 
+            | 8            | cfDNA        | 
+            | 8            | cfDNA        | 
+            ```
+
+            ```
+            | SAMPLE_TYPE  | SAMPLE_CLASS |
+            | ------------ | -------------| 
+            | 8            | cfDNA        | 
+            | 8            | cfDNA        | 
+            | 2            | Tumor        | 
+            ```
+
+            Example: Invalid Examples
+            ```
+            | SAMPLE_TYPE  | SAMPLE_CLASS |
+            | ------------ | -------------| 
+            | 8            | Other        | 
+            | 2            | cfDNA        | 
+            ```
+
+            ```
+            | SAMPLE_TYPE  | SAMPLE_CLASS |
+            | ------------ | -------------| 
+            | 8            | cfDNA        | 
+            | 8            | Other        | 
+            ```
+
+            ```
+            | SAMPLE_TYPE  | SAMPLE_CLASS |
+            | ------------ | -------------| 
+            | 8            | cfDNA        | 
+            | 2            | cfDNA        | 
+            ```
 
         Args:
             clinicaldf (pd.DataFrame): input clinical data
             sampletype_mapping (pd.DataFrame): sample type mapping table
-                containing the mappings of the SAMPLE_TYPE to the value behind it
+                containing the mappings of the SAMPLE_TYPE to the value behind it. This
+                is used to check the SAMPLE_TYPE and SAMPLE_CLASS values.
 
         Returns:
-            str: error message
+            str: error message of the concatenated error message(s)
         """
         errors = ""
         df = clinicaldf.copy()
