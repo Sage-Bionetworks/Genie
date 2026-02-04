@@ -655,7 +655,8 @@ def test_nonull__validate(clin_class):
             "YEAR_CONTACT, INT_CONTACT.\n"
             "Patient: you have inconsistent redaction and text values in "
             "YEAR_DEATH, INT_DOD.\n"
-            "Sample Clinical File: SAMPLE_CLASS column must be 'Tumor', or 'cfDNA'\n"
+            "Sample Clinical File: Please double check your SAMPLE_CLASS column.  "
+            "This column must only be these values: Tumor, cfDNA\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your SECONDARY_RACE "
@@ -695,6 +696,7 @@ def test_missingcols__validate(clin_class):
             "Patient Clinical File: Must have INT_CONTACT column.\n"
             "Patient Clinical File: Must have INT_DOD column.\n"
             "Patient Clinical File: Must have DEAD column.\n"
+            "Sample Clinical File: Must have SAMPLE_CLASS column.\n"
             "Patient Clinical File: Must have SEX column.\n"
         )
 
