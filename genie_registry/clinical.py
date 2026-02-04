@@ -690,6 +690,7 @@ class Clinical(FileTypeFormat):
             )
         return errors, warnings
 
+
     def _validate_sample_class_and_type(
         self, clinicaldf: pd.DataFrame, sampletype_mapping: pd.DataFrame
     ) -> str:
@@ -703,9 +704,9 @@ class Clinical(FileTypeFormat):
             str: error message
         """
         df = clinicaldf.copy()
-        allowed_sample_class_val = 8
-        allowed_sample_type_val = sampletype_mapping.loc[
-            sampletype_mapping["CBIO_LABEL"] == allowed_sample_class_val, "CODE"
+        allowed_sample_type_val = 8
+        allowed_sample_class_val = sampletype_mapping.loc[
+            sampletype_mapping["CODE"] == allowed_sample_type_val, "CBIO_LABEL"
         ].iloc[0]
 
         invalid_types_for_class = sorted(
@@ -714,15 +715,15 @@ class Clinical(FileTypeFormat):
             .unique()
         )
         invalid_types_for_class = [
-            t for t in invalid_types_for_class if t.lower() != "cfdna"
+            t for t in invalid_types_for_class if t != allowed_sample_class_val
         ]
 
         invalid_classes = sorted(
-            df.loc[df["SAMPLE_TYPE"].str.lower() == "cfdna", "SAMPLE_CLASS"]
+            df.loc[df["SAMPLE_TYPE"] == allowed_sample_type_val, "SAMPLE_CLASS"]
             .dropna()
             .unique()
         )
-        invalid_classes = [c for c in invalid_classes if c != 8]
+        invalid_classes = [c for c in invalid_classes if c != allowed_sample_type_val]
 
         error_messages = []
 
@@ -730,14 +731,14 @@ class Clinical(FileTypeFormat):
             error_messages.append(
                 f"Sample Clinical File: Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = {allowed_sample_class_val}. "
                 f"Found: {invalid_types_for_class}. "
-                f"When SAMPLE_CLASS is {allowed_sample_class_val}, SAMPLE_TYPE must be '{allowed_sample_type_val}'."
+                f"When SAMPLE_CLASS is {allowed_sample_class_val}, SAMPLE_TYPE must be '{allowed_sample_type_val}'.\n"
             )
 
         if invalid_classes:
             error_messages.append(
                 f"Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = '{allowed_sample_type_val}'. "
                 f"Found: {invalid_classes}. "
-                f"When SAMPLE_TYPE is 'cfDNA', SAMPLE_CLASS must be {allowed_sample_class_val}."
+                f"When SAMPLE_CLASS is '{allowed_sample_class_val}', SAMPLE_TYPE must be {allowed_sample_type_val}.\n"
             )
 
         if error_messages:
@@ -1193,15 +1194,13 @@ class Clinical(FileTypeFormat):
         death_error = _check_int_dead_consistency(clinicaldf=clinicaldf)
         total_error.write(death_error)
 
-        # CHECK: SAMPLE_CLASS
+        # CHECK: SAMPLE_CLASS and SAMPLE_TYPE mapping
         have_sample_class_column = process_functions.checkColExist(
             clinicaldf, "SAMPLE_CLASS"
         )
         have_sample_type_column = process_functions.checkColExist(
             clinicaldf, "SAMPLE_TYPE"
         )
-        
-        # CHECK: SAMPLE_CLASS and SAMPLE_TYPE mapping
         if have_sample_class_column and have_sample_type_column:
             self._validate_sample_class_and_type(clinicaldf, sampletype_mapping)
 

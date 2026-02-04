@@ -14,11 +14,6 @@ import genie_registry
 from genie_registry.clinical import Clinical
 
 
-@pytest.fixture
-def sampletype_mapping() -> pd.DataFrame:
-    # Mapping table: CBIO_LABEL=8 -> CODE='cfDNA'
-    return pd.DataFrame({"CBIO_LABEL": [8], "CODE": ["cfDNA"]})
-
 def createMockTable(dataframe):
     table = mock.create_autospec(synapseclient.table.CsvFileTable)
     table.asDataFrame.return_value = dataframe
@@ -31,9 +26,9 @@ def table_query_results(*args):
 
 no_nan = pd.DataFrame(
     dict(
-        CODE=[1, 2, 3, 4, 99],
-        CBIO_LABEL=["Test", "Why", "foo", "Me", "Unknown"],
-        DESCRIPTION=["non", "asdf", "asdf", "asdff", "asdfasdf"],
+        CODE=[1, 2, 3, 4, 99, 8],
+        CBIO_LABEL=["Test", "Why", "foo", "Me", "Unknown", "cfDNA"],
+        DESCRIPTION=["non", "asdf", "asdf", "asdff", "asdfasdf", "cfDNA"],
     )
 )
 
@@ -636,7 +631,7 @@ def test_nonull__validate(clin_class):
             "AGE_AT_SEQ_REPORT. It must be an integer, 'Unknown', "
             "'>32485', '<6570'.\n"
             "Sample Clinical File: Please double check your SAMPLE_TYPE "
-            "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
+            "column.  This column must only be these values: 1, 2, 3, 4, 99, 8\n"
             "Patient Clinical File: Please double check your BIRTH_YEAR "
             "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', '>89', '<18'.\n"
@@ -789,7 +784,7 @@ def test_errors__validate(clin_class):
             "ONCOTREE CODES exist in the mapping. You have 1 samples that "
             "don't map. These are the codes that don't map: AMPCAD\n"
             "Sample Clinical File: Please double check your SAMPLE_TYPE "
-            "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
+            "column.  This column must only be these values: 1, 2, 3, 4, 99, 8\n"
             "Sample Clinical File: Please double check your SEQ_ASSAY_ID "
             "columns, there are empty rows.\n"
             "Sample Clinical File: Please make sure your SEQ_ASSAY_IDs start "
