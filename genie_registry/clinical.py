@@ -694,11 +694,16 @@ class Clinical(FileTypeFormat):
     def _validate_sample_class_and_type(
         self, clinicaldf: pd.DataFrame, sampletype_mapping: pd.DataFrame
     ) -> str:
-        """Validates sample class and sample type
+        """Validates that the values of SAMPLE_CLASS and SAMPLE_TYPE in the 
+            clinical data is consistent.
+            
+            Current rules:
+                When SAMPLE_CLASS is `cfDNA`, SAMPLE_TYPE must be 8 and vice versa
 
         Args:
             clinicaldf (pd.DataFrame): input clinical data
             sampletype_mapping (pd.DataFrame): sample type mapping table
+                containing the mappings of the SAMPLE_TYPE to the value behind it
 
         Returns:
             str: error message
