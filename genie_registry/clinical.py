@@ -697,11 +697,15 @@ class Clinical(FileTypeFormat):
         to the clinical SOP.
 
         Args:
-            clinicalDF: Merged clinical file with patient and sample
+            clinicaldf: Merged clinical file with patient and sample
                         information
 
         Returns:
             Error message
+
+        Note:
+            SAMPLE_CLASS is a required column and must contain only
+            'Tumor' or 'cfDNA' values.
         """
         total_error = StringIO()
         warning = StringIO()
