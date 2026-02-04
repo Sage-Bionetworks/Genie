@@ -1237,7 +1237,8 @@ class Clinical(FileTypeFormat):
             clinicaldf, "SAMPLE_TYPE"
         )
         if have_sample_class_column and have_sample_type_column:
-            self._validate_sample_class_and_type(clinicaldf, sampletype_mapping)
+            error = self._validate_sample_class_and_type(clinicaldf, sampletype_mapping)
+            total_error.write(error)
 
         # CHECK: SAMPLE_CLASS is optional attribute
         have_column = process_functions.checkColExist(clinicaldf, "SAMPLE_CLASS")
