@@ -701,35 +701,35 @@ class Clinical(FileTypeFormat):
         The following conditions must be met:
             - When SAMPLE_CLASS is `cfDNA`, SAMPLE_TYPE must be 8
             - When SAMPLE_TYPE is 8, SAMPLE_CLASS must be `cfDNA`
-                
-            
+
+
         Example: Valid Examples
             | SAMPLE_TYPE  | SAMPLE_CLASS |
-            | ------------ | -------------| 
-            | 8            | cfDNA        | 
-            | 8            | cfDNA        | 
+            | ------------ | -------------|
+            | 8            | cfDNA        |
+            | 8            | cfDNA        |
 
             | SAMPLE_TYPE  | SAMPLE_CLASS |
-            | ------------ | -------------| 
-            | 8            | cfDNA        | 
-            | 8            | cfDNA        | 
-            | 2            | Tumor        | 
+            | ------------ | -------------|
+            | 8            | cfDNA        |
+            | 8            | cfDNA        |
+            | 2            | Tumor        |
 
         Example: Invalid Examples
             | SAMPLE_TYPE  | SAMPLE_CLASS |
-            | ------------ | -------------| 
-            | 8            | Other        | 
-            | 2            | cfDNA        | 
+            | ------------ | -------------|
+            | 8            | Other        |
+            | 2            | cfDNA        |
 
             | SAMPLE_TYPE  | SAMPLE_CLASS |
-            | ------------ | -------------| 
-            | 8            | cfDNA        | 
-            | 8            | Other        | 
+            | ------------ | -------------|
+            | 8            | cfDNA        |
+            | 8            | Other        |
 
             | SAMPLE_TYPE  | SAMPLE_CLASS |
-            | ------------ | -------------| 
-            | 8            | cfDNA        | 
-            | 2            | cfDNA        | 
+            | ------------ | -------------|
+            | 8            | cfDNA        |
+            | 2            | cfDNA        |
 
         Args:
             clinicaldf (pd.DataFrame): input clinical data
