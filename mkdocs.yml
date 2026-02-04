@@ -110,6 +110,7 @@ plugins:
           members_order: source
           # shows all functions and attributes even hidden
           members: true
+          show_source: false
           show_private_members: true
           show_if_no_docstring: false
           show_root_heading: true

@@ -693,52 +693,43 @@ class Clinical(FileTypeFormat):
     def _validate_sample_class_and_type(
         self, clinicaldf: pd.DataFrame, sampletype_mapping: pd.DataFrame
     ) -> str:
-        """Validates that the values of SAMPLE_CLASS and SAMPLE_TYPE in the
-            clinical data is consistent and returns error message with
-            the error(s).
+        """
+        Validates that the values of SAMPLE_CLASS and SAMPLE_TYPE in the
+        clinical data is consistent and returns error message with
+        the error(s).
 
-            The following conditions must be met:
-                - When SAMPLE_CLASS is `cfDNA`, SAMPLE_TYPE must be 8
-                - When SAMPLE_TYPE is 8, SAMPLE_CLASS must be `cfDNA`
+        The following conditions must be met:
+            - When SAMPLE_CLASS is `cfDNA`, SAMPLE_TYPE must be 8
+            - When SAMPLE_TYPE is 8, SAMPLE_CLASS must be `cfDNA`
                 
             
-            Example: Valid Examples
-            ```
+        Example: Valid Examples
             | SAMPLE_TYPE  | SAMPLE_CLASS |
             | ------------ | -------------| 
             | 8            | cfDNA        | 
             | 8            | cfDNA        | 
-            ```
 
-            ```
             | SAMPLE_TYPE  | SAMPLE_CLASS |
             | ------------ | -------------| 
             | 8            | cfDNA        | 
             | 8            | cfDNA        | 
             | 2            | Tumor        | 
-            ```
 
-            Example: Invalid Examples
-            ```
+        Example: Invalid Examples
             | SAMPLE_TYPE  | SAMPLE_CLASS |
             | ------------ | -------------| 
             | 8            | Other        | 
             | 2            | cfDNA        | 
-            ```
 
-            ```
             | SAMPLE_TYPE  | SAMPLE_CLASS |
             | ------------ | -------------| 
             | 8            | cfDNA        | 
             | 8            | Other        | 
-            ```
 
-            ```
             | SAMPLE_TYPE  | SAMPLE_CLASS |
             | ------------ | -------------| 
             | 8            | cfDNA        | 
             | 2            | cfDNA        | 
-            ```
 
         Args:
             clinicaldf (pd.DataFrame): input clinical data
