@@ -480,7 +480,7 @@ def test_sample__process(clin_class):
             Age_AT_SEQ_REPORT=[100000, 100000, 100000, 100000, 100000],
             ONCOTree_CODE=["AMPCA", " UNKNOWN", "AMPCA", "AMPCA", "AMPCA"],
             SAMPLE_TYPE=[1, 2, 3, 4, 8],
-            SAMPLE_CLASS=['Tumor', 'Tumor', 'Tumor', 'Tumor', 'cfDNA'],
+            SAMPLE_CLASS=["Tumor", "Tumor", "Tumor", "Tumor", "cfDNA"],
             SEQ_ASSAY_ID=["SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1"],
             SEQ_DATE=["Jan-2012", "Apr-2013", "JUL-2014", "Oct-2015", "release"],
         )
