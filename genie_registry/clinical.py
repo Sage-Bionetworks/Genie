@@ -1245,7 +1245,7 @@ class Clinical(FileTypeFormat):
         )
         warning.write(warn)
         total_error.write(error)
-        
+
         # CHECK: SAMPLE_CLASS and SAMPLE_TYPE mapping
         have_sample_class_column = process_functions.checkColExist(
             clinicaldf, "SAMPLE_CLASS"
