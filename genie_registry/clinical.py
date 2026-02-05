@@ -728,7 +728,7 @@ class Clinical(FileTypeFormat):
 
             | SAMPLE_TYPE  | SAMPLE_CLASS |
             | ------------ | -------------|
-            | 8            | NaN          |
+            | 8            | cfDNA        |
             | 2            | cfDNA        |
 
         Args:
@@ -746,37 +746,38 @@ class Clinical(FileTypeFormat):
         allowed_sample_class_val = sampletype_mapping.loc[
             sampletype_mapping["CODE"] == allowed_sample_type_val, "CBIO_LABEL"
         ].iloc[0]
-        
-        # Normalize SAMPLE_TYPE to numeric (handles "8", blanks, etc.)
-        df["SAMPLE_TYPE"] = pd.to_numeric(df["SAMPLE_TYPE"], errors="coerce")
-        
-        # Check 1: SAMPLE_CLASS == cfDNA -> SAMPLE_TYPE must be 8
-        invalid_type_check = (
-            (df["SAMPLE_CLASS"] == allowed_sample_class_val)
-            & (df["SAMPLE_TYPE"] != allowed_sample_type_val)
+        invalid_types_for_class = sorted(
+            df.loc[df["SAMPLE_CLASS"] == allowed_sample_class_val, "SAMPLE_TYPE"]
+            .dropna()
+            .unique()
         )
+        invalid_types_for_class = [
+            str(t) for t in invalid_types_for_class if t != allowed_sample_type_val
+        ]
+        invalid_types_for_class = ", ".join(invalid_types_for_class)
 
-        if invalid_type_check.any():
+        invalid_classes = sorted(
+            df.loc[df["SAMPLE_TYPE"] == allowed_sample_type_val, "SAMPLE_CLASS"]
+            .dropna()
+            .unique()
+        )
+        invalid_classes = [c for c in invalid_classes if c != allowed_sample_class_val]
+        invalid_classes = ", ".join(invalid_classes)
+
+        if invalid_types_for_class:
             errors += (
-                f"Sample Clinical File: Invalid SAMPLE_TYPE values detected for "
-                f"SAMPLE_CLASS = '{allowed_sample_class_val}'. "
-                f"When SAMPLE_CLASS is '{allowed_sample_class_val}', "
-                f"SAMPLE_TYPE must be {allowed_sample_type_val}.\n"
+                f"Sample Clinical File: Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = '{allowed_sample_class_val}'. "
+                f"Found: {invalid_types_for_class}. "
+                f"When SAMPLE_CLASS is '{allowed_sample_class_val}', SAMPLE_TYPE must be {allowed_sample_type_val}.\n"
             )
 
-        # Check 2: SAMPLE_TYPE == 8 -> SAMPLE_CLASS must be cfDNA
-        invalid_class_check = (
-            (df["SAMPLE_TYPE"] == allowed_sample_type_val)
-            & (df["SAMPLE_CLASS"] != allowed_sample_class_val)
-        )
-
-        if invalid_class_check.any():
+        if invalid_classes:
             errors += (
-                f"Sample Clinical File: Invalid SAMPLE_CLASS values detected for "
-                f"SAMPLE_TYPE = {allowed_sample_type_val}. "
-                f"When SAMPLE_TYPE is {allowed_sample_type_val}, "
-                f"SAMPLE_CLASS must be '{allowed_sample_class_val}'.\n"
+                f"Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = {allowed_sample_type_val}. "
+                f"Found: {invalid_classes}. "
+                f"When SAMPLE_CLASS is '{allowed_sample_class_val}', SAMPLE_TYPE must be {allowed_sample_type_val}.\n"
             )
+
         return errors
 
     # VALIDATION
