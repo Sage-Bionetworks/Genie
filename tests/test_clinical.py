@@ -480,7 +480,7 @@ def test_sample__process(clin_class):
             Age_AT_SEQ_REPORT=[100000, 100000, 100000, 100000, 100000],
             ONCOTree_CODE=["AMPCA", " UNKNOWN", "AMPCA", "AMPCA", "AMPCA"],
             SAMPLE_TYPE=[1, 2, 3, 4, 8],
-            SAMPLE_CLASS=["Tumor", "Tumor", "Tumor", "Tumor", "cfDNA"],
+            SAMPLE_CLASS=['Tumor', 'Tumor', 'Tumor', 'Tumor', 'cfDNA'],
             SEQ_ASSAY_ID=["SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1"],
             SEQ_DATE=["Jan-2012", "Apr-2013", "JUL-2014", "Oct-2015", "release"],
         )
@@ -489,6 +489,7 @@ def test_sample__process(clin_class):
     new_sampledf = clin_class._process(sampledf, clinical_template)
     assert new_sampledf.columns.isin(expected_sampledf.columns).all()
     assert expected_sampledf.equals(new_sampledf[expected_sampledf.columns])
+    
 
 
 @pytest.mark.parametrize(
@@ -625,10 +626,10 @@ def test_nonull__validate(clin_class):
             ],
             AGE_AT_SEQ_REPORT=[100000, "Unknown", 20000, float("nan"), 100000],
             ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"],
-            SAMPLE_TYPE=[1, 8, 8, 8, float("nan")],
+            SAMPLE_TYPE=[1, 8, None, 8, None],
             SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1"],
             SEQ_DATE=["Jan-2013", "ApR-2013", "Jul-2013", "Oct-2013", "release"],
-            SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", "cfDNA", float("nan")],
+            SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", None, None],
         )
     )
 
@@ -669,6 +670,10 @@ def test_nonull__validate(clin_class):
             "YEAR_DEATH, INT_DOD.\n"
             "Sample Clinical File: Please double check your SAMPLE_CLASS column.  "
             "This column must only be these values: Tumor, cfDNA\n"
+            "Sample Clinical File: Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = 'cfDNA'. "
+            "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
+            "Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = 8. "
+            "When SAMPLE_TYPE is 8, SAMPLE_CLASS must be 'cfDNA'.\n"
             "Sample Clinical File: SAMPLE_CLASS column must be 'Tumor', or 'cfDNA'\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
@@ -749,7 +754,7 @@ def test_errors__validate(clin_class):
             ],
             AGE_AT_SEQ_REPORT=[10, 100000, ">doo", 100000, 100000],
             ONCOTREE_CODE=["AMPCAD", "TESTIS", "AMPCA", "AMPCA", "UCEC"],
-            SAMPLE_TYPE=[1, 2, 3, 4, 6],
+            SAMPLE_TYPE=[1, 2, 88, 4, 8],
             SEQ_ASSAY_ID=[float("nan"), "Sage-1", "SAGE-1", "S-SAGE-1", "SAGE-1"],
             SEQ_DATE=["Jane-2013", "Jan-2013", "Jan-2013", "Jan-2013", "Jan-2013"],
             YEAR_DEATH=["Unknown", "Not Collected", "Not Applicable", 19930, 1990],
@@ -757,7 +762,7 @@ def test_errors__validate(clin_class):
             INT_CONTACT=[">32485", "<6570", 1990, "Not Collected", ">foobar"],
             INT_DOD=[">32485", "<6570", 1911, "Not Collected", "<dense"],
             DEAD=[1, False, "Unknown", "Not Collected", "Not Applicable"],
-            SAMPLE_CLASS=["Tumor", "Tumor", "Tumor", "Tumor", "Tumor"],
+            SAMPLE_CLASS=["Tumor", "Tumor", "Tumor", "cfDNA", "Tumor"],
         )
     )
 
@@ -791,7 +796,7 @@ def test_errors__validate(clin_class):
             "Sample Clinical File: PATIENT_ID's much be contained in the "
             "SAMPLE_ID's (ex. SAGE-1 <-> SAGE-1-2)\n"
             "Patient Clinical File: All samples must have associated patient "
-            "information and no null patient ids allowed. "
+            "information and no null patient ids allowed. " 
             "These samples are missing patient data: GENIE-SAGE-ID4-1\n"
             "Sample Clinical File: Please double check your "
             "AGE_AT_SEQ_REPORT. It must be an integer, 'Unknown', "
@@ -841,6 +846,10 @@ def test_errors__validate(clin_class):
             "YEAR_DEATH, INT_DOD.\n"
             "Patient Clinical File: DEAD value is inconsistent with "
             "INT_DOD for at least one patient.\n"
+            "Sample Clinical File: Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = 'cfDNA'. "
+            "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
+            "Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = 8. "
+            "When SAMPLE_TYPE is 8, SAMPLE_CLASS must be 'cfDNA'.\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your SECONDARY_RACE "
@@ -1761,8 +1770,7 @@ def test_preprocess(clin_class, newpath=None):
             ),
             (
                 "Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = 8. "
-                "Found: tissue, tumor. "
-                "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
+                "When SAMPLE_TYPE is 8, SAMPLE_CLASS must be 'cfDNA'.\n"
             ),
         ),
         (
@@ -1774,7 +1782,6 @@ def test_preprocess(clin_class, newpath=None):
             ),
             (
                 "Sample Clinical File: Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = 'cfDNA'. "
-                "Found: 2, 3. "
                 "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
             ),
         ),
@@ -1796,15 +1803,27 @@ def test_preprocess(clin_class, newpath=None):
             ),
             (
                 "Sample Clinical File: Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = 'cfDNA'. "
-                "Found: 2, 3. "
                 "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
                 "Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = 8. "
-                "Found: other. "
+                "When SAMPLE_TYPE is 8, SAMPLE_CLASS must be 'cfDNA'.\n"
+            ),
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "SAMPLE_TYPE": [2, None, 8, 8],
+                    "SAMPLE_CLASS": ["cfDNA", "cfDNA", None, "other"],
+                }
+            ),
+            (
+                "Sample Clinical File: Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = 'cfDNA'. "
                 "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
+                "Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = 8. "
+                "When SAMPLE_TYPE is 8, SAMPLE_CLASS must be 'cfDNA'.\n"
             ),
         ),
     ],
-    ids=["invalid_sample_class", "invalid_sample_type", "valid", "both_errors"],
+    ids=["invalid_sample_class", "invalid_sample_type", "valid", "both_errors", "has_nas"],
 )
 def test__validate_sample_class_and_type_cases(clin_class, clinicaldf, expected_error):
     result = clin_class._validate_sample_class_and_type(clinicaldf, sample_type_df)
