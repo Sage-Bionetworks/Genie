@@ -690,6 +690,96 @@ class Clinical(FileTypeFormat):
             )
         return errors, warnings
 
+    def _validate_sample_class_and_type(
+        self, clinicaldf: pd.DataFrame, sampletype_mapping: pd.DataFrame
+    ) -> str:
+        """
+        Validates that the values of SAMPLE_CLASS and SAMPLE_TYPE in the
+        clinical data is consistent and returns error message with
+        the error(s).
+
+        The following conditions must be met:
+            - When SAMPLE_CLASS is `cfDNA`, SAMPLE_TYPE must be 8
+            - When SAMPLE_TYPE is 8, SAMPLE_CLASS must be `cfDNA`
+
+
+        Example: Valid Examples
+            | SAMPLE_TYPE  | SAMPLE_CLASS |
+            | ------------ | -------------|
+            | 8            | cfDNA        |
+            | 8            | cfDNA        |
+
+            | SAMPLE_TYPE  | SAMPLE_CLASS |
+            | ------------ | -------------|
+            | 8            | cfDNA        |
+            | 8            | cfDNA        |
+            | 2            | Tumor        |
+
+        Example: Invalid Examples
+            | SAMPLE_TYPE  | SAMPLE_CLASS |
+            | ------------ | -------------|
+            | 8            | Other        |
+            | 2            | cfDNA        |
+
+            | SAMPLE_TYPE  | SAMPLE_CLASS |
+            | ------------ | -------------|
+            | 8            | cfDNA        |
+            | 8            | Other        |
+
+            | SAMPLE_TYPE  | SAMPLE_CLASS |
+            | ------------ | -------------|
+            | 8            | cfDNA        |
+            | 2            | cfDNA        |
+
+        Args:
+            clinicaldf (pd.DataFrame): input clinical data
+            sampletype_mapping (pd.DataFrame): sample type mapping table
+                containing the mappings of the SAMPLE_TYPE to the value behind it. This
+                is used to check the SAMPLE_TYPE and SAMPLE_CLASS values.
+
+        Returns:
+            str: error message of the concatenated error message(s)
+        """
+        errors = ""
+        df = clinicaldf.copy()
+        allowed_sample_type_val = 8
+        allowed_sample_class_val = sampletype_mapping.loc[
+            sampletype_mapping["CODE"] == allowed_sample_type_val, "CBIO_LABEL"
+        ].iloc[0]
+        invalid_types_for_class = sorted(
+            df.loc[df["SAMPLE_CLASS"] == allowed_sample_class_val, "SAMPLE_TYPE"]
+            .dropna()
+            .unique()
+        )
+        invalid_types_for_class = [
+            str(t) for t in invalid_types_for_class if t != allowed_sample_type_val
+        ]
+        invalid_types_for_class = ", ".join(invalid_types_for_class)
+
+        invalid_classes = sorted(
+            df.loc[df["SAMPLE_TYPE"] == allowed_sample_type_val, "SAMPLE_CLASS"]
+            .dropna()
+            .unique()
+        )
+        invalid_classes = [c for c in invalid_classes if c != allowed_sample_class_val]
+        invalid_classes = ", ".join(invalid_classes)
+
+        if invalid_types_for_class:
+            errors += (
+                f"Sample Clinical File: Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = '{allowed_sample_class_val}'. "
+                f"Found: {invalid_types_for_class}. "
+                f"When SAMPLE_CLASS is '{allowed_sample_class_val}', SAMPLE_TYPE must be {allowed_sample_type_val}.\n"
+            )
+
+        if invalid_classes:
+            errors += (
+                f"Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = {allowed_sample_type_val}. "
+                f"Found: {invalid_classes}. "
+                f"When SAMPLE_CLASS is '{allowed_sample_class_val}', SAMPLE_TYPE must be {allowed_sample_type_val}.\n"
+            )
+
+        return errors
+
     # VALIDATION
     def _validate(self, clinicaldf):
         """
@@ -1138,6 +1228,17 @@ class Clinical(FileTypeFormat):
         total_error.write(death_error)
         death_error = _check_int_dead_consistency(clinicaldf=clinicaldf)
         total_error.write(death_error)
+
+        # CHECK: SAMPLE_CLASS and SAMPLE_TYPE mapping
+        have_sample_class_column = process_functions.checkColExist(
+            clinicaldf, "SAMPLE_CLASS"
+        )
+        have_sample_type_column = process_functions.checkColExist(
+            clinicaldf, "SAMPLE_TYPE"
+        )
+        if have_sample_class_column and have_sample_type_column:
+            error = self._validate_sample_class_and_type(clinicaldf, sampletype_mapping)
+            total_error.write(error)
 
         # CHECK: SAMPLE_CLASS is optional attribute
         have_column = process_functions.checkColExist(clinicaldf, "SAMPLE_CLASS")
