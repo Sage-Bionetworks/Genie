@@ -1254,16 +1254,6 @@ class Clinical(FileTypeFormat):
             error = self._validate_sample_class_and_type(clinicaldf, sampletype_mapping)
             total_error.write(error)
 
-        # CHECK: SAMPLE_CLASS is optional attribute
-        have_column = process_functions.checkColExist(clinicaldf, "SAMPLE_CLASS")
-        if have_column:
-            sample_class_vals = pd.Series(clinicaldf["SAMPLE_CLASS"].unique().tolist())
-            if not sample_class_vals.isin(["Tumor", "cfDNA"]).all():
-                total_error.write(
-                    "Sample Clinical File: SAMPLE_CLASS column must "
-                    "be 'Tumor', or 'cfDNA'\n"
-                )
-
         # CHECK: PRIMARY_RACE
         warn, error = process_functions.check_col_and_values(
             clinicaldf,

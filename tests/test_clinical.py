@@ -673,7 +673,6 @@ def test_nonull__validate(clin_class):
             "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
             "Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = 8. "
             "When SAMPLE_TYPE is 8, SAMPLE_CLASS must be 'cfDNA'.\n"
-            "Sample Clinical File: SAMPLE_CLASS column must be 'Tumor', or 'cfDNA'\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your SECONDARY_RACE "
