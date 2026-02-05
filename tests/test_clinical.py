@@ -667,7 +667,8 @@ def test_nonull__validate(clin_class):
             "YEAR_CONTACT, INT_CONTACT.\n"
             "Patient: you have inconsistent redaction and text values in "
             "YEAR_DEATH, INT_DOD.\n"
-            "Sample Clinical File: SAMPLE_CLASS column must be 'Tumor', or 'cfDNA'\n"
+            "Sample Clinical File: Please double check your SAMPLE_CLASS column.  "
+            "This column must only be these values: Tumor, cfDNA\n"
             "Patient Clinical File: Please double check your PRIMARY_RACE "
             "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
             "Patient Clinical File: Please double check your SECONDARY_RACE "
@@ -707,6 +708,7 @@ def test_missingcols__validate(clin_class):
             "Patient Clinical File: Must have INT_CONTACT column.\n"
             "Patient Clinical File: Must have INT_DOD column.\n"
             "Patient Clinical File: Must have DEAD column.\n"
+            "Sample Clinical File: Must have SAMPLE_CLASS column.\n"
             "Patient Clinical File: Must have SEX column.\n"
         )
 
@@ -754,6 +756,7 @@ def test_errors__validate(clin_class):
             INT_CONTACT=[">32485", "<6570", 1990, "Not Collected", ">foobar"],
             INT_DOD=[">32485", "<6570", 1911, "Not Collected", "<dense"],
             DEAD=[1, False, "Unknown", "Not Collected", "Not Applicable"],
+            SAMPLE_CLASS=["Tumor", "Tumor", "Tumor", "Tumor", "Tumor"],
         )
     )
 
@@ -916,9 +919,10 @@ def test_duplicated__validate(clin_class):
             ],
             AGE_AT_SEQ_REPORT=[100000, 100000, 100000, float("nan")],
             ONCOTREE_CODE=["AMPCA", "UNKNOWN", "AMPCA", float("nan")],
-            SAMPLE_TYPE=[1, 3, 4, float("nan")],
+            SAMPLE_TYPE=[1, 8, 4, float("nan")],
             SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-1", "SAGE-1", float("nan")],
             SEQ_DATE=["Jan-2013", "Jul-2013", "Oct-2013", float("nan")],
+            SAMPLE_CLASS=["Tumor", "cfDNA", "Tumor", float("nan")],
         )
     )
 

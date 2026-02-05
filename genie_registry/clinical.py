@@ -787,11 +787,15 @@ class Clinical(FileTypeFormat):
         to the clinical SOP.
 
         Args:
-            clinicalDF: Merged clinical file with patient and sample
+            clinicaldf: Merged clinical file with patient and sample
                         information
 
         Returns:
             Error message
+
+        Note:
+            SAMPLE_CLASS is a required column and must contain only
+            'Tumor' or 'cfDNA' values.
         """
         total_error = StringIO()
         warning = StringIO()
@@ -1042,6 +1046,7 @@ class Clinical(FileTypeFormat):
         else:
             total_error.write("Sample Clinical File: Must have SEQ_ASSAY_ID column.\n")
 
+        # CHECK: SEQ_DATE
         haveColumn = process_functions.checkColExist(clinicaldf, "SEQ_DATE")
         seq_date_error = (
             "Sample Clinical File: SEQ_DATE must be one of five values- "
@@ -1152,7 +1157,7 @@ class Clinical(FileTypeFormat):
         else:
             total_error.write("Patient Clinical File: Must have INT_CONTACT column.\n")
 
-        # INT DOD
+        # CHECK: INT DOD
         haveColumn = process_functions.checkColExist(clinicaldf, "INT_DOD")
         if haveColumn:
             if not all(
@@ -1179,6 +1184,7 @@ class Clinical(FileTypeFormat):
         else:
             total_error.write("Patient Clinical File: Must have INT_DOD column.\n")
 
+        # CHECK: DEAD
         haveColumn = process_functions.checkColExist(clinicaldf, "DEAD")
         if haveColumn:
             # Need to have check_bool function
@@ -1229,6 +1235,17 @@ class Clinical(FileTypeFormat):
         death_error = _check_int_dead_consistency(clinicaldf=clinicaldf)
         total_error.write(death_error)
 
+        # CHECK: SAMPLE_CLASS
+        warn, error = process_functions.check_col_and_values(
+            clinicaldf,
+            "SAMPLE_CLASS",
+            ["Tumor", "cfDNA"],
+            "Sample Clinical File",
+            required=True,
+        )
+        warning.write(warn)
+        total_error.write(error)
+
         # CHECK: SAMPLE_CLASS and SAMPLE_TYPE mapping
         have_sample_class_column = process_functions.checkColExist(
             clinicaldf, "SAMPLE_CLASS"
@@ -1239,16 +1256,6 @@ class Clinical(FileTypeFormat):
         if have_sample_class_column and have_sample_type_column:
             error = self._validate_sample_class_and_type(clinicaldf, sampletype_mapping)
             total_error.write(error)
-
-        # CHECK: SAMPLE_CLASS is optional attribute
-        have_column = process_functions.checkColExist(clinicaldf, "SAMPLE_CLASS")
-        if have_column:
-            sample_class_vals = pd.Series(clinicaldf["SAMPLE_CLASS"].unique().tolist())
-            if not sample_class_vals.isin(["Tumor", "cfDNA"]).all():
-                total_error.write(
-                    "Sample Clinical File: SAMPLE_CLASS column must "
-                    "be 'Tumor', or 'cfDNA'\n"
-                )
 
         # CHECK: PRIMARY_RACE
         warn, error = process_functions.check_col_and_values(
