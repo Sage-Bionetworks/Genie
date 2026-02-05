@@ -32,6 +32,15 @@ no_nan = pd.DataFrame(
     )
 )
 
+
+sample_type_df = pd.DataFrame(
+    dict(
+        CODE=[1, 2, 3, 4, 99, 8],
+        CBIO_LABEL=["Test", "Why", "foo", "Me", "Unknown", "cfDNA"],
+        DESCRIPTION=["non", "asdf", "asdf", "asdff", "asdfasdf", "cfDNA"],
+    )
+)
+
 sexdf = pd.DataFrame(
     dict(
         CODE=[1, 2, 99],
@@ -59,7 +68,7 @@ table_query_results_map = {
     ("select * from syn60548946",): createMockTable(sexdf),
     ("select * from syn60548944",): createMockTable(no_nan),
     ("select * from syn60548943",): createMockTable(no_nan),
-    ("select * from syn60548941",): createMockTable(no_nan),
+    ("select * from syn60548941",): createMockTable(sample_type_df),
     (
         "select fieldName from syn8545211 where patient is True and inClinicalDb is True",
     ): createMockTable(patientdf),
@@ -164,7 +173,7 @@ def valid_clinical_df():
             ],
             AGE_AT_SEQ_REPORT=[">32485", "Unknown", "<6570", 20000, 100000],
             ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"],
-            SAMPLE_TYPE=[1, 2, 3, 4, 4],
+            SAMPLE_TYPE=[1, 8, 8, 8, 8],
             SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1"],
             SEQ_DATE=["Jan-2013", "ApR-2013", "Jul-2013", "Oct-2013", "release"],
             SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", "cfDNA", "cfDNA"],
@@ -428,9 +437,10 @@ def test_sample__process(clin_class):
             ],
             AGE_AT_SEQ_REPORT=[100000, 100000, 100000, 100000, 100000],
             ONCOTREE_CODE=["AMPCA", "UNKNOWN", "AMPCA", "AMPCA", "AMPCA"],
-            SAMPLE_TYPE=["Test", "Why", "foo", "Me", "Me"],
+            SAMPLE_CLASS=["Tumor", "Tumor", "Tumor", "Tumor", "cfDNA"],
+            SAMPLE_TYPE=["Test", "Why", "foo", "Me", "cfDNA"],
             CENTER=["SAGE", "SAGE", "SAGE", "SAGE", "SAGE"],
-            SAMPLE_TYPE_DETAILED=["non", "asdf", "asdf", "asdff", "asdff"],
+            SAMPLE_TYPE_DETAILED=["non", "asdf", "asdf", "asdff", "cfDNA"],
             SEQ_ASSAY_ID=["SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1"],
             SEQ_DATE=["Jan-2012", "Apr-2013", "Jul-2014", "Oct-2015", "Release"],
             SEQ_YEAR=[2012, 2013, 2014, 2015, float("nan")],
@@ -442,6 +452,7 @@ def test_sample__process(clin_class):
         "AGE_AT_SEQ_REPORT",
         "ONCOTREE_CODE",
         "SAMPLE_TYPE",
+        "SAMPLE_CLASS",
         "SEQ_ASSAY_ID",
         "SEQ_DATE",
         "SAMPLE_TYPE_DETAILED",
@@ -468,7 +479,8 @@ def test_sample__process(clin_class):
             ],
             Age_AT_SEQ_REPORT=[100000, 100000, 100000, 100000, 100000],
             ONCOTree_CODE=["AMPCA", " UNKNOWN", "AMPCA", "AMPCA", "AMPCA"],
-            SAMPLE_TYPE=[1, 2, 3, 4, 4],
+            SAMPLE_TYPE=[1, 2, 3, 4, 8],
+            SAMPLE_CLASS=["Tumor", "Tumor", "Tumor", "Tumor", "cfDNA"],
             SEQ_ASSAY_ID=["SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1"],
             SEQ_DATE=["Jan-2012", "Apr-2013", "JUL-2014", "Oct-2015", "release"],
         )
@@ -613,7 +625,7 @@ def test_nonull__validate(clin_class):
             ],
             AGE_AT_SEQ_REPORT=[100000, "Unknown", 20000, float("nan"), 100000],
             ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"],
-            SAMPLE_TYPE=[1, 2, 3, 4, float("nan")],
+            SAMPLE_TYPE=[1, 8, 8, 8, float("nan")],
             SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1"],
             SEQ_DATE=["Jan-2013", "ApR-2013", "Jul-2013", "Oct-2013", "release"],
             SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", "cfDNA", float("nan")],
@@ -631,7 +643,7 @@ def test_nonull__validate(clin_class):
             "AGE_AT_SEQ_REPORT. It must be an integer, 'Unknown', "
             "'>32485', '<6570'.\n"
             "Sample Clinical File: Please double check your SAMPLE_TYPE "
-            "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
+            "column.  This column must only be these values: 1, 2, 3, 4, 99, 8\n"
             "Patient Clinical File: Please double check your BIRTH_YEAR "
             "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', '>89', '<18'.\n"
@@ -787,7 +799,7 @@ def test_errors__validate(clin_class):
             "ONCOTREE CODES exist in the mapping. You have 1 samples that "
             "don't map. These are the codes that don't map: AMPCAD\n"
             "Sample Clinical File: Please double check your SAMPLE_TYPE "
-            "column.  This column must only be these values: 1, 2, 3, 4, 99\n"
+            "column.  This column must only be these values: 1, 2, 3, 4, 99, 8\n"
             "Sample Clinical File: Please double check your SEQ_ASSAY_ID "
             "columns, there are empty rows.\n"
             "Sample Clinical File: Please make sure your SEQ_ASSAY_IDs start "
@@ -1734,3 +1746,66 @@ def test_preprocess(clin_class, newpath=None):
     assert results["patient"] == expected["patient"]
     assert results["patientCols"] == expected["patientCols"]
     assert results["sampleCols"] == expected["sampleCols"]
+
+
+@pytest.mark.parametrize(
+    "clinicaldf, expected_error",
+    [
+        (
+            pd.DataFrame(
+                {
+                    "SAMPLE_TYPE": [8, 8, 2],
+                    "SAMPLE_CLASS": ["tissue", "tumor", "other"],
+                }
+            ),
+            (
+                "Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = 8. "
+                "Found: tissue, tumor. "
+                "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
+            ),
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "SAMPLE_TYPE": [2, 3, 2],
+                    "SAMPLE_CLASS": ["cfDNA", "cfDNA", "other"],
+                }
+            ),
+            (
+                "Sample Clinical File: Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = 'cfDNA'. "
+                "Found: 2, 3. "
+                "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
+            ),
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "SAMPLE_TYPE": [8, 8, 2],
+                    "SAMPLE_CLASS": ["cfDNA", "cfDNA", "other"],
+                }
+            ),
+            "",
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "SAMPLE_TYPE": [2, 3, 8],
+                    "SAMPLE_CLASS": ["cfDNA", "cfDNA", "other"],
+                }
+            ),
+            (
+                "Sample Clinical File: Invalid SAMPLE_TYPE values detected for SAMPLE_CLASS = 'cfDNA'. "
+                "Found: 2, 3. "
+                "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
+                "Sample Clinical File: Invalid SAMPLE_CLASS values detected for SAMPLE_TYPE = 8. "
+                "Found: other. "
+                "When SAMPLE_CLASS is 'cfDNA', SAMPLE_TYPE must be 8.\n"
+            ),
+        ),
+    ],
+    ids=["invalid_sample_class", "invalid_sample_type", "valid", "both_errors"],
+)
+def test__validate_sample_class_and_type_cases(clin_class, clinicaldf, expected_error):
+    result = clin_class._validate_sample_class_and_type(clinicaldf, sample_type_df)
+
+    assert result == expected_error
