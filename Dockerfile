@@ -23,8 +23,6 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		python3 \
 		python3-pip \
 		python3-dev \
-		python3-setuptools \
-        python3-wheel \
 		git \
 		r-base-core=4.3.3-1.2204.0 \
 		r-base-dev=4.3.3-1.2204.0 \
@@ -66,6 +64,11 @@ WORKDIR /root/Genie
 # a long time and unless there are changes to the actual
 # R packages used.  So the only files copied over are
 # renv/ renv.lock and the installation R script
+# Make a dedicated venv for reticulate
+ENV RETICULATE_PYTHON=/opt/reticulate-venv/bin/python
+RUN python3.10 -m venv /opt/reticulate-venv \
+ && /opt/reticulate-venv/bin/python -m pip install --no-cache-dir --upgrade pip setuptools wheel \
+ && /opt/reticulate-venv/bin/python -c "import pkg_resources; print('pkg_resources OK in venv')"
 COPY R/install_packages.R R/install_packages.R
 COPY renv/ renv/
 COPY renv.lock renv.lock
