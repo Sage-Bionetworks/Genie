@@ -501,7 +501,7 @@ def split_and_store_maf(
     load.store_file(
         syn=syn, filepath=annotation_paths.full_maf_path, parentid=flatfiles_synid
     )
-    
+
     load.store_table(
         syn=syn, filepath=annotation_paths.narrow_maf_path, tableid=maf_tableid
     )
