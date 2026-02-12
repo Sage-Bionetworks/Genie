@@ -247,12 +247,6 @@ def process_mutation_workflow(
         center=center,
         input_dir=annotation_paths.error_dir,
     )
-    check_annotation_error_reports(
-        syn=syn,
-        maf_table_synid=maf_tableid,
-        full_error_report=full_error_report,
-        center=center,
-    )
     store_annotation_error_reports(
         full_error_report=full_error_report,
         full_error_report_path=annotation_paths.full_error_report_path,
