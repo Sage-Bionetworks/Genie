@@ -23,6 +23,8 @@ RUN apt-get update && apt-get install -y --allow-unauthenticated --no-install-re
 		python3 \
 		python3-pip \
 		python3-dev \
+		python3-setuptools \
+        python3-wheel \
 		git \
 		r-base-core=4.3.3-1.2204.0 \
 		r-base-dev=4.3.3-1.2204.0 \
