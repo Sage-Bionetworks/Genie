@@ -153,13 +153,12 @@ Follow gitflow best practices as linked above.
    OR
 
    1. Create your tag via the release notes UI on github by creating the tag name `vX.X.X`. **Be sure to set `target branch` as `main`!**
-8. Create a new release on the repo (if you created your tag through git prior, select your tag here). Include release notes. See [writing release notes for project](https://sagebionetworks.jira.com/wiki/spaces/DPE/pages/3892543489/Writing+release+notes+for+projects) for creating informative technical release notes.
+8. Create a new release on the repo (if you created your tag through git prior, select your tag here). Generate Github release notes. See [writing release notes for project](https://sagebionetworks.jira.com/wiki/spaces/DPE/pages/3892543489/Writing+release+notes+for+projects) for creating informative technical release notes using the Github auto-generated release notes. **RECOMMENDED:** Use the [genie specific release notes prompt here.](https://sagebionetworks.jira.com/wiki/spaces/DPE/pages/3892543489/Writing+release+notes+for+projects#Genie-project-specific-Release-Notes-Prompt)
     - See [example release](https://github.com/Sage-Bionetworks/Genie/releases/tag/v16.5.0) for typical sections to include in a Genie release.
-    - You will also have to add a `Highlights` section and summarize it as you see git.
 9. Wait for the CI/CD to finish. You should see a new pypi release here: https://pypi.org/project/aacrgenie/.
-10. Merge `main` back into `develop`.
-11. Prior to pushing changes into `develop`, reset any [annotations on the test project](https://www.synapse.org/Synapse:syn11601248/tables/)/[rename maf database table](https://www.synapse.org/Synapse:syn7208886/tables/) as integration tests will run.
-12. Push changes in `develop`.
+10. Reset any [annotations on the test project](https://www.synapse.org/Synapse:syn11601248/tables/)/[rename maf database table](https://www.synapse.org/Synapse:syn7208886/tables/) as integration tests will run.
+11. Merge `main` changes back into `develop` locally
+12. Push changes to `develop`
 13. Wait for the CI/CD to finish.
 
 ### Contributing to the docs

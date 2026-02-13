@@ -247,12 +247,6 @@ def process_mutation_workflow(
         center=center,
         input_dir=annotation_paths.error_dir,
     )
-    check_annotation_error_reports(
-        syn=syn,
-        maf_table_synid=maf_tableid,
-        full_error_report=full_error_report,
-        center=center,
-    )
     store_annotation_error_reports(
         full_error_report=full_error_report,
         full_error_report_path=annotation_paths.full_error_report_path,
@@ -497,10 +491,11 @@ def split_and_store_maf(
         narrow_maf_chunk = maf_chunk[narrow_maf_cols]
         append_or_createdf(narrow_maf_chunk, annotation_paths.narrow_maf_path)
 
-    load.store_table(
-        syn=syn, filepath=annotation_paths.narrow_maf_path, tableid=maf_tableid
-    )
     # Store MAF flat file into synapse
     load.store_file(
         syn=syn, filepath=annotation_paths.full_maf_path, parentid=flatfiles_synid
+    )
+
+    load.store_table(
+        syn=syn, filepath=annotation_paths.narrow_maf_path, tableid=maf_tableid
     )

@@ -226,8 +226,6 @@ def test_process_mutation_workflow(syn, genie_config, annotation_paths):
         "concat_annotation_error_reports",
         return_value=sample_error_report,
     ) as patch_concat_error, patch.object(
-        process_mutation, "check_annotation_error_reports"
-    ) as patch_check_error, patch.object(
         process_mutation, "store_annotation_error_reports"
     ) as patch_store_error:
         maf = process_mutation.process_mutation_workflow(
@@ -251,12 +249,6 @@ def test_process_mutation_workflow(syn, genie_config, annotation_paths):
         patch_concat_error.assert_called_once_with(
             center=center,
             input_dir=annotation_paths.error_dir,
-        )
-        patch_check_error.assert_called_once_with(
-            syn=syn,
-            maf_table_synid=maf_table_id,
-            full_error_report=sample_error_report,
-            center=center,
         )
         patch_store_error.assert_called_once_with(
             full_error_report=sample_error_report,
