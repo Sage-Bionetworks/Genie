@@ -64,11 +64,14 @@ WORKDIR /root/Genie
 # a long time and unless there are changes to the actual
 # R packages used.  So the only files copied over are
 # renv/ renv.lock and the installation R script
-# Make a dedicated venv for reticulate
+# Make a dedicated venv for reticulate and force the pinning of setuptools
 ENV RETICULATE_PYTHON=/opt/reticulate-venv/bin/python
+
 RUN python3.10 -m venv /opt/reticulate-venv \
- && /opt/reticulate-venv/bin/python -m pip install --no-cache-dir --upgrade pip setuptools wheel \
- && /opt/reticulate-venv/bin/python -c "import pkg_resources; print('pkg_resources OK in venv')"
+ && /opt/reticulate-venv/bin/python -m pip install --no-cache-dir --upgrade "pip<26" wheel \
+ && /opt/reticulate-venv/bin/python -m pip install --no-cache-dir "setuptools>=80.9.0,<82.0.0" \
+ && /opt/reticulate-venv/bin/python -c "import pkg_resources, setuptools; print('setuptools', setuptools.__version__)"
+
 COPY R/install_packages.R R/install_packages.R
 COPY renv/ renv/
 COPY renv.lock renv.lock
