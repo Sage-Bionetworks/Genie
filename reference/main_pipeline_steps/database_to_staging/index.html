@@ -1,0 +1,6607 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="This repository documents code used to gather, QC, standardize, and analyze data uploaded by institutes participating in AACR's Project GENIE (Genomics, Evidence, Neoplasia, Information, Exchange).">
+      
+      
+      
+      
+        <link rel="prev" href="../input_to_database/process_mutation/">
+      
+      
+        <link rel="next" href="../consortium_to_public/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+    
+    
+      
+        <title>Database to Staging - AACR Project GENIE Repository Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#genie.database_to_staging" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="AACR Project GENIE Repository Documentation" class="md-header__button md-logo" aria-label="AACR Project GENIE Repository Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AACR Project GENIE Repository Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Database to Staging
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Sage-Bionetworks/Genie" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AACR Project GENIE
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../getting_started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../tutorials/local_file_validation/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../main_pipeline_commands/input_to_database/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="AACR Project GENIE Repository Documentation" class="md-nav__button md-logo" aria-label="AACR Project GENIE Repository Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AACR Project GENIE Repository Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Sage-Bionetworks/Genie" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AACR Project GENIE
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/local_file_validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local File Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_1" id="__nav_4_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Main Pipeline Commands
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Main Pipeline Commands
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../main_pipeline_commands/input_to_database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Input to Database
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../main_pipeline_commands/database_to_staging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database to Staging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../main_pipeline_commands/consortium_to_public/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Consortium to Public
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Main Pipeline Steps
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Main Pipeline Steps
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2_1" id="__nav_4_2_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Input to Database
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_4_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Input to Database
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../input_to_database/input_to_database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    input_to_database
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../input_to_database/validate.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    validate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../input_to_database/write_invalid_reasons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    write_invalid_reasons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../input_to_database/process_mutation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    process_mutation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../input_to_database/toRetract.py" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    to_retract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database to Staging
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database to Staging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#genie.database_to_staging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        database_to_staging
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="database_to_staging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attributes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.logger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        logger
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.GENIE_RELEASE_DIR" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GENIE_RELEASE_DIR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.CASE_LIST_PATH" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CASE_LIST_PATH
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.CNA_CENTER_PATH" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CNA_CENTER_PATH
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.SAMPLE_CENTER_PATH" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SAMPLE_CENTER_PATH
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.PATIENT_CENTER_PATH" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PATIENT_CENTER_PATH
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.MUTATIONS_CENTER_PATH" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MUTATIONS_CENTER_PATH
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.FUSIONS_CENTER_PATH" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FUSIONS_CENTER_PATH
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.SEG_CENTER_PATH" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SEG_CENTER_PATH
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.SV_CENTER_PATH" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SV_CENTER_PATH
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.BED_DIFFS_SEQASSAY_PATH" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BED_DIFFS_SEQASSAY_PATH
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.FULL_MAF_RELEASE_COLUMNS" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FULL_MAF_RELEASE_COLUMNS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.DEPRECATED_CONSORTIUM_RELEASE_FILES" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DEPRECATED_CONSORTIUM_RELEASE_FILES
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Functions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging._to_redact_interval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _to_redact_interval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging._redact_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _redact_year
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging._redact_ped_year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _redact_ped_year
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging._to_redact_difference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _to_redact_difference
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.redact_phi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        redact_phi
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.remove_maf_samples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        remove_maf_samples
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.get_whitelist_variants_idx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_whitelist_variants_idx
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.configure_maf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        configure_maf
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.calculate_missing_variant_counts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calculate_missing_variant_counts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.runMAFinBED" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        runMAFinBED
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.get_run_maf_in_bed_script_cmd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_run_maf_in_bed_script_cmd
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.store_maf_in_bed_filtered_variants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_maf_in_bed_filtered_variants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.seq_date_filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        seq_date_filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.mutation_in_cis_filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mutation_in_cis_filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.get_mutation_in_cis_filter_script_cmd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_mutation_in_cis_filter_script_cmd
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.get_mutation_in_cis_filtered_samples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_mutation_in_cis_filtered_samples
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.get_mutation_in_cis_flagged_variants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_mutation_in_cis_flagged_variants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.store_mutation_in_cis_files_to_staging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_mutation_in_cis_files_to_staging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.seq_assay_id_filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        seq_assay_id_filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.no_genepanel_filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        no_genepanel_filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.store_gene_panel_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_gene_panel_files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.filter_out_germline_variants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        filter_out_germline_variants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.store_sv_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_sv_files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.append_or_create_release_maf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        append_or_create_release_maf
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.store_maf_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_maf_files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.run_genie_filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_genie_filters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.store_assay_info_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_assay_info_files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.store_clinical_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_clinical_files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.store_cna_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_cna_files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.store_seg_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_seg_files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.store_data_gene_matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_data_gene_matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.store_bed_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_bed_files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.stagingToCbio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stagingToCbio
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.revise_metadata_files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        revise_metadata_files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.search_or_create_folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        search_or_create_folder
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genie.database_to_staging.create_link_version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        create_link_version
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../consortium_to_public/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Consortium to Public
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_3" id="__nav_4_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fileformats
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Fileformats
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fileformats/fileformat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fileformat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fileformats/assay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assay Information
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fileformats/bed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fileformats/clinical/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clinical
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fileformats/cna/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cna
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fileformats/maf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Maf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fileformats/mutations_in_cis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mutations In Cis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fileformats/patient_retraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Patient retraction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fileformats/sample_retraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sample retraction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fileformats/seg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segmented
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fileformats/structural_variant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Structural variant
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fileformats/vcf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vcf
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fileformats/workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Helper modules
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Helper modules
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../helper_modules/create_case_lists/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    create_case_lists
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../helper_modules/dashboard_table_updater/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dashboard_table_updater
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../helper_modules/extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    extract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../helper_modules/load/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    load
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../helper_modules/process_functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    process_functions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../helper_modules/transform/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    transform
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/Sage-Bionetworks/Genie/edit/master/docs/reference/main_pipeline_steps/database_to_staging.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+  <h1>Database to Staging</h1>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="genie.database_to_staging" class="doc doc-heading">
+            <code>genie.database_to_staging</code>
+
+
+<a href="#genie.database_to_staging" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Functions for releasing GENIE consortium releases</p>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+<h3 id="genie.database_to_staging-attributes">Attributes<a href="#genie.database_to_staging-attributes" class="headerlink" title="Permanent link">&para;</a></h3>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="genie.database_to_staging.logger" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#genie.database_to_staging.logger" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="genie.database_to_staging.GENIE_RELEASE_DIR" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">GENIE_RELEASE_DIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/.synapseCache&#39;</span><span class="p">),</span> <span class="s1">&#39;GENIE_release&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#genie.database_to_staging.GENIE_RELEASE_DIR" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="genie.database_to_staging.CASE_LIST_PATH" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">CASE_LIST_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">GENIE_RELEASE_DIR</span><span class="p">,</span> <span class="s1">&#39;case_lists&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#genie.database_to_staging.CASE_LIST_PATH" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="genie.database_to_staging.CNA_CENTER_PATH" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">CNA_CENTER_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">GENIE_RELEASE_DIR</span><span class="p">,</span> <span class="s1">&#39;data_CNA_</span><span class="si">%s</span><span class="s1">.txt&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#genie.database_to_staging.CNA_CENTER_PATH" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="genie.database_to_staging.SAMPLE_CENTER_PATH" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">SAMPLE_CENTER_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">GENIE_RELEASE_DIR</span><span class="p">,</span> <span class="s1">&#39;data_clinical_supp_sample_</span><span class="si">%s</span><span class="s1">.txt&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#genie.database_to_staging.SAMPLE_CENTER_PATH" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="genie.database_to_staging.PATIENT_CENTER_PATH" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">PATIENT_CENTER_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">GENIE_RELEASE_DIR</span><span class="p">,</span> <span class="s1">&#39;data_clinical_supp_patient_</span><span class="si">%s</span><span class="s1">.txt&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#genie.database_to_staging.PATIENT_CENTER_PATH" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="genie.database_to_staging.MUTATIONS_CENTER_PATH" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">MUTATIONS_CENTER_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">GENIE_RELEASE_DIR</span><span class="p">,</span> <span class="s1">&#39;data_mutations_extended_</span><span class="si">%s</span><span class="s1">.txt&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#genie.database_to_staging.MUTATIONS_CENTER_PATH" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="genie.database_to_staging.FUSIONS_CENTER_PATH" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">FUSIONS_CENTER_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">GENIE_RELEASE_DIR</span><span class="p">,</span> <span class="s1">&#39;data_fusions_</span><span class="si">%s</span><span class="s1">.txt&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#genie.database_to_staging.FUSIONS_CENTER_PATH" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="genie.database_to_staging.SEG_CENTER_PATH" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">SEG_CENTER_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">GENIE_RELEASE_DIR</span><span class="p">,</span> <span class="s1">&#39;data_cna_hg19_</span><span class="si">%s</span><span class="s1">.seg&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#genie.database_to_staging.SEG_CENTER_PATH" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="genie.database_to_staging.SV_CENTER_PATH" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">SV_CENTER_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">GENIE_RELEASE_DIR</span><span class="p">,</span> <span class="s1">&#39;data_sv_</span><span class="si">%s</span><span class="s1">.txt&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#genie.database_to_staging.SV_CENTER_PATH" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="genie.database_to_staging.BED_DIFFS_SEQASSAY_PATH" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">BED_DIFFS_SEQASSAY_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">GENIE_RELEASE_DIR</span><span class="p">,</span> <span class="s1">&#39;diff_</span><span class="si">%s</span><span class="s1">.csv&#39;</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#genie.database_to_staging.BED_DIFFS_SEQASSAY_PATH" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="genie.database_to_staging.FULL_MAF_RELEASE_COLUMNS" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">FULL_MAF_RELEASE_COLUMNS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Hugo_Symbol&#39;</span><span class="p">,</span> <span class="s1">&#39;Entrez_Gene_Id&#39;</span><span class="p">,</span> <span class="s1">&#39;Center&#39;</span><span class="p">,</span> <span class="s1">&#39;NCBI_Build&#39;</span><span class="p">,</span> <span class="s1">&#39;Chromosome&#39;</span><span class="p">,</span> <span class="s1">&#39;Start_Position&#39;</span><span class="p">,</span> <span class="s1">&#39;End_Position&#39;</span><span class="p">,</span> <span class="s1">&#39;Strand&#39;</span><span class="p">,</span> <span class="s1">&#39;Consequence&#39;</span><span class="p">,</span> <span class="s1">&#39;Variant_Classification&#39;</span><span class="p">,</span> <span class="s1">&#39;Variant_Type&#39;</span><span class="p">,</span> <span class="s1">&#39;Reference_Allele&#39;</span><span class="p">,</span> <span class="s1">&#39;Tumor_Seq_Allele1&#39;</span><span class="p">,</span> <span class="s1">&#39;Tumor_Seq_Allele2&#39;</span><span class="p">,</span> <span class="s1">&#39;dbSNP_RS&#39;</span><span class="p">,</span> <span class="s1">&#39;dbSNP_Val_Status&#39;</span><span class="p">,</span> <span class="s1">&#39;Tumor_Sample_Barcode&#39;</span><span class="p">,</span> <span class="s1">&#39;Matched_Norm_Sample_Barcode&#39;</span><span class="p">,</span> <span class="s1">&#39;Match_Norm_Seq_Allele1&#39;</span><span class="p">,</span> <span class="s1">&#39;Match_Norm_Seq_Allele2&#39;</span><span class="p">,</span> <span class="s1">&#39;Tumor_Validation_Allele1&#39;</span><span class="p">,</span> <span class="s1">&#39;Tumor_Validation_Allele2&#39;</span><span class="p">,</span> <span class="s1">&#39;Match_Norm_Validation_Allele1&#39;</span><span class="p">,</span> <span class="s1">&#39;Match_Norm_Validation_Allele2&#39;</span><span class="p">,</span> <span class="s1">&#39;Verification_Status&#39;</span><span class="p">,</span> <span class="s1">&#39;Validation_Status&#39;</span><span class="p">,</span> <span class="s1">&#39;Mutation_Status&#39;</span><span class="p">,</span> <span class="s1">&#39;Sequencing_Phase&#39;</span><span class="p">,</span> <span class="s1">&#39;Sequence_Source&#39;</span><span class="p">,</span> <span class="s1">&#39;Validation_Method&#39;</span><span class="p">,</span> <span class="s1">&#39;Score&#39;</span><span class="p">,</span> <span class="s1">&#39;BAM_File&#39;</span><span class="p">,</span> <span class="s1">&#39;Sequencer&#39;</span><span class="p">,</span> <span class="s1">&#39;t_ref_count&#39;</span><span class="p">,</span> <span class="s1">&#39;t_alt_count&#39;</span><span class="p">,</span> <span class="s1">&#39;n_ref_count&#39;</span><span class="p">,</span> <span class="s1">&#39;n_alt_count&#39;</span><span class="p">,</span> <span class="s1">&#39;HGVSc&#39;</span><span class="p">,</span> <span class="s1">&#39;HGVSp&#39;</span><span class="p">,</span> <span class="s1">&#39;HGVSp_Short&#39;</span><span class="p">,</span> <span class="s1">&#39;Transcript_ID&#39;</span><span class="p">,</span> <span class="s1">&#39;RefSeq&#39;</span><span class="p">,</span> <span class="s1">&#39;Protein_position&#39;</span><span class="p">,</span> <span class="s1">&#39;Codons&#39;</span><span class="p">,</span> <span class="s1">&#39;Exon_Number&#39;</span><span class="p">,</span> <span class="s1">&#39;gnomAD_AF&#39;</span><span class="p">,</span> <span class="s1">&#39;gnomAD_AFR_AF&#39;</span><span class="p">,</span> <span class="s1">&#39;gnomAD_AMR_AF&#39;</span><span class="p">,</span> <span class="s1">&#39;gnomAD_ASJ_AF&#39;</span><span class="p">,</span> <span class="s1">&#39;gnomAD_EAS_AF&#39;</span><span class="p">,</span> <span class="s1">&#39;gnomAD_FIN_AF&#39;</span><span class="p">,</span> <span class="s1">&#39;gnomAD_NFE_AF&#39;</span><span class="p">,</span> <span class="s1">&#39;gnomAD_OTH_AF&#39;</span><span class="p">,</span> <span class="s1">&#39;gnomAD_SAS_AF&#39;</span><span class="p">,</span> <span class="s1">&#39;FILTER&#39;</span><span class="p">,</span> <span class="s1">&#39;Polyphen_Prediction&#39;</span><span class="p">,</span> <span class="s1">&#39;Polyphen_Score&#39;</span><span class="p">,</span> <span class="s1">&#39;SIFT_Prediction&#39;</span><span class="p">,</span> <span class="s1">&#39;SIFT_Score&#39;</span><span class="p">,</span> <span class="s1">&#39;SWISSPROT&#39;</span><span class="p">,</span> <span class="s1">&#39;n_depth&#39;</span><span class="p">,</span> <span class="s1">&#39;t_depth&#39;</span><span class="p">,</span> <span class="s1">&#39;Annotation_Status&#39;</span><span class="p">,</span> <span class="s1">&#39;mutationInCis_Flag&#39;</span><span class="p">]</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#genie.database_to_staging.FULL_MAF_RELEASE_COLUMNS" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="genie.database_to_staging.DEPRECATED_CONSORTIUM_RELEASE_FILES" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">DEPRECATED_CONSORTIUM_RELEASE_FILES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;data_fusions.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;meta_fusions.txt&#39;</span><span class="p">]</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#genie.database_to_staging.DEPRECATED_CONSORTIUM_RELEASE_FILES" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+
+<h3 id="genie.database_to_staging-functions">Functions<a href="#genie.database_to_staging-functions" class="headerlink" title="Permanent link">&para;</a></h3>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging._to_redact_interval" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">_to_redact_interval</span><span class="p">(</span><span class="n">df_col</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging._to_redact_interval" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Determines year values that are "&lt;18" and interval values &gt;89 that need to be redacted
+Returns bool because BIRTH_YEAR needs to be redacted as well based
+on the results</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>df_col</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Dataframe column/pandas.Series of an interval column</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.Series">Series</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>tuple</code>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pandas.Series: to redact boolean vector
+   pandas.Series: to redact pediatric boolean vector</p>
+              </div>
+                <p>
+                  <span class="doc-returns-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="typing.Tuple">Tuple</span>[<span title="pandas.Series">Series</span>, <span title="pandas.Series">Series</span>]</code>
+                  </span>
+                </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging._redact_year" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">_redact_year</span><span class="p">(</span><span class="n">df_col</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging._redact_year" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Redacts year values that have &lt; or &gt;</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>df_col</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Dataframe column/pandas.Series of a year column</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.Series">Series</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <span class="doc-returns-annotation">
+                    <code><span title="pandas.Series">Series</span></code>
+                </span>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pandas.Series: Redacted series</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging._redact_ped_year" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">_redact_ped_year</span><span class="p">(</span><span class="n">df_col</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging._redact_ped_year" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Redacts year values that have &lt;</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>df_col</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Dataframe column/pandas.Series of a year column</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.Series">Series</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <span class="doc-returns-annotation">
+                    <code><span title="pandas.Series">Series</span></code>
+                </span>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pandas.Series: Redacted series</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging._to_redact_difference" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">_to_redact_difference</span><span class="p">(</span><span class="n">df_col_year1</span><span class="p">,</span> <span class="n">df_col_year2</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging._to_redact_difference" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Determine if difference between year2 and year1 is &gt; 89</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>df_col_year1</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Dataframe column/pandas.Series of a year column</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.Series">Series</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>df_col_year2</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Dataframe column/pandas.Series of a year column</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.Series">Series</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <span class="doc-returns-annotation">
+                    <code><span title="pandas.Series">Series</span></code>
+                </span>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pandas.Series: to redact boolean vector</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.redact_phi" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">redact_phi</span><span class="p">(</span><span class="n">clinicaldf</span><span class="p">,</span> <span class="n">interval_cols_to_redact</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;AGE_AT_SEQ_REPORT&#39;</span><span class="p">,</span> <span class="s1">&#39;INT_CONTACT&#39;</span><span class="p">,</span> <span class="s1">&#39;INT_DOD&#39;</span><span class="p">])</span></code>
+
+<a href="#genie.database_to_staging.redact_phi" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Redacts the PHI by re-annotating the clinical file</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>clinicaldf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>merged clinical dataframe</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>interval_cols_to_redact</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>List of interval columns to redact.
+                     Defaults to ['AGE_AT_SEQ_REPORT',
+                                  'INT_CONTACT',
+                                  'INT_DOD']</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="list">list</span></code>
+                  </span>
+                  <span class="doc-param-default">
+                    <b>DEFAULT:</b>
+                      <code>[&#39;AGE_AT_SEQ_REPORT&#39;, &#39;INT_CONTACT&#39;, &#39;INT_DOD&#39;]</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <span class="doc-returns-annotation">
+                    <code><span title="pandas.DataFrame">DataFrame</span></code>
+                </span>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pandas.DataFrame: Redacted clinical dataframe</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.remove_maf_samples" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">remove_maf_samples</span><span class="p">(</span><span class="n">mafdf</span><span class="p">,</span> <span class="n">keep_samples</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.remove_maf_samples" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Remove samples from maf file</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>mafdf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Maf dataframe</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>keep_samples</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Samples to keep</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="list">list</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <span class="doc-returns-annotation">
+                    <code><span title="pandas.DataFrame">DataFrame</span></code>
+                </span>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>Filtered maf dataframe</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.get_whitelist_variants_idx" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_whitelist_variants_idx</span><span class="p">(</span><span class="n">mafdf</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.get_whitelist_variants_idx" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get boolean vector for variants that are known somatic sites
+This is to override the germline filter</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.configure_maf" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">configure_maf</span><span class="p">(</span><span class="n">mafdf</span><span class="p">,</span> <span class="n">remove_variants</span><span class="p">,</span> <span class="n">flagged_variants</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.configure_maf" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Configures each maf dataframe, does germline filtering</p>
+<p>Germline filtering for MAF files uses the gnomAD columns that refer to the
+allele frequencies (AF) of variants in different population groups
+from the gnomAD (Genome Aggregation Database). This filter will filter out
+variants with a maximum AF &gt; 0.05% across all populations which are typically
+common germline variants.</p>
+<p>Germline filtering for MAF files occurs during release instead of during processing
+because the MAF file gets re-annotated during processing via genome nexus annotation.</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>mafdf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Maf dataframe</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>remove_variants</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Variants to remove</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>flagged_variants</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Variants to flag</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>configured maf row</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.calculate_missing_variant_counts" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">calculate_missing_variant_counts</span><span class="p">(</span><span class="n">depth</span><span class="p">,</span> <span class="n">alt_count</span><span class="p">,</span> <span class="n">ref_count</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.calculate_missing_variant_counts" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate missing counts. t_depth = t_alt_count + t_ref_count</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>depth</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Allele Depth</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.Series">Series</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>alt_count</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Allele alt counts</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.Series">Series</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>ref_count</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Allele ref counts</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.Series">Series</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <span class="doc-returns-annotation">
+                    <code><span title="dict">dict</span></code>
+                </span>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>filled in depth, alt_count and ref_count values</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.runMAFinBED" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">runMAFinBED</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">center_mappingdf</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">staging</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">genieVersion</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.runMAFinBED" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Run MAF in BED script, filter data and update MAFinBED files</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse client connection</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="synapseclient.Synapse">Synapse</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>center_mappingdf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>center mapping dataframe</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>test</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Testing parameter. Defaults to False.</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="bool">bool</span></code>
+                  </span>
+                  <span class="doc-param-default">
+                    <b>DEFAULT:</b>
+                      <code>False</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>staging</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Staging parameter. Defaults to False.</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="bool">bool</span></code>
+                  </span>
+                  <span class="doc-param-default">
+                    <b>DEFAULT:</b>
+                      <code>False</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genieVersion</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>GENIE version. Defaults to "test".</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+                  <span class="doc-param-default">
+                    <b>DEFAULT:</b>
+                      <code>&#39;test&#39;</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <span class="doc-returns-annotation">
+                    <code><span title="pandas.Series">Series</span></code>
+                </span>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pd.Series: Variants to remove</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.get_run_maf_in_bed_script_cmd" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_run_maf_in_bed_script_cmd</span><span class="p">(</span><span class="n">notinbed_file</span><span class="p">,</span> <span class="n">script_dir</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">staging</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.get_run_maf_in_bed_script_cmd" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>This function gets the MAFinBED R script command call based on
+   whether we are running in test, staging or production mode</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>notinbed_file</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Full path to the notinbed csv</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>script_dir</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>directory of the MAFinBED script</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>test</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Testing parameter.</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="bool">bool</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>staging</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Staging parameter</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="bool">bool</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>str</code>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>Full command call for the MAFinBED script</p>
+              </div>
+                <p>
+                  <span class="doc-returns-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+                </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.store_maf_in_bed_filtered_variants" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store_maf_in_bed_filtered_variants</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">notinbed_file</span><span class="p">,</span> <span class="n">center_mapping_df</span><span class="p">,</span> <span class="n">genie_version</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.store_maf_in_bed_filtered_variants" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>This script retrieves and stores the filtered variants generated
+    from running the MAFinBed script as files on Synapse. This script
+    then returns the not in bed file with the removed variants column
+    added.
+    TODO: Add handling for empty file?</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse client connection</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="synapseclient.Synapse">Synapse</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>notinbed_file</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>input file</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>center_mapping_df</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>the center mapping dataframe</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genie_version</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>version of this genie run</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <span class="doc-returns-annotation">
+                    <code><span title="pandas.DataFrame">DataFrame</span></code>
+                </span>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pd.DataFrame: filtered variants dataframe with
+removed variants column added</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.seq_date_filter" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">seq_date_filter</span><span class="p">(</span><span class="n">clinicalDf</span><span class="p">,</span> <span class="n">processingDate</span><span class="p">,</span> <span class="n">consortiumReleaseCutOff</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.seq_date_filter" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter samples by seq date</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>clinicalDf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Clinical dataframe</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>processingDate</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Processing date in form of Apr-XXXX</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>consortiumReleaseCutOff</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Release cut off days</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>list</code>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>Samples to remove</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.mutation_in_cis_filter" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">mutation_in_cis_filter</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">skipMutationsInCis</span><span class="p">,</span> <span class="n">variant_filtering_synId</span><span class="p">,</span> <span class="n">center_mappingdf</span><span class="p">,</span> <span class="n">genieVersion</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">staging</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.mutation_in_cis_filter" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Run mutation in cis filter, look up samples to remove.</p>
+<p>The mutation in cis script ONLY runs
+WHEN the skipMutationsInCis parameter is FALSE</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse object</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>skipMutationsInCis</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Skip this filter</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>variant_filtering_synId</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>mergeCheck database dataframe</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>center_mappingdf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>center mapping dataframe</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genieVersion</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>GENIE version. Default is test.</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>test</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Testing parameter. Default is False.</p>
+              </div>
+              <p>
+                  <span class="doc-param-default">
+                    <b>DEFAULT:</b>
+                      <code>False</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>staging</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Staging parameter. Default is False.</p>
+              </div>
+              <p>
+                  <span class="doc-param-default">
+                    <b>DEFAULT:</b>
+                      <code>False</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pd.Series: Samples to remove</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.get_mutation_in_cis_filter_script_cmd" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_mutation_in_cis_filter_script_cmd</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">staging</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.get_mutation_in_cis_filter_script_cmd" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>This function gets the mutation_in_cis_filter R script
+    command call based on whether we are running in test, staging
+    or production mode</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>test</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Testing parameter.</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="bool">bool</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>staging</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Staging parameter. Default is False.</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="bool">bool</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>str</code>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>Full command call for the mergeCheck script</p>
+              </div>
+                <p>
+                  <span class="doc-returns-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+                </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.get_mutation_in_cis_filtered_samples" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_mutation_in_cis_filtered_samples</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">variant_filtering_synId</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.get_mutation_in_cis_filtered_samples" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Gets the samples to remove in our variant filtering table
+   TODO: Add handling for when we have 0 row query results
+Args:
+    syn (synapseclient.Synapse): synapse client connection
+    variant_filtering_synId (str): variant filtering synapse id</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <span class="doc-returns-annotation">
+                    <code><span title="list">list</span></code>
+                </span>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pd.Series: removed samples</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.get_mutation_in_cis_flagged_variants" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_mutation_in_cis_flagged_variants</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">variant_filtering_synId</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.get_mutation_in_cis_flagged_variants" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Gets the flagged variants in our variant filtering table which is
+   a unique string concatenation of the Chromosome, Start_Position,
+   HGVSp_Short, Reference_Allele, Tumor_Seq_Allele2 and Tumor_Sample_Barcode
+   columns
+   TODO: Add handling for when we have 0 row query results</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>synapse client connection</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="synapseclient.Synapse">Synapse</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>variant_filtering_synId</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>variant filtering synapse id</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <span class="doc-returns-annotation">
+                    <code><span title="pandas.Series">Series</span></code>
+                </span>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pd.Series: flagged variants</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.store_mutation_in_cis_files_to_staging" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store_mutation_in_cis_files_to_staging</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">center_mappingdf</span><span class="p">,</span> <span class="n">variant_filtering_synId</span><span class="p">,</span> <span class="n">genieVersion</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.store_mutation_in_cis_files_to_staging" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Stores the mutation in cis files to synapse per
+    center</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>synapse client connection</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="synapseclient.Synapse">Synapse</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>center_mappingdf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>center mapping dataframe</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>variant_filtering_synId</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>variant filtering synapse id</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genieVersion</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>version of the genie pipeline run</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.seq_assay_id_filter" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">seq_assay_id_filter</span><span class="p">(</span><span class="n">clinicaldf</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.seq_assay_id_filter" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>(Deprecated)
+Remove samples that are part of SEQ_ASSAY_IDs with less
+than 50 samples</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>clinicalDf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Sample clinical dataframe</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pd.Series: samples to remove</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.no_genepanel_filter" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">no_genepanel_filter</span><span class="p">(</span><span class="n">clinicaldf</span><span class="p">,</span> <span class="n">beddf</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.no_genepanel_filter" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Remove samples that don't have bed files associated with
+them</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>clinicaldf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Clinical data</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>beddf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>bed data</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pd.Series: samples to remove</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.store_gene_panel_files" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store_gene_panel_files</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">fileviewSynId</span><span class="p">,</span> <span class="n">genieVersion</span><span class="p">,</span> <span class="n">data_gene_panel</span><span class="p">,</span> <span class="n">consortiumReleaseSynId</span><span class="p">,</span> <span class="n">wes_seqassayids</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.store_gene_panel_files" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.filter_out_germline_variants" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">filter_out_germline_variants</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">status_col_str</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.filter_out_germline_variants" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filters out germline variants given a status col str. Genie pipeline
+    cannot have any of these variants. NOTE: We have to search for the
+    status column because there's no column name validation in the release
+    steps so the status column may have different casing.</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>input_data</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>input data with germline variants to filter out</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>status_col_str</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>search string for the status column for the data</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <span class="doc-returns-annotation">
+                    <code><span title="pandas.DataFrame">DataFrame</span></code>
+                </span>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pd.DataFrame: filtered out germline variant data</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.store_sv_files" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store_sv_files</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">release_synid</span><span class="p">,</span> <span class="n">genie_version</span><span class="p">,</span> <span class="n">synid</span><span class="p">,</span> <span class="n">keep_for_center_consortium_samples</span><span class="p">,</span> <span class="n">keep_for_merged_consortium_samples</span><span class="p">,</span> <span class="n">current_release_staging</span><span class="p">,</span> <span class="n">center_mappingdf</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.store_sv_files" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Create, filter, configure, and store structural variant file</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse object</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="synapseclient.Synapse">Synapse</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>release_synid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse id to store release file</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genie_version</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>GENIE version (ie. v6.1-consortium)</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>synid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>SV database synid</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>keep_for_center_consortium_samples</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Samples to keep for center files</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="typing.List">List</span>[<span title="str">str</span>]</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>keep_for_merged_consortium_samples</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Samples to keep for merged file</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="typing.List">List</span>[<span title="str">str</span>]</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>current_release_staging</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Staging flag</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="bool">bool</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>center_mappingdf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Center mapping dataframe</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="pandas.DataFrame">DataFrame</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>List of SV Samples</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.append_or_create_release_maf" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">append_or_create_release_maf</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.append_or_create_release_maf" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Creates a file with the dataframe or appends to a existing file.</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>df</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>pandas.dataframe to write out</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>filepath</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Filepath to append or create</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.store_maf_files" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store_maf_files</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">genie_version</span><span class="p">,</span> <span class="n">flatfiles_view_synid</span><span class="p">,</span> <span class="n">release_synid</span><span class="p">,</span> <span class="n">clinicaldf</span><span class="p">,</span> <span class="n">center_mappingdf</span><span class="p">,</span> <span class="n">keep_for_merged_consortium_samples</span><span class="p">,</span> <span class="n">keep_for_center_consortium_samples</span><span class="p">,</span> <span class="n">remove_mafinbed_variants</span><span class="p">,</span> <span class="n">flagged_mutationInCis_variants</span><span class="p">,</span> <span class="n">current_release_staging</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.store_maf_files" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Create, filter, configure, and store maf file</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse object</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genie_version</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>GENIE version (ie. v6.1-consortium)</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>flatfiles_view_synid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse id of fileview with all the flat files</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>release_synid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse id to store release file</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>clinicaldf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Clinical dataframe with SAMPLE_ID and CENTER</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>center_mappingdf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Center mapping dataframe</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>keep_for_merged_consortium_samples</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Samples to keep for merged file</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>keep_for_center_consortium_samples</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Samples to keep for center files</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>remove_mafinbed_variants</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Variants to remove</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>flagged_mutationInCis_variants</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Variants to flag</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>current_release_staging</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Staging flag</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.run_genie_filters" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">run_genie_filters</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">genie_version</span><span class="p">,</span> <span class="n">variant_filtering_synId</span><span class="p">,</span> <span class="n">clinicaldf</span><span class="p">,</span> <span class="n">beddf</span><span class="p">,</span> <span class="n">center_mappingdf</span><span class="p">,</span> <span class="n">processing_date</span><span class="p">,</span> <span class="n">skip_mutationsincis</span><span class="p">,</span> <span class="n">consortium_release_cutoff</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">current_release_staging</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.run_genie_filters" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Run GENIE filters and returns variants and samples to remove</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse object</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genie_version</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>GENIE version (ie. v6.1-consortium)</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>variant_filtering_synId</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse id of mutationInCis table</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>clinicaldf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>beddf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Bed dataframe</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>center_mappingdf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Center mapping dataframe</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>processing_date</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Processing date</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>skip_mutationsincis</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Skip mutation in cis filter</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>consortium_release_cutoff</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Release cutoff in days</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>test</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Test flag</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>current_release_staging</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Staging flag</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pandas.Series: Variants to remove</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>set</code>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>samples to remove for release files</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>set</code>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>samples to remove for center files</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pandas.Series: Variants to flag</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.store_assay_info_files" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store_assay_info_files</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">genie_version</span><span class="p">,</span> <span class="n">assay_info_synid</span><span class="p">,</span> <span class="n">clinicaldf</span><span class="p">,</span> <span class="n">release_synid</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.store_assay_info_files" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Creates, stores assay information and gets WES panel list</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse object</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genie_version</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>GENIE version (ie. v6.1-consortium)</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>assay_info_synid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Assay information database synid</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>clinicaldf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>release_synid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse id to store release file</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>List of whole exome sequencing SEQ_ASSAY_IDs</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.store_clinical_files" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store_clinical_files</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">genie_version</span><span class="p">,</span> <span class="n">clinicaldf</span><span class="p">,</span> <span class="n">oncotree_url</span><span class="p">,</span> <span class="n">sample_cols</span><span class="p">,</span> <span class="n">patient_cols</span><span class="p">,</span> <span class="n">remove_center_consortium_samples</span><span class="p">,</span> <span class="n">remove_merged_consortium_samples</span><span class="p">,</span> <span class="n">release_synid</span><span class="p">,</span> <span class="n">current_release_staging</span><span class="p">,</span> <span class="n">center_mappingdf</span><span class="p">,</span> <span class="n">databaseSynIdMappingDf</span><span class="p">,</span> <span class="n">used</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.store_clinical_files" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Create, filter, configure, and store clinical file</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse object</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genie_version</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>GENIE version (ie. v6.1-consortium)</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>clinicaldf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>oncotree_url</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Oncotree URL</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>sample_cols</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Clinical sample columns</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>patient_cols</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Clinical patient columns</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>remove_center_consortium_samples</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Samples to remove for center files</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>remove_merged_consortium_samples</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Samples to remove for merged file</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>release_synid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse id to store release file</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>current_release_staging</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Staging flag</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>center_mappingdf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Center mapping dataframe</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>databaseSynIdMappingDf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Database to Synapse Id mapping</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pandas.DataFrame: configured clinical dataframe</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pandas.Series: samples to keep for center files</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pandas.Series: samples to keep for release files</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.store_cna_files" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store_cna_files</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">flatfiles_view_synid</span><span class="p">,</span> <span class="n">keep_for_center_consortium_samples</span><span class="p">,</span> <span class="n">keep_for_merged_consortium_samples</span><span class="p">,</span> <span class="n">center_mappingdf</span><span class="p">,</span> <span class="n">genie_version</span><span class="p">,</span> <span class="n">release_synid</span><span class="p">,</span> <span class="n">current_release_staging</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.store_cna_files" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Create, filter and store cna file</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse object</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>flatfiles_view_synid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse id of fileview with all the flat files</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>keep_for_center_consortium_samples</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Samples to keep for center files</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>keep_for_merged_consortium_samples</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Samples to keep for merged file</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>center_mappingdf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Center mapping dataframe</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genie_version</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>GENIE version (ie. v6.1-consortium)</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>release_synid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse id to store release file</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>Returns:
+    list: CNA samples</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.store_seg_files" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store_seg_files</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">genie_version</span><span class="p">,</span> <span class="n">seg_synid</span><span class="p">,</span> <span class="n">release_synid</span><span class="p">,</span> <span class="n">keep_for_center_consortium_samples</span><span class="p">,</span> <span class="n">keep_for_merged_consortium_samples</span><span class="p">,</span> <span class="n">center_mappingdf</span><span class="p">,</span> <span class="n">current_release_staging</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.store_seg_files" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Create, filter and store seg file</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse object</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genie_version</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>GENIE version (ie. v6.1-consortium)</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>seg_synid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Seg database synid</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>release_synid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse id to store release file</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>keep_for_center_consortium_samples</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Samples to keep for center files</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>keep_for_merged_consortium_samples</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Samples to keep for merged file</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>center_mappingdf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Center mapping dataframe</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>current_release_staging</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Staging flag</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.store_data_gene_matrix" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store_data_gene_matrix</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">genie_version</span><span class="p">,</span> <span class="n">clinicaldf</span><span class="p">,</span> <span class="n">cna_samples</span><span class="p">,</span> <span class="n">release_synid</span><span class="p">,</span> <span class="n">wes_seqassayids</span><span class="p">,</span> <span class="n">sv_samples</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.store_data_gene_matrix" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Create and store data gene matrix file</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse object</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genie_version</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>GENIE version (ie. v6.1-consortium)</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>clinicaldf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>cna_samples</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Samples with CNA</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>release_synid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse id to store release file</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>wes_seqassayids</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Whole exome sequencing SEQ_ASSAY_IDs</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>sv_samples</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Samples with SV</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>pandas.DataFrame: data gene matrix dataframe</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.store_bed_files" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store_bed_files</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">genie_version</span><span class="p">,</span> <span class="n">beddf</span><span class="p">,</span> <span class="n">seq_assay_ids</span><span class="p">,</span> <span class="n">center_mappingdf</span><span class="p">,</span> <span class="n">current_release_staging</span><span class="p">,</span> <span class="n">release_synid</span><span class="p">,</span> <span class="n">used</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.store_bed_files" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Store bed files, store the bed regions that had symbols remapped
+Filters bed file by clinical dataframe seq assays</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse object</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genie_version</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>GENIE version (ie. v6.1-consortium)</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>beddf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Bed dataframe</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>seq_assay_ids</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>All SEQ_ASSAY_IDs in the clinical file</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>center_mappingdf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Center mapping dataframe</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>current_release_staging</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Staging flag</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>release_synid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse id to store release file</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.stagingToCbio" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">stagingToCbio</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">processingDate</span><span class="p">,</span> <span class="n">genieVersion</span><span class="p">,</span> <span class="n">CENTER_MAPPING_DF</span><span class="p">,</span> <span class="n">databaseSynIdMappingDf</span><span class="p">,</span> <span class="n">oncotree_url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">consortiumReleaseCutOff</span><span class="o">=</span><span class="mi">183</span><span class="p">,</span> <span class="n">current_release_staging</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skipMutationsInCis</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">test</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.stagingToCbio" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Main function that takes the GENIE database and creates release files</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse object</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>processingDate</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Processing date in form of Apr-XXXX</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genieVersion</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>GENIE version. Default is test.</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>CENTER_MAPPING_DF</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>center mapping dataframe</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>databaseSynIdMappingDf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Database to Synapse Id mapping</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>oncotree_url</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Oncotree link</p>
+              </div>
+              <p>
+                  <span class="doc-param-default">
+                    <b>DEFAULT:</b>
+                      <code>None</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>consortiumReleaseCutOff</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Release cut off days</p>
+              </div>
+              <p>
+                  <span class="doc-param-default">
+                    <b>DEFAULT:</b>
+                      <code>183</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>current_release_staging</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Is it staging. Default is False.</p>
+              </div>
+              <p>
+                  <span class="doc-param-default">
+                    <b>DEFAULT:</b>
+                      <code>False</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>skipMutationsInCis</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Skip mutation in cis filter. Default is False.</p>
+              </div>
+              <p>
+                  <span class="doc-param-default">
+                    <b>DEFAULT:</b>
+                      <code>False</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>test</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Testing parameter. Default is False.</p>
+              </div>
+              <p>
+                  <span class="doc-param-default">
+                    <b>DEFAULT:</b>
+                      <code>False</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>list</code>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>Gene panel entities</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.revise_metadata_files" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">revise_metadata_files</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">consortiumid</span><span class="p">,</span> <span class="n">genie_version</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.revise_metadata_files" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Rewrite metadata files with the correct GENIE version</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse object</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>consortiumid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse id of consortium release folder</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genie_version</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>GENIE version, Default to None</p>
+              </div>
+              <p>
+                  <span class="doc-param-default">
+                    <b>DEFAULT:</b>
+                      <code>None</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.search_or_create_folder" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">search_or_create_folder</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">parentid</span><span class="p">,</span> <span class="n">folder_name</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.search_or_create_folder" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Searches for an existing Synapse Folder given a parent id
+and creates the Synapse folder if it doesn't exist</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse connection</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="synapseclient.Synapse">Synapse</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>parentid</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse Id of a project or folder</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>folder_name</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Folde rname</p>
+              </div>
+              <p>
+                  <span class="doc-param-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">RETURNS</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>str</code>
+            </td>
+            <td class="doc-returns-details">
+              <div class="doc-md-description">
+                <p>Synapse Folder id</p>
+              </div>
+                <p>
+                  <span class="doc-returns-annotation">
+                    <b>TYPE:</b>
+                      <code><span title="str">str</span></code>
+                  </span>
+                </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="genie.database_to_staging.create_link_version" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">create_link_version</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">genie_version</span><span class="p">,</span> <span class="n">case_list_entities</span><span class="p">,</span> <span class="n">gene_panel_entities</span><span class="p">,</span> <span class="n">database_synid_mappingdf</span><span class="p">,</span> <span class="n">release_type</span><span class="o">=</span><span class="s1">&#39;consortium&#39;</span><span class="p">)</span></code>
+
+<a href="#genie.database_to_staging.create_link_version" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Create release links from the actual entity and version</p>
+<p>TODO: Refactor to use fileviews</p>
+
+
+<table>
+      <thead>
+        <tr>
+          <th><span class="doc-section-title">PARAMETER</span></th>
+          <th><span>DESCRIPTION</span></th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>syn</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Synapse object</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>genie_version</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>GENIE version number</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>case_list_entities</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Case list entities</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>gene_panel_entities</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>Gene panel entities</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>database_synid_mappingdf</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>dataframe containing database to
+                      synapse id mapping</p>
+              </div>
+              <p>
+              </p>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>release_type</code>
+            </td>
+            <td class="doc-param-details">
+              <div class="doc-md-description">
+                <p>'consortium' or 'public' release</p>
+              </div>
+              <p>
+                  <span class="doc-param-default">
+                    <b>DEFAULT:</b>
+                      <code>&#39;consortium&#39;</code>
+                  </span>
+              </p>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tabs", "search.highlight", "search.share", "toc.integrate", "content.tabs.link", "navigation.indexes", "navigation.sections", "content.code.copy", "navigation.sections", "navigation.tabs", "navigation.top", "navigation.tracking", "navigation.instant", "header.autohide", "content.action.edit", "content.tabs.link", "content.tabs", "search.highlight", "search.share", "search.suggest", "toc.integrate"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../../js/open_in_new_tab.js"></script>
+      
+    
+  </body>
+</html>
