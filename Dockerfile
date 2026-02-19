@@ -60,6 +60,14 @@ RUN dpkg -i pandoc-3.0.1-1-amd64.deb
 # Only copy most recent changes in code are always installed
 # Do not build from local computer
 WORKDIR /root/Genie
+
+# Force the pinning of setuptools in the reticulate python virtual env
+# due to pkg_resources being removed in setuptools >= 82
+ENV RETICULATE_PYTHON=/opt/reticulate-venv/bin/python
+RUN python3.10 -m venv /opt/reticulate-venv \
+ && /opt/reticulate-venv/bin/python -m pip install --no-cache-dir --upgrade "pip<26" wheel \
+ && /opt/reticulate-venv/bin/python -m pip install --no-cache-dir "setuptools>=80.9.0,<82.0.0"
+
 # Copy install packages first, because R installation takes
 # a long time and unless there are changes to the actual
 # R packages used.  So the only files copied over are
