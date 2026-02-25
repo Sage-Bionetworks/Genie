@@ -1849,7 +1849,7 @@ def test__validate_sample_class_and_type_cases(clin_class, clinicaldf, expected_
             "Sample Clinical File: SEQ_DATE is now deprecated. Please remove.\n",
         ),
     ],
-    ids=["deprecated_col_exists", "deprecated_col_does_not_exist"],
+    ids=["deprecated_col_does_not_exist", "deprecated_col_exists"],
 )
 def test__validate_that_deprecated_column_do_not_exist_returns_expected_errors(
     clin_class, clinicaldf, deprecated_col, expected_error
