@@ -777,6 +777,25 @@ class Clinical(FileTypeFormat):
             )
         return errors
 
+    def _validate_that_deprecated_column_do_not_exist(
+        self, clinicaldf: pd.DataFrame, col: str
+    ) -> str:
+        """Validation that checks for presence of a deprecated column
+        and returns an error if it's present in the clinical data
+
+        Args:
+            clinicaldf (pd.DataFrame): input clinical data to be validated
+            col (str): name of deprecated column to check
+
+        Returns:
+            str: error message
+        """
+        error = ""
+        haveColumn = process_functions.checkColExist(clinicaldf, col)
+        if haveColumn:
+            error += f"Sample Clinical File: {col} is now deprecated. Please remove.\n"
+        return error
+
     # VALIDATION
     def _validate(self, clinicaldf):
         """
@@ -1043,40 +1062,11 @@ class Clinical(FileTypeFormat):
         else:
             total_error.write("Sample Clinical File: Must have SEQ_ASSAY_ID column.\n")
 
-        # CHECK: SEQ_DATE
-        haveColumn = process_functions.checkColExist(clinicaldf, "SEQ_DATE")
-        seq_date_error = (
-            "Sample Clinical File: SEQ_DATE must be one of five values- "
-            "For Jan-March: use Jan-YEAR. "
-            "For Apr-June: use Apr-YEAR. "
-            "For July-Sep: use Jul-YEAR. "
-            "For Oct-Dec: use Oct-YEAR. (ie. Apr-2017) "
-            "For values that don't have SEQ_DATES that "
-            "you want released use 'release'.\n"
+        # CHECK: SEQ_DATE is NOT PRESENT
+        error = self._validate_that_deprecated_column_do_not_exist(
+            clinicaldf, col="SEQ_DATE"
         )
-
-        if haveColumn:
-            clinicaldf["SEQ_DATE"] = [
-                i.title() for i in clinicaldf["SEQ_DATE"].astype(str)
-            ]
-
-            seqdate = clinicaldf["SEQ_DATE"][clinicaldf["SEQ_DATE"] != "Release"]
-            if sum(clinicaldf["SEQ_DATE"] == "") > 0:
-                total_error.write(
-                    "Sample Clinical File: Samples without SEQ_DATEs will "
-                    "NOT be released.\n"
-                )
-            try:
-                if not seqdate.empty:
-                    seqdate.apply(
-                        lambda date: datetime.datetime.strptime(date, "%b-%Y")
-                    )
-                    if not seqdate.str.startswith(("Jan", "Apr", "Jul", "Oct")).all():
-                        total_error.write(seq_date_error)
-            except ValueError:
-                total_error.write(seq_date_error)
-        else:
-            total_error.write("Sample Clinical File: Must have SEQ_DATE column.\n")
+        total_error.write(error)
 
         # CHECK: BIRTH_YEAR
         error = _check_year(

@@ -175,7 +175,6 @@ def valid_clinical_df():
             ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"],
             SAMPLE_TYPE=[1, 8, 8, 8, 8],
             SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1"],
-            SEQ_DATE=["Jan-2013", "ApR-2013", "Jul-2013", "Oct-2013", "release"],
             SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", "cfDNA", "cfDNA"],
         )
     )
@@ -627,7 +626,6 @@ def test_nonull__validate(clin_class):
             ONCOTREE_CODE=["AMPCA", "AMPCA", "Unknown", "AMPCA", "AMPCA"],
             SAMPLE_TYPE=[1, 8, None, 8, None],
             SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-SAGE-1", "SAGE-1", "SAGE-1", "SAGE-1"],
-            SEQ_DATE=["Jan-2013", "ApR-2013", "Jul-2013", "Oct-2013", "release"],
             SAMPLE_CLASS=["Tumor", "cfDNA", "cfDNA", None, None],
         )
     )
@@ -705,7 +703,6 @@ def test_missingcols__validate(clin_class):
             "Sample Clinical File: Must have ONCOTREE_CODE column.\n"
             "Sample Clinical File: Must have SAMPLE_TYPE column.\n"
             "Sample Clinical File: Must have SEQ_ASSAY_ID column.\n"
-            "Sample Clinical File: Must have SEQ_DATE column.\n"
             "Patient Clinical File: Must have BIRTH_YEAR column.\n"
             "Patient Clinical File: Must have YEAR_DEATH column.\n"
             "Patient Clinical File: Must have YEAR_CONTACT column.\n"
@@ -808,13 +805,8 @@ def test_errors__validate(clin_class):
             "columns, there are empty rows.\n"
             "Sample Clinical File: Please make sure your SEQ_ASSAY_IDs start "
             "with your center abbreviation: S-SAGE-1.\n"
-            "Sample Clinical File: SEQ_DATE must be one of five values- "
-            "For Jan-March: use Jan-YEAR. "
-            "For Apr-June: use Apr-YEAR. "
-            "For July-Sep: use Jul-YEAR. "
-            "For Oct-Dec: use Oct-YEAR. (ie. Apr-2017) "
-            "For values that don't have SEQ_DATES that you want "
-            "released use 'release'.\n"
+            "Sample Clinical File: SEQ_DATE is now deprecated. "
+            "Please remove.\n"
             "Patient Clinical File: Please double check your BIRTH_YEAR "
             "column, it must be an integer in YYYY format <= {year} or "
             "'Unknown', '>89', '<18'.\n"
@@ -929,7 +921,6 @@ def test_duplicated__validate(clin_class):
             ONCOTREE_CODE=["AMPCA", "UNKNOWN", "AMPCA", float("nan")],
             SAMPLE_TYPE=[1, 8, 4, float("nan")],
             SEQ_ASSAY_ID=["SAGE-1-1", "SAGE-1", "SAGE-1", float("nan")],
-            SEQ_DATE=["Jan-2013", "Jul-2013", "Oct-2013", float("nan")],
             SAMPLE_CLASS=["Tumor", "cfDNA", "Tumor", float("nan")],
         )
     )
@@ -1832,4 +1823,38 @@ def test_preprocess(clin_class, newpath=None):
 def test__validate_sample_class_and_type_cases(clin_class, clinicaldf, expected_error):
     result = clin_class._validate_sample_class_and_type(clinicaldf, sample_type_df)
 
+    assert result == expected_error
+
+
+@pytest.mark.parametrize(
+    "clinicaldf, deprecated_col, expected_error",
+    [
+        (
+            pd.DataFrame(
+                {
+                    "SAMPLE_ID": [8, 8, 2],
+                }
+            ),
+            "SEQ_DATE",
+            "",
+        ),
+        (
+            pd.DataFrame(
+                {
+                    "SAMPLE_ID": [8, 8],
+                    "SEQ_DATE": ["MAR-2014", "MAR-2016"],
+                }
+            ),
+            "SEQ_DATE",
+            "Sample Clinical File: SEQ_DATE is now deprecated. Please remove.\n",
+        ),
+    ],
+    ids=["deprecated_col_exists", "deprecated_col_does_not_exist"],
+)
+def test__validate_that_deprecated_column_do_not_exist_returns_expected_errors(
+    clin_class, clinicaldf, deprecated_col, expected_error
+):
+    result = clin_class._validate_that_deprecated_column_do_not_exist(
+        clinicaldf, col=deprecated_col
+    )
     assert result == expected_error
