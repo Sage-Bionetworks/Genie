@@ -13,7 +13,7 @@ Published as `aacrgenie` on PyPI. Jira project: GEN.
 - R 4.3.3 (analytics, renv-managed)
 - Synapse (data repository and table backend via `synapseclient`)
 - Docker (ubuntu:jammy base with Python, R, Java 21, cBioPortal, bedtools)
-- pytest (testing), black ~23.12 (formatting), flake8 (linting)
+- pytest (testing), black (formatting), ruff + flake8 (linting)
 - GitHub Actions CI/CD, published to ghcr.io and PyPI
 
 ## Commands
@@ -41,7 +41,7 @@ The pipeline uses a plugin registry pattern for file formats:
 
 - **`FileTypeFormat`** (`genie/example_filetype_format.py`) — abstract base class (ABCMeta). All file formats inherit from it. Defines the contract: `_validateFilename()`, `_get_dataframe()`, `_validate()`, `_cross_validate()`, `process_steps()`.
 - **`ValidationResults`** (dataclass) — holds `errors: str`, `warnings: str`, `detailed: Optional[str]`. Empty `errors` string = valid.
-- **13 format classes** in `genie_registry/` — each sets `_fileType`, `_validation_kwargs`, `_process_kwargs`. Discovered at runtime via `genie/config.py` using `__subclasses__()` reflection.
+- **Format classes** in `genie_registry/` — each sets `_fileType`, `_validation_kwargs`, `_process_kwargs`. Discovered at runtime via `genie/config.py` using `__subclasses__()` reflection.
 - **Config registry** (`genie/config.py`) — `collect_format_types(package_names)` imports packages and finds all `FileTypeFormat` subclasses. Extensible via `--format_registry_packages` CLI arg.
 
 Data flows through pandas DataFrames. All column names are uppercased on read. Files are TSV with `comment="#"` support. Synapse tables store processed data via `synapseclient.tableQuery()`.
@@ -99,3 +99,13 @@ Plugin discovery: `genie/config.py` uses `importlib.import_module()` + `__subcla
 - **Confluence space APGD** — "AACR Project GENIE Documentation". Contains SOPs, validation rule docs, troubleshooting.
 - **Jira project GEN** — all tickets prefixed `GEN-`. Board at sagebionetworks.jira.com.
 - **R scripts** (`R/`) use the same three hardcoded dbMapping Synapse IDs as `bin/` scripts (test: `syn11600968`, staging: `syn12094210`, prod: `syn10967259`). When updating IDs, grep across both Python and R.
+
+## Anti-Patterns — Do NOT
+
+- **Do NOT simplify validation error messages.** Error messages must include the specific invalid values found (e.g., "Found: 2, 3"). A revert (7135f18) happened when error detail was removed — because sites use these messages to debug their data submissions.
+- **Do NOT deprecate a feature without full cleanup in the same PR.** When deprecating validation/processing for a field, remove ALL related test cases, docstrings, and processing functions together (PR #638/#639 lesson).
+- **Do NOT refactor `DataFrame.append()` to `pd.concat()` without extensive testing.** A previous attempt was reverted (da18b5f) because it broke subtle dataframe ordering behavior in dashboard_table_updater.py.
+- **Do NOT use bare `set()` for DataFrame column/index construction.** Use `sorted(set(...))` — because set ordering is non-deterministic and broke tests (PR #621, GEN-2377).
+- **Do NOT hardcode Synapse IDs inline.** They are already scattered across Python and R files. When adding new ID references, add them near existing ones and document the duplication.
+- **Do NOT declare Python version support without CI coverage.** Python 3.12 is in setup.cfg range but fails CI — this was flagged in PR #559 review.
+- **Do NOT add dependency version upper bounds without documenting why.** Reviewer asked "Is there a reason <4.0.0?" in PR #559 — unclear bounds create unnecessary conflicts.

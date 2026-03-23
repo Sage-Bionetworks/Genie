@@ -52,3 +52,14 @@ Use these existing functions instead of writing new ones:
 
 - `config.py` discovers subclasses via `importlib.import_module()` + `__subclasses__()`. Subclasses are NOT found unless their module is imported first. If adding a new format package, it must be passed via `--format_registry_packages`.
 - The concurrency lock in `bin/input_to_database.py` uses `isProcessing` annotation on the centerMapping entity. If the script crashes, the lock stays True and must be manually reset in Synapse.
+
+## Do NOT Change These Patterns
+
+- **Do NOT remove the `.0` stripping hack in `load.store_database()`.** The `.replace(".0,", ",").replace(".0\n", "\n")` handles pandas float-casting of nullable int columns. Do not introduce column values that legitimately end in `.0`.
+- **Do NOT remove the `SynapseTimeoutError` silent catch in `load.store_table()`.** The timeout occurs during table indexing, not actual failure. Logging it as an error would create false alerts.
+- **Do NOT remove `pd.options.mode.chained_assignment = None` from `process_functions.py`.** It is set globally to suppress warnings for intentional assignment patterns used throughout the pipeline.
+- **Do NOT skip `fillna("")` before string comparisons.** Primary key generation in `load.py` depends on empty strings, not NaN. A bug fix (PR #601, GEN-998) was specifically for this.
+- **Do NOT assume `_cross_validate()` always runs.** It only executes if `_validate()` returned no errors AND `self.ancillary_files` is a non-empty list.
+- **Do NOT forget `syn.table_query_timeout = 50000` for new large table queries.** Without it, queries time out silently. Currently set in `process_mutation.py` and `database_to_staging.py` but not universally.
+- **Do NOT use `set()` for DataFrame index/column construction.** Always `sorted(set(...))` — non-deterministic set ordering caused production failures (GEN-2377).
+- **Do NOT allow pandas to auto-cast integer columns with NAs to float.** Explicitly use `pd.Int64Dtype()` for nullable integer columns — a runtime crash (GEN-2285, PR #615) was caused by dtype confusion from auto-casting.

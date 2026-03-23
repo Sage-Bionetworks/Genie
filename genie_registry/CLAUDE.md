@@ -16,6 +16,14 @@ Pluggable file format registry for the GENIE pipeline. Each file defines a forma
 
 ## Constraints
 
-- Do not rename `_fileType` values — they are used as registry keys and referenced throughout the pipeline and in Synapse table mappings.
-- `patientRetraction` inherits from `sampleRetraction`, not directly from `FileTypeFormat`. Preserve this chain.
 - Validation error messages must follow the format documented in root CLAUDE.md — because sites receive these messages directly.
+
+## Do NOT
+
+- **Do NOT replace `assert` statements in `_validateFilename()` with `raise ValueError`.** The pipeline catches `AssertionError` to try the next file format in the plugin registry. Changing to ValueError breaks format discovery.
+- **Do NOT put cross-file validation in format classes other than `clinical.py`.** All cross-file checks go in `clinical.py._cross_validate()` — because clinical is the source of truth.
+- **Do NOT rename `_fileType` values.** They are registry keys referenced throughout the pipeline and in Synapse table mappings.
+- **Do NOT "fix" the `patientRetraction` → `sampleRetraction` inheritance chain.** `patientRetraction` intentionally inherits from `sampleRetraction`, not directly from `FileTypeFormat`.
+- **Do NOT write custom column existence checks.** Use `process_functions.checkColExist()` — reviewer explicitly flagged this in PR #622.
+- **Do NOT omit specific invalid values from error messages.** Messages must include "Found: <values>" — a revert happened when this was removed (sites need it for debugging).
+- **Do NOT skip NA/empty string edge cases in validation tests.** Reviewer required NA test cases in PR #622 and PR #634. Always test: NA values, empty strings, and empty columns.

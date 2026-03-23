@@ -37,3 +37,9 @@ Both `database_to_staging.py` and `consortium_to_public.py` append `"; exit 0"` 
 
 - R scripts are invoked via `subprocess` calls to `Rscript` (e.g., dashboard generation). Templates in `/templates/` are parameterized via Python string replacement BEFORE being passed to R.
 - The data guide template (`data_guide_template.Rnw`) uses LaTeX/Sweave. Underscore characters in template values must be escaped as `\_` for LaTeX.
+
+## Do NOT
+
+- **Do NOT remove the `"; exit 0"` from cBioPortal validator subprocess calls.** Both `database_to_staging.py` and `consortium_to_public.py` append this to force success exit code so `subprocess.check_output()` captures output even when the validator reports errors.
+- **Do NOT add process tracking calls without the production guard.** `load.update_process_trackingdf()` runs only when `not args.test and not args.staging`. Adding it in test/staging mode would corrupt tracking data.
+- **Do NOT manually reset the `isProcessing` lock without checking if a pipeline run is active.** The concurrency lock on centerMapping can get stuck on crash — but clearing it while a run is active would allow concurrent corruption.

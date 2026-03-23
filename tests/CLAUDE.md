@@ -12,7 +12,7 @@ pytest test suite for `genie` and `genie_registry` packages. Tests mirror source
 
 ## Mock Table Pattern
 
-`createMockTable(dataframe)` is copy-pasted across test files (test_clinical.py, test_cna.py, test_bed.py, etc.) — it is NOT in conftest.py. Pattern:
+`createMockTable(dataframe)` is copy-pasted across test files (test_clinical.py, test_cna.py, test_filters.py, test_mutations_in_cis.py) — it is NOT in conftest.py. Pattern:
 ```python
 def createMockTable(dataframe):
     table = mock.create_autospec(synapseclient.table.CsvFileTable)
@@ -40,7 +40,6 @@ syn.tableQuery.side_effect = lambda *args: table_query_results_map[args]
 
 - Format class validation: `test_<adjective>_<method>` (e.g., `test_perfect__validate`, `test_missingcols__validate`). Double underscore before private method names.
 - Behavior-driven: `test_that_<behavior>` (e.g., `test_that_to_unix_epoch_time_utc_gives_expected_time`).
-- Always use `ids=` parameter with `@pytest.mark.parametrize` for clear test output.
 - Include ALL pass and fail cases in the same parametrize block.
 
 ## Mock Pattern
@@ -49,3 +48,11 @@ syn.tableQuery.side_effect = lambda *args: table_query_results_map[args]
 - For multiple mocks: chain in single `with` statement: `with patch.object(...) as m1, patch.object(...) as m2:`.
 - For Synapse queries, use `syn.tableQuery.side_effect` pointing to a dispatch function, not `return_value`.
 - Verify calls with `assert_called_once_with()` or `assert_has_calls()`.
+
+## Do NOT
+
+- **Do NOT swap or reuse test IDs without verifying they match the scenario.** PR #638 had swapped test IDs that silently passed but validated wrong scenarios — required a follow-up fix PR #639.
+- **Do NOT write tests that only cover the happy path.** Reviewers require: (a) data passes unchanged, (b) empty inputs, (c) all data filtered, (d) no matches found (PR #587 review).
+- **Do NOT duplicate test cases that overlap with parametrized tests.** Reviewer flagged redundant tests in PR #622 — use parametrize for similar scenarios.
+- **Do NOT leave deprecated feature tests in place.** When a feature is deprecated, remove ALL related test cases in the same PR (PR #638 lesson).
+- **Do NOT consolidate `createMockTable()` into conftest.py.** It is intentionally copy-pasted across test files (test_clinical.py, test_cna.py, test_filters.py, test_mutations_in_cis.py). This is a known pattern, not technical debt.
