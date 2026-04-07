@@ -1086,6 +1086,9 @@ def run_genie_filters(
 ):
     """
     Run GENIE filters and returns variants and samples to remove
+    
+    NOTE: SEQ_DATE FILTER is deprecated as we are no longer removing samples based on 
+    seq assay id but keeping track of them for filtering in the future if needed
 
     Args:
         syn: Synapse object
@@ -1136,27 +1139,29 @@ def run_genie_filters(
     )
     remove_no_genepanel_samples = no_genepanel_filter(clinicaldf, beddf)
 
-    logger.info("SEQ DATE FILTER")
-    remove_seqdate_samples = seq_date_filter(
-        clinicaldf, processing_date, consortium_release_cutoff
-    )
 
     # Only certain samples are removed for the files that go into
     # staging center folder
     remove_center_consortium_samples = set(remove_mutationincis_samples).union(
         set(remove_no_genepanel_samples)
     )
+    
+    # SEQ_DATE FILTER DEPRECATED 
+    #logger.info("SEQ DATE FILTER")
+    #remove_seqdate_samples = seq_date_filter(
+    #    clinicaldf, processing_date, consortium_release_cutoff
+    #)
+    
     # Most filteres are applied for the files that go into the merged
     # consortium release
-    remove_merged_consortium_samples = set(remove_seqdate_samples)
+    #remove_merged_consortium_samples = set(remove_seqdate_samples)
 
-    remove_merged_consortium_samples = remove_merged_consortium_samples.union(
-        remove_center_consortium_samples
-    )
-
+    #remove_merged_consortium_samples = remove_merged_consortium_samples.union(
+    #    remove_center_consortium_samples
+    #)
     return (
         remove_mafinbed_variants,
-        remove_merged_consortium_samples,
+        remove_center_consortium_samples,
         remove_center_consortium_samples,
         flagged_mutationincis_variants,
     )
