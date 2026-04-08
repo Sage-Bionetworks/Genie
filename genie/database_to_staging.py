@@ -1146,19 +1146,6 @@ def run_genie_filters(
         set(remove_no_genepanel_samples)
     )
     
-    # SEQ_DATE FILTER DEPRECATED 
-    #logger.info("SEQ DATE FILTER")
-    #remove_seqdate_samples = seq_date_filter(
-    #    clinicaldf, processing_date, consortium_release_cutoff
-    #)
-    
-    # Most filteres are applied for the files that go into the merged
-    # consortium release
-    #remove_merged_consortium_samples = set(remove_seqdate_samples)
-
-    #remove_merged_consortium_samples = remove_merged_consortium_samples.union(
-    #    remove_center_consortium_samples
-    #)
     return (
         remove_mafinbed_variants,
         remove_center_consortium_samples,

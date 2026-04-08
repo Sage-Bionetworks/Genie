@@ -40,7 +40,6 @@ def commonVariantFilter(mafDf):
 # TODO: Add to etl.py
 def consortiumToPublic(
     syn,
-    processingDate,
     genie_version,
     releaseId,
     databaseSynIdMappingDf,
@@ -120,18 +119,11 @@ def consortiumToPublic(
     clinicalDf = pd.read_csv(clinical.path, sep="\t", comment="#")
     gene_matrixdf = pd.read_csv(gene_matrix.path, sep="\t")
 
-    # NOTE: SEQ_DATE filter deprecated
-    #removeForPublicSamples = process_functions.seqDateFilter(
-    #    clinicalDf, processingDate, publicReleaseCutOff
-    #)
     logger.info("SAMPLE CLASS FILTER")
     # comment back in when public release filter back on
     # publicReleaseSamples = publicReleaseSamples.append(keepForPublicSamples)
     # Make sure all null oncotree codes are removed
     clinicalDf = clinicalDf[~clinicalDf["ONCOTREE_CODE"].isnull()]
-    #publicReleaseSamples = clinicalDf.SAMPLE_ID[
-    #    ~clinicalDf.SAMPLE_ID.isin(removeForPublicSamples)
-    #]
     
     publicReleaseSamples = clinicalDf.SAMPLE_ID
 
