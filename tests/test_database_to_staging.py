@@ -279,11 +279,16 @@ def test_that_run_genie_filters_has_expected_calls(syn, test_cases):
 
         assert_frame_equal(
             filters_results[0],
-            pd.DataFrame(dict(VARIANTS_TO_REMOVE=["GENIE-1", "GENIE-2",])),
+            pd.DataFrame(
+                dict(
+                    VARIANTS_TO_REMOVE=[
+                        "GENIE-1",
+                        "GENIE-2",
+                    ]
+                )
+            ),
         )
-        assert filters_results[1] == set(
-            ["GENIE-SAMPLE-2", "GENIE-SAMPLE-1"]
-        )
+        assert filters_results[1] == set(["GENIE-SAMPLE-2", "GENIE-SAMPLE-1"])
         assert filters_results[2] == set(["GENIE-SAMPLE-1", "GENIE-SAMPLE-2"])
         assert filters_results[3] == set(["GENIE-SAMPLE-4"])
 

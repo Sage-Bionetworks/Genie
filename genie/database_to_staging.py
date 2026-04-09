@@ -1086,8 +1086,8 @@ def run_genie_filters(
 ):
     """
     Run GENIE filters and returns variants and samples to remove
-    
-    NOTE: SEQ_DATE FILTER is deprecated as we are no longer removing samples based on 
+
+    NOTE: SEQ_DATE FILTER is deprecated as we are no longer removing samples based on
     seq assay id but keeping track of them for filtering in the future if needed
 
     Args:
@@ -1139,13 +1139,12 @@ def run_genie_filters(
     )
     remove_no_genepanel_samples = no_genepanel_filter(clinicaldf, beddf)
 
-
     # Only certain samples are removed for the files that go into
     # staging center folder
     remove_center_consortium_samples = set(remove_mutationincis_samples).union(
         set(remove_no_genepanel_samples)
     )
-    
+
     return (
         remove_mafinbed_variants,
         remove_center_consortium_samples,

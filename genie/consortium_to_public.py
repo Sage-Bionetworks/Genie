@@ -123,7 +123,7 @@ def consortiumToPublic(
     # publicReleaseSamples = publicReleaseSamples.append(keepForPublicSamples)
     # Make sure all null oncotree codes are removed
     clinicalDf = clinicalDf[~clinicalDf["ONCOTREE_CODE"].isnull()]
-    
+
     publicReleaseSamples = clinicalDf.SAMPLE_ID
 
     existing_seq_dates = clinicalDf.SEQ_DATE[
