@@ -428,10 +428,8 @@ if __name__ == "__main__":
 
     main(
         genie_version=args.genieVersion,
-        processing_date=args.processingDate,
         cbioportal_path=args.cbioportalPath,
         oncotree_link=args.oncotree_link,
-        consortium_release_cutoff=args.consortiumReleaseCutOff,
         test=args.test,
         staging=args.staging,
         debug=args.debug,
