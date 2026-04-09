@@ -144,10 +144,8 @@ def generate_data_guide(genie_version, oncotree_version=None, database_mapping=N
 
 def main(
     genie_version,
-    processing_date,
     cbioportal_path,
     oncotree_link=None,
-    consortium_release_cutoff=184,
     test=False,
     staging=False,
     debug=False,
@@ -166,10 +164,8 @@ def main(
 
     Args:
         genie_version: GENIE version,
-        processing_date: processing date
         cbioportal_path: Path to cbioportal validator
         oncotree_link: Link to oncotree codes
-        consortium_release_cutoff: release cut off value in days
         test: Test flag, uses test databases
         staging: Staging flag, uses staging databases
         debug:  Synapse debug flag
@@ -242,17 +238,14 @@ def main(
         "SELECT * FROM {} where release is true".format(centerMappingSynId)
     )
     center_mappingdf = center_mapping.asDataFrame()
-    processingDate = datetime.datetime.strptime(processing_date, "%b-%Y")
 
     logger.info("STAGING TO CONSORTIUM")
     genePanelEntities = database_to_staging.stagingToCbio(
         syn,
-        processingDate,
         genie_version,
         center_mappingdf,
         databaseSynIdMappingDf,
         oncotree_url=oncotree_link,
-        consortiumReleaseCutOff=consortium_release_cutoff,
         current_release_staging=staging,
         skipMutationsInCis=skip_mutationsincis,
         test=test,
