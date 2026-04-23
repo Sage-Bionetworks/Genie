@@ -1078,7 +1078,9 @@ def run_genie_filters(
     clinicaldf,
     beddf,
     center_mappingdf,
+    processing_date,
     skip_mutationsincis,
+    consortium_release_cutoff,
     test,
     current_release_staging,
 ):
@@ -1095,7 +1097,9 @@ def run_genie_filters(
         clinicaldf: Clinical dataframe with SAMPLE_ID and SEQ_ASSAY_ID
         beddf: Bed dataframe
         center_mappingdf: Center mapping dataframe
+        processing_date: Processing date
         skip_mutationsincis: Skip mutation in cis filter
+        consortium_release_cutoff: Release cutoff in days
         test: Test flag
         current_release_staging: Staging flag
 
@@ -1707,10 +1711,12 @@ def store_bed_files(
 # TODO: Add to etl.py
 def stagingToCbio(
     syn,
+    processingDate,
     genieVersion,
     CENTER_MAPPING_DF,
     databaseSynIdMappingDf,
     oncotree_url=None,
+    consortiumReleaseCutOff=183,
     current_release_staging=False,
     skipMutationsInCis=False,
     test=False,
@@ -1720,10 +1726,12 @@ def stagingToCbio(
 
     Args:
         syn: Synapse object
+        processingDate: Processing date in form of Apr-XXXX
         genieVersion: GENIE version. Default is test.
         CENTER_MAPPING_DF: center mapping dataframe
         databaseSynIdMappingDf: Database to Synapse Id mapping
         oncotree_url: Oncotree link
+        consortiumReleaseCutOff: Release cut off days
         current_release_staging: Is it staging. Default is False.
         skipMutationsInCis: Skip mutation in cis filter. Default is False.
         test: Testing parameter. Default is False.
@@ -1834,7 +1842,9 @@ def stagingToCbio(
         clinicalDf,
         bedDf,
         CENTER_MAPPING_DF,
+        processingDate,
         skipMutationsInCis,
+        consortiumReleaseCutOff,
         test,
         current_release_staging=current_release_staging,
     )

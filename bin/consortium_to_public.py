@@ -87,7 +87,13 @@ def main(args):
     assert not (
         args.test and args.staging
     ), "You can only specify --test or --staging, not both"
-
+    try:
+        processingDate = datetime.datetime.strptime(args.processingDate, "%b-%Y")
+    except ValueError:
+        raise ValueError(
+            "Process date must be in the format " "abbreviated_month-YEAR ie. Oct-2017"
+        )
+        
     syn = process_functions.synapse_login(debug=args.debug)
 
     # Get all the possible public releases
@@ -137,9 +143,11 @@ def main(args):
 
     caseListEntities, genePanelEntities = consortium_to_public.consortiumToPublic(
         syn,
+        processingDate,
         args.genieVersion,
         args.releaseId,
         databaseSynIdMappingDf,
+        publicReleaseCutOff=args.publicReleaseCutOff,
     )
 
     database_to_staging.revise_metadata_files(syn, public_synid, args.genieVersion)

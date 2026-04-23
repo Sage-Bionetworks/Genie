@@ -40,9 +40,11 @@ def commonVariantFilter(mafDf):
 # TODO: Add to etl.py
 def consortiumToPublic(
     syn,
+    processingDate,
     genie_version,
     releaseId,
     databaseSynIdMappingDf,
+    publicReleaseCutOff=365,
 ):
     cna_path = os.path.join(database_to_staging.GENIE_RELEASE_DIR, "data_CNA.txt")
     clinical_path = os.path.join(
