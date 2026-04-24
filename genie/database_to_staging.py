@@ -1087,8 +1087,9 @@ def run_genie_filters(
     """
     Run GENIE filters and returns variants and samples to remove
 
-    NOTE: SEQ_DATE FILTER is deprecated as we are no longer removing samples based on
-    seq assay id but keeping track of them for filtering in the future if needed
+    NOTE: The legacy SEQ_DATE based sample filter has been removed. This function
+    no longer removes samples based on the clinical SEQ_DATE field or a processing
+    date cutoff, and SEQ_DATE is not otherwise used here.
 
     Args:
         syn: Synapse object

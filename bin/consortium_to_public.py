@@ -93,7 +93,7 @@ def main(args):
         raise ValueError(
             "Process date must be in the format " "abbreviated_month-YEAR ie. Oct-2017"
         )
-        
+
     syn = process_functions.synapse_login(debug=args.debug)
 
     # Get all the possible public releases
