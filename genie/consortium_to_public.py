@@ -104,7 +104,6 @@ def consortiumToPublic(
     #     dates < processingDate]
     #######################################################################
 
-    # SEQ_DATE filter
     # Jun-2015, given processing date (today) -> public release
     # (processing date - Jun-2015 > 12 months)
     consortiumReleaseWalk = synapseutils.walk(syn, releaseId)
@@ -121,17 +120,13 @@ def consortiumToPublic(
     clinicalDf = pd.read_csv(clinical.path, sep="\t", comment="#")
     gene_matrixdf = pd.read_csv(gene_matrix.path, sep="\t")
 
-    removeForPublicSamples = process_functions.seqDateFilter(
-        clinicalDf, processingDate, publicReleaseCutOff
-    )
     logger.info("SAMPLE CLASS FILTER")
     # comment back in when public release filter back on
     # publicReleaseSamples = publicReleaseSamples.append(keepForPublicSamples)
     # Make sure all null oncotree codes are removed
     clinicalDf = clinicalDf[~clinicalDf["ONCOTREE_CODE"].isnull()]
-    publicReleaseSamples = clinicalDf.SAMPLE_ID[
-        ~clinicalDf.SAMPLE_ID.isin(removeForPublicSamples)
-    ]
+
+    publicReleaseSamples = clinicalDf.SAMPLE_ID
 
     existing_seq_dates = clinicalDf.SEQ_DATE[
         clinicalDf.SAMPLE_ID.isin(publicReleaseSamples)
