@@ -1,11 +1,9 @@
 import datetime
+import json
 import uuid
-from unittest.mock import Mock, patch
+from unittest.mock import call, Mock, patch
 
 import pandas as pd
-import pytest
-import synapseclient
-from genie import process_functions
 from pandas.api.types import (
     is_bool_dtype,
     is_float_dtype,
@@ -13,6 +11,11 @@ from pandas.api.types import (
     is_string_dtype,
 )
 from pandas.testing import assert_frame_equal
+import pytest
+import requests
+import synapseclient
+
+from genie import process_functions
 
 DATABASE_DF = pd.DataFrame(
     {
@@ -1132,3 +1135,138 @@ def test_add_columns_to_data_gene_matrix(
 
     # check the output
     pd.testing.assert_frame_equal(output, expected_output)
+
+
+def test_retry_get_url_uses_requests_session_with_retries():
+    mock_response = Mock(status_code=200, text="ok")
+    mock_session = Mock()
+    mock_session.get.return_value = mock_response
+
+    with patch.object(
+        process_functions.requests, "Session", return_value=mock_session
+    ) as patch_session, patch.object(
+        process_functions, "HTTPAdapter"
+    ) as patch_http_adapter, patch.object(
+        process_functions, "Retry"
+    ) as patch_retry:
+        patch_retry.return_value = "mock_retry"
+        patch_http_adapter.return_value = "mock_adapter"
+
+        response = process_functions.retry_get_url("https://example.org/test")
+
+        patch_session.assert_called_once_with()
+        patch_retry.assert_called_once_with(total=5, backoff_factor=1)
+        assert mock_session.mount.call_args_list == [
+            call("http://", "mock_adapter"),
+            call("https://", "mock_adapter"),
+        ]
+        patch_http_adapter.assert_has_calls(
+            [
+                call(max_retries="mock_retry"),
+                call(max_retries="mock_retry"),
+            ]
+        )
+        mock_session.get.assert_called_once_with(
+            "https://example.org/test", timeout=3
+        )
+        assert response == mock_response
+
+
+def test_checkUrl_passes_when_status_code_is_200():
+    mock_response = Mock(status_code=200)
+
+    with patch.object(
+        process_functions, "retry_get_url", return_value=mock_response
+    ) as patch_retry_get_url:
+        process_functions.checkUrl("https://example.org")
+
+        patch_retry_get_url.assert_called_once_with("https://example.org")
+
+
+def test_checkUrl_raises_assertion_error_when_status_code_is_not_200():
+    mock_response = Mock(status_code=500)
+
+    with patch.object(
+        process_functions, "retry_get_url", return_value=mock_response
+    ) as patch_retry_get_url:
+        with pytest.raises(AssertionError, match="https://example.org site is down"):
+            process_functions.checkUrl("https://example.org")
+
+        patch_retry_get_url.assert_called_once_with("https://example.org")
+
+
+def test_get_gdc_data_dictionary_returns_response_json():
+    expected_response = {
+        "properties": {
+            "disease_type": {
+                "enum": ["Disease A", "Disease B"],
+            }
+        }
+    }
+    mock_response = Mock(text=json.dumps(expected_response))
+
+    with patch.object(
+        process_functions, "retry_get_url", return_value=mock_response
+    ) as patch_retry_get_url:
+        result = process_functions.get_gdc_data_dictionary("case")
+
+        patch_retry_get_url.assert_called_once_with(
+            "https://api.gdc.cancer.gov/v0/submission/_dictionary/case"
+        )
+        assert result == expected_response
+
+
+def test_get_oncotree_code_mappings_uses_retry_get_url_and_parses_mapping():
+    oncotree_response = {
+        "TISSUE": {
+            "children": {
+                "LUNG": {
+                    "level": 1,
+                    "mainType": "Lung Cancer",
+                    "name": "Lung Cancer",
+                    "children": {
+                        "LUAD": {
+                            "level": 2,
+                            "mainType": "Lung Adenocarcinoma",
+                            "name": "Lung Adenocarcinoma",
+                            "children": {},
+                        }
+                    },
+                }
+            }
+        }
+    }
+    mock_response = Mock(text=json.dumps(oncotree_response))
+
+    with patch.object(
+        process_functions, "retry_get_url", return_value=mock_response
+    ) as patch_retry_get_url:
+        result = process_functions.get_oncotree_code_mappings(
+            "https://oncotree.example.org/api/tumorTypes"
+        )
+
+        patch_retry_get_url.assert_called_once_with(
+            "https://oncotree.example.org/api/tumorTypes"
+        )
+        assert result["LUNG"] == {
+            "CANCER_TYPE": "Lung Cancer",
+            "CANCER_TYPE_DETAILED": "Lung Cancer",
+            "ONCOTREE_PRIMARY_NODE": "LUNG",
+            "ONCOTREE_SECONDARY_NODE": "",
+        }
+        assert result["LUAD"] == {
+            "CANCER_TYPE": "Lung Adenocarcinoma",
+            "CANCER_TYPE_DETAILED": "Lung Adenocarcinoma",
+            "ONCOTREE_PRIMARY_NODE": "LUNG",
+            "ONCOTREE_SECONDARY_NODE": "LUAD",
+        }
+
+     
+def test_retry_get_url_propagates_request_exception():
+    with patch.object(
+        process_functions.requests, "Session"
+    ) as patch_session:
+        patch_session.return_value.get.side_effect = requests.Timeout()
+
+        with pytest.raises(requests.Timeout):
+            process_functions.retry_get_url("https://example.org")
