@@ -1166,9 +1166,7 @@ def test_retry_get_url_uses_requests_session_with_retries():
                 call(max_retries="mock_retry"),
             ]
         )
-        mock_session.get.assert_called_once_with(
-            "https://example.org/test", timeout=3
-        )
+        mock_session.get.assert_called_once_with("https://example.org/test", timeout=3)
         assert response == mock_response
 
 
@@ -1261,11 +1259,9 @@ def test_get_oncotree_code_mappings_uses_retry_get_url_and_parses_mapping():
             "ONCOTREE_SECONDARY_NODE": "LUAD",
         }
 
-     
+
 def test_retry_get_url_propagates_request_exception():
-    with patch.object(
-        process_functions.requests, "Session"
-    ) as patch_session:
+    with patch.object(process_functions.requests, "Session") as patch_session:
         patch_session.return_value.get.side_effect = requests.Timeout()
 
         with pytest.raises(requests.Timeout):
