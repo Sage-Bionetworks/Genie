@@ -54,6 +54,38 @@ class TestDtype:
             col_types = process_mutation.determine_dtype("test.csv")
             assert col_types == self.column_types
 
+    def test_determine_dtype_with_around_9000_nas_still_detects_dtype(self, tmp_path):
+        """Test dtype inference still works when many leading rows are NA."""
+        mutation_file = tmp_path / "test_mutation.tsv"
+
+        test_df = pd.DataFrame(
+            {
+                "mostly_na_then_string": [float("nan")] * 9000 + ["variant"],
+                "mostly_na_then_int": [float("nan")] * 9000 + [1],
+            }
+        )
+        test_df.to_csv(mutation_file, sep="\t", index=False)
+
+        col_types = process_mutation.determine_dtype(str(mutation_file))
+
+        assert col_types["mostly_na_then_string"] == "object"
+        assert col_types["mostly_na_then_int"] == "float64"
+
+    def test_determine_dtype_only_uses_first_10000_rows(self, tmp_path):
+        """Rows after 10,000 should not affect inferred dtype."""
+        mutation_file = tmp_path / "test_mutation.tsv"
+
+        test_df = pd.DataFrame(
+            {
+                "mixed_after_limit": list(range(10000)) + ["not_an_int"],
+            }
+        )
+        test_df.to_csv(mutation_file, sep="\t", index=False)
+
+        col_types = process_mutation.determine_dtype(str(mutation_file))
+
+        assert col_types["mixed_after_limit"] == "int64"
+
     @pytest.mark.parametrize(
         "input_columns_types, known_str_cols, expected_new_column_types",
         [

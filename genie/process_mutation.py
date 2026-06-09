@@ -16,6 +16,9 @@ from . import extract, load, process_functions
 
 logger = logging.getLogger(__name__)
 
+# Change this nrows to 10000 so that it better encapsulates the types
+MAX_ROWS_TO_DETERMINE_DTYPE = 10000
+
 # TODO: add to constants.py
 # Some columns are already capitalized, so they aren't included here
 MAF_COL_MAPPING = {
@@ -134,8 +137,9 @@ def _convert_to_str_dtype(column_types, known_string_cols):
 # TODO Add to utils
 def determine_dtype(path: str):
     """Reads in a dataframe partially and determines the dtype of columns"""
-    # Change this nrows to 5000 so that it better encapsulates the types
-    subset_df = pd.read_csv(path, nrows=5000, sep="\t", comment="#")
+    subset_df = pd.read_csv(
+        path, nrows=MAX_ROWS_TO_DETERMINE_DTYPE, sep="\t", comment="#"
+    )
     column_types = subset_df.dtypes.to_dict()
     return column_types
 
