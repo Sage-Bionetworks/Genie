@@ -1,5 +1,5 @@
-# known working version 4.0.0
-chardet>=3.0.4
+# locked down chardet due to encoding issues with newer versions
+chardet>=3.0.4, <=5.2.0
 # known working version 0.20.4
 httplib2>=0.11.3
 pyranges==0.1.4
