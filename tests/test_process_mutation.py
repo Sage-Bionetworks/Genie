@@ -160,6 +160,97 @@ class TestDtype:
         )
         assert new_column_types == expected_new_column_types
 
+    @pytest.mark.parametrize(
+        "input_columns_types, dtype_name, known_dtype_cols, expected_new_column_types",
+        [
+            (
+                {"foo": "int64", "bar": "object"},
+                "float64",
+                ["foo"],
+                {"foo": "float64", "bar": "object"},
+            ),
+            (
+                {
+                    "Hugo_Symbol": "object",
+                    "Entrez_Gene_Id": "int64",
+                    "Chromosome": "object",
+                    "Start_Position": "int64",
+                    "End_Position": "int64",
+                    "Reference_Allele": "object",
+                    "Variant_Classification": "float64",
+                    "Annotation_Status": "int64",
+                },
+                "object",
+                process_mutation.KNOWN_STRING_COLS,
+                {
+                    "Hugo_Symbol": "object",
+                    "Entrez_Gene_Id": "int64",
+                    "Chromosome": "object",
+                    "Start_Position": "int64",
+                    "End_Position": "int64",
+                    "Reference_Allele": "object",
+                    "Variant_Classification": "object",
+                    "Annotation_Status": "object",
+                },
+            ),
+            (
+                {
+                    "Hugo_Symbol": "object",
+                    "Entrez_Gene_Id": "int64",
+                    "Chromosome": "object",
+                    "Start_Position": "int64",
+                    "End_Position": "int64",
+                    "Reference_Allele": "object",
+                    "Tumor_Seq_Allele1": "object",
+                    "Tumor_Seq_Allele2": "object",
+                    "Tumor_Sample_Barcode": "object",
+                    "Annotation_Status": "object",
+                },
+                "object",
+                process_mutation.KNOWN_STRING_COLS,
+                {
+                    "Hugo_Symbol": "object",
+                    "Entrez_Gene_Id": "int64",
+                    "Chromosome": "object",
+                    "Start_Position": "int64",
+                    "End_Position": "int64",
+                    "Reference_Allele": "object",
+                    "Tumor_Seq_Allele1": "object",
+                    "Tumor_Seq_Allele2": "object",
+                    "Tumor_Sample_Barcode": "object",
+                    "Annotation_Status": "object",
+                },
+            ),
+            (
+                {"foo": "int64", "bar": "object"},
+                "float64",
+                ["missing_col"],
+                {"foo": "int64", "bar": "object"},
+            ),
+        ],
+        ids=[
+            "test_int_to_float",
+            "test_changes_known_string_cols_to_object",
+            "test_no_changes_with_constant",
+            "test_missing_col_no_change",
+        ],
+    )
+    def test__convert_to_specified_dtypes(
+        self,
+        input_columns_types,
+        dtype_name,
+        known_dtype_cols,
+        expected_new_column_types,
+    ):
+        """Tests converting dtypes to specified dtypes"""
+        new_column_types = process_mutation._convert_to_specified_dtypes(
+            input_columns_types,
+            dtype_name=dtype_name,
+            known_dtype_cols=known_dtype_cols,
+        )
+
+        assert new_column_types == expected_new_column_types
+
     def test_move_maf_rename(self):
         """Test moving mafs when maf column headers need to be remapped"""
         testdf = pd.DataFrame({"CHROMOSOME": [1]})

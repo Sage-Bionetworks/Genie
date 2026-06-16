@@ -7,7 +7,7 @@ import os
 import shutil
 import subprocess
 import tempfile
-from typing import Optional
+from typing import Dict, List, Optional
 
 import pandas as pd
 from synapseclient import Synapse
@@ -122,6 +122,14 @@ KNOWN_STRING_COLS = [
     "Transcript_Exon",
 ]
 
+KNOWN_FLOAT_COLS = [
+    "t_ref_count",
+    "t_alt_count",
+    "n_ref_count",
+    "n_alt_count",
+    # other columns that may contain blanks
+]
+
 
 # TODO: add to utils or transform
 def _convert_to_str_dtype(column_types, known_string_cols):
@@ -131,6 +139,26 @@ def _convert_to_str_dtype(column_types, known_string_cols):
     for str_col in known_string_cols:
         if column_types.get(str_col):
             column_types[str_col] = "object"
+    return column_types
+
+
+def _convert_to_specified_dtypes(
+    column_types: Dict[str, str], dtype_name: str, known_dtype_cols: List[str]
+) -> Dict[str, str]:
+    """Sometimes the determined dtype is incorrect based off the first
+    100 rows, update the incorrect dtypes here based on known columns that should be a certain dtype
+
+    Args:
+        column_types (Dict[str, str]): dictionary of column names and their determined dtypes
+        dtype_name (str): the dtype to set for the specified columns
+        known_dtype_cols (List[str]): list of columns to update to the specified dtype
+
+    Returns:
+        Dict[str, str]: updated dictionary of column names and their dtypes
+    """
+    for col in known_dtype_cols:
+        if column_types.get(col):
+            column_types[col] = dtype_name
     return column_types
 
 
@@ -160,6 +188,9 @@ def move_and_configure_maf(mutation_path: str, input_files_dir: str) -> str:
     new_filepath = os.path.join(input_files_dir, filename)
     column_types = determine_dtype(mutation_path)
     new_column_types = _convert_to_str_dtype(column_types, KNOWN_STRING_COLS)
+    new_column_types = _convert_to_specified_dtypes(
+        new_column_types, dtype_name="float64", known_dtype_cols=KNOWN_FLOAT_COLS
+    )
     mafdf = pd.read_csv(mutation_path, sep="\t", dtype=new_column_types, comment="#")
     # If any column headers need to be remapped, remap
     mafdf = mafdf.rename(columns=MAF_COL_MAPPING)
