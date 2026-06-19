@@ -122,12 +122,20 @@ KNOWN_STRING_COLS = [
     "Transcript_Exon",
 ]
 
+# these are the required numeric columns in maf
+# since maf files can sometimes have blanks in
+# numeric columns, only float64 is supported because
+# int64 cannot have blanks.
 KNOWN_FLOAT_COLS = [
     "t_ref_count",
     "t_alt_count",
     "n_ref_count",
     "n_alt_count",
-    # other columns that may contain blanks
+    "t_depth",
+    "n_depth",
+    "Start_Position",
+    "End_Position",
+    # other numeric columns that may contain blanks
 ]
 
 
